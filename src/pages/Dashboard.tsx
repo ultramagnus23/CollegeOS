@@ -1,29 +1,86 @@
-import { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Calendar,
+  AlertCircle,
+  CheckCircle,
+  BookOpen
+} from 'lucide-react';
+import api from '../services/api';
 
-const Dashboard = () => {
-  const { user, logout } = useAuth();
-  const [colleges, setColleges] = useState([]);
-  const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
+/* =======================
+   Types
+======================= */
+
+interface Deadline {
+  id: number;
+  title: string;
+  college_name: string;
+  deadline_date: string;
+  days_until: number;
+}
+
+interface DeadlinesStats {
+  upcoming: number;
+  this_week: number;
+  completed: number;
+}
+
+interface DeadlinesResponse {
+  stats: DeadlinesStats;
+  upcoming: Deadline[];
+}
+
+interface Application {
+  id: number;
+  college_id: number;
+  status: string;
+}
+
+interface TimelineAction {
+  id: number;
+  title: string;
+  description: string;
+  completed: boolean;
+}
+
+interface DashboardData {
+  deadlines: DeadlinesResponse;
+  applications: Application[];
+  timeline: TimelineAction[];
+}
+
+/* =======================
+   Component
+======================= */
+
+const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState<boolean>(true);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
 
   useEffect(() => {
-    loadData();
+    loadDashboardData();
   }, []);
 
-  const loadData = async () => {
+  const loadDashboardData = async (): Promise<void> => {
     try {
-      const [collegesRes, applicationsRes] = await Promise.all([
-        api.getColleges({ limit: 10 }),
-        api.getApplications()
+      setLoading(true);
+
+      const [deadlinesRes, applicationsRes, timelineRes] = await Promise.all([
+        api.deadlines.getDashboard<{ data: any }>(),
+        api.applications.getAll<{ data: any }>(),
+        api.timeline.getMonthly<{ data: any }>()
       ]);
 
-      setColleges(collegesRes.data || []);
-      setApplications(applicationsRes.data || []);
+      setDashboardData({
+        deadlines: deadlinesRes.data,
+        applications: applicationsRes.data,
+        timeline: timelineRes.data
+      });
     } catch (error) {
-      console.error('Failed to load data:', error);
+      console.error('Failed to load dashboard:', error);
     } finally {
       setLoading(false);
     }
@@ -31,58 +88,216 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     );
   }
 
+  const { deadlines, applications, timeline } = dashboardData ?? {};
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">College App OS</h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-gray-600">Welcome, {user?.full_name}</span>
-            <Button onClick={logout} variant="outline" size="sm">
-              Logout
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-500 text-sm font-medium">Total Applications</h3>
-            <p className="text-3xl font-bold text-gray-900 mt-2">{applications.length}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-500 text-sm font-medium">Colleges Available</h3>
-            <p className="text-3xl font-bold text-gray-900 mt-2">{colleges.length}</p>
-          </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-2">
+            Your college application overview
+          </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Available Colleges</h2>
-          <div className="space-y-4">
-            {colleges.map((college: any) => (
-              <div key={college.id} className="border border-gray-200 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900">{college.name}</h3>
-                <p className="text-sm text-gray-600">{college.country}</p>
-                <a
-                  href={college.official_website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-700 text-sm mt-2 inline-block"
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <StatsCard
+            title="Applications"
+            value={applications?.length ?? 0}
+            icon={<BookOpen className="w-6 h-6" />}
+            color="blue"
+            onClick={() => navigate('/applications')}
+          />
+
+          <StatsCard
+            title="Upcoming Deadlines"
+            value={deadlines?.stats?.upcoming ?? 0}
+            icon={<Calendar className="w-6 h-6" />}
+            color="orange"
+            onClick={() => navigate('/deadlines')}
+          />
+
+          <StatsCard
+            title="This Week"
+            value={deadlines?.stats?.this_week ?? 0}
+            icon={<AlertCircle className="w-6 h-6" />}
+            color="red"
+          />
+
+          <StatsCard
+            title="Completed"
+            value={deadlines?.stats?.completed ?? 0}
+            icon={<CheckCircle className="w-6 h-6" />}
+            color="green"
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Upcoming Deadlines */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Upcoming Deadlines
+                </h2>
+                <button
+                  onClick={() => navigate('/deadlines')}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                 >
-                  Visit Website →
-                </a>
+                  View All
+                </button>
               </div>
-            ))}
+
+              {deadlines?.upcoming?.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">
+                  No upcoming deadlines
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {deadlines?.upcoming?.slice(0, 5).map((deadline) => (
+                    <DeadlineItem key={deadline.id} deadline={deadline} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Timeline */}
+          <div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  This Month
+                </h2>
+                <button
+                  onClick={() => navigate('/timeline')}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  Full Timeline
+                </button>
+              </div>
+
+              {timeline?.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">
+                  No actions for this month
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {timeline?.slice(0, 5).map((action) => (
+                    <ActionItem key={action.id} action={action} />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </main>
+      </div>
+    </div>
+  );
+};
+
+/* =======================
+   Helper Components
+======================= */
+
+interface StatsCardProps {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+  color: 'blue' | 'orange' | 'red' | 'green';
+  onClick?: () => void;
+}
+
+const StatsCard: React.FC<StatsCardProps> = ({
+  title,
+  value,
+  icon,
+  color,
+  onClick
+}) => {
+  const colors: Record<StatsCardProps['color'], string> = {
+    blue: 'bg-blue-50 text-blue-600',
+    orange: 'bg-orange-50 text-orange-600',
+    red: 'bg-red-50 text-red-600',
+    green: 'bg-green-50 text-green-600'
+  };
+
+  return (
+    <div
+      className="bg-white rounded-lg shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow"
+      onClick={onClick}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-600 mb-1">{title}</p>
+          <p className="text-3xl font-bold text-gray-900">{value}</p>
+        </div>
+        <div className={`p-3 rounded-lg ${colors[color]}`}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface DeadlineItemProps {
+  deadline: Deadline;
+}
+
+const DeadlineItem: React.FC<DeadlineItemProps> = ({ deadline }) => {
+  const urgencyColor =
+    deadline.days_until <= 7
+      ? 'text-red-600'
+      : deadline.days_until <= 14
+      ? 'text-orange-600'
+      : 'text-gray-600';
+
+  return (
+    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+      <div className="flex-1">
+        <p className="font-medium text-gray-900">{deadline.title}</p>
+        <p className="text-sm text-gray-500">
+          {deadline.college_name}
+        </p>
+      </div>
+      <div className="text-right">
+        <p className={`text-sm font-medium ${urgencyColor}`}>
+          {deadline.days_until} days
+        </p>
+        <p className="text-xs text-gray-500">
+          {deadline.deadline_date}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+interface ActionItemProps {
+  action: TimelineAction;
+}
+
+const ActionItem: React.FC<ActionItemProps> = ({ action }) => {
+  return (
+    <div className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg">
+      <input
+        type="checkbox"
+        checked={action.completed}
+        readOnly
+        className="mt-1"
+      />
+      <div className="flex-1">
+        <p className="font-medium text-gray-900">{action.title}</p>
+        <p className="text-sm text-gray-600">{action.description}</p>
+      </div>
     </div>
   );
 };

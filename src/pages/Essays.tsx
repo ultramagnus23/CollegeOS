@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../services/api';
+import api from '../services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,8 +28,8 @@ const Essays = () => {
   const loadData = async () => {
     try {
       const [essaysRes, appsRes] = await Promise.all([
-        api.getEssays(),
-        api.getApplications()
+        api.essays.getAll<{ data: any[] }>(),
+        api.applications.getAll<{ data: any[] }>()
       ]);
       setEssays(essaysRes.data || []);
       setApplications(appsRes.data || []);
@@ -47,7 +47,7 @@ const Essays = () => {
     }
 
     try {
-      await api.createEssay({
+      await api.essays.create({
         ...formData,
         applicationId: Number(formData.applicationId),
         wordLimit: formData.wordLimit ? Number(formData.wordLimit) : null
@@ -70,7 +70,7 @@ const Essays = () => {
 
   const handleStatusChange = async (id: number, newStatus: string) => {
     try {
-      await api.updateEssay(id, { status: newStatus });
+      await api.essays.update(id, { status: newStatus });
       toast.success('Status updated');
       loadData();
     } catch (error: any) {
@@ -82,7 +82,7 @@ const Essays = () => {
     if (!confirm('Delete this essay?')) return;
 
     try {
-      await api.deleteEssay(id);
+      await api.essays.delete(id);
       toast.success('Essay deleted');
       loadData();
     } catch (error: any) {

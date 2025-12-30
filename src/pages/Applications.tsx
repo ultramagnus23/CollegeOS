@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../services/api';
+import api from '../services/api';
 import { Button } from '@/components/ui/button';
 import { Trash2, ExternalLink, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,7 +17,7 @@ const Applications = () => {
 
   const loadApplications = async () => {
     try {
-      const response = await api.getApplications();
+      const response = await api.applications.getAll<{ data: any[] }>();
       setApplications(response.data || []);
     } catch (error: any) {
       toast.error('Failed to load applications');
@@ -31,7 +31,7 @@ const Applications = () => {
 
     setDeleting(id);
     try {
-      await api.deleteApplication(id);
+      await api.applications.delete(id);
       toast.success('Application deleted');
       loadApplications();
     } catch (error: any) {
@@ -43,7 +43,7 @@ const Applications = () => {
 
   const handleStatusChange = async (id: number, newStatus: string) => {
     try {
-      await api.updateApplication(id, { status: newStatus });
+      await api.applications.update(id, { status: newStatus });
       toast.success('Status updated');
       loadApplications();
     } catch (error: any) {

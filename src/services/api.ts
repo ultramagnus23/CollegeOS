@@ -1,204 +1,353 @@
-// ============================================
-// FILE: src/services/api.ts
-// Create this file in your frontend
-// ============================================
+// src/services/api.ts
+// Frontend API service that communicates with the backend
+// Centralizes all API calls and handles authentication tokens
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL: string =
+  import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-class ApiService {
-  private baseUrl: string;
-  private token: string | null;
+// ==================== UTILITY TYPES ====================
 
-  constructor() {
-    this.baseUrl = API_BASE_URL;
-    this.token = localStorage.getItem('accessToken');
-  }
+type HTTPMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
-  setToken(token: string | null) {
-    this.token = token;
-    if (token) {
-      localStorage.setItem('accessToken', token);
-    } else {
-      localStorage.removeItem('accessToken');
-    }
-  }
-
-  private getHeaders() {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
-    
-    return headers;
-  }
-
-  private async request(endpoint: string, options: RequestInit = {}) {
-    try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
-        ...options,
-        headers: this.getHeaders(),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'API request failed');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('API Error:', error);
-      throw error;
-    }
-  }
-
-  // Auth endpoints
-  async register(email: string, password: string, fullName: string, country: string) {
-    return this.request('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, fullName, country }),
-    });
-  }
-
-  async login(email: string, password: string) {
-    const response = await this.request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    
-    if (response.data.tokens) {
-      this.setToken(response.data.tokens.accessToken);
-    }
-    
-    return response;
-  }
-
-  async logout() {
-    this.setToken(null);
-    return { success: true };
-  }
-
-  async getCurrentUser() {
-    return this.request('/auth/me');
-  }
-
-  async completeOnboarding(data: any) {
-    return this.request('/auth/onboarding', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // College endpoints
-  async getColleges(filters = {}) {
-    const params = new URLSearchParams(filters);
-    return this.request(`/colleges?${params}`);
-  }
-
-  async searchColleges(query: string, filters = {}) {
-    const params = new URLSearchParams({ q: query, ...filters });
-    return this.request(`/colleges/search?${params}`);
-  }
-
-  async getCollegeById(id: number) {
-    return this.request(`/colleges/${id}`);
-  }
-
-  async getCollegeData(id: number, type: string) {
-    return this.request(`/colleges/${id}/data?type=${type}`);
-  }
-
-  // Application endpoints
-  async getApplications(filters = {}) {
-    const params = new URLSearchParams(filters);
-    return this.request(`/applications?${params}`);
-  }
-
-  async createApplication(data: any) {
-    return this.request('/applications', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updateApplication(id: number, data: any) {
-    return this.request(`/applications/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteApplication(id: number) {
-    return this.request(`/applications/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async getApplicationTimeline(id: number) {
-    return this.request(`/applications/${id}/timeline`);
-  }
-
-  // Deadline endpoints
-  async getDeadlines(daysAhead = 30) {
-    return this.request(`/deadlines?daysAhead=${daysAhead}`);
-  }
-
-  async createDeadline(data: any) {
-    return this.request('/deadlines', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updateDeadline(id: number, data: any) {
-    return this.request(`/deadlines/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteDeadline(id: number) {
-    return this.request(`/deadlines/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Essay endpoints
-  async getEssays() {
-    return this.request('/essays');
-  }
-
-  async createEssay(data: any) {
-    return this.request('/essays', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updateEssay(id: number, data: any) {
-    return this.request(`/essays/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async deleteEssay(id: number) {
-    return this.request(`/essays/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Research endpoint
-  async conductResearch(collegeId: number, researchType: string, forceRefresh = false) {
-    return this.request('/research/on-demand', {
-      method: 'POST',
-      body: JSON.stringify({ collegeId, researchType, forceRefresh }),
-    });
-  }
+interface FetchOptions extends RequestInit {
+  method?: HTTPMethod;
+  headers?: Record<string, string>;
+  body?: string;
 }
 
-export const api = new ApiService();
+// Generic API response (adjust if your backend wraps responses differently)
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+}
 
+// ==================== AUTH HELPERS ====================
+
+// Get auth token from localStorage
+const getAuthToken = (): string | null => {
+  return localStorage.getItem('token');
+};
+
+// Build headers with optional auth token
+const getHeaders = (): Record<string, string> => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  const token = getAuthToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
+};
+
+// ==================== FETCH WRAPPER ====================
+
+const fetchAPI = async <T>(
+  endpoint: string,
+  options: FetchOptions = {}
+): Promise<T> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        ...getHeaders(),
+        ...options.headers,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.message || 'API request failed');
+    }
+
+    return data as T;
+  } catch (error) {
+    console.error(`API Error (${endpoint}):`, error);
+    throw error;
+  }
+};
+
+// ==================== COLLEGES API ====================
+
+export interface CollegeSearchParams {
+  country?: string;
+  program?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export const collegesAPI = {
+  /**
+   * Search and filter colleges
+   */
+  search: async <T = unknown>(
+    params: CollegeSearchParams = {}
+  ): Promise<T> => {
+    const queryString = new URLSearchParams(
+      params as Record<string, string>
+    ).toString();
+
+    return fetchAPI<T>(
+      `/colleges${queryString ? `?${queryString}` : ''}`
+    );
+  },
+
+  /**
+   * Get college by ID
+   */
+  getById: async <T = unknown>(id: number): Promise<T> => {
+    return fetchAPI<T>(`/colleges/${id}`);
+  },
+
+  /**
+   * Check eligibility for a college
+   */
+  checkEligibility: async <T = unknown>(
+    id: number,
+    program?: string | null,
+    profile?: Record<string, unknown> | null
+  ): Promise<T> => {
+    const params = program
+      ? `?program=${encodeURIComponent(program)}`
+      : '';
+
+    return fetchAPI<T>(`/colleges/${id}/eligibility${params}`, {
+      method: 'GET',
+      body: profile ? JSON.stringify({ profile }) : undefined,
+    });
+  },
+
+  /**
+   * Get all countries
+   */
+  getCountries: async <T = unknown>(): Promise<T> => {
+    return fetchAPI<T>('/colleges/filters/countries');
+  },
+
+  /**
+   * Get all programs
+   */
+  getPrograms: async <T = unknown>(): Promise<T> => {
+    return fetchAPI<T>('/colleges/filters/programs');
+  },
+};
+
+// ==================== APPLICATIONS API ====================
+
+export interface ApplicationCreateData {
+  college_id: number;
+  application_type: string;
+  notes?: string;
+}
+
+export const applicationsAPI = {
+  getAll: async <T = unknown>(): Promise<T> => {
+    return fetchAPI<T>('/applications');
+  },
+
+  getById: async <T = unknown>(id: number): Promise<T> => {
+    return fetchAPI<T>(`/applications/${id}`);
+  },
+
+  create: async <T = unknown>(
+    data: ApplicationCreateData
+  ): Promise<T> => {
+    return fetchAPI<T>('/applications', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  update: async <T = unknown>(
+    id: number,
+    updates: Partial<ApplicationCreateData & { status: string }>
+  ): Promise<T> => {
+    return fetchAPI<T>(`/applications/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  delete: async <T = unknown>(id: number): Promise<T> => {
+    return fetchAPI<T>(`/applications/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// ==================== DEADLINES API ====================
+
+export interface DeadlineQueryParams {
+  status?: 'upcoming' | 'completed' | 'all';
+  college_id?: number;
+  limit?: number;
+}
+
+export const deadlinesAPI = {
+  getAll: async <T = unknown>(
+    params: DeadlineQueryParams = {}
+  ): Promise<T> => {
+    const queryString = new URLSearchParams(
+      params as Record<string, string>
+    ).toString();
+
+    return fetchAPI<T>(
+      `/deadlines${queryString ? `?${queryString}` : ''}`
+    );
+  },
+
+  getDashboard: async <T = unknown>(): Promise<T> => {
+    return fetchAPI<T>('/deadlines/dashboard');
+  },
+
+  updateCompletion: async <T = unknown>(
+    id: number,
+    completed: boolean
+  ): Promise<T> => {
+    return fetchAPI<T>(`/deadlines/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ completed }),
+    });
+  },
+};
+
+// ==================== ESSAYS API ====================
+
+export interface EssayCreateData {
+  applicationId: number;
+  essayType?: string;
+  prompt: string;
+  wordLimit?: number | null;
+  googleDriveLink?: string;
+  notes?: string;
+}
+
+export const essaysAPI = {
+  getAll: async <T = unknown>(): Promise<T> => {
+    return fetchAPI<T>('/essays');
+  },
+
+  getById: async <T = unknown>(id: number): Promise<T> => {
+    return fetchAPI<T>(`/essays/${id}`);
+  },
+
+  create: async <T = unknown>(data: EssayCreateData): Promise<T> => {
+    return fetchAPI<T>('/essays', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  update: async <T = unknown>(
+    id: number,
+    updates: Partial<EssayCreateData & { status: string }>
+  ): Promise<T> => {
+    return fetchAPI<T>(`/essays/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  delete: async <T = unknown>(id: number): Promise<T> => {
+    return fetchAPI<T>(`/essays/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// ==================== PROFILE API ====================
+
+export const profileAPI = {
+  get: async <T = unknown>(): Promise<T> => {
+    return fetchAPI<T>('/profile');
+  },
+
+  updateAcademic: async <T = unknown>(
+    data: Record<string, unknown>
+  ): Promise<T> => {
+    return fetchAPI<T>('/profile/academic', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// ==================== RECOMMENDATIONS API ====================
+
+export const recommendationsAPI = {
+  get: async <T = unknown>(): Promise<T> => {
+    return fetchAPI<T>('/recommendations');
+  },
+
+  generate: async <T = unknown>(): Promise<T> => {
+    return fetchAPI<T>('/recommendations/generate', {
+      method: 'POST',
+    });
+  },
+};
+
+// ==================== TIMELINE API ====================
+
+export const timelineAPI = {
+  getMonthly: async <T = unknown>(): Promise<T> => {
+    return fetchAPI<T>('/timeline/monthly');
+  },
+};
+
+// ==================== AUTH API ====================
+
+export interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginData {
+  email: string;
+  password: string;
+}
+
+export const authAPI = {
+  register: async <T = unknown>(
+    userData: RegisterData
+  ): Promise<T> => {
+    return fetchAPI<T>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  },
+
+  login: async <T = unknown>(
+    credentials: LoginData
+  ): Promise<T> => {
+    return fetchAPI<T>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+  },
+
+  logout: async <T = unknown>(): Promise<T> => {
+    return fetchAPI<T>('/auth/logout', {
+      method: 'POST',
+    });
+  },
+};
+
+// ==================== DEFAULT EXPORT ====================
+
+const api = {
+  colleges: collegesAPI,
+  applications: applicationsAPI,
+  deadlines: deadlinesAPI,
+  essays: essaysAPI,
+  profile: profileAPI,
+  recommendations: recommendationsAPI,
+  timeline: timelineAPI,
+  auth: authAPI,
+};
+
+export default api;
