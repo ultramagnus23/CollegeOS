@@ -1,0 +1,15 @@
+ALTER TABLE users ADD COLUMN academic_board TEXT;
+ALTER TABLE users ADD COLUMN grade_level TEXT;
+ALTER TABLE users ADD COLUMN graduation_year INTEGER;
+ALTER TABLE users ADD COLUMN subjects TEXT;
+ALTER TABLE users ADD COLUMN percentage REAL;
+ALTER TABLE users ADD COLUMN gpa REAL;
+ALTER TABLE users ADD COLUMN medium_of_instruction TEXT;
+ALTER TABLE users ADD COLUMN exams_taken TEXT;
+ALTER TABLE users ADD COLUMN max_budget_per_year REAL;
+ALTER TABLE users ADD COLUMN can_take_loan BOOLEAN DEFAULT 0;
+ALTER TABLE users ADD COLUMN need_financial_aid BOOLEAN DEFAULT 0;
+ALTER TABLE users ADD COLUMN target_countries TEXT;
+ALTER TABLE users ADD COLUMN intended_major TEXT;
+ALTER TABLE users ADD COLUMN career_goals TEXT;
+ALTER TABLE users ADD COLUMN profile_completed BOOLEAN DEFAULT 0;

@@ -1,0 +1,209 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@layer base {
+  :root {
+    /* Calm, trust-focused palette */
+    --background: 60 20% 99%;
+    --foreground: 210 15% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 15% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 15% 15%;
+
+    /* Sage green - trust & clarity */
+    --primary: 150 35% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Warm neutral secondary */
+    --secondary: 45 20% 95%;
+    --secondary-foreground: 210 15% 25%;
+
+    --muted: 45 15% 94%;
+    --muted-foreground: 210 10% 45%;
+
+    /* Soft sage accent */
+    --accent: 150 25% 92%;
+    --accent-foreground: 150 35% 30%;
+
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Status colors */
+    --success: 150 60% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 35 90% 55%;
+    --warning-foreground: 35 90% 15%;
+    --info: 210 70% 55%;
+    --info-foreground: 0 0% 100%;
+
+    /* Trust indicators */
+    --verified: 150 50% 45%;
+    --unverified: 35 70% 50%;
+    --missing: 0 0% 60%;
+
+    --border: 45 15% 88%;
+    --input: 45 15% 88%;
+    --ring: 150 35% 40%;
+
+    --radius: 0.625rem;
+
+    /* Sidebar */
+    --sidebar-background: 60 15% 97%;
+    --sidebar-foreground: 210 15% 25%;
+    --sidebar-primary: 150 35% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 150 25% 92%;
+    --sidebar-accent-foreground: 150 35% 30%;
+    --sidebar-border: 45 15% 90%;
+    --sidebar-ring: 150 35% 40%;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(210 15% 15% / 0.03);
+    --shadow-md: 0 4px 6px -1px hsl(210 15% 15% / 0.05), 0 2px 4px -2px hsl(210 15% 15% / 0.05);
+    --shadow-lg: 0 10px 15px -3px hsl(210 15% 15% / 0.05), 0 4px 6px -4px hsl(210 15% 15% / 0.05);
+    --shadow-glow: 0 0 20px hsl(150 35% 40% / 0.15);
+  }
+
+  .dark {
+    --background: 220 20% 10%;
+    --foreground: 45 20% 95%;
+
+    --card: 220 18% 13%;
+    --card-foreground: 45 20% 95%;
+
+    --popover: 220 18% 13%;
+    --popover-foreground: 45 20% 95%;
+
+    --primary: 150 40% 50%;
+    --primary-foreground: 220 20% 10%;
+
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 45 20% 90%;
+
+    --muted: 220 15% 18%;
+    --muted-foreground: 45 10% 60%;
+
+    --accent: 150 20% 18%;
+    --accent-foreground: 150 40% 70%;
+
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 150 50% 45%;
+    --warning: 35 80% 55%;
+    --info: 210 60% 55%;
+
+    --verified: 150 45% 50%;
+    --unverified: 35 60% 55%;
+    --missing: 220 10% 50%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 150 40% 50%;
+
+    --sidebar-background: 220 18% 11%;
+    --sidebar-foreground: 45 20% 90%;
+    --sidebar-primary: 150 40% 50%;
+    --sidebar-primary-foreground: 220 20% 10%;
+    --sidebar-accent: 150 20% 18%;
+    --sidebar-accent-foreground: 150 40% 70%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 150 40% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    @apply tracking-tight;
+  }
+
+  code, pre {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.1s; }
+  .stagger-3 { animation-delay: 0.15s; }
+  .stagger-4 { animation-delay: 0.2s; }
+  .stagger-5 { animation-delay: 0.25s; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(12px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
