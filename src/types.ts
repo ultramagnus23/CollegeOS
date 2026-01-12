@@ -7,6 +7,7 @@ export interface StudentProfile {
   currentGPA: string;
   satScore: string;
   actScore: string;
+  ibPredicted: string;
   subjects: string[];
   majorCertain: boolean | null;
   potentialMajors: string[];

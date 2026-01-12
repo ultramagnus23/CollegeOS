@@ -19,12 +19,11 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     grade: '',
     currentBoard: '',
     country: '',
-    
+
     // Step 2: Academic Profile
     currentGPA: '',
     satScore: '',
     actScore: '',
-    apScores: [],
     ibPredicted: '',
     subjects: [],
     
@@ -627,8 +626,8 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
               </button>
             ) : (
               <button
-                onClick={() => {
-                  onComplete(studentData);
+                onClick={async () => {
+                  await onComplete(studentData);
                   navigate('/search');
                 }}
                 disabled={!isStepComplete()}
