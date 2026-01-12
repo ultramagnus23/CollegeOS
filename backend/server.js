@@ -17,7 +17,6 @@ const timelineRoutes = require('./routes/timeline');
 const profileRoutes = require('./routes/profile');
 // Add with other route imports
 const recommendationsRoutes = require('./routes/recommendations');
-const timelineRoutes = require('./routes/timeline');
 
 // Mount routes
 app.use('/api/auth', authRoutes);
@@ -28,7 +27,6 @@ app.use('/api/timeline', timelineRoutes);
 app.use('/api/profile', profileRoutes);
 // Add with other route mounts
 app.use('/api/recommendations', recommendationsRoutes);
-app.use('/api/timeline', timelineRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'CollegeOS API Running' });

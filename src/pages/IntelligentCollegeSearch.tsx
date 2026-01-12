@@ -1,483 +1,299 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Sparkles, MessageCircle, Target, TrendingUp, Award, DollarSign, MapPin } from 'lucide-react';
-
-const API_URL = 'http://localhost:5000/api';
-
-// --- Interfaces & Types ---
-
-interface StudentProfile {
-  name?: string;
-  potentialMajors?: string[];
-  skillsStrengths?: string[];
-  grade?: string | number;
-  country?: string;
-  subjects?: string[];
-  currentBoard?: string;
-}
-
-interface ResearchData {
-  avg_cost?: number;
-  aid_available?: boolean;
-  indian_students?: number;
-  [key: string]: any;
-}
-
-interface College {
-  id?: string | number;
-  name: string;
-  country: string;
-  location: string;
-  type?: string;
-  acceptance_rate: number;
-  programs?: string[];
-  description?: string;
-  website_url?: string;
-  logo_url?: string | null;
-  matchScore?: number; // Added this as it appears in your rendering logic
-  research_data?: ResearchData;
-}
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
+// ==========================================
+// FILE: src/pages/IntelligentCollegeSearch.tsx
+// ==========================================
+import { useState } from 'react';
+import { Search, Database, Globe, Layers, TrendingUp } from 'lucide-react';
+import { StudentProfile } from '../types';
 
 interface Props {
-  studentProfile: StudentProfile;
+  studentProfile: StudentProfile | null;
 }
-
-interface SearchResponse {
-  success: boolean;
-  results: College[];
-  understood?: Record<string, any>;
-}
-
-interface MatchResponse {
-  success: boolean;
-  matches: College[];
-  analysis: string;
-}
-
-interface CounselorResponse {
-  success: boolean;
-  guidance?: string;
-  advice?: string;
-  opportunities?: string;
-}
-
-// --- Component ---
 
 const IntelligentCollegeSearch: React.FC<Props> = ({ studentProfile }) => {
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [colleges, setColleges] = useState<College[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [aiAnalysis, setAiAnalysis] = useState<string>('');
-  
-  // Counselor State
-  const [showCounselor, setShowCounselor] = useState<boolean>(false);
-  const [counselorMessages, setCounselorMessages] = useState<Message[]>([]);
-  const [counselorInput, setCounselorInput] = useState<string>('');
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchLayer, setSearchLayer] = useState<number | null>(null);
+  const [searchSource, setSearchSource] = useState('');
 
-  // Get AI-matched colleges on load
-  useEffect(() => {
-    if (studentProfile && studentProfile.name) {
-      getAIMatches();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [studentProfile]);
+  const performSearch = async () => {
+    if (!query.trim()) return;
 
-  const getAIMatches = async () => {
-    setLoading(true);
+    setSearching(true);
+    setResults([]);
+    setSearchLayer(null);
+
     try {
-      const response = await fetch(`${API_URL}/counselor/match-colleges`, {
+      const response = await fetch('http://localhost:5000/api/intelligent-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentProfile })
-      });
-
-      const data: MatchResponse = await response.json();
-      if (data.success) {
-        setColleges(data.matches);
-        setAiAnalysis(data.analysis);
-      }
-    } catch (error) {
-      console.error('AI matching failed:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const intelligentSearch = async () => {
-    if (!searchQuery.trim()) return;
-
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/counselor/search`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query: searchQuery,
-          studentProfile: studentProfile
+        body: JSON.stringify({ 
+          query,
+          profile: studentProfile 
         })
       });
 
-      const data: SearchResponse = await response.json();
+      const data = await response.json();
+      
       if (data.success) {
-        setColleges(data.results);
-        
-        // Show what the AI understood
-        if (data.understood) {
-          setAiAnalysis(`I understood you're looking for: ${JSON.stringify(data.understood, null, 2)}`);
-        }
+        setResults(data.results);
+        setSearchLayer(data.layer);
+        setSearchSource(data.source);
       }
     } catch (error) {
       console.error('Search failed:', error);
     } finally {
-      setLoading(false);
+      setSearching(false);
     }
   };
 
-  const askCounselor = async (question: string) => {
-    // Add user message immediately
-    setCounselorMessages(prev => [...prev, { role: 'user', content: question }]);
-    setCounselorInput('');
-
-    try {
-      // Intelligent routing based on question type
-      let endpoint = '/counselor/major-guidance';
-      let body: any = { studentProfile, question };
-
-      const lowerQuestion = question.toLowerCase();
-
-      if (lowerQuestion.includes('major') || lowerQuestion.includes('degree')) {
-        endpoint = '/counselor/major-guidance';
-        body = {
-          studentProfile,
-          potentialMajors: studentProfile.potentialMajors || [],
-          skills: studentProfile.skillsStrengths || [],
-          interests: question
+  const getLayerInfo = () => {
+    switch(searchLayer) {
+      case 1:
+        return {
+          icon: <Database className="w-5 h-5" />,
+          text: 'Results from your database',
+          color: 'bg-green-100 text-green-800 border-green-300'
         };
-      } else if (lowerQuestion.includes('competition') || lowerQuestion.includes('internship')) {
-        endpoint = '/counselor/opportunities';
-        body = {
-          major: studentProfile.potentialMajors?.[0] || 'Computer Science',
-          grade: studentProfile.grade,
-          interests: studentProfile.skillsStrengths || [],
-          location: studentProfile.country
+      case 2:
+        return {
+          icon: <Globe className="w-5 h-5" />,
+          text: 'Scraped from university websites',
+          color: 'bg-blue-100 text-blue-800 border-blue-300'
         };
-      } else if (lowerQuestion.includes('subject')) {
-        endpoint = '/counselor/subject-selection';
-        body = {
-          currentSubjects: studentProfile.subjects || [],
-          intendedMajor: studentProfile.potentialMajors?.[0],
-          targetColleges: colleges.slice(0, 5).map(c => c.name),
-          board: studentProfile.currentBoard
+      case 3:
+        return {
+          icon: <TrendingUp className="w-5 h-5" />,
+          text: 'Found via general web search',
+          color: 'bg-purple-100 text-purple-800 border-purple-300'
         };
-      }
-
-      const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      const data: CounselorResponse = await response.json();
-      
-      if (data.success) {
-        const answer = data.guidance || data.advice || data.opportunities || 'I can help with that!';
-        setCounselorMessages(prev => [...prev, { role: 'assistant', content: answer }]);
-      }
-    } catch (error) {
-      console.error('Counselor error:', error);
-      setCounselorMessages(prev => [...prev, {
-        role: 'assistant',
-        content: "I'm here to help! Ask me about majors, colleges, requirements, or your roadmap."
-      }]);
+      default:
+        return null;
     }
   };
 
-  const getMatchCategory = (score: number | undefined): { label: string; color: string } => {
-    const s = score || 0;
-    if (s >= 80) return { label: 'Safety', color: 'green' };
-    if (s >= 60) return { label: 'Target', color: 'blue' };
-    return { label: 'Reach', color: 'orange' };
-  };
-
-  // Event Handlers
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') intelligentSearch();
-  };
-
-  const handleCounselorInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && counselorInput.trim()) {
-      askCounselor(counselorInput);
-    }
-  };
+  const layerInfo = getLayerInfo();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Layers className="w-8 h-8 text-blue-600" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Hi {studentProfile?.name || 'there'}! 👋
-              </h1>
-              <p className="text-gray-600 mt-1">
-                AI-powered college matches based on your profile
-              </p>
+              <h1 className="text-2xl font-bold text-gray-900">3-Layer Intelligent Search</h1>
+              <p className="text-sm text-gray-600">Database → University Sites → Web Search</p>
+              {studentProfile && (
+                <p className="text-xs text-blue-600 mt-1">
+                  Personalized for {studentProfile.name}
+                </p>
+              )}
             </div>
-            <button
-              onClick={() => setShowCounselor(!showCounselor)}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition"
-            >
-              <MessageCircle className="w-5 h-5" />
-              AI Counselor
-            </button>
           </div>
-        </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Intelligent Search Bar */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-5 h-5 text-purple-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Natural Language Search</h2>
-          </div>
-          
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                onKeyPress={handleSearchKeyPress}
-                className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition"
-                placeholder="Try: 'small colleges with good CS programs and over 10% acceptance' or 'affordable engineering schools in Canada'"
-              />
-            </div>
+          {/* Search Bar */}
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && performSearch()}
+              placeholder="Search for colleges, programs, or requirements..."
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
             <button
-              onClick={intelligentSearch}
-              disabled={loading}
-              className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition disabled:opacity-50"
+              onClick={performSearch}
+              disabled={searching || !query.trim()}
+              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 flex items-center gap-2"
             >
-              {loading ? 'Searching...' : 'Search'}
+              <Search className="w-5 h-5" />
+              {searching ? 'Searching...' : 'Search'}
             </button>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="text-sm text-gray-600">Try:</span>
-            {['affordable CS colleges', 'small liberal arts', 'UK universities under £30k', 'engineering with co-op'].map(ex => (
-              <button
-                key={ex}
-                onClick={() => { setSearchQuery(ex); }}
-                className="text-sm px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-700 transition"
-              >
-                {ex}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* AI Analysis */}
-        {aiAnalysis && (
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6 mb-6">
-            <div className="flex items-start gap-3">
-              <Sparkles className="w-6 h-6 text-purple-600 mt-1 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 mb-2">AI Analysis</h3>
-                <p className="text-gray-700 whitespace-pre-line">{aiAnalysis}</p>
+          {/* Layer Indicator */}
+          {searching && (
+            <div className="mt-4 flex items-center gap-3 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                <span>Searching across all layers...</span>
               </div>
             </div>
+          )}
+
+          {layerInfo && !searching && (
+            <div className={`mt-4 flex items-center gap-3 px-4 py-3 border rounded-lg ${layerInfo.color}`}>
+              {layerInfo.icon}
+              <div>
+                <p className="font-medium">Layer {searchLayer} Results</p>
+                <p className="text-sm">{layerInfo.text}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Search Process Visualization */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h3 className="font-semibold text-gray-900 mb-4">Search Process</h3>
+          <div className="space-y-3">
+            <div className={`flex items-center gap-4 p-3 rounded-lg border ${searchLayer! >= 1 ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${searchLayer! >= 1 ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                1
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Layer 1: Database Search</p>
+                <p className="text-sm text-gray-600">Search your local college database first</p>
+              </div>
+              <Database className="w-5 h-5 text-gray-400" />
+            </div>
+
+            <div className={`flex items-center gap-4 p-3 rounded-lg border ${searchLayer! >= 2 ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${searchLayer! >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                2
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Layer 2: University Websites</p>
+                <p className="text-sm text-gray-600">Scrape official university sites for data</p>
+              </div>
+              <Globe className="w-5 h-5 text-gray-400" />
+            </div>
+
+            <div className={`flex items-center gap-4 p-3 rounded-lg border ${searchLayer === 3 ? 'bg-purple-50 border-purple-300' : 'bg-gray-50 border-gray-200'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${searchLayer === 3 ? 'bg-purple-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                3
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">Layer 3: General Web Search</p>
+                <p className="text-sm text-gray-600">Search the entire web for information</p>
+              </div>
+              <TrendingUp className="w-5 h-5 text-gray-400" />
+            </div>
           </div>
-        )}
+        </div>
 
         {/* Results */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {loading ? 'Finding matches...' : `${colleges.length} Colleges Matched`}
-            </h2>
-            {colleges.length > 0 && (
-              <div className="flex gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-gray-600">Safety</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-gray-600">Target</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span className="text-gray-600">Reach</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="mt-4 text-gray-600">Using AI to find your perfect matches...</p>
-            </div>
-          ) : colleges.length > 0 ? (
+        {results.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {results.length} Results Found
+            </h3>
+            
             <div className="space-y-4">
-              {colleges.map((college, index) => {
-                const category = getMatchCategory(college.matchScore);
-                return (
-                  <div
-                    key={college.id || index}
-                    className={`border-l-4 border-${category.color}-500 bg-white rounded-lg p-6 hover:shadow-md transition`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-xl font-bold text-gray-900">{college.name}</h3>
-                          <span className={`px-3 py-1 bg-${category.color}-100 text-${category.color}-700 text-sm font-medium rounded-full`}>
-                            {category.label}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-4 h-4" />
-                            {college.location}, {college.country}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Target className="w-4 h-4" />
-                            {(college.acceptance_rate * 100).toFixed(1)}% acceptance
-                          </div>
-                          {college.research_data && (
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="w-4 h-4" />
-                              ${college.research_data.avg_cost?.toLocaleString()}/year
+              {results.map((result, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition">
+                  {/* Database Results */}
+                  {searchLayer === 1 && (
+                    <>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="text-xl font-bold text-gray-900">{result.name}</h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {result.location} • {result.country}
+                          </p>
+                          <p className="text-gray-700 mt-2">{result.description}</p>
+                          
+                          {result.programs && result.programs.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {result.programs.slice(0, 5).map((prog: string, i: number) => (
+                                <span key={i} className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">
+                                  {prog}
+                                </span>
+                              ))}
                             </div>
                           )}
                         </div>
+                        
+                        <div className="text-right ml-4">
+                          <div className="text-2xl font-bold text-blue-600">
+                            {(result.acceptance_rate * 100).toFixed(1)}%
+                          </div>
+                          <div className="text-xs text-gray-500">Acceptance</div>
+                        </div>
+                      </div>
+                      
+                      {result.website_url && (
+                        <a 
+                          href={result.website_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block mt-3 text-blue-600 hover:underline text-sm"
+                        >
+                          Visit Website →
+                        </a>
+                      )}
+                    </>
+                  )}
 
-                        <p className="text-gray-700 mb-3">{college.description}</p>
-
-                        <div className="flex flex-wrap gap-2">
-                          {college.programs?.slice(0, 5).map((prog, i) => (
-                            <span key={i} className="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-full">
+                  {/* University Website Results */}
+                  {searchLayer === 2 && (
+                    <>
+                      <h4 className="text-lg font-bold text-gray-900">{result.name}</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {result.location} • {result.country}
+                      </p>
+                      <p className="text-gray-700 mt-2">{result.description}</p>
+                      
+                      {result.programs && result.programs.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {result.programs.map((prog: string, i: number) => (
+                            <span key={i} className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full">
                               {prog}
                             </span>
                           ))}
                         </div>
-                      </div>
+                      )}
+                      
+                      <a 
+                        href={result.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-3 text-blue-600 hover:underline text-sm"
+                      >
+                        Visit {result.name} →
+                      </a>
+                    </>
+                  )}
 
-                      <div className="text-right ml-6">
-                        <div className="text-3xl font-bold text-purple-600">
-                          {college.matchScore}%
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">Match Score</div>
-                        <button className="mt-4 px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg text-sm font-medium transition">
-                          View Details
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                  {/* Web Search Results */}
+                  {searchLayer === 3 && (
+                    <>
+                      <h4 className="text-lg font-bold text-gray-900">{result.title}</h4>
+                      {result.category && (
+                        <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded-full mt-2">
+                          {result.category}
+                        </span>
+                      )}
+                      <p className="text-gray-700 mt-2">{result.snippet}</p>
+                      
+                      {result.url && (
+                        <a 
+                          href={result.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block mt-3 text-blue-600 hover:underline text-sm"
+                        >
+                          Read More →
+                        </a>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
             </div>
-          ) : (
-            <div className="text-center py-12 text-gray-500">
-              <Search className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p>Complete your profile to see AI-matched colleges!</p>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {!searching && results.length === 0 && query && (
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">No results found for "{query}"</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Searched across all 3 layers: Database, University Sites, and Web
+            </p>
+          </div>
+        )}
       </div>
-
-      {/* AI Counselor Sidebar */}
-      {showCounselor && (
-        <div className="fixed right-0 top-0 h-full w-96 bg-white shadow-2xl flex flex-col z-50">
-          <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold">AI Counselor</h3>
-                <p className="text-sm opacity-90">Your personal college advisor</p>
-              </div>
-              <button
-                onClick={() => setShowCounselor(false)}
-                className="text-white hover:bg-white/20 rounded-lg p-2 transition"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            {counselorMessages.length === 0 && (
-              <div className="text-center text-gray-500 mt-8">
-                <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-sm mb-4">Ask me anything about:</p>
-                <div className="space-y-2 text-left">
-                  {[
-                    'Which major should I choose?',
-                    'What competitions should I do?',
-                    'Which subjects to take?',
-                    'How to stand out in applications?',
-                    'Create my personalized roadmap'
-                  ].map((q, i) => (
-                    <button
-                      key={i}
-                      onClick={() => askCounselor(q)}
-                      className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-sm transition"
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {counselorMessages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[80%] p-4 rounded-lg ${
-                    msg.role === 'user'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}
-                >
-                  <p className="text-sm whitespace-pre-line">{msg.content}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="border-t p-4">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={counselorInput}
-                onChange={(e) => setCounselorInput(e.target.value)}
-                onKeyPress={handleCounselorInputKeyPress}
-                placeholder="Ask about majors, colleges, requirements..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-              />
-              <button
-                onClick={() => counselorInput.trim() && askCounselor(counselorInput)}
-                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition"
-              >
-                Send
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

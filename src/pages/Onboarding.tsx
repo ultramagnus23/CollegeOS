@@ -1,15 +1,19 @@
+// ==========================================
+// FILE: src/pages/StudentOnboarding.tsx
+// ==========================================
 import React, { useState } from 'react';
 import { ArrowRight, ArrowLeft, Check, Target, GraduationCap, BookOpen, Trophy, Briefcase, FileText, Heart, Star, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { StudentProfile } from '../types';
 
 interface StudentOnboardingProps {
-  onComplete: (profile: any) => void;
+  onComplete: (profile: StudentProfile) => void;
 }
 
 const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [studentData, setStudentData] = useState({
+  const [studentData, setStudentData] = useState<any>({
     // Step 1: Basic Info
     name: '',
     grade: '',
@@ -46,8 +50,8 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     whyCollege: ''
   });
 
-  const updateData = (field, value) => {
-    setStudentData(prev => ({ ...prev, [field]: value }));
+  const updateData = (field: string, value: any) => {
+    setStudentData((prev: any) => ({ ...prev, [field]: value }));
   };
 
   const nextStep = () => setStep(prev => Math.min(prev + 1, 7));
@@ -224,7 +228,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                         onChange={(e) => {
                           const subjects = e.target.checked
                             ? [...studentData.subjects, subject]
-                            : studentData.subjects.filter(s => s !== subject);
+                            : studentData.subjects.filter((s: string) => s !== subject);
                           updateData('subjects', subjects);
                         }}
                         className="rounded text-blue-600"
@@ -297,7 +301,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                           } else {
                             const majors = e.target.checked
                               ? [...studentData.potentialMajors, major]
-                              : studentData.potentialMajors.filter(m => m !== major);
+                              : studentData.potentialMajors.filter((m: string) => m !== major);
                             updateData('potentialMajors', majors);
                           }
                         }}
@@ -322,7 +326,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                         onChange={(e) => {
                           const skills = e.target.checked
                             ? [...studentData.skillsStrengths, skill]
-                            : studentData.skillsStrengths.filter(s => s !== skill);
+                            : studentData.skillsStrengths.filter((s: string) => s !== skill);
                           updateData('skillsStrengths', skills);
                         }}
                         className="rounded text-purple-600"
@@ -361,7 +365,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                         onChange={(e) => {
                           const countries = e.target.checked
                             ? [...studentData.preferredCountries, country]
-                            : studentData.preferredCountries.filter(c => c !== country);
+                            : studentData.preferredCountries.filter((c: string) => c !== country);
                           updateData('preferredCountries', countries);
                         }}
                         className="rounded text-orange-600"
@@ -443,7 +447,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                   value={studentData.activities.join('\n')}
                   onChange={(e) => updateData('activities', e.target.value.split('\n'))}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                  rows="4"
+                  rows={4}
                   placeholder="List your activities (one per line)&#10;e.g., Student Council President&#10;Debate Team Captain&#10;Volunteer at NGO"
                 />
               </div>
@@ -456,7 +460,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                   value={studentData.awards.join('\n')}
                   onChange={(e) => updateData('awards', e.target.value.split('\n'))}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                  rows="4"
+                  rows={4}
                   placeholder="List your awards (one per line)&#10;e.g., National Science Olympiad Gold Medal&#10;Best Delegate at MUN&#10;State Level Chess Champion"
                 />
               </div>
@@ -484,7 +488,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                   value={studentData.careerGoals}
                   onChange={(e) => updateData('careerGoals', e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  rows="4"
+                  rows={4}
                   placeholder="Share your aspirations...&#10;e.g., I want to become a software engineer at a leading tech company, or start my own AI startup"
                 />
               </div>
@@ -497,7 +501,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                   value={studentData.whyCollege}
                   onChange={(e) => updateData('whyCollege', e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  rows="4"
+                  rows={4}
                   placeholder="What matters most to you?&#10;e.g., Research opportunities, networking, specific programs, personal growth"
                 />
               </div>
@@ -573,7 +577,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       case 4:
         return studentData.preferredCountries.length > 0 && studentData.budgetRange;
       case 5:
-        return true; // Optional step
+        return true;
       case 6:
         return studentData.careerGoals.trim().length > 0;
       case 7:
@@ -586,7 +590,6 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12 px-4">
       <div className="max-w-3xl mx-auto">
-        {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-gray-600">Step {step} of 7</span>
@@ -600,11 +603,9 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           </div>
         </div>
 
-        {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {renderStep()}
 
-          {/* Navigation */}
           <div className="flex justify-between mt-8 pt-6 border-t">
             <button
               onClick={prevStep}
@@ -627,7 +628,6 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             ) : (
               <button
                 onClick={() => {
-                  console.log('Student Profile:', studentData);
                   onComplete(studentData);
                   navigate('/search');
                 }}
@@ -641,7 +641,6 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           </div>
         </div>
 
-        {/* Help Text */}
         <div className="text-center mt-6 text-sm text-gray-600">
           Need help? <button className="text-blue-600 hover:underline">Contact Support</button>
         </div>
