@@ -30,8 +30,8 @@ if [ -f ".env" ]; then
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             # Backup original .env
             cp .env .env.backup
-            # Update DATABASE_PATH
-            sed -i 's|DATABASE_PATH=./database\.sqlite|DATABASE_PATH=./database/college_app.db|g' .env
+            # Update DATABASE_PATH (only first occurrence)
+            sed -i 's|DATABASE_PATH=./database\.sqlite|DATABASE_PATH=./database/college_app.db|' .env
             echo "✅ Updated .env file (backup saved as .env.backup)"
         else
             echo "⚠️  Continuing with current .env (may cause path issues)"
@@ -40,8 +40,8 @@ if [ -f ".env" ]; then
     fi
 fi
 
-# Unset DATABASE_PATH for this script to use default
-unset DATABASE_PATH
+# Override DATABASE_PATH for this script to ensure correct path is used
+export DATABASE_PATH=./database/college_app.db
 
 echo ""
 echo "Step 2: Removing old database files..."

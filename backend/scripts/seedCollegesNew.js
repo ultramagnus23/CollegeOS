@@ -11,7 +11,10 @@ console.log('🌱 CollegeOS Comprehensive Seeding Script\n');
 console.log('📂 Database path:', config.database.path);
 
 // Check for wrong database path (common issue)
-if (config.database.path.includes('database.sqlite') && !config.database.path.includes('college_app.db')) {
+// Check if path ends with database.sqlite or contains it without college_app.db
+const isOldPath = config.database.path.endsWith('database.sqlite') || 
+                  (config.database.path.includes('database.sqlite') && !config.database.path.includes('college_app.db'));
+if (isOldPath) {
   console.error('\n⚠️  WARNING: You are using the OLD database path!');
   console.error('   Current path:', config.database.path);
   console.error('   Correct path should be: ./database/college_app.db');
