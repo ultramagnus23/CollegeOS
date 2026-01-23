@@ -7,6 +7,12 @@ echo ""
 echo "⚠️  WARNING: This will DELETE your existing database!"
 echo "     All data will be lost."
 echo ""
+echo "Use this if you're experiencing:"
+echo "  - Database corruption errors (SQLITE_CORRUPT)"
+echo "  - Schema mismatch errors"
+echo "  - Migration failures"
+echo "  - Wrong database path issues"
+echo ""
 read -p "Continue? (y/N): " -n 1 -r
 echo ""
 

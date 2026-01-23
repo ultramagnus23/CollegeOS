@@ -82,9 +82,25 @@ This deletes the old database and creates a fresh one.
 ```bash
 cd backend
 rm -f database/college_app.db  # Delete old database
+rm -f database/college_app.db-shm  # Delete WAL files
+rm -f database/college_app.db-wal
 node scripts/runMigrations.js   # Create new schema
 node scripts/seedCollegesNew.js  # Add data
 ```
+
+### "database disk image is malformed" (Database Corruption)
+
+**Cause:** Database file is corrupted (incomplete writes, crash, improper shutdown).
+
+**Quick Fix:**
+```bash
+cd backend
+./fresh-start.sh
+```
+
+This rebuilds the database from scratch.
+
+See `DATABASE_CORRUPT_FIX.md` for detailed troubleshooting.
 
 ### "Cannot find module 'better-sqlite3'"
 
