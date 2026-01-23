@@ -1,11 +1,12 @@
 require('dotenv').config();
+const path = require('path');
 
 module.exports = {
   port: process.env.PORT || 5000,
   nodeEnv: process.env.NODE_ENV || 'development',
   
   database: {
-    path: process.env.DATABASE_PATH || './database/college_app.db'
+    path: process.env.DATABASE_PATH || path.join(__dirname, '../../database/college_app.db')
   },
   
   jwt: {
