@@ -50,50 +50,38 @@ const AIChatbot = () => {
     setIsLoading(true);
 
     try {
-      // Build conversation history for context
-      const conversationHistory = messages.map(msg => ({
+      // Build conversation history for context (exclude current message, already added to UI)
+      const conversationHistory = messages.slice(0, -1).map(msg => ({
         role: msg.role,
         content: msg.content
       }));
 
-      // Add the new user message
-      conversationHistory.push({
-        role: 'user',
-        content: userMessage.content
-      });
-
-      // Call Claude API (or your backend endpoint)
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      // Call backend chatbot endpoint
+      const response = await fetch('http://localhost:5000/api/chatbot/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'anthropic-version': '2023-06-01',
-          'x-api-key': 'YOUR_ANTHROPIC_API_KEY' // Replace with your key
+          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1024,
-          system: `You are a helpful college application assistant. You help students with:
-- Researching colleges and universities
-- Understanding application requirements
-- Writing college essays
-- Planning application timelines
-- Scholarship information
-- Test preparation advice
-
-Be conversational, encouraging, and provide specific actionable advice. Remember the conversation history to provide contextual responses.`,
-          messages: conversationHistory
+          message: userMessage.content,
+          conversationHistory: conversationHistory
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response from AI');
+        throw new Error('Failed to get response from chatbot');
       }
 
       const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Chatbot request failed');
+      }
+      
       const assistantMessage: Message = {
         role: 'assistant',
-        content: data.content[0].text,
+        content: data.reply || 'I apologize, but I couldn\'t generate a response. Please try again.',
         timestamp: new Date()
       };
 
