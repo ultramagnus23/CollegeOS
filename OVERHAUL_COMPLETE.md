@@ -107,12 +107,14 @@ npm install
 
 ### 2. Seed Database (if needed)
 ```bash
-# Run migrations
+# Run migrations (creates tables)
 node scripts/runMigrations.js
 
 # Seed with 1100+ colleges (use --force to clear existing data)
 node scripts/seedCollegesNew.js --force
 ```
+
+**Note:** The old `seedColleges.js` script is deprecated. Always use `seedCollegesNew.js`.
 
 ### 3. Start Backend
 ```bash
