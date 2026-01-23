@@ -28,7 +28,10 @@ class WebScraper {
       // Check cache
       if (this.robotsCache.has(domain)) {
         const robots = this.robotsCache.get(domain);
-        return robots.isAllowed(url, this.userAgent);
+        // Safety check: ensure robots object exists and has isAllowed method
+        if (robots && typeof robots.isAllowed === 'function') {
+          return robots.isAllowed(url, this.userAgent);
+        }
       }
       
       // Fetch robots.txt
@@ -39,9 +42,14 @@ class WebScraper {
       });
       
       const robots = robotsParser(robotsUrl, response.data);
-      this.robotsCache.set(domain, robots);
+      // Validate robots object before caching
+      if (robots && typeof robots.isAllowed === 'function') {
+        this.robotsCache.set(domain, robots);
+        return robots.isAllowed(url, this.userAgent);
+      }
       
-      return robots.isAllowed(url, this.userAgent);
+      // If robots parsing failed, allow scraping
+      return true;
     } catch (error) {
       // If robots.txt doesn't exist or error, allow scraping
       console.warn(`Could not fetch robots.txt for ${url}:`, error.message);

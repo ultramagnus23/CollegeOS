@@ -74,6 +74,15 @@ class IntelligentSearch {
    * @returns {object} - Comprehensive response with data and explanations
    */
   static async search(query, context = {}) {
+    // Input validation
+    if (!query || typeof query !== 'string' || query.trim() === '') {
+      return {
+        type: 'error',
+        error: 'Query must be a non-empty string',
+        suggestion: 'Please provide a valid search query'
+      };
+    }
+    
     const queryType = this.detectQueryType(query);
     
     switch (queryType.type) {

@@ -16,6 +16,7 @@ class DataRefreshJob {
    */
   start() {
     // Monthly: Refresh deadlines for colleges with active applications
+    // Runs at midnight on the 1st day of every month
     this.jobs.push(
       cron.schedule('0 0 1 * *', async () => {
         logger.info('Monthly deadline refresh starting...');
@@ -24,6 +25,7 @@ class DataRefreshJob {
     );
     
     // Quarterly: Refresh college data
+    // Runs at midnight on the 1st day every 3 months
     this.jobs.push(
       cron.schedule('0 0 1 */3 *', async () => {
         logger.info('Quarterly college data refresh starting...');

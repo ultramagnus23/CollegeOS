@@ -81,14 +81,20 @@ class DataAggregator {
       };
       
       rows.forEach(row => {
-        const content = JSON.parse(row.data_content);
-        
-        if (row.data_type === 'deadlines' && content.deadlines) {
-          cached.deadlines.push(...content.deadlines);
-        } else if (row.data_type === 'requirements' && content.requirements) {
-          cached.requirements.push(...content.requirements);
-        } else if (row.data_type === 'programs' && Array.isArray(content)) {
-          cached.programs.push(...content);
+        try {
+          // Safe JSON parsing with error handling
+          const content = JSON.parse(row.data_content);
+          
+          if (row.data_type === 'deadlines' && content.deadlines) {
+            cached.deadlines.push(...content.deadlines);
+          } else if (row.data_type === 'requirements' && content.requirements) {
+            cached.requirements.push(...content.requirements);
+          } else if (row.data_type === 'programs' && Array.isArray(content)) {
+            cached.programs.push(...content);
+          }
+        } catch (parseError) {
+          console.error(`Error parsing college_data for row ${row.id}:`, parseError.message);
+          // Continue with other rows
         }
       });
       
