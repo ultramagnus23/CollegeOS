@@ -36,11 +36,19 @@ try {
     console.error('');
     console.error('Missing columns:', missingColumns.join(', '));
     console.error('');
-    console.error('SOLUTION: Run migrations first to update the schema:');
+    console.error('SOLUTION 1 (Recommended): Run fresh-start script');
+    console.error('');
+    console.error('  ./fresh-start.sh');
+    console.error('');
+    console.error('This will delete the old database and create a fresh one.');
+    console.error('');
+    console.error('SOLUTION 2: Run migrations manually');
     console.error('');
     console.error('  node scripts/runMigrations.js');
     console.error('');
     console.error('Then run this seed script again.');
+    console.error('');
+    console.error('See backend/MIGRATION_TROUBLESHOOTING.md for detailed help.');
     console.error('');
     db.close();
     process.exit(1);
@@ -51,11 +59,13 @@ try {
   if (error.message.includes('no such table')) {
     console.error('❌ ERROR: colleges table does not exist!');
     console.error('');
-    console.error('SOLUTION: Run migrations first to create the tables:');
+    console.error('SOLUTION: Run fresh-start script');
     console.error('');
-    console.error('  node scripts/runMigrations.js');
+    console.error('  ./fresh-start.sh');
     console.error('');
-    console.error('Then run this seed script again.');
+    console.error('This will create the database with the correct schema.');
+    console.error('');
+    console.error('See backend/MIGRATION_TROUBLESHOOTING.md for detailed help.');
     console.error('');
     db.close();
     process.exit(1);

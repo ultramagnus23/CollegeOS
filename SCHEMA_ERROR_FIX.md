@@ -2,31 +2,22 @@
 
 ## Error: "table colleges has no column named type"
 
-This means you need to run migrations BEFORE seeding!
+This means you need a fresh database with the correct schema.
 
-### Solution (Copy & Paste)
+### Quick Fix (Recommended)
 
 ```bash
 cd backend
-node scripts/runMigrations.js
-node scripts/seedCollegesNew.js
+./fresh-start.sh
 ```
 
-### What This Does
+**What this does:**
+1. Deletes old database files
+2. Runs all migrations (creates correct schema)
+3. Seeds 1100 colleges
+4. Verifies everything works
 
-1. **Migrations** - Creates/updates the database schema with 30+ fields including:
-   - `type` column (Public/Private)
-   - `official_website`, `admissions_url`
-   - `major_categories`, `academic_strengths`
-   - `cbse_requirements`, `igcse_requirements`, `ib_requirements`
-   - `studielink_required`, `numerus_fixus_programs`
-   - And 20+ more fields
-
-2. **Seeding** - Populates database with 1100 colleges
-
-### Complete Fresh Start
-
-If you want to start completely fresh:
+### Manual Fix
 
 ```bash
 cd backend
@@ -39,9 +30,6 @@ node scripts/runMigrations.js
 
 # Add data
 node scripts/seedCollegesNew.js
-
-# Verify
-sqlite3 database/college_app.db "SELECT COUNT(*) FROM colleges;"
 ```
 
 ### Why This Happens
@@ -52,25 +40,55 @@ The original database had a simpler schema. The new version has 30+ fields to su
 - Detailed program and major information
 - Financial data and deadlines
 
-The migration updates your schema to the new version.
+Migration 005 updates your schema to the new version, but if you have an old database from before the overhaul, you need to start fresh.
 
-### Files Changed
+### If Migrations Keep Failing
 
-- **Migration**: `backend/migrations/005_unified_colleges_schema.sql`
-- **Seed Script**: `backend/scripts/seedCollegesNew.js`
+If `node scripts/runMigrations.js` fails with errors about "grade_level" or other columns:
 
-Both now work together. Migration creates the schema, seed fills it with data.
+```bash
+cd backend
+
+# Complete cleanup
+rm -f database/*.db*
+rm -f *.db*
+
+# Fresh start
+./fresh-start.sh
+```
+
+### Verification
+
+After running fresh-start.sh, verify:
+
+```bash
+# Check database exists
+ls -lh database/college_app.db
+
+# Check it has 1100 colleges
+sqlite3 database/college_app.db "SELECT COUNT(*) FROM colleges;"
+
+# Check schema is correct
+sqlite3 database/college_app.db "PRAGMA table_info(colleges);" | grep "type"
+```
 
 ### Next Steps
 
-After running migrations and seeding:
+After successful setup:
 
 ```bash
 # Start backend
 npm start
 
 # In another terminal, start frontend
+cd ..
 npm run dev
 ```
 
 Visit http://localhost:8080
+
+### More Help
+
+- `backend/MIGRATION_TROUBLESHOOTING.md` - Detailed troubleshooting guide
+- `START_HERE.md` - Complete setup instructions
+- `APP_BLANK_TROUBLESHOOTING.md` - If app appears blank

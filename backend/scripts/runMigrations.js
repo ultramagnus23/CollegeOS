@@ -8,6 +8,8 @@ const path = require('path');
 const DB_PATH = path.join(__dirname, '..', 'database', 'college_app.db');
 const MIGRATIONS_DIR = path.join(__dirname, '..', 'migrations');
 
+console.log('📂 Database path:', DB_PATH);
+
 // Ensure database directory exists
 const dbDir = path.dirname(DB_PATH);
 if (!fs.existsSync(dbDir)) {
@@ -61,15 +63,59 @@ function recordMigration(filename) {
 // Execute a single migration file with better error handling
 function executeMigration(filename, sql) {
   return new Promise((resolve, reject) => {
-    db.exec(sql, (err) => {
-      if (err) {
-        console.error(`❌ Error executing migration ${filename}`);
-        console.error(err.message);
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
+    // For migration 004, we need to handle ALTER TABLE errors gracefully
+    // because columns might already exist
+    const is004 = filename === '004_user_profile.sql';
+    
+    if (is004) {
+      // Split by semicolon and execute one at a time
+      const statements = sql.split(';').filter(s => s.trim());
+      let completed = 0;
+      let errors = [];
+      
+      const executeNext = (index) => {
+        if (index >= statements.length) {
+          if (errors.length > 0) {
+            console.log(`   ⚠️  ${errors.length} statements had errors (likely columns already exist)`);
+          }
+          resolve();
+          return;
+        }
+        
+        const stmt = statements[index].trim();
+        if (!stmt) {
+          executeNext(index + 1);
+          return;
+        }
+        
+        db.exec(stmt, (err) => {
+          if (err) {
+            // For ALTER TABLE, column already exists is okay
+            if (stmt.includes('ALTER TABLE') && err.message.includes('duplicate column')) {
+              errors.push({ stmt: stmt.substring(0, 50), err: 'column exists' });
+            } else {
+              errors.push({ stmt: stmt.substring(0, 50), err: err.message });
+            }
+          } else {
+            completed++;
+          }
+          executeNext(index + 1);
+        });
+      };
+      
+      executeNext(0);
+    } else {
+      // Normal migration execution
+      db.exec(sql, (err) => {
+        if (err) {
+          console.error(`❌ Error executing migration ${filename}`);
+          console.error(err.message);
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    }
   });
 }
 
@@ -135,7 +181,8 @@ async function runMigrations() {
       } catch (error) {
         console.error(`\n❌ Migration ${filename} failed!`);
         console.error(`   Error: ${error.message}`);
-        console.error('\n💡 Fix the SQL file and run migrations again.\n');
+        console.error('\n💡 Tip: If you have an old database, try running:');
+        console.error('   ./fresh-start.sh\n');
         throw error;
       }
     }

@@ -55,13 +55,22 @@ Wait for: Frontend running on `http://localhost:8080`
 
 ### "table colleges has no column named type"
 
-**Cause:** You tried to seed without running migrations first.
+**Cause:** Database has old schema, migrations weren't run or failed.
 
-**Solution:**
+**Quick Fix:**
 ```bash
 cd backend
-node scripts/runMigrations.js  # Run this FIRST
-node scripts/seedCollegesNew.js  # Then seed
+./fresh-start.sh
+```
+
+This deletes the old database and creates a fresh one.
+
+**Manual Fix:**
+```bash
+cd backend
+rm -f database/college_app.db  # Delete old database
+node scripts/runMigrations.js   # Create new schema
+node scripts/seedCollegesNew.js  # Add data
 ```
 
 ### "Cannot find module 'better-sqlite3'"
