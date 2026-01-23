@@ -21,6 +21,48 @@ if (!fs.existsSync(dbDir)) {
 const db = new Database(config.database.path);
 console.log('✅ Connected to database\n');
 
+// Check if schema is correct
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(colleges)").all();
+  const columnNames = tableInfo.map(col => col.name);
+  
+  // Check for required columns from new unified schema
+  const requiredColumns = ['type', 'official_website', 'major_categories', 'cbse_requirements', 
+                          'igcse_requirements', 'ib_requirements', 'studielink_required'];
+  const missingColumns = requiredColumns.filter(col => !columnNames.includes(col));
+  
+  if (missingColumns.length > 0) {
+    console.error('❌ ERROR: Database schema is outdated!');
+    console.error('');
+    console.error('Missing columns:', missingColumns.join(', '));
+    console.error('');
+    console.error('SOLUTION: Run migrations first to update the schema:');
+    console.error('');
+    console.error('  node scripts/runMigrations.js');
+    console.error('');
+    console.error('Then run this seed script again.');
+    console.error('');
+    db.close();
+    process.exit(1);
+  }
+  
+  console.log('✅ Database schema is up to date\n');
+} catch (error) {
+  if (error.message.includes('no such table')) {
+    console.error('❌ ERROR: colleges table does not exist!');
+    console.error('');
+    console.error('SOLUTION: Run migrations first to create the tables:');
+    console.error('');
+    console.error('  node scripts/runMigrations.js');
+    console.error('');
+    console.error('Then run this seed script again.');
+    console.error('');
+    db.close();
+    process.exit(1);
+  }
+  throw error;
+}
+
 // Helper function to create college object
 function createCollege(name, country, location, type, acceptance_rate, tuition_cost, application_portal) {
   return {

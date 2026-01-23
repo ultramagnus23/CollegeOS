@@ -1,6 +1,6 @@
 # 🚀 START HERE - CollegeOS Setup
 
-## Quick Start (3 Steps)
+## Quick Start (4 Steps)
 
 ### 1️⃣ Install Dependencies
 
@@ -14,16 +14,25 @@ cd ..
 npm install
 ```
 
-### 2️⃣ Verify Setup
+### 2️⃣ Run Migrations (CRITICAL!)
 
 ```bash
-# Run the pre-flight check
-./check-setup.sh
+cd backend
+node scripts/runMigrations.js
 ```
 
-**Expected output:** All checks pass ✅
+**This creates the database schema with 30+ fields. MUST be done before seeding!**
 
-### 3️⃣ Start Both Servers
+### 3️⃣ Seed Database
+
+```bash
+# Still in backend directory
+node scripts/seedCollegesNew.js
+```
+
+This populates the database with 1100 colleges.
+
+### 4️⃣ Start Both Servers
 
 **Terminal 1 - Backend:**
 ```bash
@@ -42,25 +51,38 @@ Wait for: Frontend running on `http://localhost:8080`
 
 **Test:** Open http://localhost:8080 in your browser
 
-## ⚠️ Troubleshooting "Blank App"
+## ⚠️ Common Errors
 
-If the app appears blank:
+### "table colleges has no column named type"
 
-1. **Check backend is running**
-   - Visit: http://localhost:5000/health
-   - Should see JSON response
+**Cause:** You tried to seed without running migrations first.
 
-2. **Check browser console** (Press F12)
-   - Look for red errors
-   - `ECONNREFUSED` means backend isn't running
+**Solution:**
+```bash
+cd backend
+node scripts/runMigrations.js  # Run this FIRST
+node scripts/seedCollegesNew.js  # Then seed
+```
 
-3. **Check database has data**
-   ```bash
-   sqlite3 backend/database/college_app.db "SELECT COUNT(*) FROM colleges;"
-   ```
-   Should show: `1100`
+### "Cannot find module 'better-sqlite3'"
 
-See `APP_BLANK_TROUBLESHOOTING.md` for detailed help.
+**Cause:** Dependencies not installed.
+
+**Solution:**
+```bash
+cd backend
+npm install
+```
+
+### "Blank App"
+
+**Cause:** Backend not running.
+
+**Solution:**
+1. Make sure migrations are run
+2. Make sure database is seeded
+3. Start backend: `cd backend && npm start`
+4. Start frontend: `npm run dev`
 
 ## 🎯 What Should Work
 
@@ -72,9 +94,48 @@ Once both servers are running:
 ✅ **Chatbot** - Interactive assistance
 ✅ **Research** - Major-based college search
 
-## 📝 Important
+## 📝 Complete Setup Procedure
+
+```bash
+# Step 1: Install backend dependencies
+cd backend
+npm install
+
+# Step 2: Run migrations (creates tables)
+node scripts/runMigrations.js
+
+# Step 3: Seed data (adds 1100 colleges)
+node scripts/seedCollegesNew.js
+
+# Step 4: Start backend
+npm start
+
+# In another terminal...
+# Step 5: Install frontend dependencies
+npm install
+
+# Step 6: Start frontend
+npm run dev
+```
+
+## 🔍 Verify Setup
+
+```bash
+# Check database exists and has data
+cd backend
+sqlite3 database/college_app.db "SELECT COUNT(*) FROM colleges;"
+# Should show: 1100
+
+# Check backend is running
+curl http://localhost:5000/health
+# Should show JSON response
+```
+
+## 📁 Important
 
 **Backend MUST run on port 5000**
 **Frontend MUST run on port 8080**
 
 Both must be running simultaneously for the app to work.
+
+See `APP_BLANK_TROUBLESHOOTING.md` for detailed help.
