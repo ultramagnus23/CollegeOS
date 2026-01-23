@@ -18,6 +18,7 @@ Quick reference guide to all troubleshooting documentation.
 |-------|-------|-----------|
 | "database disk image is malformed" | `DATABASE_CORRUPT_FIX.md` | `cd backend && ./fresh-start.sh` |
 | "table colleges has no column named type" | `SCHEMA_ERROR_FIX.md` | `cd backend && ./fresh-start.sh` |
+| "table users has no column named full_name" | `USERS_TABLE_ERROR_FIX.md` | `cd backend && ./fresh-start.sh` |
 | Wrong database path (database.sqlite) | `DATABASE_PATH_FIX.md` | `cd backend && ./fresh-start.sh` |
 | Migration errors (004, grade_level) | `backend/MIGRATION_TROUBLESHOOTING.md` | `cd backend && ./fresh-start.sh` |
 

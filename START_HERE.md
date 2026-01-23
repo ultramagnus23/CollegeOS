@@ -102,6 +102,20 @@ This rebuilds the database from scratch.
 
 See `DATABASE_CORRUPT_FIX.md` for detailed troubleshooting.
 
+### "table users has no column named full_name" (Users Table Schema)
+
+**Cause:** Users table has outdated schema (missing migration 006).
+
+**Quick Fix:**
+```bash
+cd backend
+./fresh-start.sh
+```
+
+This recreates the users table with correct schema.
+
+See `USERS_TABLE_ERROR_FIX.md` for detailed troubleshooting.
+
 ### "Cannot find module 'better-sqlite3'"
 
 **Cause:** Dependencies not installed.
