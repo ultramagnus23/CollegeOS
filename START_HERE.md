@@ -14,6 +14,19 @@ cd ..
 npm install
 ```
 
+**⚠️ IMPORTANT - Environment Variables:**
+The backend requires a `.env` file with JWT secrets for authentication. This file should already exist. If you're setting up for the first time and it's missing:
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+The `.env` file contains development-safe secrets. **For production, generate strong secrets:**
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
 ### 2️⃣ Run Migrations (CRITICAL!)
 
 ```bash
