@@ -283,6 +283,35 @@ class ApiService {
     return this.request('/research/majors/list');
   }
 
+  // ==================== INTELLIGENT SEARCH ENDPOINTS ====================
+
+  async intelligentSearch(query: string, filters: any = {}) {
+    return this.request('/intelligent-search', {
+      method: 'POST',
+      body: JSON.stringify({ query, filters }),
+    });
+  }
+
+  async classifyQuery(query: string) {
+    return this.request('/intelligent-search/classify', {
+      method: 'POST',
+      body: JSON.stringify({ query }),
+    });
+  }
+
+  // ==================== CHATBOT ENDPOINTS ====================
+
+  async chatbotChat(message: string, conversationHistory: any[] = []) {
+    return this.request('/chatbot/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message, conversationHistory }),
+    });
+  }
+
+  async getChatbotStatus() {
+    return this.request('/chatbot/status');
+  }
+
   // ==================== COMPATIBILITY NAMESPACES ====================
 
   // Profile namespace
@@ -340,6 +369,19 @@ class ApiService {
     getAvailableMajors: () => this.getAvailableMajors(),
     conductResearch: (collegeId: number, researchType: string, forceRefresh?: boolean) =>
       this.conductResearch(collegeId, researchType, forceRefresh),
+  };
+
+  // Intelligent Search namespace
+  intelligentSearch = {
+    search: (query: string, filters?: any) => this.intelligentSearch(query, filters),
+    classify: (query: string) => this.classifyQuery(query),
+  };
+
+  // Chatbot namespace
+  chatbot = {
+    chat: (message: string, conversationHistory?: any[]) => 
+      this.chatbotChat(message, conversationHistory),
+    status: () => this.getChatbotStatus(),
   };
 
   // Applications namespace (as used by pages)

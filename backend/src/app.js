@@ -17,10 +17,10 @@ const researchRoutes = require('./routes/research');
 const profileRoutes = require('./routes/profile');
 const recommendationsRoutes = require('./routes/recommendations');
 const timelineRoutes = require('./routes/timeline');
-const aiCounselorRoutes = require('./routes/aiCounselor'); // NEW!
+const aiCounselorRoutes = require('./routes/aiCounselor');
 const searchRoutes = require('./routes/search');
-// Add this import at the top
 const intelligentSearchRoutes = require('./routes/intelligentSearch');
+const chatbotRoutes = require('./routes/chatbot');
 // Create Express app
 const app = express();
 
@@ -65,9 +65,10 @@ app.use('/api/research', researchRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/recommendations', recommendationsRoutes);
 app.use('/api/timeline', timelineRoutes);
-app.use('/api/counselor', aiCounselorRoutes);  // NEW!
+app.use('/api/counselor', aiCounselorRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/intelligent-search', intelligentSearchRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 // 404 handler
 app.use((req, res) => {
