@@ -17,7 +17,34 @@ then
 fi
 
 echo ""
-echo "Step 1: Removing old database files..."
+echo "Step 1: Checking for .env overrides..."
+
+# Check if .env file exists and has DATABASE_PATH set incorrectly
+if [ -f ".env" ]; then
+    if grep -q "DATABASE_PATH.*database\.sqlite" .env; then
+        echo "⚠️  Found DATABASE_PATH=./database.sqlite in .env file"
+        echo "   This is the OLD path. We need to update it."
+        echo ""
+        read -p "Update .env file to use correct path? (y/N): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            # Backup original .env
+            cp .env .env.backup
+            # Update DATABASE_PATH
+            sed -i 's|DATABASE_PATH=./database\.sqlite|DATABASE_PATH=./database/college_app.db|g' .env
+            echo "✅ Updated .env file (backup saved as .env.backup)"
+        else
+            echo "⚠️  Continuing with current .env (may cause path issues)"
+        fi
+        echo ""
+    fi
+fi
+
+# Unset DATABASE_PATH for this script to use default
+unset DATABASE_PATH
+
+echo ""
+echo "Step 2: Removing old database files..."
 
 # Remove any existing database files
 rm -f database/college_app.db
@@ -32,7 +59,7 @@ rm -f database.sqlite-wal
 echo "✅ Old database files removed"
 echo ""
 
-echo "Step 2: Running migrations to create schema..."
+echo "Step 3: Running migrations to create schema..."
 node scripts/runMigrations.js
 
 if [ $? -ne 0 ]; then
@@ -43,7 +70,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "Step 3: Seeding database with 1100 colleges..."
+echo "Step 4: Seeding database with 1100 colleges..."
 node scripts/seedCollegesNew.js
 
 if [ $? -ne 0 ]; then

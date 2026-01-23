@@ -10,6 +10,27 @@ const fs = require('fs');
 console.log('🌱 CollegeOS Comprehensive Seeding Script\n');
 console.log('📂 Database path:', config.database.path);
 
+// Check for wrong database path (common issue)
+if (config.database.path.includes('database.sqlite') && !config.database.path.includes('college_app.db')) {
+  console.error('\n⚠️  WARNING: You are using the OLD database path!');
+  console.error('   Current path:', config.database.path);
+  console.error('   Correct path should be: ./database/college_app.db');
+  console.error('');
+  console.error('This is likely caused by a .env file with:');
+  console.error('   DATABASE_PATH=./database.sqlite');
+  console.error('');
+  console.error('SOLUTIONS:');
+  console.error('  1. Delete or update your .env file to use:');
+  console.error('     DATABASE_PATH=./database/college_app.db');
+  console.error('');
+  console.error('  2. Run fresh-start.sh which will fix this automatically:');
+  console.error('     ./fresh-start.sh');
+  console.error('');
+  console.error('  3. Remove .env file and let system use defaults');
+  console.error('');
+  process.exit(1);
+}
+
 // Ensure database directory exists
 const dbDir = path.dirname(config.database.path);
 if (!fs.existsSync(dbDir)) {
