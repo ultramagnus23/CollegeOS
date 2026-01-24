@@ -265,6 +265,7 @@ class IntelligentSearch {
   
   /**
    * Handle general queries
+   * Layer 3: Attempts broader search when specific query types don't match
    */
   static async handleGeneralQuery(query, context) {
     // Perform broad search across colleges with higher limit for better results
@@ -276,9 +277,9 @@ class IntelligentSearch {
     
     if (colleges.length === 0) {
       if (lowerQuery.includes('university') || lowerQuery.includes('college')) {
-        suggestion = 'Try searching by location (e.g., "US universities") or field of study (e.g., "engineering programs")';
+        suggestion = 'No results in database. Try searching by location (e.g., "US universities") or field of study (e.g., "engineering programs"). You can also add colleges manually if they\'re not in our database.';
       } else {
-        suggestion = 'No results found. Try using different keywords or check the spelling.';
+        suggestion = 'No results found in database. Try using different keywords, check spelling, or add the college manually if it\'s not in our system.';
       }
     } else if (colleges.length > 50) {
       suggestion = 'Many results found. Add filters like country or program to narrow down your search.';
@@ -289,7 +290,10 @@ class IntelligentSearch {
       colleges: colleges,
       totalResults: colleges.length,
       suggestion: suggestion,
-      query: query
+      query: query,
+      note: colleges.length === 0 ? 
+        'Layer 3 web search is available for manual college addition. Contact your administrator to add colleges not in the database.' : 
+        undefined
     };
   }
   

@@ -18,6 +18,7 @@ import OnboardingPage from "./pages/Onboarding"; // Make sure this matches your 
 import Dashboard from "./pages/Dashboard";
 import Discover from "./pages/Discover";
 import Colleges from "./pages/Colleges";
+import AddCollege from "./pages/AddCollege";
 import CollegeDetails from "./pages/CollegeDetails";
 import Research from "./pages/Research";
 import Applications from "./pages/Applications";
@@ -99,6 +100,7 @@ const AppContent = () => {
             <Route index element={<Dashboard />} />
             <Route path="discover" element={<Discover />} />
             <Route path="colleges" element={<Colleges />} />
+            <Route path="colleges/add" element={<AddCollege />} />
             <Route path="colleges/:id" element={<CollegeDetails />} />
             <Route path="research" element={<Research />} />
             <Route path="applications" element={<Applications />} />
