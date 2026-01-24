@@ -358,6 +358,12 @@ class ApiService {
 
     checkEligibility: (id: number, program?: string) =>
       this.request(`/colleges/${id}/eligibility${program ? `?program=${encodeURIComponent(program)}` : ''}`),
+    
+    // Create a new college (requires authentication)
+    create: (data: any) => this.request('/colleges', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
   };
 
   // Research namespace - Major-based search and research

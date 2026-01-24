@@ -267,14 +267,29 @@ class IntelligentSearch {
    * Handle general queries
    */
   static async handleGeneralQuery(query, context) {
-    // Perform broad search across colleges
-    const colleges = await College.search(query, context.filters || { limit: 50 });
+    // Perform broad search across colleges with higher limit for better results
+    const colleges = await College.search(query, context.filters || { limit: 100 });
+    
+    // Add helpful suggestions based on query content
+    let suggestion = 'Try being more specific about what you\'re looking for';
+    const lowerQuery = query.toLowerCase();
+    
+    if (colleges.length === 0) {
+      if (lowerQuery.includes('university') || lowerQuery.includes('college')) {
+        suggestion = 'Try searching by location (e.g., "US universities") or field of study (e.g., "engineering programs")';
+      } else {
+        suggestion = 'No results found. Try using different keywords or check the spelling.';
+      }
+    } else if (colleges.length > 50) {
+      suggestion = 'Many results found. Add filters like country or program to narrow down your search.';
+    }
     
     return {
       type: 'general',
       colleges: colleges,
       totalResults: colleges.length,
-      suggestion: 'Try being more specific about what you\'re looking for'
+      suggestion: suggestion,
+      query: query
     };
   }
   
