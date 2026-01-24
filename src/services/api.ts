@@ -379,7 +379,10 @@ class ApiService {
 
   // Intelligent Search namespace
   intelligentSearch = {
-    search: (query: string, filters?: any) => this.intelligentSearch(query, filters),
+    search: (query: string, filters?: any) => this.request('/intelligent-search', {
+      method: 'POST',
+      body: JSON.stringify({ query, filters }),
+    }),
     classify: (query: string) => this.classifyQuery(query),
   };
 
