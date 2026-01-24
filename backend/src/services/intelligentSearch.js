@@ -48,12 +48,12 @@ class IntelligentSearch {
   }
   
   static isProcessQuery(query) {
-    const processKeywords = ['how to apply', 'application process', 'studielink', 'ucas', 'common app', 'numerus fixus', 'deadline', 'apply to'];
+    const processKeywords = ['how to apply', 'application process', 'studielink', 'ucas', 'common app', 'numerus fixus', 'deadline', 'apply to', 'essay', 'essays', 'admission essay', 'personal statement', 'sop', 'statement of purpose', 'application', 'applying'];
     return processKeywords.some(keyword => query.includes(keyword));
   }
   
   static isRequirementsQuery(query) {
-    const reqKeywords = ['requirements', 'minimum', 'eligibility', 'need', 'required', 'admission criteria'];
+    const reqKeywords = ['requirements', 'minimum', 'eligibility', 'need', 'required', 'admission criteria', 'admission', 'admissions', 'entry requirements', 'prerequisites'];
     return reqKeywords.some(keyword => query.includes(keyword));
   }
   

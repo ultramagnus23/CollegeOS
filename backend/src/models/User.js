@@ -71,6 +71,67 @@ class User {
   static async hashPassword(password) {
     return bcrypt.hash(password, 10);
   }
+  
+  static getAcademicProfile(userId) {
+    const db = dbManager.getDatabase();
+    const stmt = db.prepare(`
+      SELECT 
+        academic_board,
+        grade_level,
+        graduation_year,
+        subjects,
+        percentage,
+        gpa,
+        medium_of_instruction,
+        exams_taken,
+        intended_major,
+        target_countries,
+        test_status
+      FROM users 
+      WHERE id = ?
+    `);
+    
+    const profile = stmt.get(userId);
+    
+    if (!profile) {
+      return null;
+    }
+    
+    // Parse JSON fields
+    if (profile.subjects) {
+      try {
+        profile.subjects = JSON.parse(profile.subjects);
+      } catch (e) {
+        profile.subjects = [];
+      }
+    }
+    
+    if (profile.exams_taken) {
+      try {
+        profile.exams_taken = JSON.parse(profile.exams_taken);
+      } catch (e) {
+        profile.exams_taken = [];
+      }
+    }
+    
+    if (profile.target_countries) {
+      try {
+        profile.target_countries = JSON.parse(profile.target_countries);
+      } catch (e) {
+        profile.target_countries = [];
+      }
+    }
+    
+    if (profile.test_status) {
+      try {
+        profile.test_status = JSON.parse(profile.test_status);
+      } catch (e) {
+        profile.test_status = {};
+      }
+    }
+    
+    return profile;
+  }
 }
 
 module.exports = User;
