@@ -65,21 +65,19 @@ const Research: React.FC = () => {
       console.log('Intelligent search response:', res);
       
       // Handle different response types from intelligent search
-      if (res.success) {
+      if (res.success || res.success !== false) {
         setSearchInfo({
           type: res.type,
           explanation: res.explanation,
           suggestion: res.suggestion
         });
 
-        // Extract colleges from response
+        // Extract colleges from response - API returns colleges in different properties
         let collegesData = [];
-        if (res.colleges && Array.isArray(res.colleges)) {
+        if (Array.isArray(res.colleges)) {
           collegesData = res.colleges;
-        } else if (res.data && Array.isArray(res.data)) {
+        } else if (Array.isArray(res.data)) {
           collegesData = res.data;
-        } else if (res.results && Array.isArray(res.results)) {
-          collegesData = res.results;
         }
 
         setColleges(collegesData);

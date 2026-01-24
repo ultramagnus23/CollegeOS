@@ -58,7 +58,7 @@ const AddCollege: React.FC = () => {
 
       const response = await api.colleges.create(data);
 
-      if (response.success) {
+      if (response && response.success) {
         setSuccess(true);
         // Reset form
         setFormData({

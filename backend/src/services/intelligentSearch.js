@@ -292,7 +292,7 @@ class IntelligentSearch {
       suggestion: suggestion,
       query: query,
       note: colleges.length === 0 ? 
-        'Layer 3 web search is available for manual college addition. Contact your administrator to add colleges not in the database.' : 
+        'No colleges found in database. You can add colleges manually using the "Add College" feature in the Colleges page.' : 
         undefined
     };
   }
