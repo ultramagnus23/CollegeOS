@@ -25,8 +25,13 @@
 ### Step 1: Seed Database
 ```bash
 cd backend
-node scripts/seedColleges.js --force
+node scripts/seedCollegesNew.js --force
 ```
+
+**Important:** Use `seedCollegesNew.js` (not the old `seedColleges.js`). The new script:
+- Uses correct database path: `database/college_app.db`
+- Matches the unified schema (30+ fields)
+- Seeds 1100+ colleges with comprehensive data
 
 This will:
 - Add `location` column if missing

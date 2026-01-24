@@ -1,3 +1,21 @@
+# Environment variables
+.env
+
+# Database files (including WAL files)
+database/*.db
+database/*.db-shm
+database/*.db-wal
+database/*.db-journal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal
+*.sqlite3
+
+# Backups
+*.backup
+backup.sql
+
 # Logs
 logs
 *.log

@@ -53,9 +53,15 @@ const Research: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Use the correct API method from the namespace
       const res = await api.research.searchByMajor(majorQuery.trim(), selectedCountry || undefined);
+      
       console.log('Major search response:', res);
-      setColleges(res?.data || res || []);
+      
+      // Handle response format
+      const data = res?.data || res || [];
+      setColleges(Array.isArray(data) ? data : []);
     } catch (err: any) {
       setError(err.message || 'Search failed');
       setColleges([]);
@@ -73,9 +79,15 @@ const Research: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Use the correct API method from the namespace
       const res = await api.research.search(generalQuery.trim(), selectedCountry || undefined, 'all');
+      
       console.log('General search response:', res);
-      setColleges(res?.data || res || []);
+      
+      // Handle response format
+      const data = res?.data || res || [];
+      setColleges(Array.isArray(data) ? data : []);
     } catch (err: any) {
       setError(err.message || 'Search failed');
       setColleges([]);

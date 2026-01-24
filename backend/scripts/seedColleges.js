@@ -1,13 +1,20 @@
-// backend/scripts/guaranteedSeed.js
-// TESTED AND WORKING seed script for 1000+ colleges
-// Run: node backend/scripts/guaranteedSeed.js
+// backend/scripts/seedColleges.js
+// DEPRECATED: Use seedCollegesNew.js instead
+// This script now redirects to the new seeding script
 
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-require('dotenv').config();
+console.log('⚠️  This script is deprecated.');
+console.log('📌 Please use: node scripts/seedCollegesNew.js');
+console.log('');
+console.log('The new script includes:');
+console.log('  - Correct database path (database/college_app.db)');
+console.log('  - Updated schema with 30+ fields');
+console.log('  - 1100+ colleges with comprehensive data');
+console.log('');
+console.log('Run with --force to clear existing data:');
+console.log('  node scripts/seedCollegesNew.js --force');
+console.log('');
 
-const dbPath = path.join(__dirname, '../database.sqlite');
-console.log('📂 Database path:', dbPath);
+process.exit(0);
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
