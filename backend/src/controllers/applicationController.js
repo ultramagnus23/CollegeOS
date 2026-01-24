@@ -25,6 +25,11 @@ class ApplicationController {
       const userId = req.user.userId;
       const data = req.validatedData;
       
+      // Normalize collegeId field
+      if (data.college_id && !data.collegeId) {
+        data.collegeId = data.college_id;
+      }
+      
       const application = Application.create(userId, data);
       
       // Generate deadlines automatically when application is created
@@ -49,6 +54,14 @@ class ApplicationController {
         data: application
       });
     } catch (error) {
+      // Handle duplicate application error specially
+      if (error.code === 'DUPLICATE_APPLICATION') {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+          code: 'DUPLICATE_APPLICATION'
+        });
+      }
       next(error);
     }
   }

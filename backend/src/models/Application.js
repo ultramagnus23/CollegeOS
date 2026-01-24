@@ -3,6 +3,16 @@ const dbManager = require('../config/database');
 class Application {
   static create(userId, data) {
     const db = dbManager.getDatabase();
+    
+    // Check for duplicate first
+    const existingApp = this.findByUserAndCollege(userId, data.collegeId || data.college_id);
+    if (existingApp) {
+      const error = new Error('College already added to your list');
+      error.statusCode = 400;
+      error.code = 'DUPLICATE_APPLICATION';
+      throw error;
+    }
+    
     const stmt = db.prepare(`
       INSERT INTO applications (
         user_id, college_id, status, application_type, priority, notes
@@ -11,14 +21,25 @@ class Application {
     
     const result = stmt.run(
       userId,
-      data.collegeId,
+      data.collegeId || data.college_id,
       data.status || 'researching',
-      data.applicationType || null,
+      data.applicationType || data.application_type || null,
       data.priority || null,
       data.notes || null
     );
     
     return this.findById(result.lastInsertRowid);
+  }
+  
+  static findByUserAndCollege(userId, collegeId) {
+    const db = dbManager.getDatabase();
+    const stmt = db.prepare(`
+      SELECT a.*, c.name as college_name, c.country, c.official_website
+      FROM applications a
+      JOIN colleges c ON a.college_id = c.id
+      WHERE a.user_id = ? AND a.college_id = ?
+    `);
+    return stmt.get(userId, collegeId);
   }
   
   static findById(id) {

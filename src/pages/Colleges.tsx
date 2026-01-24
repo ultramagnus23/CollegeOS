@@ -146,10 +146,17 @@ const Colleges: React.FC = () => {
         application_type: 'regular'
       });
 
+      alert('College added successfully! Check your Applications page.');
       navigate('/applications');
-    } catch (err) {
-      alert('College already added or failed');
-      console.error(err);
+    } catch (err: any) {
+      console.error('Add college error:', err);
+      
+      // Check for duplicate error
+      if (err.message && err.message.includes('already added')) {
+        alert('This college is already in your list! Check your Applications page.');
+      } else {
+        alert('Failed to add college. Please try again.');
+      }
     } finally {
       setAddingCollegeId(null);
     }

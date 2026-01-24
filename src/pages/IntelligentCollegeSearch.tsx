@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { Search, Database, Globe, Layers, TrendingUp } from 'lucide-react';
 import { StudentProfile } from '../types';
+import api from '../services/api';
 
 interface Props {
   studentProfile: StudentProfile | null;
@@ -24,24 +25,21 @@ const IntelligentCollegeSearch: React.FC<Props> = ({ studentProfile }) => {
     setSearchLayer(null);
 
     try {
-      const response = await fetch('http://localhost:5000/api/intelligent-search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          query,
-          profile: studentProfile 
-        })
+      const response = await api.intelligentSearch(query.trim(), {
+        profile: studentProfile
       });
 
-      const data = await response.json();
-      
-      if (data.success) {
-        setResults(data.results);
-        setSearchLayer(data.layer);
-        setSearchSource(data.source);
+      if (response.success) {
+        setResults(response.results || response.data || []);
+        setSearchLayer(response.layer || 1);
+        setSearchSource(response.source || 'database');
+      } else {
+        console.error('Search failed:', response);
+        setResults([]);
       }
     } catch (error) {
       console.error('Search failed:', error);
+      setResults([]);
     } finally {
       setSearching(false);
     }
