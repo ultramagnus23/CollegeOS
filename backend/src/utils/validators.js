@@ -31,11 +31,13 @@ const validators = {
   
   // Create application
   createApplication: Joi.object({
-    collegeId: Joi.number().integer().positive().required(),
+    collegeId: Joi.number().integer().positive().optional(),
+    college_id: Joi.number().integer().positive().optional(),
     applicationType: Joi.string().optional(),
+    application_type: Joi.string().optional(),
     priority: Joi.string().valid('reach', 'target', 'safety').optional(),
     notes: Joi.string().max(1000).optional()
-  }),
+  }).or('collegeId', 'college_id'),  // At least one must be present
   
   // Update application
   updateApplication: Joi.object({
