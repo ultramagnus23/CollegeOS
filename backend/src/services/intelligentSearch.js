@@ -275,11 +275,36 @@ class IntelligentSearch {
     let suggestion = 'Try being more specific about what you\'re looking for';
     const lowerQuery = query.toLowerCase();
     
+    // If no results found in database, try Layer 3 web search
     if (colleges.length === 0) {
+      console.log('🔍 Layer 1 (database) returned no results, initiating Layer 3 web search...');
+      
+      try {
+        const layer3Search = require('./layer3Search');
+        const webResults = await layer3Search.search(query, { maxResults: 10 });
+        
+        if (webResults.success && webResults.results.length > 0) {
+          return {
+            type: 'general',
+            layer: 3,
+            colleges: [], // Database colleges (empty)
+            webResults: webResults.results, // External search results
+            totalResults: webResults.totalResults,
+            suggestion: 'Results from external web search. Click links to visit official websites.',
+            query: query,
+            source: webResults.source,
+            note: 'These results are from external web search. Verify information on official websites.'
+          };
+        }
+      } catch (error) {
+        console.error('Layer 3 search failed:', error.message);
+      }
+      
+      // If Layer 3 also failed or not available
       if (lowerQuery.includes('university') || lowerQuery.includes('college')) {
-        suggestion = 'No results in database. Try searching by location (e.g., "US universities") or field of study (e.g., "engineering programs"). You can also add colleges manually if they\'re not in our database.';
+        suggestion = 'No results in database or web search. Try searching by location (e.g., "US universities") or field of study (e.g., "engineering programs"). You can also add colleges manually if they\'re not in our database.';
       } else {
-        suggestion = 'No results found in database. Try using different keywords, check spelling, or add the college manually if it\'s not in our system.';
+        suggestion = 'No results found in database or web search. Try using different keywords, check spelling, or add the college manually if it\'s not in our system.';
       }
     } else if (colleges.length > 50) {
       suggestion = 'Many results found. Add filters like country or program to narrow down your search.';
@@ -287,7 +312,9 @@ class IntelligentSearch {
     
     return {
       type: 'general',
+      layer: 1, // Database search
       colleges: colleges,
+      webResults: [],
       totalResults: colleges.length,
       suggestion: suggestion,
       query: query,

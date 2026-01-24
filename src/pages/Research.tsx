@@ -69,7 +69,10 @@ const Research: React.FC = () => {
         setSearchInfo({
           type: res.type,
           explanation: res.explanation,
-          suggestion: res.suggestion
+          suggestion: res.suggestion,
+          layer: res.layer,
+          source: res.source,
+          note: res.note
         });
 
         // Extract colleges from response - API returns colleges in different properties
@@ -78,6 +81,24 @@ const Research: React.FC = () => {
           collegesData = res.colleges;
         } else if (Array.isArray(res.data)) {
           collegesData = res.data;
+        }
+        
+        // Handle Layer 3 web results
+        if (res.webResults && Array.isArray(res.webResults) && res.webResults.length > 0) {
+          // Convert web results to college format for display
+          const webColleges = res.webResults.map((result: any) => ({
+            id: `web-${Math.random()}`,
+            name: result.name,
+            description: result.description,
+            official_website: result.url,
+            country: 'Unknown',
+            location: '',
+            majorCategories: [],
+            academicStrengths: [],
+            source: result.source,
+            layer: 3
+          }));
+          collegesData = [...collegesData, ...webColleges];
         }
 
         setColleges(collegesData);
@@ -296,10 +317,29 @@ const Research: React.FC = () => {
 
         {/* Search Info (for intelligent search) */}
         {searchInfo && (
-          <div className="bg-blue-50 border border-blue-200 text-blue-900 px-4 py-3 rounded-lg mb-6">
-            <div className="font-medium">Query Type: {searchInfo.type}</div>
+          <div className={`border px-4 py-3 rounded-lg mb-6 ${
+            searchInfo.layer === 3 
+              ? 'bg-purple-50 border-purple-200 text-purple-900' 
+              : 'bg-blue-50 border-blue-200 text-blue-900'
+          }`}>
+            <div className="font-medium">
+              Query Type: {searchInfo.type}
+              {searchInfo.layer && (
+                <span className="ml-2 text-xs px-2 py-1 rounded-full bg-white">
+                  Layer {searchInfo.layer} {searchInfo.layer === 3 ? '(Web Search)' : '(Database)'}
+                </span>
+              )}
+            </div>
             {searchInfo.explanation && <p className="text-sm mt-1">{searchInfo.explanation}</p>}
-            {searchInfo.suggestion && <p className="text-sm text-blue-700 mt-1">💡 {searchInfo.suggestion}</p>}
+            {searchInfo.suggestion && <p className="text-sm mt-1">💡 {searchInfo.suggestion}</p>}
+            {searchInfo.note && (
+              <p className="text-xs mt-2 p-2 bg-white rounded border border-current/20">
+                ℹ️ {searchInfo.note}
+              </p>
+            )}
+            {searchInfo.source && (
+              <p className="text-xs mt-1">Source: {searchInfo.source}</p>
+            )}
           </div>
         )}
 
@@ -339,9 +379,25 @@ const Research: React.FC = () => {
           {colleges.map((college) => (
             <div
               key={college.id}
-              className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow"
+              className={`bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow ${
+                (college as any).layer === 3 ? 'border-purple-200' : ''
+              }`}
             >
-              <h3 className="text-lg font-semibold mb-2">{college.name}</h3>
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-lg font-semibold flex-1">{college.name}</h3>
+                {(college as any).layer === 3 && (
+                  <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full ml-2">
+                    Web Result
+                  </span>
+                )}
+              </div>
+              
+              {(college as any).description && (
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                  {(college as any).description}
+                </p>
+              )}
+              
               <p className="text-sm text-gray-600 mb-4">
                 {college.location || ''} {college.location && college.country ? ', ' : ''}
                 {college.country}
