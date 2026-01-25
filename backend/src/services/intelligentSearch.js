@@ -3,6 +3,7 @@
 
 const knowledgeBase = require('../data/knowledgeBase');
 const College = require('../models/College');
+const collegeAliasResolver = require('./collegeAliasResolver');
 
 class IntelligentSearch {
   /**
@@ -108,11 +109,40 @@ class IntelligentSearch {
   }
   
   /**
-   * Handle college-specific queries
+   * Resolve college entity from query
+   * @param {string} query - User's search query
+   * @returns {string[]} - Expanded query terms including aliases
+   */
+  static resolveCollegeEntity(query) {
+    // Try to resolve aliases
+    const expandedQueries = collegeAliasResolver.expandQuery(query);
+    return expandedQueries;
+  }
+
+  /**
+   * Handle college-specific queries with entity resolution
    */
   static async handleCollegeQuery(query, context) {
-    // Extract college name or search term
-    const colleges = await College.search(query, context.filters || {});
+    // Resolve college entity (handle aliases like "MIT" → "Massachusetts Institute of Technology")
+    const expandedQueries = this.resolveCollegeEntity(query);
+    
+    // Search with all query variations
+    let colleges = [];
+    for (const expandedQuery of expandedQueries) {
+      const results = await College.search(expandedQuery, context.filters || {});
+      colleges.push(...results);
+    }
+    
+    // Remove duplicates by ID
+    const uniqueColleges = Array.from(
+      new Map(colleges.map(c => [c.id, c])).values()
+    );
+    
+    // Sort by trust tier (official first)
+    uniqueColleges.sort((a, b) => {
+      const trustOrder = { official: 0, secondary: 1, forum: 2, user_added: 3, web_search: 4 };
+      return (trustOrder[a.trust_tier] || 5) - (trustOrder[b.trust_tier] || 5);
+    });
     
     // Get relevant knowledge base info
     const country = this.extractCountry(query);
@@ -120,10 +150,11 @@ class IntelligentSearch {
     
     return {
       type: 'college',
-      colleges: colleges,
-      totalResults: colleges.length,
+      colleges: uniqueColleges,
+      totalResults: uniqueColleges.length,
       applicationInfo: applicationProcess,
-      relatedInfo: this.getRelatedInfo(query, 'college')
+      relatedInfo: this.getRelatedInfo(query, 'college'),
+      resolvedAliases: expandedQueries.length > 1 ? expandedQueries : null
     };
   }
   
