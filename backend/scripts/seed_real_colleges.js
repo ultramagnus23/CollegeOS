@@ -203,7 +203,7 @@ function cleanDatabase() {
   console.log(`✓ Deleted ${result.changes} old college entries`);
   
   // Reset auto-increment
-  db.prepare('DELETE FROM sqlite_sequence WHERE name = "colleges"').run();
+  db.prepare("DELETE FROM sqlite_sequence WHERE name = 'colleges'").run();
 }
 
 /**
