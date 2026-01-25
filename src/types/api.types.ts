@@ -233,6 +233,191 @@ export interface EligibilityRecommendation {
 
 // ==================== RECOMMENDATION TYPES ====================
 
+/**
+ * Signal scores from the rule-based scoring engine
+ * Each score is 0-1, weighted to produce overall score
+ */
+export interface SignalScores {
+  majorAlignment: number;       // Program match score
+  academicFit: number;          // Academic profile fit
+  testCompatibility: number;    // Standardized test compatibility
+  countryPreference: number;    // Target country match
+  costAlignment: number;        // Budget alignment
+  admissionProbability: number; // Admission probability proxy
+}
+
+/**
+ * Explanation for a recommendation
+ * All explanations are rule-derived, not hardcoded
+ */
+export interface RecommendationExplanation {
+  summary: string;           // Overall summary
+  reasons: string[];         // Why recommended
+  concerns: string[];        // Potential concerns
+  primaryReason: string;     // Main reason for recommendation
+}
+
+/**
+ * New curated recommendation format
+ * Returned by the deterministic recommendation service
+ */
+export interface CuratedRecommendation {
+  collegeId: number;
+  collegeName: string;
+  country: string;
+  location: string;
+  category: 'Reach' | 'Match' | 'Safety';
+  score: number;                         // 0-100
+  signalScores: SignalScores;
+  explanation: RecommendationExplanation;
+  trustTier: string;
+  acceptanceRate: number;
+  selectivityLevel: string;
+  affordabilityBucket: string;
+  programMatch: boolean;
+  college: CollegeSummary;
+}
+
+/**
+ * Simplified college data for recommendation response
+ */
+export interface CollegeSummary {
+  id: number;
+  name: string;
+  country: string;
+  location: string;
+  type: string;
+  officialWebsite: string;
+  acceptanceRate: number;
+  programs: string[];
+  tuitionCost: number;
+  financialAidAvailable: boolean;
+  logoUrl: string | null;
+  description: string;
+}
+
+/**
+ * API response for recommendations endpoint
+ */
+export interface RecommendationsResponse {
+  success: boolean;
+  reach: CuratedRecommendation[];
+  match: CuratedRecommendation[];
+  safety: CuratedRecommendation[];
+  stats: CuratedRecommendationStats;
+  scoringWeights: ScoringWeights;
+  message?: string;
+}
+
+/**
+ * Statistics for the recommendation set
+ */
+export interface CuratedRecommendationStats {
+  totalConsidered: number;
+  totalScored: number;
+  reachCount: number;
+  matchCount: number;
+  safetyCount: number;
+  avgScore: number;
+  countriesRepresented: string[];
+}
+
+/**
+ * Scoring weights used by the recommendation engine
+ */
+export interface ScoringWeights {
+  MAJOR_ALIGNMENT: number;
+  ACADEMIC_FIT: number;
+  TEST_COMPATIBILITY: number;
+  COUNTRY_PREFERENCE: number;
+  COST_ALIGNMENT: number;
+  ADMISSION_PROBABILITY: number;
+}
+
+/**
+ * User signals derived from profile
+ */
+export interface UserSignals {
+  academicStrengthLevel: 'excellent' | 'strong' | 'good' | 'fair' | 'needs_improvement' | 'unknown';
+  testStatus: TestStatus;
+  majorIntent: MajorIntent;
+  countryPreferences: string[];
+  budgetSensitivity: BudgetSensitivity;
+  percentage: number | null;
+  gpa: number | null;
+  subjects: string[];
+  board: string | null;
+}
+
+export interface TestStatus {
+  hasSAT: boolean;
+  hasACT: boolean;
+  hasIELTS: boolean;
+  hasTOEFL: boolean;
+  hasDuolingo: boolean;
+  hasGRE: boolean;
+  hasGMAT: boolean;
+  satScore: number | null;
+  actScore: number | null;
+  ieltsScore: number | null;
+  toeflScore: number | null;
+  hasStandardizedTest: boolean;
+  hasLanguageTest: boolean;
+}
+
+export interface MajorIntent {
+  primary: string | null;
+  all: string[];
+  hasIntent: boolean;
+}
+
+export interface BudgetSensitivity {
+  level: 'flexible' | 'moderate' | 'constrained' | 'limited' | 'unknown';
+  maxBudget: number | null;
+  maxBudgetUSD: number;
+  needsAid: boolean;
+  canLoan: boolean;
+}
+
+/**
+ * User interaction types for logging
+ */
+export type InteractionType = 'view' | 'save' | 'unsave' | 'click' | 'apply' | 'dismiss' | 'compare' | 'share';
+
+/**
+ * Interaction log entry
+ */
+export interface UserInteraction {
+  id: number;
+  userId: number;
+  collegeId: number;
+  interactionType: InteractionType;
+  recommendationScore?: number;
+  recommendationCategory?: string;
+  context?: Record<string, any>;
+  sourcePage?: string;
+  createdAt: string;
+  collegeName?: string;
+  country?: string;
+  location?: string;
+}
+
+/**
+ * Interaction statistics
+ */
+export interface InteractionStats {
+  success: boolean;
+  byType: Record<InteractionType, { count: number; uniqueColleges: number }>;
+  topColleges: Array<{
+    id: number;
+    name: string;
+    country: string;
+    interactionCount: number;
+    interactionTypes: string;
+  }>;
+}
+
+// Legacy types kept for backward compatibility
 export interface Recommendation {
   college: College;
   eligibility: EligibilityResult;
