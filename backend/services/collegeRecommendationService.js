@@ -3,6 +3,15 @@
 // Rule-based scoring engine with full explainability
 
 /**
+ * CONFIGURATION CONSTANTS
+ * These can be tuned without changing the algorithm
+ */
+
+// Currency conversion rate (INR to USD)
+// Update this value when exchange rates change significantly
+const INR_TO_USD_RATE = 82;
+
+/**
  * SCORING WEIGHTS - All weights are explicit and adjustable
  * These can be tuned without changing the algorithm
  */
@@ -273,8 +282,8 @@ function deriveBudgetSensitivity(profile) {
     return { level: 'unknown', maxBudget: null, needsAid: false, canLoan: false };
   }
   
-  // Convert to USD equivalent for comparison (rough conversion)
-  const budgetUSD = budget / 82; // Assuming INR
+  // Convert to USD equivalent for comparison
+  const budgetUSD = budget / INR_TO_USD_RATE;
   
   let level;
   if (budgetUSD >= 80000) level = 'flexible';
@@ -853,10 +862,10 @@ function sanitizeCollegeForResponse(college) {
  * Get recommendations for a specific user by ID
  * TODO 7: Create recommendation service
  */
-async function getRecommendationsForUser(userId, colleges, options = {}) {
+function getRecommendationsForUser(userId, colleges, options = {}) {
   const User = require('../src/models/User');
   
-  // Get user's academic profile
+  // Get user's academic profile (synchronous call)
   const userProfile = User.getAcademicProfile(userId);
   
   if (!userProfile) {

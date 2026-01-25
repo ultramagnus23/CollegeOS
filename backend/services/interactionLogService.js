@@ -291,33 +291,38 @@ function getUserInteractionStats(userId) {
 
 /**
  * Get saved colleges for a user
+ * Uses a more efficient approach: get most recent action per college and filter for 'save'
  */
 function getSavedColleges(userId) {
   try {
     const db = dbManager.getDatabase();
     
-    // Get colleges that were saved but not unsaved later
+    // Get colleges where the most recent interaction is 'save' (not 'unsave')
+    // This is more efficient than nested subqueries
     const stmt = db.prepare(`
-      SELECT DISTINCT c.*, 
-        (SELECT MAX(created_at) FROM user_interactions 
-         WHERE user_id = ? AND college_id = c.id AND interaction_type = 'save') as saved_at
-      FROM colleges c
-      WHERE c.id IN (
-        SELECT college_id FROM user_interactions
-        WHERE user_id = ? AND interaction_type = 'save'
-        AND college_id NOT IN (
-          SELECT college_id FROM user_interactions
-          WHERE user_id = ? AND interaction_type = 'unsave'
-          AND created_at > (
-            SELECT MAX(created_at) FROM user_interactions
-            WHERE user_id = ? AND college_id = user_interactions.college_id AND interaction_type = 'save'
-          )
-        )
+      WITH latest_interactions AS (
+        SELECT 
+          college_id,
+          interaction_type,
+          created_at,
+          ROW_NUMBER() OVER (
+            PARTITION BY college_id 
+            ORDER BY created_at DESC
+          ) as rn
+        FROM user_interactions
+        WHERE user_id = ?
+          AND interaction_type IN ('save', 'unsave')
       )
-      ORDER BY saved_at DESC
+      SELECT c.*, li.created_at as saved_at
+      FROM colleges c
+      INNER JOIN latest_interactions li 
+        ON li.college_id = c.id 
+        AND li.rn = 1 
+        AND li.interaction_type = 'save'
+      ORDER BY li.created_at DESC
     `);
     
-    return stmt.all(userId, userId, userId, userId);
+    return stmt.all(userId);
   } catch (error) {
     logger.error('Failed to get saved colleges:', error);
     return [];
