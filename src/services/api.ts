@@ -358,6 +358,12 @@ class ApiService {
 
     checkEligibility: (id: number, program?: string) =>
       this.request(`/colleges/${id}/eligibility${program ? `?program=${encodeURIComponent(program)}` : ''}`),
+    
+    // Create a new college (requires authentication)
+    create: (data: any) => this.request('/colleges', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
   };
 
   // Research namespace - Major-based search and research
@@ -373,7 +379,10 @@ class ApiService {
 
   // Intelligent Search namespace
   intelligentSearch = {
-    search: (query: string, filters?: any) => this.intelligentSearch(query, filters),
+    search: (query: string, filters?: any) => this.request('/intelligent-search', {
+      method: 'POST',
+      body: JSON.stringify({ query, filters }),
+    }),
     classify: (query: string) => this.classifyQuery(query),
   };
 

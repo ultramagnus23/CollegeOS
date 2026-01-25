@@ -3,6 +3,7 @@
 
 const knowledgeBase = require('../data/knowledgeBase');
 const College = require('../models/College');
+const collegeAliasResolver = require('./collegeAliasResolver');
 
 class IntelligentSearch {
   /**
@@ -48,12 +49,12 @@ class IntelligentSearch {
   }
   
   static isProcessQuery(query) {
-    const processKeywords = ['how to apply', 'application process', 'studielink', 'ucas', 'common app', 'numerus fixus', 'deadline', 'apply to'];
+    const processKeywords = ['how to apply', 'application process', 'studielink', 'ucas', 'common app', 'numerus fixus', 'deadline', 'apply to', 'essay', 'essays', 'admission essay', 'personal statement', 'sop', 'statement of purpose', 'application', 'applying'];
     return processKeywords.some(keyword => query.includes(keyword));
   }
   
   static isRequirementsQuery(query) {
-    const reqKeywords = ['requirements', 'minimum', 'eligibility', 'need', 'required', 'admission criteria'];
+    const reqKeywords = ['requirements', 'minimum', 'eligibility', 'need', 'required', 'admission criteria', 'admission', 'admissions', 'entry requirements', 'prerequisites'];
     return reqKeywords.some(keyword => query.includes(keyword));
   }
   
@@ -108,11 +109,40 @@ class IntelligentSearch {
   }
   
   /**
-   * Handle college-specific queries
+   * Resolve college entity from query
+   * @param {string} query - User's search query
+   * @returns {string[]} - Expanded query terms including aliases
+   */
+  static resolveCollegeEntity(query) {
+    // Try to resolve aliases
+    const expandedQueries = collegeAliasResolver.expandQuery(query);
+    return expandedQueries;
+  }
+
+  /**
+   * Handle college-specific queries with entity resolution
    */
   static async handleCollegeQuery(query, context) {
-    // Extract college name or search term
-    const colleges = await College.search(query, context.filters || {});
+    // Resolve college entity (handle aliases like "MIT" → "Massachusetts Institute of Technology")
+    const expandedQueries = this.resolveCollegeEntity(query);
+    
+    // Search with all query variations
+    let colleges = [];
+    for (const expandedQuery of expandedQueries) {
+      const results = await College.search(expandedQuery, context.filters || {});
+      colleges.push(...results);
+    }
+    
+    // Remove duplicates by ID
+    const uniqueColleges = Array.from(
+      new Map(colleges.map(c => [c.id, c])).values()
+    );
+    
+    // Sort by trust tier (official first)
+    uniqueColleges.sort((a, b) => {
+      const trustOrder = { official: 0, secondary: 1, forum: 2, user_added: 3, web_search: 4 };
+      return (trustOrder[a.trust_tier] || 5) - (trustOrder[b.trust_tier] || 5);
+    });
     
     // Get relevant knowledge base info
     const country = this.extractCountry(query);
@@ -120,10 +150,11 @@ class IntelligentSearch {
     
     return {
       type: 'college',
-      colleges: colleges,
-      totalResults: colleges.length,
+      colleges: uniqueColleges,
+      totalResults: uniqueColleges.length,
       applicationInfo: applicationProcess,
-      relatedInfo: this.getRelatedInfo(query, 'college')
+      relatedInfo: this.getRelatedInfo(query, 'college'),
+      resolvedAliases: expandedQueries.length > 1 ? expandedQueries : null
     };
   }
   
@@ -265,16 +296,62 @@ class IntelligentSearch {
   
   /**
    * Handle general queries
+   * Layer 3: Attempts broader search when specific query types don't match
    */
   static async handleGeneralQuery(query, context) {
-    // Perform broad search across colleges
-    const colleges = await College.search(query, context.filters || { limit: 50 });
+    // Perform broad search across colleges with higher limit for better results
+    const colleges = await College.search(query, context.filters || { limit: 100 });
+    
+    // Add helpful suggestions based on query content
+    let suggestion = 'Try being more specific about what you\'re looking for';
+    const lowerQuery = query.toLowerCase();
+    
+    // If no results found in database, try Layer 3 web search
+    if (colleges.length === 0) {
+      console.log('🔍 Layer 1 (database) returned no results, initiating Layer 3 web search...');
+      
+      try {
+        const layer3Search = require('./layer3Search');
+        const webResults = await layer3Search.search(query, { maxResults: 10 });
+        
+        if (webResults.success && webResults.results.length > 0) {
+          return {
+            type: 'general',
+            layer: 3,
+            colleges: [], // Database colleges (empty)
+            webResults: webResults.results, // External search results
+            totalResults: webResults.totalResults,
+            suggestion: 'Results from external web search. Click links to visit official websites.',
+            query: query,
+            source: webResults.source,
+            note: 'These results are from external web search. Verify information on official websites.'
+          };
+        }
+      } catch (error) {
+        console.error('Layer 3 search failed:', error.message);
+      }
+      
+      // If Layer 3 also failed or not available
+      if (lowerQuery.includes('university') || lowerQuery.includes('college')) {
+        suggestion = 'No results in database or web search. Try searching by location (e.g., "US universities") or field of study (e.g., "engineering programs"). You can also add colleges manually if they\'re not in our database.';
+      } else {
+        suggestion = 'No results found in database or web search. Try using different keywords, check spelling, or add the college manually if it\'s not in our system.';
+      }
+    } else if (colleges.length > 50) {
+      suggestion = 'Many results found. Add filters like country or program to narrow down your search.';
+    }
     
     return {
       type: 'general',
+      layer: 1, // Database search
       colleges: colleges,
+      webResults: [],
       totalResults: colleges.length,
-      suggestion: 'Try being more specific about what you\'re looking for'
+      suggestion: suggestion,
+      query: query,
+      note: colleges.length === 0 ? 
+        'No colleges found in database. You can add colleges manually using the "Add College" feature in the Colleges page.' : 
+        undefined
     };
   }
   

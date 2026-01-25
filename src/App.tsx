@@ -13,12 +13,12 @@ import DashboardLayout from "./layouts/DashboardLayout";
 // Page Imports
 import AuthPage from "./pages/Auth";
 import OnboardingPage from "./pages/Onboarding"; // Make sure this matches your file name
-import IntelligentCollegeSearch from './pages/IntelligentCollegeSearch';
 
 // Dashboard Pages
 import Dashboard from "./pages/Dashboard";
 import Discover from "./pages/Discover";
 import Colleges from "./pages/Colleges";
+import AddCollege from "./pages/AddCollege";
 import CollegeDetails from "./pages/CollegeDetails";
 import Research from "./pages/Research";
 import Applications from "./pages/Applications";
@@ -100,21 +100,13 @@ const AppContent = () => {
             <Route index element={<Dashboard />} />
             <Route path="discover" element={<Discover />} />
             <Route path="colleges" element={<Colleges />} />
+            <Route path="colleges/add" element={<AddCollege />} />
             <Route path="colleges/:id" element={<CollegeDetails />} />
             <Route path="research" element={<Research />} />
             <Route path="applications" element={<Applications />} />
             <Route path="deadlines" element={<Deadlines />} />
             <Route path="essays" element={<Essays />} />
             <Route path="settings" element={<Settings />} />
-
-            <Route
-              path="/search"
-              element={
-                <IntelligentCollegeSearch
-                  studentProfile={studentProfile}
-                />
-              }
-            />
           </Route>
         </Routes>
       </BrowserRouter>

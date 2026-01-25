@@ -17,7 +17,8 @@ interface College {
 
 const Research: React.FC = () => {
   const navigate = useNavigate();
-  const [searchType, setSearchType] = useState<'major' | 'all'>('major');
+  const [searchType, setSearchType] = useState<'intelligent' | 'major' | 'all'>('intelligent');
+  const [intelligentQuery, setIntelligentQuery] = useState('');
   const [majorQuery, setMajorQuery] = useState('');
   const [generalQuery, setGeneralQuery] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
@@ -26,6 +27,7 @@ const Research: React.FC = () => {
   const [countries, setCountries] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchInfo, setSearchInfo] = useState<any>(null);
 
   useEffect(() => {
     loadFilters();
@@ -41,6 +43,74 @@ const Research: React.FC = () => {
       setCountries(countriesRes.data || []);
     } catch (err) {
       console.error('Failed to load filters:', err);
+    }
+  };
+
+  const handleIntelligentSearch = async () => {
+    if (!intelligentQuery.trim()) {
+      setError('Please enter a search query');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      setSearchInfo(null);
+      
+      // Use intelligent search API
+      const res = await api.intelligentSearch.search(intelligentQuery.trim(), {
+        filters: { country: selectedCountry || undefined }
+      });
+      
+      console.log('Intelligent search response:', res);
+      
+      // Handle different response types from intelligent search
+      if (res.success || res.success !== false) {
+        setSearchInfo({
+          type: res.type,
+          explanation: res.explanation,
+          suggestion: res.suggestion,
+          layer: res.layer,
+          source: res.source,
+          note: res.note
+        });
+
+        // Extract colleges from response - API returns colleges in different properties
+        let collegesData = [];
+        if (Array.isArray(res.colleges)) {
+          collegesData = res.colleges;
+        } else if (Array.isArray(res.data)) {
+          collegesData = res.data;
+        }
+        
+        // Handle Layer 3 web results
+        if (res.webResults && Array.isArray(res.webResults) && res.webResults.length > 0) {
+          // Convert web results to college format for display
+          const webColleges = res.webResults.map((result: any) => ({
+            id: `web-${Math.random()}`,
+            name: result.name,
+            description: result.description,
+            official_website: result.url,
+            country: 'Unknown',
+            location: '',
+            majorCategories: [],
+            academicStrengths: [],
+            source: result.source,
+            layer: 3
+          }));
+          collegesData = [...collegesData, ...webColleges];
+        }
+
+        setColleges(collegesData);
+      } else {
+        setError(res.message || 'Search failed');
+        setColleges([]);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Search failed');
+      setColleges([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -99,14 +169,25 @@ const Research: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">College Research Engine</h1>
+        <h1 className="text-3xl font-bold mb-6">College Research & Search</h1>
         <p className="text-gray-600 mb-8">
-          Search colleges by major, program, or name. All results link to official university sources.
+          Intelligent search with query understanding, major-based search, or general college discovery.
         </p>
 
         {/* Search Type Toggle */}
         <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
+            <button
+              onClick={() => setSearchType('intelligent')}
+              className={`px-4 py-2 rounded-lg ${
+                searchType === 'intelligent'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700'
+              }`}
+            >
+              <Search className="w-4 h-4 inline mr-2" />
+              Intelligent Search
+            </button>
             <button
               onClick={() => setSearchType('major')}
               className={`px-4 py-2 rounded-lg ${
@@ -126,15 +207,43 @@ const Research: React.FC = () => {
                   : 'bg-gray-100 text-gray-700'
               }`}
             >
-              <Search className="w-4 h-4 inline mr-2" />
-              General Search
+              <Globe className="w-4 h-4 inline mr-2" />
+              Browse All
             </button>
           </div>
         </div>
 
         {/* Search Form */}
         <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-          {searchType === 'major' ? (
+          {searchType === 'intelligent' ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Ask anything about colleges, programs, or admissions
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={intelligentQuery}
+                    onChange={(e) => setIntelligentQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleIntelligentSearch()}
+                    placeholder="e.g., 'MIT requirements', 'engineering colleges in US', 'UCAS process'"
+                    className="flex-1 border rounded-lg px-4 py-3"
+                  />
+                  <button
+                    onClick={handleIntelligentSearch}
+                    disabled={loading}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50"
+                  >
+                    {loading ? 'Searching...' : 'Search'}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  💡 The system understands your query and provides relevant colleges, processes, or requirements
+                </p>
+              </div>
+            </div>
+          ) : searchType === 'major' ? (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Major/Program Name</label>
@@ -206,6 +315,34 @@ const Research: React.FC = () => {
           </div>
         </div>
 
+        {/* Search Info (for intelligent search) */}
+        {searchInfo && (
+          <div className={`border px-4 py-3 rounded-lg mb-6 ${
+            searchInfo.layer === 3 
+              ? 'bg-purple-50 border-purple-200 text-purple-900' 
+              : 'bg-blue-50 border-blue-200 text-blue-900'
+          }`}>
+            <div className="font-medium">
+              Query Type: {searchInfo.type}
+              {searchInfo.layer && (
+                <span className="ml-2 text-xs px-2 py-1 rounded-full bg-white">
+                  Layer {searchInfo.layer} {searchInfo.layer === 3 ? '(Web Search)' : '(Database)'}
+                </span>
+              )}
+            </div>
+            {searchInfo.explanation && <p className="text-sm mt-1">{searchInfo.explanation}</p>}
+            {searchInfo.suggestion && <p className="text-sm mt-1">💡 {searchInfo.suggestion}</p>}
+            {searchInfo.note && (
+              <p className="text-xs mt-2 p-2 bg-white rounded border border-current/20">
+                ℹ️ {searchInfo.note}
+              </p>
+            )}
+            {searchInfo.source && (
+              <p className="text-xs mt-1">Source: {searchInfo.source}</p>
+            )}
+          </div>
+        )}
+
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
@@ -230,7 +367,9 @@ const Research: React.FC = () => {
 
         {!loading && colleges.length === 0 && !error && (
           <div className="text-center py-12 text-gray-500">
-            {searchType === 'major'
+            {searchType === 'intelligent'
+              ? 'Ask any question about colleges, programs, or admissions to get started'
+              : searchType === 'major'
               ? 'Enter a major/program name to search'
               : 'Enter a search query to find colleges'}
           </div>
@@ -240,9 +379,25 @@ const Research: React.FC = () => {
           {colleges.map((college) => (
             <div
               key={college.id}
-              className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow"
+              className={`bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow ${
+                (college as any).layer === 3 ? 'border-purple-200' : ''
+              }`}
             >
-              <h3 className="text-lg font-semibold mb-2">{college.name}</h3>
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-lg font-semibold flex-1">{college.name}</h3>
+                {(college as any).layer === 3 && (
+                  <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full ml-2">
+                    Web Result
+                  </span>
+                )}
+              </div>
+              
+              {(college as any).description && (
+                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                  {(college as any).description}
+                </p>
+              )}
+              
               <p className="text-sm text-gray-600 mb-4">
                 {college.location || ''} {college.location && college.country ? ', ' : ''}
                 {college.country}
