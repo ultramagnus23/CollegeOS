@@ -68,6 +68,37 @@ class College {
       if (college.numerus_fixus_programs) {
         college.numerusFixusPrograms = JSON.parse(college.numerus_fixus_programs);
       }
+      
+      // Format admission stats for API response
+      college.admissionStats = {
+        acceptanceRate: college.acceptance_rate,
+        sat: {
+          reading25: college.sat_reading_25,
+          reading75: college.sat_reading_75,
+          math25: college.sat_math_25,
+          math75: college.sat_math_75,
+          totalAvg: college.sat_total_avg
+        },
+        act: {
+          composite25: college.act_composite_25,
+          composite75: college.act_composite_75,
+          compositeAvg: college.act_composite_avg
+        },
+        gpa: {
+          avg: college.gpa_avg,
+          percentile25: college.gpa_25,
+          percentile75: college.gpa_75
+        },
+        tuition: {
+          inState: college.in_state_tuition,
+          outOfState: college.out_of_state_tuition,
+          international: college.international_tuition
+        },
+        enrollment: college.total_enrollment,
+        graduationRate: college.graduation_rate,
+        dataSource: college.admission_data_source,
+        dataYear: college.admission_data_year
+      };
     }
     
     return college;

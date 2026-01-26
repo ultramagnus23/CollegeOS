@@ -169,15 +169,20 @@ class ProfileComparisonService {
    * Note: Scorecard doesn't provide GPA data - requires CDS
    */
   compareGPA(userGPA, collegeData) {
-    // Check if we have GPA data from CDS or other sources
+    // Support both old format and new format (direct columns)
     const gpaData = collegeData.gpa_stats || collegeData.cds_data?.gpa;
+    const directStats = collegeData.admissionStats || {};
     
-    if (gpaData && gpaData.range_25 !== undefined && gpaData.range_75 !== undefined) {
+    // Check direct columns first
+    const gpa25 = collegeData.gpa_25 || directStats.gpa?.percentile25 || gpaData?.range_25;
+    const gpa75 = collegeData.gpa_75 || directStats.gpa?.percentile75 || gpaData?.range_75;
+    
+    if (gpa25 !== undefined && gpa75 !== undefined) {
       return new DimensionComparison(
         'GPA',
         userGPA,
-        gpaData.range_25,
-        gpaData.range_75,
+        gpa25,
+        gpa75,
         'gpa'
       );
     }
@@ -188,19 +193,30 @@ class ProfileComparisonService {
 
   /**
    * Compare SAT scores against typical admitted students
-   * Uses 25th-75th percentile ranges from Scorecard
+   * Uses 25th-75th percentile ranges from Scorecard or direct DB columns
    */
   compareSAT(userProfile, collegeData) {
     const dimensions = [];
+    
+    // Support both old format (admissions_stats JSON) and new format (direct columns)
     const stats = collegeData.admissions_stats || {};
+    const directStats = collegeData.admissionStats || {};
+    
+    // Get SAT Math ranges (check direct columns first, then JSON)
+    const satMath25 = collegeData.sat_math_25 || directStats.sat?.math25 || stats.sat_math_25;
+    const satMath75 = collegeData.sat_math_75 || directStats.sat?.math75 || stats.sat_math_75;
+    
+    // Get SAT Reading ranges
+    const satReading25 = collegeData.sat_reading_25 || directStats.sat?.reading25 || stats.sat_reading_25;
+    const satReading75 = collegeData.sat_reading_75 || directStats.sat?.reading75 || stats.sat_reading_75;
 
     // SAT Math
     if (userProfile.sat_math !== undefined) {
       dimensions.push(new DimensionComparison(
         'SAT Math',
         userProfile.sat_math,
-        stats.sat_math_25,
-        stats.sat_math_75,
+        satMath25,
+        satMath75,
         null
       ));
     }
@@ -210,19 +226,19 @@ class ProfileComparisonService {
       dimensions.push(new DimensionComparison(
         'SAT Reading',
         userProfile.sat_reading,
-        stats.sat_reading_25,
-        stats.sat_reading_75,
+        satReading25,
+        satReading75,
         null
       ));
     }
 
     // SAT Total (if both sections available)
     if (userProfile.sat_total !== undefined) {
-      const total25 = (stats.sat_math_25 && stats.sat_reading_25) 
-        ? stats.sat_math_25 + stats.sat_reading_25 
+      const total25 = (satMath25 && satReading25) 
+        ? satMath25 + satReading25 
         : null;
-      const total75 = (stats.sat_math_75 && stats.sat_reading_75)
-        ? stats.sat_math_75 + stats.sat_reading_75
+      const total75 = (satMath75 && satReading75)
+        ? satMath75 + satReading75
         : null;
 
       dimensions.push(new DimensionComparison(
@@ -241,13 +257,18 @@ class ProfileComparisonService {
    * Compare ACT score against typical admitted students
    */
   compareACT(userACT, collegeData) {
+    // Support both old format (admissions_stats JSON) and new format (direct columns)
     const stats = collegeData.admissions_stats || {};
+    const directStats = collegeData.admissionStats || {};
+    
+    const act25 = collegeData.act_composite_25 || directStats.act?.composite25 || stats.act_25;
+    const act75 = collegeData.act_composite_75 || directStats.act?.composite75 || stats.act_75;
 
     return new DimensionComparison(
       'ACT Composite',
       userACT,
-      stats.act_25,
-      stats.act_75,
+      act25,
+      act75,
       null
     );
   }

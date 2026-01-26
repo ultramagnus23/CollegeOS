@@ -387,6 +387,7 @@ class ApiService {
   // Applications namespace (as used by pages)
   applications = {
     get: (filters: any = {}) => this.getApplications(filters),
+    getAll: <T = any>(filters: any = {}): Promise<T> => this.getApplications(filters) as Promise<T>,
     create: (data: any) => this.createApplication(data),
     update: (id: number, data: any) => this.updateApplication(id, data),
     delete: (id: number) => this.deleteApplication(id),

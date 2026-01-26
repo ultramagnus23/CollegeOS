@@ -90,6 +90,7 @@ This runs migrations:
 - `005_unified_colleges_schema.sql` - Comprehensive college schema
 - `006_fix_users_schema.sql` - User schema fixes
 - `007_user_interactions.sql` - Interaction logging for future ML
+- `008_add_admission_stats.sql` - SAT/ACT/GPA admission statistics columns
 
 ### Step 4: Seed University Data
 

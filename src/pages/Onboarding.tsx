@@ -628,7 +628,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
               <button
                 onClick={async () => {
                   await onComplete(studentData);
-                  navigate('/search');
+                  navigate('/colleges');
                 }}
                 disabled={!isStepComplete()}
                 className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg hover:from-green-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold"
