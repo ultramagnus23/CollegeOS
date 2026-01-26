@@ -6,8 +6,11 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "migrate": "node scripts/migrate.js",
-    "seed": "node scripts/seed.js",
+    "migrate": "node scripts/runMigrations.js",
+    "seed": "node scripts/seed_comprehensive.js --force",
+    "seed:api": "node scripts/seed_comprehensive.js --force --api",
+    "check": "node scripts/check_integration.js",
+    "setup": "npm run migrate && npm run seed",
     "test": "jest --coverage",
     "lint": "eslint src/"
   },
