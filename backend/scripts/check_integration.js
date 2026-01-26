@@ -28,7 +28,7 @@ try {
 const Database = require('better-sqlite3');
 
 console.log('🔍 CollegeOS Integration Check\n');
-console.log('=' .repeat(60));
+console.log('='.repeat(60));
 
 const results = {
   passed: 0,
@@ -249,7 +249,7 @@ try {
       console.log(`     ${flag} ${row.country}: ${row.count}`);
     });
     
-    check('Colleges seeded', totalColleges.count >= 100, 'Expected 470+ universities');
+    check('Colleges seeded', totalColleges.count >= 100, `Expected 100+ universities, found ${totalColleges.count}`);
   }
   
   const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
