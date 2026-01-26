@@ -99,7 +99,8 @@ Seed the database with verified university data from official sources:
 # Basic seeding (uses static data for all regions)
 node backend/scripts/seed_comprehensive.js --force
 
-# With College Scorecard API (fetches live US data)
+# With College Scorecard API (fetches ALL US colleges - 6000+)
+# This takes several minutes but provides comprehensive US data
 node backend/scripts/seed_comprehensive.js --force --api
 
 # Verbose mode (shows each university as it's inserted)
@@ -107,12 +108,12 @@ node backend/scripts/seed_comprehensive.js --force --verbose
 ```
 
 **Data Sources:**
-- 🇺🇸 **US**: College Scorecard API (Department of Education)
-- 🇬🇧 **UK**: HESA (Higher Education Statistics Agency) - 150 universities
-- 🇮🇳 **India**: UGC/AICTE/NIRF - 120 universities
-- 🇪🇺 **Europe**: Official registries - 200 universities (20+ countries)
+- 🇺🇸 **US**: College Scorecard API (Department of Education) - **6,000+ colleges when using --api**
+- 🇬🇧 **UK**: HESA (Higher Education Statistics Agency) - 138 universities
+- 🇮🇳 **India**: UGC/AICTE/NIRF - 121 institutions
+- 🇪🇺 **Europe**: Official registries - 184 universities (20+ countries)
 
-**Expected Output:**
+**Expected Output (with --api flag):**
 ```
 🌱 CollegeOS Comprehensive University Seeding
 
@@ -121,32 +122,37 @@ node backend/scripts/seed_comprehensive.js --force --verbose
 
 📋 Options:
    --force: YES
-   --api:   NO
+   --api:   YES
    --verbose: NO
 
 🧹 Cleaning existing college data...
    ✅ Existing colleges removed
 🇬🇧 Loading UK universities from HESA data...
-   ✅ Loaded 150 UK universities
+   ✅ Loaded 138 UK universities
 🇮🇳 Loading Indian institutions from UGC/NIRF data...
-   ✅ Loaded 120 Indian institutions
+   ✅ Loaded 121 Indian institutions
 🇪🇺 Loading European universities...
-   ✅ Loaded 200 European universities
-🇺🇸 Using static US college data...
-   ✅ Loaded 40 US colleges
+   ✅ Loaded 184 European universities
+🇺🇸 Fetching US colleges from College Scorecard API...
+   📡 Connecting to College Scorecard API (US Dept of Education)...
+   📥 Fetched 100 US colleges...
+   📥 Fetched 500 US colleges...
+   📥 Fetched 1000 US colleges...
+   ...
+   ✅ Fetched 6000+ US colleges from College Scorecard
 
-📚 Inserting 510 universities...
+📚 Inserting 6443+ universities...
 
 📊 Summary:
-   Inserted: 510
+   Inserted: 6443+
    Failed: 0
-   Total in database: 510
+   Total in database: 6443+
 
 📍 By Country:
-   🇪🇺 EU: 200
-   🇬🇧 UK: 150
-   🇮🇳 IN: 120
-   🇺🇸 US: 40
+   🇺🇸 US: 6000+
+   🇪🇺 EU: 184
+   🇬🇧 UK: 138
+   🇮🇳 IN: 121
 
 🎉 Seeding completed!
 ```
