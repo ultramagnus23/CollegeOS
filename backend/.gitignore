@@ -16,6 +16,9 @@ database/*.db-journal
 *.backup
 backup.sql
 
+# Coverage reports
+coverage/
+
 # Logs
 logs
 *.log
