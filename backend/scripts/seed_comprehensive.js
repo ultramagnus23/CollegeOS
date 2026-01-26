@@ -16,6 +16,10 @@
 
 const path = require('path');
 const fs = require('fs');
+
+// Load environment variables FIRST before anything else
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
 const axios = require('axios');
 
 // Load config
@@ -233,6 +237,26 @@ function normalizeScorecard(raw) {
   };
   const ownershipMap = { 1: 'Public', 2: 'Private Non-Profit', 3: 'Private For-Profit' };
 
+  // Extract SAT scores
+  const satReading25 = get(raw, 'latest.admissions.sat_scores.25th_percentile.critical_reading');
+  const satReading75 = get(raw, 'latest.admissions.sat_scores.75th_percentile.critical_reading');
+  const satMath25 = get(raw, 'latest.admissions.sat_scores.25th_percentile.math');
+  const satMath75 = get(raw, 'latest.admissions.sat_scores.75th_percentile.math');
+  
+  // Calculate SAT total average (midpoint of 25th and 75th for both sections)
+  let satTotalAvg = null;
+  if (satReading25 && satReading75 && satMath25 && satMath75) {
+    satTotalAvg = Math.round((satReading25 + satReading75) / 2 + (satMath25 + satMath75) / 2);
+  }
+
+  // Extract ACT scores
+  const actComposite25 = get(raw, 'latest.admissions.act_scores.25th_percentile.cumulative');
+  const actComposite75 = get(raw, 'latest.admissions.act_scores.75th_percentile.cumulative');
+  let actCompositeAvg = null;
+  if (actComposite25 && actComposite75) {
+    actCompositeAvg = Math.round((actComposite25 + actComposite75) / 2);
+  }
+
   return {
     name: get(raw, 'school.name'),
     country: 'US',
@@ -241,15 +265,21 @@ function normalizeScorecard(raw) {
     official_website: get(raw, 'school.school_url'),
     acceptance_rate: get(raw, 'latest.admissions.admission_rate.overall'),
     tuition_cost: get(raw, 'latest.cost.tuition.out_of_state'),
-    admissions_stats: JSON.stringify({
-      sat_reading_25: get(raw, 'latest.admissions.sat_scores.25th_percentile.critical_reading'),
-      sat_reading_75: get(raw, 'latest.admissions.sat_scores.75th_percentile.critical_reading'),
-      sat_math_25: get(raw, 'latest.admissions.sat_scores.25th_percentile.math'),
-      sat_math_75: get(raw, 'latest.admissions.sat_scores.75th_percentile.math'),
-      act_25: get(raw, 'latest.admissions.act_scores.25th_percentile.cumulative'),
-      act_75: get(raw, 'latest.admissions.act_scores.75th_percentile.cumulative'),
-      data_source: 'US Department of Education College Scorecard'
-    }),
+    // New admission stats fields
+    sat_reading_25: satReading25,
+    sat_reading_75: satReading75,
+    sat_math_25: satMath25,
+    sat_math_75: satMath75,
+    sat_total_avg: satTotalAvg,
+    act_composite_25: actComposite25,
+    act_composite_75: actComposite75,
+    act_composite_avg: actCompositeAvg,
+    in_state_tuition: get(raw, 'latest.cost.tuition.in_state'),
+    out_of_state_tuition: get(raw, 'latest.cost.tuition.out_of_state'),
+    total_enrollment: get(raw, 'latest.student.size'),
+    graduation_rate: get(raw, 'latest.completion.rate_suppressed.overall'),
+    admission_data_source: 'US Department of Education College Scorecard',
+    admission_data_year: 2024,
     trust_tier: 'official_government',
     source: 'College Scorecard'
   };
@@ -320,6 +350,84 @@ function cleanDatabase() {
 }
 
 function insertCollege(college) {
+  // First, try to insert with new admission stats columns if they exist
+  // Fall back to basic insert if columns don't exist yet (migration not run)
+  
+  try {
+    // Try full insert with admission stats
+    const stmt = db.prepare(`
+      INSERT INTO colleges (
+        name, country, location, type, official_website, admissions_url,
+        programs_url, application_portal_url, programs, major_categories,
+        academic_strengths, application_portal, acceptance_rate, requirements,
+        deadline_templates, tuition_cost, financial_aid_available, research_data,
+        description, logo_url, cbse_requirements, igcse_requirements, ib_requirements,
+        studielink_required, numerus_fixus_programs, ucas_code, common_app_id,
+        trust_tier, is_verified,
+        sat_reading_25, sat_reading_75, sat_math_25, sat_math_75, sat_total_avg,
+        act_composite_25, act_composite_75, act_composite_avg,
+        in_state_tuition, out_of_state_tuition, total_enrollment, graduation_rate,
+        admission_data_source, admission_data_year
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(
+      college.name,
+      college.country,
+      college.location,
+      college.type,
+      college.official_website || null,
+      college.admissions_url || null,
+      college.programs_url || null,
+      null, // application_portal_url
+      college.programs ? JSON.stringify(college.programs) : null,
+      college.major_categories ? JSON.stringify(college.major_categories) : null,
+      college.academic_strengths ? JSON.stringify(college.academic_strengths) : null,
+      college.application_portal || null,
+      college.acceptance_rate || null,
+      college.requirements ? JSON.stringify(college.requirements) : null,
+      college.deadline_templates ? JSON.stringify(college.deadline_templates) : null,
+      college.tuition_cost || null,
+      college.financial_aid_available ? 1 : 0,
+      null, // research_data
+      college.description || null,
+      null, // logo_url
+      null, null, null, // board requirements
+      college.studielink_required ? 1 : 0,
+      null, // numerus_fixus
+      college.ucas_code || null,
+      null, // common_app_id
+      college.trust_tier || 'official',
+      1,
+      // New admission stats columns
+      college.sat_reading_25 || null,
+      college.sat_reading_75 || null,
+      college.sat_math_25 || null,
+      college.sat_math_75 || null,
+      college.sat_total_avg || null,
+      college.act_composite_25 || null,
+      college.act_composite_75 || null,
+      college.act_composite_avg || null,
+      college.in_state_tuition || null,
+      college.out_of_state_tuition || null,
+      college.total_enrollment || null,
+      college.graduation_rate || null,
+      college.admission_data_source || null,
+      college.admission_data_year || null
+    );
+    return true;
+  } catch (error) {
+    // If columns don't exist, fall back to basic insert
+    if (error.message.includes('no column named')) {
+      return insertCollegeBasic(college);
+    }
+    console.error(`   ✗ Failed: ${college.name} - ${error.message}`);
+    return false;
+  }
+}
+
+function insertCollegeBasic(college) {
   const stmt = db.prepare(`
     INSERT INTO colleges (
       name, country, location, type, official_website, admissions_url,
@@ -347,7 +455,7 @@ function insertCollege(college) {
       college.academic_strengths ? JSON.stringify(college.academic_strengths) : null,
       college.application_portal || null,
       college.acceptance_rate || null,
-      college.admissions_stats || (college.requirements ? JSON.stringify(college.requirements) : null),
+      college.requirements ? JSON.stringify(college.requirements) : null,
       college.deadline_templates ? JSON.stringify(college.deadline_templates) : null,
       college.tuition_cost || null,
       college.financial_aid_available ? 1 : 0,
