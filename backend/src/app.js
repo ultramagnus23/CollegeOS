@@ -21,6 +21,7 @@ const aiCounselorRoutes = require('./routes/aiCounselor');
 const searchRoutes = require('./routes/search');
 const intelligentSearchRoutes = require('./routes/intelligentSearch');
 const chatbotRoutes = require('./routes/chatbot');
+const profileComparisonRoutes = require('./routes/profileComparison');
 // Create Express app
 const app = express();
 
@@ -69,6 +70,7 @@ app.use('/api/counselor', aiCounselorRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/intelligent-search', intelligentSearchRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/profile-comparison', profileComparisonRoutes);
 
 // 404 handler
 app.use((req, res) => {
