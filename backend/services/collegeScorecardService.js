@@ -247,6 +247,79 @@ class CollegeScorecardService {
   }
 
   /**
+   * Fetch ALL US colleges with pagination
+   * This can take several minutes due to API rate limiting
+   * @param {object} options - Fetch options
+   * @returns {array} - Array of all college data
+   */
+  async fetchAllColleges(options = {}) {
+    const {
+      pageSize = 100,
+      maxPages = 100, // Safety limit: 100 pages = 10,000 colleges max
+      filters = { 'school.operating': 1 },
+      onProgress = null
+    } = options;
+
+    const allResults = [];
+    let page = 0;
+    let hasMore = true;
+    
+    console.log('📊 Fetching all US colleges from College Scorecard...');
+    
+    try {
+      while (hasMore && page < maxPages) {
+        const params = {
+          'fields': SCORECARD_FIELDS.join(','),
+          'per_page': pageSize,
+          'page': page,
+          ...filters
+        };
+        
+        const url = this.buildUrl('/schools.json', params);
+        const response = await axios.get(url, { timeout: 60000 });
+        
+        if (!response.data || !response.data.results || response.data.results.length === 0) {
+          hasMore = false;
+          break;
+        }
+        
+        const pageResults = response.data.results.map(r => this.normalizeCollegeData(r));
+        allResults.push(...pageResults);
+        
+        // Progress callback
+        if (onProgress) {
+          onProgress({
+            page,
+            fetched: allResults.length,
+            total: response.data.metadata?.total || null
+          });
+        }
+        
+        // Check if there are more pages
+        const metadata = response.data.metadata;
+        if (metadata && metadata.total) {
+          hasMore = (page + 1) * pageSize < metadata.total;
+        } else {
+          hasMore = response.data.results.length === pageSize;
+        }
+        
+        page++;
+        
+        // Rate limiting: 100ms between requests
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      console.log(`📊 Fetched ${allResults.length} US colleges from College Scorecard`);
+      return allResults;
+      
+    } catch (error) {
+      console.error(`❌ Error fetching all colleges:`, error.message);
+      // Return what we have so far
+      return allResults;
+    }
+  }
+
+  /**
    * Check if API is accessible
    * @returns {boolean} - API availability status
    */

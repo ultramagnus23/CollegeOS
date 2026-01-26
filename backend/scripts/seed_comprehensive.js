@@ -143,29 +143,85 @@ function loadEUUniversities() {
   }
 }
 
-async function fetchUSUniversities(limit = 200) {
+async function fetchUSUniversities(limit = 'all') {
   console.log('🇺🇸 Fetching US colleges from College Scorecard API...');
+  
+  // College Scorecard API: https://api.data.gov/ed/collegescorecard/v1
+  // Free, no auth required (but API key gives higher rate limits)
+  // Contains ~6,500+ institutions
+  
+  const allUniversities = [];
+  const PAGE_SIZE = 100; // Max allowed by API
+  let page = 0;
+  let totalFetched = 0;
+  let hasMore = true;
+  
+  // Filters for quality institutions:
+  // - degrees_awarded.predominant=3 means "Predominantly bachelor's degree granting"
+  // - operating=1 means currently operating
+  const FILTERS = [
+    'school.degrees_awarded.predominant=2,3', // Associate's or Bachelor's predominant
+    'school.operating=1' // Currently operating
+  ];
+  
   try {
-    let url = `${SCORECARD_API_BASE}/schools.json?`;
-    url += `fields=${SCORECARD_FIELDS.join(',')}`;
-    url += `&per_page=${limit}`;
-    url += '&school.degrees_awarded.predominant=3';
+    console.log('   📡 Connecting to College Scorecard API (US Dept of Education)...');
     
-    if (SCORECARD_API_KEY) {
-      url += `&api_key=${SCORECARD_API_KEY}`;
-    }
+    while (hasMore) {
+      let url = `${SCORECARD_API_BASE}/schools.json?`;
+      url += `fields=${SCORECARD_FIELDS.join(',')}`;
+      url += `&per_page=${PAGE_SIZE}`;
+      url += `&page=${page}`;
+      url += `&${FILTERS.join('&')}`;
+      
+      if (SCORECARD_API_KEY) {
+        url += `&api_key=${SCORECARD_API_KEY}`;
+      }
 
-    const response = await axios.get(url, { timeout: 30000 });
+      const response = await axios.get(url, { timeout: 60000 });
+      
+      if (!response.data || !response.data.results || response.data.results.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      const pageResults = response.data.results.map(r => normalizeScorecard(r));
+      allUniversities.push(...pageResults);
+      totalFetched += pageResults.length;
+      
+      // Progress update every 500 colleges
+      if (totalFetched % 500 === 0 || totalFetched < 200) {
+        console.log(`   📥 Fetched ${totalFetched} US colleges...`);
+      }
+      
+      // Check if we've reached the limit (if specified)
+      if (limit !== 'all' && totalFetched >= limit) {
+        hasMore = false;
+        break;
+      }
+      
+      // Check if there are more pages
+      const metadata = response.data.metadata;
+      if (metadata && metadata.total) {
+        hasMore = (page + 1) * PAGE_SIZE < metadata.total;
+      } else {
+        hasMore = pageResults.length === PAGE_SIZE;
+      }
+      
+      page++;
+      
+      // Rate limiting: wait 100ms between requests to be respectful
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
     
-    if (!response.data || !response.data.results) {
-      console.log('   ⚠️ No results from Scorecard API');
-      return [];
-    }
-
-    const universities = response.data.results.map(r => normalizeScorecard(r));
-    console.log(`   ✅ Fetched ${universities.length} US colleges`);
-    return universities;
+    console.log(`   ✅ Fetched ${allUniversities.length} US colleges from College Scorecard`);
+    return allUniversities;
+    
   } catch (error) {
+    if (allUniversities.length > 0) {
+      console.log(`   ⚠️ API interrupted after ${allUniversities.length} colleges: ${error.message}`);
+      return allUniversities;
+    }
     console.log(`   ⚠️ API error: ${error.message}. Using fallback data...`);
     return getStaticUSUniversities();
   }
@@ -350,8 +406,10 @@ async function main() {
     // Load US universities
     let usUniversities;
     if (useApi) {
-      usUniversities = await fetchUSUniversities(200);
+      // Fetch ALL US colleges from College Scorecard API (6000+)
+      usUniversities = await fetchUSUniversities('all');
     } else {
+      console.log('🇺🇸 Using static US universities (run with --api to fetch all from Scorecard)...');
       usUniversities = getStaticUSUniversities();
     }
     allUniversities.push(...usUniversities);
