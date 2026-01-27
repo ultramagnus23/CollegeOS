@@ -147,6 +147,115 @@ function loadEUUniversities() {
   }
 }
 
+/**
+ * Load top US colleges with full CDS (Common Data Set) information
+ * This provides more detailed admission data than Scorecard API
+ */
+function loadUSCollegesCDS() {
+  console.log('🇺🇸 Loading US colleges with Common Data Set info...');
+  try {
+    const dataPath = path.join(__dirname, '../data/us_top_colleges_cds.json');
+    if (!fs.existsSync(dataPath)) {
+      console.log('   ⚠️  CDS data file not found, using static data');
+      return [];
+    }
+    const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+    const universities = data.colleges.map(c => ({
+      name: c.name,
+      country: c.country || 'US',
+      location: c.location,
+      type: c.type,
+      official_website: c.officialWebsite,
+      acceptance_rate: c.cds?.admissions?.acceptanceRate,
+      us_news_rank: c.usNewsRank,
+      // Enrollment data
+      total_enrollment: c.cds?.enrollment?.totalUndergrad,
+      undergrad_enrollment: c.cds?.enrollment?.totalUndergrad,
+      grad_enrollment: c.cds?.enrollment?.totalGrad,
+      ft_undergrad_enrollment: c.cds?.enrollment?.ftUndergrad,
+      pt_undergrad_enrollment: c.cds?.enrollment?.ptUndergrad,
+      first_year_retention_rate: c.cds?.enrollment?.firstYearRetention,
+      four_year_graduation_rate: c.cds?.enrollment?.fourYearGrad,
+      six_year_graduation_rate: c.cds?.enrollment?.sixYearGrad,
+      graduation_rate: c.cds?.enrollment?.sixYearGrad,
+      // Admission stats
+      total_applicants: c.cds?.admissions?.totalApplicants,
+      total_admitted: c.cds?.admissions?.totalAdmitted,
+      total_enrolled: c.cds?.admissions?.totalEnrolled,
+      yield_rate: c.cds?.admissions?.yieldRate,
+      ed_applicants: c.cds?.admissions?.edApplicants,
+      ed_admitted: c.cds?.admissions?.edAdmitted,
+      ea_applicants: c.cds?.admissions?.eaApplicants,
+      ea_admitted: c.cds?.admissions?.eaAdmitted,
+      waitlist_offered: c.cds?.admissions?.waitlistOffered,
+      waitlist_accepted: c.cds?.admissions?.waitlistAccepted,
+      waitlist_admitted: c.cds?.admissions?.waitlistAdmitted,
+      // SAT/ACT scores
+      sat_reading_25: c.cds?.testScores?.satReading25,
+      sat_reading_50: c.cds?.testScores?.satReading50,
+      sat_reading_75: c.cds?.testScores?.satReading75,
+      sat_math_25: c.cds?.testScores?.satMath25,
+      sat_math_50: c.cds?.testScores?.satMath50,
+      sat_math_75: c.cds?.testScores?.satMath75,
+      act_composite_25: c.cds?.testScores?.actComposite25,
+      act_composite_75: c.cds?.testScores?.actComposite75,
+      act_english_25: c.cds?.testScores?.actEnglish25,
+      act_english_75: c.cds?.testScores?.actEnglish75,
+      act_math_25: c.cds?.testScores?.actMath25,
+      act_math_75: c.cds?.testScores?.actMath75,
+      percent_submitting_sat: c.cds?.testScores?.percentSubmittingSat,
+      percent_submitting_act: c.cds?.testScores?.percentSubmittingAct,
+      test_optional_policy: c.cds?.testScores?.testOptional,
+      // GPA data
+      gpa_avg: c.cds?.gpa?.averageGpa,
+      percent_gpa_375_plus: c.cds?.gpa?.percent375Plus,
+      percent_gpa_350_374: c.cds?.gpa?.percent350to374,
+      percent_gpa_325_349: c.cds?.gpa?.percent325to349,
+      percent_gpa_300_324: c.cds?.gpa?.percent300to324,
+      percent_gpa_250_299: c.cds?.gpa?.percent250to299,
+      // Admission factors
+      factor_rigor: c.cds?.admissionFactors?.rigor,
+      factor_class_rank: c.cds?.admissionFactors?.classRank,
+      factor_gpa: c.cds?.admissionFactors?.gpa,
+      factor_test_scores: c.cds?.admissionFactors?.testScores,
+      factor_essay: c.cds?.admissionFactors?.essay,
+      factor_recommendation: c.cds?.admissionFactors?.recommendation,
+      factor_interview: c.cds?.admissionFactors?.interview,
+      factor_extracurricular: c.cds?.admissionFactors?.extracurricular,
+      factor_talent: c.cds?.admissionFactors?.talent,
+      factor_character: c.cds?.admissionFactors?.character,
+      factor_first_gen: c.cds?.admissionFactors?.firstGen,
+      factor_alumni: c.cds?.admissionFactors?.alumni,
+      factor_geography: c.cds?.admissionFactors?.geography,
+      factor_state_residency: c.cds?.admissionFactors?.stateResidency,
+      factor_volunteer: c.cds?.admissionFactors?.volunteer,
+      factor_work_experience: c.cds?.admissionFactors?.workExperience,
+      // Financial data
+      in_state_tuition: c.cds?.financial?.inStateTuition,
+      out_of_state_tuition: c.cds?.financial?.outOfStateTuition,
+      room_and_board: c.cds?.financial?.roomAndBoard,
+      books_supplies: c.cds?.financial?.booksSupplies,
+      total_cost_of_attendance: c.cds?.financial?.totalCOA,
+      avg_need_based_grant: c.cds?.financial?.avgNeedBasedGrant,
+      avg_merit_scholarship: c.cds?.financial?.avgMeritScholarship,
+      percent_receiving_aid: c.cds?.financial?.percentReceivingAid,
+      percent_need_fully_met: c.cds?.financial?.percentNeedFullyMet,
+      avg_net_price: c.cds?.financial?.avgNetPrice,
+      // Metadata
+      cds_year: c.cds?.year || 2024,
+      admission_data_source: 'Common Data Set',
+      admission_data_year: c.cds?.year || 2024,
+      trust_tier: 'official_institution',
+      is_verified: 1
+    }));
+    console.log(`   ✅ Loaded ${universities.length} US universities with full CDS data`);
+    return universities;
+  } catch (error) {
+    console.error('   ❌ Failed to load CDS data:', error.message);
+    return [];
+  }
+}
+
 async function fetchUSUniversities(limit = 'all') {
   console.log('🇺🇸 Fetching US colleges from College Scorecard API...');
   
@@ -351,76 +460,136 @@ function cleanDatabase() {
 }
 
 function insertCollege(college) {
-  // First, try to insert with new admission stats columns if they exist
-  // Fall back to basic insert if columns don't exist yet (migration not run)
+  // Use INSERT OR REPLACE with named parameters for clarity
+  // This handles any subset of columns that exist in the database
   
   try {
-    // Try full insert with admission stats
+    // Get all column names from the college object
+    const columnMappings = {
+      name: college.name,
+      country: college.country,
+      location: college.location,
+      type: college.type,
+      official_website: college.official_website || null,
+      admissions_url: college.admissions_url || null,
+      programs_url: college.programs_url || null,
+      programs: college.programs ? JSON.stringify(college.programs) : null,
+      major_categories: college.major_categories ? JSON.stringify(college.major_categories) : null,
+      academic_strengths: college.academic_strengths ? JSON.stringify(college.academic_strengths) : null,
+      application_portal: college.application_portal || null,
+      acceptance_rate: college.acceptance_rate || null,
+      requirements: college.requirements ? JSON.stringify(college.requirements) : null,
+      deadline_templates: college.deadline_templates ? JSON.stringify(college.deadline_templates) : null,
+      tuition_cost: college.tuition_cost || null,
+      financial_aid_available: college.financial_aid_available ? 1 : 0,
+      description: college.description || null,
+      ucas_code: college.ucas_code || null,
+      trust_tier: college.trust_tier || 'official',
+      is_verified: 1,
+      // SAT
+      sat_reading_25: college.sat_reading_25 || null,
+      sat_reading_50: college.sat_reading_50 || null,
+      sat_reading_75: college.sat_reading_75 || null,
+      sat_math_25: college.sat_math_25 || null,
+      sat_math_50: college.sat_math_50 || null,
+      sat_math_75: college.sat_math_75 || null,
+      sat_total_avg: college.sat_total_avg || null,
+      // ACT
+      act_composite_25: college.act_composite_25 || null,
+      act_composite_75: college.act_composite_75 || null,
+      act_composite_avg: college.act_composite_avg || null,
+      act_english_25: college.act_english_25 || null,
+      act_english_75: college.act_english_75 || null,
+      act_math_25: college.act_math_25 || null,
+      act_math_75: college.act_math_75 || null,
+      // GPA
+      gpa_avg: college.gpa_avg || null,
+      gpa_25: college.gpa_25 || null,
+      gpa_75: college.gpa_75 || null,
+      percent_gpa_375_plus: college.percent_gpa_375_plus || null,
+      percent_gpa_350_374: college.percent_gpa_350_374 || null,
+      percent_gpa_325_349: college.percent_gpa_325_349 || null,
+      percent_gpa_300_324: college.percent_gpa_300_324 || null,
+      percent_gpa_250_299: college.percent_gpa_250_299 || null,
+      // Tuition
+      in_state_tuition: college.in_state_tuition || null,
+      out_of_state_tuition: college.out_of_state_tuition || null,
+      international_tuition: college.international_tuition || null,
+      room_and_board: college.room_and_board || null,
+      total_cost_of_attendance: college.total_cost_of_attendance || null,
+      avg_net_price: college.avg_net_price || null,
+      // Enrollment
+      total_enrollment: college.total_enrollment || null,
+      undergrad_enrollment: college.undergrad_enrollment || null,
+      grad_enrollment: college.grad_enrollment || null,
+      ft_undergrad_enrollment: college.ft_undergrad_enrollment || null,
+      pt_undergrad_enrollment: college.pt_undergrad_enrollment || null,
+      // Retention/Graduation
+      first_year_retention_rate: college.first_year_retention_rate || null,
+      four_year_graduation_rate: college.four_year_graduation_rate || null,
+      six_year_graduation_rate: college.six_year_graduation_rate || null,
+      graduation_rate: college.graduation_rate || null,
+      // Admissions
+      total_applicants: college.total_applicants || null,
+      total_admitted: college.total_admitted || null,
+      total_enrolled: college.total_enrolled || null,
+      yield_rate: college.yield_rate || null,
+      ed_applicants: college.ed_applicants || null,
+      ed_admitted: college.ed_admitted || null,
+      ea_applicants: college.ea_applicants || null,
+      ea_admitted: college.ea_admitted || null,
+      waitlist_offered: college.waitlist_offered || null,
+      waitlist_accepted: college.waitlist_accepted || null,
+      waitlist_admitted: college.waitlist_admitted || null,
+      // Test submission
+      percent_submitting_sat: college.percent_submitting_sat || null,
+      percent_submitting_act: college.percent_submitting_act || null,
+      test_optional_policy: college.test_optional_policy || null,
+      // Admission factors
+      factor_rigor: college.factor_rigor || null,
+      factor_class_rank: college.factor_class_rank || null,
+      factor_gpa: college.factor_gpa || null,
+      factor_test_scores: college.factor_test_scores || null,
+      factor_essay: college.factor_essay || null,
+      factor_recommendation: college.factor_recommendation || null,
+      factor_interview: college.factor_interview || null,
+      factor_extracurricular: college.factor_extracurricular || null,
+      factor_talent: college.factor_talent || null,
+      factor_character: college.factor_character || null,
+      factor_first_gen: college.factor_first_gen || null,
+      factor_alumni: college.factor_alumni || null,
+      factor_geography: college.factor_geography || null,
+      factor_state_residency: college.factor_state_residency || null,
+      factor_volunteer: college.factor_volunteer || null,
+      factor_work_experience: college.factor_work_experience || null,
+      // Financial aid
+      avg_need_based_grant: college.avg_need_based_grant || null,
+      avg_merit_scholarship: college.avg_merit_scholarship || null,
+      percent_receiving_aid: college.percent_receiving_aid || null,
+      percent_need_fully_met: college.percent_need_fully_met || null,
+      // Rankings
+      us_news_rank: college.us_news_rank || null,
+      cds_year: college.cds_year || null,
+      // Data source
+      admission_data_source: college.admission_data_source || null,
+      admission_data_year: college.admission_data_year || null
+    };
+    
+    // Filter out null values and build dynamic query
+    const columns = Object.keys(columnMappings);
+    const values = Object.values(columnMappings);
+    const placeholders = columns.map(() => '?').join(', ');
+    
     const stmt = db.prepare(`
-      INSERT INTO colleges (
-        name, country, location, type, official_website, admissions_url,
-        programs_url, application_portal_url, programs, major_categories,
-        academic_strengths, application_portal, acceptance_rate, requirements,
-        deadline_templates, tuition_cost, financial_aid_available, research_data,
-        description, logo_url, cbse_requirements, igcse_requirements, ib_requirements,
-        studielink_required, numerus_fixus_programs, ucas_code, common_app_id,
-        trust_tier, is_verified,
-        sat_reading_25, sat_reading_75, sat_math_25, sat_math_75, sat_total_avg,
-        act_composite_25, act_composite_75, act_composite_avg,
-        in_state_tuition, out_of_state_tuition, total_enrollment, graduation_rate,
-        admission_data_source, admission_data_year
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO colleges (${columns.join(', ')}) 
+      VALUES (${placeholders})
     `);
 
-    stmt.run(
-      college.name,
-      college.country,
-      college.location,
-      college.type,
-      college.official_website || null,
-      college.admissions_url || null,
-      college.programs_url || null,
-      null, // application_portal_url
-      college.programs ? JSON.stringify(college.programs) : null,
-      college.major_categories ? JSON.stringify(college.major_categories) : null,
-      college.academic_strengths ? JSON.stringify(college.academic_strengths) : null,
-      college.application_portal || null,
-      college.acceptance_rate || null,
-      college.requirements ? JSON.stringify(college.requirements) : null,
-      college.deadline_templates ? JSON.stringify(college.deadline_templates) : null,
-      college.tuition_cost || null,
-      college.financial_aid_available ? 1 : 0,
-      null, // research_data
-      college.description || null,
-      null, // logo_url
-      null, null, null, // board requirements
-      college.studielink_required ? 1 : 0,
-      null, // numerus_fixus
-      college.ucas_code || null,
-      null, // common_app_id
-      college.trust_tier || 'official',
-      1,
-      // New admission stats columns
-      college.sat_reading_25 || null,
-      college.sat_reading_75 || null,
-      college.sat_math_25 || null,
-      college.sat_math_75 || null,
-      college.sat_total_avg || null,
-      college.act_composite_25 || null,
-      college.act_composite_75 || null,
-      college.act_composite_avg || null,
-      college.in_state_tuition || null,
-      college.out_of_state_tuition || null,
-      college.total_enrollment || null,
-      college.graduation_rate || null,
-      college.admission_data_source || null,
-      college.admission_data_year || null
-    );
+    stmt.run(...values);
     return true;
   } catch (error) {
-    // If columns don't exist, fall back to basic insert
-    if (error.message.includes('no column named')) {
+    // If a column doesn't exist, try basic insert
+    if (error.message.includes('no column named') || error.message.includes('no such column')) {
       return insertCollegeBasic(college);
     }
     console.error(`   ✗ Failed: ${college.name} - ${error.message}`);
@@ -512,7 +681,14 @@ async function main() {
     const euUniversities = loadEUUniversities();
     allUniversities.push(...euUniversities);
     
-    // Load US universities
+    // Load US universities with CDS data first (highest priority)
+    const cdsUniversities = loadUSCollegesCDS();
+    allUniversities.push(...cdsUniversities);
+    
+    // Track names already added from CDS
+    const addedNames = new Set(cdsUniversities.map(u => u.name.toLowerCase()));
+    
+    // Load additional US universities
     let usUniversities;
     if (useApi) {
       // Fetch ALL US colleges from College Scorecard API (6000+)
@@ -521,7 +697,14 @@ async function main() {
       console.log('🇺🇸 Using static US universities (run with --api to fetch all from Scorecard)...');
       usUniversities = getStaticUSUniversities();
     }
-    allUniversities.push(...usUniversities);
+    
+    // Add US universities that weren't already added from CDS
+    for (const uni of usUniversities) {
+      if (!addedNames.has(uni.name.toLowerCase())) {
+        allUniversities.push(uni);
+        addedNames.add(uni.name.toLowerCase());
+      }
+    }
 
     console.log(`\n📚 Inserting ${allUniversities.length} universities...`);
     

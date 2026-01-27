@@ -12,6 +12,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const profileComparisonService = require('../../services/profileComparisonService');
+const cdsProfileComparisonService = require('../../services/cdsProfileComparisonService');
 const collegeScorecardService = require('../../services/collegeScorecardService');
 const User = require('../models/User');
 const College = require('../models/College');
@@ -279,5 +280,71 @@ function buildUserComparisonProfile(userProfile) {
 
   return profile;
 }
+
+/**
+ * GET /api/profile-comparison/cds/:collegeId
+ * 
+ * Get CDS-based profile comparison for authenticated user
+ * Uses Common Data Set information for detailed comparison
+ * 
+ * Response includes:
+ * - Dimension-by-dimension comparison (GPA, SAT, ACT, Course Rigor, Extracurriculars)
+ * - Admission factor importance from CDS
+ * - Overall fit category (Reach/Match/Safety based on data, not probability)
+ */
+router.get('/cds/:collegeId', authenticate, async (req, res, next) => {
+  try {
+    const collegeId = parseInt(req.params.collegeId);
+    const userId = req.user.userId;
+
+    // Use CDS-specific comparison service
+    const comparison = cdsProfileComparisonService.getProfileComparisonForCollege(userId, collegeId);
+
+    if (!comparison.success) {
+      return res.status(404).json(comparison);
+    }
+
+    res.json(comparison);
+
+  } catch (error) {
+    logger.error('CDS profile comparison failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * POST /api/profile-comparison/cds/batch
+ * 
+ * Get CDS-based profile comparison for multiple colleges
+ * Body: { collegeIds: [1, 2, 3] }
+ */
+router.post('/cds/batch', authenticate, async (req, res, next) => {
+  try {
+    const { collegeIds } = req.body;
+    const userId = req.user.userId;
+
+    if (!collegeIds || !Array.isArray(collegeIds) || collegeIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'collegeIds array is required'
+      });
+    }
+
+    // Limit to 20 colleges per request
+    const limitedIds = collegeIds.slice(0, 20);
+
+    const comparisons = cdsProfileComparisonService.getProfileComparisonForColleges(userId, limitedIds);
+
+    res.json({
+      success: true,
+      comparisons,
+      count: comparisons.length
+    });
+
+  } catch (error) {
+    logger.error('CDS batch comparison failed:', error);
+    next(error);
+  }
+});
 
 module.exports = router;
