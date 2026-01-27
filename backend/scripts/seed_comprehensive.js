@@ -701,9 +701,14 @@ async function main() {
     
     // Add US universities that weren't already added from CDS
     for (const uni of usUniversities) {
-      if (!addedNames.has(uni.name.toLowerCase())) {
+      // Skip entries without a valid name (some API responses have null names)
+      if (!uni.name) {
+        continue;
+      }
+      const nameLower = uni.name.toLowerCase();
+      if (!addedNames.has(nameLower)) {
         allUniversities.push(uni);
-        addedNames.add(uni.name.toLowerCase());
+        addedNames.add(nameLower);
       }
     }
 
