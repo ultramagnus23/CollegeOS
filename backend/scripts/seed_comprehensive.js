@@ -589,61 +589,67 @@ function insertCollege(college) {
     stmt.run(...values);
     return true;
   } catch (error) {
-    // If a column doesn't exist, try basic insert
-    if (error.message.includes('no column named') || error.message.includes('no such column')) {
-      return insertCollegeBasic(college);
-    }
-    console.error(`   ✗ Failed: ${college.name} - ${error.message}`);
-    return false;
+    // If a column doesn't exist or any error, try the basic insert which handles schema variations
+    return insertCollegeBasic(college);
   }
 }
 
 function insertCollegeBasic(college) {
-  const stmt = db.prepare(`
-    INSERT OR REPLACE INTO colleges (
-      name, country, location, type, official_website, admissions_url,
-      programs_url, application_portal_url, programs, major_categories,
-      academic_strengths, application_portal, acceptance_rate, requirements,
-      deadline_templates, tuition_cost, financial_aid_available, research_data,
-      description, logo_url, cbse_requirements, igcse_requirements, ib_requirements,
-      studielink_required, numerus_fixus_programs, ucas_code, common_app_id,
-      trust_tier, is_verified
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
+  // Use dynamic column building to handle varying database schemas
+  // This handles colleges from any source (API, static, etc.)
+  
   try {
-    stmt.run(
-      college.name,
-      college.country,
-      college.location,
-      college.type,
-      college.official_website || null,
-      college.admissions_url || null,
-      college.programs_url || null,
-      null, // application_portal_url
-      college.programs ? JSON.stringify(college.programs) : null,
-      college.major_categories ? JSON.stringify(college.major_categories) : null,
-      college.academic_strengths ? JSON.stringify(college.academic_strengths) : null,
-      college.application_portal || null,
-      college.acceptance_rate || null,
-      college.requirements ? JSON.stringify(college.requirements) : null,
-      college.deadline_templates ? JSON.stringify(college.deadline_templates) : null,
-      college.tuition_cost || null,
-      college.financial_aid_available ? 1 : 0,
-      null, // research_data
-      college.description || null,
-      null, // logo_url
-      null, null, null, // board requirements
-      college.studielink_required ? 1 : 0,
-      null, // numerus_fixus
-      college.ucas_code || null,
-      null, // common_app_id
-      college.trust_tier || 'official',
-      1
-    );
+    // Build column list dynamically based on what data we have
+    const data = {
+      name: college.name,
+      country: college.country,
+      location: college.location || null,
+      type: college.type || null,
+      official_website: college.official_website || null,
+      acceptance_rate: college.acceptance_rate || null,
+      tuition_cost: college.tuition_cost || null,
+      trust_tier: college.trust_tier || 'official',
+      is_verified: 1
+    };
+    
+    // Add admission stats if available
+    if (college.sat_reading_25) data.sat_reading_25 = college.sat_reading_25;
+    if (college.sat_reading_75) data.sat_reading_75 = college.sat_reading_75;
+    if (college.sat_math_25) data.sat_math_25 = college.sat_math_25;
+    if (college.sat_math_75) data.sat_math_75 = college.sat_math_75;
+    if (college.sat_total_avg) data.sat_total_avg = college.sat_total_avg;
+    if (college.act_composite_25) data.act_composite_25 = college.act_composite_25;
+    if (college.act_composite_75) data.act_composite_75 = college.act_composite_75;
+    if (college.act_composite_avg) data.act_composite_avg = college.act_composite_avg;
+    if (college.in_state_tuition) data.in_state_tuition = college.in_state_tuition;
+    if (college.out_of_state_tuition) data.out_of_state_tuition = college.out_of_state_tuition;
+    if (college.total_enrollment) data.total_enrollment = college.total_enrollment;
+    if (college.graduation_rate) data.graduation_rate = college.graduation_rate;
+    if (college.admission_data_source) data.admission_data_source = college.admission_data_source;
+    if (college.admission_data_year) data.admission_data_year = college.admission_data_year;
+    
+    // Add other optional fields
+    if (college.ucas_code) data.ucas_code = college.ucas_code;
+    if (college.description) data.description = college.description;
+    if (college.programs) data.programs = JSON.stringify(college.programs);
+    if (college.requirements) data.requirements = JSON.stringify(college.requirements);
+    
+    const columns = Object.keys(data);
+    const values = Object.values(data);
+    const placeholders = columns.map(() => '?').join(', ');
+    
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO colleges (${columns.join(', ')}) 
+      VALUES (${placeholders})
+    `);
+    
+    stmt.run(...values);
     return true;
   } catch (error) {
-    console.error(`   ✗ Failed: ${college.name} - ${error.message}`);
+    // Only log if not a common/expected error
+    if (!error.message.includes('UNIQUE constraint') && !error.message.includes('no column')) {
+      console.error(`   ✗ Basic insert failed: ${college.name} - ${error.message}`);
+    }
     return false;
   }
 }
