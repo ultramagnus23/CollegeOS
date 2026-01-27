@@ -722,14 +722,40 @@ async function main() {
     
     let inserted = 0;
     let failed = 0;
+    let skipped = 0;
+    const failedColleges = [];
     
-    for (const uni of allUniversities) {
+    for (let i = 0; i < allUniversities.length; i++) {
+      const uni = allUniversities[i];
+      
+      // Skip entries without a valid name
+      if (!uni.name) {
+        skipped++;
+        continue;
+      }
+      
+      // Progress logging every 100 colleges or when verbose
+      if ((i + 1) % 100 === 0 || verbose) {
+        console.log(`   [${i + 1}/${allUniversities.length}] Processing: ${uni.name}`);
+      }
+      
       if (insertCollege(uni)) {
-        if (verbose) console.log(`   ✓ ${uni.name}`);
+        if (verbose) console.log(`   ✓ SUCCESS: ${uni.name}`);
         inserted++;
       } else {
+        if (verbose) console.log(`   ✗ FAILED: ${uni.name}`);
+        failedColleges.push(uni.name);
         failed++;
       }
+    }
+    
+    // Show failed colleges if any
+    if (failedColleges.length > 0 && failedColleges.length <= 50) {
+      console.log('\n⚠️ Failed colleges:');
+      failedColleges.forEach(name => console.log(`   - ${name}`));
+    } else if (failedColleges.length > 50) {
+      console.log(`\n⚠️ ${failedColleges.length} colleges failed (showing first 10):`);
+      failedColleges.slice(0, 10).forEach(name => console.log(`   - ${name}`));
     }
 
     // Summary
@@ -742,8 +768,10 @@ async function main() {
     `).all();
 
     console.log('\n📊 Summary:');
+    console.log(`   Processed: ${allUniversities.length}`);
     console.log(`   Inserted: ${inserted}`);
     console.log(`   Failed: ${failed}`);
+    console.log(`   Skipped (no name): ${skipped}`);
     console.log(`   Total in database: ${countResult.count}`);
     
     console.log('\n📍 By Country:');
