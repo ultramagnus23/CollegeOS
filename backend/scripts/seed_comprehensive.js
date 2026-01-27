@@ -582,7 +582,7 @@ function insertCollege(college) {
     const placeholders = columns.map(() => '?').join(', ');
     
     const stmt = db.prepare(`
-      INSERT INTO colleges (${columns.join(', ')}) 
+      INSERT OR REPLACE INTO colleges (${columns.join(', ')}) 
       VALUES (${placeholders})
     `);
 
@@ -600,7 +600,7 @@ function insertCollege(college) {
 
 function insertCollegeBasic(college) {
   const stmt = db.prepare(`
-    INSERT INTO colleges (
+    INSERT OR REPLACE INTO colleges (
       name, country, location, type, official_website, admissions_url,
       programs_url, application_portal_url, programs, major_categories,
       academic_strengths, application_portal, acceptance_rate, requirements,
