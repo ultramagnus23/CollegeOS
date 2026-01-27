@@ -575,6 +575,7 @@ function insertCollege(college) {
       admission_data_year: college.admission_data_year || null
     };
     
+    // Column names are hardcoded above (not from user input) so SQL injection is not possible
     // Filter out null values and build dynamic query
     const columns = Object.keys(columnMappings);
     const values = Object.values(columnMappings);

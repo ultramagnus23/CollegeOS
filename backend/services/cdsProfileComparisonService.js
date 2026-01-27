@@ -470,7 +470,9 @@ function calculateOverallFit(matchingDimensions, totalDimensions, college) {
     return {
       category: 'Unknown',
       explanation: 'Insufficient data to determine fit.',
-      matchScore: null
+      matchingDimensions: 0,
+      totalDimensions: 0,
+      acceptanceRate: 'Not reported'
     };
   }
 
