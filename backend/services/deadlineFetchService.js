@@ -321,12 +321,14 @@ class DeadlineFetchService {
   async createDeadlinesForApplication(applicationId, collegeId, selectedTypes = []) {
     const deadlineInfo = await this.getDeadlinesForCollege(collegeId);
     
-    // Ensure dbManager is initialized before getting database
-    if (!dbManager) {
-      throw new Error('Database manager is not available');
+    // Get database connection - will throw if database is not initialized
+    let db;
+    try {
+      db = dbManager.getDatabase();
+    } catch (error) {
+      logger.error('Failed to get database connection:', error);
+      throw new Error('Database connection is not available: ' + error.message);
     }
-    
-    const db = dbManager.getDatabase();
     
     if (!db) {
       throw new Error('Database connection is not available');
