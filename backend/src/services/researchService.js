@@ -189,14 +189,117 @@ class ResearchService {
   
   // Research admission statistics
   async _researchAdmissionStats(college) {
-    // This would typically scrape secondary sources like Niche, US News
-    // For now, return placeholder
+    // Return the admission stats that are already stored in the database
+    // This data comes from official sources (College Scorecard, NIRF, UCAS, etc.)
+    
+    const sources = [];
+    const data = {};
+    
+    // Build response from database columns added by migration 008
+    if (college.sat_reading_25 || college.sat_math_25) {
+      data.satScores = {
+        reading: {
+          percentile25: college.sat_reading_25,
+          percentile75: college.sat_reading_75
+        },
+        math: {
+          percentile25: college.sat_math_25,
+          percentile75: college.sat_math_75
+        },
+        totalAverage: college.sat_total_avg
+      };
+    }
+    
+    if (college.act_composite_25) {
+      data.actScores = {
+        composite: {
+          percentile25: college.act_composite_25,
+          percentile75: college.act_composite_75,
+          average: college.act_composite_avg
+        }
+      };
+    }
+    
+    if (college.gpa_avg) {
+      data.gpa = {
+        average: college.gpa_avg,
+        percentile25: college.gpa_25,
+        percentile75: college.gpa_75
+      };
+    }
+    
+    if (college.acceptance_rate != null) {
+      data.acceptanceRate = college.acceptance_rate;
+      // Format as percentage if needed
+      data.acceptanceRateFormatted = college.acceptance_rate < 1 
+        ? `${(college.acceptance_rate * 100).toFixed(1)}%`
+        : `${college.acceptance_rate.toFixed(1)}%`;
+    }
+    
+    if (college.total_enrollment) {
+      data.enrollment = {
+        total: college.total_enrollment,
+        undergrad: college.undergrad_enrollment
+      };
+    }
+    
+    if (college.graduation_rate) {
+      data.graduationRate = college.graduation_rate;
+    }
+    
+    if (college.in_state_tuition || college.out_of_state_tuition) {
+      data.tuition = {
+        inState: college.in_state_tuition,
+        outOfState: college.out_of_state_tuition,
+        international: college.international_tuition
+      };
+    }
+    
+    // Language requirements
+    if (college.ielts_min || college.toefl_min) {
+      data.languageRequirements = {
+        ielts: college.ielts_min,
+        toefl: college.toefl_min
+      };
+    }
+    
+    // India-specific
+    if (college.jee_advanced_cutoff || college.jee_mains_cutoff) {
+      data.entranceExams = {
+        jeeAdvancedCutoff: college.jee_advanced_cutoff,
+        jeeMainsCutoff: college.jee_mains_cutoff,
+        neetCutoff: college.neet_cutoff
+      };
+    }
+    
+    // UK-specific
+    if (college.a_level_typical) {
+      data.aLevelRequirements = college.a_level_typical;
+    }
+    
+    if (college.ib_min) {
+      data.ibRequirements = college.ib_min;
+    }
+    
+    // Data source
+    if (college.admission_data_source) {
+      sources.push({
+        name: college.admission_data_source,
+        year: college.admission_data_year,
+        trustTier: 'official_government'
+      });
+    }
+    
+    const hasData = Object.keys(data).length > 0;
+    
     return {
-      data: null,
-      sources: [],
-      message: 'Admission statistics research not yet implemented. Check College Board or Niche.',
+      data: hasData ? data : null,
+      sources,
+      message: hasData 
+        ? 'Admission statistics from official sources'
+        : 'No admission statistics available. Please check the official website.',
       officialWebsite: college.official_website,
-      trustTier: null
+      trustTier: sources.length > 0 ? 'official_government' : null
     };
   }
   

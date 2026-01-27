@@ -118,10 +118,10 @@ const Colleges: React.FC = () => {
           name: c.name,
           location: c.location || '',
           country: c.country,
-          type: c.trust_tier || 'official',
-          acceptance_rate: null, // Layer 1 doesn't include this - will come from Layer 2
+          type: c.type || c.trust_tier || 'official',
+          acceptance_rate: c.acceptance_rate ?? null, // Include from database
           programs: majorCategories,
-          description: null // Layer 1 doesn't include this - will come from Layer 2
+          description: c.description || null
         };
       });
       
