@@ -70,7 +70,22 @@ const Colleges: React.FC = () => {
       setError(null);
 
       const params: any = {};
-      if (selectedCountry) params.country = selectedCountry;
+      
+      // Expand region-based filters to country codes
+      const regionMappings: Record<string, string[]> = {
+        'ASIA': ['SG', 'HK', 'JP', 'KR', 'CN', 'TW', 'MY', 'TH', 'PH', 'VN', 'ID'],
+        'EU': ['DE', 'FR', 'NL', 'IT', 'ES', 'AT', 'BE', 'CH', 'SE', 'DK', 'NO', 'FI', 'IE', 'PT', 'PL', 'CZ', 'HU', 'GR', 'RO']
+      };
+      
+      if (selectedCountry) {
+        if (regionMappings[selectedCountry]) {
+          params.countries = regionMappings[selectedCountry];
+        } else if (selectedCountry === 'UK') {
+          params.country = 'UK'; // Also accept GB
+        } else {
+          params.country = selectedCountry;
+        }
+      }
       
       // Use search endpoint only if there's a search term, otherwise use get to fetch all
       let res;
@@ -189,7 +204,13 @@ const Colleges: React.FC = () => {
             className="border rounded-lg px-4 py-2"
           >
             <option value="">All Countries</option>
-            {countries.map(c => <option key={c}>{c}</option>)}
+            <option value="US">🇺🇸 United States</option>
+            <option value="UK">🇬🇧 United Kingdom</option>
+            <option value="IN">🇮🇳 India</option>
+            <option value="SG">🇸🇬 Singapore</option>
+            <option value="HK">🇭🇰 Hong Kong</option>
+            <option value="ASIA">🌏 Asia</option>
+            <option value="EU">🇪🇺 Europe</option>
           </select>
 
           <select

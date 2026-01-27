@@ -31,6 +31,23 @@ interface College {
   major_categories?: string[] | string;
   trust_tier?: string;
   is_verified?: number;
+  // Admission stats
+  acceptance_rate?: number;
+  sat_reading_25?: number;
+  sat_reading_75?: number;
+  sat_math_25?: number;
+  sat_math_75?: number;
+  act_composite_25?: number;
+  act_composite_75?: number;
+  gpa_avg?: number;
+  total_enrollment?: number;
+  in_state_tuition?: number;
+  out_of_state_tuition?: number;
+  test_optional?: boolean;
+  application_fee?: number;
+  // India-specific
+  neet_cutoff_general?: number;
+  jee_advanced_required?: boolean;
 }
 
 interface Layer2Data {
@@ -286,6 +303,90 @@ const CollegeDetail: React.FC = () => {
               value={college.is_verified ? 'Yes' : 'No'}
             />
           </div>
+
+          {/* Admission Statistics - From Layer 1 Database */}
+          {(college.acceptance_rate || college.sat_reading_25 || college.neet_cutoff_general) && (
+            <div className="mt-6 pt-6 border-t">
+              <h3 className="text-lg font-semibold mb-4">Admission Statistics</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {college.acceptance_rate && (
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600">Acceptance Rate</p>
+                    <p className="text-2xl font-bold text-blue-700">
+                      {(college.acceptance_rate * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                )}
+                {college.sat_reading_25 && college.sat_reading_75 && college.sat_math_25 && college.sat_math_75 && (
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600">SAT Range (25-75%)</p>
+                    <p className="text-xl font-bold text-purple-700">
+                      {(college.sat_reading_25 + college.sat_math_25)} - {(college.sat_reading_75 + college.sat_math_75)}
+                    </p>
+                  </div>
+                )}
+                {college.act_composite_25 && college.act_composite_75 && (
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600">ACT Range (25-75%)</p>
+                    <p className="text-xl font-bold text-green-700">
+                      {college.act_composite_25} - {college.act_composite_75}
+                    </p>
+                  </div>
+                )}
+                {college.gpa_avg && (
+                  <div className="bg-orange-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600">Avg GPA</p>
+                    <p className="text-2xl font-bold text-orange-700">
+                      {college.gpa_avg.toFixed(2)}
+                    </p>
+                  </div>
+                )}
+                {college.total_enrollment && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600">Total Enrollment</p>
+                    <p className="text-xl font-bold text-gray-700">
+                      {college.total_enrollment.toLocaleString()}
+                    </p>
+                  </div>
+                )}
+                {college.in_state_tuition && (
+                  <div className="bg-teal-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600">In-State Tuition</p>
+                    <p className="text-xl font-bold text-teal-700">
+                      ${college.in_state_tuition.toLocaleString()}
+                    </p>
+                  </div>
+                )}
+                {college.out_of_state_tuition && (
+                  <div className="bg-indigo-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600">Out-of-State Tuition</p>
+                    <p className="text-xl font-bold text-indigo-700">
+                      ${college.out_of_state_tuition.toLocaleString()}
+                    </p>
+                  </div>
+                )}
+                {college.test_optional && (
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600">Test Policy</p>
+                    <p className="text-lg font-bold text-green-700">Test Optional</p>
+                  </div>
+                )}
+              </div>
+
+              {/* India-specific: NEET/JEE */}
+              {college.country === 'IN' && college.neet_cutoff_general && (
+                <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+                  <p className="text-sm font-semibold text-yellow-800 mb-2">NEET AIQ Cutoff (General Category)</p>
+                  <p className="text-xl font-bold text-yellow-700">
+                    Rank: {college.neet_cutoff_general.toLocaleString()}
+                  </p>
+                  {college.jee_advanced_required && (
+                    <p className="text-sm text-yellow-600 mt-1">⚠️ JEE Advanced Required</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Layer 2: Trusted Dynamic Data */}

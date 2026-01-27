@@ -109,9 +109,20 @@ class College {
     let query = 'SELECT * FROM colleges WHERE 1=1';
     const params = [];
     
-    if (filters.country) {
-      query += ' AND country = ?';
-      params.push(filters.country);
+    // Support multiple countries (for regions like ASIA, EU)
+    if (filters.countries && Array.isArray(filters.countries) && filters.countries.length > 0) {
+      const placeholders = filters.countries.map(() => '?').join(', ');
+      query += ` AND country IN (${placeholders})`;
+      params.push(...filters.countries);
+    } else if (filters.country) {
+      // Handle UK alias (UK and GB are the same)
+      if (filters.country === 'UK') {
+        query += ' AND country IN (?, ?)';
+        params.push('UK', 'GB');
+      } else {
+        query += ' AND country = ?';
+        params.push(filters.country);
+      }
     }
     
     if (filters.type) {

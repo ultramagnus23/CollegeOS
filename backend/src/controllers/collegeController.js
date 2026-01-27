@@ -5,12 +5,19 @@ class CollegeController {
   // Get all colleges
   static async getColleges(req, res, next) {
     try {
-      const { country, search, limit } = req.query;
+      const { country, countries, search, limit } = req.query;
+      
+      // Parse countries array if provided as comma-separated string
+      let countriesArray = null;
+      if (countries) {
+        countriesArray = typeof countries === 'string' ? countries.split(',') : countries;
+      }
       
       // Default to returning all colleges (no limit) unless specified
       // This supports the goal of showing 500-1000 colleges
       const colleges = await CollegeService.getColleges({
         country,
+        countries: countriesArray,
         search,
         limit: limit ? parseInt(limit) : undefined // No default limit - return all
       });
