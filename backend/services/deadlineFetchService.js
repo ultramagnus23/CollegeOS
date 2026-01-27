@@ -2,9 +2,9 @@
 // Service to automatically fetch/provide deadline templates for colleges
 // Uses stored deadline templates and official source data
 
-const dbManager = require('../config/database');
-const College = require('../models/College');
-const logger = require('../utils/logger');
+const dbManager = require('../src/config/database');
+const College = require('../src/models/College');
+const logger = require('../src/utils/logger');
 
 // Known deadline templates for common application portals and countries
 // This is verified data from official sources
@@ -320,7 +320,17 @@ class DeadlineFetchService {
    */
   async createDeadlinesForApplication(applicationId, collegeId, selectedTypes = []) {
     const deadlineInfo = await this.getDeadlinesForCollege(collegeId);
+    
+    // Ensure dbManager is initialized before getting database
+    if (!dbManager) {
+      throw new Error('Database manager is not available');
+    }
+    
     const db = dbManager.getDatabase();
+    
+    if (!db) {
+      throw new Error('Database connection is not available');
+    }
     
     const insertStmt = db.prepare(`
       INSERT INTO deadlines (application_id, deadline_type, deadline_date, description, source_url)

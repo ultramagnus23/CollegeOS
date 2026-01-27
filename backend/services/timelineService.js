@@ -1,7 +1,7 @@
 // backend/services/timelineService.js
 // Generates personalized monthly action items based on user's applications and timeline
 
-const db = require('../config/database');
+const db = require('../src/config/database');
 
 /**
  * Generate timeline actions for a user based on their applications

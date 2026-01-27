@@ -2,9 +2,9 @@
 // Service to provide essay prompts for colleges
 // Data is from official sources (Common App, Coalition App, official college websites)
 
-const dbManager = require('../config/database');
-const College = require('../models/College');
-const logger = require('../utils/logger');
+const dbManager = require('../src/config/database');
+const College = require('../src/models/College');
+const logger = require('../src/utils/logger');
 
 // Common App Personal Essay Prompts (2024-2025)
 // Source: https://www.commonapp.org/apply/essay-prompts
