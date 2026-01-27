@@ -392,6 +392,24 @@ class ApiService {
     update: (id: number, data: any) => this.updateApplication(id, data),
     delete: (id: number) => this.deleteApplication(id),
   };
+
+  // Essays namespace
+  essays = {
+    get: () => this.getEssays(),
+    getAll: <T = any>(): Promise<T> => this.getEssays() as Promise<T>,
+    create: (data: any) => this.createEssay(data),
+    update: (id: number, data: any) => this.updateEssay(id, data),
+    delete: (id: number) => this.deleteEssay(id),
+  };
+
+  // Deadlines namespace
+  deadlines = {
+    get: (daysAhead?: number) => this.getDeadlines(daysAhead),
+    getAll: <T = any>(daysAhead?: number): Promise<T> => this.getDeadlines(daysAhead) as Promise<T>,
+    create: (data: any) => this.createDeadline(data),
+    update: (id: number, data: any) => this.updateDeadline(id, data),
+    delete: (id: number) => this.deleteDeadline(id),
+  };
 }
 
 // Export singleton instance

@@ -1,4 +1,7 @@
 const Application = require('../models/Application');
+const College = require('../models/College');
+const deadlineFetchService = require('../../services/deadlineFetchService');
+const logger = require('../utils/logger');
 
 class ApplicationController {
   // Get all user applications
@@ -32,26 +35,29 @@ class ApplicationController {
       
       const application = Application.create(userId, data);
       
-      // Generate deadlines automatically when application is created
+      // Automatically create deadlines when application is created
+      let deadlineInfo = null;
       if (application && application.college_id) {
         try {
-          const { generateDeadlinesForCollege } = require('../../services/deadlineGenerator');
-          const College = require('../models/College');
-          const college = await College.findById(application.college_id);
-          
-          if (college) {
-            await generateDeadlinesForCollege(college, userId, application.id);
-          }
+          deadlineInfo = await deadlineFetchService.createDeadlinesForApplication(
+            application.id,
+            application.college_id,
+            [] // Empty array = create all available deadline types
+          );
+          logger.info(`Created ${deadlineInfo.createdDeadlines.length} deadlines for application ${application.id}`);
         } catch (deadlineError) {
           // Log but don't fail the application creation
-          console.error('Failed to generate deadlines:', deadlineError);
+          logger.error('Failed to generate deadlines:', deadlineError);
         }
       }
       
       res.status(201).json({
         success: true,
-        message: 'Application created successfully. Deadlines generated automatically.',
-        data: application
+        message: deadlineInfo?.createdDeadlines?.length > 0 
+          ? `Application created with ${deadlineInfo.createdDeadlines.length} deadline(s) added automatically.`
+          : 'Application created successfully.',
+        data: application,
+        deadlines: deadlineInfo
       });
     } catch (error) {
       // Handle duplicate application error specially
