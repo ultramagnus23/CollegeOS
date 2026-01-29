@@ -120,17 +120,51 @@ class College {
       
       // Extract rich data from research_data for frontend display
       const researchData = college.researchData || {};
+      const reqs = college.requirements || {};
       
       // Enrollment
       college.enrollment = researchData.enrollment || null;
       
-      // Test Scores
-      const reqs = college.requirements || {};
-      college.testScores = {
-        satRange: reqs.satRange || null,
-        actRange: reqs.actRange || null,
-        averageGPA: reqs.averageGPA || null
-      };
+      // Test Scores - support both old and new format
+      // New format: { satRange: { ebrw: { min, max }, math: { min, max }, total: { min, max } }, actRange: { composite: { min, max } } }
+      // Old format: { satRange: { percentile25, percentile75 }, actRange: { percentile25, percentile75 } }
+      const satRange = reqs.satRange;
+      const actRange = reqs.actRange;
+      
+      // Convert to frontend-expected format
+      if (satRange) {
+        // New comprehensive format
+        if (satRange.total) {
+          college.testScores = {
+            satRange: {
+              percentile25: satRange.total.min,
+              percentile75: satRange.total.max,
+              ebrw25: satRange.ebrw?.min,
+              ebrw75: satRange.ebrw?.max,
+              math25: satRange.math?.min,
+              math75: satRange.math?.max
+            },
+            actRange: actRange?.composite ? {
+              percentile25: actRange.composite.min,
+              percentile75: actRange.composite.max
+            } : null,
+            averageGPA: reqs.averageGPA || null
+          };
+        } else {
+          // Old simple format
+          college.testScores = {
+            satRange: satRange,
+            actRange: actRange || null,
+            averageGPA: reqs.averageGPA || null
+          };
+        }
+      } else {
+        college.testScores = {
+          satRange: null,
+          actRange: actRange || null,
+          averageGPA: reqs.averageGPA || null
+        };
+      }
       
       // Graduation Rates
       college.graduationRates = researchData.graduationRates || null;
@@ -138,32 +172,42 @@ class College {
       // Student Faculty Ratio
       college.studentFacultyRatio = researchData.studentFacultyRatio || null;
       
-      // Rankings
-      college.ranking = researchData.rank || researchData.nirfRank || researchData.qsRank || null;
+      // Financial Data
+      college.financialData = researchData.financialData || null;
+      
+      // Essay Prompts
+      college.essayPrompts = researchData.essayPrompts || null;
+      
+      // Rankings - extract from nested ranking object
+      const ranking = researchData.ranking || {};
+      college.ranking = ranking.usNews || ranking.nirf || ranking.qsWorld || researchData.rank || null;
       college.tier = researchData.tier || null;
       
       // Indian-specific: placements, cutoffs
       if (college.country === 'India') {
-        college.placements = researchData.placements || null;
-        college.cutoffs = reqs.cutoffs || null;
+        college.placements = researchData.placement || researchData.placements || null;
+        college.cutoffs = reqs.jeeAdvanced || reqs.bitsat || reqs.viteee || null;
         college.entranceExam = reqs.entranceExam || null;
-        college.nirfRank = researchData.nirfRank || null;
+        college.nirfRank = ranking.nirf || null;
       }
       
       // UK-specific: Russell Group, A-levels, IB
       if (college.country === 'United Kingdom') {
         college.russellGroup = researchData.russellGroup || false;
-        college.aLevelRequirements = reqs.aLevels || null;
-        college.ibPointsRequired = reqs.ibPoints || null;
-        college.qsRank = researchData.qsRank || null;
+        college.aLevelRequirements = reqs.aLevelRequirements || reqs.aLevels || null;
+        college.ibPointsRequired = reqs.ibRequirements || reqs.ibPoints || null;
+        college.qsRank = ranking.qsWorld || null;
       }
       
       // Germany-specific
       if (college.country === 'Germany') {
-        college.abiturRequirement = reqs.abitur || null;
-        college.germanLevel = reqs.germanLevel || null;
-        college.englishLevel = reqs.englishLevel || null;
+        college.abiturRequirement = reqs.abiturGradeRequirement || reqs.abitur || null;
+        college.germanLevel = reqs.germanLanguageRequirement || reqs.germanLevel || null;
+        college.englishLevel = reqs.englishLanguageRequirement || reqs.englishLevel || null;
       }
+      
+      // Application requirements
+      college.applicationRequirements = reqs.applicationRequirements || [];
     }
     
     return college;
@@ -218,6 +262,29 @@ class College {
       const requirements = safeJsonParse(college.requirements, {});
       const acceptanceRate = normalizeAcceptanceRate(college.acceptance_rate);
       
+      // Extract ranking from nested structure
+      const ranking = researchData.ranking || {};
+      const collegeRanking = ranking.usNews || ranking.nirf || ranking.qsWorld || researchData.rank || null;
+      
+      // Extract test scores properly (support both formats)
+      const satRange = requirements.satRange;
+      let testScores = null;
+      if (satRange) {
+        if (satRange.total) {
+          // New comprehensive format
+          testScores = {
+            satRange: { percentile25: satRange.total.min, percentile75: satRange.total.max },
+            actRange: requirements.actRange?.composite ? { percentile25: requirements.actRange.composite.min, percentile75: requirements.actRange.composite.max } : null
+          };
+        } else {
+          // Old format
+          testScores = {
+            satRange: satRange,
+            actRange: requirements.actRange || null
+          };
+        }
+      }
+      
       return {
         ...college,
         programs,
@@ -230,12 +297,9 @@ class College {
         acceptance_rate: acceptanceRate,
         // Rich data for cards
         enrollment: researchData.enrollment || null,
-        ranking: researchData.rank || researchData.nirfRank || researchData.qsRank || null,
+        ranking: collegeRanking,
         averageGPA: requirements.averageGPA || null,
-        testScores: {
-          satRange: requirements.satRange || null,
-          actRange: requirements.actRange || null
-        },
+        testScores: testScores,
         graduationRates: researchData.graduationRates || null,
         studentFacultyRatio: researchData.studentFacultyRatio || null
       };
@@ -344,6 +408,27 @@ class College {
       const requirements = safeJsonParse(college.requirements, {});
       const acceptanceRate = normalizeAcceptanceRate(college.acceptance_rate);
       
+      // Extract ranking from nested structure
+      const ranking = researchData.ranking || {};
+      const collegeRanking = ranking.usNews || ranking.nirf || ranking.qsWorld || researchData.rank || null;
+      
+      // Extract test scores properly (support both formats)
+      const satRange = requirements.satRange;
+      let testScores = null;
+      if (satRange) {
+        if (satRange.total) {
+          testScores = {
+            satRange: { percentile25: satRange.total.min, percentile75: satRange.total.max },
+            actRange: requirements.actRange?.composite ? { percentile25: requirements.actRange.composite.min, percentile75: requirements.actRange.composite.max } : null
+          };
+        } else {
+          testScores = {
+            satRange: satRange,
+            actRange: requirements.actRange || null
+          };
+        }
+      }
+      
       return {
         ...college,
         programs,
@@ -356,12 +441,9 @@ class College {
         acceptance_rate: acceptanceRate,
         // Rich data for cards
         enrollment: researchData.enrollment || null,
-        ranking: researchData.rank || researchData.nirfRank || researchData.qsRank || null,
+        ranking: collegeRanking,
         averageGPA: requirements.averageGPA || null,
-        testScores: {
-          satRange: requirements.satRange || null,
-          actRange: requirements.actRange || null
-        },
+        testScores: testScores,
         graduationRates: researchData.graduationRates || null,
         studentFacultyRatio: researchData.studentFacultyRatio || null
       };
