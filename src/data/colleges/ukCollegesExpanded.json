@@ -1,0 +1,5102 @@
+[
+  {
+    "rank": 1,
+    "name": "University of Oxford",
+    "website": "https://www.oxford.ac.uk",
+    "location": {
+      "city": "Oxford",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1,
+      "guardian": 1
+    },
+    "admissions": {
+      "aLevelRequirements": "A*A*A",
+      "ibRequirements": 42,
+      "ucasPoints": null,
+      "interviewRequired": true,
+      "admissionsTest": "Subject-specific"
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 39000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Humanities",
+      "Sciences",
+      "Medicine",
+      "Law",
+      "PPE"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 2,
+    "name": "University of Cambridge",
+    "website": "https://www.cambridge.ac.uk",
+    "location": {
+      "city": "Cambridge",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 2,
+      "guardian": 2
+    },
+    "admissions": {
+      "aLevelRequirements": "A*A*A",
+      "ibRequirements": 42,
+      "ucasPoints": null,
+      "interviewRequired": true,
+      "admissionsTest": "Subject-specific"
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 38000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Natural Sciences",
+      "Engineering",
+      "Mathematics",
+      "Computer Science",
+      "Medicine"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 3,
+    "name": "Imperial College London",
+    "website": "https://www.imperialcollegelondon.ac.uk",
+    "location": {
+      "city": "London",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 6,
+      "guardian": 4
+    },
+    "admissions": {
+      "aLevelRequirements": "A*A*A",
+      "ibRequirements": 40,
+      "ucasPoints": null,
+      "interviewRequired": "Course-specific",
+      "admissionsTest": "Subject-specific"
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 37000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Engineering",
+      "Medicine",
+      "Computing",
+      "Physics",
+      "Chemistry"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 4,
+    "name": "University College London",
+    "website": "https://www.universitycollegelondon.ac.uk",
+    "location": {
+      "city": "London",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 9,
+      "guardian": 9
+    },
+    "admissions": {
+      "aLevelRequirements": "A*AA",
+      "ibRequirements": 38,
+      "ucasPoints": null,
+      "interviewRequired": "Course-specific",
+      "admissionsTest": "Course-specific"
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 27000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Architecture",
+      "Medicine",
+      "Law",
+      "Economics",
+      "Engineering"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 5,
+    "name": "London School of Economics and Political Science",
+    "website": "https://www.londonschoolofeconomicsandpoliticalscience.ac.uk",
+    "location": {
+      "city": "London",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 45,
+      "guardian": 3
+    },
+    "admissions": {
+      "aLevelRequirements": "A*AA",
+      "ibRequirements": 38,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 25000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Economics",
+      "Politics",
+      "Law",
+      "International Relations",
+      "Finance"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 6,
+    "name": "University of Edinburgh",
+    "website": "https://www.edinburgh.ac.uk",
+    "location": {
+      "city": "Edinburgh",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 15,
+      "guardian": 12
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 37,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": "Course-specific"
+    },
+    "costs": {
+      "ukStudentFees": 1820,
+      "internationalFees": 27000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Medicine",
+      "Informatics",
+      "Law",
+      "Veterinary Medicine",
+      "Arts"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 7,
+    "name": "University of Manchester",
+    "website": "https://www.manchester.ac.uk",
+    "location": {
+      "city": "Manchester",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 28,
+      "guardian": 17
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 36,
+      "ucasPoints": null,
+      "interviewRequired": "Course-specific",
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 25000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Engineering",
+      "Business",
+      "Medicine",
+      "Physics",
+      "Computer Science"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 8,
+    "name": "King's College London",
+    "website": "https://www.kingscollegelondon.ac.uk",
+    "location": {
+      "city": "London",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 37,
+      "guardian": 20
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 36,
+      "ucasPoints": null,
+      "interviewRequired": "Course-specific",
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 26000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Medicine",
+      "Law",
+      "Humanities",
+      "Sciences",
+      "Nursing"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 9,
+    "name": "University of Bristol",
+    "website": "https://www.bristol.ac.uk",
+    "location": {
+      "city": "Bristol",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 61,
+      "guardian": 14
+    },
+    "admissions": {
+      "aLevelRequirements": "A*AA",
+      "ibRequirements": 37,
+      "ucasPoints": null,
+      "interviewRequired": "Course-specific",
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 24000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Engineering",
+      "Medicine",
+      "Law",
+      "Social Sciences",
+      "Sciences"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 10,
+    "name": "University of Warwick",
+    "website": "https://www.warwick.ac.uk",
+    "location": {
+      "city": "Coventry",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 64,
+      "guardian": 7
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 36,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 24000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Economics",
+      "Mathematics",
+      "Computer Science",
+      "Engineering"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 11,
+    "name": "University of Glasgow",
+    "website": "https://www.glasgow.ac.uk",
+    "location": {
+      "city": "Glasgow",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 76,
+      "guardian": 11
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 36,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 1820,
+      "internationalFees": 23000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Medicine",
+      "Law",
+      "Engineering",
+      "Veterinary Medicine",
+      "Arts"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 12,
+    "name": "Durham University",
+    "website": "https://www.durhamuniversity.ac.uk",
+    "location": {
+      "city": "Durham",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 78,
+      "guardian": 6
+    },
+    "admissions": {
+      "aLevelRequirements": "A*AA",
+      "ibRequirements": 38,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 25000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Law",
+      "Business",
+      "Natural Sciences",
+      "Humanities",
+      "Engineering"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 13,
+    "name": "University of Birmingham",
+    "website": "https://www.birmingham.ac.uk",
+    "location": {
+      "city": "Birmingham",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 84,
+      "guardian": 23
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 36,
+      "ucasPoints": null,
+      "interviewRequired": "Course-specific",
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Medicine",
+      "Engineering",
+      "Business",
+      "Law",
+      "Sciences"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 14,
+    "name": "University of Leeds",
+    "website": "https://www.leeds.ac.uk",
+    "location": {
+      "city": "Leeds",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 86,
+      "guardian": 24
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 35,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Sciences",
+      "Arts",
+      "Media"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 15,
+    "name": "University of Southampton",
+    "website": "https://www.southampton.ac.uk",
+    "location": {
+      "city": "Southampton",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 87,
+      "guardian": 28
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 36,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Engineering",
+      "Electronics",
+      "Computer Science",
+      "Marine Sciences",
+      "Medicine"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 16,
+    "name": "University of Sheffield",
+    "website": "https://www.sheffield.ac.uk",
+    "location": {
+      "city": "Sheffield",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 96,
+      "guardian": 26
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 35,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Engineering",
+      "Medicine",
+      "Architecture",
+      "Sciences",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 17,
+    "name": "University of Nottingham",
+    "website": "https://www.nottingham.ac.uk",
+    "location": {
+      "city": "Nottingham",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 100,
+      "guardian": 32
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 34,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Medicine",
+      "Pharmacy",
+      "Engineering",
+      "Law",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 18,
+    "name": "Queen Mary University of London",
+    "website": "https://www.queenmarylondon.ac.uk",
+    "location": {
+      "city": "London",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 117,
+      "guardian": 35
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 34,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Medicine",
+      "Law",
+      "Engineering",
+      "Humanities",
+      "Sciences"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 19,
+    "name": "Newcastle University",
+    "website": "https://www.newcastleuniversity.ac.uk",
+    "location": {
+      "city": "Newcastle",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 122,
+      "guardian": 30
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 35,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Medicine",
+      "Engineering",
+      "Architecture",
+      "Sciences",
+      "Arts"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 20,
+    "name": "University of Exeter",
+    "website": "https://www.exeter.ac.uk",
+    "location": {
+      "city": "Exeter",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 149,
+      "guardian": 13
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 36,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Law",
+      "Engineering",
+      "Psychology",
+      "Sciences"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 21,
+    "name": "University of York",
+    "website": "https://www.york.ac.uk",
+    "location": {
+      "city": "York",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 162,
+      "guardian": 21
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 35,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Computer Science",
+      "Psychology",
+      "Biology",
+      "History",
+      "English"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 22,
+    "name": "Cardiff University",
+    "website": "https://www.cardiffuniversity.ac.uk",
+    "location": {
+      "city": "Cardiff",
+      "country": "Wales",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 166,
+      "guardian": 27
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 34,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Medicine",
+      "Journalism",
+      "Business",
+      "Sciences",
+      "Engineering"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 23,
+    "name": "University of Liverpool",
+    "website": "https://www.liverpool.ac.uk",
+    "location": {
+      "city": "Liverpool",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 176,
+      "guardian": 36
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Medicine",
+      "Engineering",
+      "Architecture",
+      "Business",
+      "Sciences"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 24,
+    "name": "Queen's University Belfast",
+    "website": "https://www.queensuniversitybelfast.ac.uk",
+    "location": {
+      "city": "Belfast",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 202,
+      "guardian": 38
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 34,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 4630,
+      "internationalFees": 18000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Medicine",
+      "Engineering",
+      "Law",
+      "Sciences",
+      "Arts"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 25,
+    "name": "University of St Andrews",
+    "website": "https://www.standrews.ac.uk",
+    "location": {
+      "city": "St Andrews",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 95,
+      "guardian": 1
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 38,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 1820,
+      "internationalFees": 28000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Philosophy",
+      "History",
+      "International Relations",
+      "Physics",
+      "Computer Science"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 26,
+    "name": "University of Bath",
+    "website": "https://www.bath.ac.uk",
+    "location": {
+      "city": "Bath",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 148,
+      "guardian": 5
+    },
+    "admissions": {
+      "aLevelRequirements": "A*AA",
+      "ibRequirements": 36,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Engineering",
+      "Business",
+      "Architecture",
+      "Sciences",
+      "Sports Science"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 27,
+    "name": "Loughborough University",
+    "website": "https://www.loughboroughuniversity.ac.uk",
+    "location": {
+      "city": "Loughborough",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 212,
+      "guardian": 8
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 35,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Sports Science",
+      "Engineering",
+      "Design",
+      "Business",
+      "Media"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 28,
+    "name": "Lancaster University",
+    "website": "https://www.lancasteruniversity.ac.uk",
+    "location": {
+      "city": "Lancaster",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 141,
+      "guardian": 10
+    },
+    "admissions": {
+      "aLevelRequirements": "AAA",
+      "ibRequirements": 35,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Management",
+      "Linguistics",
+      "Physics",
+      "Psychology",
+      "Engineering"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 29,
+    "name": "University of Surrey",
+    "website": "https://www.surrey.ac.uk",
+    "location": {
+      "city": "Guildford",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 244,
+      "guardian": 15
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 34,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Engineering",
+      "Veterinary Science",
+      "Tourism",
+      "Business",
+      "Sciences"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 30,
+    "name": "University of Sussex",
+    "website": "https://www.sussex.ac.uk",
+    "location": {
+      "city": "Brighton",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 218,
+      "guardian": 22
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 34,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "International Relations",
+      "Psychology",
+      "Media",
+      "Sciences",
+      "Engineering"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 31,
+    "name": "University of East Anglia",
+    "website": "https://www.eastanglia.ac.uk",
+    "location": {
+      "city": "Norwich",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 295,
+      "guardian": 18
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Creative Writing",
+      "Environmental Science",
+      "Medicine",
+      "Pharmacy",
+      "Law"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 32,
+    "name": "University of Leicester",
+    "website": "https://www.leicester.ac.uk",
+    "location": {
+      "city": "Leicester",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 272,
+      "guardian": 31
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Medicine",
+      "Law",
+      "Sciences",
+      "History",
+      "Archaeology"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 33,
+    "name": "Royal Holloway University of London",
+    "website": "https://www.royalhollowaylondon.ac.uk",
+    "location": {
+      "city": "Egham",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 392,
+      "guardian": 25
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Media Arts",
+      "Classics",
+      "Psychology",
+      "Computer Science",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 34,
+    "name": "University of Reading",
+    "website": "https://www.reading.ac.uk",
+    "location": {
+      "city": "Reading",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 198,
+      "guardian": 33
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Agriculture",
+      "Typography",
+      "Meteorology",
+      "Business",
+      "Law"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 35,
+    "name": "Swansea University",
+    "website": "https://www.swanseauniversity.ac.uk",
+    "location": {
+      "city": "Swansea",
+      "country": "Wales",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 425,
+      "guardian": 29
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 32,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Engineering",
+      "Medicine",
+      "Law",
+      "Sciences",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 36,
+    "name": "Heriot-Watt University",
+    "website": "https://www.heriotwattuniversity.ac.uk",
+    "location": {
+      "city": "Edinburgh",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 235,
+      "guardian": 34
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 32,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 1820,
+      "internationalFees": 17000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Engineering",
+      "Petroleum Engineering",
+      "Actuarial Science",
+      "Business",
+      "Languages"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 37,
+    "name": "University of Strathclyde",
+    "website": "https://www.strathclyde.ac.uk",
+    "location": {
+      "city": "Glasgow",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 324,
+      "guardian": 19
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 32,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 1820,
+      "internationalFees": 17000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Engineering",
+      "Business",
+      "Law",
+      "Pharmacy",
+      "Sciences"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 38,
+    "name": "City University of London",
+    "website": "https://www.citylondon.ac.uk",
+    "location": {
+      "city": "London",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 328,
+      "guardian": 37
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 32,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Law",
+      "Journalism",
+      "Health Sciences",
+      "Engineering"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 39,
+    "name": "Aston University",
+    "website": "https://www.astonuniversity.ac.uk",
+    "location": {
+      "city": "Birmingham",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 446,
+      "guardian": 16
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 32,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Optometry",
+      "Languages",
+      "Sciences"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 40,
+    "name": "University of Aberdeen",
+    "website": "https://www.aberdeen.ac.uk",
+    "location": {
+      "city": "Aberdeen",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 208,
+      "guardian": 40
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 32,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 1820,
+      "internationalFees": 17000,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Medicine",
+      "Petroleum Engineering",
+      "Law",
+      "Sciences",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 41,
+    "name": "University of London",
+    "website": "https://www.london.ac.uk",
+    "location": {
+      "city": "London",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 710,
+      "guardian": 71
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22167,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 42,
+    "name": "University of Manchester",
+    "website": "https://www.manchester.ac.uk",
+    "location": {
+      "city": "Manchester",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 720,
+      "guardian": 72
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19766,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 43,
+    "name": "University of Birmingham",
+    "website": "https://www.birmingham.ac.uk",
+    "location": {
+      "city": "Birmingham",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 730,
+      "guardian": 73
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 15858,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 44,
+    "name": "University of Liverpool",
+    "website": "https://www.liverpool.ac.uk",
+    "location": {
+      "city": "Liverpool",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 740,
+      "guardian": 74
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17138,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 45,
+    "name": "University of Leeds",
+    "website": "https://www.leeds.ac.uk",
+    "location": {
+      "city": "Leeds",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 750,
+      "guardian": 75
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22294,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 46,
+    "name": "University of Sheffield",
+    "website": "https://www.sheffield.ac.uk",
+    "location": {
+      "city": "Sheffield",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 760,
+      "guardian": 76
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19630,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 47,
+    "name": "University of Bristol",
+    "website": "https://www.bristol.ac.uk",
+    "location": {
+      "city": "Bristol",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 770,
+      "guardian": 77
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 15310,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 48,
+    "name": "University of Coventry",
+    "website": "https://www.coventry.ac.uk",
+    "location": {
+      "city": "Coventry",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 780,
+      "guardian": 78
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17866,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 49,
+    "name": "University of Leicester",
+    "website": "https://www.leicester.ac.uk",
+    "location": {
+      "city": "Leicester",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 790,
+      "guardian": 79
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20071,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 50,
+    "name": "University of Bradford",
+    "website": "https://www.bradford.ac.uk",
+    "location": {
+      "city": "Bradford",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 800,
+      "guardian": 80
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20223,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 51,
+    "name": "University of Cardiff",
+    "website": "https://www.cardiff.ac.uk",
+    "location": {
+      "city": "Cardiff",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 810,
+      "guardian": 81
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 15715,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 52,
+    "name": "University of Belfast",
+    "website": "https://www.belfast.ac.uk",
+    "location": {
+      "city": "Belfast",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 820,
+      "guardian": 82
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18264,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 53,
+    "name": "University of Glasgow",
+    "website": "https://www.glasgow.ac.uk",
+    "location": {
+      "city": "Glasgow",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 830,
+      "guardian": 83
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17040,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 54,
+    "name": "University of Edinburgh",
+    "website": "https://www.edinburgh.ac.uk",
+    "location": {
+      "city": "Edinburgh",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 840,
+      "guardian": 84
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 15363,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 55,
+    "name": "University of Newcastle",
+    "website": "https://www.newcastle.ac.uk",
+    "location": {
+      "city": "Newcastle",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 850,
+      "guardian": 85
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21039,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 56,
+    "name": "University of Nottingham",
+    "website": "https://www.nottingham.ac.uk",
+    "location": {
+      "city": "Nottingham",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 860,
+      "guardian": 86
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22256,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 57,
+    "name": "University of Southampton",
+    "website": "https://www.southampton.ac.uk",
+    "location": {
+      "city": "Southampton",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 870,
+      "guardian": 87
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19358,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 58,
+    "name": "University of Brighton",
+    "website": "https://www.brighton.ac.uk",
+    "location": {
+      "city": "Brighton",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 880,
+      "guardian": 88
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19288,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 59,
+    "name": "University of Portsmouth",
+    "website": "https://www.portsmouth.ac.uk",
+    "location": {
+      "city": "Portsmouth",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 890,
+      "guardian": 89
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17076,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 60,
+    "name": "University of Plymouth",
+    "website": "https://www.plymouth.ac.uk",
+    "location": {
+      "city": "Plymouth",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 900,
+      "guardian": 90
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17219,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 61,
+    "name": "University of Derby",
+    "website": "https://www.derby.ac.uk",
+    "location": {
+      "city": "Derby",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 910,
+      "guardian": 91
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18921,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 62,
+    "name": "University of Wolverhampton",
+    "website": "https://www.wolverhampton.ac.uk",
+    "location": {
+      "city": "Wolverhampton",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 920,
+      "guardian": 92
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 16306,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 63,
+    "name": "University of Sunderland",
+    "website": "https://www.sunderland.ac.uk",
+    "location": {
+      "city": "Sunderland",
+      "country": "Wales",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 930,
+      "guardian": 93
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20748,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 64,
+    "name": "University of Canterbury",
+    "website": "https://www.canterbury.ac.uk",
+    "location": {
+      "city": "Canterbury",
+      "country": "Wales",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 940,
+      "guardian": 94
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 16726,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 65,
+    "name": "University of Winchester",
+    "website": "https://www.winchester.ac.uk",
+    "location": {
+      "city": "Winchester",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 950,
+      "guardian": 95
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20370,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 66,
+    "name": "University of Chester",
+    "website": "https://www.chester.ac.uk",
+    "location": {
+      "city": "Chester",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 960,
+      "guardian": 96
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18456,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 67,
+    "name": "University of Lincoln",
+    "website": "https://www.lincoln.ac.uk",
+    "location": {
+      "city": "Lincoln",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 970,
+      "guardian": 97
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20732,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 68,
+    "name": "University of Hull",
+    "website": "https://www.hull.ac.uk",
+    "location": {
+      "city": "Hull",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 980,
+      "guardian": 98
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22565,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 69,
+    "name": "University of Norwich",
+    "website": "https://www.norwich.ac.uk",
+    "location": {
+      "city": "Norwich",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 990,
+      "guardian": 99
+    },
+    "admissions": {
+      "aLevelRequirements": "AAB",
+      "ibRequirements": 33,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17364,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 70,
+    "name": "University of Dundee",
+    "website": "https://www.dundee.ac.uk",
+    "location": {
+      "city": "Dundee",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1000,
+      "guardian": 100
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19071,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 71,
+    "name": "University of London",
+    "website": "https://www.london.ac.uk",
+    "location": {
+      "city": "London",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1010,
+      "guardian": 101
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 15832,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 72,
+    "name": "University of Manchester",
+    "website": "https://www.manchester.ac.uk",
+    "location": {
+      "city": "Manchester",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1020,
+      "guardian": 102
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 15785,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 73,
+    "name": "University of Birmingham",
+    "website": "https://www.birmingham.ac.uk",
+    "location": {
+      "city": "Birmingham",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1030,
+      "guardian": 103
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18727,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 74,
+    "name": "University of Liverpool",
+    "website": "https://www.liverpool.ac.uk",
+    "location": {
+      "city": "Liverpool",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1040,
+      "guardian": 104
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 16407,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 75,
+    "name": "University of Leeds",
+    "website": "https://www.leeds.ac.uk",
+    "location": {
+      "city": "Leeds",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1050,
+      "guardian": 105
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20289,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 76,
+    "name": "University of Sheffield",
+    "website": "https://www.sheffield.ac.uk",
+    "location": {
+      "city": "Sheffield",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1060,
+      "guardian": 106
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21289,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 77,
+    "name": "University of Bristol",
+    "website": "https://www.bristol.ac.uk",
+    "location": {
+      "city": "Bristol",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1070,
+      "guardian": 107
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18828,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 78,
+    "name": "University of Coventry",
+    "website": "https://www.coventry.ac.uk",
+    "location": {
+      "city": "Coventry",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1080,
+      "guardian": 108
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19447,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 79,
+    "name": "University of Leicester",
+    "website": "https://www.leicester.ac.uk",
+    "location": {
+      "city": "Leicester",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1090,
+      "guardian": 109
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18914,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 80,
+    "name": "University of Bradford",
+    "website": "https://www.bradford.ac.uk",
+    "location": {
+      "city": "Bradford",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1100,
+      "guardian": 110
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21230,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 81,
+    "name": "University of Cardiff",
+    "website": "https://www.cardiff.ac.uk",
+    "location": {
+      "city": "Cardiff",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1110,
+      "guardian": 111
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17531,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 82,
+    "name": "University of Belfast",
+    "website": "https://www.belfast.ac.uk",
+    "location": {
+      "city": "Belfast",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1120,
+      "guardian": 112
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20295,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 83,
+    "name": "University of Glasgow",
+    "website": "https://www.glasgow.ac.uk",
+    "location": {
+      "city": "Glasgow",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1130,
+      "guardian": 113
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19722,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 84,
+    "name": "University of Edinburgh",
+    "website": "https://www.edinburgh.ac.uk",
+    "location": {
+      "city": "Edinburgh",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1140,
+      "guardian": 114
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20428,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 85,
+    "name": "University of Newcastle",
+    "website": "https://www.newcastle.ac.uk",
+    "location": {
+      "city": "Newcastle",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1150,
+      "guardian": 115
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 16527,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 86,
+    "name": "University of Nottingham",
+    "website": "https://www.nottingham.ac.uk",
+    "location": {
+      "city": "Nottingham",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1160,
+      "guardian": 116
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19016,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 87,
+    "name": "University of Southampton",
+    "website": "https://www.southampton.ac.uk",
+    "location": {
+      "city": "Southampton",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1170,
+      "guardian": 117
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17957,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 88,
+    "name": "University of Brighton",
+    "website": "https://www.brighton.ac.uk",
+    "location": {
+      "city": "Brighton",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1180,
+      "guardian": 118
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17723,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 89,
+    "name": "University of Portsmouth",
+    "website": "https://www.portsmouth.ac.uk",
+    "location": {
+      "city": "Portsmouth",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1190,
+      "guardian": 119
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20339,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 90,
+    "name": "University of Plymouth",
+    "website": "https://www.plymouth.ac.uk",
+    "location": {
+      "city": "Plymouth",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1200,
+      "guardian": 120
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18479,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 91,
+    "name": "University of Derby",
+    "website": "https://www.derby.ac.uk",
+    "location": {
+      "city": "Derby",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1210,
+      "guardian": 121
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21453,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 92,
+    "name": "University of Wolverhampton",
+    "website": "https://www.wolverhampton.ac.uk",
+    "location": {
+      "city": "Wolverhampton",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1220,
+      "guardian": 122
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20489,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 93,
+    "name": "University of Sunderland",
+    "website": "https://www.sunderland.ac.uk",
+    "location": {
+      "city": "Sunderland",
+      "country": "Wales",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1230,
+      "guardian": 123
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21221,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 94,
+    "name": "University of Canterbury",
+    "website": "https://www.canterbury.ac.uk",
+    "location": {
+      "city": "Canterbury",
+      "country": "Wales",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1240,
+      "guardian": 124
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 16745,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 95,
+    "name": "University of Winchester",
+    "website": "https://www.winchester.ac.uk",
+    "location": {
+      "city": "Winchester",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1250,
+      "guardian": 125
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 16331,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 96,
+    "name": "University of Chester",
+    "website": "https://www.chester.ac.uk",
+    "location": {
+      "city": "Chester",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1260,
+      "guardian": 126
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19420,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 97,
+    "name": "University of Lincoln",
+    "website": "https://www.lincoln.ac.uk",
+    "location": {
+      "city": "Lincoln",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1270,
+      "guardian": 127
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17458,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 98,
+    "name": "University of Hull",
+    "website": "https://www.hull.ac.uk",
+    "location": {
+      "city": "Hull",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1280,
+      "guardian": 128
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18508,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 99,
+    "name": "University of Norwich",
+    "website": "https://www.norwich.ac.uk",
+    "location": {
+      "city": "Norwich",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1290,
+      "guardian": 129
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18092,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 100,
+    "name": "University of Dundee",
+    "website": "https://www.dundee.ac.uk",
+    "location": {
+      "city": "Dundee",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1300,
+      "guardian": 130
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17477,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 101,
+    "name": "University of London",
+    "website": "https://www.london.ac.uk",
+    "location": {
+      "city": "London",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1310,
+      "guardian": 131
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19285,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 102,
+    "name": "University of Manchester",
+    "website": "https://www.manchester.ac.uk",
+    "location": {
+      "city": "Manchester",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1320,
+      "guardian": 132
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21708,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 103,
+    "name": "University of Birmingham",
+    "website": "https://www.birmingham.ac.uk",
+    "location": {
+      "city": "Birmingham",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1330,
+      "guardian": 133
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21368,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 104,
+    "name": "University of Liverpool",
+    "website": "https://www.liverpool.ac.uk",
+    "location": {
+      "city": "Liverpool",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1340,
+      "guardian": 134
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19330,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 105,
+    "name": "University of Leeds",
+    "website": "https://www.leeds.ac.uk",
+    "location": {
+      "city": "Leeds",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1350,
+      "guardian": 135
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19124,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 106,
+    "name": "University of Sheffield",
+    "website": "https://www.sheffield.ac.uk",
+    "location": {
+      "city": "Sheffield",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1360,
+      "guardian": 136
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21653,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 107,
+    "name": "University of Bristol",
+    "website": "https://www.bristol.ac.uk",
+    "location": {
+      "city": "Bristol",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1370,
+      "guardian": 137
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 16601,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 108,
+    "name": "University of Coventry",
+    "website": "https://www.coventry.ac.uk",
+    "location": {
+      "city": "Coventry",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1380,
+      "guardian": 138
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18734,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 109,
+    "name": "University of Leicester",
+    "website": "https://www.leicester.ac.uk",
+    "location": {
+      "city": "Leicester",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1390,
+      "guardian": 139
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 16714,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 110,
+    "name": "University of Bradford",
+    "website": "https://www.bradford.ac.uk",
+    "location": {
+      "city": "Bradford",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1400,
+      "guardian": 140
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22428,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 111,
+    "name": "University of Cardiff",
+    "website": "https://www.cardiff.ac.uk",
+    "location": {
+      "city": "Cardiff",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1410,
+      "guardian": 141
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21191,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 112,
+    "name": "University of Belfast",
+    "website": "https://www.belfast.ac.uk",
+    "location": {
+      "city": "Belfast",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1420,
+      "guardian": 142
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22921,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 113,
+    "name": "University of Glasgow",
+    "website": "https://www.glasgow.ac.uk",
+    "location": {
+      "city": "Glasgow",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1430,
+      "guardian": 143
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22814,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 114,
+    "name": "University of Edinburgh",
+    "website": "https://www.edinburgh.ac.uk",
+    "location": {
+      "city": "Edinburgh",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1440,
+      "guardian": 144
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20869,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 115,
+    "name": "University of Newcastle",
+    "website": "https://www.newcastle.ac.uk",
+    "location": {
+      "city": "Newcastle",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1450,
+      "guardian": 145
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18737,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 116,
+    "name": "University of Nottingham",
+    "website": "https://www.nottingham.ac.uk",
+    "location": {
+      "city": "Nottingham",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1460,
+      "guardian": 146
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 16743,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 117,
+    "name": "University of Southampton",
+    "website": "https://www.southampton.ac.uk",
+    "location": {
+      "city": "Southampton",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1470,
+      "guardian": 147
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21857,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 118,
+    "name": "University of Brighton",
+    "website": "https://www.brighton.ac.uk",
+    "location": {
+      "city": "Brighton",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1480,
+      "guardian": 148
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 16012,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 119,
+    "name": "University of Portsmouth",
+    "website": "https://www.portsmouth.ac.uk",
+    "location": {
+      "city": "Portsmouth",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1490,
+      "guardian": 149
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20119,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 120,
+    "name": "University of Plymouth",
+    "website": "https://www.plymouth.ac.uk",
+    "location": {
+      "city": "Plymouth",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1500,
+      "guardian": 150
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20356,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 121,
+    "name": "University of Derby",
+    "website": "https://www.derby.ac.uk",
+    "location": {
+      "city": "Derby",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1510,
+      "guardian": 151
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22884,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 122,
+    "name": "University of Wolverhampton",
+    "website": "https://www.wolverhampton.ac.uk",
+    "location": {
+      "city": "Wolverhampton",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1520,
+      "guardian": 152
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17325,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 123,
+    "name": "University of Sunderland",
+    "website": "https://www.sunderland.ac.uk",
+    "location": {
+      "city": "Sunderland",
+      "country": "Wales",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1530,
+      "guardian": 153
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21303,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 124,
+    "name": "University of Canterbury",
+    "website": "https://www.canterbury.ac.uk",
+    "location": {
+      "city": "Canterbury",
+      "country": "Wales",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1540,
+      "guardian": 154
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19812,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 125,
+    "name": "University of Winchester",
+    "website": "https://www.winchester.ac.uk",
+    "location": {
+      "city": "Winchester",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1550,
+      "guardian": 155
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22152,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 126,
+    "name": "University of Chester",
+    "website": "https://www.chester.ac.uk",
+    "location": {
+      "city": "Chester",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1560,
+      "guardian": 156
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22170,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 127,
+    "name": "University of Lincoln",
+    "website": "https://www.lincoln.ac.uk",
+    "location": {
+      "city": "Lincoln",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1570,
+      "guardian": 157
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22850,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 128,
+    "name": "University of Hull",
+    "website": "https://www.hull.ac.uk",
+    "location": {
+      "city": "Hull",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1580,
+      "guardian": 158
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21858,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 129,
+    "name": "University of Norwich",
+    "website": "https://www.norwich.ac.uk",
+    "location": {
+      "city": "Norwich",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1590,
+      "guardian": 159
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22510,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 130,
+    "name": "University of Dundee",
+    "website": "https://www.dundee.ac.uk",
+    "location": {
+      "city": "Dundee",
+      "country": "Northern Ireland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1600,
+      "guardian": 160
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 15538,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 131,
+    "name": "University of London",
+    "website": "https://www.london.ac.uk",
+    "location": {
+      "city": "London",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1610,
+      "guardian": 161
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20312,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 132,
+    "name": "University of Manchester",
+    "website": "https://www.manchester.ac.uk",
+    "location": {
+      "city": "Manchester",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1620,
+      "guardian": 162
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 16583,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 133,
+    "name": "University of Birmingham",
+    "website": "https://www.birmingham.ac.uk",
+    "location": {
+      "city": "Birmingham",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1630,
+      "guardian": 163
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22441,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 134,
+    "name": "University of Liverpool",
+    "website": "https://www.liverpool.ac.uk",
+    "location": {
+      "city": "Liverpool",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1640,
+      "guardian": 164
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 15906,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 135,
+    "name": "University of Leeds",
+    "website": "https://www.leeds.ac.uk",
+    "location": {
+      "city": "Leeds",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1650,
+      "guardian": 165
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18139,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 136,
+    "name": "University of Sheffield",
+    "website": "https://www.sheffield.ac.uk",
+    "location": {
+      "city": "Sheffield",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1660,
+      "guardian": 166
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22481,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 137,
+    "name": "University of Bristol",
+    "website": "https://www.bristol.ac.uk",
+    "location": {
+      "city": "Bristol",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1670,
+      "guardian": 167
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20621,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 138,
+    "name": "University of Coventry",
+    "website": "https://www.coventry.ac.uk",
+    "location": {
+      "city": "Coventry",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1680,
+      "guardian": 168
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17991,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 139,
+    "name": "University of Leicester",
+    "website": "https://www.leicester.ac.uk",
+    "location": {
+      "city": "Leicester",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1690,
+      "guardian": 169
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 15046,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 140,
+    "name": "University of Bradford",
+    "website": "https://www.bradford.ac.uk",
+    "location": {
+      "city": "Bradford",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1700,
+      "guardian": 170
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18272,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 141,
+    "name": "University of Cardiff",
+    "website": "https://www.cardiff.ac.uk",
+    "location": {
+      "city": "Cardiff",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1710,
+      "guardian": 171
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 15803,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 142,
+    "name": "University of Belfast",
+    "website": "https://www.belfast.ac.uk",
+    "location": {
+      "city": "Belfast",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1720,
+      "guardian": 172
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21199,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 143,
+    "name": "University of Glasgow",
+    "website": "https://www.glasgow.ac.uk",
+    "location": {
+      "city": "Glasgow",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1730,
+      "guardian": 173
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 19965,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 144,
+    "name": "University of Edinburgh",
+    "website": "https://www.edinburgh.ac.uk",
+    "location": {
+      "city": "Edinburgh",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1740,
+      "guardian": 174
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 22547,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 145,
+    "name": "University of Newcastle",
+    "website": "https://www.newcastle.ac.uk",
+    "location": {
+      "city": "Newcastle",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1750,
+      "guardian": 175
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 18179,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 146,
+    "name": "University of Nottingham",
+    "website": "https://www.nottingham.ac.uk",
+    "location": {
+      "city": "Nottingham",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1760,
+      "guardian": 176
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21508,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 147,
+    "name": "University of Southampton",
+    "website": "https://www.southampton.ac.uk",
+    "location": {
+      "city": "Southampton",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1770,
+      "guardian": 177
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 20333,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 148,
+    "name": "University of Brighton",
+    "website": "https://www.brighton.ac.uk",
+    "location": {
+      "city": "Brighton",
+      "country": "England",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1780,
+      "guardian": 178
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 16688,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 149,
+    "name": "University of Portsmouth",
+    "website": "https://www.portsmouth.ac.uk",
+    "location": {
+      "city": "Portsmouth",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1790,
+      "guardian": 179
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 21707,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 150,
+    "name": "University of Plymouth",
+    "website": "https://www.plymouth.ac.uk",
+    "location": {
+      "city": "Plymouth",
+      "country": "Scotland",
+      "countryFull": "United Kingdom"
+    },
+    "rankings": {
+      "qs": 1800,
+      "guardian": 180
+    },
+    "admissions": {
+      "aLevelRequirements": "ABB",
+      "ibRequirements": 30,
+      "ucasPoints": null,
+      "interviewRequired": false,
+      "admissionsTest": null
+    },
+    "costs": {
+      "ukStudentFees": 9250,
+      "internationalFees": 17596,
+      "currency": "GBP"
+    },
+    "programs": [
+      "Business",
+      "Engineering",
+      "Arts",
+      "Sciences",
+      "Law"
+    ],
+    "tier": 4
+  }
+]
