@@ -10,13 +10,39 @@ import {
   FileText,
   GraduationCap,
   DollarSign,
-  RefreshCw
+  RefreshCw,
+  Users,
+  Award,
+  TrendingUp,
+  Building,
+  Calendar,
+  BookOpen,
+  Briefcase,
+  Home,
+  BarChart2
 } from 'lucide-react';
 import api from '../services/api';
 
 /* =========================
    Types
 ========================= */
+
+interface TestScores {
+  satRange?: { percentile25: number; percentile75: number } | null;
+  actRange?: { percentile25: number; percentile75: number } | null;
+  averageGPA?: number | null;
+}
+
+interface GraduationRates {
+  fourYear?: number;
+  sixYear?: number;
+}
+
+interface Placements {
+  averagePackage?: number;
+  highestPackage?: number;
+  placementRate?: number;
+}
 
 interface College {
   id: number;
@@ -32,31 +58,33 @@ interface College {
   programs?: string[] | string;
   trust_tier?: string;
   is_verified?: number;
-  // Acceptance rate (stored as decimal 0-1, e.g., 0.09 for 9%)
   acceptance_rate?: number | null;
   acceptanceRate?: number | null;
-  // Additional fields for comprehensive display
   tuition_cost?: number | null;
   description?: string | null;
   type?: string | null;
+  enrollment?: number | null;
+  ranking?: number | null;
+  testScores?: TestScores;
+  graduationRates?: GraduationRates | null;
+  studentFacultyRatio?: string | null;
+  deadlineTemplates?: Record<string, { date: string; type: string }>;
+  requirements?: Record<string, any>;
+  // Country-specific fields
+  placements?: Placements | null;
+  cutoffs?: Record<string, any> | null;
+  entranceExam?: string | null;
+  nirfRank?: number | null;
+  russellGroup?: boolean;
+  aLevelRequirements?: string | null;
+  ibPointsRequired?: string | null;
+  qsRank?: number | null;
+  abiturRequirement?: string | null;
+  germanLevel?: string | null;
+  englishLevel?: string | null;
 }
 
-interface Layer2Data {
-  available: boolean;
-  message?: string;
-  data?: any;
-  source?: string;
-  trustTier?: string;
-  scrapedAt?: string;
-  lastUpdated?: string;
-}
-
-interface EligibilityResult {
-  status: 'eligible' | 'conditional' | 'not_eligible';
-  issues?: Array<{ message: string }>;
-  warnings?: Array<{ message: string }>;
-  recommendations?: Array<{ message: string }>;
-}
+type TabName = 'overview' | 'admissions' | 'academics' | 'cost' | 'studentLife' | 'outcomes';
 
 /* =========================
    Component
@@ -67,13 +95,9 @@ const CollegeDetail: React.FC = () => {
   const navigate = useNavigate();
 
   const [college, setCollege] = useState<College | null>(null);
-  const [requirements, setRequirements] = useState<Layer2Data | null>(null);
-  const [deadlines, setDeadlines] = useState<Layer2Data | null>(null);
-  const [programs, setPrograms] = useState<Layer2Data | null>(null);
-  const [eligibility, setEligibility] = useState<EligibilityResult | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [adding, setAdding] = useState<boolean>(false);
-  const [researching, setResearching] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabName>('overview');
 
   useEffect(() => {
     if (id) {
@@ -84,73 +108,12 @@ const CollegeDetail: React.FC = () => {
   const loadCollegeDetails = async (collegeId: number): Promise<void> => {
     try {
       setLoading(true);
-      
-      // Layer 1: Core static data
       const response = await api.colleges.getById(collegeId);
       setCollege(response.data);
-      
-      // Layer 2: Trusted dynamic data (if available)
-      await Promise.all([
-        loadLayer2Data(collegeId, 'requirements', setRequirements),
-        loadLayer2Data(collegeId, 'deadlines', setDeadlines),
-        loadLayer2Data(collegeId, 'programs', setPrograms)
-      ]);
-      
-      // Check eligibility if user is authenticated
-      try {
-        const eligibilityRes = await api.colleges.checkEligibility(collegeId);
-        setEligibility(eligibilityRes.data);
-      } catch (e) {
-        // Eligibility check requires auth - ignore if not logged in
-        console.log('Eligibility check skipped (not authenticated)');
-      }
-      
     } catch (error) {
       console.error('Failed to load college:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadLayer2Data = async (
-    collegeId: number,
-    dataType: string,
-    setter: (data: Layer2Data) => void
-  ) => {
-    try {
-      const data = await api.colleges.getCollegeData(collegeId, dataType);
-      setter(data);
-    } catch (error) {
-      // Layer 2 data not available - that's OK, we'll show "Not listed officially"
-      setter({
-        available: false,
-        message: 'Not listed officially'
-      });
-    }
-  };
-
-  const triggerResearch = async (researchType: string) => {
-    if (!id || !college) return;
-    
-    try {
-      setResearching(researchType);
-      const result = await api.conductResearch(Number(id), researchType, true);
-      
-      // Reload Layer 2 data after research
-      if (researchType === 'requirements') {
-        await loadLayer2Data(Number(id), 'requirements', setRequirements);
-      } else if (researchType === 'deadlines') {
-        await loadLayer2Data(Number(id), 'deadlines', setDeadlines);
-      } else if (researchType === 'programs') {
-        await loadLayer2Data(Number(id), 'programs', setPrograms);
-      }
-      
-      alert('Research completed! Data updated.');
-    } catch (error) {
-      console.error('Research failed:', error);
-      alert('Research failed. Please try again or visit the official website.');
-    } finally {
-      setResearching(null);
     }
   };
 
@@ -199,55 +162,27 @@ const CollegeDetail: React.FC = () => {
   }
 
   // Parse JSON fields safely
-  const majorCategories: string[] = (() => {
+  const parseArray = (data: string[] | string | undefined): string[] => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
     try {
-      if (Array.isArray(college.major_categories)) {
-        return college.major_categories;
-      } else if (typeof college.major_categories === 'string') {
-        return JSON.parse(college.major_categories || '[]');
-      }
-    } catch (e) {
-      console.warn('Failed to parse major_categories', e);
+      return JSON.parse(data);
+    } catch {
+      return [];
     }
-    return [];
-  })();
+  };
 
-  const academicStrengths: string[] = (() => {
-    try {
-      if (Array.isArray(college.academic_strengths)) {
-        return college.academic_strengths;
-      } else if (typeof college.academic_strengths === 'string') {
-        return JSON.parse(college.academic_strengths || '[]');
-      }
-    } catch (e) {
-      console.warn('Failed to parse academic_strengths', e);
-    }
-    return [];
-  })();
-  
-  // Parse programs/majors list
-  const programsList: string[] = (() => {
-    try {
-      if (Array.isArray(college.programs)) {
-        return college.programs;
-      } else if (typeof college.programs === 'string') {
-        return JSON.parse(college.programs || '[]');
-      }
-    } catch (e) {
-      console.warn('Failed to parse programs', e);
-    }
-    return [];
-  })();
-  
-  // Format acceptance rate properly (Issue 2)
+  const majorCategories = parseArray(college.major_categories);
+  const academicStrengths = parseArray(college.academic_strengths);
+  const programs = parseArray(college.programs);
+
+  // Format helpers
   const formatAcceptanceRate = (rate: number | null | undefined): string => {
     if (rate === null || rate === undefined) return 'N/A';
-    // If rate is in decimal form (0-1), multiply by 100
     const percentage = rate <= 1 ? rate * 100 : rate;
     return `${percentage.toFixed(1)}%`;
   };
-  
-  // Format tuition cost
+
   const formatCurrency = (amount: number | null | undefined, country: string): string => {
     if (amount === null || amount === undefined) return 'Not available';
     if (country === 'India') {
@@ -255,43 +190,87 @@ const CollegeDetail: React.FC = () => {
     } else if (country === 'United Kingdom') {
       return `£${amount.toLocaleString('en-GB')}`;
     } else if (country === 'Germany') {
-      return `€${amount.toLocaleString('de-DE')}`;
+      return amount === 0 ? 'Free (Public)' : `€${amount.toLocaleString('de-DE')}`;
     }
     return `$${amount.toLocaleString('en-US')}`;
   };
 
+  const formatEnrollment = (num: number | null | undefined): string => {
+    if (!num) return 'N/A';
+    return num.toLocaleString();
+  };
+
+  const acceptanceRate = college.acceptanceRate ?? college.acceptance_rate;
+  const testScores = college.testScores || {};
+
+  const tabs: { id: TabName; label: string; icon: React.ReactNode }[] = [
+    { id: 'overview', label: 'Overview', icon: <Building className="w-4 h-4" /> },
+    { id: 'admissions', label: 'Admissions', icon: <FileText className="w-4 h-4" /> },
+    { id: 'academics', label: 'Academics', icon: <GraduationCap className="w-4 h-4" /> },
+    { id: 'cost', label: 'Cost & Aid', icon: <DollarSign className="w-4 h-4" /> },
+    { id: 'studentLife', label: 'Student Life', icon: <Users className="w-4 h-4" /> },
+    { id: 'outcomes', label: 'Outcomes', icon: <TrendingUp className="w-4 h-4" /> },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header - Layer 1 Data */}
-        <div className="bg-white rounded-lg shadow-sm p-8 mb-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <button
+            onClick={() => navigate('/colleges')}
+            className="text-blue-200 hover:text-white mb-4 text-sm flex items-center gap-1"
+          >
+            ← Back to Colleges
+          </button>
+          
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold">{college.name}</h1>
-              <div className="flex items-center text-gray-600 mt-2">
-                <MapPin className="w-4 h-4 mr-2" />
-                {college.location || 'Location not specified'}, {college.country}
+              <div className="flex items-center gap-3 mb-2">
+                {college.ranking && (
+                  <span className="bg-yellow-400 text-yellow-900 text-sm font-bold px-3 py-1 rounded-full">
+                    #{college.ranking}
+                  </span>
+                )}
+                {college.is_verified ? (
+                  <span className="bg-green-400/20 text-green-100 text-xs px-2 py-0.5 rounded flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" /> Verified
+                  </span>
+                ) : null}
               </div>
+              
+              <h1 className="text-4xl font-bold mb-2">{college.name}</h1>
+              
+              <div className="flex items-center gap-4 text-blue-100">
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-4 h-4" />
+                  {college.location || 'Location not specified'}, {college.country}
+                </div>
+                <span className="px-2 py-0.5 bg-white/20 rounded text-sm">
+                  {college.type || 'University'}
+                </span>
+              </div>
+
               <div className="flex items-center gap-4 mt-4">
                 <a
                   href={college.official_website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 flex items-center hover:underline"
+                  className="text-white flex items-center gap-1 hover:underline"
                 >
-                  <Globe className="w-4 h-4 mr-1" />
+                  <Globe className="w-4 h-4" />
                   Official Website
-                  <ExternalLink className="w-4 h-4 ml-1" />
+                  <ExternalLink className="w-3 h-3" />
                 </a>
                 {college.admissions_url && (
                   <a
                     href={college.admissions_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 flex items-center hover:underline"
+                    className="text-white flex items-center gap-1 hover:underline"
                   >
-                    Admissions Page
-                    <ExternalLink className="w-4 h-4 ml-1" />
+                    Admissions
+                    <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
               </div>
@@ -300,149 +279,546 @@ const CollegeDetail: React.FC = () => {
             <button
               onClick={handleAddCollege}
               disabled={adding}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50 hover:bg-blue-700"
+              className="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold disabled:opacity-50 hover:bg-blue-50 transition-colors"
             >
-              {adding ? 'Adding…' : 'Add to My List'}
+              {adding ? 'Adding…' : '+ Add to My List'}
             </button>
           </div>
 
-          {/* Layer 1: Core Facts - Updated to show actual data (Issue 2, 3, 4) */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-            <InfoBox
-              icon={<GraduationCap />}
-              label="Acceptance Rate"
-              value={formatAcceptanceRate(college.acceptance_rate ?? college.acceptanceRate)}
-            />
-            <InfoBox
-              icon={<DollarSign />}
-              label="Tuition Cost"
-              value={formatCurrency(college.tuition_cost, college.country)}
-            />
-            <InfoBox
-              icon={<CheckCircle />}
-              label="Institution Type"
-              value={college.type || college.trust_tier || 'Not specified'}
-            />
-            <InfoBox
-              icon={<FileText />}
-              label="Programs Offered"
-              value={majorCategories.length > 0 ? `${majorCategories.length} programs` : 'Not listed'}
-            />
+          {/* Quick Stats Bar */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-8 bg-white/10 rounded-xl p-4">
+            <QuickStat label="Acceptance Rate" value={formatAcceptanceRate(acceptanceRate)} />
+            <QuickStat label="Enrollment" value={formatEnrollment(college.enrollment)} />
+            <QuickStat label="Tuition" value={formatCurrency(college.tuition_cost, college.country)} />
+            <QuickStat label="Avg GPA" value={testScores.averageGPA?.toFixed(2) || 'N/A'} />
+            <QuickStat label="Student:Faculty" value={college.studentFacultyRatio || 'N/A'} />
           </div>
         </div>
+      </div>
 
-        {/* SECTION: Programs & Majors (Issue 3, 5) */}
-        {(majorCategories.length > 0 || programsList.length > 0) && (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <GraduationCap className="w-5 h-5 mr-2" />
-              Programs & Majors Offered
-            </h2>
-            
-            {/* Major Categories as Tags */}
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">Major Categories:</p>
-              <div className="flex flex-wrap gap-2">
-                {majorCategories.map((cat, i) => (
-                  <span
-                    key={i}
-                    className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium"
-                  >
-                    {cat}
-                  </span>
-                ))}
-              </div>
+      {/* Tabs Navigation */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex gap-1 overflow-x-auto">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'border-blue-600 text-blue-600 font-medium'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Description */}
+              {college.description && (
+                <Card title="About">
+                  <p className="text-gray-700 leading-relaxed">{college.description}</p>
+                </Card>
+              )}
+
+              {/* Key Stats */}
+              <Card title="Key Statistics">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <StatItem label="Acceptance Rate" value={formatAcceptanceRate(acceptanceRate)} icon={<TrendingUp />} />
+                  <StatItem label="Total Enrollment" value={formatEnrollment(college.enrollment)} icon={<Users />} />
+                  <StatItem label="Student:Faculty Ratio" value={college.studentFacultyRatio || 'N/A'} icon={<GraduationCap />} />
+                  {college.graduationRates?.fourYear && (
+                    <StatItem label="4-Year Grad Rate" value={`${college.graduationRates.fourYear}%`} icon={<Award />} />
+                  )}
+                  {college.graduationRates?.sixYear && (
+                    <StatItem label="6-Year Grad Rate" value={`${college.graduationRates.sixYear}%`} icon={<Award />} />
+                  )}
+                  <StatItem label="Institution Type" value={college.type || 'University'} icon={<Building />} />
+                </div>
+              </Card>
+
+              {/* Academic Strengths */}
+              {academicStrengths.length > 0 && (
+                <Card title="Academic Strengths">
+                  <div className="flex flex-wrap gap-2">
+                    {academicStrengths.map((strength, i) => (
+                      <span key={i} className="px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-sm font-medium">
+                        ⭐ {strength}
+                      </span>
+                    ))}
+                  </div>
+                </Card>
+              )}
             </div>
-            
-            {/* Academic Strengths */}
-            {academicStrengths.length > 0 && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-600 mb-2">Academic Strengths:</p>
-                <div className="flex flex-wrap gap-2">
-                  {academicStrengths.map((strength, i) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm"
-                    >
-                      {strength}
-                    </span>
-                  ))}
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Quick Links */}
+              <Card title="Quick Links">
+                <div className="space-y-2">
+                  <QuickLink href={college.official_website} label="Official Website" />
+                  {college.admissions_url && <QuickLink href={college.admissions_url} label="Admissions Page" />}
+                  {college.programs_url && <QuickLink href={college.programs_url} label="Programs & Majors" />}
+                  {college.application_portal_url && <QuickLink href={college.application_portal_url} label="Apply Now" />}
                 </div>
-              </div>
-            )}
-            
-            {/* Programs List (if different from categories) */}
-            {programsList.length > 0 && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-600 mb-2">Specific Programs:</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {programsList.slice(0, 20).map((program, i) => (
-                    <span key={i} className="text-sm text-gray-700">• {program}</span>
-                  ))}
+              </Card>
+
+              {/* Location */}
+              <Card title="Location">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium">{college.location || college.country}</p>
+                    <p className="text-sm text-gray-600">{college.country}</p>
+                  </div>
                 </div>
-                {programsList.length > 20 && (
-                  <p className="text-sm text-gray-500 mt-2">
-                    And {programsList.length - 20} more programs...
-                  </p>
-                )}
-              </div>
-            )}
+              </Card>
+            </div>
           </div>
         )}
 
-        {/* Layer 2: Trusted Dynamic Data */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Requirements */}
-          <DataSection
-            title="Entry Requirements"
-            icon={<FileText />}
-            data={requirements}
-            officialUrl={college.admissions_url || college.official_website}
-            onResearch={() => triggerResearch('requirements')}
-            researching={researching === 'requirements'}
-          />
-
-          {/* Deadlines */}
-          <DataSection
-            title="Application Deadlines"
-            icon={<Clock />}
-            data={deadlines}
-            officialUrl={college.admissions_url || college.official_website}
-            onResearch={() => triggerResearch('deadlines')}
-            researching={researching === 'deadlines'}
-          />
-
-          {/* Programs */}
-          <DataSection
-            title="Additional Program Info"
-            icon={<GraduationCap />}
-            data={programs}
-            officialUrl={college.programs_url || college.official_website}
-            onResearch={() => triggerResearch('programs')}
-            researching={researching === 'programs'}
-          />
-
-          {/* Eligibility Check */}
-          {eligibility && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center">
-                <CheckCircle className="w-5 h-5 mr-2" />
-                Eligibility Check
-              </h2>
-              <EligibilityBadge status={eligibility.status} />
-              {eligibility.issues && eligibility.issues.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-sm font-semibold text-gray-700">Issues:</p>
-                  <ul className="list-disc list-inside mt-2 text-sm text-gray-600">
-                    {eligibility.issues.map((issue, i) => (
-                      <li key={i}>{issue.message}</li>
-                    ))}
-                  </ul>
+        {/* Admissions Tab */}
+        {activeTab === 'admissions' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Acceptance Rate */}
+              <Card title="Acceptance Rate">
+                <div className="flex items-center gap-8">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-blue-600">{formatAcceptanceRate(acceptanceRate)}</div>
+                    <p className="text-gray-600 text-sm mt-1">Overall Acceptance Rate</p>
+                  </div>
+                  <div className="flex-1">
+                    <div className="w-full bg-gray-200 rounded-full h-4">
+                      <div 
+                        className="bg-blue-600 h-4 rounded-full" 
+                        style={{ width: `${Math.min((acceptanceRate || 0) * (acceptanceRate && acceptanceRate <= 1 ? 100 : 1), 100)}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
+              </Card>
+
+              {/* Test Scores */}
+              <Card title="Test Score Ranges (Middle 50%)">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {testScores.satRange && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">SAT</h4>
+                      <div className="space-y-2">
+                        <ScoreBar label="Total" low={testScores.satRange.percentile25} high={testScores.satRange.percentile75} max={1600} />
+                      </div>
+                    </div>
+                  )}
+                  {testScores.actRange && (
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">ACT</h4>
+                      <div className="space-y-2">
+                        <ScoreBar label="Composite" low={testScores.actRange.percentile25} high={testScores.actRange.percentile75} max={36} />
+                      </div>
+                    </div>
+                  )}
+                  {!testScores.satRange && !testScores.actRange && (
+                    <p className="text-gray-600">Test score data not available</p>
+                  )}
+                </div>
+                {testScores.averageGPA && (
+                  <div className="mt-6 pt-6 border-t">
+                    <h4 className="font-medium text-gray-900 mb-2">Average GPA</h4>
+                    <div className="text-3xl font-bold text-blue-600">{testScores.averageGPA.toFixed(2)}</div>
+                  </div>
+                )}
+              </Card>
+
+              {/* Application Deadlines */}
+              {college.deadlineTemplates && Object.keys(college.deadlineTemplates).length > 0 && (
+                <Card title="Application Deadlines">
+                  <div className="space-y-3">
+                    {Object.entries(college.deadlineTemplates).map(([key, deadline]) => (
+                      <div key={key} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Calendar className="w-5 h-5 text-blue-600" />
+                          <span className="font-medium capitalize">{key.replace(/_/g, ' ')}</span>
+                        </div>
+                        <span className="text-gray-700">{deadline.date}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              {/* Country-Specific: India */}
+              {college.country === 'India' && (
+                <>
+                  {college.entranceExam && (
+                    <Card title="Entrance Exam">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-orange-50 rounded-lg">
+                          <FileText className="w-6 h-6 text-orange-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-lg">{college.entranceExam}</p>
+                          {college.cutoffs && (
+                            <p className="text-sm text-gray-600">Cutoff data available</p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                </>
+              )}
+
+              {/* Country-Specific: UK */}
+              {college.country === 'United Kingdom' && (
+                <Card title="Entry Requirements">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {college.aLevelRequirements && (
+                      <div className="p-4 bg-purple-50 rounded-lg">
+                        <p className="text-sm text-purple-600 font-medium">A-Level Requirements</p>
+                        <p className="text-lg font-semibold">{college.aLevelRequirements}</p>
+                      </div>
+                    )}
+                    {college.ibPointsRequired && (
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-600 font-medium">IB Points</p>
+                        <p className="text-lg font-semibold">{college.ibPointsRequired}</p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+
+              {/* Country-Specific: Germany */}
+              {college.country === 'Germany' && (
+                <Card title="Entry Requirements">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {college.abiturRequirement && (
+                      <div className="p-4 bg-yellow-50 rounded-lg">
+                        <p className="text-sm text-yellow-700 font-medium">Abitur Grade</p>
+                        <p className="text-lg font-semibold">{college.abiturRequirement}</p>
+                      </div>
+                    )}
+                    {college.germanLevel && (
+                      <div className="p-4 bg-red-50 rounded-lg">
+                        <p className="text-sm text-red-600 font-medium">German Level</p>
+                        <p className="text-lg font-semibold">{college.germanLevel}</p>
+                      </div>
+                    )}
+                    {college.englishLevel && (
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-600 font-medium">English Level</p>
+                        <p className="text-lg font-semibold">{college.englishLevel}</p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
               )}
             </div>
-          )}
-        </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              <Card title="Application Portal">
+                {college.application_portal_url && (
+                  <a
+                    href={college.application_portal_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full py-3 bg-blue-600 text-white text-center rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Apply Now →
+                  </a>
+                )}
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Academics Tab */}
+        {activeTab === 'academics' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Major Categories */}
+              <Card title="Major Categories">
+                <div className="flex flex-wrap gap-2">
+                  {majorCategories.length > 0 ? (
+                    majorCategories.map((cat, i) => (
+                      <span key={i} className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium">
+                        {cat}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-gray-600">Major categories not listed</p>
+                  )}
+                </div>
+              </Card>
+
+              {/* Programs/Majors */}
+              <Card title="Programs Offered">
+                {programs.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {programs.map((program, i) => (
+                      <div key={i} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
+                        <BookOpen className="w-4 h-4 text-gray-400" />
+                        <span>{program}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-600">
+                    Specific programs not listed.{' '}
+                    <a href={college.programs_url || college.official_website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      View on official website →
+                    </a>
+                  </p>
+                )}
+              </Card>
+
+              {/* Academic Stats */}
+              <Card title="Academic Statistics">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-gray-900">{college.studentFacultyRatio || 'N/A'}</div>
+                    <p className="text-sm text-gray-600">Student:Faculty</p>
+                  </div>
+                  {college.graduationRates?.fourYear && (
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">{college.graduationRates.fourYear}%</div>
+                      <p className="text-sm text-gray-600">4-Year Grad Rate</p>
+                    </div>
+                  )}
+                  {college.graduationRates?.sixYear && (
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">{college.graduationRates.sixYear}%</div>
+                      <p className="text-sm text-gray-600">6-Year Grad Rate</p>
+                    </div>
+                  )}
+                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{majorCategories.length}</div>
+                    <p className="text-sm text-gray-600">Major Categories</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {academicStrengths.length > 0 && (
+                <Card title="Academic Strengths">
+                  <div className="space-y-2">
+                    {academicStrengths.map((strength, i) => (
+                      <div key={i} className="flex items-center gap-2 p-2 bg-green-50 rounded">
+                        <Award className="w-4 h-4 text-green-600" />
+                        <span className="text-green-700 font-medium">{strength}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Cost & Aid Tab */}
+        {activeTab === 'cost' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <Card title="Tuition & Costs">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-6 bg-blue-50 rounded-xl text-center">
+                    <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                    <div className="text-3xl font-bold text-blue-600">
+                      {formatCurrency(college.tuition_cost, college.country)}
+                    </div>
+                    <p className="text-blue-700 mt-1">Annual Tuition</p>
+                  </div>
+                  {college.country === 'Germany' && college.tuition_cost === 0 && (
+                    <div className="p-6 bg-green-50 rounded-xl text-center">
+                      <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                      <div className="text-3xl font-bold text-green-600">Free</div>
+                      <p className="text-green-700 mt-1">Public University</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              {/* India-specific: Placements */}
+              {college.country === 'India' && college.placements && (
+                <Card title="Placement Statistics">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {college.placements.averagePackage && (
+                      <div className="p-4 bg-green-50 rounded-lg text-center">
+                        <div className="text-2xl font-bold text-green-600">
+                          ₹{(college.placements.averagePackage / 100000).toFixed(1)} LPA
+                        </div>
+                        <p className="text-sm text-green-700">Average Package</p>
+                      </div>
+                    )}
+                    {college.placements.highestPackage && (
+                      <div className="p-4 bg-blue-50 rounded-lg text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          ₹{(college.placements.highestPackage / 100000).toFixed(1)} LPA
+                        </div>
+                        <p className="text-sm text-blue-700">Highest Package</p>
+                      </div>
+                    )}
+                    {college.placements.placementRate && (
+                      <div className="p-4 bg-purple-50 rounded-lg text-center">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {college.placements.placementRate}%
+                        </div>
+                        <p className="text-sm text-purple-700">Placement Rate</p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <Card title="Financial Aid">
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <p className="text-gray-600">
+                    Financial aid information available on the official website
+                  </p>
+                  <a
+                    href={college.official_website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline text-sm mt-2 inline-block"
+                  >
+                    View Financial Aid →
+                  </a>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Student Life Tab */}
+        {activeTab === 'studentLife' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <Card title="Campus Overview">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <StatItem label="Total Students" value={formatEnrollment(college.enrollment)} icon={<Users />} />
+                  <StatItem label="Location" value={college.location || college.country} icon={<MapPin />} />
+                  <StatItem label="Type" value={college.type || 'University'} icon={<Building />} />
+                </div>
+              </Card>
+
+              {college.country === 'United Kingdom' && college.russellGroup && (
+                <Card title="Affiliations">
+                  <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg">
+                    <Award className="w-6 h-6 text-purple-600" />
+                    <div>
+                      <p className="font-semibold text-purple-900">Russell Group Member</p>
+                      <p className="text-sm text-purple-700">One of the UK's leading research universities</p>
+                    </div>
+                  </div>
+                </Card>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <Card title="Campus Life">
+                <p className="text-gray-600 text-center p-4">
+                  For detailed information about campus life, clubs, and activities, visit the official website.
+                </p>
+                <a
+                  href={college.official_website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full py-2 border border-gray-200 text-center rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Explore Campus Life →
+                </a>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Outcomes Tab */}
+        {activeTab === 'outcomes' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <Card title="Graduation Rates">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {college.graduationRates?.fourYear && (
+                    <div className="text-center">
+                      <div className="relative w-32 h-32 mx-auto">
+                        <svg className="w-full h-full" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
+                          <circle 
+                            cx="50" cy="50" r="45" fill="none" stroke="#10B981" strokeWidth="10"
+                            strokeDasharray={`${college.graduationRates.fourYear * 2.83} 283`}
+                            strokeLinecap="round"
+                            transform="rotate(-90 50 50)"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-2xl font-bold">{college.graduationRates.fourYear}%</span>
+                        </div>
+                      </div>
+                      <p className="mt-2 font-medium">4-Year Graduation Rate</p>
+                    </div>
+                  )}
+                  {college.graduationRates?.sixYear && (
+                    <div className="text-center">
+                      <div className="relative w-32 h-32 mx-auto">
+                        <svg className="w-full h-full" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
+                          <circle 
+                            cx="50" cy="50" r="45" fill="none" stroke="#3B82F6" strokeWidth="10"
+                            strokeDasharray={`${college.graduationRates.sixYear * 2.83} 283`}
+                            strokeLinecap="round"
+                            transform="rotate(-90 50 50)"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-2xl font-bold">{college.graduationRates.sixYear}%</span>
+                        </div>
+                      </div>
+                      <p className="mt-2 font-medium">6-Year Graduation Rate</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              {/* India-specific: Placements in Outcomes */}
+              {college.country === 'India' && college.placements && (
+                <Card title="Career Outcomes">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                      <Briefcase className="w-8 h-8 text-blue-600" />
+                      <div>
+                        <p className="font-semibold">Strong Placement Record</p>
+                        <p className="text-sm text-gray-600">Top companies recruit from this institution</p>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <Card title="Career Services">
+                <p className="text-gray-600 text-sm">
+                  Contact the career services office for detailed employment statistics and outcomes data.
+                </p>
+              </Card>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -452,220 +828,61 @@ const CollegeDetail: React.FC = () => {
    Helper Components
 ========================= */
 
-interface InfoBoxProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}
+const Card: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="p-4 border-b border-gray-100">
+      <h3 className="font-semibold text-gray-900">{title}</h3>
+    </div>
+    <div className="p-4">{children}</div>
+  </div>
+);
 
-const InfoBox: React.FC<InfoBoxProps> = ({ icon, label, value }) => (
-  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-    <div className="text-blue-600">{icon}</div>
+const QuickStat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="text-center">
+    <div className="text-xl font-bold">{value}</div>
+    <div className="text-xs text-blue-200">{label}</div>
+  </div>
+);
+
+const StatItem: React.FC<{ label: string; value: string; icon: React.ReactNode }> = ({ label, value, icon }) => (
+  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+    <div className="p-2 bg-white rounded-lg text-blue-600">{icon}</div>
     <div>
-      <p className="text-xs text-gray-600">{label}</p>
-      <p className="text-sm font-semibold">{value}</p>
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="font-semibold text-gray-900">{value}</p>
     </div>
   </div>
 );
 
-interface DataSectionProps {
-  title: string;
-  icon: React.ReactNode;
-  data: Layer2Data | null;
-  officialUrl: string;
-  onResearch: () => void;
-  researching: boolean;
-}
+const QuickLink: React.FC<{ href: string; label: string }> = ({ href, label }) => (
+  <a
+    href={href}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+  >
+    <span className="text-gray-700">{label}</span>
+    <ExternalLink className="w-4 h-4 text-gray-400" />
+  </a>
+);
 
-const DataSection: React.FC<DataSectionProps> = ({
-  title,
-  icon,
-  data,
-  officialUrl,
-  onResearch,
-  researching
-}) => {
-  if (!data) {
-    return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold mb-4 flex items-center">
-          {icon}
-          <span className="ml-2">{title}</span>
-        </h2>
-        <div className="text-center py-8">
-          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-          <p className="text-gray-600 mb-4">Not listed officially</p>
-          <div className="flex flex-col gap-2">
-            <a
-              href={officialUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline flex items-center justify-center"
-            >
-              Visit Official Website
-              <ExternalLink className="w-4 h-4 ml-1" />
-            </a>
-            <button
-              onClick={onResearch}
-              disabled={researching}
-              className="text-sm text-gray-600 hover:text-blue-600 flex items-center justify-center disabled:opacity-50"
-            >
-              {researching ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
-                  Researching...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-1" />
-                  Trigger On-Demand Research (Layer 3)
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!data.available) {
-    return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold mb-4 flex items-center">
-          {icon}
-          <span className="ml-2">{title}</span>
-        </h2>
-        <div className="text-center py-8">
-          <AlertCircle className="w-12 h-12 text-yellow-400 mx-auto mb-2" />
-          <p className="text-gray-600 mb-2">{data.message || 'Not listed officially'}</p>
-          {data.lastUpdated && (
-            <p className="text-xs text-gray-500 mb-4">Last updated: {new Date(data.lastUpdated).toLocaleDateString()}</p>
-          )}
-          <div className="flex flex-col gap-2">
-            <a
-              href={officialUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline flex items-center justify-center"
-            >
-              Visit Official Website
-              <ExternalLink className="w-4 h-4 ml-1" />
-            </a>
-            <button
-              onClick={onResearch}
-              disabled={researching}
-              className="text-sm text-gray-600 hover:text-blue-600 flex items-center justify-center disabled:opacity-50"
-            >
-              {researching ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
-                  Researching...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-1" />
-                  Trigger On-Demand Research (Layer 3)
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+const ScoreBar: React.FC<{ label: string; low: number; high: number; max: number }> = ({ label, low, high, max }) => {
+  const lowPercent = (low / max) * 100;
+  const highPercent = (high / max) * 100;
+  const rangeWidth = highPercent - lowPercent;
+  
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold flex items-center">
-          {icon}
-          <span className="ml-2">{title}</span>
-        </h2>
-        {data.source && (
-          <a
-            href={data.source}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-blue-600 hover:underline flex items-center"
-          >
-            Source
-            <ExternalLink className="w-3 h-3 ml-1" />
-          </a>
-        )}
+    <div>
+      <div className="flex justify-between text-sm text-gray-600 mb-1">
+        <span>{label}</span>
+        <span className="font-medium">{low} - {high}</span>
       </div>
-      
-      {data.data && (
-        <div className="space-y-2">
-          {typeof data.data === 'object' ? (
-            <pre className="text-sm bg-gray-50 p-4 rounded overflow-auto">
-              {JSON.stringify(data.data, null, 2)}
-            </pre>
-          ) : (
-            <p className="text-sm text-gray-700">{String(data.data)}</p>
-          )}
-        </div>
-      )}
-      
-      {data.scrapedAt && (
-        <p className="text-xs text-gray-500 mt-4">
-          Scraped: {new Date(data.scrapedAt).toLocaleString()}
-          {data.trustTier && ` • Trust Tier: ${data.trustTier}`}
-        </p>
-      )}
-      
-      <button
-        onClick={onResearch}
-        disabled={researching}
-        className="mt-4 text-sm text-gray-600 hover:text-blue-600 flex items-center disabled:opacity-50"
-      >
-        {researching ? (
-          <>
-            <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
-            Refreshing...
-          </>
-        ) : (
-          <>
-            <RefreshCw className="w-4 h-4 mr-1" />
-            Refresh Data (Layer 3)
-          </>
-        )}
-      </button>
-    </div>
-  );
-};
-
-interface EligibilityBadgeProps {
-  status: 'eligible' | 'conditional' | 'not_eligible';
-}
-
-const EligibilityBadge: React.FC<EligibilityBadgeProps> = ({ status }) => {
-  const config = {
-    eligible: {
-      bg: 'bg-green-50',
-      text: 'text-green-700',
-      icon: <CheckCircle className="w-5 h-5" />,
-      label: 'Eligible'
-    },
-    conditional: {
-      bg: 'bg-yellow-50',
-      text: 'text-yellow-700',
-      icon: <AlertCircle className="w-5 h-5" />,
-      label: 'Conditionally Eligible'
-    },
-    not_eligible: {
-      bg: 'bg-red-50',
-      text: 'text-red-700',
-      icon: <AlertCircle className="w-5 h-5" />,
-      label: 'Not Eligible'
-    }
-  };
-
-  const { bg, text, icon, label } = config[status];
-
-  return (
-    <div className={`flex items-center gap-2 p-4 rounded-lg ${bg}`}>
-      <div className={text}>{icon}</div>
-      <span className={`font-semibold ${text}`}>{label}</span>
+      <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
+        <div 
+          className="absolute h-full bg-blue-500 rounded-full"
+          style={{ left: `${lowPercent}%`, width: `${rangeWidth}%` }}
+        />
+      </div>
     </div>
   );
 };
