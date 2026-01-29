@@ -220,8 +220,10 @@ class CollegeController {
   static async browseAll(req, res, next) {
     try {
       const { page = 1, limit = 50, sort = 'name', country, type } = req.query;
-      const pageNum = parseInt(page);
-      const limitNum = Math.min(parseInt(limit) || 50, 100);
+      
+      // Validate pagination parameters
+      const pageNum = Math.max(1, parseInt(page) || 1);
+      const limitNum = Math.min(Math.max(1, parseInt(limit) || 50), 100);
       const offset = (pageNum - 1) * limitNum;
       
       const College = require('../models/College');
@@ -260,14 +262,28 @@ class CollegeController {
   static async browseByMajor(req, res, next) {
     try {
       const { major } = req.params;
+      
+      // Validate major parameter
+      if (!major || major.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Major parameter is required'
+        });
+      }
+      
+      // Sanitize major - allow alphanumeric, spaces, and common punctuation
+      const sanitizedMajor = major.trim().substring(0, 100);
+      
       const { page = 1, limit = 50, country } = req.query;
-      const pageNum = parseInt(page);
-      const limitNum = Math.min(parseInt(limit) || 50, 100);
+      
+      // Validate pagination parameters
+      const pageNum = Math.max(1, parseInt(page) || 1);
+      const limitNum = Math.min(Math.max(1, parseInt(limit) || 50), 100);
       const offset = (pageNum - 1) * limitNum;
       
       const College = require('../models/College');
       
-      const colleges = College.findByMajor(major, {
+      const colleges = College.findByMajor(sanitizedMajor, {
         country,
         limit: limitNum,
         offset
@@ -275,9 +291,14 @@ class CollegeController {
       
       res.json({
         success: true,
-        major,
+        major: sanitizedMajor,
         count: colleges.length,
-        data: colleges
+        data: colleges,
+        pagination: {
+          currentPage: pageNum,
+          perPage: limitNum,
+          resultsOnPage: colleges.length
+        }
       });
     } catch (error) {
       logger.error('Browse by major error:', error);

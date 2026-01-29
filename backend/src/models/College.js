@@ -3,11 +3,20 @@ const dbManager = require('../config/database');
 // Helper to normalize acceptance rate (ensure it's in decimal form 0-1)
 function normalizeAcceptanceRate(rate) {
   if (rate === null || rate === undefined) return null;
+  // Validate rate is a number
+  const numRate = Number(rate);
+  if (isNaN(numRate)) return null;
   // If stored as percentage (e.g., 9 for 9%), convert to decimal
-  if (rate > 1) {
-    return rate / 100;
+  // Use threshold of > 1 to determine if it's percentage form
+  // Edge case: 1.0 is 100%, values > 100 are invalid
+  if (numRate > 100) {
+    console.warn(`Invalid acceptance rate value: ${numRate}. Expected 0-100 or 0-1.`);
+    return null;
   }
-  return rate;
+  if (numRate > 1) {
+    return numRate / 100;
+  }
+  return numRate;
 }
 
 // Helper to safely parse JSON
@@ -187,19 +196,22 @@ class College {
     };
     
     // Build search patterns including synonyms
-    const searchTermLower = searchTerm.toLowerCase();
-    const searchPatterns = [`%${searchTerm}%`];
+    const searchTermLower = searchTerm.toLowerCase().trim();
+    const searchWords = searchTermLower.split(/\s+/);
+    const searchPatterns = new Set([`%${searchTerm}%`]);
     
-    // Add synonyms to search if applicable
+    // Add synonyms to search if applicable (using word boundary matching)
     for (const [key, values] of Object.entries(synonyms)) {
-      if (searchTermLower.includes(key)) {
+      // Check if any word in search matches the synonym key exactly
+      if (searchWords.includes(key)) {
         values.forEach(synonym => {
-          if (!searchPatterns.some(p => p.includes(synonym))) {
-            searchPatterns.push(`%${synonym}%`);
-          }
+          searchPatterns.add(`%${synonym}%`);
         });
       }
     }
+    
+    // Limit number of patterns to avoid performance issues
+    const patternsArray = Array.from(searchPatterns).slice(0, 5);
     
     // Build query with multiple search patterns
     let query = `
@@ -209,7 +221,7 @@ class College {
     const params = [];
     
     // Add search conditions for each pattern
-    const patternConditions = searchPatterns.map((pattern, idx) => {
+    const patternConditions = patternsArray.map((pattern, idx) => {
       params.push(pattern, pattern, pattern, pattern, pattern, pattern, pattern);
       return `(
         name LIKE ?
@@ -352,7 +364,8 @@ class College {
   // Get total count of colleges (for pagination)
   static getCount(filters = {}) {
     const db = dbManager.getDatabase();
-    let query = 'SELECT COUNT(DISTINCT name || country) as count FROM colleges WHERE 1=1';
+    // Use delimiter to avoid collision (e.g., "New" + "York" vs "NewY" + "ork")
+    let query = "SELECT COUNT(DISTINCT LOWER(name) || '|' || LOWER(country)) as count FROM colleges WHERE 1=1";
     const params = [];
     
     if (filters.country) {
