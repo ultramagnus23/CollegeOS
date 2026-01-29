@@ -259,8 +259,20 @@ router.get('/filters', async (req, res) => {
 router.get('/suggestions', async (req, res) => {
   try {
     const { q } = req.query;
-    
-    if (!q || q.length < 2) {
+
+    // Normalize q to a string to avoid type confusion (arrays/objects)
+    let searchQuery = null;
+    if (typeof q === 'string') {
+      searchQuery = q;
+    } else if (Array.isArray(q)) {
+      // Take the first non-empty string value if multiple are provided
+      const first = q.find(v => typeof v === 'string' && v.length > 0);
+      if (first) {
+        searchQuery = first;
+      }
+    }
+
+    if (!searchQuery || searchQuery.length < 2) {
       return res.json({ success: true, suggestions: [] });
     }
 
@@ -272,7 +284,7 @@ router.get('/suggestions', async (req, res) => {
     `;
 
     const results = await new Promise((resolve, reject) => {
-      db.all(query, [`%${q}%`], (err, rows) => {
+      db.all(query, [`%${searchQuery}%`], (err, rows) => {
         if (err) reject(err);
         else resolve(rows);
       });
