@@ -55,7 +55,5 @@ export function getCollegesByCountry(country: 'us' | 'india' | 'uk' | 'germany')
       return ukColleges;
     case 'germany':
       return germanColleges;
-    default:
-      return [];
   }
 }
