@@ -1,0 +1,3202 @@
+[
+  {
+    "rank": 1,
+    "name": "Technical University of Munich",
+    "website": "https://www.technicaluni-munich.de",
+    "location": {
+      "city": "Munich",
+      "state": "Bavaria",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 37,
+      "times": 30
+    },
+    "admissions": {
+      "abiturRequirement": "1.0-1.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 150,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Engineering",
+      "Computer Science",
+      "Physics"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 2,
+    "name": "Ludwig Maximilian University of Munich",
+    "website": "https://www.ludwigmaximilianuni-munich.de",
+    "location": {
+      "city": "Munich",
+      "state": "Bavaria",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 54,
+      "times": 32
+    },
+    "admissions": {
+      "abiturRequirement": "1.5-2.0",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 160,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Economics",
+      "Biology",
+      "Physics"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 3,
+    "name": "Heidelberg University",
+    "website": "https://www.heidelberguniversity.de",
+    "location": {
+      "city": "Heidelberg",
+      "state": "Baden-Württemberg",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 49,
+      "times": 43
+    },
+    "admissions": {
+      "abiturRequirement": "1.5-2.0",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 175,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Medicine",
+      "Sciences",
+      "Humanities"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 4,
+    "name": "RWTH Aachen University",
+    "website": "https://www.rwthaachenuniversity.de",
+    "location": {
+      "city": "Aachen",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 106,
+      "times": 99
+    },
+    "admissions": {
+      "abiturRequirement": "1.5-2.5",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 310,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Engineering",
+      "Computer Science",
+      "Physics"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 5,
+    "name": "Technical University of Berlin",
+    "website": "https://www.technicaluni-berlin.de",
+    "location": {
+      "city": "Berlin",
+      "state": "Berlin",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 106,
+      "times": 140
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 315,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Engineering",
+      "Computer Science",
+      "Urban Planning"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 6,
+    "name": "Humboldt University of Berlin",
+    "website": "https://www.humboldtuni-berlin.de",
+    "location": {
+      "city": "Berlin",
+      "state": "Berlin",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 120,
+      "times": 86
+    },
+    "admissions": {
+      "abiturRequirement": "1.5-2.0",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 315,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Arts",
+      "Humanities",
+      "Social Sciences"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 7,
+    "name": "Free University of Berlin",
+    "website": "https://www.freeuni-berlin.de",
+    "location": {
+      "city": "Berlin",
+      "state": "Berlin",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 100,
+      "times": 83
+    },
+    "admissions": {
+      "abiturRequirement": "1.5-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 330,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Political Science",
+      "Humanities",
+      "Sciences"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 8,
+    "name": "Karlsruhe Institute of Technology",
+    "website": "https://www.karlsruheinstituteoftechnology.de",
+    "location": {
+      "city": "Karlsruhe",
+      "state": "Baden-Württemberg",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 119,
+      "times": 201
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 175,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Engineering",
+      "Computer Science",
+      "Natural Sciences"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 9,
+    "name": "University of Freiburg",
+    "website": "https://www.uni-freiburg.de",
+    "location": {
+      "city": "Freiburg",
+      "state": "Baden-Württemberg",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 172,
+      "times": 108
+    },
+    "admissions": {
+      "abiturRequirement": "1.5-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 180,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Medicine",
+      "Sciences",
+      "Humanities"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 10,
+    "name": "University of Göttingen",
+    "website": "https://www.uni-gttingen.de",
+    "location": {
+      "city": "Göttingen",
+      "state": "Lower Saxony",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 223,
+      "times": 119
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 390,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Mathematics",
+      "Economics"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 11,
+    "name": "University of Bonn",
+    "website": "https://www.uni-bonn.de",
+    "location": {
+      "city": "Bonn",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 200,
+      "times": 112
+    },
+    "admissions": {
+      "abiturRequirement": "1.5-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 310,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Mathematics",
+      "Economics",
+      "Sciences"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 12,
+    "name": "University of Hamburg",
+    "website": "https://www.uni-hamburg.de",
+    "location": {
+      "city": "Hamburg",
+      "state": "Hamburg",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 197,
+      "times": 127
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 340,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Humanities",
+      "Business"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 13,
+    "name": "Technical University of Darmstadt",
+    "website": "https://www.technicaluni-darmstadt.de",
+    "location": {
+      "city": "Darmstadt",
+      "state": "Hesse",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 260,
+      "times": 251
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 280,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Engineering",
+      "Computer Science",
+      "Physics"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 14,
+    "name": "University of Stuttgart",
+    "website": "https://www.uni-stuttgart.de",
+    "location": {
+      "city": "Stuttgart",
+      "state": "Baden-Württemberg",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 301,
+      "times": 301
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 180,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Engineering",
+      "Automotive",
+      "Aerospace"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 15,
+    "name": "University of Tübingen",
+    "website": "https://www.uni-tbingen.de",
+    "location": {
+      "city": "Tübingen",
+      "state": "Baden-Württemberg",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 177,
+      "times": 86
+    },
+    "admissions": {
+      "abiturRequirement": "1.5-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 185,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Medicine",
+      "Humanities",
+      "Sciences"
+    ],
+    "tier": 1
+  },
+  {
+    "rank": 16,
+    "name": "University of Mannheim",
+    "website": "https://www.uni-mannheim.de",
+    "location": {
+      "city": "Mannheim",
+      "state": "Baden-Württemberg",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 411,
+      "times": 201
+    },
+    "admissions": {
+      "abiturRequirement": "1.5-2.0",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 180,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Business",
+      "Economics",
+      "Social Sciences"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 17,
+    "name": "University of Cologne",
+    "website": "https://www.uni-cologne.de",
+    "location": {
+      "city": "Cologne",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 326,
+      "times": 171
+    },
+    "admissions": {
+      "abiturRequirement": "1.5-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 290,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Economics",
+      "Business",
+      "Law"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 18,
+    "name": "University of Frankfurt",
+    "website": "https://www.uni-frankfurt.de",
+    "location": {
+      "city": "Frankfurt",
+      "state": "Hesse",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 292,
+      "times": 186
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 390,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Finance",
+      "Economics",
+      "Sciences"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 19,
+    "name": "Leibniz University Hannover",
+    "website": "https://www.leibnizuniversityhannover.de",
+    "location": {
+      "city": "Hanover",
+      "state": "Lower Saxony",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 448,
+      "times": 401
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 415,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Engineering",
+      "Sciences",
+      "Computer Science"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 20,
+    "name": "Technical University of Dresden",
+    "website": "https://www.technicaluni-dresden.de",
+    "location": {
+      "city": "Dresden",
+      "state": "Saxony",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 173,
+      "times": 173
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 285,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Engineering",
+      "Computer Science",
+      "Sciences"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 21,
+    "name": "University of Konstanz",
+    "website": "https://www.uni-konstanz.de",
+    "location": {
+      "city": "Konstanz",
+      "state": "Baden-Württemberg",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 426,
+      "times": 176
+    },
+    "admissions": {
+      "abiturRequirement": "1.5-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 175,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Humanities",
+      "Politics"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 22,
+    "name": "University of Münster",
+    "website": "https://www.uni-mnster.de",
+    "location": {
+      "city": "Münster",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 361,
+      "times": 163
+    },
+    "admissions": {
+      "abiturRequirement": "1.5-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 310,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Business",
+      "Medicine"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 23,
+    "name": "University of Würzburg",
+    "website": "https://www.uni-wrzburg.de",
+    "location": {
+      "city": "Würzburg",
+      "state": "Bavaria",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 399,
+      "times": 251
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 150,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Medicine",
+      "Humanities"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 24,
+    "name": "University of Erlangen-Nuremberg",
+    "website": "https://www.uni-erlangen-nuremberg.de",
+    "location": {
+      "city": "Erlangen",
+      "state": "Bavaria",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 331,
+      "times": 182
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 150,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Engineering",
+      "Sciences",
+      "Medicine"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 25,
+    "name": "University of Leipzig",
+    "website": "https://www.uni-leipzig.de",
+    "location": {
+      "city": "Leipzig",
+      "state": "Saxony",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 436,
+      "times": 192
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 245,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Humanities",
+      "Sciences",
+      "Medicine"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 26,
+    "name": "University of Jena",
+    "website": "https://www.uni-jena.de",
+    "location": {
+      "city": "Jena",
+      "state": "Thuringia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 333,
+      "times": 181
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 235,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Humanities",
+      "Medicine"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 27,
+    "name": "University of Kiel",
+    "website": "https://www.uni-kiel.de",
+    "location": {
+      "city": "Kiel",
+      "state": "Schleswig-Holstein",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 454,
+      "times": 201
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-3.0",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 135,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Marine Sciences",
+      "Sciences",
+      "Medicine"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 28,
+    "name": "University of Mainz",
+    "website": "https://www.uni-mainz.de",
+    "location": {
+      "city": "Mainz",
+      "state": "Rhineland-Palatinate",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 321,
+      "times": 201
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "C1",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 360,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Humanities",
+      "Medicine"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 29,
+    "name": "University of Ulm",
+    "website": "https://www.uni-ulm.de",
+    "location": {
+      "city": "Ulm",
+      "state": "Baden-Württemberg",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 249,
+      "times": 126
+    },
+    "admissions": {
+      "abiturRequirement": "2.0-2.5",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 180,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Medicine",
+      "Computer Science"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 30,
+    "name": "University of Duisburg-Essen",
+    "website": "https://www.uni-duisburg-essen.de",
+    "location": {
+      "city": "Duisburg",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 501,
+      "times": 201
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 330,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Engineering",
+      "Sciences",
+      "Economics"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 31,
+    "name": "University of Bremen",
+    "website": "https://www.uni-bremen.de",
+    "location": {
+      "city": "Bremen",
+      "state": "Bremen",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 710,
+      "times": 455
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 289,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 32,
+    "name": "University of Wuppertal",
+    "website": "https://www.uni-wuppertal.de",
+    "location": {
+      "city": "Wuppertal",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 720,
+      "times": 460
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 365,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 33,
+    "name": "University of Bielefeld",
+    "website": "https://www.uni-bielefeld.de",
+    "location": {
+      "city": "Bielefeld",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 730,
+      "times": 465
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 318,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 34,
+    "name": "University of Bochum",
+    "website": "https://www.uni-bochum.de",
+    "location": {
+      "city": "Bochum",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 740,
+      "times": 470
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 237,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 35,
+    "name": "University of Dortmund",
+    "website": "https://www.uni-dortmund.de",
+    "location": {
+      "city": "Dortmund",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 750,
+      "times": 475
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 230,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 36,
+    "name": "University of Essen",
+    "website": "https://www.uni-essen.de",
+    "location": {
+      "city": "Essen",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 760,
+      "times": 480
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 276,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 37,
+    "name": "University of Düsseldorf",
+    "website": "https://www.uni-dsseldorf.de",
+    "location": {
+      "city": "Düsseldorf",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 770,
+      "times": 485
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 369,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 38,
+    "name": "University of Kassel",
+    "website": "https://www.uni-kassel.de",
+    "location": {
+      "city": "Kassel",
+      "state": "Hesse",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 780,
+      "times": 490
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 268,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 39,
+    "name": "University of Magdeburg",
+    "website": "https://www.uni-magdeburg.de",
+    "location": {
+      "city": "Magdeburg",
+      "state": "Saxony-Anhalt",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 790,
+      "times": 495
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 398,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 40,
+    "name": "University of Rostock",
+    "website": "https://www.uni-rostock.de",
+    "location": {
+      "city": "Rostock",
+      "state": "Mecklenburg-Vorpommern",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 800,
+      "times": 500
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 312,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 2
+  },
+  {
+    "rank": 41,
+    "name": "University of Potsdam",
+    "website": "https://www.uni-potsdam.de",
+    "location": {
+      "city": "Potsdam",
+      "state": "Brandenburg",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 810,
+      "times": 505
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 240,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 42,
+    "name": "University of Osnabrück",
+    "website": "https://www.uni-osnabrck.de",
+    "location": {
+      "city": "Osnabrück",
+      "state": "Lower Saxony",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 820,
+      "times": 510
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 356,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 43,
+    "name": "University of Siegen",
+    "website": "https://www.uni-siegen.de",
+    "location": {
+      "city": "Siegen",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 830,
+      "times": 515
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 351,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 44,
+    "name": "University of Paderborn",
+    "website": "https://www.uni-paderborn.de",
+    "location": {
+      "city": "Paderborn",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 840,
+      "times": 520
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 292,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 45,
+    "name": "University of Chemnitz",
+    "website": "https://www.uni-chemnitz.de",
+    "location": {
+      "city": "Chemnitz",
+      "state": "Saxony",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 850,
+      "times": 525
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 258,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 46,
+    "name": "University of Greifswald",
+    "website": "https://www.uni-greifswald.de",
+    "location": {
+      "city": "Greifswald",
+      "state": "Mecklenburg-Vorpommern",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 860,
+      "times": 530
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 349,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 47,
+    "name": "University of Augsburg",
+    "website": "https://www.uni-augsburg.de",
+    "location": {
+      "city": "Augsburg",
+      "state": "Bavaria",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 870,
+      "times": 535
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 394,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 48,
+    "name": "University of Regensburg",
+    "website": "https://www.uni-regensburg.de",
+    "location": {
+      "city": "Regensburg",
+      "state": "Bavaria",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 880,
+      "times": 540
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 257,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 49,
+    "name": "University of Passau",
+    "website": "https://www.uni-passau.de",
+    "location": {
+      "city": "Passau",
+      "state": "Bavaria",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 890,
+      "times": 545
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 394,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 50,
+    "name": "University of Bayreuth",
+    "website": "https://www.uni-bayreuth.de",
+    "location": {
+      "city": "Bayreuth",
+      "state": "Bavaria",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 900,
+      "times": 550
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 210,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 51,
+    "name": "University of Oldenburg",
+    "website": "https://www.uni-oldenburg.de",
+    "location": {
+      "city": "Oldenburg",
+      "state": "Lower Saxony",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 910,
+      "times": 555
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 275,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 52,
+    "name": "University of Marburg",
+    "website": "https://www.uni-marburg.de",
+    "location": {
+      "city": "Marburg",
+      "state": "Hesse",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 920,
+      "times": 560
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 281,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 53,
+    "name": "University of Giessen",
+    "website": "https://www.uni-giessen.de",
+    "location": {
+      "city": "Giessen",
+      "state": "Hesse",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 930,
+      "times": 565
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 310,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 54,
+    "name": "University of Saarbrücken",
+    "website": "https://www.uni-saarbrcken.de",
+    "location": {
+      "city": "Saarbrücken",
+      "state": "Saarland",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 940,
+      "times": 570
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 362,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 55,
+    "name": "University of Trier",
+    "website": "https://www.uni-trier.de",
+    "location": {
+      "city": "Trier",
+      "state": "Rhineland-Palatinate",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 950,
+      "times": 575
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 317,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 56,
+    "name": "University of Worms",
+    "website": "https://www.uni-worms.de",
+    "location": {
+      "city": "Worms",
+      "state": "Rhineland-Palatinate",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 960,
+      "times": 580
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 396,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 57,
+    "name": "University of Fulda",
+    "website": "https://www.uni-fulda.de",
+    "location": {
+      "city": "Fulda",
+      "state": "Hesse",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 970,
+      "times": 585
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 314,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 58,
+    "name": "University of Bremen",
+    "website": "https://www.uni-bremen.de",
+    "location": {
+      "city": "Bremen",
+      "state": "Bremen",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 980,
+      "times": 590
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 374,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 59,
+    "name": "University of Wuppertal",
+    "website": "https://www.uni-wuppertal.de",
+    "location": {
+      "city": "Wuppertal",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 990,
+      "times": 595
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 279,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 60,
+    "name": "University of Bielefeld",
+    "website": "https://www.uni-bielefeld.de",
+    "location": {
+      "city": "Bielefeld",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1000,
+      "times": 600
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 356,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 61,
+    "name": "University of Bochum",
+    "website": "https://www.uni-bochum.de",
+    "location": {
+      "city": "Bochum",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1010,
+      "times": 605
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 394,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 62,
+    "name": "University of Dortmund",
+    "website": "https://www.uni-dortmund.de",
+    "location": {
+      "city": "Dortmund",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1020,
+      "times": 610
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 200,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 63,
+    "name": "University of Essen",
+    "website": "https://www.uni-essen.de",
+    "location": {
+      "city": "Essen",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1030,
+      "times": 615
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 397,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 64,
+    "name": "University of Düsseldorf",
+    "website": "https://www.uni-dsseldorf.de",
+    "location": {
+      "city": "Düsseldorf",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1040,
+      "times": 620
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 369,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 65,
+    "name": "University of Kassel",
+    "website": "https://www.uni-kassel.de",
+    "location": {
+      "city": "Kassel",
+      "state": "Hesse",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1050,
+      "times": 625
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 322,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 66,
+    "name": "University of Magdeburg",
+    "website": "https://www.uni-magdeburg.de",
+    "location": {
+      "city": "Magdeburg",
+      "state": "Saxony-Anhalt",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1060,
+      "times": 630
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 308,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 67,
+    "name": "University of Rostock",
+    "website": "https://www.uni-rostock.de",
+    "location": {
+      "city": "Rostock",
+      "state": "Mecklenburg-Vorpommern",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1070,
+      "times": 635
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 210,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 68,
+    "name": "University of Potsdam",
+    "website": "https://www.uni-potsdam.de",
+    "location": {
+      "city": "Potsdam",
+      "state": "Brandenburg",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1080,
+      "times": 640
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 260,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 69,
+    "name": "University of Osnabrück",
+    "website": "https://www.uni-osnabrck.de",
+    "location": {
+      "city": "Osnabrück",
+      "state": "Lower Saxony",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1090,
+      "times": 645
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 216,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 70,
+    "name": "University of Siegen",
+    "website": "https://www.uni-siegen.de",
+    "location": {
+      "city": "Siegen",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1100,
+      "times": 650
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 203,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 3
+  },
+  {
+    "rank": 71,
+    "name": "University of Paderborn",
+    "website": "https://www.uni-paderborn.de",
+    "location": {
+      "city": "Paderborn",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1110,
+      "times": 655
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 337,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 72,
+    "name": "University of Chemnitz",
+    "website": "https://www.uni-chemnitz.de",
+    "location": {
+      "city": "Chemnitz",
+      "state": "Saxony",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1120,
+      "times": 660
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 367,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 73,
+    "name": "University of Greifswald",
+    "website": "https://www.uni-greifswald.de",
+    "location": {
+      "city": "Greifswald",
+      "state": "Mecklenburg-Vorpommern",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1130,
+      "times": 665
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 286,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 74,
+    "name": "University of Augsburg",
+    "website": "https://www.uni-augsburg.de",
+    "location": {
+      "city": "Augsburg",
+      "state": "Bavaria",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1140,
+      "times": 670
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 363,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 75,
+    "name": "University of Regensburg",
+    "website": "https://www.uni-regensburg.de",
+    "location": {
+      "city": "Regensburg",
+      "state": "Bavaria",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1150,
+      "times": 675
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 208,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 76,
+    "name": "University of Passau",
+    "website": "https://www.uni-passau.de",
+    "location": {
+      "city": "Passau",
+      "state": "Bavaria",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1160,
+      "times": 680
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 282,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 77,
+    "name": "University of Bayreuth",
+    "website": "https://www.uni-bayreuth.de",
+    "location": {
+      "city": "Bayreuth",
+      "state": "Bavaria",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1170,
+      "times": 685
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 308,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 78,
+    "name": "University of Oldenburg",
+    "website": "https://www.uni-oldenburg.de",
+    "location": {
+      "city": "Oldenburg",
+      "state": "Lower Saxony",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1180,
+      "times": 690
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 377,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 79,
+    "name": "University of Marburg",
+    "website": "https://www.uni-marburg.de",
+    "location": {
+      "city": "Marburg",
+      "state": "Hesse",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1190,
+      "times": 695
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 258,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 80,
+    "name": "University of Giessen",
+    "website": "https://www.uni-giessen.de",
+    "location": {
+      "city": "Giessen",
+      "state": "Hesse",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1200,
+      "times": 700
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 363,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 81,
+    "name": "University of Saarbrücken",
+    "website": "https://www.uni-saarbrcken.de",
+    "location": {
+      "city": "Saarbrücken",
+      "state": "Saarland",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1210,
+      "times": 705
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 209,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 82,
+    "name": "University of Trier",
+    "website": "https://www.uni-trier.de",
+    "location": {
+      "city": "Trier",
+      "state": "Rhineland-Palatinate",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1220,
+      "times": 710
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 270,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 83,
+    "name": "University of Worms",
+    "website": "https://www.uni-worms.de",
+    "location": {
+      "city": "Worms",
+      "state": "Rhineland-Palatinate",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1230,
+      "times": 715
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 308,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 84,
+    "name": "University of Fulda",
+    "website": "https://www.uni-fulda.de",
+    "location": {
+      "city": "Fulda",
+      "state": "Hesse",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1240,
+      "times": 720
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 287,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 85,
+    "name": "University of Bremen",
+    "website": "https://www.uni-bremen.de",
+    "location": {
+      "city": "Bremen",
+      "state": "Bremen",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1250,
+      "times": 725
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 272,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 86,
+    "name": "University of Wuppertal",
+    "website": "https://www.uni-wuppertal.de",
+    "location": {
+      "city": "Wuppertal",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1260,
+      "times": 730
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 215,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 87,
+    "name": "University of Bielefeld",
+    "website": "https://www.uni-bielefeld.de",
+    "location": {
+      "city": "Bielefeld",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1270,
+      "times": 735
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 380,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 88,
+    "name": "University of Bochum",
+    "website": "https://www.uni-bochum.de",
+    "location": {
+      "city": "Bochum",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1280,
+      "times": 740
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 260,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 89,
+    "name": "University of Dortmund",
+    "website": "https://www.uni-dortmund.de",
+    "location": {
+      "city": "Dortmund",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1290,
+      "times": 745
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 252,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 90,
+    "name": "University of Essen",
+    "website": "https://www.uni-essen.de",
+    "location": {
+      "city": "Essen",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1300,
+      "times": 750
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 371,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 91,
+    "name": "University of Düsseldorf",
+    "website": "https://www.uni-dsseldorf.de",
+    "location": {
+      "city": "Düsseldorf",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1310,
+      "times": 755
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 249,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 92,
+    "name": "University of Kassel",
+    "website": "https://www.uni-kassel.de",
+    "location": {
+      "city": "Kassel",
+      "state": "Hesse",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1320,
+      "times": 760
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 227,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 93,
+    "name": "University of Magdeburg",
+    "website": "https://www.uni-magdeburg.de",
+    "location": {
+      "city": "Magdeburg",
+      "state": "Saxony-Anhalt",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1330,
+      "times": 765
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 366,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 94,
+    "name": "University of Rostock",
+    "website": "https://www.uni-rostock.de",
+    "location": {
+      "city": "Rostock",
+      "state": "Mecklenburg-Vorpommern",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1340,
+      "times": 770
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 352,
+      "euTuition": 0,
+      "nonEuTuition": 1500,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 95,
+    "name": "University of Potsdam",
+    "website": "https://www.uni-potsdam.de",
+    "location": {
+      "city": "Potsdam",
+      "state": "Brandenburg",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1350,
+      "times": 775
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 277,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 96,
+    "name": "University of Osnabrück",
+    "website": "https://www.uni-osnabrck.de",
+    "location": {
+      "city": "Osnabrück",
+      "state": "Lower Saxony",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1360,
+      "times": 780
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 289,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 97,
+    "name": "University of Siegen",
+    "website": "https://www.uni-siegen.de",
+    "location": {
+      "city": "Siegen",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1370,
+      "times": 785
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 242,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 98,
+    "name": "University of Paderborn",
+    "website": "https://www.uni-paderborn.de",
+    "location": {
+      "city": "Paderborn",
+      "state": "North Rhine-Westphalia",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1380,
+      "times": 790
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 299,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 99,
+    "name": "University of Chemnitz",
+    "website": "https://www.uni-chemnitz.de",
+    "location": {
+      "city": "Chemnitz",
+      "state": "Saxony",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1390,
+      "times": 795
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": true
+    },
+    "costs": {
+      "semesterFee": 209,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  },
+  {
+    "rank": 100,
+    "name": "University of Greifswald",
+    "website": "https://www.uni-greifswald.de",
+    "location": {
+      "city": "Greifswald",
+      "state": "Mecklenburg-Vorpommern",
+      "country": "Germany"
+    },
+    "rankings": {
+      "qs": 1400,
+      "times": 800
+    },
+    "admissions": {
+      "abiturRequirement": "2.5-3.0",
+      "germanLanguage": "B2",
+      "englishLanguage": "B2",
+      "numerusClausus": false
+    },
+    "costs": {
+      "semesterFee": 237,
+      "euTuition": 0,
+      "nonEuTuition": 0,
+      "currency": "EUR"
+    },
+    "englishPrograms": [
+      "Sciences",
+      "Engineering",
+      "Business"
+    ],
+    "tier": 4
+  }
+]
