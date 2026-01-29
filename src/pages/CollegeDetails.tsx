@@ -402,7 +402,7 @@ const CollegeDetail: React.FC = () => {
                     <div className="w-full bg-gray-200 rounded-full h-4">
                       <div 
                         className="bg-blue-600 h-4 rounded-full" 
-                        style={{ width: `${Math.min((acceptanceRate || 0) * (acceptanceRate && acceptanceRate <= 1 ? 100 : 1), 100)}%` }}
+                        style={{ width: `${Math.min(acceptanceRate != null ? (acceptanceRate <= 1 ? acceptanceRate * 100 : acceptanceRate) : 0, 100)}%` }}
                       />
                     </div>
                   </div>
@@ -867,15 +867,20 @@ const QuickLink: React.FC<{ href: string; label: string }> = ({ href, label }) =
 );
 
 const ScoreBar: React.FC<{ label: string; low: number; high: number; max: number }> = ({ label, low, high, max }) => {
-  const lowPercent = (low / max) * 100;
-  const highPercent = (high / max) * 100;
-  const rangeWidth = highPercent - lowPercent;
+  // Handle edge cases where values might be undefined or zero
+  const safeLow = low || 0;
+  const safeHigh = high || 0;
+  const safeMax = max || 1; // Avoid division by zero
+  
+  const lowPercent = (safeLow / safeMax) * 100;
+  const highPercent = (safeHigh / safeMax) * 100;
+  const rangeWidth = Math.max(0, highPercent - lowPercent);
   
   return (
     <div>
       <div className="flex justify-between text-sm text-gray-600 mb-1">
         <span>{label}</span>
-        <span className="font-medium">{low} - {high}</span>
+        <span className="font-medium">{safeLow} - {safeHigh}</span>
       </div>
       <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
         <div 
