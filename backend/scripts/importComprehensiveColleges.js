@@ -329,6 +329,7 @@ function buildGermanDeadlineTemplates(college) {
 
 /**
  * Insert a college into the database with comprehensive data
+ * Stores all rich data directly in the colleges table's JSON columns
  */
 function insertCollege(db, college, country, buildRequirements, buildResearchData, buildDeadlines) {
   // Determine location based on country
@@ -344,83 +345,60 @@ function insertCollege(db, college, country, buildRequirements, buildResearchDat
   const topMajors = parseList(college.top_majors || college.top_programs);
   const majorCategories = extractMajorCategories(college.top_majors || college.top_programs);
   
-  // Insert into colleges table
-  const insertCollege = db.prepare(`
+  // Build JSON data
+  const requirements = buildRequirements(college);
+  const researchData = buildResearchData(college);
+  const deadlines = buildDeadlines(college);
+  
+  // Determine tuition cost based on country
+  let tuitionCost = college.tuition_annual || college.tuition_fees_inr_annual || 
+                    college.tuition_fees_international_annual || college.semester_fee || 0;
+  
+  // Determine acceptance rate (convert from percentage to decimal if needed)
+  let acceptanceRate = college.acceptance_rate;
+  if (acceptanceRate !== null && acceptanceRate !== undefined) {
+    // If stored as percentage (> 1), convert to decimal
+    if (acceptanceRate > 1) {
+      acceptanceRate = acceptanceRate / 100;
+    }
+  }
+  
+  // Insert directly into colleges table with all JSON data
+  const insertCollegeStmt = db.prepare(`
     INSERT INTO colleges (
-      name, country, location, official_website,
-      academic_strengths, major_categories, trust_tier, is_verified
-    ) VALUES (?, ?, ?, ?, ?, ?, 'official', 1)
+      name, country, location, official_website, type,
+      programs, major_categories, academic_strengths,
+      acceptance_rate, tuition_cost, financial_aid_available,
+      requirements, research_data, deadline_templates,
+      description, trust_tier, is_verified
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'official', 1)
   `);
   
-  const result = insertCollege.run(
+  // Build description from notable programs or generic
+  const notablePrograms = parseList(college.notable_programs);
+  const description = notablePrograms.length > 0 
+    ? `Notable programs: ${notablePrograms.slice(0, 3).join(', ')}`
+    : `${college.institution_type || 'Public'} university offering diverse academic programs.`;
+  
+  const result = insertCollegeStmt.run(
     college.name,
     country,
     location,
     college.website,
-    topMajors.join(', '),
-    majorCategories.join(', ')
-  );
-  
-  const collegeId = result.lastInsertRowid;
-  
-  // Prepare insert for college_data
-  const insertCollegeData = db.prepare(`
-    INSERT INTO college_data (
-      college_id, data_type, data_content, source_url, trust_tier, expires_at
-    ) VALUES (?, ?, ?, ?, 'official', datetime('now', '+1 year'))
-  `);
-  
-  // Insert requirements data
-  const requirements = buildRequirements(college);
-  insertCollegeData.run(
-    collegeId,
-    'requirements',
+    college.institution_type || 'Public',
+    JSON.stringify(programs),
+    JSON.stringify(majorCategories),
+    JSON.stringify(topMajors),
+    acceptanceRate,
+    tuitionCost,
+    college.average_financial_aid_package > 0 ? 1 : 0,
     JSON.stringify(requirements),
-    college.website
-  );
-  
-  // Insert research data
-  const researchData = buildResearchData(college);
-  insertCollegeData.run(
-    collegeId,
-    'research_data',
     JSON.stringify(researchData),
-    college.website
-  );
-  
-  // Insert deadline templates
-  const deadlines = buildDeadlines(college);
-  insertCollegeData.run(
-    collegeId,
-    'deadline_templates',
     JSON.stringify(deadlines),
-    college.website
+    description
   );
   
-  // Insert programs data
-  insertCollegeData.run(
-    collegeId,
-    'programs',
-    JSON.stringify({ programs, topPrograms: topMajors }),
-    college.website
-  );
-  
-  // Insert tuition/cost data separately for easy access
-  const tuitionData = {
-    tuitionAnnual: college.tuition_annual || college.tuition_fees_inr_annual || 
-                   college.tuition_fees_international_annual || college.semester_fee,
-    currency: country === 'United States' ? 'USD' : 
-              country === 'India' ? 'INR' : 
-              country === 'United Kingdom' ? 'GBP' : 'EUR'
-  };
-  insertCollegeData.run(
-    collegeId,
-    'tuition',
-    JSON.stringify(tuitionData),
-    college.website
-  );
-  
-  return collegeId;
+  return result.lastInsertRowid;
 }
 
 // ==========================================
@@ -443,11 +421,6 @@ function importComprehensiveColleges() {
   // Handle --force flag
   if (forceMode) {
     console.log('\n⚠️  Force mode enabled - clearing existing data...');
-    
-    // Delete existing college_data first (foreign key constraint)
-    const deleteCollegeData = db.prepare('DELETE FROM college_data');
-    const dataResult = deleteCollegeData.run();
-    console.log(`   Deleted ${dataResult.changes} college_data records`);
     
     // Delete existing colleges
     const deleteColleges = db.prepare('DELETE FROM colleges');
