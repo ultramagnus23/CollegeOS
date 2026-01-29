@@ -245,10 +245,16 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
   onViewDetails,
   isAdding
 }) => {
-  const acceptance =
-    college.acceptance_rate != null
-      ? `${(college.acceptance_rate > 1 ? college.acceptance_rate : college.acceptance_rate * 100).toFixed(1)}%`
-      : 'N/A';
+  // Format acceptance rate properly (Issue 2)
+  // Backend now normalizes to decimal (0-1), but handle both cases for safety
+  const acceptance = (() => {
+    const rate = college.acceptance_rate;
+    if (rate == null) return 'N/A';
+    // If rate is <= 1, it's in decimal form (0.09 = 9%)
+    // If rate is > 1, it's already a percentage (9 = 9%)
+    const percentage = rate <= 1 ? rate * 100 : rate;
+    return `${percentage.toFixed(1)}%`;
+  })();
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border">
@@ -261,9 +267,9 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
       <p className="text-sm">Acceptance: {acceptance}</p>
 
       <div className="flex flex-wrap gap-2 mt-3">
-        {(college.programs || []).slice(0, 3).map(p => (
+        {(college.programs || []).slice(0, 3).map((p, idx) => (
           <span
-            key={p}
+            key={`${p}-${idx}`}
             className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full"
           >
             {p}

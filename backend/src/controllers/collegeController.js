@@ -216,6 +216,92 @@ class CollegeController {
     }
   }
   
+  // Browse all colleges with pagination (Issue 8)
+  static async browseAll(req, res, next) {
+    try {
+      const { page = 1, limit = 50, sort = 'name', country, type } = req.query;
+      const pageNum = parseInt(page);
+      const limitNum = Math.min(parseInt(limit) || 50, 100);
+      const offset = (pageNum - 1) * limitNum;
+      
+      const College = require('../models/College');
+      
+      // Get total count for pagination
+      const totalCount = College.getCount({ country, type });
+      const totalPages = Math.ceil(totalCount / limitNum);
+      
+      // Get colleges with pagination
+      const colleges = College.findAll({
+        country,
+        type,
+        limit: limitNum,
+        offset
+      });
+      
+      res.json({
+        success: true,
+        data: colleges,
+        pagination: {
+          currentPage: pageNum,
+          totalPages,
+          totalCount,
+          perPage: limitNum,
+          hasNext: pageNum < totalPages,
+          hasPrev: pageNum > 1
+        }
+      });
+    } catch (error) {
+      logger.error('Browse all error:', error);
+      next(error);
+    }
+  }
+  
+  // Browse by major (Issue 7)
+  static async browseByMajor(req, res, next) {
+    try {
+      const { major } = req.params;
+      const { page = 1, limit = 50, country } = req.query;
+      const pageNum = parseInt(page);
+      const limitNum = Math.min(parseInt(limit) || 50, 100);
+      const offset = (pageNum - 1) * limitNum;
+      
+      const College = require('../models/College');
+      
+      const colleges = College.findByMajor(major, {
+        country,
+        limit: limitNum,
+        offset
+      });
+      
+      res.json({
+        success: true,
+        major,
+        count: colleges.length,
+        data: colleges
+      });
+    } catch (error) {
+      logger.error('Browse by major error:', error);
+      next(error);
+    }
+  }
+  
+  // Get all majors with counts (Issue 7)
+  static async getMajors(req, res, next) {
+    try {
+      const College = require('../models/College');
+      const majors = College.getMajorsWithCounts();
+      
+      res.json({
+        success: true,
+        count: majors.length,
+        data: majors
+      });
+    } catch (error) {
+      logger.error('Get majors error:', error);
+      next(error);
+    }
+  }
+  
   // Request a college that's not in the database
   static async requestCollege(req, res, next) {
     try {

@@ -29,8 +29,16 @@ interface College {
   application_portal_url?: string;
   academic_strengths?: string[] | string;
   major_categories?: string[] | string;
+  programs?: string[] | string;
   trust_tier?: string;
   is_verified?: number;
+  // Acceptance rate (stored as decimal 0-1, e.g., 0.09 for 9%)
+  acceptance_rate?: number | null;
+  acceptanceRate?: number | null;
+  // Additional fields for comprehensive display
+  tuition_cost?: number | null;
+  description?: string | null;
+  type?: string | null;
 }
 
 interface Layer2Data {
@@ -216,6 +224,41 @@ const CollegeDetail: React.FC = () => {
     }
     return [];
   })();
+  
+  // Parse programs/majors list
+  const programsList: string[] = (() => {
+    try {
+      if (Array.isArray(college.programs)) {
+        return college.programs;
+      } else if (typeof college.programs === 'string') {
+        return JSON.parse(college.programs || '[]');
+      }
+    } catch (e) {
+      console.warn('Failed to parse programs', e);
+    }
+    return [];
+  })();
+  
+  // Format acceptance rate properly (Issue 2)
+  const formatAcceptanceRate = (rate: number | null | undefined): string => {
+    if (rate === null || rate === undefined) return 'N/A';
+    // If rate is in decimal form (0-1), multiply by 100
+    const percentage = rate <= 1 ? rate * 100 : rate;
+    return `${percentage.toFixed(1)}%`;
+  };
+  
+  // Format tuition cost
+  const formatCurrency = (amount: number | null | undefined, country: string): string => {
+    if (amount === null || amount === undefined) return 'Not available';
+    if (country === 'India') {
+      return `₹${amount.toLocaleString('en-IN')}`;
+    } else if (country === 'United Kingdom') {
+      return `£${amount.toLocaleString('en-GB')}`;
+    } else if (country === 'Germany') {
+      return `€${amount.toLocaleString('de-DE')}`;
+    }
+    return `$${amount.toLocaleString('en-US')}`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -263,30 +306,89 @@ const CollegeDetail: React.FC = () => {
             </button>
           </div>
 
-          {/* Layer 1: Core Facts */}
+          {/* Layer 1: Core Facts - Updated to show actual data (Issue 2, 3, 4) */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
             <InfoBox
               icon={<GraduationCap />}
-              label="Major Categories"
-              value={majorCategories.length > 0 ? `${majorCategories.length} categories` : 'Not listed'}
+              label="Acceptance Rate"
+              value={formatAcceptanceRate(college.acceptance_rate ?? college.acceptanceRate)}
             />
             <InfoBox
-              icon={<Globe />}
-              label="Application Portal"
-              value={college.application_portal_url ? 'See link above' : 'Not listed officially'}
+              icon={<DollarSign />}
+              label="Tuition Cost"
+              value={formatCurrency(college.tuition_cost, college.country)}
             />
             <InfoBox
               icon={<CheckCircle />}
-              label="Trust Tier"
-              value={college.trust_tier || 'official'}
+              label="Institution Type"
+              value={college.type || college.trust_tier || 'Not specified'}
             />
             <InfoBox
               icon={<FileText />}
-              label="Verified"
-              value={college.is_verified ? 'Yes' : 'No'}
+              label="Programs Offered"
+              value={majorCategories.length > 0 ? `${majorCategories.length} programs` : 'Not listed'}
             />
           </div>
         </div>
+
+        {/* SECTION: Programs & Majors (Issue 3, 5) */}
+        {(majorCategories.length > 0 || programsList.length > 0) && (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-4 flex items-center">
+              <GraduationCap className="w-5 h-5 mr-2" />
+              Programs & Majors Offered
+            </h2>
+            
+            {/* Major Categories as Tags */}
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">Major Categories:</p>
+              <div className="flex flex-wrap gap-2">
+                {majorCategories.map((cat, i) => (
+                  <span
+                    key={i}
+                    className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium"
+                  >
+                    {cat}
+                  </span>
+                ))}
+              </div>
+            </div>
+            
+            {/* Academic Strengths */}
+            {academicStrengths.length > 0 && (
+              <div className="mt-4">
+                <p className="text-sm text-gray-600 mb-2">Academic Strengths:</p>
+                <div className="flex flex-wrap gap-2">
+                  {academicStrengths.map((strength, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm"
+                    >
+                      {strength}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Programs List (if different from categories) */}
+            {programsList.length > 0 && (
+              <div className="mt-4">
+                <p className="text-sm text-gray-600 mb-2">Specific Programs:</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {programsList.slice(0, 20).map((program, i) => (
+                    <span key={i} className="text-sm text-gray-700">• {program}</span>
+                  ))}
+                </div>
+                {programsList.length > 20 && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    And {programsList.length - 20} more programs...
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Layer 2: Trusted Dynamic Data */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -312,7 +414,7 @@ const CollegeDetail: React.FC = () => {
 
           {/* Programs */}
           <DataSection
-            title="Programs & Majors"
+            title="Additional Program Info"
             icon={<GraduationCap />}
             data={programs}
             officialUrl={college.programs_url || college.official_website}
@@ -341,23 +443,6 @@ const CollegeDetail: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* Major Categories */}
-        {majorCategories.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">Major Categories</h2>
-            <div className="flex flex-wrap gap-2">
-              {majorCategories.map((cat, i) => (
-                <span
-                  key={i}
-                  className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
-                >
-                  {cat}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
