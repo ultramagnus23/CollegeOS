@@ -202,6 +202,153 @@ class CollegeController {
       next(error);
     }
   }
+  
+  // Get database statistics
+  static async getDatabaseStats(req, res, next) {
+    try {
+      const stats = await CollegeService.getDatabaseStats();
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  
+  // Request a college that's not in the database
+  static async requestCollege(req, res, next) {
+    try {
+      const { name, website, city, state, country, reason, email } = req.body;
+      
+      if (!name || !country) {
+        return res.status(400).json({
+          success: false,
+          message: 'College name and country are required'
+        });
+      }
+      
+      const request = await CollegeService.requestCollege({
+        name,
+        website,
+        city,
+        state,
+        country,
+        reason,
+        email,
+        userId: req.user?.userId
+      });
+      
+      res.json({
+        success: true,
+        message: request.isNew 
+          ? 'College request submitted successfully! We\'ll review and add it soon.'
+          : 'Your vote has been added to an existing request for this college.',
+        data: request
+      });
+    } catch (error) {
+      logger.error('Request college error:', error);
+      next(error);
+    }
+  }
+  
+  // Get popular college requests
+  static async getPopularRequests(req, res, next) {
+    try {
+      const { limit = 20, status = 'pending' } = req.query;
+      
+      const requests = await CollegeService.getPopularRequests({
+        limit: parseInt(limit),
+        status
+      });
+      
+      res.json({
+        success: true,
+        count: requests.length,
+        data: requests
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  
+  // Upvote a college request
+  static async upvoteRequest(req, res, next) {
+    try {
+      const { id } = req.params;
+      
+      const request = await CollegeService.upvoteRequest(parseInt(id));
+      
+      res.json({
+        success: true,
+        message: 'Request upvoted successfully',
+        data: request
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  
+  // Contribute data for a college
+  static async contributeData(req, res, next) {
+    try {
+      const { collegeId, requestedCollegeId, dataType, dataValue, sourceUrl } = req.body;
+      
+      if (!dataType || !dataValue) {
+        return res.status(400).json({
+          success: false,
+          message: 'Data type and value are required'
+        });
+      }
+      
+      if (!collegeId && !requestedCollegeId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Either collegeId or requestedCollegeId is required'
+        });
+      }
+      
+      const contribution = await CollegeService.contributeData({
+        collegeId,
+        requestedCollegeId,
+        dataType,
+        dataValue: typeof dataValue === 'string' ? dataValue : JSON.stringify(dataValue),
+        sourceUrl,
+        userId: req.user?.userId,
+        email: req.user?.email
+      });
+      
+      res.json({
+        success: true,
+        message: 'Thank you for your contribution! It will be reviewed and added soon.',
+        data: contribution
+      });
+    } catch (error) {
+      logger.error('Contribute data error:', error);
+      next(error);
+    }
+  }
+  
+  // Get contributions for a college
+  static async getContributions(req, res, next) {
+    try {
+      const { collegeId } = req.params;
+      const { status = 'approved' } = req.query;
+      
+      const contributions = await CollegeService.getContributions({
+        collegeId: parseInt(collegeId),
+        status
+      });
+      
+      res.json({
+        success: true,
+        count: contributions.length,
+        data: contributions
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = CollegeController;
