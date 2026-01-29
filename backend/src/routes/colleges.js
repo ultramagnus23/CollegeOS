@@ -4,6 +4,16 @@ const CollegeController = require('../controllers/collegeController');
 const { authenticate } = require('../middleware/auth');
 
 // Public routes - no authentication required for browsing
+
+// Browse all colleges with pagination (Issue 8)
+router.get('/all', CollegeController.browseAll);
+
+// Browse by major (Issue 7)
+router.get('/by-major/:major', CollegeController.browseByMajor);
+
+// Get all majors with counts (Issue 7)
+router.get('/majors', CollegeController.getMajors);
+
 router.get('/', CollegeController.getColleges);
 router.get('/search', CollegeController.searchColleges);
 router.get('/filters/countries', CollegeController.getCountries);
