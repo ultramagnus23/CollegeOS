@@ -372,7 +372,7 @@ class ApiService {
   };
 
   // Intelligent Search namespace
-  intelligentSearch = {
+  smartSearch = {
     search: (query: string, filters?: any) => this.intelligentSearch(query, filters),
     classify: (query: string) => this.classifyQuery(query),
   };
