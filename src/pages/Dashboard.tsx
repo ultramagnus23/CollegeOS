@@ -411,13 +411,6 @@ const Dashboard = () => {
           </div>
         </Link>
       </div>
-      return (
-  <div className="min-h-screen bg-gray-50">
-    {/* ... existing code ... */}
-    
-    <AIChatbot />  {/* ADD THIS LINE */}
-  </div>
-);
     </div>
   );
 };
