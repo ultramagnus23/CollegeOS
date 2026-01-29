@@ -11,6 +11,22 @@ const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * Helper function to safely construct URLs
+ */
+function buildUrl(baseUrl, suffix) {
+  if (!baseUrl) return null;
+  const cleanBase = baseUrl.replace(/\/+$/, ''); // Remove trailing slashes
+  return `${cleanBase}${suffix}`;
+}
+
+/**
+ * Helper function to safely build description strings
+ */
+function safeString(value, fallback = '') {
+  return value !== null && value !== undefined ? value : fallback;
+}
+
 // Database path
 const DB_PATH = path.join(__dirname, '..', 'database', 'college_app.db');
 
@@ -82,8 +98,8 @@ function transformUSCollege(college) {
     location: location,
     type: college.type || 'Private',
     official_website: college.website,
-    admissions_url: college.website + '/admissions',
-    programs_url: college.website + '/academics',
+    admissions_url: buildUrl(college.website, '/admissions'),
+    programs_url: buildUrl(college.website, '/academics'),
     application_portal_url: 'https://www.commonapp.org',
     programs: JSON.stringify(programs),
     major_categories: JSON.stringify(['Engineering', 'Sciences', 'Business', 'Humanities', 'Arts']),
@@ -101,7 +117,7 @@ function transformUSCollege(college) {
       graduationRates: college.academics?.graduationRates,
       studentFacultyRatio: college.academics?.studentFacultyRatio
     }),
-    description: `${college.name} is a ${college.type?.toLowerCase() || 'private'} university located in ${location || 'the United States'}. Ranked #${college.rank} with an acceptance rate of ${college.acceptanceRate}%.`,
+    description: `${safeString(college.name, 'University')} is a ${(college.type || 'private').toLowerCase()} university located in ${location || 'the United States'}. Ranked #${safeString(college.rank, 'N/A')} with an acceptance rate of ${safeString(college.acceptanceRate, 'N/A')}%.`,
     trust_tier: college.tier === 1 ? 'verified' : (college.tier === 2 ? 'official' : 'standard'),
     is_verified: college.tier <= 2 ? 1 : 0
   };
@@ -124,8 +140,8 @@ function transformIndianCollege(college) {
     location: location,
     type: college.type || 'Public',
     official_website: college.website,
-    admissions_url: college.website + '/admissions',
-    programs_url: college.website + '/academics',
+    admissions_url: buildUrl(college.website, '/admissions'),
+    programs_url: buildUrl(college.website, '/academics'),
     application_portal_url: college.entranceExam === 'JEE Advanced' 
       ? 'https://josaa.nic.in' 
       : college.website,
@@ -147,7 +163,7 @@ function transformIndianCollege(college) {
       placements: college.placements,
       enrollment: college.enrollment
     }),
-    description: `${college.name} is a premier ${college.type?.toLowerCase() || 'public'} institution in India${location ? ` located in ${location}` : ''}. NIRF Rank: #${college.nirfRank || 'N/A'}.`,
+    description: `${safeString(college.name, 'Institution')} is a premier ${(college.type || 'public').toLowerCase()} institution in India${location ? ` located in ${location}` : ''}. NIRF Rank: #${safeString(college.nirfRank, 'N/A')}.`,
     cbse_requirements: JSON.stringify({ minPercent: 75 }),
     trust_tier: college.tier === 1 ? 'verified' : (college.tier === 2 ? 'official' : 'standard'),
     is_verified: college.tier <= 2 ? 1 : 0
@@ -171,8 +187,8 @@ function transformUKCollege(college) {
     location: location,
     type: college.type || 'Public',
     official_website: college.website,
-    admissions_url: college.website + '/admissions',
-    programs_url: college.website + '/courses',
+    admissions_url: buildUrl(college.website, '/admissions'),
+    programs_url: buildUrl(college.website, '/courses'),
     application_portal_url: 'https://www.ucas.com',
     programs: JSON.stringify(college.programs || ['Computer Science', 'Engineering', 'Medicine', 'Law', 'Business']),
     major_categories: JSON.stringify(['Sciences', 'Engineering', 'Humanities', 'Medicine', 'Law']),
@@ -193,7 +209,7 @@ function transformUKCollege(college) {
       enrollment: college.enrollment,
       russellGroup: college.russellGroup || false
     }),
-    description: `${college.name} is a prestigious ${college.type?.toLowerCase() || 'public'} university in the UK${location ? ` located in ${location}` : ''}. QS World Rank: #${college.qsRank || 'N/A'}.`,
+    description: `${safeString(college.name, 'University')} is a prestigious ${(college.type || 'public').toLowerCase()} university in the UK${location ? ` located in ${location}` : ''}. QS World Rank: #${safeString(college.qsRank, 'N/A')}.`,
     ucas_code: college.ucasCode || null,
     trust_tier: college.tier === 1 ? 'verified' : (college.tier === 2 ? 'official' : 'standard'),
     is_verified: college.tier <= 2 ? 1 : 0
@@ -217,8 +233,8 @@ function transformGermanCollege(college) {
     location: location,
     type: college.type || 'Public',
     official_website: college.website,
-    admissions_url: college.website + '/studium',
-    programs_url: college.website + '/studiengaenge',
+    admissions_url: buildUrl(college.website, '/studium'),
+    programs_url: buildUrl(college.website, '/studiengaenge'),
     application_portal_url: 'https://www.uni-assist.de',
     programs: JSON.stringify(college.programs || ['Engineering', 'Computer Science', 'Natural Sciences', 'Economics']),
     major_categories: JSON.stringify(['Engineering', 'Sciences', 'Medicine', 'Economics']),
@@ -239,7 +255,7 @@ function transformGermanCollege(college) {
       tu9: college.tu9 || false,
       excellenceInitiative: college.excellenceInitiative || false
     }),
-    description: `${college.name} is a ${college.type?.toLowerCase() || 'public'} university in Germany${location ? ` located in ${location}` : ''}. ${college.tu9 ? 'Member of TU9 alliance. ' : ''}QS World Rank: #${college.qsRank || 'N/A'}.`,
+    description: `${safeString(college.name, 'University')} is a ${(college.type || 'public').toLowerCase()} university in Germany${location ? ` located in ${location}` : ''}. ${college.tu9 ? 'Member of TU9 alliance. ' : ''}QS World Rank: #${safeString(college.qsRank, 'N/A')}.`,
     studielink_required: 0,
     trust_tier: college.tier === 1 ? 'verified' : (college.tier === 2 ? 'official' : 'standard'),
     is_verified: college.tier <= 2 ? 1 : 0
@@ -315,10 +331,10 @@ function importColleges() {
   initDatabase();
   
   const stats = {
-    us: { success: 0, failed: 0 },
-    india: { success: 0, failed: 0 },
-    uk: { success: 0, failed: 0 },
-    germany: { success: 0, failed: 0 }
+    us: { success: 0, skipped: 0, failed: 0 },
+    india: { success: 0, skipped: 0, failed: 0 },
+    uk: { success: 0, skipped: 0, failed: 0 },
+    germany: { success: 0, skipped: 0, failed: 0 }
   };
   
   // Start transaction for better performance
@@ -326,7 +342,13 @@ function importColleges() {
     // Import US colleges
     if (fs.existsSync(US_COLLEGES_PATH)) {
       console.log('📚 Importing US colleges from expanded data...');
-      const usColleges = JSON.parse(fs.readFileSync(US_COLLEGES_PATH, 'utf8'));
+      const usCollegesData = fs.readFileSync(US_COLLEGES_PATH, 'utf8');
+      const usColleges = JSON.parse(usCollegesData);
+      if (!Array.isArray(usColleges)) {
+        console.error('   ❌ US colleges file is not a valid array');
+        return;
+      }
+      console.log(`   Found ${usColleges.length} US colleges`);
       console.log(`   Found ${usColleges.length} US colleges`);
       
       for (const college of usColleges) {
@@ -341,11 +363,11 @@ function importColleges() {
           }
         } catch (error) {
           if (error.message.includes('UNIQUE constraint failed')) {
-            // Skip duplicate
+            stats.us.skipped++;
           } else {
             console.error(`   ❌ [US] ${college.name}: ${error.message}`);
+            stats.us.failed++;
           }
-          stats.us.failed++;
         }
       }
       console.log(`   📊 US colleges completed: ${stats.us.success} imported`);
@@ -356,7 +378,12 @@ function importColleges() {
     // Import Indian colleges
     if (fs.existsSync(INDIAN_COLLEGES_PATH)) {
       console.log('\n📚 Importing Indian colleges from expanded data...');
-      const indianColleges = JSON.parse(fs.readFileSync(INDIAN_COLLEGES_PATH, 'utf8'));
+      const indianCollegesData = fs.readFileSync(INDIAN_COLLEGES_PATH, 'utf8');
+      const indianColleges = JSON.parse(indianCollegesData);
+      if (!Array.isArray(indianColleges)) {
+        console.error('   ❌ Indian colleges file is not a valid array');
+        return;
+      }
       console.log(`   Found ${indianColleges.length} Indian colleges`);
       
       for (const college of indianColleges) {
@@ -371,11 +398,11 @@ function importColleges() {
           }
         } catch (error) {
           if (error.message.includes('UNIQUE constraint failed')) {
-            // Skip duplicate
+            stats.india.skipped++;
           } else {
             console.error(`   ❌ [IN] ${college.name}: ${error.message}`);
+            stats.india.failed++;
           }
-          stats.india.failed++;
         }
       }
       console.log(`   📊 Indian colleges completed: ${stats.india.success} imported`);
@@ -386,7 +413,12 @@ function importColleges() {
     // Import UK colleges
     if (fs.existsSync(UK_COLLEGES_PATH)) {
       console.log('\n📚 Importing UK colleges from expanded data...');
-      const ukColleges = JSON.parse(fs.readFileSync(UK_COLLEGES_PATH, 'utf8'));
+      const ukCollegesData = fs.readFileSync(UK_COLLEGES_PATH, 'utf8');
+      const ukColleges = JSON.parse(ukCollegesData);
+      if (!Array.isArray(ukColleges)) {
+        console.error('   ❌ UK colleges file is not a valid array');
+        return;
+      }
       console.log(`   Found ${ukColleges.length} UK colleges`);
       
       for (const college of ukColleges) {
@@ -401,11 +433,11 @@ function importColleges() {
           }
         } catch (error) {
           if (error.message.includes('UNIQUE constraint failed')) {
-            // Skip duplicate
+            stats.uk.skipped++;
           } else {
             console.error(`   ❌ [UK] ${college.name}: ${error.message}`);
+            stats.uk.failed++;
           }
-          stats.uk.failed++;
         }
       }
       console.log(`   📊 UK colleges completed: ${stats.uk.success} imported`);
@@ -416,7 +448,12 @@ function importColleges() {
     // Import German colleges
     if (fs.existsSync(GERMAN_COLLEGES_PATH)) {
       console.log('\n📚 Importing German colleges from expanded data...');
-      const germanColleges = JSON.parse(fs.readFileSync(GERMAN_COLLEGES_PATH, 'utf8'));
+      const germanCollegesData = fs.readFileSync(GERMAN_COLLEGES_PATH, 'utf8');
+      const germanColleges = JSON.parse(germanCollegesData);
+      if (!Array.isArray(germanColleges)) {
+        console.error('   ❌ German colleges file is not a valid array');
+        return;
+      }
       console.log(`   Found ${germanColleges.length} German colleges`);
       
       for (const college of germanColleges) {
@@ -431,11 +468,11 @@ function importColleges() {
           }
         } catch (error) {
           if (error.message.includes('UNIQUE constraint failed')) {
-            // Skip duplicate
+            stats.germany.skipped++;
           } else {
             console.error(`   ❌ [DE] ${college.name}: ${error.message}`);
+            stats.germany.failed++;
           }
-          stats.germany.failed++;
         }
       }
       console.log(`   📊 German colleges completed: ${stats.germany.success} imported`);
@@ -451,18 +488,21 @@ function importColleges() {
     console.log('\n' + '='.repeat(60));
     console.log('📊 IMPORT SUMMARY');
     console.log('='.repeat(60));
-    console.log(`🇺🇸 US Colleges:      ${stats.us.success} success, ${stats.us.failed} skipped`);
-    console.log(`🇮🇳 Indian Colleges:  ${stats.india.success} success, ${stats.india.failed} skipped`);
-    console.log(`🇬🇧 UK Colleges:      ${stats.uk.success} success, ${stats.uk.failed} skipped`);
-    console.log(`🇩🇪 German Colleges:  ${stats.germany.success} success, ${stats.germany.failed} skipped`);
+    console.log(`🇺🇸 US Colleges:      ${stats.us.success} imported, ${stats.us.skipped} skipped, ${stats.us.failed} failed`);
+    console.log(`🇮🇳 Indian Colleges:  ${stats.india.success} imported, ${stats.india.skipped} skipped, ${stats.india.failed} failed`);
+    console.log(`🇬🇧 UK Colleges:      ${stats.uk.success} imported, ${stats.uk.skipped} skipped, ${stats.uk.failed} failed`);
+    console.log(`🇩🇪 German Colleges:  ${stats.germany.success} imported, ${stats.germany.skipped} skipped, ${stats.germany.failed} failed`);
     console.log('─'.repeat(60));
     const total = stats.us.success + stats.india.success + stats.uk.success + stats.germany.success;
-    console.log(`📦 TOTAL: ${total} colleges imported into main database`);
+    const totalSkipped = stats.us.skipped + stats.india.skipped + stats.uk.skipped + stats.germany.skipped;
+    const totalFailed = stats.us.failed + stats.india.failed + stats.uk.failed + stats.germany.failed;
+    console.log(`📦 TOTAL: ${total} imported, ${totalSkipped} skipped (duplicates), ${totalFailed} failed`);
     console.log('='.repeat(60) + '\n');
     
   } catch (error) {
     console.error('\n❌ Transaction failed:', error.message);
     console.log('All changes have been rolled back.');
+    db.close();
     process.exit(1);
   }
   
