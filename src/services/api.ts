@@ -4,6 +4,36 @@
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
+// ==================== DEBUG LOGGING UTILITIES ====================
+// Debug mode is enabled in development, disabled in production
+const DEBUG_MODE = process.env.NODE_ENV !== 'production';
+
+function generateRequestId(): string {
+  return `req_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+}
+
+function logDebug(requestId: string, stage: string, message: string, data?: any) {
+  if (!DEBUG_MODE) return;
+  const prefix = `[API ${requestId}] [${stage}]`;
+  if (data !== undefined) {
+    console.log(`${prefix} ${message}`, data);
+  } else {
+    console.log(`${prefix} ${message}`);
+  }
+}
+
+function logError(requestId: string, stage: string, message: string, error?: any) {
+  const prefix = `[API ${requestId}] [${stage}] ❌`;
+  console.error(`${prefix} ${message}`);
+  if (error) {
+    console.error(`${prefix} Error details:`, {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack?.split('\n').slice(0, 5).join('\n')
+    });
+  }
+}
+
 class ApiService {
   private baseUrl: string;
   private token: string | null;
@@ -11,9 +41,12 @@ class ApiService {
   constructor() {
     this.baseUrl = API_BASE_URL;
     this.token = localStorage.getItem('accessToken');
+    logDebug('init', 'INIT', `ApiService initialized with baseUrl: ${this.baseUrl}`);
   }
 
   setToken(token: string | null) {
+    const requestId = generateRequestId();
+    logDebug(requestId, 'TOKEN', token ? 'Setting new token' : 'Clearing token');
     this.token = token;
     if (token) {
       localStorage.setItem('accessToken', token);
@@ -31,29 +64,66 @@ class ApiService {
   }
 
   private async request(endpoint: string, options: RequestInit = {}) {
+    const requestId = generateRequestId();
+    const method = options.method || 'GET';
+    const startTime = performance.now();
+    
+    // Log request start
+    logDebug(requestId, 'REQUEST', `${method} ${endpoint}`, {
+      hasBody: !!options.body,
+      bodySize: options.body ? (options.body as string).length : 0
+    });
+    
     // Refresh token from localStorage before each request
     this.token = localStorage.getItem('accessToken');
+    logDebug(requestId, 'AUTH', this.token ? 'Token present' : 'No token - request may fail if auth required');
     
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      headers: this.getHeaders(),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...options,
+        headers: this.getHeaders(),
+      });
+      
+      const duration = (performance.now() - startTime).toFixed(2);
+      logDebug(requestId, 'RESPONSE', `Status ${response.status} in ${duration}ms`, {
+        ok: response.ok,
+        statusText: response.statusText
+      });
+    } catch (networkError: any) {
+      logError(requestId, 'NETWORK', `Network request failed to ${endpoint}`, networkError);
+      throw new Error(`Network error: Could not connect to server. Is the backend running at ${this.baseUrl}?`);
+    }
 
     // Attempt to parse JSON always (backend returns JSON)
     let data;
     try {
       data = await response.json();
-    } catch (e) {
-      console.error('Failed to parse JSON response:', e);
+      logDebug(requestId, 'PARSE', 'JSON parsed successfully', {
+        success: data?.success,
+        hasData: !!data?.data,
+        dataType: typeof data?.data,
+        count: data?.count
+      });
+    } catch (e: any) {
+      logError(requestId, 'PARSE', 'Failed to parse JSON response', e);
       data = {};
     }
 
     if (!response.ok) {
       const errorMessage = (data as any).message || `API request failed with status ${response.status}`;
-      console.error('API Error:', errorMessage, data);
+      logError(requestId, 'ERROR', `API Error: ${errorMessage}`, {
+        status: response.status,
+        endpoint,
+        method,
+        responseData: data
+      });
       throw new Error(errorMessage);
     }
 
+    const totalDuration = (performance.now() - startTime).toFixed(2);
+    logDebug(requestId, 'COMPLETE', `Request completed in ${totalDuration}ms`);
+    
     return data;
   }
 
