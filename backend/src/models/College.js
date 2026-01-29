@@ -117,6 +117,53 @@ class College {
       // Normalize acceptance rate (ensure it's in decimal form 0-1)
       college.acceptanceRate = normalizeAcceptanceRate(college.acceptance_rate);
       college.acceptance_rate = college.acceptanceRate;
+      
+      // Extract rich data from research_data for frontend display
+      const researchData = college.researchData || {};
+      
+      // Enrollment
+      college.enrollment = researchData.enrollment || null;
+      
+      // Test Scores
+      const reqs = college.requirements || {};
+      college.testScores = {
+        satRange: reqs.satRange || null,
+        actRange: reqs.actRange || null,
+        averageGPA: reqs.averageGPA || null
+      };
+      
+      // Graduation Rates
+      college.graduationRates = researchData.graduationRates || null;
+      
+      // Student Faculty Ratio
+      college.studentFacultyRatio = researchData.studentFacultyRatio || null;
+      
+      // Rankings
+      college.ranking = researchData.rank || researchData.nirfRank || researchData.qsRank || null;
+      college.tier = researchData.tier || null;
+      
+      // Indian-specific: placements, cutoffs
+      if (college.country === 'India') {
+        college.placements = researchData.placements || null;
+        college.cutoffs = reqs.cutoffs || null;
+        college.entranceExam = reqs.entranceExam || null;
+        college.nirfRank = researchData.nirfRank || null;
+      }
+      
+      // UK-specific: Russell Group, A-levels, IB
+      if (college.country === 'United Kingdom') {
+        college.russellGroup = researchData.russellGroup || false;
+        college.aLevelRequirements = reqs.aLevels || null;
+        college.ibPointsRequired = reqs.ibPoints || null;
+        college.qsRank = researchData.qsRank || null;
+      }
+      
+      // Germany-specific
+      if (college.country === 'Germany') {
+        college.abiturRequirement = reqs.abitur || null;
+        college.germanLevel = reqs.germanLevel || null;
+        college.englishLevel = reqs.englishLevel || null;
+      }
     }
     
     return college;
@@ -165,18 +212,34 @@ class College {
     const stmt = db.prepare(query);
     const colleges = stmt.all(...params);
     
-    return colleges.map(college => ({
-      ...college,
-      programs: safeJsonParse(college.programs, []),
-      academicStrengths: safeJsonParse(college.academic_strengths, []),
-      majorCategories: safeJsonParse(college.major_categories, []),
-      requirements: safeJsonParse(college.requirements, {}),
-      deadlineTemplates: safeJsonParse(college.deadline_templates, {}),
-      researchData: safeJsonParse(college.research_data, {}),
-      // Normalize acceptance rate
-      acceptanceRate: normalizeAcceptanceRate(college.acceptance_rate),
-      acceptance_rate: normalizeAcceptanceRate(college.acceptance_rate)
-    }));
+    return colleges.map(college => {
+      const programs = safeJsonParse(college.programs, []);
+      const researchData = safeJsonParse(college.research_data, {});
+      const requirements = safeJsonParse(college.requirements, {});
+      const acceptanceRate = normalizeAcceptanceRate(college.acceptance_rate);
+      
+      return {
+        ...college,
+        programs,
+        academicStrengths: safeJsonParse(college.academic_strengths, []),
+        majorCategories: safeJsonParse(college.major_categories, []),
+        requirements,
+        deadlineTemplates: safeJsonParse(college.deadline_templates, {}),
+        researchData,
+        acceptanceRate,
+        acceptance_rate: acceptanceRate,
+        // Rich data for cards
+        enrollment: researchData.enrollment || null,
+        ranking: researchData.rank || researchData.nirfRank || researchData.qsRank || null,
+        averageGPA: requirements.averageGPA || null,
+        testScores: {
+          satRange: requirements.satRange || null,
+          actRange: requirements.actRange || null
+        },
+        graduationRates: researchData.graduationRates || null,
+        studentFacultyRatio: researchData.studentFacultyRatio || null
+      };
+    });
   }
   
   static search(searchTerm, filters = {}) {
@@ -275,18 +338,34 @@ class College {
     const stmt = db.prepare(query);
     const colleges = stmt.all(...params);
     
-    return colleges.map(college => ({
-      ...college,
-      programs: safeJsonParse(college.programs, []),
-      academicStrengths: safeJsonParse(college.academic_strengths, []),
-      majorCategories: safeJsonParse(college.major_categories, []),
-      requirements: safeJsonParse(college.requirements, {}),
-      deadlineTemplates: safeJsonParse(college.deadline_templates, {}),
-      researchData: safeJsonParse(college.research_data, {}),
-      // Normalize acceptance rate
-      acceptanceRate: normalizeAcceptanceRate(college.acceptance_rate),
-      acceptance_rate: normalizeAcceptanceRate(college.acceptance_rate)
-    }));
+    return colleges.map(college => {
+      const programs = safeJsonParse(college.programs, []);
+      const researchData = safeJsonParse(college.research_data, {});
+      const requirements = safeJsonParse(college.requirements, {});
+      const acceptanceRate = normalizeAcceptanceRate(college.acceptance_rate);
+      
+      return {
+        ...college,
+        programs,
+        academicStrengths: safeJsonParse(college.academic_strengths, []),
+        majorCategories: safeJsonParse(college.major_categories, []),
+        requirements,
+        deadlineTemplates: safeJsonParse(college.deadline_templates, {}),
+        researchData,
+        acceptanceRate,
+        acceptance_rate: acceptanceRate,
+        // Rich data for cards
+        enrollment: researchData.enrollment || null,
+        ranking: researchData.rank || researchData.nirfRank || researchData.qsRank || null,
+        averageGPA: requirements.averageGPA || null,
+        testScores: {
+          satRange: requirements.satRange || null,
+          actRange: requirements.actRange || null
+        },
+        graduationRates: researchData.graduationRates || null,
+        studentFacultyRatio: researchData.studentFacultyRatio || null
+      };
+    });
   }
   
   // Browse by major (Issue 7)
