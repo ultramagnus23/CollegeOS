@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -37,6 +38,7 @@ interface CollegeRequirements {
 }
 
 const Requirements = () => {
+  const navigate = useNavigate();
   const [collegeRequirements, setCollegeRequirements] = useState<CollegeRequirements[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedColleges, setExpandedColleges] = useState<Set<number>>(new Set());
@@ -187,13 +189,17 @@ const Requirements = () => {
     
     if (filteredReqs.length === 0) return null;
 
+    // Always use original requirements array for the count display
+    const completedCount = requirements.filter(r => completionData[r.id]).length;
+    const totalCount = requirements.length;
+
     return (
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-2 text-gray-700">
           {icon}
           <span className="font-medium">{title}</span>
           <span className="text-xs text-gray-500">
-            ({filteredReqs.filter(r => completionData[r.id]).length}/{filteredReqs.length} completed)
+            ({completedCount}/{totalCount} completed)
           </span>
         </div>
         <div className="space-y-2 ml-6">
@@ -205,8 +211,7 @@ const Requirements = () => {
             >
               <Checkbox 
                 checked={completionData[req.id] || false}
-                onCheckedChange={() => toggleRequirement(req.id)}
-                className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+                className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500 pointer-events-none"
               />
               <span className={`text-sm ${completionData[req.id] ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
                 {req.text}
@@ -267,6 +272,7 @@ const Requirements = () => {
             value={selectedCountry}
             onChange={(e) => setSelectedCountry(e.target.value)}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+            aria-label="Filter by country"
           >
             <option value="">All Countries</option>
             {countries.map(country => (
@@ -294,7 +300,7 @@ const Requirements = () => {
             }
           </p>
           {collegeRequirements.length === 0 && (
-            <Button onClick={() => window.location.href = '/colleges'}>
+            <Button onClick={() => navigate('/colleges')}>
               Browse Colleges
             </Button>
           )}
