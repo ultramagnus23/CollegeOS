@@ -27,5 +27,3 @@ backend/.env
 
 # Database backups
 *.backup
-*.sqlite.backup
-database.sqlite.backup
