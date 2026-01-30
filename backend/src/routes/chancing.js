@@ -424,4 +424,316 @@ router.get('/profile-strength', authenticate, async (req, res, next) => {
   }
 });
 
+/**
+ * POST /api/chancing/scenario
+ * Test what-if scenario without saving changes
+ */
+router.post('/scenario', authenticate, async (req, res, next) => {
+  try {
+    const { profileChanges, collegeIds } = req.body;
+    
+    if (!profileChanges || !collegeIds || !Array.isArray(collegeIds)) {
+      return res.status(400).json({
+        success: false,
+        message: 'profileChanges and collegeIds (array) are required'
+      });
+    }
+    
+    // Get current profile
+    const currentProfile = StudentProfile.getCompleteProfile(req.user.userId);
+    
+    if (!currentProfile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please complete your student profile first',
+        code: 'PROFILE_REQUIRED'
+      });
+    }
+    
+    // Create temporary merged profile with changes
+    const scenarioProfile = { ...currentProfile };
+    
+    // Apply changes to the scenario profile
+    for (const [key, value] of Object.entries(profileChanges)) {
+      scenarioProfile[key] = value;
+    }
+    
+    // Get colleges
+    const colleges = collegeIds.map(id => College.findById(id)).filter(c => c);
+    
+    // Calculate chances with both profiles
+    const currentResults = [];
+    const scenarioResults = [];
+    
+    for (const college of colleges) {
+      const country = college.location_country || college.country || 'USA';
+      
+      // Current chances
+      let currentChancing;
+      if (country === 'India' && (currentProfile.jee_main_percentile || currentProfile.jee_advanced_rank)) {
+        currentChancing = calculateJEEChance(currentProfile, college);
+      } else if (country === 'UK' && (currentProfile.predicted_a_levels || currentProfile.ib_predicted_score)) {
+        currentChancing = calculateUKChance(currentProfile, college);
+      } else if (country === 'Germany' && currentProfile.abitur_grade) {
+        currentChancing = calculateGermanChance(currentProfile, college);
+      } else {
+        currentChancing = calculateAdmissionChance(currentProfile, college);
+      }
+      
+      // Scenario chances
+      let scenarioChancing;
+      if (country === 'India' && (scenarioProfile.jee_main_percentile || scenarioProfile.jee_advanced_rank)) {
+        scenarioChancing = calculateJEEChance(scenarioProfile, college);
+      } else if (country === 'UK' && (scenarioProfile.predicted_a_levels || scenarioProfile.ib_predicted_score)) {
+        scenarioChancing = calculateUKChance(scenarioProfile, college);
+      } else if (country === 'Germany' && scenarioProfile.abitur_grade) {
+        scenarioChancing = calculateGermanChance(scenarioProfile, college);
+      } else {
+        scenarioChancing = calculateAdmissionChance(scenarioProfile, college);
+      }
+      
+      currentResults.push({
+        college: { id: college.id, name: college.name },
+        chancing: currentChancing
+      });
+      
+      scenarioResults.push({
+        college: { id: college.id, name: college.name },
+        chancing: scenarioChancing
+      });
+    }
+    
+    // Calculate comparison
+    const comparison = colleges.map((college, idx) => {
+      const oldChance = currentResults[idx].chancing.chance;
+      const newChance = scenarioResults[idx].chancing.chance;
+      const change = newChance - oldChance;
+      const oldCategory = currentResults[idx].chancing.category;
+      const newCategory = scenarioResults[idx].chancing.category;
+      
+      return {
+        college: { id: college.id, name: college.name },
+        oldChance,
+        newChance,
+        change,
+        oldCategory,
+        newCategory,
+        categoryChanged: oldCategory !== newCategory,
+        improved: change > 0
+      };
+    });
+    
+    const improved = comparison.filter(c => c.improved).length;
+    const decreased = comparison.filter(c => c.change < 0).length;
+    const stayed = comparison.filter(c => c.change === 0).length;
+    
+    res.json({
+      success: true,
+      data: {
+        scenarioChanges: profileChanges,
+        comparison: comparison,
+        summary: {
+          improved,
+          decreased,
+          stayed,
+          avgChange: Math.round(comparison.reduce((sum, c) => sum + c.change, 0) / comparison.length) || 0,
+          categoryChanges: comparison.filter(c => c.categoryChanged).map(c => ({
+            college: c.college.name,
+            from: c.oldCategory,
+            to: c.newCategory
+          }))
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Scenario calculation failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * POST /api/chancing/save-history
+ * Save chancing snapshot to history
+ */
+router.post('/save-history', authenticate, async (req, res, next) => {
+  try {
+    const { collegeId, chance, category, factors } = req.body;
+    
+    if (!collegeId || chance === undefined || !category) {
+      return res.status(400).json({
+        success: false,
+        message: 'collegeId, chance, and category are required'
+      });
+    }
+    
+    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    
+    const dbManager = require('../config/database');
+    const db = dbManager.getDatabase();
+    
+    // Create profile snapshot
+    const profileSnapshot = profile ? {
+      gpa: profile.gpa_unweighted || profile.gpa_weighted,
+      sat: profile.sat_total,
+      act: profile.act_composite,
+      activitiesCount: (profile.activities || []).length,
+      tier1Count: (profile.activities || []).filter(a => a.tier_rating === 1).length
+    } : {};
+    
+    const stmt = db.prepare(`
+      INSERT INTO chancing_history (
+        user_id, college_id, chance_percentage, category, profile_snapshot, factors
+      ) VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    
+    const result = stmt.run(
+      req.user.userId,
+      collegeId,
+      chance,
+      category,
+      JSON.stringify(profileSnapshot),
+      JSON.stringify(factors || [])
+    );
+    
+    res.status(201).json({
+      success: true,
+      message: 'Chancing history saved',
+      data: { id: result.lastInsertRowid }
+    });
+  } catch (error) {
+    logger.error('Save history failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * GET /api/chancing/history
+ * Get user's chancing history
+ */
+router.get('/history', authenticate, async (req, res, next) => {
+  try {
+    const { collegeId, limit = 50 } = req.query;
+    
+    const dbManager = require('../config/database');
+    const db = dbManager.getDatabase();
+    
+    let query = `
+      SELECT ch.*, c.name as college_name
+      FROM chancing_history ch
+      JOIN colleges c ON ch.college_id = c.id
+      WHERE ch.user_id = ?
+    `;
+    const params = [req.user.userId];
+    
+    if (collegeId) {
+      query += ' AND ch.college_id = ?';
+      params.push(parseInt(collegeId));
+    }
+    
+    query += ' ORDER BY ch.calculated_at DESC LIMIT ?';
+    params.push(parseInt(limit));
+    
+    const history = db.prepare(query).all(...params);
+    
+    // Parse JSON fields
+    const parsedHistory = history.map(h => ({
+      ...h,
+      profileSnapshot: JSON.parse(h.profile_snapshot || '{}'),
+      factors: JSON.parse(h.factors || '[]')
+    }));
+    
+    res.json({
+      success: true,
+      data: parsedHistory
+    });
+  } catch (error) {
+    logger.error('Get history failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * POST /api/chancing/compare
+ * Compare old profile vs new profile chances
+ */
+router.post('/compare', authenticate, async (req, res, next) => {
+  try {
+    // Get current profile and all colleges in list
+    const Application = require('../models/Application');
+    const applications = Application.findByUser(req.user.userId);
+    
+    if (!applications || applications.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          results: [],
+          summary: { improved: 0, decreased: 0, stayed: 0 }
+        },
+        message: 'No colleges in your list'
+      });
+    }
+    
+    const collegeIds = applications.map(a => a.college_id);
+    const results = getChancingForStudent(req.user.userId, 
+      collegeIds.map(id => College.findById(id)).filter(c => c)
+    );
+    
+    if (results.error) {
+      return res.status(400).json({
+        success: false,
+        message: results.message,
+        code: 'PROFILE_REQUIRED'
+      });
+    }
+    
+    // Get previous history entries for comparison
+    const dbManager = require('../config/database');
+    const db = dbManager.getDatabase();
+    
+    const comparison = results.results.map(r => {
+      const lastHistory = db.prepare(`
+        SELECT * FROM chancing_history 
+        WHERE user_id = ? AND college_id = ?
+        ORDER BY calculated_at DESC LIMIT 1
+      `).get(req.user.userId, r.college.id);
+      
+      const oldChance = lastHistory?.chance_percentage || null;
+      const newChance = r.chancing.chance;
+      const change = oldChance !== null ? newChance - oldChance : null;
+      
+      return {
+        college: r.college,
+        oldChance,
+        newChance,
+        change,
+        oldCategory: lastHistory?.category || null,
+        newCategory: r.chancing.category,
+        improved: change !== null ? change > 0 : null
+      };
+    });
+    
+    const withHistory = comparison.filter(c => c.oldChance !== null);
+    
+    res.json({
+      success: true,
+      data: {
+        comparison,
+        summary: {
+          total: comparison.length,
+          withHistory: withHistory.length,
+          improved: withHistory.filter(c => c.improved).length,
+          decreased: withHistory.filter(c => c.change < 0).length,
+          stayed: withHistory.filter(c => c.change === 0).length,
+          avgChange: withHistory.length > 0 
+            ? Math.round(withHistory.reduce((sum, c) => sum + c.change, 0) / withHistory.length)
+            : null
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Compare failed:', error);
+    next(error);
+  }
+});
+
 module.exports = router;
