@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import AIChatbot from '../components/AIChatbot';
+import ProfileStrength from '../components/chancing/ProfileStrength';
 import { 
   School, 
   FileText, 
@@ -19,7 +20,8 @@ import {
   Target,
   Trophy,
   BookOpen,
-  Users
+  Users,
+  Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -237,6 +239,45 @@ const Dashboard = () => {
             ) : (
               <p className="text-sm text-gray-500">No majors selected</p>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Strength Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Profile Strength Card */}
+        <div className="lg:col-span-2">
+          <ProfileStrength />
+        </div>
+        
+        {/* Quick Actions */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="font-bold text-gray-900 mb-4">Quick Actions</h3>
+          <div className="space-y-3">
+            <Link to="/activities" className="block">
+              <Button variant="outline" className="w-full justify-start">
+                <Activity className="mr-2 h-4 w-4" />
+                Manage Activities
+              </Button>
+            </Link>
+            <Link to="/colleges" className="block">
+              <Button variant="outline" className="w-full justify-start">
+                <School className="mr-2 h-4 w-4" />
+                Explore Colleges
+              </Button>
+            </Link>
+            <Link to="/essays" className="block">
+              <Button variant="outline" className="w-full justify-start">
+                <PenTool className="mr-2 h-4 w-4" />
+                Work on Essays
+              </Button>
+            </Link>
+            <Link to="/deadlines" className="block">
+              <Button variant="outline" className="w-full justify-start">
+                <Calendar className="mr-2 h-4 w-4" />
+                Check Deadlines
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
