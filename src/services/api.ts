@@ -184,6 +184,82 @@ class ApiService {
     });
   }
 
+  // Extended student profile
+  async getExtendedProfile() {
+    return this.request('/profile/extended');
+  }
+
+  async saveExtendedProfile(data: any) {
+    return this.request('/profile/extended', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Activities
+  async getActivities() {
+    return this.request('/profile/activities');
+  }
+
+  async addActivity(data: any) {
+    return this.request('/profile/activities', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateActivity(id: number, data: any) {
+    return this.request(`/profile/activities/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteActivity(id: number) {
+    return this.request(`/profile/activities/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async reorderActivities(activityIds: number[]) {
+    return this.request('/profile/activities/reorder', {
+      method: 'POST',
+      body: JSON.stringify({ activityIds }),
+    });
+  }
+
+  // ==================== CHANCING ENDPOINTS ====================
+
+  async calculateChance(collegeId: number) {
+    return this.request('/chancing/calculate', {
+      method: 'POST',
+      body: JSON.stringify({ collegeId }),
+    });
+  }
+
+  async calculateChanceBatch(collegeIds: number[]) {
+    return this.request('/chancing/batch', {
+      method: 'POST',
+      body: JSON.stringify({ collegeIds }),
+    });
+  }
+
+  async getMyListChancing() {
+    return this.request('/chancing/my-list');
+  }
+
+  async getChancingRecommendations(options: { limit?: number; country?: string } = {}) {
+    const params = new URLSearchParams();
+    if (options.limit) params.append('limit', String(options.limit));
+    if (options.country) params.append('country', options.country);
+    const queryString = params.toString();
+    return this.request(`/chancing/recommendations${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async getProfileStrength() {
+    return this.request('/chancing/profile-strength');
+  }
+
   // ==================== COLLEGE ENDPOINTS ====================
 
   async getColleges(filters: any = {}) {
