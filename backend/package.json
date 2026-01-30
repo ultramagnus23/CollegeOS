@@ -7,8 +7,9 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "migrate": "node scripts/migrate.js",
-    "seed": "node scripts/seedMasterData.js --force",
-    "seed:check": "node scripts/seedMasterData.js",
+    "seed": "node scripts/seedFromJSON.js --force",
+    "seed:check": "node scripts/seedFromJSON.js",
+    "seed:legacy": "node scripts/seedMasterData.js --force",
     "test": "jest --coverage",
     "lint": "eslint src/"
   },

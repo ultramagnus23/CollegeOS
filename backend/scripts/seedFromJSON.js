@@ -1,6 +1,6 @@
 // backend/scripts/seedFromJSON.js
 // Comprehensive seed script that reads from JSON data files
-// Creates 290+ colleges from global dataset
+// Creates 2500+ colleges from global dataset (85 countries)
 
 const path = require('path');
 const fs = require('fs');
@@ -51,11 +51,15 @@ function mapToDbSchema(college) {
   const majorCategories = college.Key_Programs_Specializations ? 
     JSON.stringify(college.Key_Programs_Specializations.split(', ')) : null;
   
+  // For colleges without Website_URL, create a placeholder that indicates it needs verification
+  const websiteUrl = college.Website_URL || 
+    `https://www.google.com/search?q=${encodeURIComponent(college.Institution_Name + ' official website')}`;
+  
   return {
     name: college.Institution_Name,
     country: college.Country || 'Unknown',
     location: location,
-    official_website: college.Website_URL || 'https://www.google.com/search?q=' + encodeURIComponent(college.Institution_Name),
+    official_website: websiteUrl,
     admissions_url: college.Website_URL ? college.Website_URL + '/admissions' : null,
     programs_url: college.Website_URL ? college.Website_URL + '/programs' : null,
     application_portal_url: null,
@@ -137,10 +141,18 @@ function showStats() {
 function main() {
   const args = process.argv.slice(2);
   const forceReseed = args.includes('--force') || args.includes('-f');
+  const checkOnly = args.includes('--check') || args.includes('-c');
   
-  if (forceReseed) {
-    clearExistingColleges();
+  // If check-only mode, just show stats
+  if (checkOnly || !forceReseed) {
+    console.log('📊 Check mode - showing current statistics only\n');
+    console.log('   (Use --force flag to reseed database)\n');
+    showStats();
+    return;
   }
+  
+  // Clear existing colleges when force reseeding
+  clearExistingColleges();
   
   // Load and seed colleges from JSON files
   const colleges = loadCollegeDataFiles();
