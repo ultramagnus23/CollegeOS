@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 backend/.env
 *.env
+
+# Database backups
+*.backup
