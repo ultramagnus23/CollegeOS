@@ -1,0 +1,4302 @@
+[
+  {
+    "Institution_Name": "Williams College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.williamscollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Amherst College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.amherstcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Swarthmore College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.swarthmorecollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Wellesley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.wellesleycollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Bowdoin College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.bowdoincollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Pomona College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.pomonacollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Middlebury College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.middleburycollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Carleton College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.carletoncollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Claremont McKenna College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.claremontmckennacollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Davidson College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.davidsoncollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Haverford College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.haverfordcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Colby College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.colbycollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Hamilton College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.hamiltoncollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Wesleyan University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.wesleyanuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Vassar College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.vassarcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Colgate University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.colgateuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Harvey Mudd College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.harveymuddcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Grinnell College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.grinnellcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Washington and Lee University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.washingtonandleeuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Bates College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.batescollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Colorado College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.coloradocollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Macalester College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.macalestercollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Oberlin College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.oberlincollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Scripps College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.scrippscollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Bryn Mawr College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.brynmawrcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Kenyon College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.kenyoncollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Barnard College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.barnardcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Bucknell University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.bucknelluniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "College of the Holy Cross",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.collegeoftheholycross.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Lafayette College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.lafayettecollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Trinity College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.trinitycollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Connecticut College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.connecticutcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Sewanee: University of the South",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.sewaneeuniversityofthesouth.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Gettysburg College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.gettysburgcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Dickinson College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.dickinsoncollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Franklin and Marshall College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.franklinandmarshallcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Union College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.unioncollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Whitman College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.whitmancollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Rhodes College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.rhodescollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Furman University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.furmanuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Denison University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.denisonuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Centre College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.centrecollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "DePauw University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.depauwuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Occidental College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.occidentalcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Reed College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.reedcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "St. Lawrence University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.stlawrenceuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Skidmore College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.skidmorecollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "St. Olaf College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.stolafcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Wheaton College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.wheatoncollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Beloit College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.beloitcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Notre Dame",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.notredame.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Brigham Young University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.brighamyounguniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Pepperdine University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.pepperdineuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Baylor University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.bayloruniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Villanova University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.villanovauniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Boston College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.bostoncollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Fordham University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.fordhamuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Creighton University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.creightonuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Santa Clara University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.santaclarauniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Loyola University Chicago",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.loyolauniversitychicago.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Gonzaga University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.gonzagauniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Marquette University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.marquetteuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of San Diego",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.universityofsandiego.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Providence College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.providencecollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Seton Hall University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.setonhalluniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "DePaul University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.depauluniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "St. Louis University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.stlouisuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Xavier University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.xavieruniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Dayton",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.universityofdayton.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Portland",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.universityofportland.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Drexel University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.drexeluniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Stevens Institute of Technology",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.stevensinstituteoftechnology.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Rensselaer Polytechnic Institute",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.rensselaerpolytechnicinstitute.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Worcester Polytechnic Institute",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.worcesterpolytechnicinstitute.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Illinois Institute of Technology",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.illinoisinstituteoftechnology.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Tulsa",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.universityoftulsa.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of the Pacific",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.universityofthepacific.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Hartford",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.universityofhartford.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of New Haven",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.universityofnewhaven.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Bridgeport",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.universityofbridgeport.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Adelphi University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.adelphiuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Hofstra University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.hofstrauniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Pace University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.paceuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "St. Johns University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.stjohnsuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Long Island University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.longislanduniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Quinnipiac University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.quinnipiacuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Sacred Heart University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.sacredheartuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Roger Williams University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.rogerwilliamsuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Bryant University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.bryantuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Bentley University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.bentleyuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Babson College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.babsoncollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Suffolk University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.suffolkuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Simmons University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.simmonsuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Lesley University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.lesleyuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Emmanuel College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.emmanuelcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Fairfield University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.fairfielduniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Marist College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.maristcollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Manhattan College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.manhattancollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Iona College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.ionacollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Wagner College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.wagnercollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Seton Hall University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.setonhalluniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Rider University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.rideruniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Monmouth University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.monmouthuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Drew University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.drewuniversity.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Ramapo College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Website_URL": "https://www.ramapocollege.edu",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Professional Programs",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "California State University Fullerton",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California State University Long Beach",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California State University Northridge",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California State University Los Angeles",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California State University Sacramento",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California State University San Bernardino",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California State Polytechnic University Pomona",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastatepolyt.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California State University Fresno",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California State University Bakersfield",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California State University Chico",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California State University Stanislaus",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California State University East Bay",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California State University Monterey Bay",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California State University Channel Islands",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiastateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Sonoma State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sonomastateuniversit.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "San Francisco State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sanfranciscostateuni.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Humboldt State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.humboldtstateunivers.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "San Diego State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sandiegostateunivers.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY Albany",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunyalbany.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY Buffalo",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunybuffalo.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY Stony Brook",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunystonybrook.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY Binghamton",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunybinghamton.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY Oswego",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunyoswego.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY Geneseo",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunygeneseo.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY New Paltz",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunynewpaltz.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY Oneonta",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunyoneonta.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY Cortland",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunycortland.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY Plattsburgh",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunyplattsburgh.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY Potsdam",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunypotsdam.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY Purchase",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunypurchase.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY Fredonia",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunyfredonia.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY Brockport",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunybrockport.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "SUNY College at Buffalo",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sunycollegeatbuffalo.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "CUNY City College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.cunycitycollege.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "CUNY Hunter College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.cunyhuntercollege.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "CUNY Baruch College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.cunybaruchcollege.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "CUNY Brooklyn College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.cunybrooklyncollege.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "CUNY Queens College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.cunyqueenscollege.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "CUNY John Jay College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.cunyjohnjaycollege.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "CUNY Lehman College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.cunylehmancollege.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "CUNY Staten Island",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.cunystatenisland.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "CUNY Medgar Evers College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.cunymedgareverscolle.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "West Chester University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.westchesteruniversit.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Kutztown University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.kutztownuniversity.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Millersville University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.millersvilleuniversi.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Shippensburg University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.shippensburguniversi.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Bloomsburg University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.bloomsburguniversity.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Indiana University of Pennsylvania",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianauniversityofp.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Slippery Rock University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.slipperyrockuniversi.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Clarion University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.clarionuniversity.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "California University of Pennsylvania",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.californiauniversity.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Lock Haven University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.lockhavenuniversity.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Edinboro University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.edinborouniversity.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Mansfield University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.mansfielduniversity.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Cheyney University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.cheyneyuniversity.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Texas State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.texasstateuniversity.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Texas Tech University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.texastechuniversity.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "University of Texas at Dallas",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityoftexasatd.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "University of Texas at Arlington",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityoftexasata.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "University of Texas at San Antonio",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityoftexasats.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "University of Texas at El Paso",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityoftexasate.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "University of North Texas",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofnorthtex.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Sam Houston State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.samhoustonstateunive.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Stephen F. Austin State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.stephenfaustinstateu.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Lamar University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.lamaruniversity.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Tarleton State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.tarletonstateunivers.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Prairie View A&M University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.prairieviewamunivers.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Texas Southern University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.texassouthernunivers.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Texas A&M University Commerce",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.texasamuniversitycom.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Texas A&M University Corpus Christi",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.texasamuniversitycor.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Texas A&M University Kingsville",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.texasamuniversitykin.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "University of Texas Rio Grande Valley",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityoftexasrio.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "West Texas A&M University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.westtexasamuniversit.edu",
+    "Key_Programs_Specializations": "Education, Business, Sciences, Arts",
+    "Research_Output_Level": "Medium"
+  },
+  {
+    "Institution_Name": "Los Angeles City College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.losangelescityc.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "East Los Angeles College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.eastlosangelesc.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Los Angeles Southwest College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.losangelessouth.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Los Angeles Trade-Technical College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.losangelestrade.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Los Angeles Pierce College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.losangelespierc.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Los Angeles Valley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.losangelesvalle.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Los Angeles Mission College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.losangelesmissi.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "West Los Angeles College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.westlosangelesc.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Los Angeles Harbor College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.losangelesharbo.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "City College of San Francisco",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.citycollegeofsa.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Foothill College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.foothillcollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "De Anza College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.deanzacollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Diablo Valley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.diablovalleycol.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Laney College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.laneycollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Chabot College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.chabotcollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Ohlone College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.ohlonecollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Evergreen Valley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.evergreenvalley.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "San Jose City College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.sanjosecitycoll.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Cabrillo College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.cabrillocollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Gavilan College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.gavilancollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Hartnell College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.hartnellcollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Monterey Peninsula College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.montereypeninsu.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "College of San Mateo",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.collegeofsanmat.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Canada College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.canadacollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Skyline College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.skylinecollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Contra Costa College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.contracostacoll.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Los Medanos College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.losmedanoscolle.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "College of Alameda",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.collegeofalamed.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Merritt College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.merrittcollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Berkeley City College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.berkeleycitycol.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Fresno City College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.fresnocitycolle.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Reedley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.reedleycollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Santa Barbara City College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.santabarbaracit.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Ventura College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.venturacollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Moorpark College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.moorparkcollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Oxnard College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.oxnardcollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Allan Hancock College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.allanhancockcol.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Long Beach City College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.longbeachcityco.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "El Camino College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.elcaminocollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Cerritos College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.cerritoscollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Rio Hondo College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.riohondocollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Citrus College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.citruscollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Mt. San Antonio College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.mtsanantoniocol.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Pasadena City College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.pasadenacitycol.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Glendale Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.glendalecommuni.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "College of the Canyons",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.collegeofthecan.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Antelope Valley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.antelopevalleyc.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "San Bernardino Valley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.sanbernardinova.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Riverside City College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.riversidecityco.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Norco College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.norcocollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Moreno Valley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.morenovalleycol.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Chaffey College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.chaffeycollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Victor Valley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.victorvalleycol.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Barstow Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.barstowcommunit.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Palo Verde College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.paloverdecolleg.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Imperial Valley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.imperialvalleyc.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Southwestern College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.southwesterncol.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Grossmont College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.grossmontcolleg.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Cuyamaca College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.cuyamacacollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "MiraCosta College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.miracostacolleg.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Palomar College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.palomarcollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "San Diego City College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.sandiegocitycol.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "San Diego Mesa College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.sandiegomesacol.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "San Diego Miramar College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.sandiegomiramar.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Houston Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.houstoncommunit.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Lone Star College System",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.lonestarcollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Dallas County Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.dallascountycom.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Tarrant County College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.tarrantcountyco.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Austin Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.austincommunity.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "San Antonio College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.sanantoniocolle.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Alamo Colleges District",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.alamocollegesdi.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Miami Dade College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.miamidadecolleg.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Broward College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.browardcollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Palm Beach State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.palmbeachstatec.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Valencia College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.valenciacollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Hillsborough Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.hillsboroughcom.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Pasco-Hernando State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.pascohernandost.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "State College of Florida",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.statecollegeoff.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Santa Fe College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.santafecollege.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Florida State College at Jacksonville",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.floridastatecol.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Seminole State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.seminolestateco.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Daytona State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.daytonastatecol.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Indian River State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Website_URL": "https://www.indianriverstat.edu",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training",
+    "Research_Output_Level": "Low"
+  },
+  {
+    "Institution_Name": "Paris-Saclay University",
+    "Country": "France",
+    "Region_State_Province": "Paris",
+    "City": "Paris",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.parissaclayuniversit.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Paris Sciences et Lettres University",
+    "Country": "France",
+    "Region_State_Province": "Paris",
+    "City": "Paris",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.parissciencesetlettr.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Aix-Marseille University",
+    "Country": "France",
+    "Region_State_Province": "Marseille",
+    "City": "Marseille",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.aixmarseilleuniversi.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Strasbourg",
+    "Country": "France",
+    "Region_State_Province": "Strasbourg",
+    "City": "Strasbourg",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofstrasbou.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Bordeaux",
+    "Country": "France",
+    "Region_State_Province": "Bordeaux",
+    "City": "Bordeaux",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofbordeaux.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Lyon",
+    "Country": "France",
+    "Region_State_Province": "Lyon",
+    "City": "Lyon",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityoflyon.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Grenoble Alpes",
+    "Country": "France",
+    "Region_State_Province": "Grenoble",
+    "City": "Grenoble",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofgrenoble.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Toulouse",
+    "Country": "France",
+    "Region_State_Province": "Toulouse",
+    "City": "Toulouse",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityoftoulouse.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Montpellier",
+    "Country": "France",
+    "Region_State_Province": "Montpellier",
+    "City": "Montpellier",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofmontpell.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Lille",
+    "Country": "France",
+    "Region_State_Province": "Lille",
+    "City": "Lille",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityoflille.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Nantes",
+    "Country": "France",
+    "Region_State_Province": "Nantes",
+    "City": "Nantes",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofnantes.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Nice Sophia Antipolis",
+    "Country": "France",
+    "Region_State_Province": "Nice",
+    "City": "Nice",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofnicesoph.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "CentraleSupélec",
+    "Country": "France",
+    "Region_State_Province": "Paris",
+    "City": "Paris",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.centralesuplec.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "ESSEC Business School",
+    "Country": "France",
+    "Region_State_Province": "Paris",
+    "City": "Paris",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.essecbusinessschool.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "ESCP Business School",
+    "Country": "France",
+    "Region_State_Province": "Paris",
+    "City": "Paris",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.escpbusinessschool.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Sapienza University of Rome",
+    "Country": "Italy",
+    "Region_State_Province": "Rome",
+    "City": "Rome",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sapienzauniversityof.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Padua",
+    "Country": "Italy",
+    "Region_State_Province": "Padua",
+    "City": "Padua",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofpadua.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Milan",
+    "Country": "Italy",
+    "Region_State_Province": "Milan",
+    "City": "Milan",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofmilan.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Turin",
+    "Country": "Italy",
+    "Region_State_Province": "Turin",
+    "City": "Turin",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofturin.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Florence",
+    "Country": "Italy",
+    "Region_State_Province": "Florence",
+    "City": "Florence",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofflorence.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Naples Federico II",
+    "Country": "Italy",
+    "Region_State_Province": "Naples",
+    "City": "Naples",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofnaplesfe.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Pisa",
+    "Country": "Italy",
+    "Region_State_Province": "Pisa",
+    "City": "Pisa",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofpisa.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Bocconi University",
+    "Country": "Italy",
+    "Region_State_Province": "Milan",
+    "City": "Milan",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.bocconiuniversity.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Politecnico di Torino",
+    "Country": "Italy",
+    "Region_State_Province": "Turin",
+    "City": "Turin",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.politecnicoditorino.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Scuola Normale Superiore",
+    "Country": "Italy",
+    "Region_State_Province": "Pisa",
+    "City": "Pisa",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.scuolanormalesuperio.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Complutense de Madrid",
+    "Country": "Spain",
+    "Region_State_Province": "Madrid",
+    "City": "Madrid",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadcompluten.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Politécnica de Madrid",
+    "Country": "Spain",
+    "Region_State_Province": "Madrid",
+    "City": "Madrid",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadpolitcnic.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Carlos III de Madrid",
+    "Country": "Spain",
+    "Region_State_Province": "Madrid",
+    "City": "Madrid",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadcarlosiii.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Autónoma de Barcelona",
+    "Country": "Spain",
+    "Region_State_Province": "Barcelona",
+    "City": "Barcelona",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadautnomade.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Politécnica de Cataluña",
+    "Country": "Spain",
+    "Region_State_Province": "Barcelona",
+    "City": "Barcelona",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadpolitcnic.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad de Valencia",
+    "Country": "Spain",
+    "Region_State_Province": "Valencia",
+    "City": "Valencia",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddevalenci.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad de Sevilla",
+    "Country": "Spain",
+    "Region_State_Province": "Sevilla",
+    "City": "Sevilla",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddesevilla.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad de Granada",
+    "Country": "Spain",
+    "Region_State_Province": "Granada",
+    "City": "Granada",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddegranada.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad del País Vasco",
+    "Country": "Spain",
+    "Region_State_Province": "Bilbao",
+    "City": "Bilbao",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddelpasvas.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad de Salamanca",
+    "Country": "Spain",
+    "Region_State_Province": "Salamanca",
+    "City": "Salamanca",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddesalaman.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Eindhoven University of Technology",
+    "Country": "Netherlands",
+    "Region_State_Province": "Eindhoven",
+    "City": "Eindhoven",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.eindhovenuniversityo.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Twente",
+    "Country": "Netherlands",
+    "Region_State_Province": "Enschede",
+    "City": "Enschede",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityoftwente.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Utrecht University",
+    "Country": "Netherlands",
+    "Region_State_Province": "Utrecht",
+    "City": "Utrecht",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.utrechtuniversity.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Erasmus University Rotterdam",
+    "Country": "Netherlands",
+    "Region_State_Province": "Rotterdam",
+    "City": "Rotterdam",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.erasmusuniversityrot.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Groningen",
+    "Country": "Netherlands",
+    "Region_State_Province": "Groningen",
+    "City": "Groningen",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofgroninge.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Wageningen University",
+    "Country": "Netherlands",
+    "Region_State_Province": "Wageningen",
+    "City": "Wageningen",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.wageningenuniversity.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Radboud University",
+    "Country": "Netherlands",
+    "Region_State_Province": "Nijmegen",
+    "City": "Nijmegen",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.radbouduniversity.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "VU Amsterdam",
+    "Country": "Netherlands",
+    "Region_State_Province": "Amsterdam",
+    "City": "Amsterdam",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.vuamsterdam.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Maastricht University",
+    "Country": "Netherlands",
+    "Region_State_Province": "Maastricht",
+    "City": "Maastricht",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.maastrichtuniversity.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Tilburg University",
+    "Country": "Netherlands",
+    "Region_State_Province": "Tilburg",
+    "City": "Tilburg",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.tilburguniversity.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Lund University",
+    "Country": "Sweden",
+    "Region_State_Province": "Lund",
+    "City": "Lund",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.lunduniversity.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Chalmers University of Technology",
+    "Country": "Sweden",
+    "Region_State_Province": "Gothenburg",
+    "City": "Gothenburg",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.chalmersuniversityof.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Stockholm University",
+    "Country": "Sweden",
+    "Region_State_Province": "Stockholm",
+    "City": "Stockholm",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.stockholmuniversity.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Gothenburg",
+    "Country": "Sweden",
+    "Region_State_Province": "Gothenburg",
+    "City": "Gothenburg",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofgothenbu.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Linköping University",
+    "Country": "Sweden",
+    "Region_State_Province": "Linköping",
+    "City": "Linköping",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.linkpinguniversity.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Umeå University",
+    "Country": "Sweden",
+    "Region_State_Province": "Umeå",
+    "City": "Umeå",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.umeuniversity.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Oslo",
+    "Country": "Norway",
+    "Region_State_Province": "Oslo",
+    "City": "Oslo",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofoslo.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Norwegian University of Science and Technology",
+    "Country": "Norway",
+    "Region_State_Province": "Trondheim",
+    "City": "Trondheim",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.norwegianuniversityo.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Bergen",
+    "Country": "Norway",
+    "Region_State_Province": "Bergen",
+    "City": "Bergen",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofbergen.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Helsinki",
+    "Country": "Finland",
+    "Region_State_Province": "Helsinki",
+    "City": "Helsinki",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofhelsinki.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Aalto University",
+    "Country": "Finland",
+    "Region_State_Province": "Espoo",
+    "City": "Espoo",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.aaltouniversity.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Turku",
+    "Country": "Finland",
+    "Region_State_Province": "Turku",
+    "City": "Turku",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofturku.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Technical University of Denmark",
+    "Country": "Denmark",
+    "Region_State_Province": "Copenhagen",
+    "City": "Copenhagen",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.technicaluniversityo.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Aarhus University",
+    "Country": "Denmark",
+    "Region_State_Province": "Aarhus",
+    "City": "Aarhus",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.aarhusuniversity.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Southern Denmark",
+    "Country": "Denmark",
+    "Region_State_Province": "Odense",
+    "City": "Odense",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofsouthern.edu",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Federal University of Minas Gerais",
+    "Country": "Brazil",
+    "Region_State_Province": "Belo Horizonte",
+    "City": "Belo Horizonte",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.federaluniversityofm.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Federal University of Rio Grande do Sul",
+    "Country": "Brazil",
+    "Region_State_Province": "Porto Alegre",
+    "City": "Porto Alegre",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.federaluniversityofr.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Paulista State University",
+    "Country": "Brazil",
+    "Region_State_Province": "São Paulo",
+    "City": "São Paulo",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.paulistastateunivers.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Federal University of Paraná",
+    "Country": "Brazil",
+    "Region_State_Province": "Curitiba",
+    "City": "Curitiba",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.federaluniversityofp.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Federal University of Santa Catarina",
+    "Country": "Brazil",
+    "Region_State_Province": "Florianópolis",
+    "City": "Florianópolis",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.federaluniversityofs.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Federal University of Pernambuco",
+    "Country": "Brazil",
+    "Region_State_Province": "Recife",
+    "City": "Recife",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.federaluniversityofp.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Federal University of Bahia",
+    "Country": "Brazil",
+    "Region_State_Province": "Salvador",
+    "City": "Salvador",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.federaluniversityofb.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Federal University of Ceará",
+    "Country": "Brazil",
+    "Region_State_Province": "Fortaleza",
+    "City": "Fortaleza",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.federaluniversityofc.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Brasília",
+    "Country": "Brazil",
+    "Region_State_Province": "Brasília",
+    "City": "Brasília",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofbraslia.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Federal University of São Carlos",
+    "Country": "Brazil",
+    "Region_State_Province": "São Carlos",
+    "City": "São Carlos",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.federaluniversityofs.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Autónoma de Nuevo León",
+    "Country": "Mexico",
+    "Region_State_Province": "Monterrey",
+    "City": "Monterrey",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadautnomade.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad de Guadalajara",
+    "Country": "Mexico",
+    "Region_State_Province": "Guadalajara",
+    "City": "Guadalajara",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddeguadala.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Iberoamericana",
+    "Country": "Mexico",
+    "Region_State_Province": "Mexico City",
+    "City": "Mexico City",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadiberoamer.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Anáhuac",
+    "Country": "Mexico",
+    "Region_State_Province": "Mexico City",
+    "City": "Mexico City",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadanhuac.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad de las Américas Puebla",
+    "Country": "Mexico",
+    "Region_State_Province": "Puebla",
+    "City": "Puebla",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddelasamri.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Autónoma del Estado de México",
+    "Country": "Mexico",
+    "Region_State_Province": "Toluca",
+    "City": "Toluca",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadautnomade.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad de Monterrey",
+    "Country": "Mexico",
+    "Region_State_Province": "Monterrey",
+    "City": "Monterrey",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddemonterr.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Nacional de Córdoba",
+    "Country": "Argentina",
+    "Region_State_Province": "Córdoba",
+    "City": "Córdoba",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadnacionald.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Nacional de La Plata",
+    "Country": "Argentina",
+    "Region_State_Province": "La Plata",
+    "City": "La Plata",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadnacionald.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Nacional de Rosario",
+    "Country": "Argentina",
+    "Region_State_Province": "Rosario",
+    "City": "Rosario",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadnacionald.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Torcuato Di Tella",
+    "Country": "Argentina",
+    "Region_State_Province": "Buenos Aires",
+    "City": "Buenos Aires",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadtorcuatod.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad de San Andrés",
+    "Country": "Argentina",
+    "Region_State_Province": "Buenos Aires",
+    "City": "Buenos Aires",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddesanandr.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad EAFIT",
+    "Country": "Colombia",
+    "Region_State_Province": "Medellín",
+    "City": "Medellín",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadeafit.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad del Norte",
+    "Country": "Colombia",
+    "Region_State_Province": "Barranquilla",
+    "City": "Barranquilla",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddelnorte.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Javeriana",
+    "Country": "Colombia",
+    "Region_State_Province": "Bogotá",
+    "City": "Bogotá",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadjaveriana.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad de Antioquia",
+    "Country": "Colombia",
+    "Region_State_Province": "Medellín",
+    "City": "Medellín",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddeantioqu.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad del Valle",
+    "Country": "Colombia",
+    "Region_State_Province": "Cali",
+    "City": "Cali",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddelvalle.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad de Concepción",
+    "Country": "Chile",
+    "Region_State_Province": "Concepción",
+    "City": "Concepción",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddeconcepc.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Diego Portales",
+    "Country": "Chile",
+    "Region_State_Province": "Santiago",
+    "City": "Santiago",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddiegoport.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Adolfo Ibáñez",
+    "Country": "Chile",
+    "Region_State_Province": "Santiago",
+    "City": "Santiago",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadadolfoibe.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad de Santiago de Chile",
+    "Country": "Chile",
+    "Region_State_Province": "Santiago",
+    "City": "Santiago",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidaddesantiag.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universidad Técnica Federico Santa María",
+    "Country": "Chile",
+    "Region_State_Province": "Valparaíso",
+    "City": "Valparaíso",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universidadtcnicafed.edu",
+    "Key_Programs_Specializations": "Engineering, Sciences, Business, Medicine",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "All India Institute of Medical Sciences Delhi",
+    "Country": "India",
+    "Region_State_Province": "New Delhi",
+    "City": "New Delhi",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.allindiainstituteofm.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "All India Institute of Medical Sciences Jodhpur",
+    "Country": "India",
+    "Region_State_Province": "Jodhpur",
+    "City": "Jodhpur",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.allindiainstituteofm.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "All India Institute of Medical Sciences Bhopal",
+    "Country": "India",
+    "Region_State_Province": "Bhopal",
+    "City": "Bhopal",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.allindiainstituteofm.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "All India Institute of Medical Sciences Patna",
+    "Country": "India",
+    "Region_State_Province": "Patna",
+    "City": "Patna",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.allindiainstituteofm.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "All India Institute of Medical Sciences Raipur",
+    "Country": "India",
+    "Region_State_Province": "Raipur",
+    "City": "Raipur",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.allindiainstituteofm.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Armed Forces Medical College",
+    "Country": "India",
+    "Region_State_Province": "Pune",
+    "City": "Pune",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.armedforcesmedicalco.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Christian Medical College Vellore",
+    "Country": "India",
+    "Region_State_Province": "Vellore",
+    "City": "Vellore",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.christianmedicalcoll.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "King George Medical University",
+    "Country": "India",
+    "Region_State_Province": "Lucknow",
+    "City": "Lucknow",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.kinggeorgemedicaluni.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Maulana Azad Medical College",
+    "Country": "India",
+    "Region_State_Province": "New Delhi",
+    "City": "New Delhi",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.maulanaazadmedicalco.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Grant Medical College",
+    "Country": "India",
+    "Region_State_Province": "Mumbai",
+    "City": "Mumbai",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.grantmedicalcollege.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Management Lucknow",
+    "Country": "India",
+    "Region_State_Province": "Lucknow",
+    "City": "Lucknow",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteofman.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Management Kozhikode",
+    "Country": "India",
+    "Region_State_Province": "Kozhikode",
+    "City": "Kozhikode",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteofman.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Management Indore",
+    "Country": "India",
+    "Region_State_Province": "Indore",
+    "City": "Indore",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteofman.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Management Shillong",
+    "Country": "India",
+    "Region_State_Province": "Shillong",
+    "City": "Shillong",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteofman.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Management Ranchi",
+    "Country": "India",
+    "Region_State_Province": "Ranchi",
+    "City": "Ranchi",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteofman.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Management Raipur",
+    "Country": "India",
+    "Region_State_Province": "Raipur",
+    "City": "Raipur",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteofman.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Management Rohtak",
+    "Country": "India",
+    "Region_State_Province": "Rohtak",
+    "City": "Rohtak",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteofman.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Management Tiruchirappalli",
+    "Country": "India",
+    "Region_State_Province": "Tiruchirappalli",
+    "City": "Tiruchirappalli",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteofman.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Management Udaipur",
+    "Country": "India",
+    "Region_State_Province": "Udaipur",
+    "City": "Udaipur",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteofman.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Management Kashipur",
+    "Country": "India",
+    "Region_State_Province": "Kashipur",
+    "City": "Kashipur",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteofman.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Technology Bhubaneswar",
+    "Country": "India",
+    "Region_State_Province": "Bhubaneswar",
+    "City": "Bhubaneswar",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteoftec.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Technology Gandhinagar",
+    "Country": "India",
+    "Region_State_Province": "Gandhinagar",
+    "City": "Gandhinagar",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteoftec.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Technology Jodhpur",
+    "Country": "India",
+    "Region_State_Province": "Jodhpur",
+    "City": "Jodhpur",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteoftec.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Technology Patna",
+    "Country": "India",
+    "Region_State_Province": "Patna",
+    "City": "Patna",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteoftec.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Technology Ropar",
+    "Country": "India",
+    "Region_State_Province": "Ropar",
+    "City": "Ropar",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteoftec.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Technology Indore",
+    "Country": "India",
+    "Region_State_Province": "Indore",
+    "City": "Indore",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteoftec.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Technology Mandi",
+    "Country": "India",
+    "Region_State_Province": "Mandi",
+    "City": "Mandi",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteoftec.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Technology Tirupati",
+    "Country": "India",
+    "Region_State_Province": "Tirupati",
+    "City": "Tirupati",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteoftec.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Technology Palakkad",
+    "Country": "India",
+    "Region_State_Province": "Palakkad",
+    "City": "Palakkad",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteoftec.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Indian Institute of Technology Goa",
+    "Country": "India",
+    "Region_State_Province": "Goa",
+    "City": "Goa",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.indianinstituteoftec.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "National Taiwan University",
+    "Country": "Taiwan",
+    "Region_State_Province": "Taipei",
+    "City": "Taipei",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.nationaltaiwanuniver.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "National Tsing Hua University",
+    "Country": "Taiwan",
+    "Region_State_Province": "Hsinchu",
+    "City": "Hsinchu",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.nationaltsinghuauniv.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "National Cheng Kung University",
+    "Country": "Taiwan",
+    "Region_State_Province": "Tainan",
+    "City": "Tainan",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.nationalchengkunguni.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "National Yang Ming Chiao Tung University",
+    "Country": "Taiwan",
+    "Region_State_Province": "Taipei",
+    "City": "Taipei",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.nationalyangmingchia.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "National Taiwan University of Science and Technology",
+    "Country": "Taiwan",
+    "Region_State_Province": "Taipei",
+    "City": "Taipei",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.nationaltaiwanuniver.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Mahidol University",
+    "Country": "Thailand",
+    "Region_State_Province": "Bangkok",
+    "City": "Bangkok",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.mahidoluniversity.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Kasetsart University",
+    "Country": "Thailand",
+    "Region_State_Province": "Bangkok",
+    "City": "Bangkok",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.kasetsartuniversity.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Thammasat University",
+    "Country": "Thailand",
+    "Region_State_Province": "Bangkok",
+    "City": "Bangkok",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.thammasatuniversity.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universiti Teknologi Malaysia",
+    "Country": "Malaysia",
+    "Region_State_Province": "Johor Bahru",
+    "City": "Johor Bahru",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universititeknologim.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universiti Sains Malaysia",
+    "Country": "Malaysia",
+    "Region_State_Province": "Penang",
+    "City": "Penang",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universitisainsmalay.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universiti Kebangsaan Malaysia",
+    "Country": "Malaysia",
+    "Region_State_Province": "Kuala Lumpur",
+    "City": "Kuala Lumpur",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universitikebangsaan.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Universiti Malaya",
+    "Country": "Malaysia",
+    "Region_State_Province": "Kuala Lumpur",
+    "City": "Kuala Lumpur",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universitimalaya.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Indonesia",
+    "Country": "Indonesia",
+    "Region_State_Province": "Depok",
+    "City": "Depok",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofindonesi.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Institut Teknologi Bandung",
+    "Country": "Indonesia",
+    "Region_State_Province": "Bandung",
+    "City": "Bandung",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.institutteknologiban.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Gadjah Mada University",
+    "Country": "Indonesia",
+    "Region_State_Province": "Yogyakarta",
+    "City": "Yogyakarta",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.gadjahmadauniversity.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Ateneo de Manila University",
+    "Country": "Philippines",
+    "Region_State_Province": "Manila",
+    "City": "Manila",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.ateneodemanilauniver.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "De La Salle University",
+    "Country": "Philippines",
+    "Region_State_Province": "Manila",
+    "City": "Manila",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.delasalleuniversity.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Singapore Management University",
+    "Country": "Singapore",
+    "Region_State_Province": "Singapore",
+    "City": "Singapore",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.singaporemanagementu.edu",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "American University of Beirut",
+    "Country": "Lebanon",
+    "Region_State_Province": "Beirut",
+    "City": "Beirut",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.americanuniversityof.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Lebanese American University",
+    "Country": "Lebanon",
+    "Region_State_Province": "Beirut",
+    "City": "Beirut",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.lebaneseamericanuniv.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Jordan",
+    "Country": "Jordan",
+    "Region_State_Province": "Amman",
+    "City": "Amman",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofjordan.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "King Fahd University of Petroleum and Minerals",
+    "Country": "Saudi Arabia",
+    "Region_State_Province": "Dhahran",
+    "City": "Dhahran",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.kingfahduniversityof.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "King Abdulaziz University",
+    "Country": "Saudi Arabia",
+    "Region_State_Province": "Jeddah",
+    "City": "Jeddah",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.kingabdulazizunivers.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Sharjah",
+    "Country": "United Arab Emirates",
+    "Region_State_Province": "Sharjah",
+    "City": "Sharjah",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofsharjah.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Abu Dhabi University",
+    "Country": "United Arab Emirates",
+    "Region_State_Province": "Abu Dhabi",
+    "City": "Abu Dhabi",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.abudhabiuniversity.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Zayed University",
+    "Country": "United Arab Emirates",
+    "Region_State_Province": "Abu Dhabi",
+    "City": "Abu Dhabi",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.zayeduniversity.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Weizmann Institute of Science",
+    "Country": "Israel",
+    "Region_State_Province": "Rehovot",
+    "City": "Rehovot",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.weizmanninstituteofs.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Ben-Gurion University of the Negev",
+    "Country": "Israel",
+    "Region_State_Province": "Beer Sheva",
+    "City": "Beer Sheva",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.bengurionuniversityo.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Koç University",
+    "Country": "Turkey",
+    "Region_State_Province": "Istanbul",
+    "City": "Istanbul",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.kouniversity.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Sabancı University",
+    "Country": "Turkey",
+    "Region_State_Province": "Istanbul",
+    "City": "Istanbul",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.sabancuniversity.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Bilkent University",
+    "Country": "Turkey",
+    "Region_State_Province": "Ankara",
+    "City": "Ankara",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.bilkentuniversity.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Istanbul Technical University",
+    "Country": "Turkey",
+    "Region_State_Province": "Istanbul",
+    "City": "Istanbul",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.istanbultechnicaluni.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Pretoria",
+    "Country": "South Africa",
+    "Region_State_Province": "Pretoria",
+    "City": "Pretoria",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofpretoria.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Johannesburg",
+    "Country": "South Africa",
+    "Region_State_Province": "Johannesburg",
+    "City": "Johannesburg",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofjohannes.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Rhodes University",
+    "Country": "South Africa",
+    "Region_State_Province": "Grahamstown",
+    "City": "Grahamstown",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.rhodesuniversity.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of KwaZulu-Natal",
+    "Country": "South Africa",
+    "Region_State_Province": "Durban",
+    "City": "Durban",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofkwazulun.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of the Western Cape",
+    "Country": "South Africa",
+    "Region_State_Province": "Cape Town",
+    "City": "Cape Town",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityoftheweste.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Alexandria University",
+    "Country": "Egypt",
+    "Region_State_Province": "Alexandria",
+    "City": "Alexandria",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.alexandriauniversity.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Ain Shams University",
+    "Country": "Egypt",
+    "Region_State_Province": "Cairo",
+    "City": "Cairo",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.ainshamsuniversity.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Ibadan",
+    "Country": "Nigeria",
+    "Region_State_Province": "Ibadan",
+    "City": "Ibadan",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofibadan.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Covenant University",
+    "Country": "Nigeria",
+    "Region_State_Province": "Ota",
+    "City": "Ota",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.covenantuniversity.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Cape Coast",
+    "Country": "Ghana",
+    "Region_State_Province": "Cape Coast",
+    "City": "Cape Coast",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofcapecoas.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Kwame Nkrumah University of Science and Technology",
+    "Country": "Ghana",
+    "Region_State_Province": "Kumasi",
+    "City": "Kumasi",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.kwamenkrumahuniversi.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Strathmore University",
+    "Country": "Kenya",
+    "Region_State_Province": "Nairobi",
+    "City": "Nairobi",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.strathmoreuniversity.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Dar es Salaam",
+    "Country": "Tanzania",
+    "Region_State_Province": "Dar es Salaam",
+    "City": "Dar es Salaam",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofdaressal.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "Addis Ababa University",
+    "Country": "Ethiopia",
+    "Region_State_Province": "Addis Ababa",
+    "City": "Addis Ababa",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.addisababauniversity.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  },
+  {
+    "Institution_Name": "University of Rwanda",
+    "Country": "Rwanda",
+    "Region_State_Province": "Kigali",
+    "City": "Kigali",
+    "Institution_Type": "Public",
+    "Website_URL": "https://www.universityofrwanda.edu",
+    "Key_Programs_Specializations": "Medicine, Engineering, Sciences, Business",
+    "Research_Output_Level": "High"
+  }
+]
