@@ -1,0 +1,4330 @@
+[
+  {
+    "Institution_Name": "Cal State LA",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cal State Fullerton",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cal State Long Beach",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cal State Northridge",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cal State Dominguez Hills",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cal State San Bernardino",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cal State Fresno",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cal State Bakersfield",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cal State Stanislaus",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cal State East Bay",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cal State Monterey Bay",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cal State Channel Islands",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cal State Maritime Academy",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cal State San Marcos",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Humboldt State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UW Oshkosh",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UW La Crosse",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UW Eau Claire",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UW Whitewater",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UW Stevens Point",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UW Stout",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UW Superior",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UW Platteville",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UW Parkside",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UW Green Bay",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UW River Falls",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UMN Duluth",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UMN Morris",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UMN Crookston",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UMN Rochester",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "SUNY Maritime College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "SUNY Empire State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "SUNY Farmingdale",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "SUNY Old Westbury",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "SUNY Canton",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "SUNY Cobleskill",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "SUNY Delhi",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "SUNY Morrisville",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "SUNY Alfred",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Fashion Institute of Technology",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Texas A&M Galveston",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Texas A&M Texarkana",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Texas A&M Central Texas",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Texas A&M San Antonio",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Texas A&M International",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "West Texas A&M",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Tarleton State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Prairie View A&M",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UT Dallas",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UT Arlington",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UT San Antonio",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UT El Paso",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UT Tyler",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UT Permian Basin",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UT Rio Grande Valley",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Penn State Harrisburg",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Penn State Erie",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Penn State Berks",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Penn State Altoona",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Penn State Abington",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Penn State Brandywine",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Penn State Hazleton",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Penn State Schuylkill",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Penn State York",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Penn State Mont Alto",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Ohio State Lima",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Ohio State Mansfield",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Ohio State Marion",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Ohio State Newark",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "CU Colorado Springs",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "CU Denver",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "CU Anschutz",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "IU South Bend",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "IU Fort Wayne",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "IU Kokomo",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "IU Northwest",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "IU East",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "IU Southeast",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Purdue Fort Wayne",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Purdue Northwest",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Purdue Global",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UMKC",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Missouri S&T",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UMSL",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UConn Hartford",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UConn Stamford",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UConn Waterbury",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UConn Avery Point",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "USC Upstate",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "USC Aiken",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "USC Beaufort",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "USC Lancaster",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "USC Sumter",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UNC Charlotte",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UNC Greensboro",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UNC Wilmington",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UNC Asheville",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "UNC Pembroke",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "East Carolina University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "North Carolina A&T",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "North Carolina Central",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Fayetteville State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Winston-Salem State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Elizabeth City State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Western Carolina University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Appalachian State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Georgia State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Georgia Southern University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Kennesaw State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of West Georgia",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Valdosta State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Columbus State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Augusta University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Albany State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Clayton State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Fort Valley State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Savannah State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Georgia College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Georgia Southwestern State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Middle Georgia State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "South Georgia State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Florida Atlantic University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Florida Gulf Coast University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Florida International University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Florida Polytechnic University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of West Florida",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of North Florida",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "New College of Florida",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "LSU Alexandria",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "LSU Eunice",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "LSU Shreveport",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of New Orleans",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Middle Tennessee State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "East Tennessee State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Austin Peay State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Tennessee Tech",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Alabama Birmingham",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Alabama Huntsville",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of South Alabama",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Auburn University Montgomery",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Troy University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Jacksonville State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of North Alabama",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of West Alabama",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Montevallo",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Arkansas State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Central Arkansas",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Arkansas Tech University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Arkansas Fort Smith",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Southern Arkansas University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Henderson State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Harding University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Southern Mississippi",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Mississippi Valley State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Alcorn State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Delta State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Jackson State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Oklahoma State University Tulsa",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Rogers State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Cameron University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Northwestern Oklahoma State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Southwestern Oklahoma State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Northeastern State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Southeastern Oklahoma State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "East Central University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Kansas State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Wichita State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Fort Hays State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Pittsburg State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Emporia State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Washburn University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Nebraska Omaha",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Nebraska Kearney",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Wayne State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Chadron State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Peru State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Northern Iowa",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Iowa State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Utah State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Weber State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Southern Utah University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Dixie State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Utah Valley University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Idaho State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Boise State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Lewis-Clark State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Montana State University Billings",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Montana Western",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Montana State University Northern",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Northern Arizona University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Grand Canyon University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Embry-Riddle Aeronautical University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Nevada Reno",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Nevada State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Great Basin College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "New Mexico State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "New Mexico Highlands University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Western New Mexico University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Eastern New Mexico University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of North Dakota",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Minot State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Mayville State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Valley City State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Dickinson State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "South Dakota State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Northern State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Black Hills State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Dakota State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Wyoming Laramie",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Maine Orono",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Maine Farmington",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Maine Augusta",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Maine Fort Kent",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of New Hampshire",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Plymouth State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Keene State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Granite State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Vermont",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Castleton University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Johnson State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Lyndon State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Rhode Island",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Rhode Island College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Community College of Rhode Island",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Delaware",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Delaware State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Wesley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Towson University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Salisbury University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Frostburg State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Coppin State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Morgan State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "George Mason University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "James Madison University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Old Dominion University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Christopher Newport University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Longwood University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "University of Mary Washington",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Radford University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Virginia Commonwealth University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Norfolk State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Virginia State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "West Virginia University Tech",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Marshall University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Fairmont State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Shepherd University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Concord University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "Glenville State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Education, Sciences"
+  },
+  {
+    "Institution_Name": "St. John's College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Deep Springs College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Sarah Lawrence College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Hampshire College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Bard College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Eugene Lang College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Bennington College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Marlboro College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Evergreen State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Warren Wilson College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Agnes Scott College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Sweet Briar College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Hollins University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Randolph College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Mills College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Mount Holyoke College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Smith College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Scripps College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Barnard College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Wellesley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "University of Scranton",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Wilkes University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Kings College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Misericordia University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Marywood University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Immaculata University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Cabrini University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Widener University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Neumann University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Chestnut Hill College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Gwynedd Mercy University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Rosemont College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Manor College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Holy Family University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "La Salle University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "University of the Sciences",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Philadelphia University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Arcadia University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Eastern University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Messiah College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Elizabethtown College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Lebanon Valley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Albright College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Moravian University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Cedar Crest College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "DeSales University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Muhlenberg College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Kutztown University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "East Stroudsburg University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Bloomsburg University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "University of New England",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Husson University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Thomas College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Unity College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "College of the Atlantic",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "University of Maine Presque Isle",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Maine Maritime Academy",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Southern New Hampshire University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Rivier University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Franklin Pierce University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "New England College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Colby-Sawyer College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Saint Anselm College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Southern Connecticut State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Central Connecticut State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Eastern Connecticut State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Western Connecticut State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Albertus Magnus College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Post University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "University of Hartford",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Sacred Heart University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Fairfield University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "University of Bridgeport",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Mitchell College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Eastern Nazarene College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Gordon College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Wheaton College Massachusetts",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Stonehill College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Merrimack College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Endicott College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Salem State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Bridgewater State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Fitchburg State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Framingham State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Westfield State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Worcester State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Massachusetts College of Art",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Massachusetts Maritime Academy",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "MCPHS University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Lasell University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Bay State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Fisher College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Augustana College Illinois",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Augustana University South Dakota",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Luther College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Wartburg College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Central College Iowa",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Simpson College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Drake University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Clarke University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Loras College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Buena Vista University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Northwestern College Iowa",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Dordt University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Morningside University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Briar Cliff University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Graceland University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "William Penn University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Grand View University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Iowa Wesleyan University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Saint Ambrose University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Coe College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Cornell College Iowa",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Grinnell College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Marycrest International University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Upper Iowa University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Ashford University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Viterbo University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Alverno College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Cardinal Stritch University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Marian University Wisconsin",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Edgewood College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Beloit College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Ripon College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Lawrence University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "St. Norbert College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Lakeland University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Carthage College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Concordia University Wisconsin",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Milwaukee School of Engineering",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Marquette University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "University of Wisconsin Milwaukee",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Calvin University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Hope College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Albion College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Kalamazoo College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Hillsdale College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Adrian College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Alma College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Olivet College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Spring Arbor University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Cornerstone University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Aquinas College Michigan",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Grand Valley State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Ferris State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Northern Michigan University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Lake Superior State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Saginaw Valley State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Madonna University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Lawrence Technological University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "University of Detroit Mercy",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Marygrove College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Siena Heights University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Concordia University Ann Arbor",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Eastern Michigan University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Wayne State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Oakland University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Liberal Arts, Business, Sciences, Education"
+  },
+  {
+    "Institution_Name": "Maricopa Community Colleges",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Pima Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Yavapai College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Coconino Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Mohave Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Community College of Denver",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Community College of Aurora",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Arapahoe Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Red Rocks Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Front Range Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Pikes Peak Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Pueblo Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Trinidad State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Northeastern Junior College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Lamar Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "College of Southern Nevada",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Truckee Meadows Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Western Nevada College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Central New Mexico Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "San Juan College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Santa Fe Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Dona Ana Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Clovis Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Salt Lake Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Snow College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "LDS Business College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Seattle Central College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Bellevue College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Edmonds College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Shoreline Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Green River College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Highline College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Pierce College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Tacoma Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Clark College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Whatcom Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Skagit Valley College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Everett Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Olympic College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "South Puget Sound Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Spokane Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Portland Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Lane Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Mt. Hood Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Clackamas Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Chemeketa Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Linn-Benton Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Central Oregon Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Rogue Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Umpqua Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Blue Mountain Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Georgia Piedmont Technical College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Atlanta Technical College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Chattahoochee Technical College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Georgia Northwestern Technical College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Gwinnett Technical College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Wake Technical Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Central Piedmont Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Guilford Technical Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Fayetteville Technical Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Durham Technical Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Northern Virginia Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Tidewater Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Virginia Western Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Thomas Nelson Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "J. Sargeant Reynolds Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Montgomery College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Prince Georges Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Anne Arundel Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Community College of Baltimore County",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Howard Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Raritan Valley Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "County College of Morris",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Brookdale Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Middlesex County College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Ocean County College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Union County College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Hudson County Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Essex County College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Passaic County Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Mercer County Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Community College of Philadelphia",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Montgomery County Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Bucks County Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Delaware County Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Northampton Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Lehigh Carbon Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Reading Area Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Harrisburg Area Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Pennsylvania Highlands Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Pittsburgh Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Cuyahoga Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Columbus State Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Sinclair Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Lorain County Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Stark State College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Lakeland Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Terra State Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Owens Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Cincinnati State",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Clark State Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Macomb Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Oakland Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Schoolcraft College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Henry Ford College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Wayne County Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Lansing Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Grand Rapids Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Muskegon Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Jackson College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Kellogg Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "City Colleges of Chicago",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "College of DuPage",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Harper College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Elgin Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Oakton Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Moraine Valley Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Triton College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "College of Lake County",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Joliet Junior College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Waubonsee Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "St. Louis Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Metropolitan Community College Kansas City",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "State Fair Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Ozarks Technical Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Jefferson College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Minneapolis Community and Technical College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Saint Paul College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Normandale Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "North Hennepin Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Inver Hills Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Century College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Anoka-Ramsey Community College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Dakota County Technical College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Rochester Community and Technical College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  },
+  {
+    "Institution_Name": "Minnesota State Community and Technical College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Community",
+    "Key_Programs_Specializations": "Transfer Programs, Career Training, Vocational"
+  }
+]
