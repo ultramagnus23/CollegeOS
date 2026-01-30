@@ -77,12 +77,13 @@ npm run dev
 
 ### Quick Guides
 - `START_HERE.md` - Main setup guide (READ THIS FIRST)
-- `FINAL_SUMMARY.md` - Complete implementation overview
+- `QUICK_START.md` - Quick setup instructions
 
 ### Database Troubleshooting
 - `DATABASE_CORRUPT_FIX.md` - Corruption recovery (SQLITE_CORRUPT)
 - `DATABASE_PATH_FIX.md` - .env path issues
 - `SCHEMA_ERROR_FIX.md` - Schema mismatch errors
+- `USERS_TABLE_ERROR_FIX.md` - Users table schema errors
 - `backend/MIGRATION_TROUBLESHOOTING.md` - Migration problems
 
 ### Application Troubleshooting
@@ -91,7 +92,6 @@ npm run dev
 - `BACKEND_FRONTEND_CONNECTION.md` - Technical setup details
 
 ### Reference Documentation
-- `OVERHAUL_COMPLETE.md` - Complete implementation details
 - `backend/scripts/README.md` - Scripts documentation
 - `backend/.env.example` - Configuration template
 

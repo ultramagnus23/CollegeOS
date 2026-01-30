@@ -25,6 +25,7 @@ import Applications from "./pages/Applications";
 import Deadlines from "./pages/Deadlines";
 import Essays from "./pages/Essays";
 import Settings from "./pages/Settings";
+import Activities from "./pages/Activities";
 
 // FIXED: Import the type from the new types.ts file
 import { StudentProfile } from "./types";
@@ -105,6 +106,7 @@ const AppContent = () => {
             <Route path="applications" element={<Applications />} />
             <Route path="deadlines" element={<Deadlines />} />
             <Route path="essays" element={<Essays />} />
+            <Route path="activities" element={<Activities />} />
             <Route path="settings" element={<Settings />} />
 
             <Route

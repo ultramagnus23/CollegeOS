@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import AIChatbot from '../components/AIChatbot';
+import ProfileStrength from '../components/chancing/ProfileStrength';
 import { 
   School, 
   FileText, 
@@ -19,7 +20,8 @@ import {
   Target,
   Trophy,
   BookOpen,
-  Users
+  Users,
+  Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -124,7 +126,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
@@ -132,9 +134,9 @@ const Dashboard = () => {
   return (
     <div className="p-8 space-y-8">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white">
+      <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-2xl p-8 text-white">
         <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.full_name}! 👋</h1>
-        <p className="text-blue-100 mb-6">Here's your college application journey at a glance</p>
+        <p className="text-indigo-100 mb-6">Here's your college application journey at a glance</p>
         
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -210,9 +212,9 @@ const Dashboard = () => {
           <div className="space-y-2">
             {targetCountries.length > 0 ? (
               targetCountries.map((country: string, idx: number) => (
-                <div key={idx} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+                <div key={idx} className="flex items-center justify-between p-2 bg-indigo-50 rounded-lg">
                   <span className="text-sm font-medium text-gray-900">{country}</span>
-                  <span className="text-xs text-blue-600 bg-white px-2 py-1 rounded">Active</span>
+                  <span className="text-xs text-indigo-600 bg-white px-2 py-1 rounded">Active</span>
                 </div>
               ))
             ) : (
@@ -237,6 +239,45 @@ const Dashboard = () => {
             ) : (
               <p className="text-sm text-gray-500">No majors selected</p>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Strength Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Profile Strength Card */}
+        <div className="lg:col-span-2">
+          <ProfileStrength />
+        </div>
+        
+        {/* Quick Actions */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="font-bold text-gray-900 mb-4">Quick Actions</h3>
+          <div className="space-y-3">
+            <Link to="/activities" className="block">
+              <Button variant="outline" className="w-full justify-start">
+                <Activity className="mr-2 h-4 w-4" />
+                Manage Activities
+              </Button>
+            </Link>
+            <Link to="/colleges" className="block">
+              <Button variant="outline" className="w-full justify-start">
+                <School className="mr-2 h-4 w-4" />
+                Explore Colleges
+              </Button>
+            </Link>
+            <Link to="/essays" className="block">
+              <Button variant="outline" className="w-full justify-start">
+                <PenTool className="mr-2 h-4 w-4" />
+                Work on Essays
+              </Button>
+            </Link>
+            <Link to="/deadlines" className="block">
+              <Button variant="outline" className="w-full justify-start">
+                <Calendar className="mr-2 h-4 w-4" />
+                Check Deadlines
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -320,7 +361,7 @@ const Dashboard = () => {
           ) : (
             <div className="space-y-3">
               {recentApplications.map((app: any) => (
-                <div key={app.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition">
+                <div key={app.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-indigo-300 transition">
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">{app.college_name}</p>
                     <p className="text-sm text-gray-600">{app.country}</p>
@@ -380,8 +421,8 @@ const Dashboard = () => {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Link to="/discover">
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 hover:border-blue-400 transition cursor-pointer">
-            <School className="text-blue-600 mb-3" size={32} />
+          <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-6 hover:border-indigo-400 transition cursor-pointer">
+            <School className="text-indigo-600 mb-3" size={32} />
             <h3 className="font-bold text-gray-900 mb-1">Discover Colleges</h3>
             <p className="text-sm text-gray-600">Browse and research universities</p>
           </div>
@@ -396,16 +437,16 @@ const Dashboard = () => {
         </Link>
 
         <Link to="/deadlines">
-          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 hover:border-red-400 transition cursor-pointer">
-            <Calendar className="text-red-600 mb-3" size={32} />
+          <div className="bg-rose-50 border-2 border-rose-200 rounded-xl p-6 hover:border-rose-400 transition cursor-pointer">
+            <Calendar className="text-rose-600 mb-3" size={32} />
             <h3 className="font-bold text-gray-900 mb-1">Deadlines</h3>
             <p className="text-sm text-gray-600">Never miss a deadline</p>
           </div>
         </Link>
 
         <Link to="/essays">
-          <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6 hover:border-purple-400 transition cursor-pointer">
-            <PenTool className="text-purple-600 mb-3" size={32} />
+          <div className="bg-violet-50 border-2 border-violet-200 rounded-xl p-6 hover:border-violet-400 transition cursor-pointer">
+            <PenTool className="text-violet-600 mb-3" size={32} />
             <h3 className="font-bold text-gray-900 mb-1">Essays</h3>
             <p className="text-sm text-gray-600">Manage your essays</p>
           </div>

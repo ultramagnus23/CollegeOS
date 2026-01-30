@@ -1,0 +1,2370 @@
+[
+  {
+    "Institution_Name": "Howard University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Spelman College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Morehouse College",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Hampton University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Tuskegee University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Florida A&M University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "North Carolina A&T State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Xavier University of Louisiana",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Fisk University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Clark Atlanta University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Morgan State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Tennessee State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Alabama State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Grambling State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Southern University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Jackson State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Prairie View A&M University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Bethune-Cookman University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Delaware State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Norfolk State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Virginia State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Lincoln University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Bowie State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Coppin State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Elizabeth City State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Savannah State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Albany State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Fort Valley State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Kentucky State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Central State University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Liberal Arts, Sciences, Engineering, Business"
+  },
+  {
+    "Institution_Name": "Georgia Tech",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Virginia Tech",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Texas Tech University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Louisiana Tech University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Michigan Technological University",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Colorado School of Mines",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "South Dakota School of Mines and Technology",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "New Mexico Institute of Mining and Technology",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Montana Tech",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Missouri University of Science and Technology",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Oregon Institute of Technology",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "New Jersey Institute of Technology",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Florida Institute of Technology",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Rochester Institute of Technology",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Art Center College of Design",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Pratt Institute",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Rhode Island School of Design",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "School of the Art Institute of Chicago",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "California College of the Arts",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Parsons School of Design",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Fashion Institute of Technology",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "School of Visual Arts",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Maryland Institute College of Art",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Savannah College of Art and Design",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Ringling College of Art and Design",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Columbus College of Art and Design",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Minneapolis College of Art and Design",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Otis College of Art and Design",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "ArtCenter College of Design",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "California Institute of the Arts",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Berklee College of Music",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Juilliard School",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Eastman School of Music",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "New England Conservatory",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Manhattan School of Music",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Curtis Institute of Music",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Peabody Institute",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "San Francisco Conservatory of Music",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Boston Conservatory",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Cleveland Institute of Music",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Colburn School",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "Mannes School of Music",
+    "Country": "United States",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Private",
+    "Key_Programs_Specializations": "Engineering, Technology, Arts, Music"
+  },
+  {
+    "Institution_Name": "University of Geneva",
+    "Country": "Switzerland",
+    "Region_State_Province": "Geneva",
+    "City": "Geneva",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University of Bern",
+    "Country": "Switzerland",
+    "Region_State_Province": "Bern",
+    "City": "Bern",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University of Basel",
+    "Country": "Switzerland",
+    "Region_State_Province": "Basel",
+    "City": "Basel",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University of Lausanne",
+    "Country": "Switzerland",
+    "Region_State_Province": "Lausanne",
+    "City": "Lausanne",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University of St. Gallen",
+    "Country": "Switzerland",
+    "Region_State_Province": "St. Gallen",
+    "City": "St. Gallen",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University of Fribourg",
+    "Country": "Switzerland",
+    "Region_State_Province": "Fribourg",
+    "City": "Fribourg",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University of Neuchâtel",
+    "Country": "Switzerland",
+    "Region_State_Province": "Neuchâtel",
+    "City": "Neuchâtel",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University of Lugano",
+    "Country": "Switzerland",
+    "Region_State_Province": "Lugano",
+    "City": "Lugano",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University College Cork",
+    "Country": "Ireland",
+    "Region_State_Province": "Cork",
+    "City": "Cork",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "National University of Ireland Galway",
+    "Country": "Ireland",
+    "Region_State_Province": "Galway",
+    "City": "Galway",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Dublin City University",
+    "Country": "Ireland",
+    "Region_State_Province": "Dublin",
+    "City": "Dublin",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Maynooth University",
+    "Country": "Ireland",
+    "Region_State_Province": "Maynooth",
+    "City": "Maynooth",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University of Limerick",
+    "Country": "Ireland",
+    "Region_State_Province": "Limerick",
+    "City": "Limerick",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Jagiellonian University",
+    "Country": "Poland",
+    "Region_State_Province": "Kraków",
+    "City": "Kraków",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Warsaw University of Technology",
+    "Country": "Poland",
+    "Region_State_Province": "Warsaw",
+    "City": "Warsaw",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "AGH University of Science and Technology",
+    "Country": "Poland",
+    "Region_State_Province": "Kraków",
+    "City": "Kraków",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Wrocław University of Technology",
+    "Country": "Poland",
+    "Region_State_Province": "Wrocław",
+    "City": "Wrocław",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Adam Mickiewicz University",
+    "Country": "Poland",
+    "Region_State_Province": "Poznań",
+    "City": "Poznań",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Charles University",
+    "Country": "Czech Republic",
+    "Region_State_Province": "Prague",
+    "City": "Prague",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Czech Technical University",
+    "Country": "Czech Republic",
+    "Region_State_Province": "Prague",
+    "City": "Prague",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Masaryk University",
+    "Country": "Czech Republic",
+    "Region_State_Province": "Brno",
+    "City": "Brno",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Eötvös Loránd University",
+    "Country": "Hungary",
+    "Region_State_Province": "Budapest",
+    "City": "Budapest",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Budapest University of Technology",
+    "Country": "Hungary",
+    "Region_State_Province": "Budapest",
+    "City": "Budapest",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Corvinus University of Budapest",
+    "Country": "Hungary",
+    "Region_State_Province": "Budapest",
+    "City": "Budapest",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University of Bucharest",
+    "Country": "Romania",
+    "Region_State_Province": "Bucharest",
+    "City": "Bucharest",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Babeș-Bolyai University",
+    "Country": "Romania",
+    "Region_State_Province": "Cluj-Napoca",
+    "City": "Cluj-Napoca",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University of Athens",
+    "Country": "Greece",
+    "Region_State_Province": "Athens",
+    "City": "Athens",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Aristotle University of Thessaloniki",
+    "Country": "Greece",
+    "Region_State_Province": "Thessaloniki",
+    "City": "Thessaloniki",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "National Technical University of Athens",
+    "Country": "Greece",
+    "Region_State_Province": "Athens",
+    "City": "Athens",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University of Lisbon",
+    "Country": "Portugal",
+    "Region_State_Province": "Lisbon",
+    "City": "Lisbon",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University of Porto",
+    "Country": "Portugal",
+    "Region_State_Province": "Porto",
+    "City": "Porto",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "University of Coimbra",
+    "Country": "Portugal",
+    "Region_State_Province": "Coimbra",
+    "City": "Coimbra",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "NOVA University Lisbon",
+    "Country": "Portugal",
+    "Region_State_Province": "Lisbon",
+    "City": "Lisbon",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Católica Lisbon School of Business and Economics",
+    "Country": "Portugal",
+    "Region_State_Province": "Lisbon",
+    "City": "Lisbon",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Engineering, Medicine, Humanities"
+  },
+  {
+    "Institution_Name": "Huazhong University of Science and Technology",
+    "Country": "China",
+    "Region_State_Province": "Wuhan",
+    "City": "Wuhan",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Sun Yat-sen University",
+    "Country": "China",
+    "Region_State_Province": "Guangzhou",
+    "City": "Guangzhou",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Beihang University",
+    "Country": "China",
+    "Region_State_Province": "Beijing",
+    "City": "Beijing",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Beijing Institute of Technology",
+    "Country": "China",
+    "Region_State_Province": "Beijing",
+    "City": "Beijing",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Northwestern Polytechnical University",
+    "Country": "China",
+    "Region_State_Province": "Xian",
+    "City": "Xian",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Tongji University",
+    "Country": "China",
+    "Region_State_Province": "Shanghai",
+    "City": "Shanghai",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "East China Normal University",
+    "Country": "China",
+    "Region_State_Province": "Shanghai",
+    "City": "Shanghai",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Sichuan University",
+    "Country": "China",
+    "Region_State_Province": "Chengdu",
+    "City": "Chengdu",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Jilin University",
+    "Country": "China",
+    "Region_State_Province": "Changchun",
+    "City": "Changchun",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Xiamen University",
+    "Country": "China",
+    "Region_State_Province": "Xiamen",
+    "City": "Xiamen",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Renmin University of China",
+    "Country": "China",
+    "Region_State_Province": "Beijing",
+    "City": "Beijing",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Beijing Normal University",
+    "Country": "China",
+    "Region_State_Province": "Beijing",
+    "City": "Beijing",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "South China University of Technology",
+    "Country": "China",
+    "Region_State_Province": "Guangzhou",
+    "City": "Guangzhou",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Tianjin University",
+    "Country": "China",
+    "Region_State_Province": "Tianjin",
+    "City": "Tianjin",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Ocean University of China",
+    "Country": "China",
+    "Region_State_Province": "Qingdao",
+    "City": "Qingdao",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Central South University",
+    "Country": "China",
+    "Region_State_Province": "Changsha",
+    "City": "Changsha",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Northeastern University China",
+    "Country": "China",
+    "Region_State_Province": "Shenyang",
+    "City": "Shenyang",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "China Agricultural University",
+    "Country": "China",
+    "Region_State_Province": "Beijing",
+    "City": "Beijing",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Southeast University",
+    "Country": "China",
+    "Region_State_Province": "Nanjing",
+    "City": "Nanjing",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Shanghai University",
+    "Country": "China",
+    "Region_State_Province": "Shanghai",
+    "City": "Shanghai",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Keio University",
+    "Country": "Japan",
+    "Region_State_Province": "Tokyo",
+    "City": "Tokyo",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Waseda University",
+    "Country": "Japan",
+    "Region_State_Province": "Tokyo",
+    "City": "Tokyo",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Meiji University",
+    "Country": "Japan",
+    "Region_State_Province": "Tokyo",
+    "City": "Tokyo",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Sophia University",
+    "Country": "Japan",
+    "Region_State_Province": "Tokyo",
+    "City": "Tokyo",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Ritsumeikan University",
+    "Country": "Japan",
+    "Region_State_Province": "Kyoto",
+    "City": "Kyoto",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Doshisha University",
+    "Country": "Japan",
+    "Region_State_Province": "Kyoto",
+    "City": "Kyoto",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Kwansei Gakuin University",
+    "Country": "Japan",
+    "Region_State_Province": "Nishinomiya",
+    "City": "Nishinomiya",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Tokyo Metropolitan University",
+    "Country": "Japan",
+    "Region_State_Province": "Tokyo",
+    "City": "Tokyo",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Tokyo University of Agriculture and Technology",
+    "Country": "Japan",
+    "Region_State_Province": "Tokyo",
+    "City": "Tokyo",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Tokyo University of Science",
+    "Country": "Japan",
+    "Region_State_Province": "Tokyo",
+    "City": "Tokyo",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Sejong University",
+    "Country": "South Korea",
+    "Region_State_Province": "Seoul",
+    "City": "Seoul",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Sookmyung Women University",
+    "Country": "South Korea",
+    "Region_State_Province": "Seoul",
+    "City": "Seoul",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Hongik University",
+    "Country": "South Korea",
+    "Region_State_Province": "Seoul",
+    "City": "Seoul",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Dankook University",
+    "Country": "South Korea",
+    "Region_State_Province": "Yongin",
+    "City": "Yongin",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Chosun University",
+    "Country": "South Korea",
+    "Region_State_Province": "Gwangju",
+    "City": "Gwangju",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "National Central University",
+    "Country": "Taiwan",
+    "Region_State_Province": "Taoyuan",
+    "City": "Taoyuan",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "National Sun Yat-sen University",
+    "Country": "Taiwan",
+    "Region_State_Province": "Kaohsiung",
+    "City": "Kaohsiung",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "National Chiao Tung University",
+    "Country": "Taiwan",
+    "Region_State_Province": "Hsinchu",
+    "City": "Hsinchu",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "National Taiwan Normal University",
+    "Country": "Taiwan",
+    "Region_State_Province": "Taipei",
+    "City": "Taipei",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Taipei Medical University",
+    "Country": "Taiwan",
+    "Region_State_Province": "Taipei",
+    "City": "Taipei",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Sciences, Technology"
+  },
+  {
+    "Institution_Name": "Sharif University of Technology",
+    "Country": "Iran",
+    "Region_State_Province": "Tehran",
+    "City": "Tehran",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "University of Tehran",
+    "Country": "Iran",
+    "Region_State_Province": "Tehran",
+    "City": "Tehran",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Amirkabir University of Technology",
+    "Country": "Iran",
+    "Region_State_Province": "Tehran",
+    "City": "Tehran",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Iran University of Science and Technology",
+    "Country": "Iran",
+    "Region_State_Province": "Tehran",
+    "City": "Tehran",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Ferdowsi University of Mashhad",
+    "Country": "Iran",
+    "Region_State_Province": "Mashhad",
+    "City": "Mashhad",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Prince Sultan University",
+    "Country": "Saudi Arabia",
+    "Region_State_Province": "Riyadh",
+    "City": "Riyadh",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Imam Abdulrahman Bin Faisal University",
+    "Country": "Saudi Arabia",
+    "Region_State_Province": "Dammam",
+    "City": "Dammam",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Umm Al-Qura University",
+    "Country": "Saudi Arabia",
+    "Region_State_Province": "Mecca",
+    "City": "Mecca",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Al-Faisal University",
+    "Country": "Saudi Arabia",
+    "Region_State_Province": "Riyadh",
+    "City": "Riyadh",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Princess Nourah bint Abdulrahman University",
+    "Country": "Saudi Arabia",
+    "Region_State_Province": "Riyadh",
+    "City": "Riyadh",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Texas A&M University at Qatar",
+    "Country": "Qatar",
+    "Region_State_Province": "Doha",
+    "City": "Doha",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Carnegie Mellon University in Qatar",
+    "Country": "Qatar",
+    "Region_State_Province": "Doha",
+    "City": "Doha",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Georgetown University in Qatar",
+    "Country": "Qatar",
+    "Region_State_Province": "Doha",
+    "City": "Doha",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Northwestern University in Qatar",
+    "Country": "Qatar",
+    "Region_State_Province": "Doha",
+    "City": "Doha",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Virginia Commonwealth University in Qatar",
+    "Country": "Qatar",
+    "Region_State_Province": "Doha",
+    "City": "Doha",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Weill Cornell Medicine-Qatar",
+    "Country": "Qatar",
+    "Region_State_Province": "Doha",
+    "City": "Doha",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "NYU Abu Dhabi",
+    "Country": "United Arab Emirates",
+    "Region_State_Province": "Abu Dhabi",
+    "City": "Abu Dhabi",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Sorbonne University Abu Dhabi",
+    "Country": "United Arab Emirates",
+    "Region_State_Province": "Abu Dhabi",
+    "City": "Abu Dhabi",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Heriot-Watt University Dubai",
+    "Country": "United Arab Emirates",
+    "Region_State_Province": "Dubai",
+    "City": "Dubai",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "University of Birmingham Dubai",
+    "Country": "United Arab Emirates",
+    "Region_State_Province": "Dubai",
+    "City": "Dubai",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Medicine, Business, Sciences"
+  },
+  {
+    "Institution_Name": "Pontificia Universidad Católica Argentina",
+    "Country": "Argentina",
+    "Region_State_Province": "Buenos Aires",
+    "City": "Buenos Aires",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad de Belgrano",
+    "Country": "Argentina",
+    "Region_State_Province": "Buenos Aires",
+    "City": "Buenos Aires",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad del Salvador",
+    "Country": "Argentina",
+    "Region_State_Province": "Buenos Aires",
+    "City": "Buenos Aires",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad Nacional de Tucumán",
+    "Country": "Argentina",
+    "Region_State_Province": "Tucumán",
+    "City": "Tucumán",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad Nacional del Litoral",
+    "Country": "Argentina",
+    "Region_State_Province": "Santa Fe",
+    "City": "Santa Fe",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Pontificia Universidade Católica do Rio de Janeiro",
+    "Country": "Brazil",
+    "Region_State_Province": "Rio de Janeiro",
+    "City": "Rio de Janeiro",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Pontifícia Universidade Católica de São Paulo",
+    "Country": "Brazil",
+    "Region_State_Province": "São Paulo",
+    "City": "São Paulo",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidade Federal de Viçosa",
+    "Country": "Brazil",
+    "Region_State_Province": "Viçosa",
+    "City": "Viçosa",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidade Federal do Rio Grande do Norte",
+    "Country": "Brazil",
+    "Region_State_Province": "Natal",
+    "City": "Natal",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidade Federal de Goiás",
+    "Country": "Brazil",
+    "Region_State_Province": "Goiânia",
+    "City": "Goiânia",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad de Montevideo",
+    "Country": "Uruguay",
+    "Region_State_Province": "Montevideo",
+    "City": "Montevideo",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad de la República",
+    "Country": "Uruguay",
+    "Region_State_Province": "Montevideo",
+    "City": "Montevideo",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad Nacional de Asunción",
+    "Country": "Paraguay",
+    "Region_State_Province": "Asunción",
+    "City": "Asunción",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad Católica del Uruguay",
+    "Country": "Uruguay",
+    "Region_State_Province": "Montevideo",
+    "City": "Montevideo",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad Mayor de San Andrés",
+    "Country": "Bolivia",
+    "Region_State_Province": "La Paz",
+    "City": "La Paz",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad Católica Boliviana",
+    "Country": "Bolivia",
+    "Region_State_Province": "La Paz",
+    "City": "La Paz",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad de Panamá",
+    "Country": "Panama",
+    "Region_State_Province": "Panama City",
+    "City": "Panama City",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad Tecnológica de Panamá",
+    "Country": "Panama",
+    "Region_State_Province": "Panama City",
+    "City": "Panama City",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad de La Habana",
+    "Country": "Cuba",
+    "Region_State_Province": "Havana",
+    "City": "Havana",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "Universidad de Puerto Rico",
+    "Country": "Puerto Rico",
+    "Region_State_Province": "San Juan",
+    "City": "San Juan",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Business, Law"
+  },
+  {
+    "Institution_Name": "University of Pretoria",
+    "Country": "South Africa",
+    "Region_State_Province": "Pretoria",
+    "City": "Pretoria",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "North-West University",
+    "Country": "South Africa",
+    "Region_State_Province": "Potchefstroom",
+    "City": "Potchefstroom",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "University of the Free State",
+    "Country": "South Africa",
+    "Region_State_Province": "Bloemfontein",
+    "City": "Bloemfontein",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Nelson Mandela University",
+    "Country": "South Africa",
+    "Region_State_Province": "Port Elizabeth",
+    "City": "Port Elizabeth",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "University of Johannesburg",
+    "Country": "South Africa",
+    "Region_State_Province": "Johannesburg",
+    "City": "Johannesburg",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Tshwane University of Technology",
+    "Country": "South Africa",
+    "Region_State_Province": "Pretoria",
+    "City": "Pretoria",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Cape Peninsula University of Technology",
+    "Country": "South Africa",
+    "Region_State_Province": "Cape Town",
+    "City": "Cape Town",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Obafemi Awolowo University",
+    "Country": "Nigeria",
+    "Region_State_Province": "Ile-Ife",
+    "City": "Ile-Ife",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Ahmadu Bello University",
+    "Country": "Nigeria",
+    "Region_State_Province": "Zaria",
+    "City": "Zaria",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "University of Benin",
+    "Country": "Nigeria",
+    "Region_State_Province": "Benin City",
+    "City": "Benin City",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "University of Port Harcourt",
+    "Country": "Nigeria",
+    "Region_State_Province": "Port Harcourt",
+    "City": "Port Harcourt",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "University of Ilorin",
+    "Country": "Nigeria",
+    "Region_State_Province": "Ilorin",
+    "City": "Ilorin",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Jomo Kenyatta University of Agriculture and Technology",
+    "Country": "Kenya",
+    "Region_State_Province": "Nairobi",
+    "City": "Nairobi",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Kenyatta University",
+    "Country": "Kenya",
+    "Region_State_Province": "Nairobi",
+    "City": "Nairobi",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Moi University",
+    "Country": "Kenya",
+    "Region_State_Province": "Eldoret",
+    "City": "Eldoret",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Egerton University",
+    "Country": "Kenya",
+    "Region_State_Province": "Njoro",
+    "City": "Njoro",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Assiut University",
+    "Country": "Egypt",
+    "Region_State_Province": "Assiut",
+    "City": "Assiut",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Mansoura University",
+    "Country": "Egypt",
+    "Region_State_Province": "Mansoura",
+    "City": "Mansoura",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Helwan University",
+    "Country": "Egypt",
+    "Region_State_Province": "Cairo",
+    "City": "Cairo",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Zagazig University",
+    "Country": "Egypt",
+    "Region_State_Province": "Zagazig",
+    "City": "Zagazig",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Medicine, Engineering, Agriculture, Sciences"
+  },
+  {
+    "Institution_Name": "Concordia University",
+    "Country": "Canada",
+    "Region_State_Province": "Montreal",
+    "City": "Montreal",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "École de technologie supérieure",
+    "Country": "Canada",
+    "Region_State_Province": "Montreal",
+    "City": "Montreal",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Polytechnique Montréal",
+    "Country": "Canada",
+    "Region_State_Province": "Montreal",
+    "City": "Montreal",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "HEC Montréal",
+    "Country": "Canada",
+    "Region_State_Province": "Montreal",
+    "City": "Montreal",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Université du Québec à Montréal",
+    "Country": "Canada",
+    "Region_State_Province": "Montreal",
+    "City": "Montreal",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Wilfrid Laurier University",
+    "Country": "Canada",
+    "Region_State_Province": "Waterloo",
+    "City": "Waterloo",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of Guelph",
+    "Country": "Canada",
+    "Region_State_Province": "Guelph",
+    "City": "Guelph",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Université Laval",
+    "Country": "Canada",
+    "Region_State_Province": "Quebec City",
+    "City": "Quebec City",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of New Brunswick",
+    "Country": "Canada",
+    "Region_State_Province": "Fredericton",
+    "City": "Fredericton",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Memorial University of Newfoundland",
+    "Country": "Canada",
+    "Region_State_Province": "St. Johns",
+    "City": "St. Johns",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of Prince Edward Island",
+    "Country": "Canada",
+    "Region_State_Province": "Charlottetown",
+    "City": "Charlottetown",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Acadia University",
+    "Country": "Canada",
+    "Region_State_Province": "Wolfville",
+    "City": "Wolfville",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Saint Marys University",
+    "Country": "Canada",
+    "Region_State_Province": "Halifax",
+    "City": "Halifax",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Mount Allison University",
+    "Country": "Canada",
+    "Region_State_Province": "Sackville",
+    "City": "Sackville",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Bishop University",
+    "Country": "Canada",
+    "Region_State_Province": "Sherbrooke",
+    "City": "Sherbrooke",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Business, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of Leicester",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Leicester",
+    "City": "Leicester",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of East Anglia",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Norwich",
+    "City": "Norwich",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of Surrey",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Guildford",
+    "City": "Guildford",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of Essex",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Colchester",
+    "City": "Colchester",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Swansea University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Swansea",
+    "City": "Swansea",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Cardiff Metropolitan University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Cardiff",
+    "City": "Cardiff",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Bangor University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Bangor",
+    "City": "Bangor",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Aberystwyth University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Aberystwyth",
+    "City": "Aberystwyth",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of Aberdeen",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Aberdeen",
+    "City": "Aberdeen",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Heriot-Watt University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Edinburgh",
+    "City": "Edinburgh",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of Strathclyde",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Glasgow",
+    "City": "Glasgow",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Glasgow Caledonian University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Glasgow",
+    "City": "Glasgow",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Edinburgh Napier University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Edinburgh",
+    "City": "Edinburgh",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Robert Gordon University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Aberdeen",
+    "City": "Aberdeen",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of the West of Scotland",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Paisley",
+    "City": "Paisley",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Queens University Belfast",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Belfast",
+    "City": "Belfast",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Ulster University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Belfast",
+    "City": "Belfast",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "De Montfort University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Leicester",
+    "City": "Leicester",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Oxford Brookes University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Oxford",
+    "City": "Oxford",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of Huddersfield",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Huddersfield",
+    "City": "Huddersfield",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Nottingham Trent University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Nottingham",
+    "City": "Nottingham",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Sheffield Hallam University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Sheffield",
+    "City": "Sheffield",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Manchester Metropolitan University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Manchester",
+    "City": "Manchester",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Liverpool John Moores University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Liverpool",
+    "City": "Liverpool",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Leeds Beckett University",
+    "Country": "United Kingdom",
+    "Region_State_Province": "Leeds",
+    "City": "Leeds",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Engineering, Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of the Sunshine Coast",
+    "Country": "Australia",
+    "Region_State_Province": "Sunshine Coast",
+    "City": "Sunshine Coast",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Education, Health Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Federation University Australia",
+    "Country": "Australia",
+    "Region_State_Province": "Ballarat",
+    "City": "Ballarat",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Education, Health Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Central Queensland University",
+    "Country": "Australia",
+    "Region_State_Province": "Rockhampton",
+    "City": "Rockhampton",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Education, Health Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Victoria University",
+    "Country": "Australia",
+    "Region_State_Province": "Melbourne",
+    "City": "Melbourne",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Education, Health Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of Southern Queensland",
+    "Country": "Australia",
+    "Region_State_Province": "Toowoomba",
+    "City": "Toowoomba",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Education, Health Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of New England",
+    "Country": "Australia",
+    "Region_State_Province": "Armidale",
+    "City": "Armidale",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Education, Health Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Western Sydney University",
+    "Country": "Australia",
+    "Region_State_Province": "Sydney",
+    "City": "Sydney",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Education, Health Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Australian Catholic University",
+    "Country": "Australia",
+    "Region_State_Province": "Melbourne",
+    "City": "Melbourne",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Education, Health Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of Divinity",
+    "Country": "Australia",
+    "Region_State_Province": "Melbourne",
+    "City": "Melbourne",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Education, Health Sciences, Arts"
+  },
+  {
+    "Institution_Name": "Charles Sturt University",
+    "Country": "Australia",
+    "Region_State_Province": "Bathurst",
+    "City": "Bathurst",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Business, Education, Health Sciences, Arts"
+  },
+  {
+    "Institution_Name": "University of Münster",
+    "Country": "Germany",
+    "Region_State_Province": "Münster",
+    "City": "Münster",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Engineering, Humanities"
+  },
+  {
+    "Institution_Name": "University of Würzburg",
+    "Country": "Germany",
+    "Region_State_Province": "Würzburg",
+    "City": "Würzburg",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Engineering, Humanities"
+  },
+  {
+    "Institution_Name": "University of Leipzig",
+    "Country": "Germany",
+    "Region_State_Province": "Leipzig",
+    "City": "Leipzig",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Engineering, Humanities"
+  },
+  {
+    "Institution_Name": "University of Kiel",
+    "Country": "Germany",
+    "Region_State_Province": "Kiel",
+    "City": "Kiel",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Engineering, Humanities"
+  },
+  {
+    "Institution_Name": "University of Jena",
+    "Country": "Germany",
+    "Region_State_Province": "Jena",
+    "City": "Jena",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Engineering, Humanities"
+  },
+  {
+    "Institution_Name": "University of Rostock",
+    "Country": "Germany",
+    "Region_State_Province": "Rostock",
+    "City": "Rostock",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Engineering, Humanities"
+  },
+  {
+    "Institution_Name": "University of Greifswald",
+    "Country": "Germany",
+    "Region_State_Province": "Greifswald",
+    "City": "Greifswald",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Engineering, Humanities"
+  },
+  {
+    "Institution_Name": "University of Potsdam",
+    "Country": "Germany",
+    "Region_State_Province": "Potsdam",
+    "City": "Potsdam",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Engineering, Humanities"
+  },
+  {
+    "Institution_Name": "University of Magdeburg",
+    "Country": "Germany",
+    "Region_State_Province": "Magdeburg",
+    "City": "Magdeburg",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Engineering, Humanities"
+  },
+  {
+    "Institution_Name": "University of Duisburg-Essen",
+    "Country": "Germany",
+    "Region_State_Province": "Essen",
+    "City": "Essen",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Sciences, Medicine, Engineering, Humanities"
+  },
+  {
+    "Institution_Name": "Jamia Millia Islamia",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Aligarh Muslim University",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Central University of Hyderabad",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Visva-Bharati University",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Panjab University",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Osmania University",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Savitribai Phule Pune University",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "University of Calcutta",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "University of Madras",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Amrita Vishwa Vidyapeetham",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Symbiosis International University",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Lovely Professional University",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Chandigarh University",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Shiv Nadar University",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Ashoka University",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "O.P. Jindal Global University",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Thapar Institute of Engineering and Technology",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Indian Statistical Institute",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Tata Institute of Fundamental Research",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Tata Institute of Social Sciences",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "National Law School of India University",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "National Academy of Legal Studies and Research",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "National Law University Delhi",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Indian Maritime University",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Indian Institute of Space Science and Technology",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Indian School of Mines Dhanbad",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Institute of Chemical Technology Mumbai",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Homi Bhabha National Institute",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "Indian Agricultural Research Institute",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  },
+  {
+    "Institution_Name": "National Institute of Pharmaceutical Education and Research",
+    "Country": "India",
+    "Region_State_Province": "Various",
+    "City": "Various",
+    "Institution_Type": "Public",
+    "Key_Programs_Specializations": "Engineering, Sciences, Research, Law"
+  }
+]

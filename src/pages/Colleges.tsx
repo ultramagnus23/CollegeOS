@@ -248,7 +248,7 @@ const Colleges: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search colleges by name, location, or major..."
-              className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+              className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg"
             />
           </div>
           
@@ -313,7 +313,7 @@ const Colleges: React.FC = () => {
         {/* RESULTS */}
         {loading && (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
           </div>
         )}
         {error && <div className="text-center text-red-600 py-12">{error}</div>}
@@ -383,11 +383,11 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
       {/* Header with gradient */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white">
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 p-4 text-white">
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <h3 className="text-lg font-semibold leading-tight">{college.name}</h3>
-            <div className="flex items-center gap-1 mt-1 text-blue-100 text-sm">
+            <div className="flex items-center gap-1 mt-1 text-indigo-100 text-sm">
               <MapPin className="w-3 h-3" />
               {college.location || college.country}
             </div>
@@ -434,7 +434,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
           {(college.majorCategories || college.programs || []).slice(0, 4).map((p, idx) => (
             <span
               key={`${p}-${idx}`}
-              className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full font-medium"
+              className="text-xs px-2 py-1 bg-indigo-50 text-indigo-700 rounded-full font-medium"
             >
               {p}
             </span>
@@ -467,7 +467,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
         <button
           onClick={onAdd}
           disabled={isAdding}
-          className="flex-1 bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="flex-1 bg-indigo-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
         >
           {isAdding ? 'Adding…' : 'Add to List'}
         </button>
