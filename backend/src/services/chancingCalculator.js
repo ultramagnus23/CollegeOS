@@ -392,11 +392,31 @@ function calculateAdmissionChance(studentProfile, college) {
 
 /**
  * Calculate percentile within a range
+ * Returns 0-100 where:
+ * - value at low boundary = 25 (25th percentile)
+ * - value at high boundary = 75 (75th percentile)
+ * - value between = linear interpolation from 25-75
+ * - value below low = linear extrapolation down to 0
+ * - value above high = linear extrapolation up to 100
  */
 function calculatePercentile(value, low, high) {
-  if (value <= low) return 0;
-  if (value >= high) return 100;
-  return ((value - low) / (high - low)) * 100;
+  if (value <= low) {
+    // At or below 25th percentile boundary
+    // Use the same slope to extrapolate down, but return at least 25 at the boundary
+    if (value === low) return 25;
+    // Below low: extrapolate but don't go below 0
+    const slope = 50 / (high - low);
+    return Math.max(0, 25 - slope * (low - value));
+  }
+  if (value >= high) {
+    // At or above 75th percentile boundary
+    if (value === high) return 75;
+    // Above high: extrapolate but don't go above 100
+    const slope = 50 / (high - low);
+    return Math.min(100, 75 + slope * (value - high));
+  }
+  // Between low and high: interpolate from 25 to 75
+  return 25 + ((value - low) / (high - low)) * 50;
 }
 
 /**

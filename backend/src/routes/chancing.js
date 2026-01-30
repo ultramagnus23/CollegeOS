@@ -105,8 +105,9 @@ router.post('/batch', authenticate, async (req, res, next) => {
       });
     }
     
-    // Limit batch size
-    const limitedIds = collegeIds.slice(0, 50);
+    const MAX_BATCH_SIZE = 50;
+    const wasTruncated = collegeIds.length > MAX_BATCH_SIZE;
+    const limitedIds = collegeIds.slice(0, MAX_BATCH_SIZE);
     
     // Get colleges
     const colleges = limitedIds.map(id => College.findById(id)).filter(c => c);
@@ -124,7 +125,13 @@ router.post('/batch', authenticate, async (req, res, next) => {
     
     res.json({
       success: true,
-      data: results
+      data: results,
+      meta: {
+        requested: collegeIds.length,
+        processed: limitedIds.length,
+        maxBatchSize: MAX_BATCH_SIZE,
+        wasTruncated: wasTruncated
+      }
     });
   } catch (error) {
     logger.error('Batch chancing failed:', error);
