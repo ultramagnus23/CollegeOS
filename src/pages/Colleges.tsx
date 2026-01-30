@@ -387,7 +387,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <h3 className="text-lg font-semibold leading-tight">{college.name}</h3>
-            <div className="flex items-center gap-1 mt-1 text-blue-100 text-sm">
+            <div className="flex items-center gap-1 mt-1 text-indigo-100 text-sm">
               <MapPin className="w-3 h-3" />
               {college.location || college.country}
             </div>

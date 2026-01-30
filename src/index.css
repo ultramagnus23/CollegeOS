@@ -17,7 +17,7 @@
     --popover-foreground: 222 47% 11%;
 
     /* Primary: Indigo (#4F46E5) */
-    --primary: 239 84% 67%;
+    --primary: 239 78% 58%;
     --primary-foreground: 0 0% 100%;
 
     /* Neutral secondary */
@@ -29,7 +29,7 @@
 
     /* Indigo accent */
     --accent: 239 84% 97%;
-    --accent-foreground: 239 84% 67%;
+    --accent-foreground: 239 78% 58%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -54,25 +54,25 @@
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 239 84% 67%;
+    --ring: 239 78% 58%;
 
     --radius: 0.5rem;
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary: 239 78% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 239 84% 97%;
-    --sidebar-accent-foreground: 239 84% 67%;
+    --sidebar-accent-foreground: 239 78% 58%;
     --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 239 84% 67%;
+    --sidebar-ring: 239 78% 58%;
 
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-glow: 0 0 20px hsl(239 84% 67% / 0.15);
+    --shadow-glow: 0 0 20px hsl(239 78% 58% / 0.15);
   }
 
   .dark {
@@ -85,7 +85,7 @@
     --popover: 222 47% 13%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 239 84% 67%;
+    --primary: 239 78% 58%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 217 33% 17%;
@@ -114,16 +114,16 @@
 
     --border: 217 33% 20%;
     --input: 217 33% 20%;
-    --ring: 239 84% 67%;
+    --ring: 239 78% 58%;
 
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary: 239 78% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 239 50% 25%;
     --sidebar-accent-foreground: 239 84% 80%;
     --sidebar-border: 217 33% 20%;
-    --sidebar-ring: 239 84% 67%;
+    --sidebar-ring: 239 78% 58%;
   }
 }
 
