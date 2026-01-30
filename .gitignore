@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 backend/.env
 *.env
+
+# Database backups
+*.backup
+*.sqlite.backup
+database.sqlite.backup
