@@ -202,7 +202,19 @@ router.post('/essay-submission', authenticate, async (req, res, next) => {
       });
     }
     
-    const wordCount = essayText.trim().split(/\s+/).length;
+    // Validate quality score if provided
+    if (qualityScore !== undefined && qualityScore !== null) {
+      if (!Number.isInteger(qualityScore) || qualityScore < 1 || qualityScore > 10) {
+        return res.status(400).json({
+          success: false,
+          message: 'qualityScore must be an integer between 1 and 10'
+        });
+      }
+    }
+    
+    // Normalize whitespace and count words
+    const normalizedText = essayText.replace(/\s+/g, ' ').trim();
+    const wordCount = normalizedText.split(' ').filter(w => w.length > 0).length;
     
     const db = dbManager.getDatabase();
     
@@ -286,30 +298,33 @@ router.patch('/essay/:id/outcome', authenticate, async (req, res, next) => {
 /**
  * GET /api/ml/export-training-data
  * Admin only endpoint to export anonymized data for model training
+ * Note: Currently scoped to user's own data for security
  */
 router.get('/export-training-data', authenticate, async (req, res, next) => {
   try {
-    // For now, any authenticated user can export their own data
-    // In production, add admin check: if (!req.user.isAdmin) return res.status(403)...
-    
+    const userId = req.user.userId;
     const db = dbManager.getDatabase();
     const { type = 'all', anonymize = 'true' } = req.query;
     
     const shouldAnonymize = anonymize === 'true';
     
-    // Helper to hash student IDs
+    // Use HMAC with server secret for better anonymization
+    const serverSecret = process.env.JWT_SECRET || 'default-ml-hash-secret';
     const hashId = (id) => {
       if (!shouldAnonymize) return id;
-      return crypto.createHash('sha256').update(`student_${id}_salt_ml`).digest('hex').substring(0, 16);
+      return crypto.createHmac('sha256', serverSecret)
+        .update(`student_${id}`)
+        .digest('hex')
+        .substring(0, 16);
     };
     
     const exportData = {};
     
-    // Export training data
+    // Export training data - ONLY user's own data for non-admin
     if (type === 'all' || type === 'training') {
       const trainingData = db.prepare(`
-        SELECT * FROM ml_training_data ORDER BY created_at DESC
-      `).all();
+        SELECT * FROM ml_training_data WHERE student_id = ? ORDER BY created_at DESC
+      `).all(userId);
       
       exportData.trainingData = trainingData.map(row => ({
         ...row,
@@ -317,11 +332,11 @@ router.get('/export-training-data', authenticate, async (req, res, next) => {
       }));
     }
     
-    // Export user interactions
+    // Export user interactions - ONLY user's own data
     if (type === 'all' || type === 'interactions') {
       const interactions = db.prepare(`
-        SELECT * FROM ml_user_interactions ORDER BY timestamp DESC
-      `).all();
+        SELECT * FROM ml_user_interactions WHERE student_id = ? ORDER BY timestamp DESC
+      `).all(userId);
       
       exportData.interactions = interactions.map(row => ({
         ...row,
@@ -330,13 +345,13 @@ router.get('/export-training-data', authenticate, async (req, res, next) => {
       }));
     }
     
-    // Export essays (with text optionally redacted)
+    // Export essays - ONLY user's own data (without text for privacy)
     if (type === 'all' || type === 'essays') {
       const essays = db.prepare(`
         SELECT id, student_id, college_id, essay_prompt_type, 
                word_count, quality_score, acceptance_outcome, created_at
-        FROM ml_essays ORDER BY created_at DESC
-      `).all();
+        FROM ml_essays WHERE student_id = ? ORDER BY created_at DESC
+      `).all(userId);
       
       exportData.essays = essays.map(row => ({
         ...row,
@@ -344,7 +359,7 @@ router.get('/export-training-data', authenticate, async (req, res, next) => {
       }));
     }
     
-    // Export model versions
+    // Export model versions (this is public info about deployed models)
     if (type === 'all' || type === 'models') {
       exportData.modelVersions = db.prepare(`
         SELECT * FROM ml_model_versions ORDER BY created_at DESC

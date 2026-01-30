@@ -536,7 +536,9 @@ router.post('/scenario', authenticate, async (req, res, next) => {
           improved,
           decreased,
           stayed,
-          avgChange: Math.round(comparison.reduce((sum, c) => sum + c.change, 0) / comparison.length) || 0,
+          avgChange: comparison.length > 0 
+            ? Math.round(comparison.reduce((sum, c) => sum + c.change, 0) / comparison.length)
+            : 0,
           categoryChanges: comparison.filter(c => c.categoryChanged).map(c => ({
             college: c.college.name,
             from: c.oldCategory,
@@ -614,6 +616,9 @@ router.get('/history', authenticate, async (req, res, next) => {
   try {
     const { collegeId, limit = 50 } = req.query;
     
+    // Validate and bound limit
+    const boundedLimit = Math.min(Math.max(1, parseInt(limit) || 50), 1000);
+    
     const dbManager = require('../config/database');
     const db = dbManager.getDatabase();
     
@@ -631,16 +636,33 @@ router.get('/history', authenticate, async (req, res, next) => {
     }
     
     query += ' ORDER BY ch.calculated_at DESC LIMIT ?';
-    params.push(parseInt(limit));
+    params.push(boundedLimit);
     
     const history = db.prepare(query).all(...params);
     
-    // Parse JSON fields
-    const parsedHistory = history.map(h => ({
-      ...h,
-      profileSnapshot: JSON.parse(h.profile_snapshot || '{}'),
-      factors: JSON.parse(h.factors || '[]')
-    }));
+    // Parse JSON fields with error handling
+    const parsedHistory = history.map(h => {
+      let profileSnapshot = {};
+      let factors = [];
+      
+      try {
+        profileSnapshot = JSON.parse(h.profile_snapshot || '{}');
+      } catch (e) {
+        logger.warn(`Invalid JSON in profile_snapshot for history id ${h.id}`);
+      }
+      
+      try {
+        factors = JSON.parse(h.factors || '[]');
+      } catch (e) {
+        logger.warn(`Invalid JSON in factors for history id ${h.id}`);
+      }
+      
+      return {
+        ...h,
+        profileSnapshot,
+        factors
+      };
+    });
     
     res.json({
       success: true,
