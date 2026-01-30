@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
 
@@ -171,12 +172,13 @@ export default function ActivityManager() {
     }
   };
 
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  
   const handleDeleteActivity = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this activity?')) return;
-    
     try {
       await api.deleteActivity(id);
       toast.success('Activity deleted');
+      setDeleteConfirmId(null);
       fetchActivities();
     } catch (error) {
       console.error('Failed to delete activity:', error);
@@ -310,9 +312,27 @@ export default function ActivityManager() {
                     <Button variant="outline" size="sm" onClick={() => handleEditActivity(activity)}>
                       Edit
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => activity.id && handleDeleteActivity(activity.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Activity</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{activity.activity_name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => activity.id && handleDeleteActivity(activity.id)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </CardContent>
