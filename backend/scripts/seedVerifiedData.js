@@ -7,7 +7,25 @@ const path = require('path');
 const fs = require('fs');
 const db = require('../database/dbManager');
 
-const VERIFIED_DATA_PATH = path.join(__dirname, '../data/verified/top_200_verified.json');
+const VERIFIED_DATA_DIR = path.join(__dirname, '../data/verified');
+
+// Load all universities from multiple JSON files
+function loadAllUniversities() {
+  const files = fs.readdirSync(VERIFIED_DATA_DIR).filter(f => f.endsWith('.json'));
+  let allUniversities = [];
+  
+  for (const file of files) {
+    const filePath = path.join(VERIFIED_DATA_DIR, file);
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    
+    if (data.universities && Array.isArray(data.universities)) {
+      allUniversities = allUniversities.concat(data.universities);
+      console.log(`  Loaded ${data.universities.length} universities from ${file}`);
+    }
+  }
+  
+  return allUniversities;
+}
 
 async function seedVerifiedData(force = false) {
   console.log('=== Seeding Verified University Data ===\n');
@@ -21,15 +39,10 @@ async function seedVerifiedData(force = false) {
     return;
   }
   
-  // Load verified data
-  if (!fs.existsSync(VERIFIED_DATA_PATH)) {
-    console.error('Verified data file not found:', VERIFIED_DATA_PATH);
-    process.exit(1);
-  }
-  
-  const data = JSON.parse(fs.readFileSync(VERIFIED_DATA_PATH, 'utf-8'));
-  console.log(`Loaded ${data.universities.length} verified universities`);
-  console.log(`Data version: ${data.metadata.version}, Last updated: ${data.metadata.lastUpdated}`);
+  // Load all verified data
+  console.log('\nLoading verified data files...');
+  const universities = loadAllUniversities();
+  console.log(`\nTotal: ${universities.length} verified universities loaded`);
   
   if (force) {
     console.log('\nClearing existing colleges...');
@@ -40,7 +53,7 @@ async function seedVerifiedData(force = false) {
   let inserted = 0;
   let failed = 0;
   
-  for (const uni of data.universities) {
+  for (const uni of universities) {
     try {
       await db.query(`
         INSERT INTO colleges (
@@ -66,7 +79,7 @@ async function seedVerifiedData(force = false) {
       
       // Log progress
       if (inserted % 20 === 0) {
-        console.log(`Progress: ${inserted}/${data.universities.length} universities inserted`);
+        console.log(`Progress: ${inserted}/${universities.length} universities inserted`);
       }
       
     } catch (error) {
