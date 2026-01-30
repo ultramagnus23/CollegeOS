@@ -17,9 +17,10 @@ const Applications = () => {
 
   const loadApplications = async () => {
     try {
-      const response = await api.applications.getAll<{ data: any[] }>();
+      const response = await api.applications.get();
       setApplications(response.data || []);
     } catch (error: any) {
+      console.error('Failed to load applications:', error);
       toast.error('Failed to load applications');
     } finally {
       setLoading(false);

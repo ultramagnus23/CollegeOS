@@ -381,13 +381,13 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
   const acceptanceRate = college.acceptanceRate ?? college.acceptance_rate;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200 card-gradient-hover">
       {/* Header with gradient */}
-      <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 p-4 text-white">
+      <div className="gradient-header p-4 text-white">
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <h3 className="text-lg font-semibold leading-tight">{college.name}</h3>
-            <div className="flex items-center gap-1 mt-1 text-indigo-100 text-sm">
+            <div className="flex items-center gap-1 mt-1 text-white/80 text-sm">
               <MapPin className="w-3 h-3" />
               {college.location || college.country}
             </div>
@@ -467,7 +467,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
         <button
           onClick={onAdd}
           disabled={isAdding}
-          className="flex-1 bg-indigo-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          className="flex-1 btn-gradient rounded-lg py-2.5 text-sm font-medium disabled:opacity-50"
         >
           {isAdding ? 'Adding…' : 'Add to List'}
         </button>
