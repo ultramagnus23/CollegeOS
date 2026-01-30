@@ -444,13 +444,17 @@ const CollegeDetail: React.FC = () => {
               {college.deadlineTemplates && Object.keys(college.deadlineTemplates).length > 0 && (
                 <Card title="Application Deadlines">
                   <div className="space-y-3">
-                    {Object.entries(college.deadlineTemplates).map(([key, deadline]) => (
+                    {Object.entries(college.deadlineTemplates)
+                      .filter(([, deadline]) => deadline !== null)
+                      .map(([key, deadline]) => (
                       <div key={key} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
                           <Calendar className="w-5 h-5 text-blue-600" />
-                          <span className="font-medium capitalize">{key.replace(/_/g, ' ')}</span>
+                          <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
                         </div>
-                        <span className="text-gray-700">{deadline.date}</span>
+                        <span className="text-gray-700">
+                          {typeof deadline === 'string' ? deadline : (deadline as { date: string })?.date || 'N/A'}
+                        </span>
                       </div>
                     ))}
                   </div>

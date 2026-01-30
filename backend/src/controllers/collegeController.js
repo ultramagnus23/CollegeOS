@@ -1,11 +1,29 @@
 const CollegeService = require('../services/collegeService');
 const logger = require('../utils/logger');
 
+// Generate request ID for tracking
+function generateRequestId() {
+  return `col_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+}
+
+// Only include debug info in development
+function addDebugInfo(obj, debugData) {
+  if (process.env.NODE_ENV === 'development') {
+    return { ...obj, _debug: debugData };
+  }
+  return obj;
+}
+
 class CollegeController {
   // Get all colleges
   static async getColleges(req, res, next) {
+    const requestId = generateRequestId();
+    const startTime = Date.now();
+    
     try {
       const { country, search, limit } = req.query;
+      
+      logger.info(`[${requestId}] GET /colleges - country=${country}, search=${search}, limit=${limit}`);
       
       // Default to returning all colleges (no limit) unless specified
       // This supports the goal of showing 500-1000 colleges
@@ -15,37 +33,75 @@ class CollegeController {
         limit: limit ? parseInt(limit) : undefined // No default limit - return all
       });
       
-      res.json({
+      const duration = Date.now() - startTime;
+      logger.info(`[${requestId}] Found ${colleges?.length || 0} colleges in ${duration}ms`);
+      
+      res.json(addDebugInfo({
         success: true,
         count: colleges.length,
         data: colleges
-      });
+      }, { requestId, duration: `${duration}ms` }));
     } catch (error) {
+      logger.error(`[${requestId}] Error in getColleges:`, error);
       next(error);
     }
   }
   
   // Get college by ID
   static async getCollegeById(req, res, next) {
+    const requestId = generateRequestId();
+    const startTime = Date.now();
+    
     try {
       const { id } = req.params;
+      
+      logger.info(`[${requestId}] GET /colleges/${id}`);
+      
+      if (!id || isNaN(parseInt(id))) {
+        logger.warn(`[${requestId}] Invalid college ID: ${id}`);
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid college ID',
+          errorCode: 'INVALID_ID'
+        });
+      }
+      
       const college = await CollegeService.getCollegeById(parseInt(id));
       
-      res.json({
+      if (!college) {
+        logger.warn(`[${requestId}] College ${id} not found`);
+        return res.status(404).json({
+          success: false,
+          message: 'College not found',
+          errorCode: 'COLLEGE_NOT_FOUND'
+        });
+      }
+      
+      const duration = Date.now() - startTime;
+      logger.debug(`[${requestId}] College ${id} retrieved in ${duration}ms`);
+      
+      res.json(addDebugInfo({
         success: true,
         data: college
-      });
+      }, { requestId, duration: `${duration}ms` }));
     } catch (error) {
+      logger.error(`[${requestId}] Error in getCollegeById:`, error);
       next(error);
     }
   }
   
   // Search colleges - comprehensive search across all fields
   static async searchColleges(req, res, next) {
+    const requestId = generateRequestId();
+    const startTime = Date.now();
+    
     try {
       const { q, country, program, limit } = req.query;
       
+      logger.info(`[${requestId}] GET /colleges/search - q="${q}", country=${country}, program=${program}`);
+      
       if (!q || q.trim() === '') {
+        logger.debug(`[${requestId}] Empty search query - returning all colleges`);
         // If no search term, return all colleges (for browsing)
         return CollegeController.getColleges(req, res, next);
       }
@@ -56,37 +112,49 @@ class CollegeController {
         limit: limit ? parseInt(limit) : 1000 // Higher default for research
       });
       
-      res.json({
+      const duration = Date.now() - startTime;
+      logger.info(`[${requestId}] Search returned ${colleges?.length || 0} results in ${duration}ms`);
+      
+      res.json(addDebugInfo({
         success: true,
         count: colleges.length,
         data: colleges
-      });
+      }, { requestId, duration: `${duration}ms`, query: q }));
     } catch (error) {
-      logger.error('Search colleges error:', error);
+      logger.error(`[${requestId}] Search colleges error:`, error);
       next(error);
     }
   }
   
   // Get college data (requirements, deadlines, etc.)
   static async getCollegeData(req, res, next) {
+    const requestId = generateRequestId();
+    
     try {
       const { id } = req.params;
       const { type } = req.query;
       
+      logger.info(`[${requestId}] GET /colleges/${id}/data - type=${type}`);
+      
       if (!type) {
+        logger.warn(`[${requestId}] Missing data type parameter`);
         return res.status(400).json({
           success: false,
-          message: 'Data type is required (requirements, deadlines, programs)'
+          message: 'Data type is required (requirements, deadlines, programs)',
+          errorCode: 'MISSING_TYPE'
         });
       }
       
       const data = await CollegeService.getCollegeData(parseInt(id), type);
       
-      res.json({
+      logger.debug(`[${requestId}] Retrieved ${type} data for college ${id}`);
+      
+      res.json(addDebugInfo({
         success: true,
         data
-      });
+      }, { requestId }));
     } catch (error) {
+      logger.error(`[${requestId}] Error in getCollegeData:`, error);
       next(error);
     }
   }
