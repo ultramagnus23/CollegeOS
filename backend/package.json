@@ -38,7 +38,6 @@
     "passport-google-oauth20": "^2.0.0",
     "puppeteer": "^24.34.0",
     "robots-parser": "^3.0.1",
-    "sqlite3": "^5.1.7",
     "winston": "^3.11.0"
   },
   "devDependencies": {
