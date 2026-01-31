@@ -133,10 +133,10 @@ const Dashboard = () => {
 
   return (
     <div className="p-8 space-y-8">
-      {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-violet-600 rounded-2xl p-8 text-white">
+      {/* Welcome Header with gradient-hero */}
+      <div className="gradient-hero rounded-2xl p-8 text-white">
         <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.full_name}! 👋</h1>
-        <p className="text-indigo-100 mb-6">Here's your college application journey at a glance</p>
+        <p className="text-white/90 mb-6">Here's your college application journey at a glance</p>
         
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

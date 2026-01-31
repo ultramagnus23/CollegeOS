@@ -22,6 +22,7 @@ import Colleges from "./pages/Colleges";
 import CollegeDetails from "./pages/CollegeDetails";
 import Research from "./pages/Research";
 import Applications from "./pages/Applications";
+import Requirements from "./pages/Requirements";
 import Deadlines from "./pages/Deadlines";
 import Essays from "./pages/Essays";
 import Settings from "./pages/Settings";
@@ -104,6 +105,7 @@ const AppContent = () => {
             <Route path="colleges/:id" element={<CollegeDetails />} />
             <Route path="research" element={<Research />} />
             <Route path="applications" element={<Applications />} />
+            <Route path="requirements" element={<Requirements />} />
             <Route path="deadlines" element={<Deadlines />} />
             <Route path="essays" element={<Essays />} />
             <Route path="activities" element={<Activities />} />

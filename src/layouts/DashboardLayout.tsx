@@ -11,7 +11,8 @@ import {
   Settings as SettingsIcon,
   LogOut,
   Menu,
-  X
+  X,
+  ClipboardList
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -24,6 +25,7 @@ const DashboardLayout = () => {
     { name: 'Research', href: '/research', icon: Search },
     { name: 'Colleges', href: '/colleges', icon: School },
     { name: 'Applications', href: '/applications', icon: FileText },
+    { name: 'Requirements', href: '/requirements', icon: ClipboardList },
     { name: 'Deadlines', href: '/deadlines', icon: Calendar },
     { name: 'Essays', href: '/essays', icon: PenTool },
     { name: 'Settings', href: '/settings', icon: SettingsIcon },
@@ -59,15 +61,15 @@ const DashboardLayout = () => {
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b flex items-center justify-between">
+          {/* Logo with gradient header */}
+          <div className="p-6 border-b flex items-center justify-between gradient-header">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">College App OS</h1>
-              <p className="text-sm text-gray-600 mt-1">Welcome, {user?.full_name}</p>
+              <h1 className="text-2xl font-bold text-white">College App OS</h1>
+              <p className="text-sm text-white/80 mt-1">Welcome, {user?.full_name}</p>
             </div>
             <button 
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+              className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-white"
               aria-label="Close sidebar"
             >
               <X size={20} />
@@ -109,16 +111,16 @@ const DashboardLayout = () => {
         </div>
       </div>
 
-      {/* Mobile Top Bar */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white shadow-sm z-30 flex items-center justify-between px-4">
+      {/* Mobile Top Bar with gradient */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 gradient-header shadow-sm z-30 flex items-center justify-between px-4">
         <button 
           onClick={() => setSidebarOpen(true)}
-          className="p-2 rounded-lg hover:bg-gray-100"
+          className="p-2 rounded-lg hover:bg-white/10 text-white"
           aria-label="Open menu"
         >
           <Menu size={24} aria-hidden="true" />
         </button>
-        <h1 className="text-lg font-bold text-gray-900">College App OS</h1>
+        <h1 className="text-lg font-bold text-white">College App OS</h1>
         <div className="w-10" aria-hidden="true" /> {/* Spacer for centering */}
       </header>
 

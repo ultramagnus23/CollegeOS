@@ -1,14 +1,14 @@
 const dbManager = require('../config/database');
 
+// Pagination constants
+const DEFAULT_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = 500;
+
 // Helper to normalize acceptance rate (ensure it's in decimal form 0-1)
 function normalizeAcceptanceRate(rate) {
   if (rate === null || rate === undefined) return null;
-  // Validate rate is a number
   const numRate = Number(rate);
   if (isNaN(numRate)) return null;
-  // If stored as percentage (e.g., 9 for 9%), convert to decimal
-  // Use threshold of > 1 to determine if it's percentage form
-  // Edge case: 1.0 is 100%, values > 100 are invalid
   if (numRate > 100) {
     console.warn(`Invalid acceptance rate value: ${numRate}. Expected 0-100 or 0-1.`);
     return null;
@@ -22,7 +22,7 @@ function normalizeAcceptanceRate(rate) {
 // Helper to safely parse JSON
 function safeJsonParse(str, defaultValue = []) {
   if (!str) return defaultValue;
-  if (typeof str === 'object') return str; // Already parsed
+  if (typeof str === 'object') return str;
   try {
     return JSON.parse(str);
   } catch (e) {
@@ -30,7 +30,100 @@ function safeJsonParse(str, defaultValue = []) {
   }
 }
 
+// Get country-specific requirements
+function getCountryRequirements(country) {
+  const countryLower = (country || '').toLowerCase();
+  
+  if (countryLower === 'united states' || countryLower === 'usa' || countryLower === 'us') {
+    return {
+      applicationType: 'Common App / Coalition App',
+      applicationComponents: [
+        'Common Application',
+        'Application fee ($75-90)',
+        'High school transcript',
+        'Counselor recommendation',
+        '2 teacher recommendations',
+        'SAT/ACT scores (many test-optional)',
+        'Personal essay (650 words)',
+        'Supplemental essays (varies by college)'
+      ],
+      financialAid: ['FAFSA', 'CSS Profile (for private colleges)'],
+      testScores: 'SAT/ACT (many colleges test-optional)',
+      region: 'US'
+    };
+  }
+  
+  if (countryLower === 'united kingdom' || countryLower === 'uk') {
+    return {
+      applicationType: 'UCAS Application',
+      applicationComponents: [
+        'UCAS Application form',
+        'Personal Statement (4000 characters)',
+        'Academic Reference',
+        'Predicted grades',
+        'UCAS fee (£27.50 for multiple choices)'
+      ],
+      financialAid: ['Student Finance England/Wales/Scotland', 'University bursaries'],
+      testScores: 'A-Levels or IB Diploma',
+      region: 'UK'
+    };
+  }
+  
+  if (countryLower === 'india') {
+    return {
+      applicationType: 'National Entrance Exams',
+      applicationComponents: [
+        'JEE Main/Advanced (for IITs/NITs)',
+        'NEET (for medical colleges)',
+        'CAT (for IIMs - MBA)',
+        'CUET (for central universities)',
+        'Class 12 board exam marks',
+        'Category certificate (if applicable)'
+      ],
+      financialAid: ['Government scholarships', 'Institute-specific scholarships'],
+      testScores: 'JEE/NEET/CAT rank & Class 12 percentage',
+      region: 'India'
+    };
+  }
+  
+  // Europe (Germany, France, Netherlands, Finland, etc.)
+  return {
+    applicationType: 'National/University Portal',
+    applicationComponents: [
+      'Online application form',
+      'Secondary school leaving certificate (Abitur/Baccalaureate/IB)',
+      'Motivation letter',
+      'CV/Resume',
+      'Language proficiency certificate',
+      'Application fee (varies)'
+    ],
+    financialAid: ['Government grants', 'University scholarships'],
+    testScores: 'Abitur/IB/National leaving certificate',
+    region: 'Europe'
+  };
+}
+
+// Get region for filtering
+function getRegion(country) {
+  const countryLower = (country || '').toLowerCase();
+  
+  if (countryLower === 'united states' || countryLower === 'usa' || countryLower === 'us') {
+    return 'United States';
+  }
+  if (countryLower === 'united kingdom' || countryLower === 'uk') {
+    return 'United Kingdom';
+  }
+  if (countryLower === 'india') {
+    return 'India';
+  }
+  // All other countries grouped as Europe
+  return 'Europe';
+}
+
 class College {
+  /**
+   * Create a new college
+   */
   static create(data) {
     const db = dbManager.getDatabase();
     
@@ -41,52 +134,40 @@ class College {
     `).get(data.name, data.country);
     
     if (existing) {
-      // Return existing college instead of creating duplicate
       return this.findById(existing.id);
     }
     
     const stmt = db.prepare(`
       INSERT INTO colleges (
-        name, country, location, type, official_website, admissions_url, programs_url,
-        application_portal_url, programs, major_categories, academic_strengths,
-        application_portal, acceptance_rate, requirements, deadline_templates,
-        tuition_cost, financial_aid_available, research_data, description, logo_url,
-        cbse_requirements, igcse_requirements, ib_requirements, studielink_required,
-        numerus_fixus_programs, ucas_code, common_app_id, trust_tier, is_verified
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        name, country, location, official_website, admissions_url,
+        programs_url, application_portal_url, academic_strengths, major_categories,
+        acceptance_rate, tuition_domestic, tuition_international, student_population,
+        average_gpa, sat_range, act_range, graduation_rate, ranking,
+        trust_tier, is_verified
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
-    // Normalize acceptance rate before storing (store as decimal 0-1)
     const acceptanceRate = normalizeAcceptanceRate(data.acceptanceRate || data.acceptance_rate);
     
     const result = stmt.run(
       data.name,
       data.country,
       data.location || null,
-      data.type || null,
-      data.officialWebsite || data.official_website,
+      data.officialWebsite || data.official_website || '',
       data.admissionsUrl || data.admissions_url || null,
       data.programsUrl || data.programs_url || null,
       data.applicationPortalUrl || data.application_portal_url || null,
-      JSON.stringify(data.programs || []),
-      JSON.stringify(data.majorCategories || data.major_categories || []),
       JSON.stringify(data.academicStrengths || data.academic_strengths || []),
-      data.applicationPortal || data.application_portal || null,
+      JSON.stringify(data.majorCategories || data.major_categories || []),
       acceptanceRate,
-      JSON.stringify(data.requirements || {}),
-      JSON.stringify(data.deadlineTemplates || data.deadline_templates || {}),
-      data.tuitionCost || data.tuition_cost || null,
-      data.financialAidAvailable || data.financial_aid_available || 0,
-      JSON.stringify(data.researchData || data.research_data || {}),
-      data.description || null,
-      data.logoUrl || data.logo_url || null,
-      JSON.stringify(data.cbseRequirements || data.cbse_requirements || {}),
-      JSON.stringify(data.igcseRequirements || data.igcse_requirements || {}),
-      JSON.stringify(data.ibRequirements || data.ib_requirements || {}),
-      data.studielinkRequired || data.studielink_required || 0,
-      JSON.stringify(data.numerusFixusPrograms || data.numerus_fixus_programs || null),
-      data.ucasCode || data.ucas_code || null,
-      data.commonAppId || data.common_app_id || null,
+      data.tuitionDomestic || data.tuition_domestic || null,
+      data.tuitionInternational || data.tuition_international || null,
+      data.studentPopulation || data.student_population || null,
+      data.averageGpa || data.average_gpa || null,
+      data.satRange || data.sat_range || null,
+      data.actRange || data.act_range || null,
+      data.graduationRate || data.graduation_rate || null,
+      data.ranking || null,
       data.trustTier || data.trust_tier || 'official',
       data.isVerified || data.is_verified || 0
     );
@@ -94,454 +175,318 @@ class College {
     return this.findById(result.lastInsertRowid);
   }
   
+  /**
+   * Find college by ID
+   */
   static findById(id) {
     const db = dbManager.getDatabase();
     const stmt = db.prepare('SELECT * FROM colleges WHERE id = ?');
     const college = stmt.get(id);
     
     if (college) {
-      // Parse JSON fields safely and normalize data
-      college.programs = safeJsonParse(college.programs, []);
-      college.academicStrengths = safeJsonParse(college.academic_strengths, []);
-      college.majorCategories = safeJsonParse(college.major_categories, []);
-      college.requirements = safeJsonParse(college.requirements, {});
-      college.deadlineTemplates = safeJsonParse(college.deadline_templates, {});
-      college.researchData = safeJsonParse(college.research_data, {});
-      college.cbseRequirements = safeJsonParse(college.cbse_requirements, {});
-      college.igcseRequirements = safeJsonParse(college.igcse_requirements, {});
-      college.ibRequirements = safeJsonParse(college.ib_requirements, {});
-      if (college.numerus_fixus_programs) {
-        college.numerusFixusPrograms = safeJsonParse(college.numerus_fixus_programs, null);
-      }
-      
-      // Normalize acceptance rate (ensure it's in decimal form 0-1)
-      college.acceptanceRate = normalizeAcceptanceRate(college.acceptance_rate);
-      college.acceptance_rate = college.acceptanceRate;
-      
-      // Extract rich data from research_data for frontend display
-      const researchData = college.researchData || {};
-      const reqs = college.requirements || {};
-      
-      // Enrollment
-      college.enrollment = researchData.enrollment || null;
-      
-      // Test Scores - support both old and new format
-      // New format: { satRange: { ebrw: { min, max }, math: { min, max }, total: { min, max } }, actRange: { composite: { min, max } } }
-      // Old format: { satRange: { percentile25, percentile75 }, actRange: { percentile25, percentile75 } }
-      const satRange = reqs.satRange;
-      const actRange = reqs.actRange;
-      
-      // Convert to frontend-expected format
-      if (satRange) {
-        // New comprehensive format
-        if (satRange.total) {
-          college.testScores = {
-            satRange: {
-              percentile25: satRange.total.min,
-              percentile75: satRange.total.max,
-              ebrw25: satRange.ebrw?.min,
-              ebrw75: satRange.ebrw?.max,
-              math25: satRange.math?.min,
-              math75: satRange.math?.max
-            },
-            actRange: actRange?.composite ? {
-              percentile25: actRange.composite.min,
-              percentile75: actRange.composite.max
-            } : null,
-            averageGPA: reqs.averageGPA || null
-          };
-        } else {
-          // Old simple format
-          college.testScores = {
-            satRange: satRange,
-            actRange: actRange || null,
-            averageGPA: reqs.averageGPA || null
-          };
-        }
-      } else {
-        college.testScores = {
-          satRange: null,
-          actRange: actRange || null,
-          averageGPA: reqs.averageGPA || null
-        };
-      }
-      
-      // Graduation Rates
-      college.graduationRates = researchData.graduationRates || null;
-      
-      // Student Faculty Ratio
-      college.studentFacultyRatio = researchData.studentFacultyRatio || null;
-      
-      // Financial Data
-      college.financialData = researchData.financialData || null;
-      
-      // Essay Prompts
-      college.essayPrompts = researchData.essayPrompts || null;
-      
-      // Rankings - extract from nested ranking object
-      const ranking = researchData.ranking || {};
-      college.ranking = ranking.usNews || ranking.nirf || ranking.qsWorld || researchData.rank || null;
-      college.tier = researchData.tier || null;
-      
-      // Indian-specific: placements, cutoffs
-      if (college.country === 'India') {
-        college.placements = researchData.placement || researchData.placements || null;
-        college.cutoffs = reqs.jeeAdvanced || reqs.bitsat || reqs.viteee || null;
-        college.entranceExam = reqs.entranceExam || null;
-        college.nirfRank = ranking.nirf || null;
-      }
-      
-      // UK-specific: Russell Group, A-levels, IB
-      if (college.country === 'United Kingdom') {
-        college.russellGroup = researchData.russellGroup || false;
-        college.aLevelRequirements = reqs.aLevelRequirements || reqs.aLevels || null;
-        college.ibPointsRequired = reqs.ibRequirements || reqs.ibPoints || null;
-        college.qsRank = ranking.qsWorld || null;
-      }
-      
-      // Germany-specific
-      if (college.country === 'Germany') {
-        college.abiturRequirement = reqs.abiturGradeRequirement || reqs.abitur || null;
-        college.germanLevel = reqs.germanLanguageRequirement || reqs.germanLevel || null;
-        college.englishLevel = reqs.englishLanguageRequirement || reqs.englishLevel || null;
-      }
-      
-      // Application requirements
-      college.applicationRequirements = reqs.applicationRequirements || [];
+      return this.formatCollege(college);
     }
-    
-    return college;
+    return null;
   }
   
+  /**
+   * Format college data for API response
+   */
+  static formatCollege(college) {
+    // Parse JSON fields
+    const academicStrengths = safeJsonParse(college.academic_strengths, []);
+    const majorCategories = safeJsonParse(college.major_categories, []);
+    
+    // Normalize acceptance rate
+    const acceptanceRate = normalizeAcceptanceRate(college.acceptance_rate);
+    
+    // Get country-specific requirements
+    const requirements = getCountryRequirements(college.country);
+    const region = getRegion(college.country);
+    
+    return {
+      id: college.id,
+      name: college.name,
+      country: college.country,
+      region: region,
+      location: college.location,
+      officialWebsite: college.official_website,
+      admissionsUrl: college.admissions_url,
+      programsUrl: college.programs_url,
+      applicationPortalUrl: college.application_portal_url,
+      
+      // Academic info
+      academicStrengths: academicStrengths,
+      majorCategories: majorCategories,
+      programs: majorCategories, // Alias for compatibility
+      
+      // Stats
+      acceptanceRate: acceptanceRate,
+      acceptance_rate: acceptanceRate,
+      tuitionDomestic: college.tuition_domestic,
+      tuitionInternational: college.tuition_international,
+      studentPopulation: college.student_population,
+      enrollment: college.student_population, // Alias
+      averageGpa: college.average_gpa,
+      satRange: college.sat_range,
+      actRange: college.act_range,
+      graduationRate: college.graduation_rate,
+      ranking: college.ranking,
+      
+      // Country-specific requirements
+      requirements: requirements,
+      
+      // Trust info
+      trustTier: college.trust_tier,
+      isVerified: college.is_verified,
+      
+      // Timestamps
+      createdAt: college.created_at,
+      updatedAt: college.updated_at
+    };
+  }
+  
+  /**
+   * Find all colleges with filters
+   */
   static findAll(filters = {}) {
     const db = dbManager.getDatabase();
-    // Use GROUP BY to deduplicate results (Issue 1)
+    
     let query = 'SELECT * FROM colleges WHERE 1=1';
     const params = [];
     
+    // Country filter - support region grouping
     if (filters.country) {
-      query += ' AND country = ?';
-      params.push(filters.country);
+      const countryLower = filters.country.toLowerCase();
+      if (countryLower === 'europe') {
+        // Europe includes all countries except USA, UK, India
+        query += ` AND country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`;
+      } else if (countryLower === 'united states' || countryLower === 'usa') {
+        query += ` AND (country = 'United States' OR country = 'USA')`;
+      } else if (countryLower === 'united kingdom' || countryLower === 'uk') {
+        query += ` AND (country = 'United Kingdom' OR country = 'UK')`;
+      } else {
+        query += ' AND LOWER(country) = LOWER(?)';
+        params.push(filters.country);
+      }
     }
     
-    if (filters.type) {
-      query += ' AND type = ?';
-      params.push(filters.type);
+    // Search filter
+    if (filters.search) {
+      query += ` AND (
+        name LIKE ? OR 
+        location LIKE ? OR 
+        country LIKE ? OR 
+        major_categories LIKE ? OR 
+        academic_strengths LIKE ?
+      )`;
+      const searchPattern = `%${filters.search}%`;
+      params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+    }
+    
+    // Acceptance rate range
+    if (filters.minAcceptanceRate !== undefined) {
+      query += ' AND acceptance_rate >= ?';
+      params.push(filters.minAcceptanceRate);
+    }
+    if (filters.maxAcceptanceRate !== undefined) {
+      query += ' AND acceptance_rate <= ?';
+      params.push(filters.maxAcceptanceRate);
+    }
+    
+    // Ordering
+    query += ' ORDER BY ';
+    if (filters.sortBy) {
+      const validSorts = ['name', 'acceptance_rate', 'ranking', 'student_population'];
+      const sortField = validSorts.includes(filters.sortBy) ? filters.sortBy : 'name';
+      const sortDir = filters.sortDir === 'desc' ? 'DESC' : 'ASC';
+      query += `${sortField} ${sortDir}`;
+    } else {
+      query += 'name ASC';
+    }
+    
+    // Pagination using constants
+    const limit = Math.min(filters.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+    const offset = filters.offset || 0;
+    query += ` LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+    
+    const stmt = db.prepare(query);
+    const colleges = stmt.all(...params);
+    
+    return colleges.map(college => this.formatCollege(college));
+  }
+  
+  /**
+   * Get total count for pagination
+   */
+  static getCount(filters = {}) {
+    const db = dbManager.getDatabase();
+    
+    let query = 'SELECT COUNT(*) as count FROM colleges WHERE 1=1';
+    const params = [];
+    
+    if (filters.country) {
+      const countryLower = filters.country.toLowerCase();
+      if (countryLower === 'europe') {
+        query += ` AND country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`;
+      } else if (countryLower === 'united states' || countryLower === 'usa') {
+        query += ` AND (country = 'United States' OR country = 'USA')`;
+      } else if (countryLower === 'united kingdom' || countryLower === 'uk') {
+        query += ` AND (country = 'United Kingdom' OR country = 'UK')`;
+      } else {
+        query += ' AND LOWER(country) = LOWER(?)';
+        params.push(filters.country);
+      }
     }
     
     if (filters.search) {
-      query += ' AND name LIKE ?';
-      params.push(`%${filters.search}%`);
+      query += ` AND (
+        name LIKE ? OR 
+        location LIKE ? OR 
+        country LIKE ? OR 
+        major_categories LIKE ? OR 
+        academic_strengths LIKE ?
+      )`;
+      const searchPattern = `%${filters.search}%`;
+      params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
     }
     
-    if (filters.applicationPortal) {
-      query += ' AND application_portal = ?';
-      params.push(filters.applicationPortal);
-    }
-    
-    // Add GROUP BY to deduplicate (pick first by name+country)
-    query += ' GROUP BY LOWER(name), LOWER(country)';
-    query += ' ORDER BY name ASC';
-    
-    if (filters.limit) {
-      query += ' LIMIT ?';
-      params.push(filters.limit);
-    }
-    
-    if (filters.offset) {
-      query += ' OFFSET ?';
-      params.push(filters.offset);
-    }
-    
-    const stmt = db.prepare(query);
-    const colleges = stmt.all(...params);
-    
-    return colleges.map(college => {
-      const programs = safeJsonParse(college.programs, []);
-      const researchData = safeJsonParse(college.research_data, {});
-      const requirements = safeJsonParse(college.requirements, {});
-      const acceptanceRate = normalizeAcceptanceRate(college.acceptance_rate);
-      
-      // Extract ranking from nested structure
-      const ranking = researchData.ranking || {};
-      const collegeRanking = ranking.usNews || ranking.nirf || ranking.qsWorld || researchData.rank || null;
-      
-      // Extract test scores properly (support both formats)
-      const satRange = requirements.satRange;
-      let testScores = null;
-      if (satRange) {
-        if (satRange.total) {
-          // New comprehensive format
-          testScores = {
-            satRange: { percentile25: satRange.total.min, percentile75: satRange.total.max },
-            actRange: requirements.actRange?.composite ? { percentile25: requirements.actRange.composite.min, percentile75: requirements.actRange.composite.max } : null
-          };
-        } else {
-          // Old format
-          testScores = {
-            satRange: satRange,
-            actRange: requirements.actRange || null
-          };
-        }
-      }
-      
-      return {
-        ...college,
-        programs,
-        academicStrengths: safeJsonParse(college.academic_strengths, []),
-        majorCategories: safeJsonParse(college.major_categories, []),
-        requirements,
-        deadlineTemplates: safeJsonParse(college.deadline_templates, {}),
-        researchData,
-        acceptanceRate,
-        acceptance_rate: acceptanceRate,
-        // Rich data for cards
-        enrollment: researchData.enrollment || null,
-        ranking: collegeRanking,
-        averageGPA: requirements.averageGPA || null,
-        testScores: testScores,
-        graduationRates: researchData.graduationRates || null,
-        studentFacultyRatio: researchData.studentFacultyRatio || null
-      };
+    const result = db.prepare(query).get(...params);
+    return result.count;
+  }
+  
+  /**
+   * Search colleges
+   */
+  static search(searchTerm, filters = {}) {
+    return this.findAll({
+      ...filters,
+      search: searchTerm
     });
   }
   
-  static search(searchTerm, filters = {}) {
+  /**
+   * Get country filter options (simplified to 4)
+   */
+  static getCountryFilters() {
+    return [
+      { value: 'United States', label: 'United States', count: this.getCountByRegion('United States') },
+      { value: 'India', label: 'India', count: this.getCountByRegion('India') },
+      { value: 'United Kingdom', label: 'United Kingdom', count: this.getCountByRegion('United Kingdom') },
+      { value: 'Europe', label: 'Europe', count: this.getCountByRegion('Europe') }
+    ];
+  }
+  
+  /**
+   * Get count by region
+   */
+  static getCountByRegion(region) {
     const db = dbManager.getDatabase();
     
-    // Keyword synonyms for intelligent search (Issue 6)
-    const synonyms = {
-      'tech': ['technology', 'technical', 'institute of technology', 'polytechnic'],
-      'engineering': ['engineer', 'engineering', 'tech', 'technical'],
-      'business': ['business', 'commerce', 'management', 'mba'],
-      'medical': ['medicine', 'medical', 'health', 'hospital'],
-      'law': ['law', 'legal', 'jurisprudence'],
-      'arts': ['art', 'arts', 'liberal arts', 'humanities'],
-      'science': ['science', 'sciences', 'stem'],
-      'cs': ['computer science', 'computing', 'information technology'],
-      'it': ['information technology', 'computer', 'computing']
+    if (region === 'Europe') {
+      return db.prepare(`SELECT COUNT(*) as count FROM colleges 
+               WHERE country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`).get().count;
+    } else if (region === 'United States') {
+      return db.prepare(`SELECT COUNT(*) as count FROM colleges 
+               WHERE country IN ('United States', 'USA')`).get().count;
+    } else if (region === 'United Kingdom') {
+      return db.prepare(`SELECT COUNT(*) as count FROM colleges 
+               WHERE country IN ('United Kingdom', 'UK')`).get().count;
+    } else if (region === 'India') {
+      return db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country = 'India'`).get().count;
+    }
+    // For any other value (shouldn't happen with our 4 regions), use parameterized query
+    return db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country = ?`).get(region).count;
+  }
+  
+  /**
+   * Get all unique majors/programs
+   */
+  static getAllMajors() {
+    const db = dbManager.getDatabase();
+    const colleges = db.prepare('SELECT major_categories FROM colleges').all();
+    
+    const majorsSet = new Set();
+    colleges.forEach(college => {
+      const majors = safeJsonParse(college.major_categories, []);
+      majors.forEach(major => majorsSet.add(major));
+    });
+    
+    return Array.from(majorsSet).sort();
+  }
+  
+  /**
+   * Update college
+   */
+  static update(id, data) {
+    const db = dbManager.getDatabase();
+    
+    const updates = [];
+    const params = [];
+    
+    const fieldMap = {
+      name: 'name',
+      country: 'country',
+      location: 'location',
+      officialWebsite: 'official_website',
+      admissionsUrl: 'admissions_url',
+      programsUrl: 'programs_url',
+      applicationPortalUrl: 'application_portal_url',
+      academicStrengths: 'academic_strengths',
+      majorCategories: 'major_categories',
+      acceptanceRate: 'acceptance_rate',
+      tuitionDomestic: 'tuition_domestic',
+      tuitionInternational: 'tuition_international',
+      studentPopulation: 'student_population',
+      averageGpa: 'average_gpa',
+      satRange: 'sat_range',
+      actRange: 'act_range',
+      graduationRate: 'graduation_rate',
+      ranking: 'ranking',
+      trustTier: 'trust_tier',
+      isVerified: 'is_verified'
     };
     
-    // Build search patterns including synonyms
-    const searchTermLower = searchTerm.toLowerCase().trim();
-    const searchWords = searchTermLower.split(/\s+/);
-    const searchPatterns = new Set([`%${searchTerm}%`]);
-    
-    // Add synonyms to search if applicable (using word boundary matching)
-    for (const [key, values] of Object.entries(synonyms)) {
-      // Check if any word in search matches the synonym key exactly
-      if (searchWords.includes(key)) {
-        values.forEach(synonym => {
-          searchPatterns.add(`%${synonym}%`);
-        });
+    for (const [key, column] of Object.entries(fieldMap)) {
+      if (data[key] !== undefined) {
+        let value = data[key];
+        
+        // Handle JSON fields
+        if (key === 'academicStrengths' || key === 'majorCategories') {
+          value = JSON.stringify(value);
+        }
+        
+        // Normalize acceptance rate
+        if (key === 'acceptanceRate') {
+          value = normalizeAcceptanceRate(value);
+        }
+        
+        updates.push(`${column} = ?`);
+        params.push(value);
       }
     }
     
-    // Limit number of patterns to avoid performance issues
-    const patternsArray = Array.from(searchPatterns).slice(0, 5);
-    
-    // Build query with multiple search patterns
-    let query = `
-      SELECT * FROM colleges 
-      WHERE (
-    `;
-    const params = [];
-    
-    // Add search conditions for each pattern
-    const patternConditions = patternsArray.map((pattern, idx) => {
-      params.push(pattern, pattern, pattern, pattern, pattern, pattern, pattern);
-      return `(
-        name LIKE ?
-        OR location LIKE ?
-        OR country LIKE ?
-        OR major_categories LIKE ?
-        OR academic_strengths LIKE ?
-        OR programs LIKE ?
-        OR description LIKE ?
-      )`;
-    });
-    
-    query += patternConditions.join(' OR ');
-    query += ')';
-    
-    if (filters.country) {
-      query += ' AND country = ?';
-      params.push(filters.country);
+    if (updates.length === 0) {
+      return this.findById(id);
     }
     
-    if (filters.type) {
-      query += ' AND type = ?';
-      params.push(filters.type);
-    }
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    params.push(id);
     
-    if (filters.applicationPortal) {
-      query += ' AND application_portal = ?';
-      params.push(filters.applicationPortal);
-    }
+    const query = `UPDATE colleges SET ${updates.join(', ')} WHERE id = ?`;
+    db.prepare(query).run(...params);
     
-    if (filters.maxTuition) {
-      query += ' AND tuition_cost <= ?';
-      params.push(filters.maxTuition);
-    }
-    
-    // Search in major categories more precisely
-    if (filters.program) {
-      query += ' AND (major_categories LIKE ? OR programs LIKE ?)';
-      params.push(`%"${filters.program}"%`, `%"${filters.program}"%`);
-    }
-    
-    // Deduplicate results (Issue 1)
-    query += ' GROUP BY LOWER(name), LOWER(country)';
-    query += ' ORDER BY acceptance_rate ASC, name ASC';
-    
-    if (filters.limit) {
-      query += ' LIMIT ?';
-      params.push(filters.limit);
-    }
-    
-    const stmt = db.prepare(query);
-    const colleges = stmt.all(...params);
-    
-    return colleges.map(college => {
-      const programs = safeJsonParse(college.programs, []);
-      const researchData = safeJsonParse(college.research_data, {});
-      const requirements = safeJsonParse(college.requirements, {});
-      const acceptanceRate = normalizeAcceptanceRate(college.acceptance_rate);
-      
-      // Extract ranking from nested structure
-      const ranking = researchData.ranking || {};
-      const collegeRanking = ranking.usNews || ranking.nirf || ranking.qsWorld || researchData.rank || null;
-      
-      // Extract test scores properly (support both formats)
-      const satRange = requirements.satRange;
-      let testScores = null;
-      if (satRange) {
-        if (satRange.total) {
-          testScores = {
-            satRange: { percentile25: satRange.total.min, percentile75: satRange.total.max },
-            actRange: requirements.actRange?.composite ? { percentile25: requirements.actRange.composite.min, percentile75: requirements.actRange.composite.max } : null
-          };
-        } else {
-          testScores = {
-            satRange: satRange,
-            actRange: requirements.actRange || null
-          };
-        }
-      }
-      
-      return {
-        ...college,
-        programs,
-        academicStrengths: safeJsonParse(college.academic_strengths, []),
-        majorCategories: safeJsonParse(college.major_categories, []),
-        requirements,
-        deadlineTemplates: safeJsonParse(college.deadline_templates, {}),
-        researchData,
-        acceptanceRate,
-        acceptance_rate: acceptanceRate,
-        // Rich data for cards
-        enrollment: researchData.enrollment || null,
-        ranking: collegeRanking,
-        averageGPA: requirements.averageGPA || null,
-        testScores: testScores,
-        graduationRates: researchData.graduationRates || null,
-        studentFacultyRatio: researchData.studentFacultyRatio || null
-      };
-    });
+    return this.findById(id);
   }
   
-  // Browse by major (Issue 7)
-  static findByMajor(majorName, filters = {}) {
+  /**
+   * Delete college
+   */
+  static delete(id) {
     const db = dbManager.getDatabase();
-    const searchPattern = `%${majorName}%`;
-    
-    let query = `
-      SELECT * FROM colleges 
-      WHERE (
-        major_categories LIKE ? 
-        OR programs LIKE ?
-        OR academic_strengths LIKE ?
-      )
-    `;
-    const params = [searchPattern, searchPattern, searchPattern];
-    
-    if (filters.country) {
-      query += ' AND country = ?';
-      params.push(filters.country);
-    }
-    
-    // Deduplicate
-    query += ' GROUP BY LOWER(name), LOWER(country)';
-    query += ' ORDER BY acceptance_rate ASC, name ASC';
-    
-    if (filters.limit) {
-      query += ' LIMIT ?';
-      params.push(filters.limit);
-    }
-    
-    if (filters.offset) {
-      query += ' OFFSET ?';
-      params.push(filters.offset);
-    }
-    
-    const stmt = db.prepare(query);
-    const colleges = stmt.all(...params);
-    
-    return colleges.map(college => ({
-      ...college,
-      programs: safeJsonParse(college.programs, []),
-      academicStrengths: safeJsonParse(college.academic_strengths, []),
-      majorCategories: safeJsonParse(college.major_categories, []),
-      acceptanceRate: normalizeAcceptanceRate(college.acceptance_rate),
-      acceptance_rate: normalizeAcceptanceRate(college.acceptance_rate)
-    }));
-  }
-  
-  // Get all unique majors with counts (Issue 7)
-  static getMajorsWithCounts() {
-    const db = dbManager.getDatabase();
-    const stmt = db.prepare('SELECT major_categories, programs FROM colleges WHERE major_categories IS NOT NULL OR programs IS NOT NULL');
-    const rows = stmt.all();
-    
-    const majorCounts = {};
-    
-    rows.forEach(row => {
-      const categories = safeJsonParse(row.major_categories, []);
-      const programs = safeJsonParse(row.programs, []);
-      
-      [...categories, ...programs].forEach(major => {
-        if (major && typeof major === 'string') {
-          majorCounts[major] = (majorCounts[major] || 0) + 1;
-        }
-      });
-    });
-    
-    // Convert to array sorted by count
-    return Object.entries(majorCounts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
-  }
-  
-  // Get total count of colleges (for pagination)
-  static getCount(filters = {}) {
-    const db = dbManager.getDatabase();
-    // Use delimiter to avoid collision (e.g., "New" + "York" vs "NewY" + "ork")
-    let query = "SELECT COUNT(DISTINCT LOWER(name) || '|' || LOWER(country)) as count FROM colleges WHERE 1=1";
-    const params = [];
-    
-    if (filters.country) {
-      query += ' AND country = ?';
-      params.push(filters.country);
-    }
-    
-    if (filters.type) {
-      query += ' AND type = ?';
-      params.push(filters.type);
-    }
-    
-    const stmt = db.prepare(query);
-    const result = stmt.get(...params);
-    return result.count;
+    const result = db.prepare('DELETE FROM colleges WHERE id = ?').run(id);
+    return result.changes > 0;
   }
 }
 
