@@ -11,6 +11,7 @@
     "seed:check": "node scripts/seedVerifiedData.js --check",
     "seed:legacy": "node scripts/seedMasterData.js",
     "seed:comprehensive": "node scripts/seedComprehensiveData.js",
+    "seed:majors": "node scripts/seedNormalizedMajors.js",
     "parse:colleges": "node scripts/parseCollegeData.js",
     "test": "jest --coverage",
     "lint": "eslint src/"
