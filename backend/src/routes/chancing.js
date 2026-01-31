@@ -17,6 +17,10 @@ const mlPredictionService = require('../services/mlPredictionService');
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
 
+// ML Configuration Constants
+const ML_CONTRIBUTION_SCALE_FACTOR = 10; // Factor to convert LDA coefficients to percentage impacts
+const OUTCOME_CONTRIBUTION_POINTS = 10;  // Points awarded for submitting an admission outcome
+
 /**
  * POST /api/chancing/calculate
  * Calculate admission chance for a specific college
@@ -75,8 +79,8 @@ router.post('/calculate', authenticate, async (req, res, next) => {
           confidenceLevel: mlResult.confidence_level,
           factors: mlResult.factors.map(f => ({
             name: f.factor,
-            impact: f.impact === 'positive' ? `+${Math.abs(f.contribution * 10).toFixed(0)}%` : 
-                   f.impact === 'negative' ? `-${Math.abs(f.contribution * 10).toFixed(0)}%` : '0%',
+            impact: f.impact === 'positive' ? `+${Math.abs(f.contribution * ML_CONTRIBUTION_SCALE_FACTOR).toFixed(0)}%` : 
+                   f.impact === 'negative' ? `-${Math.abs(f.contribution * ML_CONTRIBUTION_SCALE_FACTOR).toFixed(0)}%` : '0%',
             details: f.impact_level,
             positive: f.impact === 'positive'
           })),
@@ -1262,19 +1266,19 @@ router.post('/outcome', authenticate, async (req, res, next) => {
       db.prepare(`
         INSERT INTO user_outcome_contributions (user_id, training_data_id, college_id, decision, points_awarded)
         VALUES (?, ?, ?, ?, ?)
-      `).run(userId, trainingDataId, collegeId, decision, 10);
+      `).run(userId, trainingDataId, collegeId, decision, OUTCOME_CONTRIBUTION_POINTS);
       
       // Update or insert user stats
       db.prepare(`
         INSERT INTO user_ml_stats (user_id, total_contributions, verified_contributions, total_points, last_contribution_at)
-        VALUES (?, 1, 1, 10, CURRENT_TIMESTAMP)
+        VALUES (?, 1, 1, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(user_id) DO UPDATE SET
           total_contributions = total_contributions + 1,
           verified_contributions = verified_contributions + 1,
-          total_points = total_points + 10,
+          total_points = total_points + ?,
           last_contribution_at = CURRENT_TIMESTAMP,
           updated_at = CURRENT_TIMESTAMP
-      `).run(userId);
+      `).run(userId, OUTCOME_CONTRIBUTION_POINTS, OUTCOME_CONTRIBUTION_POINTS);
     } catch (statsError) {
       // Non-critical - contribution tracking is optional
       logger.debug('Stats tracking failed:', statsError.message);
@@ -1287,7 +1291,7 @@ router.post('/outcome', authenticate, async (req, res, next) => {
       message: 'Thank you for contributing! Your outcome helps improve predictions for everyone.',
       data: {
         trainingDataId: trainingDataId,
-        pointsEarned: 10,
+        pointsEarned: OUTCOME_CONTRIBUTION_POINTS,
         decision: decision
       }
     });

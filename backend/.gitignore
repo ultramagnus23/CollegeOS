@@ -42,3 +42,17 @@ dist-ssr
 *.sw?
 backend/.env
 *.envlogs/
+
+# Test coverage
+coverage/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# ML Service
+ml-service/venv/
+ml-service/models/*.joblib
+ml-service/data/

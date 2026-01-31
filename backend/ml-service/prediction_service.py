@@ -333,7 +333,7 @@ class PredictionService:
             'factors': factors,
             'model_info': {
                 'note': 'ML model not available. Using rule-based estimation.',
-                'reason': 'Insufficient training data for this college'
+                'reason': f'Insufficient training data. Needs at least {config.MIN_SAMPLES_FOR_TRAINING} samples with {config.MIN_SAMPLES_PER_CLASS} accepted and {config.MIN_SAMPLES_PER_CLASS} rejected outcomes.'
             }
         }
 

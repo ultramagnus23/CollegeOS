@@ -81,7 +81,7 @@ class LDATrainer:
             metadata = self.load_model_metadata(college_id)
             if metadata:
                 days_old = (datetime.now() - datetime.fromisoformat(metadata['trained_at'])).days
-                if days_old < 30:  # Model is less than 30 days old
+                if days_old < config.MODEL_FRESHNESS_DAYS:
                     return {
                         'success': False,
                         'message': f'Model is only {days_old} days old. Use force=True to retrain.',
