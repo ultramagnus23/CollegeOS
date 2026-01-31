@@ -1,5 +1,9 @@
 const dbManager = require('../config/database');
 
+// Pagination constants
+const DEFAULT_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = 500;
+
 // Helper to normalize acceptance rate (ensure it's in decimal form 0-1)
 function normalizeAcceptanceRate(rate) {
   if (rate === null || rate === undefined) return null;
@@ -301,8 +305,8 @@ class College {
       query += 'name ASC';
     }
     
-    // Pagination
-    const limit = Math.min(filters.limit || 100, 500); // Max 500 per page
+    // Pagination using constants
+    const limit = Math.min(filters.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
     const offset = filters.offset || 0;
     query += ` LIMIT ? OFFSET ?`;
     params.push(limit, offset);
@@ -379,23 +383,21 @@ class College {
    */
   static getCountByRegion(region) {
     const db = dbManager.getDatabase();
-    let query;
     
     if (region === 'Europe') {
-      query = `SELECT COUNT(*) as count FROM colleges 
-               WHERE country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`;
+      return db.prepare(`SELECT COUNT(*) as count FROM colleges 
+               WHERE country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`).get().count;
     } else if (region === 'United States') {
-      query = `SELECT COUNT(*) as count FROM colleges 
-               WHERE country IN ('United States', 'USA')`;
+      return db.prepare(`SELECT COUNT(*) as count FROM colleges 
+               WHERE country IN ('United States', 'USA')`).get().count;
     } else if (region === 'United Kingdom') {
-      query = `SELECT COUNT(*) as count FROM colleges 
-               WHERE country IN ('United Kingdom', 'UK')`;
-    } else {
-      query = `SELECT COUNT(*) as count FROM colleges WHERE country = '${region}'`;
+      return db.prepare(`SELECT COUNT(*) as count FROM colleges 
+               WHERE country IN ('United Kingdom', 'UK')`).get().count;
+    } else if (region === 'India') {
+      return db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country = 'India'`).get().count;
     }
-    
-    const result = db.prepare(query).get();
-    return result.count;
+    // For any other value (shouldn't happen with our 4 regions), use parameterized query
+    return db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country = ?`).get(region).count;
   }
   
   /**

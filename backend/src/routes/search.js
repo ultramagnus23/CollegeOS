@@ -183,19 +183,21 @@ router.get('/filters', async (req, res) => {
       { value: 'Europe', label: 'Europe' }
     ];
     
-    // Add counts
+    // Add counts using safe queries
     countryFilters.forEach(filter => {
-      let query;
+      let result;
       if (filter.value === 'Europe') {
-        query = `SELECT COUNT(*) as count FROM colleges WHERE country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`;
+        result = db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`).get();
       } else if (filter.value === 'United States') {
-        query = `SELECT COUNT(*) as count FROM colleges WHERE country IN ('United States', 'USA')`;
+        result = db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country IN ('United States', 'USA')`).get();
       } else if (filter.value === 'United Kingdom') {
-        query = `SELECT COUNT(*) as count FROM colleges WHERE country IN ('United Kingdom', 'UK')`;
+        result = db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country IN ('United Kingdom', 'UK')`).get();
+      } else if (filter.value === 'India') {
+        result = db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country = 'India'`).get();
       } else {
-        query = `SELECT COUNT(*) as count FROM colleges WHERE country = '${filter.value}'`;
+        // Use parameterized query for any other value
+        result = db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country = ?`).get(filter.value);
       }
-      const result = db.prepare(query).get();
       filter.count = result.count;
     });
 
@@ -285,7 +287,8 @@ router.post('/log', authenticate, async (req, res, next) => {
 router.get('/recent', authenticate, async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const limit = Math.min(parseInt(req.query.limit) || 10, 20);
+    const parsedLimit = parseInt(req.query.limit);
+    const limit = Math.min(isNaN(parsedLimit) ? 10 : parsedLimit, 20);
     
     const db = dbManager.getDatabase();
     
