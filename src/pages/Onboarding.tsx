@@ -6,6 +6,17 @@ import { ArrowRight, ArrowLeft, Check, Target, GraduationCap, BookOpen, Trophy, 
 import { useNavigate } from 'react-router-dom';
 import { StudentProfile } from '../types';
 
+// Structured activity type for type-safe activity handling
+interface StructuredActivity {
+  name: string;
+  type: string;
+  tier: number;
+  yearsInvolved: number;
+  hoursPerWeek: number;
+  leadership: string;
+  achievements: string;
+}
+
 interface StudentOnboardingProps {
   onComplete: (profile: StudentProfile) => void;
 }
@@ -428,43 +439,10 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
 
       case 5:
         return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Star className="w-8 h-8 text-pink-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">Beyond Academics</h2>
-              <p className="text-gray-600 mt-2">Tell us about your extracurriculars</p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Extracurricular Activities
-                </label>
-                <textarea
-                  value={studentData.activities.join('\n')}
-                  onChange={(e) => updateData('activities', e.target.value.split('\n'))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                  rows={4}
-                  placeholder="List your activities (one per line)&#10;e.g., Student Council President&#10;Debate Team Captain&#10;Volunteer at NGO"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Awards & Achievements
-                </label>
-                <textarea
-                  value={studentData.awards.join('\n')}
-                  onChange={(e) => updateData('awards', e.target.value.split('\n'))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                  rows={4}
-                  placeholder="List your awards (one per line)&#10;e.g., National Science Olympiad Gold Medal&#10;Best Delegate at MUN&#10;State Level Chess Champion"
-                />
-              </div>
-            </div>
-          </div>
+          <ActivitiesOnboardingStep
+            activities={studentData.activities}
+            onActivitiesChange={(activities) => updateData('activities', activities)}
+          />
         );
 
       case 6:
@@ -576,7 +554,15 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       case 4:
         return studentData.preferredCountries.length > 0 && studentData.budgetRange;
       case 5:
-        return true;
+        // Require 2-10 structured activities
+        const validActivities = Array.isArray(studentData.activities) 
+          ? studentData.activities.filter((a: StructuredActivity | unknown) => 
+              a && typeof a === 'object' && 'name' in a && 
+              typeof (a as StructuredActivity).name === 'string' && 
+              (a as StructuredActivity).name.trim().length > 0
+            )
+          : [];
+        return validActivities.length >= 2;
       case 6:
         return studentData.careerGoals.trim().length > 0;
       case 7:
@@ -644,6 +630,299 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           Need help? <button className="text-blue-600 hover:underline">Contact Support</button>
         </div>
       </div>
+    </div>
+  );
+};
+
+/* =========================
+   Activities Onboarding Step Component
+   Structured activity input with tier system and validation
+========================= */
+
+const ACTIVITY_TYPES = [
+  'Academic Club',
+  'Athletics/Sports',
+  'Arts/Music/Drama',
+  'Community Service',
+  'Research/Science',
+  'Student Government',
+  'Debate/Speech',
+  'Journalism/Publication',
+  'Religious/Cultural',
+  'Work Experience',
+  'Internship',
+  'Entrepreneurship',
+  'Other'
+];
+
+const TIER_DESCRIPTIONS = {
+  1: { name: 'National/International', description: 'National-level competitions, published research, international recognition', color: 'bg-yellow-500' },
+  2: { name: 'State/Regional', description: 'State-level awards, regional leadership, significant community impact', color: 'bg-gray-400' },
+  3: { name: 'School Leadership', description: 'Club president, team captain, significant school role', color: 'bg-amber-600' },
+  4: { name: 'Participation', description: 'Club member, general participation, personal hobbies', color: 'bg-gray-300' }
+};
+
+const emptyActivity: StructuredActivity = {
+  name: '',
+  type: '',
+  tier: 4,
+  yearsInvolved: 1,
+  hoursPerWeek: 2,
+  leadership: '',
+  achievements: ''
+};
+
+interface ActivitiesOnboardingStepProps {
+  activities: StructuredActivity[];
+  onActivitiesChange: (activities: StructuredActivity[]) => void;
+}
+
+const ActivitiesOnboardingStep: React.FC<ActivitiesOnboardingStepProps> = ({ activities, onActivitiesChange }) => {
+  // Ensure activities is an array of structured objects
+  const structuredActivities: StructuredActivity[] = Array.isArray(activities) 
+    ? activities.filter((a): a is StructuredActivity => a && typeof a === 'object' && 'name' in a)
+    : [];
+  
+  const [editingIndex, setEditingIndex] = React.useState<number | null>(
+    structuredActivities.length === 0 ? 0 : null
+  );
+  const [currentActivity, setCurrentActivity] = React.useState<StructuredActivity>(emptyActivity);
+
+  // Initialize with one empty activity if none exist - use ref to track initialization
+  const initializedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!initializedRef.current && structuredActivities.length === 0) {
+      initializedRef.current = true;
+      onActivitiesChange([emptyActivity]);
+      setEditingIndex(0);
+    }
+  }, [structuredActivities.length, onActivitiesChange]);
+
+  const handleAddActivity = () => {
+    if (structuredActivities.length >= 10) return;
+    const newActivities = [...structuredActivities, { ...emptyActivity }];
+    onActivitiesChange(newActivities);
+    setEditingIndex(newActivities.length - 1);
+    setCurrentActivity({ ...emptyActivity });
+  };
+
+  const handleRemoveActivity = (index: number) => {
+    if (structuredActivities.length <= 1) return;
+    const newActivities = structuredActivities.filter((_, i) => i !== index);
+    onActivitiesChange(newActivities);
+    setEditingIndex(null);
+  };
+
+  const handleSaveActivity = () => {
+    if (editingIndex === null) return;
+    const newActivities = [...structuredActivities];
+    newActivities[editingIndex] = currentActivity;
+    onActivitiesChange(newActivities);
+    setEditingIndex(null);
+  };
+
+  const handleEditActivity = (index: number) => {
+    setCurrentActivity(structuredActivities[index]);
+    setEditingIndex(index);
+  };
+
+  const validCount = structuredActivities.filter(a => a.name.trim().length > 0).length;
+  const minRequired = 2;
+  const maxAllowed = 10;
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Star className="w-8 h-8 text-pink-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900">Extracurricular Activities</h2>
+        <p className="text-gray-600 mt-2">Add 2-10 structured activities for your profile</p>
+      </div>
+
+      {/* Progress indicator */}
+      <div className={`p-4 rounded-lg ${validCount >= minRequired ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'}`}>
+        <div className="flex items-center justify-between">
+          <span className="font-medium">
+            {validCount >= minRequired ? '✅' : '⚠️'} {validCount} of {minRequired} required activities added
+          </span>
+          <span className="text-sm text-gray-500">{validCount}/{maxAllowed} total</span>
+        </div>
+        {validCount < minRequired && (
+          <p className="text-sm text-yellow-700 mt-1">Please add at least {minRequired} activities to continue</p>
+        )}
+      </div>
+
+      {/* Activity Form (when editing) */}
+      {editingIndex !== null && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 space-y-4">
+          <h3 className="font-semibold text-blue-900">
+            {currentActivity.name ? 'Edit Activity' : 'Add New Activity'}
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Activity Name *</label>
+              <input
+                type="text"
+                value={currentActivity.name}
+                onChange={(e) => setCurrentActivity({ ...currentActivity, name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+                placeholder="e.g., Model United Nations"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Activity Type</label>
+              <select
+                value={currentActivity.type}
+                onChange={(e) => setCurrentActivity({ ...currentActivity, type: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              >
+                <option value="">Select type</option>
+                {ACTIVITY_TYPES.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tier Rating *</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {Object.entries(TIER_DESCRIPTIONS).map(([tier, info]) => (
+                <button
+                  key={tier}
+                  type="button"
+                  onClick={() => setCurrentActivity({ ...currentActivity, tier: parseInt(tier) })}
+                  className={`text-left p-3 rounded-lg border-2 transition ${
+                    currentActivity.tier === parseInt(tier)
+                      ? 'border-pink-500 bg-pink-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded-full ${info.color}`} />
+                    <span className="font-medium">Tier {tier}: {info.name}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{info.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Years Involved</label>
+              <input
+                type="number"
+                min="1"
+                max="4"
+                value={currentActivity.yearsInvolved}
+                onChange={(e) => setCurrentActivity({ ...currentActivity, yearsInvolved: parseInt(e.target.value) || 1 })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Hours per Week</label>
+              <input
+                type="number"
+                min="1"
+                max="40"
+                value={currentActivity.hoursPerWeek}
+                onChange={(e) => setCurrentActivity({ ...currentActivity, hoursPerWeek: parseInt(e.target.value) || 1 })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Leadership Position/Role</label>
+            <input
+              type="text"
+              value={currentActivity.leadership}
+              onChange={(e) => setCurrentActivity({ ...currentActivity, leadership: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              placeholder="e.g., President, Captain, Founder"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Achievements/Impact</label>
+            <textarea
+              value={currentActivity.achievements}
+              onChange={(e) => setCurrentActivity({ ...currentActivity, achievements: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              rows={2}
+              placeholder="e.g., Won state championship, Raised $5000 for charity"
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleSaveActivity}
+              disabled={!currentActivity.name.trim()}
+              className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50"
+            >
+              Save Activity
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingIndex(null)}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Activities List */}
+      <div className="space-y-3">
+        {structuredActivities.map((activity, index) => (
+          activity.name.trim() && editingIndex !== index ? (
+            <div key={index} className="flex items-center justify-between p-4 bg-white border rounded-lg hover:shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className={`w-3 h-3 rounded-full ${TIER_DESCRIPTIONS[activity.tier as keyof typeof TIER_DESCRIPTIONS]?.color || 'bg-gray-300'}`} />
+                <div>
+                  <h4 className="font-medium">{activity.name}</h4>
+                  <p className="text-sm text-gray-500">
+                    {activity.type && `${activity.type} • `}
+                    {activity.leadership && `${activity.leadership} • `}
+                    {activity.yearsInvolved} year(s), {activity.hoursPerWeek} hrs/week
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleEditActivity(index)}
+                  className="text-blue-600 hover:text-blue-800 text-sm"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleRemoveActivity(index)}
+                  className="text-red-600 hover:text-red-800 text-sm"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ) : null
+        ))}
+      </div>
+
+      {/* Add button */}
+      {structuredActivities.length < maxAllowed && editingIndex === null && (
+        <button
+          type="button"
+          onClick={handleAddActivity}
+          className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-pink-400 hover:text-pink-600 transition"
+        >
+          + Add Another Activity
+        </button>
+      )}
     </div>
   );
 };
