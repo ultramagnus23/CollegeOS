@@ -13,6 +13,7 @@ MIN_SAMPLES_PER_CLASS = int(os.environ.get('MIN_SAMPLES_PER_CLASS', 10))
 MIN_ACCURACY_THRESHOLD = float(os.environ.get('MIN_ACCURACY_THRESHOLD', 0.55))
 VALIDATION_SPLIT = float(os.environ.get('VALIDATION_SPLIT', 0.2))
 CV_FOLDS = int(os.environ.get('CV_FOLDS', 5))
+MODEL_FRESHNESS_DAYS = int(os.environ.get('MODEL_FRESHNESS_DAYS', 30))  # Days before model considered stale
 
 # Data quality thresholds
 MIN_CONFIDENCE_SCORE = float(os.environ.get('MIN_CONFIDENCE_SCORE', 0.5))

@@ -174,8 +174,6 @@ class DataProcessor:
         if sat is not None:
             if sat < 400 or sat > 1600:
                 reasons.append(f'SAT score out of range: {sat}')
-            if sat % 10 != 0:
-                reasons.append('SAT score not divisible by 10')
         
         # ACT checks
         act = record.get('act_composite')
