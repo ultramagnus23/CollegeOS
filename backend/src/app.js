@@ -90,11 +90,29 @@ const PORT = config.port;
 const server = app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT} in ${config.nodeEnv} mode`);
   logger.info(`Database: ${config.database.path}`);
+  
+  // Start ML retraining jobs (only in production or if explicitly enabled)
+  if (config.nodeEnv === 'production' || process.env.ENABLE_ML_JOBS === 'true') {
+    try {
+      const mlRetrainingJob = require('./jobs/mlRetraining');
+      mlRetrainingJob.start();
+      logger.info('ML retraining jobs started');
+    } catch (error) {
+      logger.warn('ML retraining jobs failed to start:', error.message);
+    }
+  }
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM signal received: closing HTTP server');
+  
+  // Stop ML jobs
+  try {
+    const mlRetrainingJob = require('./jobs/mlRetraining');
+    mlRetrainingJob.stop();
+  } catch (e) { /* ignore */ }
+  
   server.close(() => {
     logger.info('HTTP server closed');
     dbManager.close();
@@ -104,6 +122,13 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   logger.info('SIGINT signal received: closing HTTP server');
+  
+  // Stop ML jobs
+  try {
+    const mlRetrainingJob = require('./jobs/mlRetraining');
+    mlRetrainingJob.stop();
+  } catch (e) { /* ignore */ }
+  
   server.close(() => {
     logger.info('HTTP server closed');
     dbManager.close();
