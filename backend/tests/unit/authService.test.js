@@ -1,4 +1,4 @@
-const AuthService = require('/../src/services/authService');
+const AuthService = require('../../src/services/authService');
 const User = require('../../src/models/User');
 
 describe('AuthService', () => {

@@ -1,24 +1,60 @@
+/**
+ * Rate Limiting Middleware
+ * Protects against brute-force attacks and API abuse
+ */
 const rateLimit = require('express-rate-limit');
-const config = require('../config/env');
+const securityConfig = require('../config/security');
+const logger = require('../utils/logger');
 
+// Log rate limit hits for security monitoring
+const rateLimitHandler = (req, res, options) => {
+  logger.warn('Rate limit exceeded', {
+    ip: req.ip,
+    path: req.path,
+    method: req.method,
+    userAgent: req.get('User-Agent'),
+  });
+  res.status(429).json(options.message);
+};
+
+// General API rate limiter (100 requests per 15 minutes)
 const apiLimiter = rateLimit({
-  windowMs: config.rateLimiting.windowMs,
-  max: config.rateLimiting.maxRequests,
-  message: {
-    success: false,
-    message: 'Too many requests, please try again later'
-  },
-  standardHeaders: true,
-  legacyHeaders: false
+  ...securityConfig.rateLimits.general,
+  handler: rateLimitHandler,
 });
 
+// Strict auth rate limiter (10 attempts per hour)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
-  message: {
-    success: false,
-    message: 'Too many authentication attempts, please try again later'
-  }
+  ...securityConfig.rateLimits.auth,
+  handler: rateLimitHandler,
 });
 
-module.exports = { apiLimiter, authLimiter };
+// Very strict limiter for sensitive operations (5 per hour)
+const sensitiveLimiter = rateLimit({
+  ...securityConfig.rateLimits.sensitive,
+  handler: rateLimitHandler,
+});
+
+// Per-route rate limiting for specific endpoints
+const createRouteLimiter = (windowMs, maxRequests, message) => {
+  return rateLimit({
+    windowMs,
+    max: maxRequests,
+    message: {
+      success: false,
+      message: message || 'Too many requests for this endpoint',
+      code: 'ROUTE_RATE_LIMIT_EXCEEDED',
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.ip,
+    handler: rateLimitHandler,
+  });
+};
+
+module.exports = {
+  apiLimiter,
+  authLimiter,
+  sensitiveLimiter,
+  createRouteLimiter,
+};

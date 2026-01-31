@@ -1,18 +1,37 @@
 const Joi = require('joi');
 const { COUNTRIES, APPLICATION_STATUS, ESSAY_STATUS } = require('../config/constants');
+const securityConfig = require('../config/security');
+
+// Custom password validation with security requirements
+const passwordSchema = Joi.string()
+  .min(securityConfig.password.minLength)
+  .max(securityConfig.password.maxLength)
+  .pattern(securityConfig.password.pattern)
+  .message(securityConfig.password.message);
+
+// Email with stricter validation
+const emailSchema = Joi.string()
+  .email({ tlds: { allow: true } })
+  .lowercase()
+  .max(254)
+  .required();
 
 const validators = {
-  // User registration
+  // User registration with strong password requirements
   registerUser: Joi.object({
-    email: Joi.string().email().required(),
-    password: Joi.string().min(8).required(),
-    fullName: Joi.string().min(2).max(100).required(),
+    email: emailSchema,
+    password: passwordSchema.required(),
+    fullName: Joi.string()
+      .min(2)
+      .max(100)
+      .pattern(/^[a-zA-Z\s'-]+$/) // Only allow letters, spaces, hyphens, apostrophes
+      .required(),
     country: Joi.string().valid(...COUNTRIES).required()
   }),
   
   // User login
   loginUser: Joi.object({
-    email: Joi.string().email().required(),
+    email: emailSchema,
     password: Joi.string().required()
   }),
   

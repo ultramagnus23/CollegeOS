@@ -2,10 +2,17 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const config = require('./config/env');
+const securityConfig = require('./config/security');
 const dbManager = require('./config/database');
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
+const { 
+  requestIdMiddleware, 
+  securityValidation, 
+  securityLogger,
+  validateContentType 
+} = require('./middleware/security');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -23,29 +30,49 @@ const intelligentSearchRoutes = require('./routes/intelligentSearch');
 const chatbotRoutes = require('./routes/chatbot');
 const chancingRoutes = require('./routes/chancing');
 const mlRoutes = require('./routes/ml');
+
 // Create Express app
 const app = express();
+
+// Trust proxy for proper IP detection behind reverse proxies
+app.set('trust proxy', 1);
 
 // Initialize database
 dbManager.initialize();
 dbManager.runMigrations();
 
-// Security middleware
-app.use(helmet());
+// ===== SECURITY MIDDLEWARE (Order matters!) =====
 
-// CORS configuration
+// Add request ID for tracing
+app.use(requestIdMiddleware);
 
-app.use(cors({
-  origin: 'http://localhost:8080',
-  credentials: true
+// Security headers with enhanced Helmet configuration
+// Note: CSP is enabled in all environments for better security
+app.use(helmet({
+  contentSecurityPolicy: securityConfig.helmet.contentSecurityPolicy,
+  crossOriginEmbedderPolicy: false, // Needed for some integrations
+  hsts: securityConfig.helmet.hsts,
+  noSniff: true,
+  referrerPolicy: securityConfig.helmet.referrerPolicy,
 }));
 
+// CORS with dynamic origin validation
+app.use(cors(securityConfig.cors));
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Security logging
+app.use(securityLogger);
 
-// Rate limiting
+// Body parsing with strict size limits
+app.use(express.json({ limit: securityConfig.requestLimits.json }));
+app.use(express.urlencoded({ extended: true, limit: securityConfig.requestLimits.urlencoded }));
+
+// Validate Content-Type
+app.use(validateContentType);
+
+// Input security validation (injection detection)
+app.use(securityValidation);
+
+// Rate limiting for all API routes
 app.use('/api/', apiLimiter);
 
 // Health check
