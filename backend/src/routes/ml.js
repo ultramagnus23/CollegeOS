@@ -471,4 +471,46 @@ router.get('/stats', authenticate, async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/ml/system-status
+ * Get comprehensive ML system status including model training
+ */
+router.get('/system-status', authenticate, async (req, res, next) => {
+  try {
+    const mlRetrainingJob = require('../jobs/mlRetraining');
+    const status = await mlRetrainingJob.getSystemStatus();
+    
+    res.json({
+      success: true,
+      data: status
+    });
+  } catch (error) {
+    logger.error('ML system status failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * POST /api/ml/trigger-retraining
+ * Manually trigger a model retraining cycle (admin only for production)
+ */
+router.post('/trigger-retraining', authenticate, async (req, res, next) => {
+  try {
+    const mlRetrainingJob = require('../jobs/mlRetraining');
+    
+    // Start retraining in background
+    mlRetrainingJob.runRetrainingCycle().catch(err => {
+      logger.error('Background retraining failed:', err);
+    });
+    
+    res.json({
+      success: true,
+      message: 'Retraining cycle started in background'
+    });
+  } catch (error) {
+    logger.error('Trigger retraining failed:', error);
+    next(error);
+  }
+});
+
 module.exports = router;

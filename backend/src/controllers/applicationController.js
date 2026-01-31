@@ -153,19 +153,29 @@ class ApplicationController {
       logger.info(`[${requestId}] PUT /applications/${id}`);
       logger.debug(`[${requestId}] Update data keys: ${Object.keys(data || {}).join(', ')}`);
       
-      // Get old application to check status change
+      // Get old application to check ownership and status change
       const oldApplication = Application.findById(parseInt(id));
       
-      const application = Application.update(parseInt(id), data);
-      
-      if (!application) {
-        logger.warn(`[${requestId}] Application ${id} not found or update failed`);
+      if (!oldApplication) {
+        logger.warn(`[${requestId}] Application ${id} not found`);
         return res.status(404).json({
           success: false,
           message: 'Application not found',
           errorCode: 'APPLICATION_NOT_FOUND'
         });
       }
+      
+      // SECURITY: Verify user owns this application
+      if (oldApplication.user_id !== userId) {
+        logger.warn(`[${requestId}] User ${userId} attempted to access application ${id} owned by user ${oldApplication.user_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied',
+          errorCode: 'ACCESS_DENIED'
+        });
+      }
+      
+      const application = Application.update(parseInt(id), data);
       
       logger.info(`[${requestId}] Application ${id} updated successfully`);
       
@@ -249,8 +259,30 @@ class ApplicationController {
     
     try {
       const { id } = req.params;
+      const userId = req.user?.userId;
       
       logger.info(`[${requestId}] DELETE /applications/${id}`);
+      
+      // SECURITY: Verify user owns this application
+      const application = Application.findById(parseInt(id));
+      
+      if (!application) {
+        logger.warn(`[${requestId}] Application ${id} not found`);
+        return res.status(404).json({
+          success: false,
+          message: 'Application not found',
+          errorCode: 'APPLICATION_NOT_FOUND'
+        });
+      }
+      
+      if (application.user_id !== userId) {
+        logger.warn(`[${requestId}] User ${userId} attempted to delete application ${id} owned by user ${application.user_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied',
+          errorCode: 'ACCESS_DENIED'
+        });
+      }
       
       Application.delete(parseInt(id));
       
@@ -272,8 +304,30 @@ class ApplicationController {
     
     try {
       const { id } = req.params;
+      const userId = req.user?.userId;
       
       logger.info(`[${requestId}] GET /applications/${id}/timeline`);
+      
+      // SECURITY: Verify user owns this application
+      const application = Application.findById(parseInt(id));
+      
+      if (!application) {
+        logger.warn(`[${requestId}] Application ${id} not found`);
+        return res.status(404).json({
+          success: false,
+          message: 'Application not found',
+          errorCode: 'APPLICATION_NOT_FOUND'
+        });
+      }
+      
+      if (application.user_id !== userId) {
+        logger.warn(`[${requestId}] User ${userId} attempted to access timeline for application ${id} owned by user ${application.user_id}`);
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied',
+          errorCode: 'ACCESS_DENIED'
+        });
+      }
       
       const timeline = Application.getTimeline(parseInt(id));
       

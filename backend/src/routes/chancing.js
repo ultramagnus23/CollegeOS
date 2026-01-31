@@ -1,5 +1,5 @@
 // backend/src/routes/chancing.js
-// API routes for admission chancing calculator
+// API routes for admission chancing calculator with LDA ML integration
 
 const express = require('express');
 const router = express.Router();
@@ -13,15 +13,22 @@ const {
 } = require('../services/chancingCalculator');
 const StudentProfile = require('../models/StudentProfile');
 const College = require('../models/College');
+const mlPredictionService = require('../services/mlPredictionService');
+const dbManager = require('../config/database');
 const logger = require('../utils/logger');
+
+// ML Configuration Constants
+const ML_CONTRIBUTION_SCALE_FACTOR = 10; // Factor to convert LDA coefficients to percentage impacts
+const OUTCOME_CONTRIBUTION_POINTS = 10;  // Points awarded for submitting an admission outcome
 
 /**
  * POST /api/chancing/calculate
  * Calculate admission chance for a specific college
+ * Uses ML-based LDA prediction when available, falls back to rule-based
  */
 router.post('/calculate', authenticate, async (req, res, next) => {
   try {
-    const { collegeId } = req.body;
+    const { collegeId, useML = true } = req.body;
     
     if (!collegeId) {
       return res.status(400).json({
@@ -51,18 +58,69 @@ router.post('/calculate', authenticate, async (req, res, next) => {
       });
     }
     
-    // Determine which calculator to use
     const country = college.location_country || college.country || 'USA';
     let chancing;
+    let predictionType = 'rule_based';
     
-    if (country === 'India' && (profile.jee_main_percentile || profile.jee_advanced_rank)) {
-      chancing = calculateJEEChance(profile, college);
-    } else if (country === 'UK' && (profile.predicted_a_levels || profile.ib_predicted_score)) {
-      chancing = calculateUKChance(profile, college);
-    } else if (country === 'Germany' && profile.abitur_grade) {
-      chancing = calculateGermanChance(profile, college);
-    } else {
-      chancing = calculateAdmissionChance(profile, college);
+    // Try ML prediction first if enabled
+    if (useML) {
+      const mlResult = await mlPredictionService.predict(
+        profile, 
+        profile.activities || [], 
+        college
+      );
+      
+      if (mlResult.success && mlResult.prediction_type === 'ml_lda') {
+        // Use ML prediction
+        chancing = {
+          percentage: mlResult.percentage,
+          category: mlResult.category,
+          confidence: mlResult.confidence,
+          confidenceLevel: mlResult.confidence_level,
+          factors: mlResult.factors.map(f => ({
+            name: f.factor,
+            impact: f.impact === 'positive' ? `+${Math.abs(f.contribution * ML_CONTRIBUTION_SCALE_FACTOR).toFixed(0)}%` : 
+                   f.impact === 'negative' ? `-${Math.abs(f.contribution * ML_CONTRIBUTION_SCALE_FACTOR).toFixed(0)}%` : '0%',
+            details: f.impact_level,
+            positive: f.impact === 'positive'
+          })),
+          modelInfo: mlResult.model_info
+        };
+        predictionType = 'ml_lda';
+      }
+    }
+    
+    // Fall back to rule-based if ML not available/successful
+    if (!chancing) {
+      if (country === 'India' && (profile.jee_main_percentile || profile.jee_advanced_rank)) {
+        chancing = calculateJEEChance(profile, college);
+      } else if (country === 'UK' && (profile.predicted_a_levels || profile.ib_predicted_score)) {
+        chancing = calculateUKChance(profile, college);
+      } else if (country === 'Germany' && profile.abitur_grade) {
+        chancing = calculateGermanChance(profile, college);
+      } else {
+        chancing = calculateAdmissionChance(profile, college);
+      }
+    }
+    
+    // Log prediction for analytics
+    try {
+      const db = dbManager.getDatabase();
+      db.prepare(`
+        INSERT INTO prediction_audit_log (user_id, college_id, prediction_type, probability, category, confidence, factors_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        req.user.userId,
+        collegeId,
+        predictionType,
+        chancing.percentage / 100,
+        chancing.category,
+        chancing.confidence || null,
+        JSON.stringify(chancing.factors || [])
+      );
+    } catch (auditError) {
+      // Non-critical - don't fail if audit logging fails
+      logger.debug('Prediction audit log failed:', auditError.message);
     }
     
     res.json({
@@ -76,6 +134,7 @@ router.post('/calculate', authenticate, async (req, res, next) => {
           acceptanceRate: college.acceptance_rate
         },
         chancing: chancing,
+        predictionType: predictionType,
         profile: {
           gpa: profile.gpa_unweighted || profile.gpa_weighted,
           sat: profile.sat_total,
@@ -975,6 +1034,385 @@ router.get('/region/:region', authenticate, async (req, res, next) => {
     });
   } catch (error) {
     logger.error('Get region info failed:', error);
+    next(error);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ML-BASED CHANCING ROUTES
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * GET /api/chancing/ml/status
+ * Get ML prediction service status and statistics
+ */
+router.get('/ml/status', authenticate, async (req, res, next) => {
+  try {
+    const stats = await mlPredictionService.getStats();
+    
+    res.json({
+      success: true,
+      data: {
+        serviceAvailable: stats.available,
+        stats: stats.stats || null,
+        config: stats.config || null
+      }
+    });
+  } catch (error) {
+    logger.error('ML status check failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * GET /api/chancing/ml/models
+ * Get list of available ML models
+ */
+router.get('/ml/models', authenticate, async (req, res, next) => {
+  try {
+    const models = await mlPredictionService.listModels();
+    
+    res.json({
+      success: true,
+      data: {
+        models: models,
+        count: models.length
+      }
+    });
+  } catch (error) {
+    logger.error('ML models list failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * GET /api/chancing/ml/model/:collegeId
+ * Get ML model information for a specific college
+ */
+router.get('/ml/model/:collegeId', authenticate, async (req, res, next) => {
+  try {
+    const collegeId = parseInt(req.params.collegeId);
+    const modelInfo = await mlPredictionService.getModelInfo(collegeId);
+    
+    if (!modelInfo) {
+      return res.json({
+        success: true,
+        data: {
+          hasModel: false,
+          message: 'No ML model available for this college. Using rule-based predictions.'
+        }
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        hasModel: true,
+        model: modelInfo
+      }
+    });
+  } catch (error) {
+    logger.error('ML model info failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * POST /api/chancing/ml/batch
+ * Get ML predictions for multiple colleges
+ */
+router.post('/ml/batch', authenticate, async (req, res, next) => {
+  try {
+    const { collegeIds } = req.body;
+    
+    if (!Array.isArray(collegeIds) || collegeIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'collegeIds must be a non-empty array'
+      });
+    }
+    
+    // Get student profile
+    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    
+    if (!profile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please complete your student profile first',
+        code: 'PROFILE_REQUIRED'
+      });
+    }
+    
+    // Get colleges
+    const MAX_BATCH = 50;
+    const limitedIds = collegeIds.slice(0, MAX_BATCH);
+    const colleges = limitedIds.map(id => College.findById(id)).filter(c => c);
+    
+    // Get ML predictions
+    const result = await mlPredictionService.batchPredict(
+      profile,
+      profile.activities || [],
+      colleges
+    );
+    
+    res.json({
+      success: true,
+      data: {
+        predictions: result.predictions || [],
+        predictionType: result.prediction_type || 'ml_lda',
+        count: (result.predictions || []).length
+      }
+    });
+  } catch (error) {
+    logger.error('ML batch prediction failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * POST /api/chancing/outcome
+ * Submit admission outcome for ML training
+ * This is the user feedback loop for continuous model improvement
+ */
+router.post('/outcome', authenticate, async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const {
+      collegeId,
+      decision,
+      applicationYear,
+      major
+    } = req.body;
+    
+    if (!collegeId || !decision) {
+      return res.status(400).json({
+        success: false,
+        message: 'collegeId and decision are required'
+      });
+    }
+    
+    const validDecisions = ['accepted', 'rejected', 'waitlisted', 'deferred'];
+    if (!validDecisions.includes(decision)) {
+      return res.status(400).json({
+        success: false,
+        message: `decision must be one of: ${validDecisions.join(', ')}`
+      });
+    }
+    
+    // Get user's profile
+    const profile = StudentProfile.getCompleteProfile(userId);
+    if (!profile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Profile required to submit outcome'
+      });
+    }
+    
+    // Get college
+    const college = College.findById(collegeId);
+    if (!college) {
+      return res.status(404).json({
+        success: false,
+        message: 'College not found'
+      });
+    }
+    
+    const db = dbManager.getDatabase();
+    
+    // Count activity tiers
+    const activities = profile.activities || [];
+    const tier1Count = activities.filter(a => a.tier_rating === 1).length;
+    const tier2Count = activities.filter(a => a.tier_rating === 2).length;
+    const tier3Count = activities.filter(a => a.tier_rating === 3 || a.tier_rating === 4).length;
+    
+    // Insert training data with high confidence (user-verified)
+    const stmt = db.prepare(`
+      INSERT INTO ml_training_data (
+        student_id, college_id, gpa, sat_total, act_composite,
+        class_rank_percentile, num_ap_courses, activity_tier_1_count,
+        activity_tier_2_count, activity_tier_3_count, is_first_gen, is_legacy,
+        state, college_acceptance_rate, decision, application_year,
+        source, is_verified, confidence_score, major_applied
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    const result = stmt.run(
+      userId,
+      collegeId,
+      profile.gpa_unweighted || profile.gpa_weighted || null,
+      profile.sat_total || null,
+      profile.act_composite || null,
+      profile.class_rank_percentile || null,
+      profile.num_ap_courses || 0,
+      tier1Count,
+      tier2Count,
+      tier3Count,
+      profile.is_first_generation ? 1 : 0,
+      profile.is_legacy ? 1 : 0,
+      profile.state_province || null,
+      college.acceptance_rate || null,
+      decision,
+      applicationYear || new Date().getFullYear(),
+      'user_verified',
+      1,  // is_verified = true
+      0.95,  // High confidence for user-submitted
+      major || null
+    );
+    
+    const trainingDataId = result.lastInsertRowid;
+    
+    // Track contribution for gamification
+    try {
+      db.prepare(`
+        INSERT INTO user_outcome_contributions (user_id, training_data_id, college_id, decision, points_awarded)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(userId, trainingDataId, collegeId, decision, OUTCOME_CONTRIBUTION_POINTS);
+      
+      // Update or insert user stats
+      db.prepare(`
+        INSERT INTO user_ml_stats (user_id, total_contributions, verified_contributions, total_points, last_contribution_at)
+        VALUES (?, 1, 1, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(user_id) DO UPDATE SET
+          total_contributions = total_contributions + 1,
+          verified_contributions = verified_contributions + 1,
+          total_points = total_points + ?,
+          last_contribution_at = CURRENT_TIMESTAMP,
+          updated_at = CURRENT_TIMESTAMP
+      `).run(userId, OUTCOME_CONTRIBUTION_POINTS, OUTCOME_CONTRIBUTION_POINTS);
+    } catch (statsError) {
+      // Non-critical - contribution tracking is optional
+      logger.debug('Stats tracking failed:', statsError.message);
+    }
+    
+    logger.info(`Outcome submitted: user ${userId}, college ${collegeId}, decision: ${decision}`);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Thank you for contributing! Your outcome helps improve predictions for everyone.',
+      data: {
+        trainingDataId: trainingDataId,
+        pointsEarned: OUTCOME_CONTRIBUTION_POINTS,
+        decision: decision
+      }
+    });
+  } catch (error) {
+    logger.error('Outcome submission failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * GET /api/chancing/contribution-stats
+ * Get user's ML contribution statistics
+ */
+router.get('/contribution-stats', authenticate, async (req, res, next) => {
+  try {
+    const db = dbManager.getDatabase();
+    
+    const stats = db.prepare(`
+      SELECT 
+        total_contributions,
+        verified_contributions,
+        total_points,
+        contribution_rank,
+        models_improved,
+        last_contribution_at
+      FROM user_ml_stats
+      WHERE user_id = ?
+    `).get(req.user.userId);
+    
+    if (!stats) {
+      return res.json({
+        success: true,
+        data: {
+          totalContributions: 0,
+          verifiedContributions: 0,
+          totalPoints: 0,
+          rank: 'newcomer',
+          modelsImproved: 0,
+          lastContribution: null,
+          nextRank: { name: 'contributor', pointsNeeded: 10 }
+        }
+      });
+    }
+    
+    // Calculate rank and next rank
+    const ranks = [
+      { name: 'newcomer', minPoints: 0 },
+      { name: 'contributor', minPoints: 10 },
+      { name: 'helper', minPoints: 50 },
+      { name: 'supporter', minPoints: 100 },
+      { name: 'champion', minPoints: 250 },
+      { name: 'legend', minPoints: 500 }
+    ];
+    
+    let currentRank = ranks[0];
+    let nextRank = ranks[1];
+    
+    for (let i = 0; i < ranks.length; i++) {
+      if (stats.total_points >= ranks[i].minPoints) {
+        currentRank = ranks[i];
+        nextRank = ranks[i + 1] || null;
+      }
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        totalContributions: stats.total_contributions,
+        verifiedContributions: stats.verified_contributions,
+        totalPoints: stats.total_points,
+        rank: currentRank.name,
+        modelsImproved: stats.models_improved,
+        lastContribution: stats.last_contribution_at,
+        nextRank: nextRank ? {
+          name: nextRank.name,
+          pointsNeeded: nextRank.minPoints - stats.total_points
+        } : null
+      }
+    });
+  } catch (error) {
+    logger.error('Get contribution stats failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * GET /api/chancing/ml/data-needs
+ * Get colleges that need more data for ML training
+ */
+router.get('/ml/data-needs', authenticate, async (req, res, next) => {
+  try {
+    const db = dbManager.getDatabase();
+    const minSamples = 30;  // Minimum samples needed for training
+    
+    // Get colleges with some data but not enough for training
+    const collegesNeedingData = db.prepare(`
+      SELECT 
+        t.college_id,
+        c.name as college_name,
+        COUNT(*) as current_samples,
+        SUM(CASE WHEN t.decision = 'accepted' THEN 1 ELSE 0 END) as accepted_count,
+        SUM(CASE WHEN t.decision = 'rejected' THEN 1 ELSE 0 END) as rejected_count,
+        ? - COUNT(*) as samples_needed
+      FROM ml_training_data t
+      LEFT JOIN colleges c ON t.college_id = c.id
+      WHERE t.decision IN ('accepted', 'rejected')
+      GROUP BY t.college_id
+      HAVING current_samples < ?
+      ORDER BY current_samples DESC
+      LIMIT 20
+    `).all(minSamples, minSamples);
+    
+    res.json({
+      success: true,
+      data: {
+        collegesNeedingData: collegesNeedingData,
+        minSamplesRequired: minSamples
+      }
+    });
+  } catch (error) {
+    logger.error('Get data needs failed:', error);
     next(error);
   }
 });
