@@ -147,10 +147,14 @@ class ApplicationController {
     
     try {
       const { id } = req.params;
+      const userId = req.user?.userId;
       const data = req.validatedData || req.body;
       
       logger.info(`[${requestId}] PUT /applications/${id}`);
       logger.debug(`[${requestId}] Update data keys: ${Object.keys(data || {}).join(', ')}`);
+      
+      // Get old application to check status change
+      const oldApplication = Application.findById(parseInt(id));
       
       const application = Application.update(parseInt(id), data);
       
@@ -164,6 +168,69 @@ class ApplicationController {
       }
       
       logger.info(`[${requestId}] Application ${id} updated successfully`);
+      
+      // Auto-collect ML training data when decision status changes
+      if (oldApplication && data.status && 
+          ['accepted', 'rejected', 'waitlisted'].includes(data.status) &&
+          oldApplication.status !== data.status) {
+        try {
+          const dbManager = require('../config/database');
+          const db = dbManager.getDatabase();
+          
+          // Check if user has ML consent
+          const user = db.prepare('SELECT ml_consent FROM users WHERE id = ?').get(userId);
+          
+          if (user && user.ml_consent === 1) {
+            // Get student profile data
+            const StudentProfile = require('../models/StudentProfile');
+            const College = require('../models/College');
+            
+            const profile = StudentProfile.getCompleteProfile(userId);
+            const college = College.findById(application.college_id);
+            
+            if (profile && college) {
+              const activities = profile.activities || [];
+              const tier1Count = activities.filter(a => a.tier_rating === 1).length;
+              const tier2Count = activities.filter(a => a.tier_rating === 2).length;
+              const apCourses = (profile.coursework || []).filter(c => c.course_level === 'AP' || c.course_level === 'IB').length;
+              
+              db.prepare(`
+                INSERT INTO ml_training_data (
+                  student_id, college_id, gpa, sat_total, act_composite,
+                  class_rank_percentile, num_ap_courses, activity_tier_1_count,
+                  activity_tier_2_count, is_first_gen, is_legacy, state,
+                  college_acceptance_rate, college_sat_median, college_type,
+                  decision, enrolled, application_year
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              `).run(
+                userId,
+                application.college_id,
+                profile.gpa_unweighted || profile.gpa_weighted || null,
+                profile.sat_total || null,
+                profile.act_composite || null,
+                profile.class_rank_percentile || null,
+                apCourses,
+                tier1Count,
+                tier2Count,
+                profile.is_first_generation ? 1 : 0,
+                profile.is_legacy ? 1 : 0,
+                profile.state_province || null,
+                college.acceptance_rate || null,
+                college.sat_total_median || null,
+                college.type || null,
+                data.status,
+                0, // enrolled - will be updated later
+                new Date().getFullYear()
+              );
+              
+              logger.info(`[${requestId}] ML training data auto-collected for application ${id}`);
+            }
+          }
+        } catch (mlError) {
+          // Don't fail the update if ML collection fails
+          logger.error(`[${requestId}] ML auto-collection failed:`, mlError);
+        }
+      }
       
       res.json(addDebugInfo({
         success: true,

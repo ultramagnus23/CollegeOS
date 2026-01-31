@@ -284,4 +284,216 @@ router.post('/activities/reorder', authenticate, async (req, res, next) => {
   }
 });
 
+// ==========================================
+// FULL PROFILE UPDATE WITH LIVE CHANCING
+// ==========================================
+
+/**
+ * PUT /api/profile
+ * Update full profile with all fields
+ */
+router.put('/', authenticate, async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const data = req.body;
+    
+    // Update student profile
+    const profile = StudentProfile.upsert(userId, data);
+    
+    // Also update user table fields if provided
+    const dbManager = require('../config/database');
+    const db = dbManager.getDatabase();
+    
+    if (data.targetCountries || data.target_countries || 
+        data.intendedMajors || data.intended_majors ||
+        data.testStatus || data.test_status) {
+      db.prepare(`
+        UPDATE users 
+        SET target_countries = COALESCE(?, target_countries),
+            intended_majors = COALESCE(?, intended_majors),
+            test_status = COALESCE(?, test_status),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(
+        data.targetCountries || data.target_countries ? 
+          JSON.stringify(data.targetCountries || data.target_countries) : null,
+        data.intendedMajors || data.intended_majors ? 
+          JSON.stringify(data.intendedMajors || data.intended_majors) : null,
+        data.testStatus || data.test_status ? 
+          JSON.stringify(data.testStatus || data.test_status) : null,
+        userId
+      );
+    }
+    
+    const completeProfile = StudentProfile.getCompleteProfile(userId);
+    
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: completeProfile
+    });
+  } catch (error) {
+    logger.error('Full profile update failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * PUT /api/profile/with-chancing
+ * Update profile and return live chancing impact
+ */
+router.put('/with-chancing', authenticate, async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const { profileData, collegeIds } = req.body;
+    
+    if (!profileData) {
+      return res.status(400).json({
+        success: false,
+        message: 'profileData is required'
+      });
+    }
+    
+    // Get old profile and chancing first
+    const oldProfile = StudentProfile.getCompleteProfile(userId);
+    const { getChancingForStudent } = require('../services/chancingCalculator');
+    const College = require('../models/College');
+    const Application = require('../models/Application');
+    
+    // Get colleges to calculate chancing for
+    let colleges = [];
+    if (collegeIds && Array.isArray(collegeIds) && collegeIds.length > 0) {
+      colleges = collegeIds.map(id => College.findById(id)).filter(c => c);
+    } else {
+      // Use colleges from applications
+      const applications = Application.findByUser(userId);
+      colleges = applications.map(a => College.findById(a.college_id)).filter(c => c);
+    }
+    
+    // Calculate old chancing
+    let oldChancing = null;
+    if (oldProfile && colleges.length > 0) {
+      oldChancing = getChancingForStudent(userId, colleges);
+    }
+    
+    // Update profile
+    const updatedProfile = StudentProfile.upsert(userId, profileData);
+    const completeProfile = StudentProfile.getCompleteProfile(userId);
+    
+    // Calculate new chancing
+    let newChancing = null;
+    let comparison = [];
+    
+    if (completeProfile && colleges.length > 0) {
+      newChancing = getChancingForStudent(userId, colleges);
+      
+      // Build comparison
+      if (oldChancing && !oldChancing.error && newChancing && !newChancing.error) {
+        comparison = newChancing.results.map(newResult => {
+          const oldResult = oldChancing.results.find(o => o.college.id === newResult.college.id);
+          const oldChance = oldResult?.chancing?.chance || 0;
+          const newChance = newResult.chancing.chance;
+          const change = newChance - oldChance;
+          
+          return {
+            college: newResult.college,
+            oldChance,
+            newChance,
+            change,
+            changeText: change > 0 ? `+${change}%` : `${change}%`,
+            oldCategory: oldResult?.chancing?.category || 'Unknown',
+            newCategory: newResult.chancing.category,
+            categoryChanged: (oldResult?.chancing?.category || 'Unknown') !== newResult.chancing.category,
+            improved: change > 0
+          };
+        });
+      }
+    }
+    
+    // Calculate summary stats
+    const improved = comparison.filter(c => c.improved).length;
+    const decreased = comparison.filter(c => c.change < 0).length;
+    const stayed = comparison.filter(c => c.change === 0).length;
+    
+    res.json({
+      success: true,
+      message: 'Profile updated with chancing impact',
+      data: {
+        profile: completeProfile,
+        chancing: newChancing?.error ? null : newChancing,
+        comparison: comparison,
+        summary: {
+          collegesAnalyzed: comparison.length,
+          improved,
+          decreased,
+          stayed,
+          avgChange: comparison.length > 0 
+            ? Math.round(comparison.reduce((sum, c) => sum + c.change, 0) / comparison.length)
+            : 0,
+          categoryChanges: comparison.filter(c => c.categoryChanged).map(c => ({
+            college: c.college.name,
+            from: c.oldCategory,
+            to: c.newCategory
+          }))
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Profile update with chancing failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * GET /api/profile/snapshot
+ * Get current profile snapshot for comparison
+ */
+router.get('/snapshot', authenticate, async (req, res, next) => {
+  try {
+    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    
+    if (!profile) {
+      return res.json({
+        success: true,
+        data: null,
+        message: 'No profile found'
+      });
+    }
+    
+    // Create compact snapshot
+    const snapshot = {
+      timestamp: new Date().toISOString(),
+      academic: {
+        gpa: profile.gpa_unweighted || profile.gpa_weighted,
+        sat: profile.sat_total,
+        act: profile.act_composite,
+        classRank: profile.class_rank_percentile
+      },
+      activities: {
+        total: (profile.activities || []).length,
+        tier1: (profile.activities || []).filter(a => a.tier_rating === 1).length,
+        tier2: (profile.activities || []).filter(a => a.tier_rating === 2).length,
+        tier3: (profile.activities || []).filter(a => a.tier_rating === 3).length
+      },
+      coursework: {
+        total: (profile.coursework || []).length,
+        apIb: (profile.coursework || []).filter(c => c.course_level === 'AP' || c.course_level === 'IB').length
+      },
+      demographics: {
+        isFirstGen: profile.is_first_generation,
+        isLegacy: profile.is_legacy,
+        state: profile.state_province
+      }
+    };
+    
+    res.json({
+      success: true,
+      data: snapshot
+    });
+  } catch (error) {
+    logger.error('Get snapshot failed:', error);
+    next(error);
+  }
+});
+
 module.exports = router;

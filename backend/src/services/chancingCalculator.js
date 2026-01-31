@@ -677,10 +677,316 @@ function getChancingForStudent(userId, colleges) {
   };
 }
 
+/**
+ * CDS-based chancing calculation (uses college-specific weights)
+ * This uses the actual Common Data Set factors that each college publishes
+ */
+function calculateCDSBasedChance(studentProfile, college, cdsData) {
+  if (!cdsData) {
+    // Fall back to basic calculation if no CDS data available
+    return calculateAdmissionChance(studentProfile, college);
+  }
+
+  const factors = [];
+  let totalWeight = 0;
+  let weightedScore = 0;
+
+  // Helper function to add weighted factor
+  const addFactor = (name, studentScore, weight, details, compareValue = null) => {
+    if (weight <= 0) return;
+    
+    totalWeight += weight;
+    weightedScore += studentScore * weight;
+    
+    const impact = studentScore >= 0.7 ? '+' : (studentScore >= 0.4 ? '~' : '-');
+    factors.push({
+      name,
+      weight,
+      studentScore: Math.round(studentScore * 100),
+      impact: `${impact}${Math.round(studentScore * weight * 25)}%`,
+      details,
+      compareValue,
+      positive: studentScore >= 0.5
+    });
+  };
+
+  // FACTOR 1: GPA (using CDS weight)
+  if (studentProfile.gpa_unweighted || studentProfile.gpa_weighted) {
+    const gpa = studentProfile.gpa_unweighted || studentProfile.gpa_weighted;
+    let gpaScore = 0;
+    
+    // Compare to college's admitted student GPA distribution
+    if (cdsData.gpa_4_0_scale_pct) {
+      // College admits mostly 4.0 students
+      if (gpa >= 3.9) gpaScore = 1.0;
+      else if (gpa >= 3.75) gpaScore = 0.85;
+      else if (gpa >= 3.5) gpaScore = 0.7;
+      else if (gpa >= 3.25) gpaScore = 0.5;
+      else gpaScore = 0.3;
+    } else {
+      // Estimate based on acceptance rate
+      const acceptanceRate = college.acceptance_rate || 0.5;
+      if (acceptanceRate < 0.1) {
+        // Very selective - need 3.9+
+        gpaScore = Math.min(1.0, (gpa - 3.0) / 1.0);
+      } else if (acceptanceRate < 0.3) {
+        // Selective - need 3.5+
+        gpaScore = Math.min(1.0, (gpa - 2.5) / 1.5);
+      } else {
+        // Less selective
+        gpaScore = Math.min(1.0, (gpa - 2.0) / 2.0);
+      }
+    }
+    
+    addFactor('GPA', gpaScore, cdsData.gpa_weight || 4, 
+      `Your GPA: ${gpa.toFixed(2)}`, 
+      cdsData.gpa_4_0_scale_pct ? `${cdsData.gpa_4_0_scale_pct}% of admits have 4.0` : null);
+  }
+
+  // FACTOR 2: Course Rigor (AP/IB courses)
+  const apCount = studentProfile.ap_courses_count || 
+    (studentProfile.coursework || []).filter(c => c.course_level === 'AP').length;
+  const ibCount = studentProfile.ib_courses_count || 
+    (studentProfile.coursework || []).filter(c => c.course_level === 'IB').length;
+  const honorsCount = (studentProfile.coursework || []).filter(c => c.course_level === 'Honors').length;
+  
+  const totalRigor = apCount * 2 + ibCount * 2 + honorsCount;
+  let rigorScore = Math.min(1.0, totalRigor / 20); // 20 rigor points = max score
+  
+  addFactor('Course Rigor', rigorScore, cdsData.rigor_weight || 3,
+    `${apCount} AP, ${ibCount} IB, ${honorsCount} Honors courses`);
+
+  // FACTOR 3: Test Scores
+  if (studentProfile.sat_total || studentProfile.act_composite) {
+    let testScore = 0;
+    
+    if (studentProfile.sat_total && cdsData.sat_25th_percentile && cdsData.sat_75th_percentile) {
+      if (studentProfile.sat_total >= cdsData.sat_75th_percentile) testScore = 1.0;
+      else if (studentProfile.sat_total >= cdsData.sat_25th_percentile) {
+        testScore = 0.5 + 0.5 * (studentProfile.sat_total - cdsData.sat_25th_percentile) / 
+          (cdsData.sat_75th_percentile - cdsData.sat_25th_percentile);
+      } else {
+        testScore = 0.5 * studentProfile.sat_total / cdsData.sat_25th_percentile;
+      }
+      addFactor('SAT Score', testScore, cdsData.test_scores_weight || 3,
+        `Your SAT: ${studentProfile.sat_total}`,
+        `25th-75th: ${cdsData.sat_25th_percentile}-${cdsData.sat_75th_percentile}`);
+    } else if (studentProfile.act_composite && cdsData.act_25th_percentile && cdsData.act_75th_percentile) {
+      if (studentProfile.act_composite >= cdsData.act_75th_percentile) testScore = 1.0;
+      else if (studentProfile.act_composite >= cdsData.act_25th_percentile) {
+        testScore = 0.5 + 0.5 * (studentProfile.act_composite - cdsData.act_25th_percentile) / 
+          (cdsData.act_75th_percentile - cdsData.act_25th_percentile);
+      } else {
+        testScore = 0.5 * studentProfile.act_composite / cdsData.act_25th_percentile;
+      }
+      addFactor('ACT Score', testScore, cdsData.test_scores_weight || 3,
+        `Your ACT: ${studentProfile.act_composite}`,
+        `25th-75th: ${cdsData.act_25th_percentile}-${cdsData.act_75th_percentile}`);
+    }
+  }
+
+  // FACTOR 4: Class Rank
+  if (studentProfile.class_rank_percentile) {
+    let rankScore = studentProfile.class_rank_percentile / 100; // Percentile as decimal
+    
+    if (cdsData.class_rank_top_10_pct) {
+      // College values class rank highly
+      if (studentProfile.class_rank_percentile >= 90) rankScore = 1.0;
+      else if (studentProfile.class_rank_percentile >= 75) rankScore = 0.8;
+      else if (studentProfile.class_rank_percentile >= 50) rankScore = 0.5;
+      else rankScore = 0.3;
+    }
+    
+    addFactor('Class Rank', rankScore, cdsData.class_rank_weight || 2,
+      `Top ${100 - studentProfile.class_rank_percentile}% of class`,
+      cdsData.class_rank_top_10_pct ? `${cdsData.class_rank_top_10_pct}% of admits in top 10%` : null);
+  }
+
+  // FACTOR 5: Extracurricular Activities
+  const activities = studentProfile.activities || [];
+  const tier1 = activities.filter(a => a.tier_rating === 1).length;
+  const tier2 = activities.filter(a => a.tier_rating === 2).length;
+  const tier3 = activities.filter(a => a.tier_rating === 3).length;
+  
+  // Tier 1 = exceptional (national/international recognition)
+  // Tier 2 = strong (state/regional recognition, leadership)
+  // Tier 3 = good (participation, club membership)
+  const activityScore = Math.min(1.0, (tier1 * 0.4 + tier2 * 0.2 + tier3 * 0.1));
+  
+  addFactor('Extracurriculars', activityScore, cdsData.extracurriculars_weight || 3,
+    `${tier1} Tier 1, ${tier2} Tier 2, ${tier3} Tier 3 activities`);
+
+  // FACTOR 6: Essays (assume medium quality by default)
+  const essayQuality = studentProfile.essay_quality || 'medium';
+  const essayMultipliers = { beginner: 0.5, medium: 0.7, advanced: 0.85, super_advanced: 1.0 };
+  const essayScore = essayMultipliers[essayQuality] || 0.7;
+  
+  addFactor('Essays', essayScore, cdsData.essay_weight || 3,
+    `Quality: ${essayQuality.charAt(0).toUpperCase() + essayQuality.slice(1)}`);
+
+  // FACTOR 7: Recommendations (assume average)
+  addFactor('Recommendations', 0.7, cdsData.recommendations_weight || 3,
+    'Assumed average quality');
+
+  // FACTOR 8: First-Generation Status
+  if (studentProfile.is_first_gen) {
+    addFactor('First-Generation', 1.0, cdsData.first_generation_weight || 2,
+      'First in family to attend college', 'Bonus factor');
+  }
+
+  // FACTOR 9: Legacy Status
+  if (studentProfile.is_legacy) {
+    addFactor('Legacy', 1.0, cdsData.legacy_weight || 2,
+      'Parent attended this college', 'Bonus factor');
+  }
+
+  // FACTOR 10: Geographic Diversity
+  if (studentProfile.state && studentProfile.state !== college.location_state) {
+    // Bonus for out-of-state at some schools
+    if (cdsData.geographic_residence_weight > 2) {
+      addFactor('Geographic Diversity', 0.8, cdsData.geographic_residence_weight,
+        `From ${studentProfile.state}`);
+    }
+  }
+
+  // Calculate final chance percentage
+  let rawChance = totalWeight > 0 ? (weightedScore / totalWeight) * 100 : 50;
+  
+  // Adjust for college selectivity
+  const acceptanceRate = (college.acceptance_rate || 0.5);
+  // More selective colleges have lower baseline chances
+  const selectivityMultiplier = Math.min(1.0, Math.max(0.3, acceptanceRate * 2));
+  
+  let finalChance = rawChance * selectivityMultiplier;
+  
+  // Clamp to realistic range
+  finalChance = Math.max(5, Math.min(95, Math.round(finalChance)));
+
+  // Determine category
+  let category;
+  if (finalChance >= 65) category = 'Safety';
+  else if (finalChance >= 35) category = 'Target';
+  else category = 'Reach';
+
+  return {
+    chance: finalChance,
+    category,
+    factors,
+    calculationMethod: 'CDS-based',
+    cdsDataAvailable: true,
+    cdsDataYear: cdsData.data_year,
+    acceptanceRate: Math.round(acceptanceRate * 100),
+    totalWeight,
+    recommendations: generateRecommendations(factors, studentProfile)
+  };
+}
+
+/**
+ * Generate recommendations based on chancing factors
+ */
+function generateRecommendations(factors, profile) {
+  const recommendations = [];
+  
+  for (const factor of factors) {
+    if (factor.studentScore < 50) {
+      switch(factor.name) {
+        case 'SAT Score':
+          recommendations.push('Consider retaking the SAT - even 50+ points can help');
+          break;
+        case 'ACT Score':
+          recommendations.push('Consider retaking the ACT or trying the SAT');
+          break;
+        case 'Course Rigor':
+          recommendations.push('Take more AP/IB courses if available');
+          break;
+        case 'Extracurriculars':
+          recommendations.push('Develop deeper involvement in 1-2 activities vs many shallow ones');
+          break;
+        case 'Essays':
+          recommendations.push('Work with a counselor to strengthen your essays');
+          break;
+      }
+    }
+  }
+  
+  if (recommendations.length === 0) {
+    recommendations.push('Your profile is strong - focus on authentic essays');
+  }
+  
+  return recommendations.slice(0, 3);
+}
+
+/**
+ * Get admitted student samples for comparison
+ */
+function getAdmittedSampleComparison(studentProfile, samples) {
+  if (!samples || samples.length === 0) {
+    return null;
+  }
+  
+  const comparisons = [];
+  
+  for (const sample of samples) {
+    const comparison = {
+      admissionYear: sample.admission_year,
+      source: sample.source,
+      factors: []
+    };
+    
+    // GPA comparison
+    if (sample.student_gpa && studentProfile.gpa_unweighted) {
+      comparison.factors.push({
+        name: 'GPA',
+        you: studentProfile.gpa_unweighted.toFixed(2),
+        admitted: sample.student_gpa.toFixed(2),
+        difference: (studentProfile.gpa_unweighted - sample.student_gpa).toFixed(2)
+      });
+    }
+    
+    // SAT comparison
+    if (sample.student_sat_total && studentProfile.sat_total) {
+      comparison.factors.push({
+        name: 'SAT',
+        you: studentProfile.sat_total,
+        admitted: sample.student_sat_total,
+        difference: studentProfile.sat_total - sample.student_sat_total
+      });
+    }
+    
+    // ACT comparison
+    if (sample.student_act_composite && studentProfile.act_composite) {
+      comparison.factors.push({
+        name: 'ACT',
+        you: studentProfile.act_composite,
+        admitted: sample.student_act_composite,
+        difference: studentProfile.act_composite - sample.student_act_composite
+      });
+    }
+    
+    // Activities comparison
+    const yourTier1 = (studentProfile.activities || []).filter(a => a.tier_rating === 1).length;
+    if (sample.tier_1_activities !== null && yourTier1 !== undefined) {
+      comparison.factors.push({
+        name: 'Tier 1 Activities',
+        you: yourTier1,
+        admitted: sample.tier_1_activities,
+        difference: yourTier1 - sample.tier_1_activities
+      });
+    }
+    
+    comparisons.push(comparison);
+  }
+  
+  return comparisons;
+}
+
 module.exports = {
   calculateAdmissionChance,
   calculateJEEChance,
   calculateUKChance,
   calculateGermanChance,
-  getChancingForStudent
+  getChancingForStudent,
+  calculateCDSBasedChance,
+  getAdmittedSampleComparison,
+  generateRecommendations
 };

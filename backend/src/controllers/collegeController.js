@@ -159,13 +159,14 @@ class CollegeController {
     }
   }
   
-  // Get all unique countries
+  // Get simplified country regions (4 categories only)
   static async getCountries(req, res, next) {
     try {
-      const countries = await CollegeService.getCountries();
+      const College = require('../models/College');
+      const countryFilters = College.getCountryFilters();
       res.json({
         success: true,
-        data: countries
+        data: countryFilters
       });
     } catch (error) {
       next(error);
