@@ -19,9 +19,156 @@ import {
   BookOpen,
   Briefcase,
   Home,
-  BarChart2
+  BarChart2,
+  Search,
+  Target
 } from 'lucide-react';
 import api from '../services/api';
+
+/* =========================
+   Country-based Gradient Mapping
+========================= */
+const getCountryGradient = (country: string): string => {
+  const countryLower = country?.toLowerCase() || '';
+  
+  // US colleges - Blue gradient
+  if (countryLower.includes('united states') || countryLower === 'usa' || countryLower === 'us') {
+    return 'from-blue-600 to-blue-900';
+  }
+  
+  // UK colleges - Red gradient
+  if (countryLower.includes('united kingdom') || countryLower === 'uk' || countryLower.includes('england') || 
+      countryLower.includes('scotland') || countryLower.includes('wales')) {
+    return 'from-red-600 to-red-900';
+  }
+  
+  // EU colleges - Green gradient
+  if (countryLower.includes('germany') || countryLower.includes('france') || countryLower.includes('netherlands') ||
+      countryLower.includes('spain') || countryLower.includes('italy') || countryLower.includes('sweden') ||
+      countryLower.includes('denmark') || countryLower.includes('belgium') || countryLower.includes('austria') ||
+      countryLower.includes('switzerland') || countryLower.includes('ireland') || countryLower.includes('finland') ||
+      countryLower.includes('norway') || countryLower.includes('portugal') || countryLower.includes('poland')) {
+    return 'from-emerald-600 to-emerald-900';
+  }
+  
+  // India colleges - Orange gradient
+  if (countryLower.includes('india')) {
+    return 'from-orange-500 to-orange-800';
+  }
+  
+  // China/Asia colleges - Purple gradient
+  if (countryLower.includes('china') || countryLower.includes('japan') || countryLower.includes('korea') ||
+      countryLower.includes('singapore') || countryLower.includes('hong kong') || countryLower.includes('taiwan') ||
+      countryLower.includes('malaysia') || countryLower.includes('thailand') || countryLower.includes('vietnam') ||
+      countryLower.includes('indonesia') || countryLower.includes('philippines')) {
+    return 'from-purple-600 to-purple-900';
+  }
+  
+  // Canada - Red and white inspired gradient
+  if (countryLower.includes('canada')) {
+    return 'from-red-500 to-rose-800';
+  }
+  
+  // Australia/NZ - Teal gradient
+  if (countryLower.includes('australia') || countryLower.includes('new zealand')) {
+    return 'from-teal-600 to-teal-900';
+  }
+  
+  // Default - Blue gradient
+  return 'from-blue-600 to-blue-800';
+};
+
+/* =========================
+   Chancing Calculator Utility
+========================= */
+interface ChancingResult {
+  chance: number;
+  category: 'Safety' | 'Target' | 'Reach';
+  factors: { name: string; impact: string; details: string; positive: boolean }[];
+  recommendation: string;
+}
+
+const calculateChancing = (
+  userProfile: any,
+  college: any
+): ChancingResult | null => {
+  if (!userProfile || !college) return null;
+  
+  const userGPA = parseFloat(userProfile.currentGPA) || 0;
+  const userSAT = parseInt(userProfile.satScore) || 0;
+  const userACT = parseInt(userProfile.actScore) || 0;
+  
+  const acceptanceRate = college.acceptanceRate ?? college.acceptance_rate ?? 50;
+  const collegeGPA = college.testScores?.averageGPA || 3.5;
+  const collegeSATLow = college.testScores?.satRange?.percentile25 || 1200;
+  const collegeSATHigh = college.testScores?.satRange?.percentile75 || 1400;
+  const collegeACTLow = college.testScores?.actRange?.percentile25 || 25;
+  const collegeACTHigh = college.testScores?.actRange?.percentile75 || 32;
+  
+  let baseChance = acceptanceRate <= 1 ? acceptanceRate * 100 : acceptanceRate;
+  const factors: ChancingResult['factors'] = [];
+  
+  // GPA factor
+  if (userGPA > 0) {
+    if (userGPA >= collegeGPA + 0.3) {
+      baseChance += 15;
+      factors.push({ name: 'GPA', impact: '+15%', details: 'Your GPA is above average for admitted students', positive: true });
+    } else if (userGPA >= collegeGPA - 0.2) {
+      baseChance += 5;
+      factors.push({ name: 'GPA', impact: '+5%', details: 'Your GPA is competitive for this school', positive: true });
+    } else {
+      baseChance -= 10;
+      factors.push({ name: 'GPA', impact: '-10%', details: 'Your GPA is below the typical admitted student', positive: false });
+    }
+  }
+  
+  // SAT factor
+  if (userSAT > 0 && collegeSATLow > 0) {
+    if (userSAT >= collegeSATHigh) {
+      baseChance += 15;
+      factors.push({ name: 'SAT', impact: '+15%', details: 'Your SAT is at or above the 75th percentile', positive: true });
+    } else if (userSAT >= collegeSATLow) {
+      baseChance += 5;
+      factors.push({ name: 'SAT', impact: '+5%', details: 'Your SAT is within the middle 50% range', positive: true });
+    } else {
+      baseChance -= 10;
+      factors.push({ name: 'SAT', impact: '-10%', details: 'Your SAT is below the 25th percentile', positive: false });
+    }
+  }
+  
+  // ACT factor
+  if (userACT > 0 && collegeACTLow > 0) {
+    if (userACT >= collegeACTHigh) {
+      baseChance += 10;
+      factors.push({ name: 'ACT', impact: '+10%', details: 'Your ACT is at or above the 75th percentile', positive: true });
+    } else if (userACT >= collegeACTLow) {
+      baseChance += 3;
+      factors.push({ name: 'ACT', impact: '+3%', details: 'Your ACT is within the middle 50% range', positive: true });
+    } else {
+      baseChance -= 8;
+      factors.push({ name: 'ACT', impact: '-8%', details: 'Your ACT is below the 25th percentile', positive: false });
+    }
+  }
+  
+  // Cap chance between 5 and 95
+  const finalChance = Math.min(95, Math.max(5, Math.round(baseChance)));
+  
+  let category: ChancingResult['category'];
+  let recommendation: string;
+  
+  if (finalChance >= 70) {
+    category = 'Safety';
+    recommendation = 'Strong match! Your profile exceeds typical admitted students.';
+  } else if (finalChance >= 40) {
+    category = 'Target';
+    recommendation = 'Good match! Your profile aligns well with admitted students.';
+  } else {
+    category = 'Reach';
+    recommendation = 'Competitive school. Focus on essays and unique factors.';
+  }
+  
+  return { chance: finalChance, category, factors, recommendation };
+};
 
 /* =========================
    Types
@@ -176,15 +323,15 @@ const CollegeDetail: React.FC = () => {
   const academicStrengths = parseArray(college.academic_strengths);
   const programs = parseArray(college.programs);
 
-  // Format helpers
-  const formatAcceptanceRate = (rate: number | null | undefined): string => {
-    if (rate === null || rate === undefined) return 'N/A';
+  // Format helpers - return null for missing data instead of "N/A"
+  const formatAcceptanceRate = (rate: number | null | undefined): string | null => {
+    if (rate === null || rate === undefined) return null;
     const percentage = rate <= 1 ? rate * 100 : rate;
     return `${percentage.toFixed(1)}%`;
   };
 
-  const formatCurrency = (amount: number | null | undefined, country: string): string => {
-    if (amount === null || amount === undefined) return 'Not available';
+  const formatCurrency = (amount: number | null | undefined, country: string): string | null => {
+    if (amount === null || amount === undefined) return null;
     if (country === 'India') {
       return `₹${amount.toLocaleString('en-IN')}`;
     } else if (country === 'United Kingdom') {
@@ -195,13 +342,29 @@ const CollegeDetail: React.FC = () => {
     return `$${amount.toLocaleString('en-US')}`;
   };
 
-  const formatEnrollment = (num: number | null | undefined): string => {
-    if (!num) return 'N/A';
+  const formatEnrollment = (num: number | null | undefined): string | null => {
+    if (!num) return null;
     return num.toLocaleString();
   };
 
+  // Get user profile from localStorage for chancing
+  const getUserProfile = () => {
+    try {
+      const stored = localStorage.getItem('studentProfile');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const userProfile = getUserProfile();
+  const chancingResult = calculateChancing(userProfile, college);
+
   const acceptanceRate = college.acceptanceRate ?? college.acceptance_rate;
   const testScores = college.testScores || {};
+  
+  // Get dynamic gradient based on country
+  const heroGradient = getCountryGradient(college.country);
 
   const tabs: { id: TabName; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <Building className="w-4 h-4" /> },
@@ -214,12 +377,12 @@ const CollegeDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+      {/* Hero Section - Dynamic gradient based on country */}
+      <div className={`bg-gradient-to-r ${heroGradient} text-white`}>
         <div className="max-w-6xl mx-auto px-6 py-8">
           <button
             onClick={() => navigate('/colleges')}
-            className="text-blue-200 hover:text-white mb-4 text-sm flex items-center gap-1"
+            className="text-white/70 hover:text-white mb-4 text-sm flex items-center gap-1"
           >
             ← Back to Colleges
           </button>
@@ -276,22 +439,48 @@ const CollegeDetail: React.FC = () => {
               </div>
             </div>
 
-            <button
-              onClick={handleAddCollege}
-              disabled={adding}
-              className="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold disabled:opacity-50 hover:bg-blue-50 transition-colors"
-            >
-              {adding ? 'Adding…' : '+ Add to My List'}
-            </button>
+            <div className="flex flex-col items-end gap-3">
+              <button
+                onClick={handleAddCollege}
+                disabled={adding}
+                className="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold disabled:opacity-50 hover:bg-blue-50 transition-colors"
+              >
+                {adding ? 'Adding…' : '+ Add to My List'}
+              </button>
+              
+              {/* Chancing Card */}
+              {chancingResult && (
+                <div className={`px-4 py-2 rounded-lg font-medium ${
+                  chancingResult.category === 'Safety' ? 'bg-green-400 text-green-900' :
+                  chancingResult.category === 'Target' ? 'bg-yellow-400 text-yellow-900' :
+                  'bg-red-400 text-red-900'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    <span>{chancingResult.chance}% - {chancingResult.category}</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Quick Stats Bar */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-8 bg-white/10 rounded-xl p-4">
-            <QuickStat label="Acceptance Rate" value={formatAcceptanceRate(acceptanceRate)} />
-            <QuickStat label="Enrollment" value={formatEnrollment(college.enrollment)} />
-            <QuickStat label="Tuition" value={formatCurrency(college.tuition_cost, college.country)} />
-            <QuickStat label="Avg GPA" value={testScores.averageGPA?.toFixed(2) || 'N/A'} />
-            <QuickStat label="Student:Faculty" value={college.studentFacultyRatio || 'N/A'} />
+          {/* Quick Stats Bar - Only show stats with values */}
+          <div className="flex flex-wrap gap-4 mt-8 bg-white/10 rounded-xl p-4">
+            {formatAcceptanceRate(acceptanceRate) && (
+              <QuickStat label="Acceptance Rate" value={formatAcceptanceRate(acceptanceRate)!} />
+            )}
+            {formatEnrollment(college.enrollment) && (
+              <QuickStat label="Enrollment" value={formatEnrollment(college.enrollment)!} />
+            )}
+            {formatCurrency(college.tuition_cost, college.country) && (
+              <QuickStat label="Tuition" value={formatCurrency(college.tuition_cost, college.country)!} />
+            )}
+            {testScores.averageGPA && (
+              <QuickStat label="Avg GPA" value={testScores.averageGPA.toFixed(2)} />
+            )}
+            {college.studentFacultyRatio && (
+              <QuickStat label="Student:Faculty" value={college.studentFacultyRatio} />
+            )}
           </div>
         </div>
       </div>
@@ -320,6 +509,46 @@ const CollegeDetail: React.FC = () => {
 
       {/* Tab Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* Chancing Section - Show prominently if available */}
+        {chancingResult && (
+          <div className={`mb-6 p-4 rounded-xl border-2 ${
+            chancingResult.category === 'Safety' ? 'bg-green-50 border-green-200' :
+            chancingResult.category === 'Target' ? 'bg-yellow-50 border-yellow-200' :
+            'bg-red-50 border-red-200'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`text-4xl font-bold ${
+                  chancingResult.category === 'Safety' ? 'text-green-600' :
+                  chancingResult.category === 'Target' ? 'text-yellow-600' :
+                  'text-red-600'
+                }`}>
+                  {chancingResult.chance}%
+                </div>
+                <div>
+                  <div className={`text-lg font-semibold ${
+                    chancingResult.category === 'Safety' ? 'text-green-800' :
+                    chancingResult.category === 'Target' ? 'text-yellow-800' :
+                    'text-red-800'
+                  }`}>
+                    {chancingResult.category} School
+                  </div>
+                  <p className="text-sm text-gray-600">{chancingResult.recommendation}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {chancingResult.factors.slice(0, 3).map((factor, i) => (
+                  <span key={i} className={`px-2 py-1 rounded text-xs font-medium ${
+                    factor.positive ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {factor.name}: {factor.impact}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -331,19 +560,27 @@ const CollegeDetail: React.FC = () => {
                 </Card>
               )}
 
-              {/* Key Stats */}
+              {/* Key Stats - Only show items with values */}
               <Card title="Key Statistics">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <StatItem label="Acceptance Rate" value={formatAcceptanceRate(acceptanceRate)} icon={<TrendingUp />} />
-                  <StatItem label="Total Enrollment" value={formatEnrollment(college.enrollment)} icon={<Users />} />
-                  <StatItem label="Student:Faculty Ratio" value={college.studentFacultyRatio || 'N/A'} icon={<GraduationCap />} />
+                  {formatAcceptanceRate(acceptanceRate) && (
+                    <StatItem label="Acceptance Rate" value={formatAcceptanceRate(acceptanceRate)!} icon={<TrendingUp />} />
+                  )}
+                  {formatEnrollment(college.enrollment) && (
+                    <StatItem label="Total Enrollment" value={formatEnrollment(college.enrollment)!} icon={<Users />} />
+                  )}
+                  {college.studentFacultyRatio && (
+                    <StatItem label="Student:Faculty Ratio" value={college.studentFacultyRatio} icon={<GraduationCap />} />
+                  )}
                   {college.graduationRates?.fourYear && (
                     <StatItem label="4-Year Grad Rate" value={`${college.graduationRates.fourYear}%`} icon={<Award />} />
                   )}
                   {college.graduationRates?.sixYear && (
                     <StatItem label="6-Year Grad Rate" value={`${college.graduationRates.sixYear}%`} icon={<Award />} />
                   )}
-                  <StatItem label="Institution Type" value={college.type || 'University'} icon={<Building />} />
+                  {college.type && (
+                    <StatItem label="Institution Type" value={college.type} icon={<Building />} />
+                  )}
                 </div>
               </Card>
 
@@ -549,111 +786,39 @@ const CollegeDetail: React.FC = () => {
 
         {/* Academics Tab */}
         {activeTab === 'academics' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              {/* Major Categories */}
-              <Card title="Major Categories">
-                <div className="flex flex-wrap gap-2">
-                  {majorCategories.length > 0 ? (
-                    majorCategories.map((cat, i) => (
-                      <span key={i} className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium">
-                        {cat}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-gray-600">Major categories not listed</p>
-                  )}
-                </div>
-              </Card>
-
-              {/* Programs/Majors */}
-              <Card title="Programs Offered">
-                {programs.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {programs.map((program, i) => (
-                      <div key={i} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
-                        <BookOpen className="w-4 h-4 text-gray-400" />
-                        <span>{program}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-600">
-                    Specific programs not listed.{' '}
-                    <a href={college.programs_url || college.official_website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                      View on official website →
-                    </a>
-                  </p>
-                )}
-              </Card>
-
-              {/* Academic Stats */}
-              <Card title="Academic Statistics">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-gray-900">{college.studentFacultyRatio || 'N/A'}</div>
-                    <p className="text-sm text-gray-600">Student:Faculty</p>
-                  </div>
-                  {college.graduationRates?.fourYear && (
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{college.graduationRates.fourYear}%</div>
-                      <p className="text-sm text-gray-600">4-Year Grad Rate</p>
-                    </div>
-                  )}
-                  {college.graduationRates?.sixYear && (
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{college.graduationRates.sixYear}%</div>
-                      <p className="text-sm text-gray-600">6-Year Grad Rate</p>
-                    </div>
-                  )}
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">{majorCategories.length}</div>
-                    <p className="text-sm text-gray-600">Major Categories</p>
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {academicStrengths.length > 0 && (
-                <Card title="Academic Strengths">
-                  <div className="space-y-2">
-                    {academicStrengths.map((strength, i) => (
-                      <div key={i} className="flex items-center gap-2 p-2 bg-green-50 rounded">
-                        <Award className="w-4 h-4 text-green-600" />
-                        <span className="text-green-700 font-medium">{strength}</span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
-            </div>
-          </div>
+          <AcademicsTab 
+            college={college}
+            majorCategories={majorCategories}
+            academicStrengths={academicStrengths}
+            programs={programs}
+          />
         )}
 
         {/* Cost & Aid Tab */}
         {activeTab === 'cost' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <Card title="Tuition & Costs">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="p-6 bg-blue-50 rounded-xl text-center">
-                    <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                    <div className="text-3xl font-bold text-blue-600">
-                      {formatCurrency(college.tuition_cost, college.country)}
+              {/* Only show tuition card if there's data */}
+              {formatCurrency(college.tuition_cost, college.country) && (
+                <Card title="Tuition & Costs">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-6 bg-blue-50 rounded-xl text-center">
+                      <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                      <div className="text-3xl font-bold text-blue-600">
+                        {formatCurrency(college.tuition_cost, college.country)}
+                      </div>
+                      <p className="text-blue-700 mt-1">Annual Tuition</p>
                     </div>
-                    <p className="text-blue-700 mt-1">Annual Tuition</p>
+                    {college.country === 'Germany' && college.tuition_cost === 0 && (
+                      <div className="p-6 bg-green-50 rounded-xl text-center">
+                        <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                        <div className="text-3xl font-bold text-green-600">Free</div>
+                        <p className="text-green-700 mt-1">Public University</p>
+                      </div>
+                    )}
                   </div>
-                  {college.country === 'Germany' && college.tuition_cost === 0 && (
-                    <div className="p-6 bg-green-50 rounded-xl text-center">
-                      <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                      <div className="text-3xl font-bold text-green-600">Free</div>
-                      <p className="text-green-700 mt-1">Public University</p>
-                    </div>
-                  )}
-                </div>
-              </Card>
+                </Card>
+              )}
 
               {/* India-specific: Placements */}
               {college.country === 'India' && college.placements && (
@@ -891,6 +1056,194 @@ const ScoreBar: React.FC<{ label: string; low: number; high: number; max: number
           className="absolute h-full bg-blue-500 rounded-full"
           style={{ left: `${lowPercent}%`, width: `${rangeWidth}%` }}
         />
+      </div>
+    </div>
+  );
+};
+
+/* =========================
+   Academics Tab Component with Searchable Majors
+========================= */
+interface AcademicsTabProps {
+  college: College;
+  majorCategories: string[];
+  academicStrengths: string[];
+  programs: string[];
+}
+
+const AcademicsTab: React.FC<AcademicsTabProps> = ({ college, majorCategories, academicStrengths, programs }) => {
+  const [majorSearch, setMajorSearch] = React.useState('');
+  const [selectedCategory, setSelectedCategory] = React.useState<string>('all');
+  
+  // Categorize programs for filtering
+  const categorizeProgram = (program: string): string => {
+    const lowerProgram = program.toLowerCase();
+    if (lowerProgram.includes('engineering') || lowerProgram.includes('computer') || 
+        lowerProgram.includes('technology') || lowerProgram.includes('science') ||
+        lowerProgram.includes('math') || lowerProgram.includes('physics') ||
+        lowerProgram.includes('chemistry') || lowerProgram.includes('biology') ||
+        lowerProgram.includes('data')) return 'STEM';
+    if (lowerProgram.includes('business') || lowerProgram.includes('management') ||
+        lowerProgram.includes('finance') || lowerProgram.includes('accounting') ||
+        lowerProgram.includes('economics') || lowerProgram.includes('marketing')) return 'Business';
+    if (lowerProgram.includes('art') || lowerProgram.includes('music') ||
+        lowerProgram.includes('theater') || lowerProgram.includes('design') ||
+        lowerProgram.includes('film') || lowerProgram.includes('creative')) return 'Arts';
+    if (lowerProgram.includes('medicine') || lowerProgram.includes('nursing') ||
+        lowerProgram.includes('health') || lowerProgram.includes('pharmacy') ||
+        lowerProgram.includes('dental') || lowerProgram.includes('pre-med')) return 'Health';
+    if (lowerProgram.includes('psychology') || lowerProgram.includes('sociology') ||
+        lowerProgram.includes('political') || lowerProgram.includes('history') ||
+        lowerProgram.includes('philosophy') || lowerProgram.includes('english')) return 'Humanities';
+    if (lowerProgram.includes('law') || lowerProgram.includes('legal')) return 'Law';
+    if (lowerProgram.includes('education') || lowerProgram.includes('teaching')) return 'Education';
+    return 'Other';
+  };
+  
+  // Get unique categories from programs
+  const programCategories = React.useMemo(() => {
+    const cats = new Set(programs.map(categorizeProgram));
+    return ['all', ...Array.from(cats).sort()];
+  }, [programs]);
+  
+  // Filter programs based on search and category
+  const filteredPrograms = React.useMemo(() => {
+    return programs.filter(program => {
+      const matchesSearch = program.toLowerCase().includes(majorSearch.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || categorizeProgram(program) === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [programs, majorSearch, selectedCategory]);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 space-y-6">
+        {/* Major Categories */}
+        {majorCategories.length > 0 && (
+          <Card title="Major Categories">
+            <div className="flex flex-wrap gap-2">
+              {majorCategories.map((cat, i) => (
+                <span key={i} className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg font-medium">
+                  {cat}
+                </span>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Programs/Majors with Search */}
+        <Card title={`Programs Offered${programs.length > 0 ? ` (${programs.length})` : ''}`}>
+          {programs.length > 0 ? (
+            <div className="space-y-4">
+              {/* Search and Filter Bar */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search majors..."
+                    value={majorSearch}
+                    onChange={(e) => setMajorSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {programCategories.map(cat => (
+                    <option key={cat} value={cat}>
+                      {cat === 'all' ? 'All Categories' : cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Results count */}
+              <p className="text-sm text-gray-500">
+                Showing {filteredPrograms.length} of {programs.length} programs
+              </p>
+              
+              {/* Programs Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-96 overflow-y-auto">
+                {filteredPrograms.map((program, i) => (
+                  <div key={i} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded border border-gray-100">
+                    <BookOpen className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <span className="text-sm truncate">{program}</span>
+                  </div>
+                ))}
+              </div>
+              
+              {filteredPrograms.length === 0 && (
+                <p className="text-center text-gray-500 py-4">
+                  No programs match your search
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-600">
+                Program details available on the official website
+              </p>
+              <a 
+                href={college.programs_url || college.official_website} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-blue-600 hover:underline text-sm mt-2 inline-block"
+              >
+                View Programs →
+              </a>
+            </div>
+          )}
+        </Card>
+
+        {/* Academic Stats - Only show items with values */}
+        <Card title="Academic Statistics">
+          <div className="flex flex-wrap gap-4">
+            {college.studentFacultyRatio && (
+              <div className="text-center p-4 bg-gray-50 rounded-lg min-w-[120px]">
+                <div className="text-2xl font-bold text-gray-900">{college.studentFacultyRatio}</div>
+                <p className="text-sm text-gray-600">Student:Faculty</p>
+              </div>
+            )}
+            {college.graduationRates?.fourYear && (
+              <div className="text-center p-4 bg-gray-50 rounded-lg min-w-[120px]">
+                <div className="text-2xl font-bold text-green-600">{college.graduationRates.fourYear}%</div>
+                <p className="text-sm text-gray-600">4-Year Grad Rate</p>
+              </div>
+            )}
+            {college.graduationRates?.sixYear && (
+              <div className="text-center p-4 bg-gray-50 rounded-lg min-w-[120px]">
+                <div className="text-2xl font-bold text-green-600">{college.graduationRates.sixYear}%</div>
+                <p className="text-sm text-gray-600">6-Year Grad Rate</p>
+              </div>
+            )}
+            {programs.length > 0 && (
+              <div className="text-center p-4 bg-gray-50 rounded-lg min-w-[120px]">
+                <div className="text-2xl font-bold text-blue-600">{programs.length}</div>
+                <p className="text-sm text-gray-600">Programs</p>
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* Sidebar */}
+      <div className="space-y-6">
+        {academicStrengths.length > 0 && (
+          <Card title="Academic Strengths">
+            <div className="space-y-2">
+              {academicStrengths.map((strength, i) => (
+                <div key={i} className="flex items-center gap-2 p-2 bg-green-50 rounded">
+                  <Award className="w-4 h-4 text-green-600" />
+                  <span className="text-green-700 font-medium">{strength}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );
