@@ -37,8 +37,21 @@ const Research: React.FC = () => {
         api.research.getAvailableMajors(),
         api.colleges.getCountries()
       ]);
-      setAvailableMajors(majorsRes.data || []);
-      setCountries(countriesRes.data || []);
+      
+      // Handle both string arrays and object arrays for majors
+      const majorsData = majorsRes.data || [];
+      const normalizedMajors = Array.isArray(majorsData)
+        ? majorsData.map((item: any) => typeof item === 'string' ? item : item.value || item.label || item)
+        : [];
+      
+      // Handle both string arrays and object arrays for countries
+      const countriesData = countriesRes.data || [];
+      const normalizedCountries = Array.isArray(countriesData)
+        ? countriesData.map((item: any) => typeof item === 'string' ? item : item.value || item.label || item)
+        : [];
+      
+      setAvailableMajors(normalizedMajors);
+      setCountries(normalizedCountries);
     } catch (err) {
       console.error('Failed to load filters:', err);
     }
@@ -149,8 +162,8 @@ const Research: React.FC = () => {
                     list="majors-list"
                   />
                   <datalist id="majors-list">
-                    {availableMajors.slice(0, 50).map((major) => (
-                      <option key={major} value={major} />
+                    {availableMajors.slice(0, 50).map((major, idx) => (
+                      <option key={`major-${idx}`} value={major} />
                     ))}
                   </datalist>
                   <button
@@ -197,8 +210,8 @@ const Research: React.FC = () => {
               className="border rounded-lg px-4 py-2 w-full md:w-auto"
             >
               <option value="">All Countries</option>
-              {countries.map((c) => (
-                <option key={c} value={c}>
+              {countries.map((c, idx) => (
+                <option key={`country-${idx}`} value={c}>
                   {c}
                 </option>
               ))}

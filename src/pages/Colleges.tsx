@@ -73,8 +73,22 @@ const Colleges: React.FC = () => {
           api.colleges.getCountries(),
           api.colleges.getPrograms()
         ]);
-        setCountries(countriesRes.data);
-        setPrograms(programsRes.data);
+        
+        // Handle both string arrays and object arrays
+        const countriesData = countriesRes.data;
+        const programsData = programsRes.data;
+        
+        // Extract string values from objects if necessary
+        const normalizedCountries = Array.isArray(countriesData) 
+          ? countriesData.map((item: any) => typeof item === 'string' ? item : item.value || item.label || item)
+          : [];
+        
+        const normalizedPrograms = Array.isArray(programsData)
+          ? programsData.map((item: any) => typeof item === 'string' ? item : item.value || item.label || item)
+          : [];
+        
+        setCountries(normalizedCountries);
+        setPrograms(normalizedPrograms);
       } catch (err) {
         console.error('Failed to load filters', err);
       }
@@ -263,7 +277,11 @@ const Colleges: React.FC = () => {
                   className="w-full border border-gray-200 rounded-lg px-4 py-2"
                 >
                   <option value="">All Countries</option>
-                  {countries.map(c => <option key={c}>{c}</option>)}
+                  {countries.map((c, idx) => (
+                    <option key={`country-${idx}`} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -275,7 +293,11 @@ const Colleges: React.FC = () => {
                   className="w-full border border-gray-200 rounded-lg px-4 py-2"
                 >
                   <option value="">All Programs</option>
-                  {programs.map(p => <option key={p}>{p}</option>)}
+                  {programs.map((p, idx) => (
+                    <option key={`program-${idx}`} value={p}>
+                      {p}
+                    </option>
+                  ))}
                 </select>
               </div>
 
