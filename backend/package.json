@@ -12,6 +12,7 @@
     "seed:legacy": "node scripts/seedMasterData.js",
     "seed:comprehensive": "node scripts/seedComprehensiveData.js",
     "seed:majors": "node scripts/seedNormalizedMajors.js",
+    "seed:sample": "node scripts/seedComprehensiveSampleData.js",
     "parse:colleges": "node scripts/parseCollegeData.js",
     "test": "jest --coverage",
     "lint": "eslint src/"
