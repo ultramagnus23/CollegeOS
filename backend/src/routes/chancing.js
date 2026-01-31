@@ -758,4 +758,225 @@ router.post('/compare', authenticate, async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/chancing/:collegeId/cds
+ * Get CDS-based chancing for a specific college
+ */
+router.get('/:collegeId/cds', authenticate, async (req, res, next) => {
+  try {
+    const { collegeId } = req.params;
+    const { calculateCDSBasedChance, getAdmittedSampleComparison } = require('../services/chancingCalculator');
+    const dbManager = require('../config/database');
+    
+    // Get student profile
+    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    
+    if (!profile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please complete your student profile first',
+        code: 'PROFILE_REQUIRED'
+      });
+    }
+    
+    // Get college
+    const college = College.findById(collegeId);
+    
+    if (!college) {
+      return res.status(404).json({
+        success: false,
+        message: 'College not found'
+      });
+    }
+    
+    // Get CDS data for this college
+    const db = dbManager.getDatabase();
+    const cdsData = db.prepare(`
+      SELECT * FROM college_cds_data WHERE college_id = ?
+    `).get(collegeId);
+    
+    // Get admitted student samples
+    const samples = db.prepare(`
+      SELECT * FROM admitted_student_samples 
+      WHERE college_id = ? 
+      ORDER BY admission_year DESC 
+      LIMIT 5
+    `).all(collegeId);
+    
+    // Calculate CDS-based chance
+    const chancing = calculateCDSBasedChance(profile, college, cdsData);
+    
+    // Get comparison with admitted students
+    const comparison = getAdmittedSampleComparison(profile, samples);
+    
+    res.json({
+      success: true,
+      data: {
+        college: {
+          id: college.id,
+          name: college.name,
+          country: college.country,
+          acceptanceRate: college.acceptance_rate
+        },
+        chancing,
+        cdsData: cdsData ? {
+          available: true,
+          year: cdsData.data_year,
+          satRange: cdsData.sat_25th_percentile && cdsData.sat_75th_percentile 
+            ? `${cdsData.sat_25th_percentile}-${cdsData.sat_75th_percentile}` 
+            : null,
+          actRange: cdsData.act_25th_percentile && cdsData.act_75th_percentile
+            ? `${cdsData.act_25th_percentile}-${cdsData.act_75th_percentile}`
+            : null
+        } : { available: false },
+        admittedComparison: comparison,
+        profile: {
+          gpa: profile.gpa_unweighted || profile.gpa_weighted,
+          sat: profile.sat_total,
+          act: profile.act_composite,
+          activitiesCount: (profile.activities || []).length
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('CDS chancing failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * GET /api/chancing/:collegeId/admitted-samples
+ * Get admitted student samples for comparison
+ */
+router.get('/:collegeId/admitted-samples', authenticate, async (req, res, next) => {
+  try {
+    const { collegeId } = req.params;
+    const dbManager = require('../config/database');
+    
+    const db = dbManager.getDatabase();
+    
+    // Get admitted student samples
+    const samples = db.prepare(`
+      SELECT * FROM admitted_student_samples 
+      WHERE college_id = ? 
+      ORDER BY admission_year DESC 
+      LIMIT 10
+    `).all(collegeId);
+    
+    // Get college info
+    const college = College.findById(collegeId);
+    
+    res.json({
+      success: true,
+      data: {
+        college: college ? {
+          id: college.id,
+          name: college.name
+        } : null,
+        samples: samples.map(s => ({
+          year: s.admission_year,
+          gpa: s.student_gpa,
+          sat: s.student_sat_total,
+          act: s.student_act_composite,
+          classRank: s.class_rank_percentile,
+          apCourses: s.num_ap_courses,
+          activities: {
+            tier1: s.tier_1_activities,
+            tier2: s.tier_2_activities,
+            tier3: s.tier_3_activities,
+            summary: s.activity_summary
+          },
+          demographics: {
+            isFirstGen: !!s.is_first_gen,
+            isLegacy: !!s.is_legacy,
+            state: s.state_of_residence,
+            intendedMajor: s.intended_major
+          },
+          source: s.source,
+          essayQuality: s.essay_quality_rating,
+          achievements: s.notable_achievements
+        })),
+        count: samples.length
+      }
+    });
+  } catch (error) {
+    logger.error('Get admitted samples failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * GET /api/chancing/region/:region
+ * Get region-specific chancing requirements info
+ */
+router.get('/region/:region', authenticate, async (req, res, next) => {
+  try {
+    const { region } = req.params;
+    const validRegions = ['us', 'india', 'uk', 'germany', 'eu'];
+    
+    if (!validRegions.includes(region.toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid region. Valid regions: ${validRegions.join(', ')}`
+      });
+    }
+    
+    const regionInfo = {
+      us: {
+        name: 'United States',
+        method: 'CDS-based holistic review',
+        primaryFactors: ['GPA', 'SAT/ACT', 'Essays', 'Extracurriculars', 'Recommendations'],
+        secondaryFactors: ['Class Rank', 'Course Rigor', 'Interview', 'Legacy', 'First-Gen'],
+        description: 'US colleges use holistic admissions based on Common Data Set factors. Each college weighs factors differently.',
+        profileRequired: ['gpa_unweighted', 'sat_total OR act_composite', 'activities'],
+        testOptional: 'Many colleges are test-optional. Check individual college policies.'
+      },
+      india: {
+        name: 'India',
+        method: 'Entrance exam-based',
+        primaryFactors: ['JEE Rank (for IITs)', 'CAT Percentile (for IIMs)', 'NEET Score (for Medical)'],
+        secondaryFactors: ['12th Board Marks', 'Category (Reservation)', 'State Quota'],
+        description: 'Indian colleges primarily use entrance exam ranks and cutoffs. Category-wise reservations apply.',
+        profileRequired: ['jee_advanced_rank OR jee_main_percentile OR cat_percentile', 'board_12th_percentage'],
+        testOptional: 'Entrance exams are mandatory for most top institutions.'
+      },
+      uk: {
+        name: 'United Kingdom',
+        method: 'Predicted grades + Personal Statement',
+        primaryFactors: ['Predicted A-Levels/IB', 'Personal Statement', 'Admissions Tests (Oxbridge)'],
+        secondaryFactors: ['Reference Letter', 'Interview (Oxbridge)', 'Contextual Offers'],
+        description: 'UK universities focus on predicted grades and personal statement. Oxbridge requires additional tests.',
+        profileRequired: ['predicted_a_levels OR ib_predicted_score', 'ucas_points'],
+        testOptional: 'Admissions tests required for Oxford, Cambridge, Medicine, Law.'
+      },
+      germany: {
+        name: 'Germany',
+        method: 'Abitur/NC-based',
+        primaryFactors: ['Abitur Grade', 'NC Cutoff (for restricted programs)', 'German Proficiency'],
+        secondaryFactors: ['Waiting Semesters', 'Motivation Letter', 'Aptitude Test'],
+        description: 'German universities use Abitur grades. NC (Numerus Clausus) applies to competitive programs.',
+        profileRequired: ['abitur_grade', 'german_proficiency_level'],
+        testOptional: 'DSH or TestDaF required for German-taught programs.'
+      },
+      eu: {
+        name: 'European Union (Other)',
+        method: 'Varies by country',
+        primaryFactors: ['Secondary School Grades', 'Entrance Exams (varies)', 'Language Proficiency'],
+        secondaryFactors: ['Motivation Letter', 'Portfolio (for arts)', 'Work Experience'],
+        description: 'EU admission requirements vary significantly by country and institution.',
+        profileRequired: ['secondary_school_average', 'language_certificates'],
+        testOptional: 'Depends on specific country and program.'
+      }
+    };
+    
+    res.json({
+      success: true,
+      data: regionInfo[region.toLowerCase()]
+    });
+  } catch (error) {
+    logger.error('Get region info failed:', error);
+    next(error);
+  }
+});
+
 module.exports = router;
