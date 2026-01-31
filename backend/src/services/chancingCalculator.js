@@ -937,8 +937,8 @@ function getAdmittedSampleComparison(studentProfile, samples) {
     if (sample.student_gpa && studentProfile.gpa_unweighted) {
       comparison.factors.push({
         name: 'GPA',
-        you: studentProfile.gpa_unweighted?.toFixed(2),
-        admitted: sample.student_gpa?.toFixed(2),
+        you: studentProfile.gpa_unweighted.toFixed(2),
+        admitted: sample.student_gpa.toFixed(2),
         difference: (studentProfile.gpa_unweighted - sample.student_gpa).toFixed(2)
       });
     }
