@@ -466,15 +466,18 @@ const CollegeDetail: React.FC = () => {
 
           {/* Quick Stats Bar - Only show stats with values */}
           <div className="flex flex-wrap gap-4 mt-8 bg-white/10 rounded-xl p-4">
-            {formatAcceptanceRate(acceptanceRate) && (
-              <QuickStat label="Acceptance Rate" value={formatAcceptanceRate(acceptanceRate)!} />
-            )}
-            {formatEnrollment(college.enrollment) && (
-              <QuickStat label="Enrollment" value={formatEnrollment(college.enrollment)!} />
-            )}
-            {formatCurrency(college.tuition_cost, college.country) && (
-              <QuickStat label="Tuition" value={formatCurrency(college.tuition_cost, college.country)!} />
-            )}
+            {(() => {
+              const acceptanceRateStr = formatAcceptanceRate(acceptanceRate);
+              return acceptanceRateStr && <QuickStat label="Acceptance Rate" value={acceptanceRateStr} />;
+            })()}
+            {(() => {
+              const enrollmentStr = formatEnrollment(college.enrollment);
+              return enrollmentStr && <QuickStat label="Enrollment" value={enrollmentStr} />;
+            })()}
+            {(() => {
+              const tuitionStr = formatCurrency(college.tuition_cost, college.country);
+              return tuitionStr && <QuickStat label="Tuition" value={tuitionStr} />;
+            })()}
             {testScores.averageGPA && (
               <QuickStat label="Avg GPA" value={testScores.averageGPA.toFixed(2)} />
             )}
@@ -563,12 +566,14 @@ const CollegeDetail: React.FC = () => {
               {/* Key Stats - Only show items with values */}
               <Card title="Key Statistics">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {formatAcceptanceRate(acceptanceRate) && (
-                    <StatItem label="Acceptance Rate" value={formatAcceptanceRate(acceptanceRate)!} icon={<TrendingUp />} />
-                  )}
-                  {formatEnrollment(college.enrollment) && (
-                    <StatItem label="Total Enrollment" value={formatEnrollment(college.enrollment)!} icon={<Users />} />
-                  )}
+                  {(() => {
+                    const acceptanceRateStr = formatAcceptanceRate(acceptanceRate);
+                    return acceptanceRateStr && <StatItem label="Acceptance Rate" value={acceptanceRateStr} icon={<TrendingUp />} />;
+                  })()}
+                  {(() => {
+                    const enrollmentStr = formatEnrollment(college.enrollment);
+                    return enrollmentStr && <StatItem label="Total Enrollment" value={enrollmentStr} icon={<Users />} />;
+                  })()}
                   {college.studentFacultyRatio && (
                     <StatItem label="Student:Faculty Ratio" value={college.studentFacultyRatio} icon={<GraduationCap />} />
                   )}
@@ -1165,8 +1170,13 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ college, majorCategories, a
                 Showing {filteredPrograms.length} of {programs.length} programs
               </p>
               
-              {/* Programs Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-96 overflow-y-auto">
+              {/* Programs Grid - Accessible scrollable region */}
+              <div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-96 overflow-y-auto"
+                role="region"
+                aria-label={`Programs list, ${filteredPrograms.length} results`}
+                tabIndex={0}
+              >
                 {filteredPrograms.map((program, i) => (
                   <div key={i} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded border border-gray-100">
                     <BookOpen className="w-4 h-4 text-gray-400 flex-shrink-0" />

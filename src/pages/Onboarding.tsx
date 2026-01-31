@@ -6,6 +6,17 @@ import { ArrowRight, ArrowLeft, Check, Target, GraduationCap, BookOpen, Trophy, 
 import { useNavigate } from 'react-router-dom';
 import { StudentProfile } from '../types';
 
+// Structured activity type for type-safe activity handling
+interface StructuredActivity {
+  name: string;
+  type: string;
+  tier: number;
+  yearsInvolved: number;
+  hoursPerWeek: number;
+  leadership: string;
+  achievements: string;
+}
+
 interface StudentOnboardingProps {
   onComplete: (profile: StudentProfile) => void;
 }
@@ -545,7 +556,11 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       case 5:
         // Require 2-10 structured activities
         const validActivities = Array.isArray(studentData.activities) 
-          ? studentData.activities.filter((a: any) => a && typeof a === 'object' && a.name && a.name.trim().length > 0)
+          ? studentData.activities.filter((a: StructuredActivity | unknown) => 
+              a && typeof a === 'object' && 'name' in a && 
+              typeof (a as StructuredActivity).name === 'string' && 
+              (a as StructuredActivity).name.trim().length > 0
+            )
           : [];
         return validActivities.length >= 2;
       case 6:
@@ -647,16 +662,6 @@ const TIER_DESCRIPTIONS = {
   4: { name: 'Participation', description: 'Club member, general participation, personal hobbies', color: 'bg-gray-300' }
 };
 
-interface StructuredActivity {
-  name: string;
-  type: string;
-  tier: number;
-  yearsInvolved: number;
-  hoursPerWeek: number;
-  leadership: string;
-  achievements: string;
-}
-
 const emptyActivity: StructuredActivity = {
   name: '',
   type: '',
@@ -683,13 +688,15 @@ const ActivitiesOnboardingStep: React.FC<ActivitiesOnboardingStepProps> = ({ act
   );
   const [currentActivity, setCurrentActivity] = React.useState<StructuredActivity>(emptyActivity);
 
-  // Initialize with one empty activity if none exist
+  // Initialize with one empty activity if none exist - use ref to track initialization
+  const initializedRef = React.useRef(false);
   React.useEffect(() => {
-    if (structuredActivities.length === 0) {
+    if (!initializedRef.current && structuredActivities.length === 0) {
+      initializedRef.current = true;
       onActivitiesChange([emptyActivity]);
       setEditingIndex(0);
     }
-  }, []);
+  }, [structuredActivities.length, onActivitiesChange]);
 
   const handleAddActivity = () => {
     if (structuredActivities.length >= 10) return;
