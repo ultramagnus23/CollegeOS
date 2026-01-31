@@ -10,6 +10,12 @@
     "seed": "node scripts/seedVerifiedData.js",
     "seed:check": "node scripts/seedVerifiedData.js --check",
     "seed:legacy": "node scripts/seedMasterData.js",
+    "seed:comprehensive": "node scripts/seedComprehensiveData.js",
+    "seed:majors": "node scripts/seedNormalizedMajors.js",
+    "seed:sample": "node scripts/seedComprehensiveSampleData.js",
+    "parse:colleges": "node scripts/parseCollegeData.js",
+    "scrape": "node scripts/scrapeAllColleges.js",
+    "scrape:reset": "node scripts/scrapeAllColleges.js --reset",
     "test": "jest --coverage",
     "lint": "eslint src/"
   },
@@ -22,7 +28,7 @@
   "license": "MIT",
   "dependencies": {
     "axios": "^1.6.5",
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.6.2",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",

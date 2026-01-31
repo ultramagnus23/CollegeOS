@@ -56,3 +56,9 @@ __pycache__/
 ml-service/venv/
 ml-service/models/*.joblib
 ml-service/data/
+
+# Scraper progress and log files
+data/scrape_progress.json
+data/scrape_log.json
+data/scrape_summary.json
+
