@@ -3,14 +3,75 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const dbManager = require('../config/database');
 const config = require('../config/env');
+const securityConfig = require('../config/security');
 const logger = require('../utils/logger');
 
+// In-memory store for login attempts (use Redis in production)
+const loginAttempts = new Map();
+
 class AuthService {
+  /**
+   * Check if an account is locked due to failed login attempts
+   */
+  static isAccountLocked(email) {
+    const attempts = loginAttempts.get(email);
+    if (!attempts) return false;
+    
+    const { count, lastAttempt, lockedUntil } = attempts;
+    
+    // Check if still locked
+    if (lockedUntil && Date.now() < lockedUntil) {
+      return true;
+    }
+    
+    // Reset if lock has expired
+    if (lockedUntil && Date.now() >= lockedUntil) {
+      loginAttempts.delete(email);
+      return false;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Record a failed login attempt
+   */
+  static recordFailedAttempt(email) {
+    const now = Date.now();
+    const attempts = loginAttempts.get(email) || { count: 0, lastAttempt: now };
+    
+    // Reset count if outside the window
+    if (now - attempts.lastAttempt > securityConfig.accountLockout.resetWindowMs) {
+      attempts.count = 0;
+    }
+    
+    attempts.count += 1;
+    attempts.lastAttempt = now;
+    
+    // Lock account if max attempts exceeded
+    if (attempts.count >= securityConfig.accountLockout.maxAttempts) {
+      attempts.lockedUntil = now + securityConfig.accountLockout.lockoutDuration;
+      logger.warn(`Account locked due to failed login attempts: ${email}`);
+    }
+    
+    loginAttempts.set(email, attempts);
+  }
+
+  /**
+   * Clear failed login attempts after successful login
+   */
+  static clearFailedAttempts(email) {
+    loginAttempts.delete(email);
+  }
+
   // Register new user with email/password
   static async register(email, password, fullName, country) {
     try {
+      // Normalize email
+      const normalizedEmail = email.toLowerCase().trim();
+      
       // Check if user exists
-      const existingUser = User.findByEmail(email);
+      const existingUser = User.findByEmail(normalizedEmail);
       if (existingUser) {
         throw new Error('User already exists with this email');
       }
@@ -20,7 +81,7 @@ class AuthService {
       
       // Create user
       const user = User.create({
-        email,
+        email: normalizedEmail,
         passwordHash,
         googleId: null,
         fullName,
@@ -33,7 +94,7 @@ class AuthService {
       // Store refresh token
       this.storeRefreshToken(user.id, tokens.refreshToken);
       
-      logger.info(`User registered: ${email}`);
+      logger.info(`User registered: ${normalizedEmail}`);
       
       return {
         user: this.sanitizeUser(user),
@@ -47,18 +108,32 @@ class AuthService {
   
   // Login with email/password
   static async login(email, password) {
+    // Normalize email
+    const normalizedEmail = email.toLowerCase().trim();
+    
     try {
+      // Check if account is locked
+      if (this.isAccountLocked(normalizedEmail)) {
+        logger.warn(`Login attempt on locked account: ${normalizedEmail}`);
+        throw new Error('Account temporarily locked. Please try again later.');
+      }
+      
       // Find user
-      const user = User.findByEmail(email);
+      const user = User.findByEmail(normalizedEmail);
       if (!user || !user.password_hash) {
+        this.recordFailedAttempt(normalizedEmail);
         throw new Error('Invalid email or password');
       }
       
       // Verify password
       const isValid = await User.comparePassword(password, user.password_hash);
       if (!isValid) {
+        this.recordFailedAttempt(normalizedEmail);
         throw new Error('Invalid email or password');
       }
+      
+      // Clear failed attempts on successful login
+      this.clearFailedAttempts(normalizedEmail);
       
       // Generate tokens
       const tokens = this.generateTokens(user);
@@ -66,7 +141,7 @@ class AuthService {
       // Store refresh token
       this.storeRefreshToken(user.id, tokens.refreshToken);
       
-      logger.info(`User logged in: ${email}`);
+      logger.info(`User logged in: ${normalizedEmail}`);
       
       return {
         user: this.sanitizeUser(user),
