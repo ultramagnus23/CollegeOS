@@ -79,19 +79,25 @@ class DatabaseManager {
         application_portal_url TEXT,
         academic_strengths TEXT,
         major_categories TEXT,
+        acceptance_rate REAL,
+        tuition_domestic INTEGER,
+        tuition_international INTEGER,
+        student_population INTEGER,
+        average_gpa REAL,
+        sat_range TEXT,
+        act_range TEXT,
+        graduation_rate REAL,
+        ranking INTEGER,
         trust_tier TEXT DEFAULT 'official',
         is_verified INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
       
-      -- Add location column if it doesn't exist (migration)
-      -- SQLite doesn't support IF NOT EXISTS for ALTER TABLE, so we check first
-      -- This will be handled by the seed script
-      
       CREATE INDEX IF NOT EXISTS idx_colleges_country ON colleges(country);
       CREATE INDEX IF NOT EXISTS idx_colleges_name ON colleges(name);
       CREATE INDEX IF NOT EXISTS idx_colleges_major_categories ON colleges(major_categories);
+      CREATE INDEX IF NOT EXISTS idx_colleges_acceptance_rate ON colleges(acceptance_rate);
       
       -- College Data table (Layer 2: Trusted Dynamic Data)
       CREATE TABLE IF NOT EXISTS college_data (
