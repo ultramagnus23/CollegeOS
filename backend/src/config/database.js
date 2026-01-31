@@ -659,6 +659,47 @@ class DatabaseManager {
       
       CREATE INDEX IF NOT EXISTS idx_admitted_samples_college ON admitted_student_samples(college_id);
       CREATE INDEX IF NOT EXISTS idx_admitted_samples_year ON admitted_student_samples(admission_year);
+      
+      -- ═══════════════════════════════════════════════════════════════
+      -- SEARCH HISTORY TABLE
+      -- ═══════════════════════════════════════════════════════════════
+      
+      CREATE TABLE IF NOT EXISTS search_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        search_query TEXT NOT NULL,
+        result_count INTEGER DEFAULT 0,
+        searched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_search_history_user ON search_history(user_id);
+      CREATE INDEX IF NOT EXISTS idx_search_history_date ON search_history(searched_at);
+      
+      -- ═══════════════════════════════════════════════════════════════
+      -- STUDENT ESSAYS TABLE (for tracking essays per college)
+      -- ═══════════════════════════════════════════════════════════════
+      
+      CREATE TABLE IF NOT EXISTS student_essays (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        college_id INTEGER,
+        application_id INTEGER,
+        essay_type TEXT DEFAULT 'supplemental',
+        prompt_text TEXT,
+        word_limit INTEGER,
+        status TEXT DEFAULT 'not_started' CHECK(status IN ('not_started', 'in_progress', 'complete')),
+        google_docs_link TEXT,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (college_id) REFERENCES colleges(id) ON DELETE SET NULL,
+        FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_student_essays_user ON student_essays(user_id);
+      CREATE INDEX IF NOT EXISTS idx_student_essays_app ON student_essays(application_id);
     `);
     
     // Add ml_consent column to users if it doesn't exist
