@@ -138,7 +138,7 @@ module.exports = {
 
   // Request size limits
   requestLimits: {
-    json: '10kb', // Reduced from 10mb for better security
+    json: '10kb', // Reduced from 10MB for better security
     urlencoded: '10kb',
   },
 
