@@ -147,3 +147,6 @@ export interface DashboardStats {
   upcomingDeadlines: number;
   daysToNextDeadline: number | null;
 }
+
+// Re-export CollegeOS specific types
+export * from './collegeos.types';
