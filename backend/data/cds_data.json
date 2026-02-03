@@ -4,7 +4,7 @@
     "generated_at": "2026-02-03",
     "description": "Common Data Set information for US colleges used for accurate chancing calculations",
     "data_year": "2023-2024",
-    "total_colleges": 50
+    "total_colleges": 20
   },
   "cds_data": {
     "harvard_university": {

@@ -393,19 +393,23 @@ function calculateCDSChance(studentProfile, college) {
   }
   
   // Calculate confidence based on data completeness
-  let dataPoints = 0;
+  // Track total possible data points vs points with actual data
+  const totalPossiblePoints = 3; // test scores, GPA, activities
   let availablePoints = 0;
   
-  if (studentProfile.sat_total || studentProfile.act_composite) { dataPoints++; availablePoints++; }
-  else { dataPoints++; }
+  if (studentProfile.sat_total || studentProfile.act_composite) { 
+    availablePoints++; 
+  }
   
-  if (studentGPA) { dataPoints++; availablePoints++; }
-  else { dataPoints++; }
+  if (studentGPA) { 
+    availablePoints++; 
+  }
   
-  if (activities.length > 0) { dataPoints++; availablePoints++; }
-  else { dataPoints++; }
+  if (activities.length > 0) { 
+    availablePoints++; 
+  }
   
-  const confidence = availablePoints / dataPoints;
+  const confidence = availablePoints / totalPossiblePoints;
   
   return {
     percentage: Math.round(probability),
