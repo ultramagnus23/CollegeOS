@@ -11,6 +11,7 @@ const {
   calculateGermanChance,
   getChancingForStudent 
 } = require('../services/chancingCalculator');
+const { calculateCDSChance, hasCDSData } = require('../services/cdsChancingService');
 const StudentProfile = require('../models/StudentProfile');
 const College = require('../models/College');
 const mlPredictionService = require('../services/mlPredictionService');
@@ -92,14 +93,26 @@ router.post('/calculate', authenticate, async (req, res, next) => {
     
     // Fall back to rule-based if ML not available/successful
     if (!chancing) {
-      if (country === 'India' && (profile.jee_main_percentile || profile.jee_advanced_rank)) {
-        chancing = calculateJEEChance(profile, college);
-      } else if (country === 'UK' && (profile.predicted_a_levels || profile.ib_predicted_score)) {
-        chancing = calculateUKChance(profile, college);
-      } else if (country === 'Germany' && profile.abitur_grade) {
-        chancing = calculateGermanChance(profile, college);
-      } else {
-        chancing = calculateAdmissionChance(profile, college);
+      // Try CDS-based calculation for US colleges
+      if (country === 'USA' || country === 'United States') {
+        const cdsResult = calculateCDSChance(profile, college);
+        if (cdsResult) {
+          chancing = cdsResult;
+          predictionType = 'cds_based';
+        }
+      }
+      
+      // Fall back to country-specific calculators
+      if (!chancing) {
+        if (country === 'India' && (profile.jee_main_percentile || profile.jee_advanced_rank)) {
+          chancing = calculateJEEChance(profile, college);
+        } else if (country === 'UK' && (profile.predicted_a_levels || profile.ib_predicted_score)) {
+          chancing = calculateUKChance(profile, college);
+        } else if (country === 'Germany' && profile.abitur_grade) {
+          chancing = calculateGermanChance(profile, college);
+        } else {
+          chancing = calculateAdmissionChance(profile, college);
+        }
       }
     }
     

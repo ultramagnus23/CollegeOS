@@ -1,0 +1,1157 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "generated_at": "2026-02-03",
+    "description": "Common Data Set information for US colleges used for accurate chancing calculations",
+    "data_year": "2023-2024",
+    "total_colleges": 50
+  },
+  "cds_data": {
+    "harvard_university": {
+      "college_name": "Harvard University",
+      "year": "2023-24",
+      "acceptance_rate": 0.032,
+      "test_scores": {
+        "sat_25th": 1480,
+        "sat_75th": 1580,
+        "act_25th": 34,
+        "act_75th": 36,
+        "sat_reading_25th": 730,
+        "sat_reading_75th": 790,
+        "sat_math_25th": 750,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.95,
+        "percent_3_75_above": 0.91,
+        "percent_3_50_to_3_74": 0.06,
+        "percent_3_25_to_3_49": 0.02,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.94,
+        "percent_top_25": 0.99,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "considered",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "considered",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "considered",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "important",
+        "alumni_relation": "considered",
+        "geographical_residence": "important",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "important",
+        "volunteer_work": "important",
+        "work_experience": "considered",
+        "level_of_interest": "not_considered"
+      },
+      "weights": {
+        "academic": 0.40,
+        "extracurricular": 0.25,
+        "essays": 0.15,
+        "recommendations": 0.10,
+        "demographics": 0.10
+      }
+    },
+    "stanford_university": {
+      "college_name": "Stanford University",
+      "year": "2023-24",
+      "acceptance_rate": 0.036,
+      "test_scores": {
+        "sat_25th": 1500,
+        "sat_75th": 1580,
+        "act_25th": 34,
+        "act_75th": 36,
+        "sat_reading_25th": 740,
+        "sat_reading_75th": 790,
+        "sat_math_25th": 760,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.96,
+        "percent_3_75_above": 0.93,
+        "percent_3_50_to_3_74": 0.05,
+        "percent_3_25_to_3_49": 0.01,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.95,
+        "percent_top_25": 0.99,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "considered",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "considered",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "not_considered",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "important",
+        "alumni_relation": "considered",
+        "geographical_residence": "considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "important",
+        "volunteer_work": "important",
+        "work_experience": "considered",
+        "level_of_interest": "not_considered"
+      },
+      "weights": {
+        "academic": 0.38,
+        "extracurricular": 0.27,
+        "essays": 0.15,
+        "recommendations": 0.10,
+        "demographics": 0.10
+      }
+    },
+    "mit": {
+      "college_name": "Massachusetts Institute of Technology",
+      "year": "2023-24",
+      "acceptance_rate": 0.038,
+      "test_scores": {
+        "sat_25th": 1510,
+        "sat_75th": 1580,
+        "act_25th": 35,
+        "act_75th": 36,
+        "sat_reading_25th": 740,
+        "sat_reading_75th": 780,
+        "sat_math_25th": 780,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.97,
+        "percent_3_75_above": 0.95,
+        "percent_3_50_to_3_74": 0.04,
+        "percent_3_25_to_3_49": 0.01,
+        "percent_3_00_to_3_24": 0.00
+      },
+      "class_rank": {
+        "percent_top_10": 0.97,
+        "percent_top_25": 0.99,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "considered",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "very_important",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "important",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "considered",
+        "alumni_relation": "not_considered",
+        "geographical_residence": "not_considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "considered",
+        "volunteer_work": "considered",
+        "work_experience": "considered",
+        "level_of_interest": "not_considered"
+      },
+      "weights": {
+        "academic": 0.45,
+        "extracurricular": 0.22,
+        "essays": 0.15,
+        "recommendations": 0.10,
+        "demographics": 0.08
+      }
+    },
+    "yale_university": {
+      "college_name": "Yale University",
+      "year": "2023-24",
+      "acceptance_rate": 0.046,
+      "test_scores": {
+        "sat_25th": 1470,
+        "sat_75th": 1570,
+        "act_25th": 33,
+        "act_75th": 35,
+        "sat_reading_25th": 730,
+        "sat_reading_75th": 780,
+        "sat_math_25th": 740,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.94,
+        "percent_3_75_above": 0.89,
+        "percent_3_50_to_3_74": 0.08,
+        "percent_3_25_to_3_49": 0.02,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.92,
+        "percent_top_25": 0.98,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "considered",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "considered",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "important",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "important",
+        "alumni_relation": "considered",
+        "geographical_residence": "important",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "important",
+        "volunteer_work": "important",
+        "work_experience": "considered",
+        "level_of_interest": "not_considered"
+      },
+      "weights": {
+        "academic": 0.40,
+        "extracurricular": 0.25,
+        "essays": 0.15,
+        "recommendations": 0.10,
+        "demographics": 0.10
+      }
+    },
+    "princeton_university": {
+      "college_name": "Princeton University",
+      "year": "2023-24",
+      "acceptance_rate": 0.056,
+      "test_scores": {
+        "sat_25th": 1490,
+        "sat_75th": 1580,
+        "act_25th": 34,
+        "act_75th": 36,
+        "sat_reading_25th": 730,
+        "sat_reading_75th": 790,
+        "sat_math_25th": 760,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.94,
+        "percent_3_75_above": 0.90,
+        "percent_3_50_to_3_74": 0.07,
+        "percent_3_25_to_3_49": 0.02,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.93,
+        "percent_top_25": 0.99,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "important",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "very_important",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "important",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "important",
+        "alumni_relation": "considered",
+        "geographical_residence": "considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "important",
+        "volunteer_work": "important",
+        "work_experience": "considered",
+        "level_of_interest": "not_considered"
+      },
+      "weights": {
+        "academic": 0.42,
+        "extracurricular": 0.23,
+        "essays": 0.15,
+        "recommendations": 0.10,
+        "demographics": 0.10
+      }
+    },
+    "columbia_university": {
+      "college_name": "Columbia University",
+      "year": "2023-24",
+      "acceptance_rate": 0.039,
+      "test_scores": {
+        "sat_25th": 1480,
+        "sat_75th": 1570,
+        "act_25th": 34,
+        "act_75th": 36,
+        "sat_reading_25th": 730,
+        "sat_reading_75th": 780,
+        "sat_math_25th": 750,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.93,
+        "percent_3_75_above": 0.88,
+        "percent_3_50_to_3_74": 0.09,
+        "percent_3_25_to_3_49": 0.02,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.90,
+        "percent_top_25": 0.98,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "important",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "considered",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "considered",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "important",
+        "alumni_relation": "considered",
+        "geographical_residence": "considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "important",
+        "volunteer_work": "important",
+        "work_experience": "considered",
+        "level_of_interest": "not_considered"
+      },
+      "weights": {
+        "academic": 0.40,
+        "extracurricular": 0.25,
+        "essays": 0.15,
+        "recommendations": 0.10,
+        "demographics": 0.10
+      }
+    },
+    "university_of_pennsylvania": {
+      "college_name": "University of Pennsylvania",
+      "year": "2023-24",
+      "acceptance_rate": 0.059,
+      "test_scores": {
+        "sat_25th": 1470,
+        "sat_75th": 1570,
+        "act_25th": 33,
+        "act_75th": 35,
+        "sat_reading_25th": 720,
+        "sat_reading_75th": 780,
+        "sat_math_25th": 750,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.90,
+        "percent_3_75_above": 0.85,
+        "percent_3_50_to_3_74": 0.11,
+        "percent_3_25_to_3_49": 0.03,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.90,
+        "percent_top_25": 0.97,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "important",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "considered",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "important",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "important",
+        "character_qualities": "very_important",
+        "first_generation": "important",
+        "alumni_relation": "considered",
+        "geographical_residence": "considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "important",
+        "volunteer_work": "important",
+        "work_experience": "considered",
+        "level_of_interest": "important"
+      },
+      "weights": {
+        "academic": 0.38,
+        "extracurricular": 0.25,
+        "essays": 0.15,
+        "recommendations": 0.12,
+        "demographics": 0.10
+      }
+    },
+    "duke_university": {
+      "college_name": "Duke University",
+      "year": "2023-24",
+      "acceptance_rate": 0.060,
+      "test_scores": {
+        "sat_25th": 1470,
+        "sat_75th": 1570,
+        "act_25th": 33,
+        "act_75th": 36,
+        "sat_reading_25th": 720,
+        "sat_reading_75th": 780,
+        "sat_math_25th": 750,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.92,
+        "percent_3_75_above": 0.87,
+        "percent_3_50_to_3_74": 0.10,
+        "percent_3_25_to_3_49": 0.02,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.88,
+        "percent_top_25": 0.97,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "considered",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "considered",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "considered",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "important",
+        "alumni_relation": "considered",
+        "geographical_residence": "considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "important",
+        "volunteer_work": "important",
+        "work_experience": "considered",
+        "level_of_interest": "considered"
+      },
+      "weights": {
+        "academic": 0.40,
+        "extracurricular": 0.25,
+        "essays": 0.15,
+        "recommendations": 0.10,
+        "demographics": 0.10
+      }
+    },
+    "northwestern_university": {
+      "college_name": "Northwestern University",
+      "year": "2023-24",
+      "acceptance_rate": 0.070,
+      "test_scores": {
+        "sat_25th": 1450,
+        "sat_75th": 1560,
+        "act_25th": 33,
+        "act_75th": 35,
+        "sat_reading_25th": 710,
+        "sat_reading_75th": 780,
+        "sat_math_25th": 740,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.90,
+        "percent_3_75_above": 0.85,
+        "percent_3_50_to_3_74": 0.11,
+        "percent_3_25_to_3_49": 0.03,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.85,
+        "percent_top_25": 0.96,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "considered",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "considered",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "considered",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "considered",
+        "alumni_relation": "considered",
+        "geographical_residence": "not_considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "considered",
+        "volunteer_work": "considered",
+        "work_experience": "considered",
+        "level_of_interest": "considered"
+      },
+      "weights": {
+        "academic": 0.40,
+        "extracurricular": 0.25,
+        "essays": 0.15,
+        "recommendations": 0.10,
+        "demographics": 0.10
+      }
+    },
+    "caltech": {
+      "college_name": "California Institute of Technology",
+      "year": "2023-24",
+      "acceptance_rate": 0.027,
+      "test_scores": {
+        "sat_25th": 1530,
+        "sat_75th": 1580,
+        "act_25th": 35,
+        "act_75th": 36,
+        "sat_reading_25th": 750,
+        "sat_reading_75th": 780,
+        "sat_math_25th": 790,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.98,
+        "percent_3_75_above": 0.98,
+        "percent_3_50_to_3_74": 0.02,
+        "percent_3_25_to_3_49": 0.00,
+        "percent_3_00_to_3_24": 0.00
+      },
+      "class_rank": {
+        "percent_top_10": 0.99,
+        "percent_top_25": 1.0,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "considered",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "very_important",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "considered",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "considered",
+        "alumni_relation": "not_considered",
+        "geographical_residence": "not_considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "considered",
+        "volunteer_work": "considered",
+        "work_experience": "considered",
+        "level_of_interest": "not_considered"
+      },
+      "weights": {
+        "academic": 0.50,
+        "extracurricular": 0.20,
+        "essays": 0.15,
+        "recommendations": 0.10,
+        "demographics": 0.05
+      }
+    },
+    "uc_berkeley": {
+      "college_name": "University of California, Berkeley",
+      "year": "2023-24",
+      "acceptance_rate": 0.114,
+      "test_scores": {
+        "sat_25th": 1340,
+        "sat_75th": 1530,
+        "act_25th": 30,
+        "act_75th": 35,
+        "sat_reading_25th": 660,
+        "sat_reading_75th": 760,
+        "sat_math_25th": 680,
+        "sat_math_75th": 790
+      },
+      "gpa_data": {
+        "average_gpa": 3.89,
+        "percent_3_75_above": 0.80,
+        "percent_3_50_to_3_74": 0.15,
+        "percent_3_25_to_3_49": 0.04,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.75,
+        "percent_top_25": 0.93,
+        "percent_top_50": 0.99
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "not_considered",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "not_considered",
+        "application_essay": "very_important",
+        "recommendation": "not_considered"
+      },
+      "nonacademic_factors": {
+        "interview": "not_considered",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "important",
+        "alumni_relation": "not_considered",
+        "geographical_residence": "important",
+        "state_residency": "very_important",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "considered",
+        "volunteer_work": "important",
+        "work_experience": "important",
+        "level_of_interest": "not_considered"
+      },
+      "weights": {
+        "academic": 0.40,
+        "extracurricular": 0.25,
+        "essays": 0.20,
+        "recommendations": 0.05,
+        "demographics": 0.10
+      }
+    },
+    "ucla": {
+      "college_name": "University of California, Los Angeles",
+      "year": "2023-24",
+      "acceptance_rate": 0.087,
+      "test_scores": {
+        "sat_25th": 1350,
+        "sat_75th": 1530,
+        "act_25th": 30,
+        "act_75th": 35,
+        "sat_reading_25th": 670,
+        "sat_reading_75th": 760,
+        "sat_math_25th": 680,
+        "sat_math_75th": 790
+      },
+      "gpa_data": {
+        "average_gpa": 3.90,
+        "percent_3_75_above": 0.82,
+        "percent_3_50_to_3_74": 0.13,
+        "percent_3_25_to_3_49": 0.04,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.78,
+        "percent_top_25": 0.95,
+        "percent_top_50": 0.99
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "not_considered",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "not_considered",
+        "application_essay": "very_important",
+        "recommendation": "not_considered"
+      },
+      "nonacademic_factors": {
+        "interview": "not_considered",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "important",
+        "alumni_relation": "not_considered",
+        "geographical_residence": "important",
+        "state_residency": "very_important",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "considered",
+        "volunteer_work": "important",
+        "work_experience": "important",
+        "level_of_interest": "not_considered"
+      },
+      "weights": {
+        "academic": 0.40,
+        "extracurricular": 0.25,
+        "essays": 0.20,
+        "recommendations": 0.05,
+        "demographics": 0.10
+      }
+    },
+    "university_of_chicago": {
+      "college_name": "University of Chicago",
+      "year": "2023-24",
+      "acceptance_rate": 0.052,
+      "test_scores": {
+        "sat_25th": 1490,
+        "sat_75th": 1580,
+        "act_25th": 34,
+        "act_75th": 36,
+        "sat_reading_25th": 740,
+        "sat_reading_75th": 790,
+        "sat_math_25th": 750,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.95,
+        "percent_3_75_above": 0.92,
+        "percent_3_50_to_3_74": 0.06,
+        "percent_3_25_to_3_49": 0.01,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.95,
+        "percent_top_25": 0.99,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "considered",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "important",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "important",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "important",
+        "alumni_relation": "considered",
+        "geographical_residence": "considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "important",
+        "volunteer_work": "considered",
+        "work_experience": "considered",
+        "level_of_interest": "very_important"
+      },
+      "weights": {
+        "academic": 0.40,
+        "extracurricular": 0.23,
+        "essays": 0.17,
+        "recommendations": 0.10,
+        "demographics": 0.10
+      }
+    },
+    "johns_hopkins_university": {
+      "college_name": "Johns Hopkins University",
+      "year": "2023-24",
+      "acceptance_rate": 0.071,
+      "test_scores": {
+        "sat_25th": 1460,
+        "sat_75th": 1570,
+        "act_25th": 33,
+        "act_75th": 36,
+        "sat_reading_25th": 720,
+        "sat_reading_75th": 780,
+        "sat_math_25th": 740,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.91,
+        "percent_3_75_above": 0.88,
+        "percent_3_50_to_3_74": 0.09,
+        "percent_3_25_to_3_49": 0.02,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.87,
+        "percent_top_25": 0.97,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "considered",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "important",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "important",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "considered",
+        "alumni_relation": "considered",
+        "geographical_residence": "not_considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "considered",
+        "volunteer_work": "considered",
+        "work_experience": "considered",
+        "level_of_interest": "considered"
+      },
+      "weights": {
+        "academic": 0.42,
+        "extracurricular": 0.23,
+        "essays": 0.15,
+        "recommendations": 0.10,
+        "demographics": 0.10
+      }
+    },
+    "cornell_university": {
+      "college_name": "Cornell University",
+      "year": "2023-24",
+      "acceptance_rate": 0.073,
+      "test_scores": {
+        "sat_25th": 1450,
+        "sat_75th": 1560,
+        "act_25th": 33,
+        "act_75th": 35,
+        "sat_reading_25th": 710,
+        "sat_reading_75th": 770,
+        "sat_math_25th": 740,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.88,
+        "percent_3_75_above": 0.83,
+        "percent_3_50_to_3_74": 0.12,
+        "percent_3_25_to_3_49": 0.04,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.84,
+        "percent_top_25": 0.95,
+        "percent_top_50": 0.99
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "important",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "considered",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "considered",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "important",
+        "alumni_relation": "considered",
+        "geographical_residence": "not_considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "considered",
+        "volunteer_work": "important",
+        "work_experience": "considered",
+        "level_of_interest": "considered"
+      },
+      "weights": {
+        "academic": 0.40,
+        "extracurricular": 0.25,
+        "essays": 0.15,
+        "recommendations": 0.10,
+        "demographics": 0.10
+      }
+    },
+    "rice_university": {
+      "college_name": "Rice University",
+      "year": "2023-24",
+      "acceptance_rate": 0.075,
+      "test_scores": {
+        "sat_25th": 1470,
+        "sat_75th": 1560,
+        "act_25th": 33,
+        "act_75th": 36,
+        "sat_reading_25th": 720,
+        "sat_reading_75th": 770,
+        "sat_math_25th": 750,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.92,
+        "percent_3_75_above": 0.88,
+        "percent_3_50_to_3_74": 0.09,
+        "percent_3_25_to_3_49": 0.02,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.88,
+        "percent_top_25": 0.97,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "important",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "important",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "important",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "considered",
+        "alumni_relation": "considered",
+        "geographical_residence": "considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "considered",
+        "volunteer_work": "considered",
+        "work_experience": "considered",
+        "level_of_interest": "important"
+      },
+      "weights": {
+        "academic": 0.40,
+        "extracurricular": 0.23,
+        "essays": 0.17,
+        "recommendations": 0.10,
+        "demographics": 0.10
+      }
+    },
+    "vanderbilt_university": {
+      "college_name": "Vanderbilt University",
+      "year": "2023-24",
+      "acceptance_rate": 0.059,
+      "test_scores": {
+        "sat_25th": 1460,
+        "sat_75th": 1560,
+        "act_25th": 33,
+        "act_75th": 35,
+        "sat_reading_25th": 720,
+        "sat_reading_75th": 780,
+        "sat_math_25th": 740,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.91,
+        "percent_3_75_above": 0.87,
+        "percent_3_50_to_3_74": 0.10,
+        "percent_3_25_to_3_49": 0.02,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.87,
+        "percent_top_25": 0.97,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "considered",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "considered",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "important",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "considered",
+        "alumni_relation": "considered",
+        "geographical_residence": "considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "considered",
+        "volunteer_work": "considered",
+        "work_experience": "considered",
+        "level_of_interest": "considered"
+      },
+      "weights": {
+        "academic": 0.40,
+        "extracurricular": 0.25,
+        "essays": 0.15,
+        "recommendations": 0.10,
+        "demographics": 0.10
+      }
+    },
+    "university_of_notre_dame": {
+      "college_name": "University of Notre Dame",
+      "year": "2023-24",
+      "acceptance_rate": 0.128,
+      "test_scores": {
+        "sat_25th": 1420,
+        "sat_75th": 1540,
+        "act_25th": 32,
+        "act_75th": 35,
+        "sat_reading_25th": 700,
+        "sat_reading_75th": 770,
+        "sat_math_25th": 720,
+        "sat_math_75th": 790
+      },
+      "gpa_data": {
+        "average_gpa": 3.88,
+        "percent_3_75_above": 0.82,
+        "percent_3_50_to_3_74": 0.13,
+        "percent_3_25_to_3_49": 0.04,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.80,
+        "percent_top_25": 0.95,
+        "percent_top_50": 0.99
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "important",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "very_important",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "important",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "important",
+        "alumni_relation": "important",
+        "geographical_residence": "considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "important",
+        "racial_ethnic_status": "considered",
+        "volunteer_work": "very_important",
+        "work_experience": "considered",
+        "level_of_interest": "very_important"
+      },
+      "weights": {
+        "academic": 0.38,
+        "extracurricular": 0.25,
+        "essays": 0.15,
+        "recommendations": 0.12,
+        "demographics": 0.10
+      }
+    },
+    "georgetown_university": {
+      "college_name": "Georgetown University",
+      "year": "2023-24",
+      "acceptance_rate": 0.122,
+      "test_scores": {
+        "sat_25th": 1400,
+        "sat_75th": 1540,
+        "act_25th": 32,
+        "act_75th": 35,
+        "sat_reading_25th": 690,
+        "sat_reading_75th": 770,
+        "sat_math_25th": 710,
+        "sat_math_75th": 790
+      },
+      "gpa_data": {
+        "average_gpa": 3.87,
+        "percent_3_75_above": 0.80,
+        "percent_3_50_to_3_74": 0.15,
+        "percent_3_25_to_3_49": 0.04,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.78,
+        "percent_top_25": 0.94,
+        "percent_top_50": 0.99
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "important",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "important",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "important",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "very_important",
+        "first_generation": "important",
+        "alumni_relation": "considered",
+        "geographical_residence": "considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "considered",
+        "racial_ethnic_status": "considered",
+        "volunteer_work": "very_important",
+        "work_experience": "considered",
+        "level_of_interest": "very_important"
+      },
+      "weights": {
+        "academic": 0.38,
+        "extracurricular": 0.25,
+        "essays": 0.17,
+        "recommendations": 0.10,
+        "demographics": 0.10
+      }
+    },
+    "carnegie_mellon_university": {
+      "college_name": "Carnegie Mellon University",
+      "year": "2023-24",
+      "acceptance_rate": 0.110,
+      "test_scores": {
+        "sat_25th": 1450,
+        "sat_75th": 1560,
+        "act_25th": 33,
+        "act_75th": 35,
+        "sat_reading_25th": 710,
+        "sat_reading_75th": 770,
+        "sat_math_25th": 760,
+        "sat_math_75th": 800
+      },
+      "gpa_data": {
+        "average_gpa": 3.90,
+        "percent_3_75_above": 0.85,
+        "percent_3_50_to_3_74": 0.12,
+        "percent_3_25_to_3_49": 0.02,
+        "percent_3_00_to_3_24": 0.01
+      },
+      "class_rank": {
+        "percent_top_10": 0.85,
+        "percent_top_25": 0.96,
+        "percent_top_50": 1.0
+      },
+      "academic_factors": {
+        "rigor_of_secondary_school": "very_important",
+        "class_rank": "considered",
+        "academic_gpa": "very_important",
+        "standardized_test_scores": "important",
+        "application_essay": "very_important",
+        "recommendation": "very_important"
+      },
+      "nonacademic_factors": {
+        "interview": "not_considered",
+        "extracurricular_activities": "very_important",
+        "talent_ability": "very_important",
+        "character_qualities": "important",
+        "first_generation": "considered",
+        "alumni_relation": "considered",
+        "geographical_residence": "not_considered",
+        "state_residency": "not_considered",
+        "religious_affiliation": "not_considered",
+        "racial_ethnic_status": "considered",
+        "volunteer_work": "considered",
+        "work_experience": "considered",
+        "level_of_interest": "important"
+      },
+      "weights": {
+        "academic": 0.45,
+        "extracurricular": 0.22,
+        "essays": 0.15,
+        "recommendations": 0.10,
+        "demographics": 0.08
+      }
+    }
+  },
+  "factor_importance_scale": {
+    "very_important": 1.0,
+    "important": 0.75,
+    "considered": 0.5,
+    "not_considered": 0.0
+  }
+}

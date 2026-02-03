@@ -33,6 +33,7 @@ const mlRoutes = require('./routes/ml');
 const fitRoutes = require('./routes/fit');
 const tasksRoutes = require('./routes/tasks');
 const riskRoutes = require('./routes/risk');
+const warningsRoutes = require('./routes/warnings');
 
 // Create Express app
 const app = express();
@@ -106,6 +107,7 @@ app.use('/api/ml', mlRoutes);
 app.use('/api/fit', fitRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/risk', riskRoutes);
+app.use('/api/warnings', warningsRoutes);
 
 // 404 handler
 app.use((req, res) => {
