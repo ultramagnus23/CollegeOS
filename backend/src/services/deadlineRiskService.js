@@ -1,5 +1,5 @@
 /**
- * DeadlineService.js
+ * DeadlineRiskService.js
  * Handles deadline tracking, risk calculation, and alerts
  * Core component of the CollegeOS deadline and risk system
  */
