@@ -1,5 +1,5 @@
 /**
- * FitClassificationService.ts
+ * FitClassificationService.js
  * Core intelligence for classifying college fit based on user profile
  * Implements non-ML classification with transparent explanations
  */
