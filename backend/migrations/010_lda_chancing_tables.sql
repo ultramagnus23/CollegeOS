@@ -1,7 +1,11 @@
 -- backend/migrations/010_lda_chancing_tables.sql
 -- Extended ML tables for LDA-based admission chancing system
--- NOTE: SQLite does not support "IF NOT EXISTS" for ALTER TABLE ADD COLUMN
--- The migration runner handles duplicate column errors gracefully
+-- 
+-- @alter-table-migration
+-- NOTE: This migration uses ALTER TABLE ADD COLUMN statements.
+-- SQLite does not support "IF NOT EXISTS" for ALTER TABLE ADD COLUMN.
+-- The migration runner automatically detects ALTER TABLE statements and
+-- handles duplicate column errors gracefully (ignoring them if columns exist).
 
 -- Extend ml_training_data with additional fields for LDA training
 -- Add data quality and source tracking columns
