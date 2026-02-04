@@ -1,5 +1,5 @@
 // ============================================
-// FILE: src/pages/Dashboard.tsx - COMPLETE WITH ALL FEATURES
+// FILE: src/pages/Dashboard.tsx - MAGIC AUTOMATION DASHBOARD
 // ============================================
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,10 @@ import { api } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 import AIChatbot from '../components/AIChatbot';
 import ProfileStrength from '../components/chancing/ProfileStrength';
+import TodaysTasks from '../components/dashboard/TodaysTasks';
+import UrgentAlerts from '../components/dashboard/UrgentAlerts';
+import RecommendedActions from '../components/dashboard/RecommendedActions';
+import CollegeListOverview from '../components/dashboard/CollegeListOverview';
 import { 
   School, 
   FileText, 
@@ -21,7 +25,8 @@ import {
   Trophy,
   BookOpen,
   Users,
-  Activity
+  Activity,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -68,6 +73,13 @@ const Dashboard = () => {
   const [recentApplications, setRecentApplications] = useState<any[]>([]);
   const [essayProgress, setEssayProgress] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Magic automation states
+  const [recommendedActions, setRecommendedActions] = useState<any[]>([]);
+  const [profileStrength, setProfileStrength] = useState(0);
+  const [urgentAlerts, setUrgentAlerts] = useState<any[]>([]);
+  const [collegeList, setCollegeList] = useState<any[]>([]);
+  const [todaysTasks, setTodaysTasks] = useState<any[]>([]);
 
   // Parse user data
   const targetCountries = user?.target_countries ? JSON.parse(user.target_countries) : [];
@@ -103,6 +115,111 @@ const Dashboard = () => {
       setUpcomingDeadlines(deadlines.slice(0, 5));
       setRecentApplications(applications.slice(0, 5));
       setEssayProgress(essays.slice(0, 3));
+      
+      // Transform applications into college list format for CollegeListOverview
+      const transformedColleges = applications.map((app: any) => ({
+        id: app.id,
+        name: app.college_name,
+        category: app.category || 'target', // reach, target, safety
+        chance: app.chance || 50,
+        country: app.country || 'United States',
+        deadline: app.deadline,
+        status: app.status
+      }));
+      setCollegeList(transformedColleges);
+      
+      // Transform deadlines into urgent alerts
+      const alerts = deadlines
+        .filter((d: any) => !d.is_completed)
+        .slice(0, 5)
+        .map((d: any) => {
+          const daysRemaining = Math.ceil((new Date(d.deadline_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          return {
+            id: d.id,
+            type: 'deadline' as const,
+            severity: daysRemaining <= 1 ? 'critical' as const : 
+                      daysRemaining <= 3 ? 'warning' as const : 
+                      daysRemaining <= 7 ? 'info' as const : 'success' as const,
+            title: `${d.deadline_type} - ${d.college_name}`,
+            description: `Due ${daysRemaining <= 0 ? 'today' : `in ${daysRemaining} days`}`,
+            college: d.college_name,
+            daysRemaining,
+            action: { label: 'View', href: '/deadlines' }
+          };
+        });
+      setUrgentAlerts(alerts);
+      
+      // Generate today's tasks from deadlines
+      const tasks = deadlines
+        .filter((d: any) => !d.is_completed)
+        .slice(0, 5)
+        .map((d: any) => {
+          const daysRemaining = Math.ceil((new Date(d.deadline_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          return {
+            id: d.id,
+            title: d.deadline_type,
+            category: 'deadline',
+            priority: daysRemaining <= 1 ? 'critical' as const :
+                      daysRemaining <= 3 ? 'high' as const :
+                      daysRemaining <= 7 ? 'medium' as const : 'low' as const,
+            dueDate: d.deadline_date,
+            college: d.college_name,
+            status: 'pending' as const,
+            estimatedTime: 30
+          };
+        });
+      setTodaysTasks(tasks);
+      
+      // Load automation data (profile strength and recommended actions)
+      try {
+        const userProfile = {
+          gpa: user?.gpa || 3.5,
+          satScore: user?.sat_score,
+          actScore: user?.act_score,
+          activities: [], // Would come from activities API
+          grade: user?.grade || 'Grade 12',
+          curriculum: user?.curriculum || 'CBSE'
+        };
+        
+        const strengthRes = await api.automation.getProfileStrength(userProfile);
+        if (strengthRes.success && strengthRes.data) {
+          setProfileStrength(strengthRes.data.percentage || 0);
+        }
+        
+        const actionsRes = await api.automation.getRecommendedActions(userProfile);
+        if (actionsRes.success && actionsRes.data) {
+          setRecommendedActions(actionsRes.data.map((a: any, i: number) => ({
+            id: `action-${i}`,
+            ...a,
+            impactScore: a.impact === 'Unlocks personalized college recommendations' ? 20 :
+                         a.impact === 'Better reach/target/safety classification' ? 15 : 10
+          })));
+        }
+      } catch (automationError) {
+        console.warn('Automation features not available:', automationError);
+        // Fallback: generate basic recommended actions
+        setRecommendedActions([
+          {
+            id: 'action-1',
+            priority: 'high',
+            category: 'profile',
+            action: 'Complete your profile',
+            reason: 'A complete profile unlocks personalized recommendations',
+            impact: 'Unlocks personalized college recommendations',
+            impactScore: 20
+          },
+          {
+            id: 'action-2',
+            priority: 'medium',
+            category: 'applications',
+            action: 'Add colleges to your list',
+            reason: 'Build a balanced list of reach, target, and safety schools',
+            impact: 'Better application strategy',
+            impactScore: 15
+          }
+        ]);
+        setProfileStrength(45); // Default estimate
+      }
     } catch (error) {
       console.error('Failed to load dashboard:', error);
     } finally {
@@ -135,7 +252,13 @@ const Dashboard = () => {
     <div className="p-8 space-y-8">
       {/* Welcome Header with gradient-hero */}
       <div className="gradient-hero rounded-2xl p-8 text-white">
-        <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.full_name}! 👋</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-bold">Welcome back, {user?.full_name}! 👋</h1>
+          <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
+            <Sparkles className="w-4 h-4" />
+            <span className="text-sm font-medium">Magic Mode Active</span>
+          </div>
+        </div>
         <p className="text-white/90 mb-6">Here's your college application journey at a glance</p>
         
         {/* Quick Stats */}
@@ -173,6 +296,44 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* MAGIC SECTION: Urgent Alerts Banner */}
+      {urgentAlerts.length > 0 && (
+        <UrgentAlerts 
+          alerts={urgentAlerts}
+          onAlertClick={(alertId) => navigate('/deadlines')}
+        />
+      )}
+
+      {/* MAGIC SECTION: Today's Tasks + Recommended Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TodaysTasks 
+          tasks={todaysTasks}
+          onTaskClick={(taskId) => navigate('/deadlines')}
+          onTaskComplete={(taskId) => {
+            // Mark task as complete
+            console.log('Complete task:', taskId);
+          }}
+        />
+        
+        <RecommendedActions 
+          actions={recommendedActions}
+          profileStrength={profileStrength}
+          onActionClick={(action) => {
+            if (action.category === 'profile') navigate('/settings');
+            else if (action.category === 'essays') navigate('/essays');
+            else if (action.category === 'applications') navigate('/discover');
+            else if (action.category === 'deadlines') navigate('/deadlines');
+          }}
+        />
+      </div>
+
+      {/* MAGIC SECTION: College List Overview */}
+      <CollegeListOverview 
+        colleges={collegeList}
+        onCollegeClick={(collegeId) => navigate(`/colleges/${collegeId}`)}
+        onAddCollege={() => navigate('/discover')}
+      />
 
       {/* Progress Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
