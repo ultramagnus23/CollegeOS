@@ -35,6 +35,9 @@ const tasksRoutes = require('./routes/tasks');
 const riskRoutes = require('./routes/risk');
 const warningsRoutes = require('./routes/warnings');
 const automationRoutes = require('./routes/automation');
+const documentsRoutes = require('./routes/documents');
+const scholarshipsRoutes = require('./routes/scholarships');
+const recommendersRoutes = require('./routes/recommenders');
 
 // Create Express app
 const app = express();
@@ -110,6 +113,9 @@ app.use('/api/tasks', tasksRoutes);
 app.use('/api/risk', riskRoutes);
 app.use('/api/warnings', warningsRoutes);
 app.use('/api/automation', automationRoutes);
+app.use('/api/documents', documentsRoutes);
+app.use('/api/scholarships', scholarshipsRoutes);
+app.use('/api/recommenders', recommendersRoutes);
 
 // 404 handler
 app.use((req, res) => {
