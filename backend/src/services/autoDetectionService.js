@@ -361,7 +361,7 @@ class AutoDetectionService {
 
     // Academics (30 points)
     if (profile.gpa) {
-      const gpaScore = Math.min(profile.gpa / 4.0, 1) * 25;
+      const gpaScore = Math.min(profile.gpa / 4.0, 1) * maxScores.academics;
       score += gpaScore;
       breakdown.academics = { score: Math.round(gpaScore), max: maxScores.academics, status: 'complete' };
     } else {
@@ -372,9 +372,9 @@ class AutoDetectionService {
     if (profile.satScore || profile.actScore) {
       let testScore = 0;
       if (profile.satScore) {
-        testScore = Math.min(profile.satScore / 1600, 1) * 25;
+        testScore = Math.min(profile.satScore / 1600, 1) * maxScores.testing;
       } else if (profile.actScore) {
-        testScore = Math.min(profile.actScore / 36, 1) * 25;
+        testScore = Math.min(profile.actScore / 36, 1) * maxScores.testing;
       }
       score += testScore;
       breakdown.testing = { score: Math.round(testScore), max: maxScores.testing, status: 'complete' };
@@ -384,7 +384,7 @@ class AutoDetectionService {
 
     // Activities (20 points)
     if (profile.activities && profile.activities.length > 0) {
-      const activityScore = Math.min(profile.activities.length / 10, 1) * 20;
+      const activityScore = Math.min(profile.activities.length / 10, 1) * maxScores.activities;
       score += activityScore;
       breakdown.activities = { 
         score: Math.round(activityScore), 

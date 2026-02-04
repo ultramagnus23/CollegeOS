@@ -177,10 +177,10 @@ class SmartRecommendationService {
       tier = 'SELECTIVE';
     }
 
-    // Get sample colleges from appropriate tiers
+    // Get tier information for current tier
     const tierInfo = SELECTIVITY_TIERS[tier];
-    const lowerTier = Object.entries(SELECTIVITY_TIERS).find(([k, v]) => v.min > tierInfo.max)?.[0];
-    const higherTier = Object.entries(SELECTIVITY_TIERS).find(([k, v]) => v.max < tierInfo.min)?.[0];
+    // Note: lowerTier and higherTier could be used for adjacent tier recommendations
+    // but are not currently implemented in this version
 
     const recommendations = {
       profile_strength: this._assessProfileStrength(profile),
