@@ -4,7 +4,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { authenticateToken, optionalAuth } = require('../middleware/auth');
+const { authenticate, optionalAuth } = require('../middleware/auth');
 const AutoDetectionService = require('../services/autoDetectionService');
 const SmartRecommendationService = require('../services/smartRecommendationService');
 const logger = require('../utils/logger');
@@ -85,7 +85,7 @@ router.post('/detect-country', optionalAuth, async (req, res) => {
  * POST /api/automation/check-exemption
  * Check English proficiency test exemption
  */
-router.post('/check-exemption', authenticateToken, async (req, res) => {
+router.post('/check-exemption', authenticate, async (req, res) => {
   try {
     const { profile, targetCountry } = req.body;
     
@@ -145,7 +145,7 @@ router.get('/application-system/:country', optionalAuth, async (req, res) => {
  * POST /api/automation/recommended-actions
  * Get auto-generated recommended actions
  */
-router.post('/recommended-actions', authenticateToken, async (req, res) => {
+router.post('/recommended-actions', authenticate, async (req, res) => {
   try {
     const { profile } = req.body;
     
@@ -175,7 +175,7 @@ router.post('/recommended-actions', authenticateToken, async (req, res) => {
  * POST /api/automation/profile-strength
  * Calculate profile strength score
  */
-router.post('/profile-strength', authenticateToken, async (req, res) => {
+router.post('/profile-strength', authenticate, async (req, res) => {
   try {
     const { profile } = req.body;
     
@@ -205,7 +205,7 @@ router.post('/profile-strength', authenticateToken, async (req, res) => {
  * POST /api/automation/college-list-strategy
  * Generate college list strategy recommendations
  */
-router.post('/college-list-strategy', authenticateToken, async (req, res) => {
+router.post('/college-list-strategy', authenticate, async (req, res) => {
   try {
     const { profile, options } = req.body;
     
@@ -235,7 +235,7 @@ router.post('/college-list-strategy', authenticateToken, async (req, res) => {
  * POST /api/automation/recommendations
  * Generate personalized college recommendations
  */
-router.post('/recommendations', authenticateToken, async (req, res) => {
+router.post('/recommendations', authenticate, async (req, res) => {
   try {
     const { profile, preferences } = req.body;
     
@@ -284,7 +284,7 @@ router.post('/recommendations', authenticateToken, async (req, res) => {
  * GET /api/automation/similar-colleges/:collegeId
  * Get colleges similar to a reference college
  */
-router.get('/similar-colleges/:collegeId', authenticateToken, async (req, res) => {
+router.get('/similar-colleges/:collegeId', authenticate, async (req, res) => {
   try {
     const { collegeId } = req.params;
     const profile = req.user; // Use authenticated user profile
@@ -315,7 +315,7 @@ router.get('/similar-colleges/:collegeId', authenticateToken, async (req, res) =
  * POST /api/automation/instant-recommendations
  * Get instant recommendations after onboarding
  */
-router.post('/instant-recommendations', authenticateToken, async (req, res) => {
+router.post('/instant-recommendations', authenticate, async (req, res) => {
   try {
     const { profile } = req.body;
     
@@ -345,7 +345,7 @@ router.post('/instant-recommendations', authenticateToken, async (req, res) => {
  * POST /api/automation/behavior-suggestions
  * Get suggestions based on browsing behavior
  */
-router.post('/behavior-suggestions', authenticateToken, async (req, res) => {
+router.post('/behavior-suggestions', authenticate, async (req, res) => {
   try {
     const { viewedColleges } = req.body;
     const profile = req.user;
