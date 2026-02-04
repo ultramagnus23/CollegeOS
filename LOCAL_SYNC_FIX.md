@@ -100,6 +100,7 @@ This populates the database with colleges data.
 
 **Kill any existing server processes first:**
 
+**macOS/Linux:**
 ```bash
 # Find and kill processes on port 5000 (backend)
 lsof -ti:5000 | xargs kill -9 2>/dev/null || true
@@ -107,6 +108,23 @@ lsof -ti:5000 | xargs kill -9 2>/dev/null || true
 # Find and kill processes on port 8080 or 5173 (frontend)
 lsof -ti:8080 | xargs kill -9 2>/dev/null || true
 lsof -ti:5173 | xargs kill -9 2>/dev/null || true
+```
+
+**Windows (PowerShell):**
+```powershell
+# Find and kill process on port 5000
+Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+
+# Find and kill process on port 8080 or 5173
+Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+```
+
+**Windows (Command Prompt):**
+```cmd
+netstat -ano | findstr :5000
+:: Note the PID from the output, then:
+taskkill /PID <PID_NUMBER> /F
 ```
 
 **Start Backend (Terminal 1):**
@@ -214,8 +232,15 @@ cd backend
 ```
 
 ### "EADDRINUSE: address already in use :::5000"
+
+**macOS/Linux:**
 ```bash
-lsof -ti:5000 | xargs kill -9
+lsof -ti:5000 | xargs kill -9 2>/dev/null || true
+```
+
+**Windows (PowerShell):**
+```powershell
+Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
 ```
 
 ### "Failed to fetch" or "Network Error"
