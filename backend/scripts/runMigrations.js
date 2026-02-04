@@ -49,11 +49,10 @@ function recordMigration(filename) {
 
 // Execute a single migration file with better error handling
 function executeMigration(filename, sql) {
-  // For migrations with ALTER TABLE, we need to handle errors gracefully
-  // because columns might already exist
-  // SQLite doesn't support "IF NOT EXISTS" for ADD COLUMN
-  const hasAlterTable = filename === '004_user_profile.sql' || 
-                        filename === '010_lda_chancing_tables.sql';
+  // Dynamically detect if migration contains ALTER TABLE statements
+  // SQLite doesn't support "IF NOT EXISTS" for ADD COLUMN, so we need to
+  // handle duplicate column errors gracefully
+  const hasAlterTable = /ALTER\s+TABLE\s+\w+\s+ADD\s+COLUMN/i.test(sql);
   
   if (hasAlterTable) {
     // Split by semicolon and execute one at a time

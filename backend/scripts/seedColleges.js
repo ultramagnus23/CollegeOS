@@ -884,6 +884,9 @@ function seedDatabase() {
   console.log(`   Skipped: ${skipped} (already exist)`);
   console.log(`   Total: ${after.count} colleges in database`);
   console.log('━'.repeat(60) + '\n');
+  
+  // Re-enable foreign keys after seeding
+  db.pragma('foreign_keys = ON');
 }
 
 // Run seeding
@@ -894,6 +897,8 @@ try {
   process.exit(1);
 } finally {
   if (db) {
+    // Re-enable foreign keys before closing
+    try { db.pragma('foreign_keys = ON'); } catch (e) { /* ignore */ }
     db.close();
   }
 }
