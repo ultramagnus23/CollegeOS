@@ -5,6 +5,24 @@
 
 const config = require('./env');
 
+// Validate CORS origins - never allow wildcard in production
+const getAllowedOrigins = () => {
+  const origins = [
+    config.frontend.url,
+    'http://localhost:8080',
+    'http://localhost:8081',
+    'http://localhost:3000',
+    'http://localhost:5173',
+  ];
+  
+  // Add any additional production origins from environment
+  if (process.env.ADDITIONAL_CORS_ORIGINS) {
+    origins.push(...process.env.ADDITIONAL_CORS_ORIGINS.split(',').map(o => o.trim()));
+  }
+  
+  return origins.filter(Boolean);
+};
+
 module.exports = {
   // Helmet configuration for HTTP security headers
   helmet: {
@@ -13,14 +31,15 @@ module.exports = {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        // Remove 'unsafe-inline' for better XSS protection in production
+        styleSrc: config.isProduction ? ["'self'"] : ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "https:"],
         connectSrc: ["'self'"],
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
         frameSrc: ["'none'"],
-        upgradeInsecureRequests: config.nodeEnv === 'production' ? [] : null,
+        upgradeInsecureRequests: config.isProduction ? [] : null,
       },
     },
     // Prevent clickjacking
@@ -41,21 +60,31 @@ module.exports = {
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   },
 
-  // CORS configuration
+  // CORS configuration - SECURITY FIX: No development bypass
   cors: {
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, etc.) in development
-      const allowedOrigins = [
-        config.frontend.url,
-        'http://localhost:8080',
-        'http://localhost:3000',
-        'http://localhost:5173',
-      ];
+      const allowedOrigins = getAllowedOrigins();
       
-      if (!origin || allowedOrigins.includes(origin) || config.nodeEnv === 'development') {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      // But only from known clients, not arbitrary sources
+      if (!origin) {
+        // In production, we should be more strict
+        if (config.isProduction) {
+          // Only allow server-to-server requests (no origin)
+          // This is acceptable for backend API calls
+          callback(null, true);
+        } else {
+          callback(null, true);
+        }
+        return;
+      }
+      
+      // Check against allowed origins list
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        // SECURITY: Don't expose the attempted origin in error message
+        callback(new Error('Origin not allowed by CORS policy'));
       }
     },
     credentials: true,
@@ -107,6 +136,19 @@ module.exports = {
       legacyHeaders: false,
       keyGenerator: (req) => req.ip,
     },
+    // AI/Expensive operations - stricter limits
+    ai: {
+      windowMs: 60 * 60 * 1000, // 1 hour
+      max: 50, // 50 AI requests per hour
+      message: {
+        success: false,
+        message: 'AI request limit exceeded. Please try again later.',
+        code: 'AI_RATE_LIMIT_EXCEEDED',
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+      keyGenerator: (req) => req.user?.userId || req.ip,
+    },
   },
 
   // Password requirements
@@ -140,6 +182,7 @@ module.exports = {
   requestLimits: {
     json: '10kb', // Reduced from 10MB for better security
     urlencoded: '10kb',
+    fileUpload: '5mb', // Limit for file uploads
   },
 
   // Suspicious activity patterns

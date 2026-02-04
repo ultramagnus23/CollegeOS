@@ -5,28 +5,57 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const config = require('../config/env');
+const logger = require('../utils/logger');
+const { authenticate, optionalAuth } = require('../middleware/auth');
+const rateLimit = require('express-rate-limit');
 
-// FREE AI using Hugging Face
-const HF_API_KEY = process.env.HUGGINGFACE_API_KEY;
+// SECURITY: Get API key from config instead of direct env access
+const HF_API_KEY = config.apiKeys.huggingFace;
 const HF_MODEL = 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2';
+
+// SECURITY: Rate limiting for AI endpoints (expensive operations)
+const aiRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 50, // 50 AI requests per hour per IP
+  message: {
+    success: false,
+    message: 'AI request limit exceeded. Please try again later.',
+    code: 'AI_RATE_LIMIT_EXCEEDED',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user?.userId || req.ip,
+});
+
+// Apply rate limiting to all AI routes
+router.use(aiRateLimiter);
 
 /**
  * Step 1: Major Decision Helper
  * POST /api/counselor/major-guidance
  * Helps students decide their major with pros/cons
  */
-router.post('/major-guidance', async (req, res) => {
+router.post('/major-guidance', optionalAuth, async (req, res) => {
   try {
     const { studentProfile, potentialMajors, skills, interests } = req.body;
+
+    // Input validation
+    if (!studentProfile || !potentialMajors || !Array.isArray(potentialMajors)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid input: studentProfile and potentialMajors are required'
+      });
+    }
 
     // Build intelligent prompt
     const prompt = `You are an expert college counselor helping a student decide their major.
 
 Student Profile:
 - Current Grade: ${studentProfile.grade}
-- Strengths: ${skills.join(', ')}
+- Strengths: ${skills?.join(', ') || 'Not specified'}
 - Considering Majors: ${potentialMajors.join(', ')}
-- Interests: ${interests}
+- Interests: ${interests || 'Not specified'}
 
 Provide:
 1. Detailed pros and cons for each major they're considering
@@ -45,7 +74,7 @@ Be specific, encouraging, and practical. Format with clear sections.`;
     });
 
   } catch (error) {
-    console.error('Major guidance error:', error);
+    logger.error('Major guidance error:', { error: error.message, userId: req.user?.userId });
     res.json({
       success: true,
       guidance: getFallbackMajorGuidance(req.body),
@@ -59,9 +88,16 @@ Be specific, encouraging, and practical. Format with clear sections.`;
  * POST /api/counselor/match-colleges
  * Uses AI + algorithm to match students with perfect colleges
  */
-router.post('/match-colleges', async (req, res) => {
+router.post('/match-colleges', optionalAuth, async (req, res) => {
   try {
     const { studentProfile } = req.body;
+
+    if (!studentProfile) {
+      return res.status(400).json({
+        success: false,
+        message: 'studentProfile is required'
+      });
+    }
 
     // Calculate match scores using algorithm
     const matches = await intelligentCollegeMatching(studentProfile);
@@ -71,12 +107,12 @@ router.post('/match-colleges', async (req, res) => {
     const prompt = `Analyze these college matches for the student:
 
 Student Profile:
-- Major: ${studentProfile.potentialMajors.join(', ')}
-- GPA: ${studentProfile.currentGPA}
+- Major: ${studentProfile.potentialMajors?.join(', ') || 'Undecided'}
+- GPA: ${studentProfile.currentGPA || 'Not provided'}
 - SAT: ${studentProfile.satScore || 'Not taken'}
-- Budget: ${studentProfile.budgetRange}
-- Preferences: ${studentProfile.campusSize} campus, ${studentProfile.locationPreference} location
-- Countries: ${studentProfile.preferredCountries.join(', ')}
+- Budget: ${studentProfile.budgetRange || 'Not specified'}
+- Preferences: ${studentProfile.campusSize || 'any'} campus, ${studentProfile.locationPreference || 'any'} location
+- Countries: ${studentProfile.preferredCountries?.join(', ') || 'Any'}
 
 Top Matched Colleges:
 ${topMatches.map((c, i) => `${i + 1}. ${c.name} (${c.country}) - Match: ${c.matchScore}%`).join('\n')}
@@ -103,14 +139,21 @@ Be specific and actionable.`;
     });
 
   } catch (error) {
-    console.error('College matching error:', error);
+    logger.error('College matching error:', { error: error.message, userId: req.user?.userId });
     // Return basic algorithm matches without AI analysis
-    const matches = await intelligentCollegeMatching(req.body.studentProfile);
-    res.json({
-      success: true,
-      matches: matches.slice(0, 10),
-      fallback: true
-    });
+    try {
+      const matches = await intelligentCollegeMatching(req.body.studentProfile);
+      res.json({
+        success: true,
+        matches: matches.slice(0, 10),
+        fallback: true
+      });
+    } catch (fallbackError) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to match colleges'
+      });
+    }
   }
 });
 
@@ -118,17 +161,24 @@ Be specific and actionable.`;
  * Step 3: Requirements & Standing Out
  * POST /api/counselor/college-requirements
  */
-router.post('/college-requirements', async (req, res) => {
+router.post('/college-requirements', optionalAuth, async (req, res) => {
   try {
     const { colleges, studentProfile } = req.body;
+
+    if (!colleges || !Array.isArray(colleges) || colleges.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'colleges array is required'
+      });
+    }
 
     const prompt = `A student wants to apply to these colleges:
 ${colleges.map(c => `- ${c.name}`).join('\n')}
 
 Their profile:
-- Major: ${studentProfile.potentialMajors[0]}
-- GPA: ${studentProfile.currentGPA}
-- Current Activities: ${studentProfile.activities.slice(0, 3).join(', ')}
+- Major: ${studentProfile?.potentialMajors?.[0] || 'Undecided'}
+- GPA: ${studentProfile?.currentGPA || 'Not provided'}
+- Current Activities: ${studentProfile?.activities?.slice(0, 3).join(', ') || 'Not provided'}
 
 Provide:
 1. Key requirements for each college
@@ -146,6 +196,7 @@ Be detailed and actionable.`;
     });
 
   } catch (error) {
+    logger.error('College requirements error:', { error: error.message });
     res.json({
       success: true,
       guidance: getFallbackRequirements(req.body.colleges),
@@ -158,15 +209,22 @@ Be detailed and actionable.`;
  * Step 4: Subject Selection for IB/IGCSE/A-Levels
  * POST /api/counselor/subject-selection
  */
-router.post('/subject-selection', async (req, res) => {
+router.post('/subject-selection', optionalAuth, async (req, res) => {
   try {
     const { currentSubjects, intendedMajor, targetColleges, board } = req.body;
 
+    if (!intendedMajor || !board) {
+      return res.status(400).json({
+        success: false,
+        message: 'intendedMajor and board are required'
+      });
+    }
+
     const prompt = `Help a ${board} student select subjects:
 
-Current Subjects: ${currentSubjects.join(', ')}
+Current Subjects: ${currentSubjects?.join(', ') || 'Not provided'}
 Intended Major: ${intendedMajor}
-Target Colleges: ${targetColleges.join(', ')}
+Target Colleges: ${targetColleges?.join(', ') || 'Not specified'}
 
 Provide:
 1. Essential subjects they MUST take
@@ -184,6 +242,7 @@ Be specific to ${board} curriculum.`;
     });
 
   } catch (error) {
+    logger.error('Subject selection error:', { error: error.message });
     res.json({
       success: true,
       advice: getFallbackSubjectAdvice(req.body),
@@ -196,16 +255,23 @@ Be specific to ${board} curriculum.`;
  * Step 5: Competitions & Internships
  * POST /api/counselor/opportunities
  */
-router.post('/opportunities', async (req, res) => {
+router.post('/opportunities', optionalAuth, async (req, res) => {
   try {
     const { major, grade, interests, location } = req.body;
+
+    if (!major || !grade) {
+      return res.status(400).json({
+        success: false,
+        message: 'major and grade are required'
+      });
+    }
 
     const prompt = `Recommend competitions and internships for:
 
 Major Interest: ${major}
 Current Grade: ${grade}
-Location: ${location}
-Interests: ${interests.join(', ')}
+Location: ${location || 'Not specified'}
+Interests: ${interests?.join(', ') || 'General'}
 
 Provide:
 1. Top competitions they should participate in (with deadlines)
@@ -223,6 +289,7 @@ Include specific program names and links where possible.`;
     });
 
   } catch (error) {
+    logger.error('Opportunities error:', { error: error.message });
     res.json({
       success: true,
       opportunities: getFallbackOpportunities(req.body),
@@ -235,19 +302,26 @@ Include specific program names and links where possible.`;
  * Step 6-9: Complete Personalized Roadmap
  * POST /api/counselor/generate-roadmap
  */
-router.post('/generate-roadmap', async (req, res) => {
+router.post('/generate-roadmap', optionalAuth, async (req, res) => {
   try {
     const { studentProfile } = req.body;
+
+    if (!studentProfile) {
+      return res.status(400).json({
+        success: false,
+        message: 'studentProfile is required'
+      });
+    }
 
     const prompt = `Create a detailed 9-step roadmap for this student:
 
 Profile:
-- Name: ${studentProfile.name}
-- Grade: ${studentProfile.grade}
-- Major: ${studentProfile.potentialMajors[0]}
-- Target Colleges: Top tier in ${studentProfile.preferredCountries.join(', ')}
-- Current GPA: ${studentProfile.currentGPA}
-- Activities: ${studentProfile.activities.slice(0, 3).join(', ')}
+- Name: ${studentProfile.name || 'Student'}
+- Grade: ${studentProfile.grade || 'Not specified'}
+- Major: ${studentProfile.potentialMajors?.[0] || 'Undecided'}
+- Target Colleges: Top tier in ${studentProfile.preferredCountries?.join(', ') || 'various countries'}
+- Current GPA: ${studentProfile.currentGPA || 'Not provided'}
+- Activities: ${studentProfile.activities?.slice(0, 3).join(', ') || 'Not provided'}
 
 Create 9 steps:
 Step 1: Identify degree and target colleges
@@ -281,7 +355,7 @@ Format clearly with headers.`;
     });
 
   } catch (error) {
-    console.error('Roadmap generation error:', error);
+    logger.error('Roadmap generation error:', { error: error.message, userId: req.user?.userId });
     res.json({
       success: true,
       roadmap: getFallbackRoadmap(req.body.studentProfile),
@@ -295,9 +369,16 @@ Format clearly with headers.`;
  * POST /api/counselor/search
  * Example: "small colleges with good CS programs and over 10% acceptance rate"
  */
-router.post('/search', async (req, res) => {
+router.post('/search', optionalAuth, async (req, res) => {
   try {
     const { query, studentProfile } = req.body;
+
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'query string is required'
+      });
+    }
 
     // Extract criteria from natural language using AI
     const extractPrompt = `Extract college search criteria from this query: "${query}"
@@ -316,7 +397,7 @@ Return ONLY a JSON object with these fields:
     const criteria = parseJSONFromAI(criteriaText);
 
     // Search database with extracted criteria
-    const results = await searchWithCriteria(criteria, studentProfile);
+    const results = await searchWithCriteria(criteria, studentProfile || {});
 
     res.json({
       success: true,
@@ -326,20 +407,33 @@ Return ONLY a JSON object with these fields:
     });
 
   } catch (error) {
-    console.error('Intelligent search error:', error);
+    logger.error('Intelligent search error:', { error: error.message });
     // Fallback to basic search
-    const results = await basicSearch(req.body.query);
-    res.json({
-      success: true,
-      results: results,
-      fallback: true
-    });
+    try {
+      const results = await basicSearch(req.body.query);
+      res.json({
+        success: true,
+        results: results,
+        fallback: true
+      });
+    } catch (fallbackError) {
+      res.status(500).json({
+        success: false,
+        message: 'Search failed'
+      });
+    }
   }
 });
 
 // ==================== HELPER FUNCTIONS ====================
 
 async function callAI(prompt, maxTokens = 1500) {
+  // SECURITY: Check if API key is configured
+  if (!HF_API_KEY) {
+    logger.warn('Hugging Face API key not configured, using fallback responses');
+    throw new Error('AI service not configured');
+  }
+
   try {
     const response = await fetch(HF_MODEL, {
       method: 'POST',
@@ -366,7 +460,8 @@ async function callAI(prompt, maxTokens = 1500) {
     
     throw new Error('No response from AI');
   } catch (error) {
-    console.error('AI call failed:', error);
+    // SECURITY: Don't log API key or full error details
+    logger.error('AI call failed:', { message: error.message });
     throw error;
   }
 }

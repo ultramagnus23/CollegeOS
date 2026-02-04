@@ -530,6 +530,82 @@ class ApiService {
     status: () => this.getChatbotStatus(),
   };
 
+  // ==================== AUTOMATION ENDPOINTS ====================
+  
+  // Automation namespace - Magic automation features
+  automation = {
+    // Detect curriculum from school name
+    detectCurriculum: (schoolName: string) => 
+      this.request('/automation/detect-curriculum', {
+        method: 'POST',
+        body: JSON.stringify({ schoolName }),
+      }),
+    
+    // Detect country from location
+    detectCountry: (location: string) =>
+      this.request('/automation/detect-country', {
+        method: 'POST',
+        body: JSON.stringify({ location }),
+      }),
+    
+    // Check English proficiency exemption
+    checkExemption: (profile: any, targetCountry: string) =>
+      this.request('/automation/check-exemption', {
+        method: 'POST',
+        body: JSON.stringify({ profile, targetCountry }),
+      }),
+    
+    // Get application system for a country
+    getApplicationSystem: (country: string) =>
+      this.request(`/automation/application-system/${encodeURIComponent(country)}`),
+    
+    // Get recommended actions based on profile
+    getRecommendedActions: (profile: any) =>
+      this.request('/automation/recommended-actions', {
+        method: 'POST',
+        body: JSON.stringify({ profile }),
+      }),
+    
+    // Calculate profile strength score
+    getProfileStrength: (profile: any) =>
+      this.request('/automation/profile-strength', {
+        method: 'POST',
+        body: JSON.stringify({ profile }),
+      }),
+    
+    // Get college list strategy
+    getCollegeListStrategy: (profile: any, options?: any) =>
+      this.request('/automation/college-list-strategy', {
+        method: 'POST',
+        body: JSON.stringify({ profile, options }),
+      }),
+    
+    // Generate personalized recommendations
+    generateRecommendations: (profile: any, preferences?: any) =>
+      this.request('/automation/recommendations', {
+        method: 'POST',
+        body: JSON.stringify({ profile, preferences }),
+      }),
+    
+    // Get similar colleges
+    getSimilarColleges: (collegeId: string) =>
+      this.request(`/automation/similar-colleges/${collegeId}`),
+    
+    // Get instant recommendations after onboarding
+    getInstantRecommendations: (profile: any) =>
+      this.request('/automation/instant-recommendations', {
+        method: 'POST',
+        body: JSON.stringify({ profile }),
+      }),
+    
+    // Get suggestions based on browsing behavior
+    getBehaviorSuggestions: (viewedColleges: string[]) =>
+      this.request('/automation/behavior-suggestions', {
+        method: 'POST',
+        body: JSON.stringify({ viewedColleges }),
+      }),
+  };
+
   // Applications namespace (as used by pages)
   applications = {
     get: (filters: any = {}) => this.getApplications(filters),

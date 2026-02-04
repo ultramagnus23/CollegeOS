@@ -3,6 +3,7 @@ import React, { useEffect, useState, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Globe, BookOpen, MapPin, GraduationCap, DollarSign, Users, Award, TrendingUp, Filter, ChevronDown } from 'lucide-react';
 import api from '../services/api';
+import { normalizeCountryData } from '../types';
 
 /* ==================== TYPES ==================== */
 
@@ -73,8 +74,9 @@ const Colleges: React.FC = () => {
           api.colleges.getCountries(),
           api.colleges.getPrograms()
         ]);
-        setCountries(countriesRes.data);
-        setPrograms(programsRes.data);
+        // Use shared utility to normalize country data
+        setCountries(normalizeCountryData(countriesRes.data || []));
+        setPrograms(programsRes.data || []);
       } catch (err) {
         console.error('Failed to load filters', err);
       }

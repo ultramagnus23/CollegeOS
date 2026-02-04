@@ -21,3 +21,17 @@ export interface StudentProfile {
   careerGoals: string;
   whyCollege: string;
 }
+
+// Shared filter option types
+export interface CountryOption {
+  value: string;
+  label: string;
+  count: number;
+}
+
+// Utility function to normalize country data from API
+export function normalizeCountryData(countryData: (string | CountryOption)[]): string[] {
+  return countryData.map((c) => 
+    typeof c === 'string' ? c : c.value
+  );
+}
