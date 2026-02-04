@@ -80,6 +80,12 @@ const getCountryGradient = (country: string): string => {
 
 /* =========================
    Chancing Calculator Utility
+   
+   This is a CONSERVATIVE, REALISTIC calculator that:
+   1. Uses multi-factor weighting
+   2. Respects college selectivity tiers (hard caps based on acceptance rate)
+   3. Applies diminishing returns for strong profiles
+   4. Never produces unrealistic results (reach schools stay reach)
 ========================= */
 interface ChancingResult {
   chance: number;
@@ -87,6 +93,62 @@ interface ChancingResult {
   factors: { name: string; impact: string; details: string; positive: boolean }[];
   recommendation: string;
 }
+
+// Selectivity tier caps - no matter how strong your profile, certain colleges have hard caps
+const getSelectivityCaps = (acceptanceRate: number): { minChance: number; maxChance: number; tier: string } => {
+  if (acceptanceRate <= 10) {
+    // Highly selective (Ivy League, MIT, Stanford level)
+    return { minChance: 2, maxChance: 20, tier: 'highly_selective' };
+  } else if (acceptanceRate <= 20) {
+    // Very selective
+    return { minChance: 5, maxChance: 35, tier: 'very_selective' };
+  } else if (acceptanceRate <= 35) {
+    // Selective
+    return { minChance: 10, maxChance: 55, tier: 'selective' };
+  } else if (acceptanceRate <= 50) {
+    // Moderately selective
+    return { minChance: 20, maxChance: 70, tier: 'moderate' };
+  } else if (acceptanceRate <= 70) {
+    // Less selective
+    return { minChance: 35, maxChance: 85, tier: 'less_selective' };
+  } else {
+    // Open admission or very high acceptance
+    return { minChance: 50, maxChance: 95, tier: 'open' };
+  }
+};
+
+// Calculate factor score with diminishing returns
+const calculateFactorScore = (
+  studentValue: number,
+  collegeLow: number,
+  collegeHigh: number,
+  collegeAvg?: number
+): { score: number; position: string } => {
+  if (!studentValue) return { score: 50, position: 'unknown' };
+  
+  if (studentValue >= collegeHigh) {
+    // Above 75th percentile - diminishing returns above the top
+    const excess = (studentValue - collegeHigh) / (collegeHigh - collegeLow);
+    const bonusScore = Math.min(20, excess * 10); // Caps at +20 above 75
+    return { score: 75 + bonusScore, position: 'above_75th' };
+  } else if (studentValue >= collegeAvg || studentValue >= (collegeLow + collegeHigh) / 2) {
+    // Between average and 75th
+    const range = collegeHigh - collegeLow;
+    const mid = (collegeLow + collegeHigh) / 2;
+    const position = (studentValue - mid) / (collegeHigh - mid);
+    return { score: 50 + position * 25, position: 'competitive' };
+  } else if (studentValue >= collegeLow) {
+    // Between 25th and average
+    const mid = (collegeLow + collegeHigh) / 2;
+    const position = (studentValue - collegeLow) / (mid - collegeLow);
+    return { score: 25 + position * 25, position: 'below_avg' };
+  } else {
+    // Below 25th percentile - steep penalty
+    const deficit = (collegeLow - studentValue) / collegeLow;
+    const penaltyScore = Math.max(0, 25 - deficit * 30);
+    return { score: penaltyScore, position: 'below_25th' };
+  }
+};
 
 const calculateChancing = (
   userProfile: any,
@@ -98,73 +160,167 @@ const calculateChancing = (
   const userSAT = parseInt(userProfile.satScore) || 0;
   const userACT = parseInt(userProfile.actScore) || 0;
   
-  const acceptanceRate = college.acceptanceRate ?? college.acceptance_rate ?? 50;
+  // Normalize acceptance rate to percentage (0-100)
+  let rawAcceptanceRate = college.acceptanceRate ?? college.acceptance_rate ?? 50;
+  const acceptanceRate = rawAcceptanceRate <= 1 ? rawAcceptanceRate * 100 : rawAcceptanceRate;
+  
+  // Get selectivity-based caps - this is the KEY constraint
+  const selectivityCaps = getSelectivityCaps(acceptanceRate);
+  
   const collegeGPA = college.testScores?.averageGPA || 3.5;
   const collegeSATLow = college.testScores?.satRange?.percentile25 || 1200;
   const collegeSATHigh = college.testScores?.satRange?.percentile75 || 1400;
   const collegeACTLow = college.testScores?.actRange?.percentile25 || 25;
   const collegeACTHigh = college.testScores?.actRange?.percentile75 || 32;
   
-  let baseChance = acceptanceRate <= 1 ? acceptanceRate * 100 : acceptanceRate;
   const factors: ChancingResult['factors'] = [];
+  let weightedScore = 0;
+  let totalWeight = 0;
   
-  // GPA factor
+  // Factor weights (must sum to weights that create 0-100 score)
+  const WEIGHTS = {
+    gpa: 0.35,
+    sat: 0.30,
+    act: 0.15,
+    base: 0.20  // Baseline/holistic factors we don't have data for
+  };
+  
+  // GPA factor (weight: 35%)
   if (userGPA > 0) {
-    if (userGPA >= collegeGPA + 0.3) {
-      baseChance += 15;
-      factors.push({ name: 'GPA', impact: '+15%', details: 'Your GPA is above average for admitted students', positive: true });
-    } else if (userGPA >= collegeGPA - 0.2) {
-      baseChance += 5;
-      factors.push({ name: 'GPA', impact: '+5%', details: 'Your GPA is competitive for this school', positive: true });
-    } else {
-      baseChance -= 10;
-      factors.push({ name: 'GPA', impact: '-10%', details: 'Your GPA is below the typical admitted student', positive: false });
+    const gpaScore = calculateFactorScore(userGPA, collegeGPA - 0.4, collegeGPA + 0.2, collegeGPA);
+    weightedScore += gpaScore.score * WEIGHTS.gpa;
+    totalWeight += WEIGHTS.gpa;
+    
+    if (gpaScore.position === 'above_75th') {
+      factors.push({ name: 'GPA', impact: 'Strong', details: `Your ${userGPA.toFixed(2)} GPA exceeds the typical admitted student profile`, positive: true });
+    } else if (gpaScore.position === 'competitive') {
+      factors.push({ name: 'GPA', impact: 'Competitive', details: `Your GPA is competitive for this school`, positive: true });
+    } else if (gpaScore.position === 'below_avg') {
+      factors.push({ name: 'GPA', impact: 'Below Avg', details: `Your GPA is below the average admitted student`, positive: false });
+    } else if (gpaScore.position === 'below_25th') {
+      factors.push({ name: 'GPA', impact: 'Low', details: `Your GPA is significantly below typical admits`, positive: false });
     }
+  } else {
+    // No GPA provided - assume average
+    weightedScore += 50 * WEIGHTS.gpa;
+    totalWeight += WEIGHTS.gpa;
   }
   
-  // SAT factor
-  if (userSAT > 0 && collegeSATLow > 0) {
-    if (userSAT >= collegeSATHigh) {
-      baseChance += 15;
-      factors.push({ name: 'SAT', impact: '+15%', details: 'Your SAT is at or above the 75th percentile', positive: true });
-    } else if (userSAT >= collegeSATLow) {
-      baseChance += 5;
-      factors.push({ name: 'SAT', impact: '+5%', details: 'Your SAT is within the middle 50% range', positive: true });
-    } else {
-      baseChance -= 10;
-      factors.push({ name: 'SAT', impact: '-10%', details: 'Your SAT is below the 25th percentile', positive: false });
+  // SAT factor (weight: 30%)
+  if (userSAT > 0) {
+    const satScore = calculateFactorScore(userSAT, collegeSATLow, collegeSATHigh);
+    weightedScore += satScore.score * WEIGHTS.sat;
+    totalWeight += WEIGHTS.sat;
+    
+    if (satScore.position === 'above_75th') {
+      factors.push({ name: 'SAT', impact: 'Strong', details: `Your ${userSAT} SAT is at or above the 75th percentile (${collegeSATHigh})`, positive: true });
+    } else if (satScore.position === 'competitive') {
+      factors.push({ name: 'SAT', impact: 'Competitive', details: `Your SAT is within the competitive range`, positive: true });
+    } else if (satScore.position === 'below_avg') {
+      factors.push({ name: 'SAT', impact: 'Below Avg', details: `Your SAT is below the middle 50% range`, positive: false });
+    } else if (satScore.position === 'below_25th') {
+      factors.push({ name: 'SAT', impact: 'Low', details: `Your SAT (${userSAT}) is below the 25th percentile (${collegeSATLow})`, positive: false });
     }
+  } else {
+    // No SAT - use neutral baseline
+    weightedScore += 50 * WEIGHTS.sat;
+    totalWeight += WEIGHTS.sat;
   }
   
-  // ACT factor
-  if (userACT > 0 && collegeACTLow > 0) {
-    if (userACT >= collegeACTHigh) {
-      baseChance += 10;
-      factors.push({ name: 'ACT', impact: '+10%', details: 'Your ACT is at or above the 75th percentile', positive: true });
-    } else if (userACT >= collegeACTLow) {
-      baseChance += 3;
-      factors.push({ name: 'ACT', impact: '+3%', details: 'Your ACT is within the middle 50% range', positive: true });
-    } else {
-      baseChance -= 8;
-      factors.push({ name: 'ACT', impact: '-8%', details: 'Your ACT is below the 25th percentile', positive: false });
+  // ACT factor (weight: 15%)
+  if (userACT > 0) {
+    const actScore = calculateFactorScore(userACT, collegeACTLow, collegeACTHigh);
+    weightedScore += actScore.score * WEIGHTS.act;
+    totalWeight += WEIGHTS.act;
+    
+    if (actScore.position === 'above_75th') {
+      factors.push({ name: 'ACT', impact: 'Strong', details: `Your ${userACT} ACT is at or above the 75th percentile`, positive: true });
+    } else if (actScore.position === 'competitive') {
+      factors.push({ name: 'ACT', impact: 'Competitive', details: `Your ACT is competitive`, positive: true });
+    } else if (actScore.position === 'below_25th') {
+      factors.push({ name: 'ACT', impact: 'Low', details: `Your ACT is below typical admits`, positive: false });
     }
+  } else {
+    // No ACT provided - use SAT or neutral
+    weightedScore += 50 * WEIGHTS.act;
+    totalWeight += WEIGHTS.act;
   }
   
-  // Cap chance between 5 and 95
-  const finalChance = Math.min(95, Math.max(5, Math.round(baseChance)));
+  // Baseline for holistic factors we don't have data on (essays, ECs, LORs)
+  // Assume average/competitive student for unknown factors
+  weightedScore += 50 * WEIGHTS.base;
+  totalWeight += WEIGHTS.base;
   
+  // Calculate normalized score (0-100)
+  const normalizedScore = totalWeight > 0 ? weightedScore / totalWeight : 50;
+  
+  // Map the normalized score to the selectivity-constrained chance
+  // This is where the HARD CAPS come in
+  const scoreRange = selectivityCaps.maxChance - selectivityCaps.minChance;
+  let rawChance = selectivityCaps.minChance + (normalizedScore / 100) * scoreRange;
+  
+  // Apply additional penalty for highly selective schools
+  // Even with perfect stats, there's significant randomness/holistic factors
+  if (selectivityCaps.tier === 'highly_selective') {
+    // For Ivy-level schools, cap maximum chance more aggressively
+    rawChance = Math.min(rawChance, 18);
+    factors.push({ 
+      name: 'Selectivity', 
+      impact: 'Very High', 
+      details: `Acceptance rate is ${acceptanceRate.toFixed(1)}% - holistic review makes outcomes uncertain`, 
+      positive: false 
+    });
+  } else if (selectivityCaps.tier === 'very_selective') {
+    rawChance = Math.min(rawChance, 30);
+  }
+  
+  // Final chance with proper bounds
+  const finalChance = Math.min(95, Math.max(2, Math.round(rawChance)));
+  
+  // Determine category based on chance AND acceptance rate
+  // A school with 5% acceptance is ALWAYS a reach, even with high computed chance
   let category: ChancingResult['category'];
   let recommendation: string;
   
-  if (finalChance >= 70) {
-    category = 'Safety';
-    recommendation = 'Strong match! Your profile exceeds typical admitted students.';
-  } else if (finalChance >= 40) {
-    category = 'Target';
-    recommendation = 'Good match! Your profile aligns well with admitted students.';
-  } else {
+  if (acceptanceRate <= 15) {
+    // Highly selective schools are almost always reach
     category = 'Reach';
-    recommendation = 'Competitive school. Focus on essays and unique factors.';
+    recommendation = finalChance >= 15 
+      ? 'Very competitive school. Your stats are strong, but holistic review means outcomes are uncertain.'
+      : 'Highly competitive. Consider focusing on essays and unique factors to stand out.';
+  } else if (acceptanceRate <= 30) {
+    // Very selective - can be target with excellent stats
+    if (finalChance >= 35) {
+      category = 'Target';
+      recommendation = 'Solid match! Your profile aligns well with admitted students.';
+    } else {
+      category = 'Reach';
+      recommendation = 'Competitive school. Strong profile needed for best chances.';
+    }
+  } else if (acceptanceRate <= 50) {
+    // Moderate selectivity
+    if (finalChance >= 55) {
+      category = 'Safety';
+      recommendation = 'Good safety choice. Your profile is strong for this school.';
+    } else if (finalChance >= 35) {
+      category = 'Target';
+      recommendation = 'Good match! Your profile is competitive for this school.';
+    } else {
+      category = 'Reach';
+      recommendation = 'Consider strengthening your application for better chances.';
+    }
+  } else {
+    // Less selective
+    if (finalChance >= 65) {
+      category = 'Safety';
+      recommendation = 'Strong safety school. High likelihood of acceptance.';
+    } else if (finalChance >= 45) {
+      category = 'Target';
+      recommendation = 'Good match with reasonable chances of admission.';
+    } else {
+      category = 'Reach';
+      recommendation = 'Review your profile for this school\'s requirements.';
+    }
   }
   
   return { chance: finalChance, category, factors, recommendation };
