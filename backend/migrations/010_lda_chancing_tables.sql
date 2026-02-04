@@ -1,28 +1,30 @@
 -- backend/migrations/010_lda_chancing_tables.sql
 -- Extended ML tables for LDA-based admission chancing system
+-- NOTE: SQLite does not support "IF NOT EXISTS" for ALTER TABLE ADD COLUMN
+-- The migration runner handles duplicate column errors gracefully
 
 -- Extend ml_training_data with additional fields for LDA training
 -- Add data quality and source tracking columns
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'user_submitted';
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS source_url TEXT;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS source_year INTEGER;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS confidence_score REAL DEFAULT 0.7;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS is_verified INTEGER DEFAULT 0;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS verification_date DATETIME;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS major_applied TEXT;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS is_athlete INTEGER DEFAULT 0;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS num_ib_courses INTEGER DEFAULT 0;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS activity_tier_3_count INTEGER DEFAULT 0;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS coursework_rigor_score REAL;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS essay_quality_estimate INTEGER;
+ALTER TABLE ml_training_data ADD COLUMN source TEXT DEFAULT 'user_submitted';
+ALTER TABLE ml_training_data ADD COLUMN source_url TEXT;
+ALTER TABLE ml_training_data ADD COLUMN source_year INTEGER;
+ALTER TABLE ml_training_data ADD COLUMN confidence_score REAL DEFAULT 0.7;
+ALTER TABLE ml_training_data ADD COLUMN is_verified INTEGER DEFAULT 0;
+ALTER TABLE ml_training_data ADD COLUMN verification_date DATETIME;
+ALTER TABLE ml_training_data ADD COLUMN major_applied TEXT;
+ALTER TABLE ml_training_data ADD COLUMN is_athlete INTEGER DEFAULT 0;
+ALTER TABLE ml_training_data ADD COLUMN num_ib_courses INTEGER DEFAULT 0;
+ALTER TABLE ml_training_data ADD COLUMN activity_tier_3_count INTEGER DEFAULT 0;
+ALTER TABLE ml_training_data ADD COLUMN coursework_rigor_score REAL;
+ALTER TABLE ml_training_data ADD COLUMN essay_quality_estimate INTEGER;
 
 -- Regional education equivalents for international students
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS education_system TEXT DEFAULT 'US';
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS board_percentage REAL;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS jee_rank INTEGER;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS a_level_grades TEXT;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS ib_points INTEGER;
-ALTER TABLE ml_training_data ADD COLUMN IF NOT EXISTS abitur_grade REAL;
+ALTER TABLE ml_training_data ADD COLUMN education_system TEXT DEFAULT 'US';
+ALTER TABLE ml_training_data ADD COLUMN board_percentage REAL;
+ALTER TABLE ml_training_data ADD COLUMN jee_rank INTEGER;
+ALTER TABLE ml_training_data ADD COLUMN a_level_grades TEXT;
+ALTER TABLE ml_training_data ADD COLUMN ib_points INTEGER;
+ALTER TABLE ml_training_data ADD COLUMN abitur_grade REAL;
 
 -- Indexes for efficient querying
 CREATE INDEX IF NOT EXISTS idx_ml_training_confidence ON ml_training_data(confidence_score);
