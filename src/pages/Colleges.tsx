@@ -3,14 +3,9 @@ import React, { useEffect, useState, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Globe, BookOpen, MapPin, GraduationCap, DollarSign, Users, Award, TrendingUp, Filter, ChevronDown } from 'lucide-react';
 import api from '../services/api';
+import { normalizeCountryData } from '../types';
 
 /* ==================== TYPES ==================== */
-
-interface CountryOption {
-  value: string;
-  label: string;
-  count: number;
-}
 
 interface TestScores {
   satRange?: { percentile25: number; percentile75: number } | null;
@@ -79,12 +74,8 @@ const Colleges: React.FC = () => {
           api.colleges.getCountries(),
           api.colleges.getPrograms()
         ]);
-        // Handle both object format {value, label, count} and simple strings
-        const countryData = countriesRes.data || [];
-        const countryStrings = countryData.map((c: string | CountryOption) => 
-          typeof c === 'string' ? c : c.value
-        );
-        setCountries(countryStrings);
+        // Use shared utility to normalize country data
+        setCountries(normalizeCountryData(countriesRes.data || []));
         setPrograms(programsRes.data || []);
       } catch (err) {
         console.error('Failed to load filters', err);
