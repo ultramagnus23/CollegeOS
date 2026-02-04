@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, GraduationCap, Globe, ExternalLink, AlertCircle } from 'lucide-react';
 import api from '../services/api';
+import { CountryOption, normalizeCountryData } from '../types';
 
 interface College {
   id: number;
@@ -38,7 +39,8 @@ const Research: React.FC = () => {
         api.colleges.getCountries()
       ]);
       setAvailableMajors(majorsRes.data || []);
-      setCountries(countriesRes.data || []);
+      // Use shared utility to normalize country data
+      setCountries(normalizeCountryData(countriesRes.data || []));
     } catch (err) {
       console.error('Failed to load filters:', err);
     }
