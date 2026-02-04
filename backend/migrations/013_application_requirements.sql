@@ -1,6 +1,9 @@
 -- Migration 013: Application Requirements Table
 -- Tracks unique application requirements for each college (peer rec, portfolio, audition, etc.)
 
+-- Drop old table to replace with comprehensive schema
+DROP TABLE IF EXISTS application_requirements;
+
 -- ==========================================
 -- APPLICATION_REQUIREMENTS TABLE
 -- ==========================================
@@ -68,7 +71,7 @@ CREATE TABLE IF NOT EXISTS application_requirements (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   
-  FOREIGN KEY (college_id) REFERENCES colleges_comprehensive(id) ON DELETE CASCADE,
+  FOREIGN KEY (college_id) REFERENCES colleges(id) ON DELETE CASCADE,
   UNIQUE(college_id)
 );
 
