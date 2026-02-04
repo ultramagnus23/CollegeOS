@@ -92,8 +92,18 @@ const securityValidation = (req, res, next) => {
 
     next();
   } catch (error) {
-    logger.error('Security validation error', { error: error.message });
-    next();
+    // SECURITY FIX: Don't silently bypass on errors - reject the request
+    logger.error('Security validation error', { 
+      error: error.message,
+      requestId: req.requestId,
+      ip: req.ip,
+      path: req.path
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Security validation failed',
+      code: 'SECURITY_VALIDATION_ERROR',
+    });
   }
 };
 
