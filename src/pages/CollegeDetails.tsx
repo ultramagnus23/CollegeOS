@@ -94,6 +94,10 @@ interface ChancingResult {
   recommendation: string;
 }
 
+// Absolute caps for highly selective schools (accounts for holistic factors we can't measure)
+const HIGHLY_SELECTIVE_ABSOLUTE_CAP = 18;  // Max chance for Ivy-level schools
+const VERY_SELECTIVE_ABSOLUTE_CAP = 30;    // Max chance for very selective schools
+
 // Selectivity tier caps - no matter how strong your profile, certain colleges have hard caps
 const getSelectivityCaps = (acceptanceRate: number): { minChance: number; maxChance: number; tier: string } => {
   if (acceptanceRate <= 10) {
@@ -263,7 +267,7 @@ const calculateChancing = (
   // Even with perfect stats, there's significant randomness/holistic factors
   if (selectivityCaps.tier === 'highly_selective') {
     // For Ivy-level schools, cap maximum chance more aggressively
-    rawChance = Math.min(rawChance, 18);
+    rawChance = Math.min(rawChance, HIGHLY_SELECTIVE_ABSOLUTE_CAP);
     factors.push({ 
       name: 'Selectivity', 
       impact: 'Very High', 
@@ -271,7 +275,7 @@ const calculateChancing = (
       positive: false 
     });
   } else if (selectivityCaps.tier === 'very_selective') {
-    rawChance = Math.min(rawChance, 30);
+    rawChance = Math.min(rawChance, VERY_SELECTIVE_ABSOLUTE_CAP);
   }
   
   // Final chance with proper bounds
