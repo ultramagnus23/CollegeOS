@@ -128,12 +128,17 @@ const Dashboard = () => {
       }));
       setCollegeList(transformedColleges);
       
+      // Helper function to calculate days remaining
+      const calculateDaysRemaining = (dateStr: string) => {
+        return Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+      };
+      
       // Transform deadlines into urgent alerts
       const alerts = deadlines
         .filter((d: any) => !d.is_completed)
         .slice(0, 5)
         .map((d: any) => {
-          const daysRemaining = Math.ceil((new Date(d.deadline_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          const daysRemaining = calculateDaysRemaining(d.deadline_date);
           return {
             id: d.id,
             type: 'deadline' as const,
@@ -154,7 +159,7 @@ const Dashboard = () => {
         .filter((d: any) => !d.is_completed)
         .slice(0, 5)
         .map((d: any) => {
-          const daysRemaining = Math.ceil((new Date(d.deadline_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          const daysRemaining = calculateDaysRemaining(d.deadline_date);
           return {
             id: d.id,
             title: d.deadline_type,
