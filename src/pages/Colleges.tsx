@@ -6,6 +6,12 @@ import api from '../services/api';
 
 /* ==================== TYPES ==================== */
 
+interface CountryOption {
+  value: string;
+  label: string;
+  count: number;
+}
+
 interface TestScores {
   satRange?: { percentile25: number; percentile75: number } | null;
   actRange?: { percentile25: number; percentile75: number } | null;
@@ -73,8 +79,13 @@ const Colleges: React.FC = () => {
           api.colleges.getCountries(),
           api.colleges.getPrograms()
         ]);
-        setCountries(countriesRes.data);
-        setPrograms(programsRes.data);
+        // Handle both object format {value, label, count} and simple strings
+        const countryData = countriesRes.data || [];
+        const countryStrings = countryData.map((c: string | CountryOption) => 
+          typeof c === 'string' ? c : c.value
+        );
+        setCountries(countryStrings);
+        setPrograms(programsRes.data || []);
       } catch (err) {
         console.error('Failed to load filters', err);
       }
