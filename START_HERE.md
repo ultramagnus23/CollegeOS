@@ -40,10 +40,12 @@ node scripts/runMigrations.js
 
 ```bash
 # Still in backend directory
-node scripts/seedCollegesNew.js
+node scripts/seedColleges.js --force
 ```
 
-This populates the database with 1100 colleges.
+This populates the database with 41 well-known colleges from around the world (US, UK, Canada, Europe, Australia, Asia).
+
+**Note:** Use `seedColleges.js` (the recommended script that matches the current schema).
 
 ### 4️⃣ Start Both Servers
 
@@ -140,7 +142,7 @@ npm install
 
 Once both servers are running:
 
-✅ **College Search** - Browse 1100+ colleges
+✅ **College Search** - Browse colleges
 ✅ **Search Bar** - Filter by name, program, country
 ✅ **Intelligent Search** - Ask questions
 ✅ **Chatbot** - Interactive assistance
@@ -156,8 +158,8 @@ npm install
 # Step 2: Run migrations (creates tables)
 node scripts/runMigrations.js
 
-# Step 3: Seed data (adds 1100 colleges)
-node scripts/seedCollegesNew.js
+# Step 3: Seed data (adds 41 world-class colleges)
+node scripts/seedColleges.js --force
 
 # Step 4: Start backend
 npm start
@@ -176,7 +178,7 @@ npm run dev
 # Check database exists and has data
 cd backend
 sqlite3 database/college_app.db "SELECT COUNT(*) FROM colleges;"
-# Should show: 1100
+# Should show: 41 (or more if additional seed scripts were run)
 
 # Check backend is running
 curl http://localhost:5000/health
