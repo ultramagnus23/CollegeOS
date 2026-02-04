@@ -282,7 +282,7 @@ const Requirements = () => {
           { id: `${collegeId}-acad-4`, text: 'Subject-specific requirements', completed: false, category: 'academic' as const },
         ],
         deadlines: [
-          { id: `${collegeId}-dl-1`, text: 'Early admission: March', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-1`, text: 'Early admission (ABA): October-November', completed: false, category: 'deadline' as const },
           { id: `${collegeId}-dl-2`, text: 'Regular admission: February-March', completed: false, category: 'deadline' as const },
         ],
       };
