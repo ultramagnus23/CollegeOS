@@ -67,6 +67,250 @@ const Requirements = () => {
     localStorage.setItem('requirementsCompletion', JSON.stringify(data));
   };
 
+  // Country-specific requirement generators
+  const getCountryRequirements = (collegeId: number, country: string, collegeName: string) => {
+    const countryLower = country?.toLowerCase() || '';
+    
+    // USA requirements
+    if (countryLower === 'united states' || countryLower === 'usa' || countryLower === 'us') {
+      return {
+        application: [
+          { id: `${collegeId}-app-1`, text: 'Common Application or Coalition App', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-2`, text: 'Application fee', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-3`, text: 'High school transcript', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-4`, text: 'Counselor recommendation', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-5`, text: 'Teacher recommendations (2)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-6`, text: 'SAT/ACT scores (if required)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-7`, text: 'Common App essay (650 words)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-8`, text: 'Supplemental essays', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-9`, text: 'CSS Profile (for financial aid)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-10`, text: 'FAFSA (for financial aid)', completed: false, category: 'application' as const },
+        ],
+        academic: [
+          { id: `${collegeId}-acad-1`, text: 'GPA: 3.5+ recommended', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-2`, text: 'SAT: 1400-1550 (middle 50%)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-3`, text: 'ACT: 31-34 (middle 50%)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-4`, text: '4 years English', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-5`, text: '3-4 years Math', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-6`, text: '2-3 years Science', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-7`, text: '2-3 years Social Studies', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-8`, text: '2-4 years Foreign Language', completed: false, category: 'academic' as const },
+        ],
+        deadlines: [
+          { id: `${collegeId}-dl-1`, text: 'Early Action: November 1', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-2`, text: 'Early Decision: November 15', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-3`, text: 'Regular Decision: January 1', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-4`, text: 'Financial Aid Priority: February 1', completed: false, category: 'deadline' as const },
+        ],
+      };
+    }
+    
+    // UK requirements
+    if (countryLower === 'united kingdom' || countryLower === 'uk' || countryLower.includes('england') || 
+        countryLower.includes('scotland') || countryLower.includes('wales')) {
+      return {
+        application: [
+          { id: `${collegeId}-app-1`, text: 'UCAS Application (max 5 choices)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-2`, text: 'UCAS Fee payment', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-3`, text: 'Personal Statement (4,000 characters max)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-4`, text: 'Academic reference from teacher/counselor', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-5`, text: 'Predicted grades from school', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-6`, text: 'English language test (IELTS/TOEFL for international students)', completed: false, category: 'application' as const },
+        ],
+        academic: [
+          { id: `${collegeId}-acad-1`, text: 'A-Level requirements (typically AAA-A*A*A)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-2`, text: 'IB Diploma (typically 36-42 points)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-3`, text: 'GCSE English and Maths (grade 6+)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-4`, text: 'Subject-specific requirements for course', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-5`, text: 'IELTS 6.5-7.5 (for non-native speakers)', completed: false, category: 'academic' as const },
+        ],
+        deadlines: [
+          { id: `${collegeId}-dl-1`, text: 'Oxford/Cambridge: October 15', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-2`, text: 'Medicine/Dentistry/Veterinary: October 15', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-3`, text: 'Other courses: January 31', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-4`, text: 'International deadline: June 30', completed: false, category: 'deadline' as const },
+        ],
+      };
+    }
+    
+    // Germany requirements
+    if (countryLower === 'germany' || countryLower === 'deutschland') {
+      return {
+        application: [
+          { id: `${collegeId}-app-1`, text: 'Uni-Assist application (for international students)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-2`, text: 'Hochschulstart application (for restricted programs)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-3`, text: 'Certified translated transcripts', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-4`, text: 'Motivation letter (Motivationsschreiben)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-5`, text: 'CV/Resume (Lebenslauf)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-6`, text: 'Language proficiency certificate', completed: false, category: 'application' as const },
+        ],
+        academic: [
+          { id: `${collegeId}-acad-1`, text: 'Abitur equivalent qualification', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-2`, text: 'German language: DSH-2 or TestDaF 4x4 (for German-taught programs)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-3`, text: 'English: IELTS 6.5+ or TOEFL 90+ (for English-taught programs)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-4`, text: 'Subject-specific requirements (Numerus Clausus)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-5`, text: 'Foundation course (Studienkolleg) if needed', completed: false, category: 'academic' as const },
+        ],
+        deadlines: [
+          { id: `${collegeId}-dl-1`, text: 'Winter semester: July 15', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-2`, text: 'Summer semester: January 15', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-3`, text: 'NC programs may have earlier deadlines', completed: false, category: 'deadline' as const },
+        ],
+      };
+    }
+    
+    // India requirements
+    if (countryLower === 'india') {
+      return {
+        application: [
+          { id: `${collegeId}-app-1`, text: 'Direct university application portal', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-2`, text: 'Class 12 mark sheets (certified copy)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-3`, text: 'Class 10 mark sheets (certified copy)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-4`, text: 'Entrance exam admit card/scorecard', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-5`, text: 'Category certificate (if applicable)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-6`, text: 'Domicile certificate (if applicable)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-7`, text: 'Passport size photographs', completed: false, category: 'application' as const },
+        ],
+        academic: [
+          { id: `${collegeId}-acad-1`, text: 'JEE Main/Advanced (for engineering at IITs/NITs)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-2`, text: 'NEET (for medicine)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-3`, text: 'CUET (for central universities)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-4`, text: 'Class 12 minimum 75% (general category)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-5`, text: 'PCM/PCB subjects required for technical/medical', completed: false, category: 'academic' as const },
+        ],
+        deadlines: [
+          { id: `${collegeId}-dl-1`, text: 'JEE Main: January/April sessions', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-2`, text: 'JEE Advanced: May', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-3`, text: 'NEET: May', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-4`, text: 'Counselling rounds: June-August', completed: false, category: 'deadline' as const },
+        ],
+      };
+    }
+    
+    // Canada requirements
+    if (countryLower === 'canada') {
+      return {
+        application: [
+          { id: `${collegeId}-app-1`, text: 'University online application', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-2`, text: 'OUAC application (for Ontario universities)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-3`, text: 'Official transcripts', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-4`, text: 'English proficiency (IELTS/TOEFL)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-5`, text: 'Supplementary application (if required)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-6`, text: 'Personal profile/essays', completed: false, category: 'application' as const },
+        ],
+        academic: [
+          { id: `${collegeId}-acad-1`, text: 'High school diploma with required courses', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-2`, text: 'Minimum average 75-90% (varies by program)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-3`, text: 'IELTS 6.5+ or TOEFL 90+', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-4`, text: 'Program-specific prerequisites', completed: false, category: 'academic' as const },
+        ],
+        deadlines: [
+          { id: `${collegeId}-dl-1`, text: 'Early admission: November-December', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-2`, text: 'Regular deadline: January-February', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-3`, text: 'Final deadline: March-April', completed: false, category: 'deadline' as const },
+        ],
+      };
+    }
+    
+    // EU (General) - Netherlands, France, etc.
+    if (countryLower === 'netherlands' || countryLower === 'france' || countryLower === 'spain' ||
+        countryLower === 'italy' || countryLower === 'sweden' || countryLower === 'denmark' ||
+        countryLower === 'belgium' || countryLower === 'austria' || countryLower === 'switzerland' ||
+        countryLower === 'ireland' || countryLower === 'finland' || countryLower === 'norway' ||
+        countryLower === 'portugal' || countryLower === 'poland') {
+      return {
+        application: [
+          { id: `${collegeId}-app-1`, text: 'University direct application or Studielink (NL)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-2`, text: 'Certified/translated transcripts', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-3`, text: 'Motivation letter', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-4`, text: 'CV/Resume', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-5`, text: 'Letter of recommendation (if required)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-6`, text: 'Language proficiency certificate', completed: false, category: 'application' as const },
+        ],
+        academic: [
+          { id: `${collegeId}-acad-1`, text: 'Secondary school diploma equivalent', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-2`, text: 'English: IELTS 6.0-7.0 or TOEFL 80-100', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-3`, text: 'Subject-specific requirements', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-4`, text: 'Numerus Fixus/Selection for competitive programs', completed: false, category: 'academic' as const },
+        ],
+        deadlines: [
+          { id: `${collegeId}-dl-1`, text: 'Numerus Fixus programs: January 15', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-2`, text: 'Regular programs: May 1', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-3`, text: 'Non-EU students: Check specific deadlines', completed: false, category: 'deadline' as const },
+        ],
+      };
+    }
+    
+    // Australia requirements
+    if (countryLower === 'australia') {
+      return {
+        application: [
+          { id: `${collegeId}-app-1`, text: 'University direct application or UAC', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-2`, text: 'Official academic transcripts', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-3`, text: 'English language test results', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-4`, text: 'Personal statement (if required)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-5`, text: 'Visa documentation (student visa 500)', completed: false, category: 'application' as const },
+        ],
+        academic: [
+          { id: `${collegeId}-acad-1`, text: 'Year 12 or equivalent qualification', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-2`, text: 'ATAR equivalent score (varies by program)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-3`, text: 'IELTS 6.5+ or TOEFL 79+', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-4`, text: 'Subject prerequisites for course', completed: false, category: 'academic' as const },
+        ],
+        deadlines: [
+          { id: `${collegeId}-dl-1`, text: 'Semester 1 (Feb start): October-December', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-2`, text: 'Semester 2 (Jul start): April-June', completed: false, category: 'deadline' as const },
+        ],
+      };
+    }
+    
+    // Singapore requirements
+    if (countryLower === 'singapore') {
+      return {
+        application: [
+          { id: `${collegeId}-app-1`, text: 'University online application portal', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-2`, text: 'Official academic transcripts', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-3`, text: 'Personal statement/essays', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-4`, text: 'Letters of recommendation', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-5`, text: 'SAT/ACT scores (NUS/NTU)', completed: false, category: 'application' as const },
+          { id: `${collegeId}-app-6`, text: 'Interview (if shortlisted)', completed: false, category: 'application' as const },
+        ],
+        academic: [
+          { id: `${collegeId}-acad-1`, text: 'A-Level/IB/equivalent qualification', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-2`, text: 'SAT 1400+ or ACT 32+ (recommended)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-3`, text: 'English proficiency (if applicable)', completed: false, category: 'academic' as const },
+          { id: `${collegeId}-acad-4`, text: 'Subject-specific requirements', completed: false, category: 'academic' as const },
+        ],
+        deadlines: [
+          { id: `${collegeId}-dl-1`, text: 'Early admission: March', completed: false, category: 'deadline' as const },
+          { id: `${collegeId}-dl-2`, text: 'Regular admission: February-March', completed: false, category: 'deadline' as const },
+        ],
+      };
+    }
+    
+    // Default/Other countries - generic international requirements
+    return {
+      application: [
+        { id: `${collegeId}-app-1`, text: `${collegeName} application portal`, completed: false, category: 'application' as const },
+        { id: `${collegeId}-app-2`, text: 'Official academic transcripts (translated if needed)', completed: false, category: 'application' as const },
+        { id: `${collegeId}-app-3`, text: 'Personal statement/motivation letter', completed: false, category: 'application' as const },
+        { id: `${collegeId}-app-4`, text: 'Letters of recommendation', completed: false, category: 'application' as const },
+        { id: `${collegeId}-app-5`, text: 'English language proficiency (IELTS/TOEFL)', completed: false, category: 'application' as const },
+        { id: `${collegeId}-app-6`, text: 'Application fee payment', completed: false, category: 'application' as const },
+      ],
+      academic: [
+        { id: `${collegeId}-acad-1`, text: 'Secondary school completion certificate', completed: false, category: 'academic' as const },
+        { id: `${collegeId}-acad-2`, text: 'Minimum GPA/grade requirements', completed: false, category: 'academic' as const },
+        { id: `${collegeId}-acad-3`, text: 'English proficiency test', completed: false, category: 'academic' as const },
+        { id: `${collegeId}-acad-4`, text: 'Subject-specific prerequisites', completed: false, category: 'academic' as const },
+      ],
+      deadlines: [
+        { id: `${collegeId}-dl-1`, text: 'Check university website for specific deadlines', completed: false, category: 'deadline' as const },
+        { id: `${collegeId}-dl-2`, text: 'International student deadlines may differ', completed: false, category: 'deadline' as const },
+      ],
+    };
+  };
+
   const loadRequirements = async () => {
     try {
       // Get user's applications first
@@ -79,53 +323,20 @@ const Requirements = () => {
         return;
       }
 
-      // Build requirements for each application
+      // Build requirements for each application based on country
       const requirements: CollegeRequirements[] = applications.map((app: any) => {
         const collegeId = app.college_id;
+        const country = app.country || 'Unknown';
+        const collegeName = app.college_name || 'University';
         
-        // Generate standard application requirements
-        const applicationReqs: Requirement[] = [
-          { id: `${collegeId}-app-1`, text: 'Common Application or Coalition App', completed: false, category: 'application' },
-          { id: `${collegeId}-app-2`, text: 'Application fee', completed: false, category: 'application' },
-          { id: `${collegeId}-app-3`, text: 'High school transcript', completed: false, category: 'application' },
-          { id: `${collegeId}-app-4`, text: 'Counselor recommendation', completed: false, category: 'application' },
-          { id: `${collegeId}-app-5`, text: 'Teacher recommendations (2)', completed: false, category: 'application' },
-          { id: `${collegeId}-app-6`, text: 'SAT/ACT scores (if required)', completed: false, category: 'application' },
-          { id: `${collegeId}-app-7`, text: 'Common App essay (650 words)', completed: false, category: 'application' },
-          { id: `${collegeId}-app-8`, text: 'Supplemental essays', completed: false, category: 'application' },
-          { id: `${collegeId}-app-9`, text: 'CSS Profile (for financial aid)', completed: false, category: 'application' },
-          { id: `${collegeId}-app-10`, text: 'FAFSA (for financial aid)', completed: false, category: 'application' },
-        ];
-
-        // Generate academic requirements
-        const academicReqs: Requirement[] = [
-          { id: `${collegeId}-acad-1`, text: 'GPA: 3.5+ recommended', completed: false, category: 'academic' },
-          { id: `${collegeId}-acad-2`, text: 'SAT: 1400-1550 (middle 50%)', completed: false, category: 'academic' },
-          { id: `${collegeId}-acad-3`, text: 'ACT: 31-34 (middle 50%)', completed: false, category: 'academic' },
-          { id: `${collegeId}-acad-4`, text: '4 years English', completed: false, category: 'academic' },
-          { id: `${collegeId}-acad-5`, text: '3-4 years Math', completed: false, category: 'academic' },
-          { id: `${collegeId}-acad-6`, text: '2-3 years Science', completed: false, category: 'academic' },
-          { id: `${collegeId}-acad-7`, text: '2-3 years Social Studies', completed: false, category: 'academic' },
-          { id: `${collegeId}-acad-8`, text: '2-4 years Foreign Language', completed: false, category: 'academic' },
-        ];
-
-        // Generate deadline requirements
-        const deadlineReqs: Requirement[] = [
-          { id: `${collegeId}-dl-1`, text: 'Early Action: November 1', completed: false, category: 'deadline' },
-          { id: `${collegeId}-dl-2`, text: 'Early Decision: November 15', completed: false, category: 'deadline' },
-          { id: `${collegeId}-dl-3`, text: 'Regular Decision: January 1', completed: false, category: 'deadline' },
-          { id: `${collegeId}-dl-4`, text: 'Financial Aid Priority: February 1', completed: false, category: 'deadline' },
-        ];
+        // Get country-specific requirements
+        const countryReqs = getCountryRequirements(collegeId, country, collegeName);
 
         return {
           college_id: collegeId,
-          college_name: app.college_name,
-          country: app.country || 'Unknown',
-          requirements: {
-            application: applicationReqs,
-            academic: academicReqs,
-            deadlines: deadlineReqs,
-          },
+          college_name: collegeName,
+          country: country,
+          requirements: countryReqs,
           progress: 0,
         };
       });
