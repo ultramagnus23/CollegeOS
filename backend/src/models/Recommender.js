@@ -217,7 +217,7 @@ class Recommender {
       params.push(filters.collegeId);
     }
     
-    query += ' ORDER BY rr.deadline ASC NULLS LAST, rr.created_at DESC';
+    query += ' ORDER BY CASE WHEN rr.deadline IS NULL THEN 1 ELSE 0 END, rr.deadline ASC, rr.created_at DESC';
     
     const stmt = db.prepare(query);
     return stmt.all(...params);

@@ -77,6 +77,17 @@ router.get('/expiring', async (req, res, next) => {
 });
 
 /**
+ * GET /api/documents/categories
+ * Get all document categories
+ */
+router.get('/categories', async (req, res) => {
+  res.json({
+    success: true,
+    data: Document.CATEGORIES
+  });
+});
+
+/**
  * GET /api/documents/check/:collegeId
  * Check required documents for a college
  */
@@ -283,17 +294,6 @@ router.delete('/:id', async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
-
-/**
- * GET /api/documents/categories
- * Get all document categories
- */
-router.get('/categories', async (req, res) => {
-  res.json({
-    success: true,
-    data: Document.CATEGORIES
-  });
 });
 
 module.exports = router;
