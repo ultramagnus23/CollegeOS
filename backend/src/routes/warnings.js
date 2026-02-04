@@ -10,6 +10,10 @@ const WarningSystemService = require('../services/warningSystemService');
 const DeadlineDependencyService = require('../services/deadlineDependencyService');
 const logger = require('../utils/logger');
 
+// Constants for input validation
+const MAX_DAYS_LOOKBACK = 365;
+const MAX_RESOURCE_ID = 999999999;
+
 /**
  * GET /api/warnings
  * Get all warnings for the current user
@@ -64,7 +68,7 @@ router.get('/task-load', authenticate, async (req, res) => {
     const days = parseInt(req.query.days) || 7;
     
     // SECURITY: Validate days parameter is within reasonable bounds
-    if (isNaN(days) || days < 1 || days > 365) {
+    if (isNaN(days) || days < 1 || days > MAX_DAYS_LOOKBACK) {
       return res.status(400).json({
         success: false,
         message: 'Days must be between 1 and 365'
@@ -96,7 +100,7 @@ router.get('/dependencies/:collegeId', authenticate, async (req, res) => {
     const collegeId = parseInt(req.params.collegeId);
     
     // SECURITY: Validate collegeId is a positive integer
-    if (isNaN(collegeId) || collegeId < 1 || collegeId > 999999999) {
+    if (isNaN(collegeId) || collegeId < 1 || collegeId > MAX_RESOURCE_ID) {
       return res.status(400).json({
         success: false,
         message: 'Invalid college ID'

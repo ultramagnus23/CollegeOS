@@ -82,7 +82,8 @@ module.exports = {
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error(`CORS: Origin ${origin} not allowed`));
+        // SECURITY: Don't expose the attempted origin in error message
+        callback(new Error('Origin not allowed by CORS policy'));
       }
     },
     credentials: true,

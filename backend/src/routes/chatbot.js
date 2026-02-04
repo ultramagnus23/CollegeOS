@@ -11,6 +11,9 @@ const config = require('../config/env');
 const logger = require('../utils/logger');
 const rateLimit = require('express-rate-limit');
 
+// Constants
+const MAX_MESSAGE_LENGTH = 2000;
+
 // SECURITY: Get API key from config
 const HF_API_KEY = config.apiKeys.huggingFace;
 
@@ -46,7 +49,7 @@ router.post('/chat', authenticate, async (req, res) => {
     }
 
     // Input validation - limit message length
-    if (typeof message !== 'string' || message.length > 2000) {
+    if (typeof message !== 'string' || message.length > MAX_MESSAGE_LENGTH) {
       return res.status(400).json({
         success: false,
         message: 'Message must be a string with maximum 2000 characters'
@@ -97,7 +100,7 @@ router.post('/chat-public', async (req, res) => {
     }
 
     // Input validation - limit message length
-    if (typeof message !== 'string' || message.length > 2000) {
+    if (typeof message !== 'string' || message.length > MAX_MESSAGE_LENGTH) {
       return res.status(400).json({
         success: false,
         message: 'Message must be a string with maximum 2000 characters'
