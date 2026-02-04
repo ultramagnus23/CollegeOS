@@ -63,6 +63,14 @@ router.get('/task-load', authenticate, async (req, res) => {
     const userId = req.user.userId;
     const days = parseInt(req.query.days) || 7;
     
+    // SECURITY: Validate days parameter is within reasonable bounds
+    if (isNaN(days) || days < 1 || days > 365) {
+      return res.status(400).json({
+        success: false,
+        message: 'Days must be between 1 and 365'
+      });
+    }
+    
     const taskLoad = await WarningSystemService.calculateTaskLoad(userId, Math.min(days, 30));
     
     res.json({
@@ -87,7 +95,8 @@ router.get('/dependencies/:collegeId', authenticate, async (req, res) => {
     const userId = req.user.userId;
     const collegeId = parseInt(req.params.collegeId);
     
-    if (isNaN(collegeId)) {
+    // SECURITY: Validate collegeId is a positive integer
+    if (isNaN(collegeId) || collegeId < 1 || collegeId > 999999999) {
       return res.status(400).json({
         success: false,
         message: 'Invalid college ID'

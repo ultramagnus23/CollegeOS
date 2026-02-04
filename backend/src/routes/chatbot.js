@@ -3,12 +3,32 @@
 
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/auth');
+const { authenticate, optionalAuth } = require('../middleware/auth');
 const StudentProfile = require('../models/StudentProfile');
 const College = require('../models/College');
 const { getChancingForStudent } = require('../services/chancingCalculator');
+const config = require('../config/env');
+const logger = require('../utils/logger');
+const rateLimit = require('express-rate-limit');
 
-const HF_API_KEY = process.env.HUGGINGFACE_API_KEY;
+// SECURITY: Get API key from config
+const HF_API_KEY = config.apiKeys.huggingFace;
+
+// SECURITY: Rate limiting for chatbot endpoints
+const chatRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 chat requests per 15 minutes per IP
+  message: {
+    success: false,
+    message: 'Too many chat requests. Please try again later.',
+    code: 'CHAT_RATE_LIMIT_EXCEEDED',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting
+router.use(chatRateLimiter);
 
 /**
  * Smart chat endpoint - uses student profile for personalized responses
@@ -25,12 +45,20 @@ router.post('/chat', authenticate, async (req, res) => {
       });
     }
 
+    // Input validation - limit message length
+    if (typeof message !== 'string' || message.length > 2000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message must be a string with maximum 2000 characters'
+      });
+    }
+
     // Get student profile for personalized responses
     let profile = null;
     try {
       profile = StudentProfile.getCompleteProfile(req.user.userId);
     } catch (e) {
-      console.log('Could not load profile:', e.message);
+      logger.debug('Could not load profile:', { error: e.message, userId: req.user.userId });
     }
 
     // Generate smart, personalized response
@@ -44,7 +72,7 @@ router.post('/chat', authenticate, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Chatbot error:', error);
+    logger.error('Chatbot error:', { error: error.message, userId: req.user?.userId });
     res.json({
       success: true,
       reply: "I'm here to help! Ask me about college applications.",
@@ -68,6 +96,14 @@ router.post('/chat-public', async (req, res) => {
       });
     }
 
+    // Input validation - limit message length
+    if (typeof message !== 'string' || message.length > 2000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message must be a string with maximum 2000 characters'
+      });
+    }
+
     const response = getSimpleResponse(message);
 
     res.json({
@@ -76,7 +112,7 @@ router.post('/chat-public', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Chatbot error:', error);
+    logger.error('Chatbot public error:', { error: error.message });
     res.json({
       success: true,
       reply: "I'm here to help! Ask me about college applications.",
