@@ -2,6 +2,20 @@
 
 export type TrustTier = 'official' | 'secondary' | 'forum' | 'unverified';
 
+// Shared filter option types
+export interface CountryOption {
+  value: string;
+  label: string;
+  count: number;
+}
+
+// Utility function to normalize country data from API
+export function normalizeCountryData(countryData: (string | CountryOption)[]): string[] {
+  return countryData.map((c) => 
+    typeof c === 'string' ? c : c.value
+  );
+}
+
 export interface DataSource {
   url: string;
   tier: TrustTier;
