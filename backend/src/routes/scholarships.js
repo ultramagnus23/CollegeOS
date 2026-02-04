@@ -60,32 +60,8 @@ router.get('/countries', async (req, res, next) => {
   }
 });
 
-/**
- * GET /api/scholarships/:id
- * Get scholarship by ID
- */
-router.get('/:id', async (req, res, next) => {
-  try {
-    const scholarship = Scholarship.getById(req.params.id);
-    
-    if (!scholarship) {
-      return res.status(404).json({
-        success: false,
-        message: 'Scholarship not found'
-      });
-    }
-    
-    res.json({
-      success: true,
-      data: scholarship
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Protected routes require authentication
-router.use(authenticate);
+// Protected routes require authentication for user-specific endpoints
+router.use('/user', authenticate);
 
 /**
  * GET /api/scholarships/user/tracked
@@ -130,6 +106,33 @@ router.get('/user/eligible', async (req, res, next) => {
     next(error);
   }
 });
+
+/**
+ * GET /api/scholarships/:id
+ * Get scholarship by ID
+ */
+router.get('/:id', async (req, res, next) => {
+  try {
+    const scholarship = Scholarship.getById(req.params.id);
+    
+    if (!scholarship) {
+      return res.status(404).json({
+        success: false,
+        message: 'Scholarship not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: scholarship
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Apply authentication middleware for remaining routes
+router.use(authenticate);
 
 /**
  * POST /api/scholarships/:id/track
