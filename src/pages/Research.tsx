@@ -15,6 +15,12 @@ interface College {
   academicStrengths?: string[];
 }
 
+interface CountryOption {
+  value: string;
+  label: string;
+  count: number;
+}
+
 const Research: React.FC = () => {
   const navigate = useNavigate();
   const [searchType, setSearchType] = useState<'major' | 'all'>('major');
@@ -38,7 +44,12 @@ const Research: React.FC = () => {
         api.colleges.getCountries()
       ]);
       setAvailableMajors(majorsRes.data || []);
-      setCountries(countriesRes.data || []);
+      // Handle both object format {value, label, count} and simple strings
+      const countryData = countriesRes.data || [];
+      const countryStrings = countryData.map((c: string | CountryOption) => 
+        typeof c === 'string' ? c : c.value
+      );
+      setCountries(countryStrings);
     } catch (err) {
       console.error('Failed to load filters:', err);
     }
