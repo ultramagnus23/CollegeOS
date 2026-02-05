@@ -628,7 +628,7 @@ function printSummary(stats) {
   console.log('='.repeat(50));
 }
 
-async function main() {
+function main() {
   console.log('');
   console.log('🎓 CollegeOS Comprehensive College Seeder');
   console.log('=========================================');
