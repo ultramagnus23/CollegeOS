@@ -40,12 +40,21 @@ node scripts/runMigrations.js
 
 ```bash
 # Still in backend directory
+# Option A: Full dataset (997 colleges from 78 countries) - RECOMMENDED
+node scripts/seedFromUnifiedData.js --force
+
+# Option B: Basic dataset (41 colleges) - Minimal
 node scripts/seedColleges.js --force
 ```
 
-This populates the database with 41 well-known colleges from around the world (US, UK, Canada, Europe, Australia, Asia).
+**Recommended: `seedFromUnifiedData.js`** populates the database with:
+- 📊 **997 verified colleges** from 78 countries
+- 🇺🇸 404 US colleges, 🇬🇧 91 UK, 🇮🇳 57 India, 🇨🇦 51 Canada, 🇦🇺 38 Australia
+- 📖 **11,807 programs/majors**
+- 🏆 **1,240 rankings** (QS, US News, etc.)
+- 💰 Tuition data, acceptance rates, demographics, and more!
 
-**Note:** Use `seedColleges.js` (the recommended script that matches the current schema).
+Uses the curated `unified_colleges.json` dataset.
 
 ### 4️⃣ Start Both Servers
 
