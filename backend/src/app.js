@@ -38,6 +38,7 @@ const automationRoutes = require('./routes/automation');
 const documentsRoutes = require('./routes/documents');
 const scholarshipsRoutes = require('./routes/scholarships');
 const recommendersRoutes = require('./routes/recommenders');
+const analyticsRoutes = require('./routes/analytics');
 
 // Create Express app
 const app = express();
@@ -116,6 +117,7 @@ app.use('/api/automation', automationRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/scholarships', scholarshipsRoutes);
 app.use('/api/recommenders', recommendersRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // 404 handler
 app.use((req, res) => {
