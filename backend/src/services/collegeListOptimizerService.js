@@ -168,17 +168,17 @@ function runMonteCarloSimulation(collegeChances, iterations = 10000) {
     scenarios: []
   };
   
-  // Sort by desirability (lower acceptance rate = more desirable)
-  const sortedColleges = [...collegeChances].sort((a, b) => a.chance - b.chance);
+  // Sort by chance ascending (lower chance = more selective = harder to get in)
+  const collegesBySelectivity = [...collegeChances].sort((a, b) => a.chance - b.chance);
   
-  // Identify top schools (far_reach and reach)
-  const topSchoolIndices = sortedColleges
+  // Identify top schools (far_reach and reach - hardest to get into)
+  const topSchoolIndices = collegesBySelectivity
     .map((c, i) => ({ ...c, originalIndex: i }))
     .filter(c => c.chance < 25)
     .map(c => c.originalIndex);
   
-  // Identify safety schools
-  const safetyIndices = sortedColleges
+  // Identify safety schools (easiest to get into)
+  const safetyIndices = collegesBySelectivity
     .map((c, i) => ({ ...c, originalIndex: i }))
     .filter(c => c.chance >= 75)
     .map(c => c.originalIndex);
@@ -189,7 +189,7 @@ function runMonteCarloSimulation(collegeChances, iterations = 10000) {
     const acceptedIndices = [];
     
     // Simulate each college
-    sortedColleges.forEach((college, idx) => {
+    collegesBySelectivity.forEach((college, idx) => {
       const random = Math.random() * 100;
       if (random < college.chance) {
         acceptedCount++;
@@ -296,16 +296,17 @@ function identifyGaps(distribution) {
   
   // Check reach schools
   const reachCount = (distribution.far_reach || 0) + (distribution.reach || 0);
+  const maxReachRecommended = IDEAL_DISTRIBUTION.reach.max + 2;
   if (reachCount < IDEAL_DISTRIBUTION.reach.min) {
     gaps.push({
       type: 'insufficient_reach',
       message: `Consider adding ${IDEAL_DISTRIBUTION.reach.min - reachCount} more reach school(s) to aim high.`,
       severity: 'low'
     });
-  } else if (reachCount > IDEAL_DISTRIBUTION.reach.max + 2) {
+  } else if (reachCount > maxReachRecommended) {
     gaps.push({
       type: 'too_many_reach',
-      message: `You have ${reachCount} reach schools. This may lead to more rejections than necessary.`,
+      message: `You have ${reachCount} reach schools (recommended max: ${maxReachRecommended}). This may lead to more rejections than necessary.`,
       severity: 'medium'
     });
   }

@@ -235,8 +235,8 @@ function analyzeScenarios(originalProfile, scenarios, colleges) {
       };
     });
     
-    // Sort by ROI or average improvement
-    results.sort((a, b) => (b.averageChanceImprovement) - (a.averageChanceImprovement));
+    // Sort by average improvement
+    results.sort((a, b) => b.averageChanceImprovement - a.averageChanceImprovement);
     
     return {
       success: true,
