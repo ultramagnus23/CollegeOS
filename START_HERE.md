@@ -49,7 +49,7 @@ node scripts/seedColleges.js --force
 
 **Recommended: `seedFromUnifiedData.js`** populates the database with:
 - 📊 **997 verified colleges** from 78 countries
-- 🇺🇸 404 US colleges, 🇬🇧 91 UK, 🇮🇳 57 India, 🇨🇦 51 Canada, 🇦🇺 38 Australia
+- 🌍 Top countries: 🇺🇸 404 US, 🇬🇧 91 UK, 🇮🇳 57 India, 🇨🇦 51 Canada, 🇦🇺 38 Australia, plus 356 more from 73 other countries
 - 📖 **11,807 programs/majors**
 - 🏆 **1,240 rankings** (QS, US News, etc.)
 - 💰 Tuition data, acceptance rates, demographics, and more!
