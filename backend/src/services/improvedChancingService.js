@@ -149,43 +149,45 @@ function calculatePercentilePosition(studentValue, p25, p75, min = null, max = n
  * Get the maximum achievable chance based on acceptance rate tier
  * 
  * Key insight: Even with perfect stats, you can't have 95% chance at Harvard
- * because so many perfect candidates apply. Highly qualified candidates still 
- * get rejected due to the sheer volume of applicants.
+ * because so many perfect candidates apply. However, a truly exceptional
+ * candidate (perfect GPA, perfect SAT, national achievements) should have
+ * meaningfully better odds than the base rate.
  * 
- * CONSERVATIVE CAPS - Based on realistic admissions outcomes:
- * - At 3% schools (Harvard), even perfect stats + spike = ~15-20% real chance
- * - At 50% schools, strong candidates = ~75% chance
+ * BALANCED CAPS - Based on realistic admissions outcomes:
+ * - At 3% schools (Harvard), perfect stats + major spike = ~12-15% real chance
+ * - A perfect profile should feel "meaningfully better" than average
+ * - Middle schools are kept at realistic levels
  */
 function getMaxChanceByTier(acceptanceRate) {
   if (acceptanceRate <= 0.05) {
     // Ultra-selective (≤5%): Harvard, Stanford, MIT
-    // Even with perfect profile, lottery effect means max ~18-20%
-    // Research shows even "hooked" candidates at ~15-25%
-    return 20;
+    // Perfect profile: ~12-15% (about 4x base rate)
+    // Research shows recruited athletes/legacies at ~20-30%, but regular perfect = ~12-15%
+    return 15;
   } else if (acceptanceRate <= 0.10) {
-    // Highly selective (5-10%): Yale, Princeton, Duke
-    // Max achievable: ~25-32%
-    return 32;
+    // Highly selective (5-10%): Yale, Princeton, Duke  
+    // Perfect profile: ~20-28% (about 3-4x base rate)
+    return 28;
   } else if (acceptanceRate <= 0.15) {
     // Very selective (10-15%): Northwestern, Vanderbilt
-    // Max achievable: ~38-45%
-    return 45;
+    // Max achievable: ~35-42%
+    return 42;
   } else if (acceptanceRate <= 0.25) {
     // Selective (15-25%): UCLA, Berkeley, USC
-    // Max achievable: ~55-60%
-    return 60;
+    // Max achievable: ~50-58%
+    return 58;
   } else if (acceptanceRate <= 0.40) {
     // Moderately selective (25-40%): Boston U, Northeastern
-    // Max achievable: ~72%
-    return 72;
+    // Max achievable: ~68-75%
+    return 75;
   } else if (acceptanceRate <= 0.60) {
     // Less selective (40-60%): Many state schools
     // Max achievable: ~82%
     return 82;
   } else {
     // Least selective (>60%)
-    // Max achievable: ~90%
-    return 90;
+    // Max achievable: ~92%
+    return 92;
   }
 }
 
@@ -229,33 +231,33 @@ function calculateActivityScore(activities, cdsNonacademicFactors) {
   
   let score = 15; // Base score (lowered from 20)
   
-  // CONSERVATIVE activity scoring
-  // Tier 1 activities help but don't guarantee admission
-  // Even "cancer research" or IMO gold only gets you considered, not admitted
+  // BALANCED activity scoring - activities SHOULD meaningfully differentiate
+  // Tier 1 activities (national/international) make a real difference
+  // 3 tier 1 activities = exceptional candidate, should get strong boost
   if (tier1 >= 4) {
-    score = 90; // Truly exceptional - USAMO winner + RSI + IMO level
+    score = 95; // Truly exceptional - USAMO winner + RSI + IMO level
   } else if (tier1 >= 3) {
-    score = 82; // Outstanding - multiple national/international (was 98)
+    score = 88; // Outstanding - multiple national/international achievements
   } else if (tier1 >= 2) {
-    score = 75; // Very strong (was 95)
+    score = 80; // Very strong - 2 national/international
   } else if (tier1 >= 1) {
-    score = 65 + Math.min(10, tier2 * 3); // Strong + boost from tier 2 (was 85+)
+    score = 70 + Math.min(10, tier2 * 3); // Strong + boost from tier 2
   } else if (tier2 >= 4) {
-    score = 62; // Very strong regional presence (was 82)
+    score = 65; // Very strong regional presence
   } else if (tier2 >= 2) {
-    score = 50 + Math.min(12, tier3 * 2); // (was 70+)
+    score = 55 + Math.min(10, tier3 * 2); // Good regional
   } else if (tier2 >= 1) {
-    score = 42 + Math.min(12, tier3 * 3); // (was 60+)
+    score = 45 + Math.min(12, tier3 * 3); // Some regional
   } else if (tier3 >= 5) {
-    score = 40; // (was 55)
+    score = 42; // Strong school involvement
   } else if (tier3 >= 3) {
-    score = 32 + Math.min(8, tier4 * 2); // (was 45+)
+    score = 35 + Math.min(8, tier4 * 2); // Good school involvement
   } else if (tier3 >= 1) {
-    score = 25 + Math.min(10, tier4 * 2); // (was 35+)
+    score = 28 + Math.min(10, tier4 * 2); // Some school involvement
   } else if (tier4 >= 3) {
-    score = 22; // (was 30)
+    score = 25; // Basic participation
   } else {
-    score = 15 + Math.min(7, tier4 * 2); // (was 20+)
+    score = 18 + Math.min(7, tier4 * 2); // Minimal involvement
   }
   
   // Cap at 100
@@ -366,11 +368,19 @@ function calculateAcademicScore(studentProfile, cds) {
   }
   
   // 4. Course Rigor
-  const coursework = studentProfile.coursework || studentProfile.courses || [];
-  const apIbCount = Array.isArray(coursework) ? coursework.filter(c => 
-    c.course_level === 'AP' || c.course_level === 'IB' || c.course_level === 'Dual Enrollment' ||
-    c.level === 'AP' || c.level === 'IB'
-  ).length : (studentProfile.ap_courses || 0);
+  const coursework = studentProfile.coursework || studentProfile.courses;
+  let apIbCount;
+  
+  if (Array.isArray(coursework) && coursework.length > 0) {
+    // If we have detailed coursework, count AP/IB courses
+    apIbCount = coursework.filter(c => 
+      c.course_level === 'AP' || c.course_level === 'IB' || c.course_level === 'Dual Enrollment' ||
+      c.level === 'AP' || c.level === 'IB'
+    ).length;
+  } else {
+    // Fall back to simple count if provided
+    apIbCount = studentProfile.ap_courses || studentProfile.ap_count || 0;
+  }
   
   let rigorPercentile;
   if (apIbCount >= 12) rigorPercentile = 95;
@@ -405,43 +415,85 @@ function calculateAcademicScore(studentProfile, cds) {
  * Bayesian probability calculation
  * 
  * Uses acceptance rate as prior and student profile quality to calculate posterior
- * Key insight: A perfect applicant doesn't get 100% - they get ~2-3x the base rate at selective schools
  * 
- * CONSERVATIVE APPROACH: 
- * - Each 20 points above 50 (not 15) doubles odds - slower scaling
- * - More selective schools get additional dampening
- * - This prevents inflation at top schools
+ * BALANCED APPROACH:
+ * - Excellent candidates (quality 75+) should get meaningfully higher chances
+ * - Perfect profiles (quality 90+) should approach the tier maximum
+ * - Still respects the reality that even perfect candidates face uncertainty
+ * - Uses a hybrid linear-Bayesian approach for better differentiation
  */
 function bayesianChanceCalculation(qualityScore, acceptanceRate) {
-  // qualityScore is 0-100 where 50 = average admitted student
+  // qualityScore is 0-100 where 50 = average applicant (not admitted)
+  // For selective schools, the average ADMITTED student is much higher (70-80)
   // acceptanceRate is 0-1
   
-  // Apply dampening based on selectivity
-  // More selective schools = harder to move the needle
-  let scaleFactor = 20; // Base: every 20 points doubles odds (more conservative)
+  // Determine tier and max chance
+  let maxChance, minMultiplier;
   
   if (acceptanceRate <= 0.05) {
-    scaleFactor = 28; // Ultra-selective: need 28 points to double odds
+    // Ultra-selective: max 15%, but a 90+ quality should get ~12%
+    maxChance = 15;
+    minMultiplier = 0.3; // Minimum multiplier of base rate
   } else if (acceptanceRate <= 0.10) {
-    scaleFactor = 25; // Highly selective: need 25 points
+    // Highly selective: max 28%
+    maxChance = 28;
+    minMultiplier = 0.4;
   } else if (acceptanceRate <= 0.20) {
-    scaleFactor = 22; // Very selective: need 22 points
+    // Very selective: max 42%
+    maxChance = 42;
+    minMultiplier = 0.5;
+  } else if (acceptanceRate <= 0.40) {
+    // Selective: max 75%
+    maxChance = 75;
+    minMultiplier = 0.6;
+  } else {
+    // Less selective: max 92%
+    maxChance = 92;
+    minMultiplier = 0.7;
   }
   
-  // Convert quality score to odds ratio with dampened scale
-  // At quality=50, odds ratio is 1 (baseline)
-  const oddsRatio = Math.pow(2, (qualityScore - 50) / scaleFactor);
+  // Hybrid approach: 
+  // 1. For quality < 50: linear interpolation from min to base rate
+  // 2. For quality 50-70: gradual increase above base rate
+  // 3. For quality 70-90: steeper increase toward max
+  // 4. For quality 90+: approach the tier max
   
-  // Prior odds = acceptanceRate / (1 - acceptanceRate)
-  const priorOdds = acceptanceRate / (1 - acceptanceRate);
+  const baseRate = acceptanceRate * 100;
+  const minChance = baseRate * minMultiplier;
   
-  // Posterior odds = prior odds * likelihood ratio
-  const posteriorOdds = priorOdds * oddsRatio;
+  let probability;
   
-  // Convert back to probability
-  const probability = posteriorOdds / (1 + posteriorOdds);
+  if (qualityScore < 40) {
+    // Below average: below base rate
+    const t = qualityScore / 40;
+    probability = minChance + (baseRate * 0.7 - minChance) * t;
+  } else if (qualityScore < 55) {
+    // Average: around base rate
+    const t = (qualityScore - 40) / 15;
+    probability = baseRate * 0.7 + (baseRate * 1.0 - baseRate * 0.7) * t;
+  } else if (qualityScore < 70) {
+    // Good: above base rate, approaching 50% of max
+    const t = (qualityScore - 55) / 15;
+    const targetAtGood = baseRate + (maxChance - baseRate) * 0.35;
+    probability = baseRate + (targetAtGood - baseRate) * t;
+  } else if (qualityScore < 85) {
+    // Strong: between 35% and 70% toward max
+    const t = (qualityScore - 70) / 15;
+    const startPoint = baseRate + (maxChance - baseRate) * 0.35;
+    const targetAtStrong = baseRate + (maxChance - baseRate) * 0.70;
+    probability = startPoint + (targetAtStrong - startPoint) * t;
+  } else {
+    // Excellent (85+): approach max (70% to 95% of max)
+    const t = Math.min(1, (qualityScore - 85) / 15);
+    const startPoint = baseRate + (maxChance - baseRate) * 0.70;
+    const finalTarget = maxChance * 0.95;
+    probability = startPoint + (finalTarget - startPoint) * t;
+  }
   
-  return probability * 100;
+  // Ensure within bounds
+  probability = Math.max(minChance, Math.min(maxChance, probability));
+  
+  return probability;
 }
 
 /**
