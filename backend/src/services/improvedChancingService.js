@@ -417,16 +417,16 @@ function calculateAcademicScore(studentProfile, cds) {
  * Uses acceptance rate as prior and student profile quality to calculate posterior
  * 
  * BALANCED APPROACH:
- * - Excellent candidates (quality 75+) should get meaningfully higher chances
+ * - Quality score 0-100 where:
+ *   - 0-40: Below average applicant
+ *   - 40-55: Average applicant (around base acceptance rate)
+ *   - 55-70: Good candidate (above base rate)
+ *   - 70-85: Strong candidate (approaching max)
+ *   - 85-100: Excellent candidate (near tier maximum)
  * - Perfect profiles (quality 90+) should approach the tier maximum
- * - Still respects the reality that even perfect candidates face uncertainty
  * - Uses a hybrid linear-Bayesian approach for better differentiation
  */
 function bayesianChanceCalculation(qualityScore, acceptanceRate) {
-  // qualityScore is 0-100 where 50 = average applicant (not admitted)
-  // For selective schools, the average ADMITTED student is much higher (70-80)
-  // acceptanceRate is 0-1
-  
   // Determine tier and max chance
   let maxChance, minMultiplier;
   
@@ -452,27 +452,31 @@ function bayesianChanceCalculation(qualityScore, acceptanceRate) {
     minMultiplier = 0.7;
   }
   
-  // Hybrid approach: 
-  // 1. For quality < 50: linear interpolation from min to base rate
-  // 2. For quality 50-70: gradual increase above base rate
-  // 3. For quality 70-90: steeper increase toward max
-  // 4. For quality 90+: approach the tier max
+  // Hybrid approach with smooth interpolation:
+  // Quality < 40:  Below base rate (weak candidates)
+  // Quality 40-55: Around base rate (average applicants)
+  // Quality 55-70: 0-35% toward max (good candidates)
+  // Quality 70-85: 35-70% toward max (strong candidates)
+  // Quality 85+:   70-95% toward max (excellent candidates)
   
   const baseRate = acceptanceRate * 100;
   const minChance = baseRate * minMultiplier;
   
+  // Ensure startBelow doesn't go below minChance
+  const startBelow = Math.max(minChance, baseRate * 0.7);
+  
   let probability;
   
   if (qualityScore < 40) {
-    // Below average: below base rate
+    // Below average: between minChance and 70% of base rate
     const t = qualityScore / 40;
-    probability = minChance + (baseRate * 0.7 - minChance) * t;
+    probability = minChance + (startBelow - minChance) * t;
   } else if (qualityScore < 55) {
-    // Average: around base rate
+    // Average: around base rate (70% to 100% of base rate)
     const t = (qualityScore - 40) / 15;
-    probability = baseRate * 0.7 + (baseRate * 1.0 - baseRate * 0.7) * t;
+    probability = startBelow + (baseRate - startBelow) * t;
   } else if (qualityScore < 70) {
-    // Good: above base rate, approaching 50% of max
+    // Good: above base rate, approaching 35% toward max
     const t = (qualityScore - 55) / 15;
     const targetAtGood = baseRate + (maxChance - baseRate) * 0.35;
     probability = baseRate + (targetAtGood - baseRate) * t;
