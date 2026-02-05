@@ -12,6 +12,7 @@ const {
   getChancingForStudent 
 } = require('../services/chancingCalculator');
 const { calculateCDSChance, hasCDSData } = require('../services/cdsChancingService');
+const { calculateEnhancedChance, hasCDSData: hasImprovedCDS } = require('../services/improvedChancingService');
 const StudentProfile = require('../models/StudentProfile');
 const College = require('../models/College');
 const mlPredictionService = require('../services/mlPredictionService');
@@ -93,12 +94,19 @@ router.post('/calculate', authenticate, async (req, res, next) => {
     
     // Fall back to rule-based if ML not available/successful
     if (!chancing) {
-      // Try CDS-based calculation for US colleges
+      // Try IMPROVED CDS-based calculation for US colleges (priority)
       if (country === 'USA' || country === 'United States') {
-        const cdsResult = calculateCDSChance(profile, college);
-        if (cdsResult) {
-          chancing = cdsResult;
-          predictionType = 'cds_based';
+        const enhancedResult = calculateEnhancedChance(profile, college);
+        if (enhancedResult) {
+          chancing = enhancedResult;
+          predictionType = 'cds_bayesian';
+        } else {
+          // Try legacy CDS calculation as fallback
+          const cdsResult = calculateCDSChance(profile, college);
+          if (cdsResult) {
+            chancing = cdsResult;
+            predictionType = 'cds_based';
+          }
         }
       }
       
