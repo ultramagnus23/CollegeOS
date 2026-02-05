@@ -149,38 +149,43 @@ function calculatePercentilePosition(studentValue, p25, p75, min = null, max = n
  * Get the maximum achievable chance based on acceptance rate tier
  * 
  * Key insight: Even with perfect stats, you can't have 95% chance at Harvard
- * because so many perfect candidates apply. But at a 50% acceptance school,
- * a strong candidate can reasonably expect 85%+ chance.
+ * because so many perfect candidates apply. Highly qualified candidates still 
+ * get rejected due to the sheer volume of applicants.
+ * 
+ * CONSERVATIVE CAPS - Based on realistic admissions outcomes:
+ * - At 3% schools (Harvard), even perfect stats + spike = ~15-20% real chance
+ * - At 50% schools, strong candidates = ~75% chance
  */
 function getMaxChanceByTier(acceptanceRate) {
   if (acceptanceRate <= 0.05) {
     // Ultra-selective (≤5%): Harvard, Stanford, MIT
-    // Max achievable with perfect profile: ~25-30%
-    return 30;
+    // Even with perfect profile, lottery effect means max ~18-20%
+    // Research shows even "hooked" candidates at ~15-25%
+    return 20;
   } else if (acceptanceRate <= 0.10) {
     // Highly selective (5-10%): Yale, Princeton, Duke
-    // Max achievable: ~35-45%
-    return 45;
+    // Max achievable: ~25-32%
+    return 32;
   } else if (acceptanceRate <= 0.15) {
     // Very selective (10-15%): Northwestern, Vanderbilt
-    // Max achievable: ~50-60%
-    return 60;
+    // Max achievable: ~38-45%
+    return 45;
   } else if (acceptanceRate <= 0.25) {
     // Selective (15-25%): UCLA, Berkeley, USC
-    // Max achievable: ~70-75%
-    return 75;
+    // Max achievable: ~55-60%
+    return 60;
   } else if (acceptanceRate <= 0.40) {
     // Moderately selective (25-40%): Boston U, Northeastern
-    // Max achievable: ~85%
-    return 85;
+    // Max achievable: ~72%
+    return 72;
   } else if (acceptanceRate <= 0.60) {
     // Less selective (40-60%): Many state schools
-    // Max achievable: ~90%
-    return 90;
+    // Max achievable: ~82%
+    return 82;
   } else {
     // Least selective (>60%)
-    // Max achievable: ~95%
-    return 95;
+    // Max achievable: ~90%
+    return 90;
   }
 }
 
@@ -222,31 +227,35 @@ function calculateActivityScore(activities, cdsNonacademicFactors) {
   // Tier 3 (School leadership): Minor impact
   // Tier 4 (Club membership): Minimal impact
   
-  let score = 20; // Base score
+  let score = 15; // Base score (lowered from 20)
   
-  // Tier 1 activities have exponential impact
-  if (tier1 >= 3) {
-    score = 98; // Exceptional - multiple national/international achievements
+  // CONSERVATIVE activity scoring
+  // Tier 1 activities help but don't guarantee admission
+  // Even "cancer research" or IMO gold only gets you considered, not admitted
+  if (tier1 >= 4) {
+    score = 90; // Truly exceptional - USAMO winner + RSI + IMO level
+  } else if (tier1 >= 3) {
+    score = 82; // Outstanding - multiple national/international (was 98)
   } else if (tier1 >= 2) {
-    score = 95; // Outstanding
+    score = 75; // Very strong (was 95)
   } else if (tier1 >= 1) {
-    score = 85 + (tier2 * 3); // Strong + boost from tier 2
+    score = 65 + Math.min(10, tier2 * 3); // Strong + boost from tier 2 (was 85+)
   } else if (tier2 >= 4) {
-    score = 82; // Very strong regional presence
+    score = 62; // Very strong regional presence (was 82)
   } else if (tier2 >= 2) {
-    score = 70 + (tier3 * 2);
+    score = 50 + Math.min(12, tier3 * 2); // (was 70+)
   } else if (tier2 >= 1) {
-    score = 60 + (tier3 * 3);
+    score = 42 + Math.min(12, tier3 * 3); // (was 60+)
   } else if (tier3 >= 5) {
-    score = 55;
+    score = 40; // (was 55)
   } else if (tier3 >= 3) {
-    score = 45 + (tier4 * 2);
+    score = 32 + Math.min(8, tier4 * 2); // (was 45+)
   } else if (tier3 >= 1) {
-    score = 35 + (tier4 * 2);
+    score = 25 + Math.min(10, tier4 * 2); // (was 35+)
   } else if (tier4 >= 3) {
-    score = 30;
+    score = 22; // (was 30)
   } else {
-    score = 20 + (tier4 * 3);
+    score = 15 + Math.min(7, tier4 * 2); // (was 20+)
   }
   
   // Cap at 100
@@ -397,15 +406,31 @@ function calculateAcademicScore(studentProfile, cds) {
  * 
  * Uses acceptance rate as prior and student profile quality to calculate posterior
  * Key insight: A perfect applicant doesn't get 100% - they get ~2-3x the base rate at selective schools
+ * 
+ * CONSERVATIVE APPROACH: 
+ * - Each 20 points above 50 (not 15) doubles odds - slower scaling
+ * - More selective schools get additional dampening
+ * - This prevents inflation at top schools
  */
 function bayesianChanceCalculation(qualityScore, acceptanceRate) {
   // qualityScore is 0-100 where 50 = average admitted student
   // acceptanceRate is 0-1
   
-  // Convert quality score to odds ratio
+  // Apply dampening based on selectivity
+  // More selective schools = harder to move the needle
+  let scaleFactor = 20; // Base: every 20 points doubles odds (more conservative)
+  
+  if (acceptanceRate <= 0.05) {
+    scaleFactor = 28; // Ultra-selective: need 28 points to double odds
+  } else if (acceptanceRate <= 0.10) {
+    scaleFactor = 25; // Highly selective: need 25 points
+  } else if (acceptanceRate <= 0.20) {
+    scaleFactor = 22; // Very selective: need 22 points
+  }
+  
+  // Convert quality score to odds ratio with dampened scale
   // At quality=50, odds ratio is 1 (baseline)
-  // Each 10 points above/below 50 roughly doubles/halves odds
-  const oddsRatio = Math.pow(2, (qualityScore - 50) / 15);
+  const oddsRatio = Math.pow(2, (qualityScore - 50) / scaleFactor);
   
   // Prior odds = acceptanceRate / (1 - acceptanceRate)
   const priorOdds = acceptanceRate / (1 - acceptanceRate);
@@ -487,7 +512,8 @@ function calculateEnhancedChance(studentProfile, college) {
   }
   
   // 3. Essays Score (estimated - using placeholder)
-  const essayScore = studentProfile.essay_quality || 60; // Default to decent if not specified
+  // Default to 50 (average) - don't inflate with assumptions
+  const essayScore = studentProfile.essay_quality || 50; // Neutral default, not inflated
   const essayWeight = cds.weights?.essays || 0.15;
   
   factors.push({
@@ -500,7 +526,8 @@ function calculateEnhancedChance(studentProfile, college) {
   });
   
   // 4. Recommendations Score (estimated)
-  const recScore = studentProfile.recommendation_quality || 65;
+  // Default to 50 (average) - don't inflate with assumptions  
+  const recScore = studentProfile.recommendation_quality || 50; // Neutral default
   const recWeight = cds.weights?.recommendations || 0.10;
   
   factors.push({
@@ -517,21 +544,22 @@ function calculateEnhancedChance(studentProfile, college) {
   let demoScore = 50; // Baseline
   const hooks = [];
   
+  // CONSERVATIVE hook scoring - hooks help but don't dramatically change odds
   if (studentProfile.is_first_generation) {
     const fgImportance = IMPORTANCE_WEIGHTS[cds.nonacademic_factors?.first_generation || 'considered'];
-    demoScore += 15 * fgImportance;
+    demoScore += 8 * fgImportance; // Reduced from 15
     hooks.push('First-generation');
   }
   
   if (studentProfile.is_legacy) {
     const legacyImportance = IMPORTANCE_WEIGHTS[cds.nonacademic_factors?.alumni_relation || 'considered'];
-    demoScore += 20 * legacyImportance;
+    demoScore += 12 * legacyImportance; // Reduced from 20
     hooks.push('Legacy');
   }
   
   if (studentProfile.is_urm) {
     const urmImportance = IMPORTANCE_WEIGHTS[cds.nonacademic_factors?.racial_ethnic_status || 'considered'];
-    demoScore += 10 * urmImportance;
+    demoScore += 6 * urmImportance; // Reduced from 10
     hooks.push('URM status');
   }
   
