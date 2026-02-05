@@ -1,5 +1,5 @@
 /**
- * ImprovedChancingService.js
+ * improvedChancingService.js
  * 
  * Enhanced college admission chance calculator using Bayesian inference
  * and proper acceptance rate scaling based on CDS data.
@@ -204,10 +204,17 @@ function calculateActivityScore(activities, cdsNonacademicFactors) {
     return { score: 20, details: 'No activities reported' };
   }
   
-  const tier1 = activities.filter(a => a.tier_rating === 1 || a.tier_rating === 'tier1' || a.tier === 1).length;
-  const tier2 = activities.filter(a => a.tier_rating === 2 || a.tier_rating === 'tier2' || a.tier === 2).length;
-  const tier3 = activities.filter(a => a.tier_rating === 3 || a.tier_rating === 'tier3' || a.tier === 3).length;
-  const tier4 = activities.filter(a => a.tier_rating === 4 || a.tier_rating === 'tier4' || a.tier === 4).length;
+  // Count activities by tier in a single pass for performance
+  const tierCounts = activities.reduce((acc, a) => {
+    const tier = a.tier_rating || a.tier;
+    if (tier === 1 || tier === 'tier1') acc.tier1++;
+    else if (tier === 2 || tier === 'tier2') acc.tier2++;
+    else if (tier === 3 || tier === 'tier3') acc.tier3++;
+    else if (tier === 4 || tier === 'tier4') acc.tier4++;
+    return acc;
+  }, { tier1: 0, tier2: 0, tier3: 0, tier4: 0 });
+  
+  const { tier1, tier2, tier3, tier4 } = tierCounts;
   
   // Calculate weighted score
   // Tier 1 (National/International): Major impact

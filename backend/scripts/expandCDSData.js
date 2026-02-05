@@ -13,6 +13,18 @@ const cdsDataPath = path.join(__dirname, '..', 'data', 'cds_data.json');
 // Load existing data
 const existingData = JSON.parse(fs.readFileSync(cdsDataPath, 'utf8'));
 
+/**
+ * SAT section score estimation constants.
+ * Based on typical SAT score distributions where:
+ * - Reading/Writing is typically ~48-49% of total score
+ * - Math is typically ~51-52% of total score
+ * These are approximate multipliers for estimating section scores from total.
+ */
+const SAT_READING_25TH_PERCENTAGE = 0.48;
+const SAT_READING_75TH_PERCENTAGE = 0.49;
+const SAT_MATH_25TH_PERCENTAGE = 0.52;
+const SAT_MATH_75TH_PERCENTAGE = 0.51;
+
 // Helper function to create CDS entry
 function createCDSEntry(data) {
   return {
@@ -24,10 +36,10 @@ function createCDSEntry(data) {
       sat_75th: data.sat75,
       act_25th: data.act25,
       act_75th: data.act75,
-      sat_reading_25th: Math.round(data.sat25 * 0.48),
-      sat_reading_75th: Math.round(data.sat75 * 0.49),
-      sat_math_25th: Math.round(data.sat25 * 0.52),
-      sat_math_75th: Math.round(data.sat75 * 0.51)
+      sat_reading_25th: Math.round(data.sat25 * SAT_READING_25TH_PERCENTAGE),
+      sat_reading_75th: Math.round(data.sat75 * SAT_READING_75TH_PERCENTAGE),
+      sat_math_25th: Math.round(data.sat25 * SAT_MATH_25TH_PERCENTAGE),
+      sat_math_75th: Math.round(data.sat75 * SAT_MATH_75TH_PERCENTAGE)
     },
     gpa_data: {
       average_gpa: data.avgGPA,
