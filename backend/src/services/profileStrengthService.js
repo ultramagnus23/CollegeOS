@@ -22,6 +22,14 @@ const COMPONENT_WEIGHTS = {
   demographic: 0.15
 };
 
+// States that are underrepresented in college applicant pools
+// These states often provide geographic diversity value at selective schools
+const UNDERREPRESENTED_STATES = [
+  'wyoming', 'montana', 'north dakota', 'south dakota', 
+  'alaska', 'vermont', 'maine', 'idaho', 'west virginia', 'mississippi',
+  'arkansas', 'nebraska', 'new mexico', 'hawaii'
+];
+
 // National percentile distribution parameters (approximate)
 const PERCENTILE_PARAMS = {
   gpa: { mean: 3.0, stdDev: 0.5 },
@@ -420,10 +428,8 @@ function calculateDemographicScore(profile) {
   if (country && country.toLowerCase() !== 'usa' && country.toLowerCase() !== 'united states') {
     scores.geographicDiversity = 70; // International students add diversity
   } else if (state) {
-    // Some states are underrepresented
-    const underrepStates = ['wyoming', 'montana', 'north dakota', 'south dakota', 
-      'alaska', 'vermont', 'maine', 'idaho', 'west virginia', 'mississippi'];
-    if (underrepStates.includes(state.toLowerCase())) {
+    // Some states are underrepresented at selective colleges
+    if (UNDERREPRESENTED_STATES.includes(state.toLowerCase())) {
       scores.geographicDiversity = 75;
     } else {
       scores.geographicDiversity = 50;
@@ -480,12 +486,15 @@ function generateRecommendations(profile, academic, extracurricular, narrative, 
   }
   
   if (academic.components.testScore < 70 && academic.components.testScore > 0) {
+    // Use proper SAT/ACT concordance: ACT 21 ≈ SAT 1060, so multiply ACT by ~50
+    const satEquivalent = academic.rawData.act * 50;
+    const recommendTest = academic.rawData.sat > satEquivalent ? 'SAT' : 'ACT';
     recommendations.push({
       category: 'Academic',
       priority: 'high',
       action: 'Consider retaking standardized tests',
       impact: 'medium',
-      details: `Your current score leaves room for improvement. Consider focused prep for ${academic.rawData.sat > academic.rawData.act * 23 ? 'SAT' : 'ACT'}.`
+      details: `Your current score leaves room for improvement. Consider focused prep for ${recommendTest}.`
     });
   }
   
