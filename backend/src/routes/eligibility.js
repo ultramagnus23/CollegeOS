@@ -76,7 +76,8 @@ router.post('/diploma', async (req, res) => {
   try {
     const profile = req.body;
     
-    const diplomaStatus = EligibilityAutoFulfillService.checkAutoFulfillments(profile).high_school_diploma;
+    // Call dedicated method directly instead of checking all fulfillments
+    const diplomaStatus = EligibilityAutoFulfillService.checkHighSchoolDiploma(profile);
     
     res.json({
       success: true,
@@ -99,7 +100,8 @@ router.post('/english', async (req, res) => {
   try {
     const profile = req.body;
     
-    const englishStatus = EligibilityAutoFulfillService.checkAutoFulfillments(profile).english_proficiency;
+    // Call dedicated method directly instead of checking all fulfillments
+    const englishStatus = EligibilityAutoFulfillService.checkEnglishProficiency(profile);
     
     res.json({
       success: true,
