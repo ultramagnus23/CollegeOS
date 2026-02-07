@@ -2,7 +2,7 @@
  * useFormValidation Hook
  * Real-time form validation with inline feedback
  */
-import { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 
 export interface ValidationRule {
   validate: (value: any, formData?: any) => boolean;
@@ -188,7 +188,8 @@ export const ValidationRules = {
     validate: (value) => {
       if (!value) return true;
       const num = Number(value);
-      return [4.0, 5.0, 10.0, 100].includes(num) || (num > 0 && num <= 100);
+      // Only common GPA scales are accepted (warning is informational)
+      return [4.0, 5.0, 10.0, 100].includes(num);
     },
     message: 'Common GPA scales are 4.0, 5.0, 10.0, or 100',
     severity: 'warning'
@@ -352,7 +353,5 @@ export const ValidationMessage: React.FC<ValidationMessageProps> = ({
     </div>
   );
 };
-
-import React from 'react';
 
 export default useFormValidation;

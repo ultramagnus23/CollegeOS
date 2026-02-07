@@ -2,7 +2,7 @@
  * useAutosave Hook
  * Automatically saves form data to localStorage to prevent data loss
  */
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 interface AutosaveOptions {
   /** Key prefix for localStorage */
@@ -63,8 +63,8 @@ export function useAutosave<T>(
   const [isAutosaving, setIsAutosaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastDataRef = useRef<T>(formData);
 
   // Load existing draft on mount
@@ -245,7 +245,5 @@ export const DraftRestoreBanner: React.FC<DraftRestoreBannerProps> = ({
     </div>
   );
 };
-
-import React from 'react';
 
 export default useAutosave;
