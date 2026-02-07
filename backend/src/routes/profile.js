@@ -5,6 +5,15 @@ const User = require('../models/User');
 const StudentProfile = require('../models/StudentProfile');
 const StudentActivity = require('../models/StudentActivity');
 const logger = require('../utils/logger');
+const profileController = require('../controllers/profileController');
+const {
+  validateBasicInfo,
+  validateAcademicInfo,
+  validateSubjects,
+  validateTestScores,
+  validateActivities,
+  validatePreferences
+} = require('../middleware/profileValidation');
 
 // Get user profile (basic + extended)
 router.get('/', authenticate, async (req, res, next) => {
@@ -495,5 +504,75 @@ router.get('/snapshot', authenticate, async (req, res, next) => {
     next(error);
   }
 });
+
+// ==========================================
+// NEW PROFILE MANAGEMENT ENDPOINTS
+// ==========================================
+
+/**
+ * GET /api/profile/:userId
+ * Get complete profile by user ID
+ */
+router.get('/:userId', authenticate, profileController.getProfile);
+
+/**
+ * PUT /api/profile/:userId/basic
+ * Update basic info (name, email, phone, country, date of birth, grade level, graduation year)
+ */
+router.put('/:userId/basic', authenticate, validateBasicInfo, profileController.updateBasicInfo);
+
+/**
+ * PUT /api/profile/:userId/academic
+ * Update academic info (curriculum type, stream, GPA, class rank, school name)
+ */
+router.put('/:userId/academic', authenticate, validateAcademicInfo, profileController.updateAcademicInfo);
+
+/**
+ * PUT /api/profile/:userId/subjects
+ * Update subjects array (curriculum-specific format)
+ */
+router.put('/:userId/subjects', authenticate, validateSubjects, profileController.updateSubjects);
+
+/**
+ * PUT /api/profile/:userId/test-scores
+ * Update test scores (SAT, ACT, IELTS, TOEFL with breakdowns)
+ */
+router.put('/:userId/test-scores', authenticate, validateTestScores, profileController.updateTestScores);
+
+/**
+ * PUT /api/profile/:userId/activities
+ * Update activities array
+ */
+router.put('/:userId/activities', authenticate, validateActivities, profileController.updateActivities);
+
+/**
+ * DELETE /api/profile/:userId/activities/:activityId
+ * Remove specific activity
+ */
+router.delete('/:userId/activities/:activityId', authenticate, profileController.deleteActivity);
+
+/**
+ * PUT /api/profile/:userId/preferences
+ * Update preferences (preferred majors, locations, budget, college size, campus setting)
+ */
+router.put('/:userId/preferences', authenticate, validatePreferences, profileController.updatePreferences);
+
+/**
+ * GET /api/profile/:userId/completion-status
+ * Calculate and return profile completion percentage with missing fields
+ */
+router.get('/:userId/completion-status', authenticate, profileController.getCompletionStatus);
+
+/**
+ * POST /api/profile/:userId/onboarding-draft
+ * Save onboarding progress (save and continue later)
+ */
+router.post('/:userId/onboarding-draft', authenticate, profileController.saveOnboardingDraft);
+
+/**
+ * GET /api/profile/:userId/onboarding-draft
+ * Get onboarding draft for continuing later
+ */
+router.get('/:userId/onboarding-draft', authenticate, profileController.getOnboardingDraft);
 
 module.exports = router;
