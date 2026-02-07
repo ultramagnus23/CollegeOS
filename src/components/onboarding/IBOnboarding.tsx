@@ -59,7 +59,22 @@ const IB_GROUPS = {
   }
 };
 
-// TOK/EE Bonus Points Matrix
+/**
+ * IB Core Bonus Points Matrix
+ * 
+ * This matrix defines the bonus points (0-3) awarded for Theory of Knowledge (TOK)
+ * and Extended Essay (EE) performance in the IB Diploma Programme.
+ * 
+ * Matrix format: BONUS_POINTS[TOK_GRADE][EE_GRADE] = bonus_points
+ * - First key: TOK grade (A-E)
+ * - Second key: EE grade (A-E)
+ * - Value: Bonus points awarded (0-3)
+ * 
+ * Combined with 6 subject grades (each 1-7), the maximum IB Diploma score is:
+ * 7 × 6 (subjects) + 3 (bonus) = 45 points
+ * 
+ * Reference: IB Diploma Programme Assessment procedures
+ */
 const BONUS_POINTS: { [key: string]: { [key: string]: number } } = {
   'A': { 'A': 3, 'B': 3, 'C': 2, 'D': 2, 'E': 0 },
   'B': { 'A': 3, 'B': 2, 'C': 2, 'D': 1, 'E': 0 },
