@@ -51,6 +51,8 @@ const basicInfoSchema = Joi.object({
 }).options({ stripUnknown: true });
 
 // Academic Info Schema - allow empty strings for all optional fields
+// Note: GPA validation is done at the schema level with max values for each scale type.
+// Stream is optional for all curriculum types during partial updates; completeness is checked elsewhere.
 const academicInfoSchema = Joi.object({
   curriculum_type: Joi.string().valid(
     'IB', 'A-Level', 'CBSE', 'ICSE', 'ISC', 'State Board',
@@ -64,6 +66,8 @@ const academicInfoSchema = Joi.object({
     'Science with Medical', 'Science without Medical', 
     'Commerce', 'Humanities/Arts'
   ).optional().allow('', null),
+  // GPA validation: Allow any reasonable GPA value (0-100 covers all scales)
+  // The max values for weighted/unweighted are set based on US standards
   gpa: Joi.number().min(0).max(100).optional().allow(null),
   gpaWeighted: Joi.number().min(0).max(5.0).optional().allow(null),
   gpaUnweighted: Joi.number().min(0).max(4.0).optional().allow(null),
@@ -89,6 +93,20 @@ const academicInfoSchema = Joi.object({
     'Cambridge International (CIE)', 'Edexcel Pearson', 
     'AQA', 'OCR', 'Other'
   ).optional().allow('', null)
+}).custom((value, helpers) => {
+  // Custom validation: Check GPA doesn't exceed the scale if both are provided
+  const gpa = value.gpa;
+  const gpaScale = value.gpa_scale || value.gpaScale;
+  
+  if (gpa !== null && gpa !== undefined && gpaScale !== null && gpaScale !== undefined) {
+    if (gpa > gpaScale) {
+      return helpers.error('any.custom', { 
+        message: `GPA (${gpa}) cannot exceed GPA scale (${gpaScale})` 
+      });
+    }
+  }
+  
+  return value;
 }).options({ stripUnknown: true });
 
 // IB Subject Schema
