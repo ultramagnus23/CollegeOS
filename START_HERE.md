@@ -40,10 +40,21 @@ node scripts/runMigrations.js
 
 ```bash
 # Still in backend directory
-node scripts/seedCollegesNew.js
+# Option A: Full dataset (997 colleges from 78 countries) - RECOMMENDED
+node scripts/seedFromUnifiedData.js --force
+
+# Option B: Basic dataset (41 colleges) - Minimal
+node scripts/seedColleges.js --force
 ```
 
-This populates the database with 1100 colleges.
+**Recommended: `seedFromUnifiedData.js`** populates the database with:
+- 📊 **997 verified colleges** from 78 countries
+- 🌍 Top countries: 🇺🇸 404 US, 🇬🇧 91 UK, 🇮🇳 57 India, 🇨🇦 51 Canada, 🇦🇺 38 Australia, plus 356 more from 73 other countries
+- 📖 **11,807 programs/majors**
+- 🏆 **1,240 rankings** (QS, US News, etc.)
+- 💰 Tuition data, acceptance rates, demographics, and more!
+
+Uses the curated `unified_colleges.json` dataset.
 
 ### 4️⃣ Start Both Servers
 
@@ -140,7 +151,7 @@ npm install
 
 Once both servers are running:
 
-✅ **College Search** - Browse 1100+ colleges
+✅ **College Search** - Browse colleges
 ✅ **Search Bar** - Filter by name, program, country
 ✅ **Intelligent Search** - Ask questions
 ✅ **Chatbot** - Interactive assistance
@@ -156,8 +167,8 @@ npm install
 # Step 2: Run migrations (creates tables)
 node scripts/runMigrations.js
 
-# Step 3: Seed data (adds 1100 colleges)
-node scripts/seedCollegesNew.js
+# Step 3: Seed data (adds 41 world-class colleges)
+node scripts/seedColleges.js --force
 
 # Step 4: Start backend
 npm start
@@ -176,7 +187,7 @@ npm run dev
 # Check database exists and has data
 cd backend
 sqlite3 database/college_app.db "SELECT COUNT(*) FROM colleges;"
-# Should show: 1100
+# Should show: 41 (or more if additional seed scripts were run)
 
 # Check backend is running
 curl http://localhost:5000/health

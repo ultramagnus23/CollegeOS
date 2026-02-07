@@ -12,7 +12,10 @@ import {
   LogOut,
   Menu,
   X,
-  ClipboardList
+  ClipboardList,
+  FolderOpen,
+  Award,
+  Users
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -28,6 +31,9 @@ const DashboardLayout = () => {
     { name: 'Requirements', href: '/requirements', icon: ClipboardList },
     { name: 'Deadlines', href: '/deadlines', icon: Calendar },
     { name: 'Essays', href: '/essays', icon: PenTool },
+    { name: 'Documents', href: '/documents', icon: FolderOpen },
+    { name: 'Scholarships', href: '/scholarships', icon: Award },
+    { name: 'Recommendations', href: '/recommendations', icon: Users },
     { name: 'Settings', href: '/settings', icon: SettingsIcon },
   ];
 

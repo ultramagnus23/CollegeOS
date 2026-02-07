@@ -326,8 +326,10 @@ const Dashboard = () => {
           profileStrength={profileStrength}
           onActionClick={(action) => {
             if (action.category === 'profile') navigate('/settings');
+            else if (action.category === 'testing') navigate('/settings'); // Test scores section
             else if (action.category === 'essays') navigate('/essays');
             else if (action.category === 'applications') navigate('/discover');
+            else if (action.category === 'recommendations') navigate('/recommendations');
             else if (action.category === 'deadlines') navigate('/deadlines');
           }}
         />
