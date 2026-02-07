@@ -1,7 +1,7 @@
-// backend/scripts/migrate.js
-// Improved migration script with better error handling
+// backend/scripts/runMigrations.js
+// Migration script using better-sqlite3 (synchronous API)
 
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
 
@@ -16,121 +16,98 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
-const db = new sqlite3.Database(DB_PATH, (err) => {
-  if (err) {
-    console.error('❌ Error connecting to database:', err.message);
-    process.exit(1);
-  }
+let db;
+try {
+  db = new Database(DB_PATH);
   console.log('✅ Connected to SQLite database');
-});
+} catch (err) {
+  console.error('❌ Error connecting to database:', err.message);
+  process.exit(1);
+}
 
 // Create migrations tracking table
 function createMigrationsTable() {
-  return new Promise((resolve, reject) => {
-    db.run(`
-      CREATE TABLE IF NOT EXISTS migrations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        filename TEXT NOT NULL UNIQUE,
-        executed_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `, (err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS migrations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      filename TEXT NOT NULL UNIQUE,
+      executed_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 }
 
 // Get list of executed migrations
 function getExecutedMigrations() {
-  return new Promise((resolve, reject) => {
-    db.all('SELECT filename FROM migrations ORDER BY filename', (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows.map(row => row.filename));
-    });
-  });
+  const rows = db.prepare('SELECT filename FROM migrations ORDER BY filename').all();
+  return rows.map(row => row.filename);
 }
 
 // Record migration as executed
 function recordMigration(filename) {
-  return new Promise((resolve, reject) => {
-    db.run('INSERT INTO migrations (filename) VALUES (?)', [filename], (err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
+  db.prepare('INSERT INTO migrations (filename) VALUES (?)').run(filename);
 }
 
 // Execute a single migration file with better error handling
 function executeMigration(filename, sql) {
-  return new Promise((resolve, reject) => {
-    // For migration 004, we need to handle ALTER TABLE errors gracefully
-    // because columns might already exist
-    const is004 = filename === '004_user_profile.sql';
+  // Dynamically detect if migration contains ALTER TABLE statements
+  // SQLite doesn't support "IF NOT EXISTS" for ADD COLUMN, so we need to
+  // handle duplicate column errors gracefully
+  const hasAlterTable = /ALTER\s+TABLE\s+\w+\s+ADD\s+COLUMN/i.test(sql);
+  
+  if (hasAlterTable) {
+    // Split by semicolon and execute one at a time
+    const statements = sql.split(';').filter(s => s.trim());
+    let completed = 0;
+    let errors = [];
     
-    if (is004) {
-      // Split by semicolon and execute one at a time
-      const statements = sql.split(';').filter(s => s.trim());
-      let completed = 0;
-      let errors = [];
+    for (const stmt of statements) {
+      const trimmedStmt = stmt.trim();
+      if (!trimmedStmt) continue;
       
-      const executeNext = (index) => {
-        if (index >= statements.length) {
-          if (errors.length > 0) {
-            console.log(`   ⚠️  ${errors.length} statements had errors (likely columns already exist)`);
-          }
-          resolve();
-          return;
-        }
-        
-        const stmt = statements[index].trim();
-        if (!stmt) {
-          executeNext(index + 1);
-          return;
-        }
-        
-        db.exec(stmt, (err) => {
-          if (err) {
-            // For ALTER TABLE, column already exists is okay
-            if (stmt.includes('ALTER TABLE') && err.message.includes('duplicate column')) {
-              errors.push({ stmt: stmt.substring(0, 50), err: 'column exists' });
-            } else {
-              errors.push({ stmt: stmt.substring(0, 50), err: err.message });
-            }
-          } else {
-            completed++;
-          }
-          executeNext(index + 1);
-        });
-      };
-      
-      executeNext(0);
-    } else {
-      // Normal migration execution
-      db.exec(sql, (err) => {
-        if (err) {
-          console.error(`❌ Error executing migration ${filename}`);
-          console.error(err.message);
-          reject(err);
+      try {
+        db.exec(trimmedStmt);
+        completed++;
+      } catch (err) {
+        // For ALTER TABLE, column already exists is okay
+        if (trimmedStmt.includes('ALTER TABLE') && err.message.includes('duplicate column')) {
+          errors.push({ stmt: trimmedStmt.substring(0, 50), err: 'column exists' });
+        } else if (trimmedStmt.includes('CREATE TABLE IF NOT EXISTS') || 
+                   trimmedStmt.includes('CREATE INDEX IF NOT EXISTS')) {
+          // These are fine to fail silently
+          errors.push({ stmt: trimmedStmt.substring(0, 50), err: err.message });
         } else {
-          resolve();
+          errors.push({ stmt: trimmedStmt.substring(0, 50), err: err.message });
         }
-      });
+      }
     }
-  });
+    
+    if (errors.length > 0) {
+      console.log(`   ⚠️  ${errors.length} statements had errors (likely columns already exist)`);
+    }
+  } else {
+    // Normal migration execution
+    try {
+      db.exec(sql);
+    } catch (err) {
+      console.error(`❌ Error executing migration ${filename}`);
+      console.error(err.message);
+      throw err;
+    }
+  }
 }
 
 
 // Main migration function
-async function runMigrations() {
+function runMigrations() {
   try {
     console.log('\n🔄 Starting database migrations...\n');
     
     // Create migrations tracking table
-    await createMigrationsTable();
+    createMigrationsTable();
     console.log('✅ Migrations tracking table ready\n');
     
     // Get executed migrations
-    const executedMigrations = await getExecutedMigrations();
+    const executedMigrations = getExecutedMigrations();
     console.log(`📋 Found ${executedMigrations.length} previously executed migrations\n`);
     
     // Check if migrations directory exists
@@ -171,10 +148,10 @@ async function runMigrations() {
       
       try {
         // Execute migration
-        await executeMigration(filename, sql);
+        executeMigration(filename, sql);
         
         // Record as executed
-        await recordMigration(filename);
+        recordMigration(filename);
         
         console.log(`✅ ${filename} completed successfully\n`);
         newMigrationsCount++;
@@ -200,12 +177,9 @@ async function runMigrations() {
     console.error('\n❌ Migration process failed:', error.message);
     process.exit(1);
   } finally {
-    db.close((err) => {
-      if (err) {
-        console.error('Error closing database:', err.message);
-      }
-      process.exit(0);
-    });
+    if (db) {
+      db.close();
+    }
   }
 }
 

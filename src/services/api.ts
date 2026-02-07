@@ -613,6 +613,218 @@ class ApiService {
     update: (id: number, data: any) => this.updateApplication(id, data),
     delete: (id: number) => this.deleteApplication(id),
   };
+
+  // ==================== DOCUMENTS ENDPOINTS ====================
+  
+  // Documents namespace - Document Vault
+  documents = {
+    getAll: (filters?: { category?: string; status?: string; collegeId?: string; limit?: number }) => {
+      const params = new URLSearchParams();
+      if (filters?.category) params.append('category', filters.category);
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.collegeId) params.append('collegeId', filters.collegeId);
+      if (filters?.limit) params.append('limit', String(filters.limit));
+      const queryString = params.toString();
+      return this.request(`/documents${queryString ? `?${queryString}` : ''}`);
+    },
+    
+    getById: (id: number) => this.request(`/documents/${id}`),
+    
+    getSummary: () => this.request('/documents/summary'),
+    
+    getExpiring: (days?: number) => 
+      this.request(`/documents/expiring${days ? `?days=${days}` : ''}`),
+    
+    checkForCollege: (collegeId: number, required?: string[]) => {
+      const params = required ? `?required=${required.join(',')}` : '';
+      return this.request(`/documents/check/${collegeId}${params}`);
+    },
+    
+    create: (data: any) => this.request('/documents', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    
+    update: (id: number, data: any) => this.request(`/documents/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+    
+    tagToColleges: (id: number, collegeIds: number[]) => 
+      this.request(`/documents/${id}/tag`, {
+        method: 'PUT',
+        body: JSON.stringify({ collegeIds }),
+      }),
+    
+    delete: (id: number) => this.request(`/documents/${id}`, {
+      method: 'DELETE',
+    }),
+    
+    categories: {
+      TRANSCRIPT: 'transcript',
+      TEST_SCORE: 'test_score',
+      ESSAY: 'essay',
+      RECOMMENDATION: 'recommendation',
+      FINANCIAL: 'financial',
+      PROOF: 'proof',
+      PASSPORT: 'passport',
+      PORTFOLIO: 'portfolio',
+      OTHER: 'other',
+    },
+  };
+
+  // ==================== SCHOLARSHIPS ENDPOINTS ====================
+  
+  // Scholarships namespace - Scholarship Database
+  scholarships = {
+    search: (filters?: { 
+      country?: string; 
+      needBased?: boolean; 
+      meritBased?: boolean; 
+      minAmount?: number;
+      deadlineAfter?: string;
+      search?: string;
+      limit?: number;
+    }) => {
+      const params = new URLSearchParams();
+      if (filters?.country) params.append('country', filters.country);
+      if (filters?.needBased) params.append('needBased', 'true');
+      if (filters?.meritBased) params.append('meritBased', 'true');
+      if (filters?.minAmount) params.append('minAmount', String(filters.minAmount));
+      if (filters?.deadlineAfter) params.append('deadlineAfter', filters.deadlineAfter);
+      if (filters?.search) params.append('search', filters.search);
+      if (filters?.limit) params.append('limit', String(filters.limit));
+      const queryString = params.toString();
+      return this.request(`/scholarships${queryString ? `?${queryString}` : ''}`);
+    },
+    
+    getById: (id: number) => this.request(`/scholarships/${id}`),
+    
+    getCountries: () => this.request('/scholarships/countries'),
+    
+    getUserTracked: (status?: string) => 
+      this.request(`/scholarships/user/tracked${status ? `?status=${status}` : ''}`),
+    
+    getEligible: (filters?: { countries?: string[]; nationality?: string; academicLevel?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.countries) params.append('countries', filters.countries.join(','));
+      if (filters?.nationality) params.append('nationality', filters.nationality);
+      if (filters?.academicLevel) params.append('academicLevel', filters.academicLevel);
+      const queryString = params.toString();
+      return this.request(`/scholarships/user/eligible${queryString ? `?${queryString}` : ''}`);
+    },
+    
+    track: (id: number, status: string = 'interested', notes: string = '') =>
+      this.request(`/scholarships/${id}/track`, {
+        method: 'POST',
+        body: JSON.stringify({ status, notes }),
+      }),
+    
+    updateTracking: (id: number, data: any) =>
+      this.request(`/scholarships/${id}/track`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+  };
+
+  // ==================== RECOMMENDERS ENDPOINTS ====================
+  
+  // Recommenders namespace - Recommendation Manager
+  recommenders = {
+    getAll: () => this.request('/recommenders'),
+    
+    getById: (id: number) => this.request(`/recommenders/${id}`),
+    
+    getSummary: () => this.request('/recommenders/summary'),
+    
+    getTypes: () => this.request('/recommenders/types'),
+    
+    create: (data: any) => this.request('/recommenders', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    
+    update: (id: number, data: any) => this.request(`/recommenders/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+    
+    delete: (id: number) => this.request(`/recommenders/${id}`, {
+      method: 'DELETE',
+    }),
+    
+    // Request endpoints
+    requests: {
+      getAll: (filters?: { status?: string; recommenderId?: number; collegeId?: number }) => {
+        const params = new URLSearchParams();
+        if (filters?.status) params.append('status', filters.status);
+        if (filters?.recommenderId) params.append('recommenderId', String(filters.recommenderId));
+        if (filters?.collegeId) params.append('collegeId', String(filters.collegeId));
+        const queryString = params.toString();
+        return this.request(`/recommenders/requests/all${queryString ? `?${queryString}` : ''}`);
+      },
+      
+      getById: (id: number) => this.request(`/recommenders/requests/${id}`),
+      
+      getOverdue: () => this.request('/recommenders/requests/overdue'),
+      
+      getPendingReminders: (days?: number) =>
+        this.request(`/recommenders/requests/pending-reminders${days ? `?days=${days}` : ''}`),
+      
+      create: (recommenderId: number, data: any) =>
+        this.request(`/recommenders/${recommenderId}/request`, {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+      
+      update: (id: number, data: any) =>
+        this.request(`/recommenders/requests/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+        }),
+      
+      delete: (id: number) =>
+        this.request(`/recommenders/requests/${id}`, {
+          method: 'DELETE',
+        }),
+    },
+    
+    // Email templates
+    generateEmailTemplate: (type: 'request' | 'reminder' | 'thank_you', data: any) =>
+      this.request('/recommenders/email-template', {
+        method: 'POST',
+        body: JSON.stringify({ type, data }),
+      }),
+  };
+
+  // ==================== ELIGIBILITY ENDPOINTS ====================
+  
+  // Eligibility namespace - Auto-fulfillment checking
+  eligibility = {
+    check: (profile: any) =>
+      this.request('/eligibility/check', {
+        method: 'POST',
+        body: JSON.stringify(profile),
+      }),
+    
+    getSummary: (profile: any, college?: any) =>
+      this.request('/eligibility/summary', {
+        method: 'POST',
+        body: JSON.stringify({ profile, college }),
+      }),
+    
+    checkDiploma: (profile: any) =>
+      this.request('/eligibility/diploma', {
+        method: 'POST',
+        body: JSON.stringify(profile),
+      }),
+    
+    checkEnglish: (profile: any) =>
+      this.request('/eligibility/english', {
+        method: 'POST',
+        body: JSON.stringify(profile),
+      }),
+  };
 }
 
 // Export singleton instance
