@@ -8,6 +8,10 @@ import {
   User as UserIcon, Globe, BookOpen, TestTube, Trophy, Target, Heart, 
   Edit2, Save, X, Plus, Trash2, CheckCircle, AlertCircle, Loader2
 } from 'lucide-react';
+import ProfileCompletionWidget from '@/components/common/ProfileCompletionWidget';
+import HelpTooltip, { FIELD_HELP_TEXT } from '@/components/common/HelpTooltip';
+import { ValidationMessage, useFormValidation, ValidationRules } from '@/hooks/useFormValidation';
+import { useAutosave, DraftRestoreBanner } from '@/hooks/useAutosave';
 
 // Constants
 const COUNTRIES = [
@@ -331,28 +335,10 @@ const Settings = () => {
         </div>
       )}
 
-      {/* Profile Completion */}
-      {completionStatus && (
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-6 border border-blue-100">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-gray-900">Profile Completion</h3>
-            <span className="text-2xl font-bold text-blue-600">{completionStatus.percentage}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
-            <div 
-              className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all"
-              style={{ width: `${completionStatus.percentage}%` }}
-            />
-          </div>
-          {completionStatus.missing_critical?.length > 0 && (
-            <div className="text-sm text-gray-600">
-              <span className="font-medium">Missing: </span>
-              {completionStatus.missing_critical.slice(0, 3).join(', ')}
-              {completionStatus.missing_critical.length > 3 && ` +${completionStatus.missing_critical.length - 3} more`}
-            </div>
-          )}
-        </div>
-      )}
+      {/* Profile Completion Widget */}
+      <div className="mb-6">
+        <ProfileCompletionWidget variant="full" showMissingFields={true} />
+      </div>
 
       <div className="space-y-6">
         {/* Basic Information */}
