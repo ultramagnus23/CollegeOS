@@ -33,9 +33,8 @@ const IntelligentCollegeSearch: React.FC<Props> = ({ studentProfile }) => {
         // Backend returns colleges array for college-type queries
         const collegeResults = response.colleges || response.results || response.data || [];
         setResults(collegeResults);
-        // Determine layer from query type
-        const queryType = response.type || 'general';
-        setSearchLayer(queryType === 'college' || queryType === 'general' ? 1 : response.layer || 1);
+        // Default to layer 1 (database search) since that's what our backend uses
+        setSearchLayer(response.layer || 1);
         setSearchSource(response.source || 'database');
       } else {
         console.error('Search failed:', response);
@@ -182,7 +181,12 @@ const IntelligentCollegeSearch: React.FC<Props> = ({ studentProfile }) => {
             </h3>
             
             <div className="space-y-4">
-              {results.map((result, index) => (
+              {results.map((result, index) => {
+                // Extract common fields with fallbacks for different API response formats
+                const acceptanceRate = result.acceptanceRate || result.acceptance_rate;
+                const websiteUrl = result.officialWebsite || result.website_url;
+                
+                return (
                 <div key={index} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition">
                   {/* Database Results */}
                   {searchLayer === 1 && (
@@ -207,10 +211,10 @@ const IntelligentCollegeSearch: React.FC<Props> = ({ studentProfile }) => {
                         </div>
                         
                         <div className="text-right ml-4">
-                          {(result.acceptanceRate || result.acceptance_rate) && (
+                          {acceptanceRate && (
                             <>
                               <div className="text-2xl font-bold text-blue-600">
-                                {((result.acceptanceRate || result.acceptance_rate) * 100).toFixed(1)}%
+                                {(acceptanceRate * 100).toFixed(1)}%
                               </div>
                               <div className="text-xs text-gray-500">Acceptance</div>
                             </>
@@ -218,9 +222,9 @@ const IntelligentCollegeSearch: React.FC<Props> = ({ studentProfile }) => {
                         </div>
                       </div>
                       
-                      {(result.officialWebsite || result.website_url) && (
+                      {websiteUrl && (
                         <a 
-                          href={result.officialWebsite || result.website_url}
+                          href={websiteUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-block mt-3 text-blue-600 hover:underline text-sm"
@@ -285,7 +289,7 @@ const IntelligentCollegeSearch: React.FC<Props> = ({ studentProfile }) => {
                     </>
                   )}
                 </div>
-              ))}
+              );})}
             </div>
           </div>
         )}
