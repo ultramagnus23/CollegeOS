@@ -8,6 +8,14 @@ const logger = require('../utils/logger');
 const EligibilityAutoFulfillService = require('./eligibilityAutoFulfillService');
 
 // ==========================================
+// PROFILE COMPLETION CONFIGURATION
+// ==========================================
+
+// Weight percentages for profile completion calculation
+const CRITICAL_WEIGHT = 70; // Critical fields account for 70% of completion
+const OPTIONAL_WEIGHT = 30; // Optional fields account for 30% of completion
+
+// ==========================================
 // CRITICAL FIELDS FOR COMPLETION CALCULATION
 // ==========================================
 const CRITICAL_FIELDS = [
@@ -700,9 +708,9 @@ class ProfileService {
     
     const totalOptional = OPTIONAL_FIELDS.length + 1; // +1 for activities
     
-    // Calculate percentage: critical fields = 70%, optional = 30%
-    const criticalPercentage = (filledCritical / totalCritical) * 70;
-    const optionalPercentage = (filledOptional / totalOptional) * 30;
+    // Calculate percentage using defined weights
+    const criticalPercentage = (filledCritical / totalCritical) * CRITICAL_WEIGHT;
+    const optionalPercentage = (filledOptional / totalOptional) * OPTIONAL_WEIGHT;
     const percentage = Math.round(criticalPercentage + optionalPercentage);
     
     return {

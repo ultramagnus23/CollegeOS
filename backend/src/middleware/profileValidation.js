@@ -7,6 +7,15 @@ const Joi = require('joi');
 const logger = require('../utils/logger');
 
 // ==========================================
+// VALIDATION CONSTANTS
+// ==========================================
+
+// Dynamic graduation year range (current year - 4 to current year + 10)
+const currentYear = new Date().getFullYear();
+const MIN_GRADUATION_YEAR = currentYear - 4;
+const MAX_GRADUATION_YEAR = currentYear + 10;
+
+// ==========================================
 // VALIDATION SCHEMAS
 // ==========================================
 
@@ -37,8 +46,8 @@ const basicInfoSchema = Joi.object({
     'Freshman', 'Sophomore', 'Junior', 'Senior',
     'Gap Year', 'College Freshman'
   ).optional(),
-  graduation_year: Joi.number().integer().min(2020).max(2035).optional(),
-  graduationYear: Joi.number().integer().min(2020).max(2035).optional()
+  graduation_year: Joi.number().integer().min(MIN_GRADUATION_YEAR).max(MAX_GRADUATION_YEAR).optional(),
+  graduationYear: Joi.number().integer().min(MIN_GRADUATION_YEAR).max(MAX_GRADUATION_YEAR).optional()
 }).options({ stripUnknown: true });
 
 // Academic Info Schema
