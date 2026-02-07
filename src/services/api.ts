@@ -796,6 +796,35 @@ class ApiService {
         body: JSON.stringify({ type, data }),
       }),
   };
+
+  // ==================== ELIGIBILITY ENDPOINTS ====================
+  
+  // Eligibility namespace - Auto-fulfillment checking
+  eligibility = {
+    check: (profile: any) =>
+      this.request('/eligibility/check', {
+        method: 'POST',
+        body: JSON.stringify(profile),
+      }),
+    
+    getSummary: (profile: any, college?: any) =>
+      this.request('/eligibility/summary', {
+        method: 'POST',
+        body: JSON.stringify({ profile, college }),
+      }),
+    
+    checkDiploma: (profile: any) =>
+      this.request('/eligibility/diploma', {
+        method: 'POST',
+        body: JSON.stringify(profile),
+      }),
+    
+    checkEnglish: (profile: any) =>
+      this.request('/eligibility/english', {
+        method: 'POST',
+        body: JSON.stringify(profile),
+      }),
+  };
 }
 
 // Export singleton instance
