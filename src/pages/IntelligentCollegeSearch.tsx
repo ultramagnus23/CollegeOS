@@ -30,8 +30,12 @@ const IntelligentCollegeSearch: React.FC<Props> = ({ studentProfile }) => {
       });
 
       if (response.success) {
-        setResults(response.results || response.data || []);
-        setSearchLayer(response.layer || 1);
+        // Backend returns colleges array for college-type queries
+        const collegeResults = response.colleges || response.results || response.data || [];
+        setResults(collegeResults);
+        // Determine layer from query type
+        const queryType = response.type || 'general';
+        setSearchLayer(queryType === 'college' || queryType === 'general' ? 1 : response.layer || 1);
         setSearchSource(response.source || 'database');
       } else {
         console.error('Search failed:', response);
@@ -203,16 +207,20 @@ const IntelligentCollegeSearch: React.FC<Props> = ({ studentProfile }) => {
                         </div>
                         
                         <div className="text-right ml-4">
-                          <div className="text-2xl font-bold text-blue-600">
-                            {(result.acceptance_rate * 100).toFixed(1)}%
-                          </div>
-                          <div className="text-xs text-gray-500">Acceptance</div>
+                          {(result.acceptanceRate || result.acceptance_rate) && (
+                            <>
+                              <div className="text-2xl font-bold text-blue-600">
+                                {((result.acceptanceRate || result.acceptance_rate) * 100).toFixed(1)}%
+                              </div>
+                              <div className="text-xs text-gray-500">Acceptance</div>
+                            </>
+                          )}
                         </div>
                       </div>
                       
-                      {result.website_url && (
+                      {(result.officialWebsite || result.website_url) && (
                         <a 
-                          href={result.website_url}
+                          href={result.officialWebsite || result.website_url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-block mt-3 text-blue-600 hover:underline text-sm"
