@@ -314,9 +314,10 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       } else {
         navigate('/dashboard');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save profile:', error);
-      setErrors(['Failed to save profile. Please try again.']);
+      const errorMessage = error.message || 'Failed to save profile. Please try again.';
+      setErrors([errorMessage]);
     }
     setSaving(false);
   };

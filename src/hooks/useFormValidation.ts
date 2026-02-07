@@ -196,18 +196,16 @@ export const ValidationRules = {
   }),
 
   // Year validation
-  graduationYear: (): ValidationRule => {
-    const currentYear = new Date().getFullYear();
-    return {
-      validate: (value) => {
-        if (!value) return true;
-        const num = Number(value);
-        return num >= currentYear - 4 && num <= currentYear + 10;
-      },
-      message: `Graduation year should be between ${currentYear - 4} and ${currentYear + 10}`,
-      severity: 'error'
-    };
-  }
+  graduationYear: (): ValidationRule => ({
+    validate: (value) => {
+      if (!value) return true;
+      const currentYear = new Date().getFullYear();
+      const num = Number(value);
+      return num >= currentYear - 4 && num <= currentYear + 10;
+    },
+    message: 'Graduation year should be within a valid range',
+    severity: 'error'
+  })
 };
 
 interface UseFormValidationOptions {
