@@ -13,6 +13,38 @@
 
 const logger = require('../utils/logger');
 
+// =====================================================
+// Configuration Constants
+// =====================================================
+
+// Academic Thresholds
+const THRESHOLDS = {
+  // High School Diploma minimum requirements
+  HS_MIN_PERCENTAGE: 60,
+  HS_MIN_GPA: 2.0,
+  
+  // IB Diploma thresholds
+  IB_DIPLOMA_MINIMUM: 24,
+  IB_COMPETITIVE_MINIMUM: 38,
+  
+  // A-Levels minimum subjects
+  A_LEVEL_MIN_SUBJECTS: 3,
+  
+  // English proficiency score minimums
+  IELTS_MIN: 6.0,
+  IELTS_COMPETITIVE: 7.0,
+  TOEFL_MIN: 80,
+  TOEFL_COMPETITIVE: 100,
+  DUOLINGO_MIN: 105,
+  DUOLINGO_COMPETITIVE: 120
+};
+
+// Countries where English is official/primary language
+const ENGLISH_SPEAKING_COUNTRIES = [
+  'united states', 'usa', 'uk', 'united kingdom',
+  'canada', 'australia', 'new zealand', 'ireland', 'singapore'
+];
+
 class EligibilityAutoFulfillService {
   /**
    * Check all auto-fulfillable requirements for a student
@@ -48,12 +80,8 @@ class EligibilityAutoFulfillService {
     const hasGraduated = graduationYear > 0 && graduationYear <= currentYear;
     const isGraduating = gradeLevel.includes('12') || gradeLevel.includes('senior');
     
-    // GPA threshold (70% or 2.0 GPA minimum for most colleges)
-    const MIN_PERCENTAGE = 60;
-    const MIN_GPA = 2.0;
-    
-    const hasAcceptableGPA = gpa >= MIN_GPA;
-    const hasAcceptablePercentage = percentage >= MIN_PERCENTAGE;
+    const hasAcceptableGPA = gpa >= THRESHOLDS.HS_MIN_GPA;
+    const hasAcceptablePercentage = percentage >= THRESHOLDS.HS_MIN_PERCENTAGE;
     const hasAcceptableGrades = hasAcceptableGPA || hasAcceptablePercentage;
     
     // Determine status
@@ -78,7 +106,7 @@ class EligibilityAutoFulfillService {
         status: 'below_threshold',
         display: `⚠️ High School Diploma (Below typical requirement)`,
         color: 'orange',
-        details: `Your ${percentage > 0 ? percentage + '%' : gpa + ' GPA'} is below the typical ${MIN_PERCENTAGE}%/${MIN_GPA} GPA threshold for most colleges`,
+        details: `Your ${percentage > 0 ? percentage + '%' : gpa + ' GPA'} is below the typical ${THRESHOLDS.HS_MIN_PERCENTAGE}%/${THRESHOLDS.HS_MIN_GPA} GPA threshold for most colleges`,
         icon: 'alert'
       };
     } else {
@@ -102,10 +130,6 @@ class EligibilityAutoFulfillService {
     const ibTotal = parseInt(profile.ib_total) || parseInt(profile.ib_predicted) || 0;
     const subjects = profile.subjects || profile.ib_subjects || [];
     
-    // IB Diploma minimum is 24 points
-    const IB_DIPLOMA_MINIMUM = 24;
-    const IB_COMPETITIVE_MINIMUM = 38;
-    
     if (!curriculum.includes('IB') && ibTotal === 0) {
       return {
         status: 'not_applicable',
@@ -114,7 +138,7 @@ class EligibilityAutoFulfillService {
       };
     }
     
-    if (ibTotal >= IB_COMPETITIVE_MINIMUM) {
+    if (ibTotal >= THRESHOLDS.IB_COMPETITIVE_MINIMUM) {
       return {
         status: 'fulfilled',
         display: `✓ IB Diploma (${ibTotal}/45 - Competitive)`,
@@ -122,7 +146,7 @@ class EligibilityAutoFulfillService {
         details: `Strong IB score of ${ibTotal} points`,
         icon: 'check'
       };
-    } else if (ibTotal >= IB_DIPLOMA_MINIMUM) {
+    } else if (ibTotal >= THRESHOLDS.IB_DIPLOMA_MINIMUM) {
       return {
         status: 'fulfilled',
         display: `✓ IB Diploma (${ibTotal}/45)`,
@@ -133,9 +157,9 @@ class EligibilityAutoFulfillService {
     } else if (ibTotal > 0) {
       return {
         status: 'below_threshold',
-        display: `⚠️ IB Score Below Diploma Requirement (${ibTotal}/24 needed)`,
+        display: `⚠️ IB Score Below Diploma Requirement (${ibTotal}/${THRESHOLDS.IB_DIPLOMA_MINIMUM} needed)`,
         color: 'orange',
-        details: `Your predicted ${ibTotal} points is below the 24-point IB Diploma threshold`,
+        details: `Your predicted ${ibTotal} points is below the ${THRESHOLDS.IB_DIPLOMA_MINIMUM}-point IB Diploma threshold`,
         icon: 'alert'
       };
     } else if (curriculum.includes('IB')) {
@@ -161,9 +185,6 @@ class EligibilityAutoFulfillService {
     const aLevelSubjects = profile.a_level_subjects || profile.subjects || [];
     const aLevelGrades = profile.a_level_grades || {};
     
-    // A-Levels requirement: typically 3+ subjects
-    const MIN_SUBJECTS = 3;
-    
     if (!curriculum.includes('A-LEVEL') && !curriculum.includes('CAMBRIDGE') && aLevelSubjects.length === 0) {
       return {
         status: 'not_applicable',
@@ -173,9 +194,9 @@ class EligibilityAutoFulfillService {
     }
     
     const subjectCount = Array.isArray(aLevelSubjects) ? aLevelSubjects.length : 0;
-    const hasGrades = Object.keys(aLevelGrades).length >= MIN_SUBJECTS;
+    const hasGrades = Object.keys(aLevelGrades).length >= THRESHOLDS.A_LEVEL_MIN_SUBJECTS;
     
-    if (subjectCount >= MIN_SUBJECTS && hasGrades) {
+    if (subjectCount >= THRESHOLDS.A_LEVEL_MIN_SUBJECTS && hasGrades) {
       const grades = Object.values(aLevelGrades).join(', ');
       return {
         status: 'fulfilled',
@@ -184,7 +205,7 @@ class EligibilityAutoFulfillService {
         details: `${subjectCount} A-Level subjects with grades`,
         icon: 'check'
       };
-    } else if (subjectCount >= MIN_SUBJECTS) {
+    } else if (subjectCount >= THRESHOLDS.A_LEVEL_MIN_SUBJECTS) {
       return {
         status: 'on_track',
         display: `⏳ A-Levels (${subjectCount} subjects, awaiting grades)`,
@@ -217,22 +238,10 @@ class EligibilityAutoFulfillService {
     const toeflScore = parseInt(profile.toefl_score) || 0;
     const duolingoScore = parseInt(profile.duolingo_score) || 0;
     
-    // English-speaking countries
-    const englishSpeakingCountries = ['united states', 'usa', 'uk', 'united kingdom', 
-      'canada', 'australia', 'new zealand', 'ireland', 'singapore'];
-    
     // Check for English-medium education
     const hasEnglishMedium = mediumOfInstruction === 'english' || 
                              mediumOfInstruction.includes('english');
-    const isFromEnglishCountry = englishSpeakingCountries.some(c => country.includes(c));
-    
-    // Score thresholds
-    const IELTS_MIN = 6.0;
-    const IELTS_COMPETITIVE = 7.0;
-    const TOEFL_MIN = 80;
-    const TOEFL_COMPETITIVE = 100;
-    const DUOLINGO_MIN = 105;
-    const DUOLINGO_COMPETITIVE = 120;
+    const isFromEnglishCountry = ENGLISH_SPEAKING_COUNTRIES.some(c => country.includes(c));
     
     // Auto-waiver scenarios
     if (isFromEnglishCountry) {
@@ -256,7 +265,7 @@ class EligibilityAutoFulfillService {
     }
     
     // Check test scores
-    if (ieltsScore >= IELTS_COMPETITIVE || toeflScore >= TOEFL_COMPETITIVE || duolingoScore >= DUOLINGO_COMPETITIVE) {
+    if (ieltsScore >= THRESHOLDS.IELTS_COMPETITIVE || toeflScore >= THRESHOLDS.TOEFL_COMPETITIVE || duolingoScore >= THRESHOLDS.DUOLINGO_COMPETITIVE) {
       const scoreDisplay = ieltsScore > 0 ? `IELTS ${ieltsScore}` : 
                           toeflScore > 0 ? `TOEFL ${toeflScore}` : `Duolingo ${duolingoScore}`;
       return {
@@ -268,7 +277,7 @@ class EligibilityAutoFulfillService {
       };
     }
     
-    if (ieltsScore >= IELTS_MIN || toeflScore >= TOEFL_MIN || duolingoScore >= DUOLINGO_MIN) {
+    if (ieltsScore >= THRESHOLDS.IELTS_MIN || toeflScore >= THRESHOLDS.TOEFL_MIN || duolingoScore >= THRESHOLDS.DUOLINGO_MIN) {
       const scoreDisplay = ieltsScore > 0 ? `IELTS ${ieltsScore}` : 
                           toeflScore > 0 ? `TOEFL ${toeflScore}` : `Duolingo ${duolingoScore}`;
       return {
