@@ -35,7 +35,7 @@ def predict():
     Request body:
     {
         "student_profile": { ... },
-        "college": { ... }
+        "college": { "id": 123, ... }
     }
     """
     try:
@@ -49,6 +49,17 @@ def predict():
         
         if not student_profile or not college:
             return jsonify({'error': 'student_profile and college required'}), 400
+        
+        # Validate that college id is an integer to prevent path manipulation
+        college_id = college.get('id')
+        try:
+            college_id_int = int(college_id)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'college.id must be an integer'}), 400
+        
+        # Use the validated integer id in the college dict
+        college = dict(college)
+        college['id'] = college_id_int
         
         result = prediction_service.predict(student_profile, college)
         return jsonify(result)
