@@ -196,6 +196,86 @@ class ApiService {
     });
   }
 
+  // ==================== NEW PROFILE MANAGEMENT ENDPOINTS ====================
+
+  // Get complete profile by user ID
+  async getProfileById(userId: number) {
+    return this.request(`/profile/${userId}`);
+  }
+
+  // Update basic info
+  async updateBasicInfo(userId: number, data: any) {
+    return this.request(`/profile/${userId}/basic`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Update academic info
+  async updateAcademicInfo(userId: number, data: any) {
+    return this.request(`/profile/${userId}/academic`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Update subjects
+  async updateSubjects(userId: number, data: any) {
+    return this.request(`/profile/${userId}/subjects`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Update test scores
+  async updateTestScores(userId: number, data: any) {
+    return this.request(`/profile/${userId}/test-scores`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Update activities
+  async updateProfileActivities(userId: number, data: any) {
+    return this.request(`/profile/${userId}/activities`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Delete specific activity
+  async deleteProfileActivity(userId: number, activityId: number) {
+    return this.request(`/profile/${userId}/activities/${activityId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Update preferences
+  async updatePreferences(userId: number, data: any) {
+    return this.request(`/profile/${userId}/preferences`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Get completion status
+  async getCompletionStatus(userId: number) {
+    return this.request(`/profile/${userId}/completion-status`);
+  }
+
+  // Save onboarding draft
+  async saveOnboardingDraft(userId: number, data: any) {
+    return this.request(`/profile/${userId}/onboarding-draft`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Get onboarding draft
+  async getOnboardingDraft(userId: number) {
+    return this.request(`/profile/${userId}/onboarding-draft`);
+  }
+
   // Activities
   async getActivities() {
     return this.request('/profile/activities');
