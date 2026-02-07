@@ -183,6 +183,7 @@ const Settings = () => {
       setEditMode(prev => ({ ...prev, basic: false }));
       showMessage('success', 'Basic info saved successfully');
     } catch (error: any) {
+      console.error('Failed to save basic info:', error);
       showMessage('error', error.message || 'Failed to save');
     }
     setSaving(false);
@@ -207,6 +208,7 @@ const Settings = () => {
       setEditMode(prev => ({ ...prev, academic: false }));
       showMessage('success', 'Academic info saved successfully');
     } catch (error: any) {
+      console.error('Failed to save academic info:', error);
       showMessage('error', error.message || 'Failed to save');
     }
     setSaving(false);
@@ -230,6 +232,7 @@ const Settings = () => {
       setEditMode(prev => ({ ...prev, testScores: false }));
       showMessage('success', 'Test scores saved successfully');
     } catch (error: any) {
+      console.error('Failed to save test scores:', error);
       showMessage('error', error.message || 'Failed to save');
     }
     setSaving(false);
@@ -253,6 +256,7 @@ const Settings = () => {
       setEditMode(prev => ({ ...prev, preferences: false }));
       showMessage('success', 'Preferences saved successfully');
     } catch (error: any) {
+      console.error('Failed to save preferences:', error);
       showMessage('error', error.message || 'Failed to save');
     }
     setSaving(false);

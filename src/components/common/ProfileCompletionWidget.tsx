@@ -79,13 +79,6 @@ const ProfileCompletionWidget: React.FC<ProfileCompletionWidgetProps> = ({
     setLoading(false);
   };
 
-  // Expose refresh function
-  useEffect(() => {
-    if (onRefresh) {
-      // Allow parent to trigger refresh
-    }
-  }, [onRefresh]);
-
   const handleFieldClick = (fieldName: string) => {
     const mapping = FIELD_TO_SECTION[fieldName];
     if (mapping) {
