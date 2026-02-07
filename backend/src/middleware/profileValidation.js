@@ -19,80 +19,76 @@ const MAX_GRADUATION_YEAR = currentYear + 10;
 // VALIDATION SCHEMAS
 // ==========================================
 
-// Basic Info Schema
+// Basic Info Schema - allow empty strings for all optional fields
 const basicInfoSchema = Joi.object({
-  first_name: Joi.string().min(2).max(100).optional(),
-  last_name: Joi.string().min(2).max(100).optional(),
-  firstName: Joi.string().min(2).max(100).optional(),
-  lastName: Joi.string().min(2).max(100).optional(),
-  email: Joi.string().email().optional(),
+  first_name: Joi.string().min(2).max(100).optional().allow('', null),
+  last_name: Joi.string().min(2).max(100).optional().allow('', null),
+  firstName: Joi.string().min(2).max(100).optional().allow('', null),
+  lastName: Joi.string().min(2).max(100).optional().allow('', null),
+  email: Joi.string().email().optional().allow('', null),
   phone: Joi.string().pattern(/^[\d\s+\-()]+$/).max(20).optional().allow('', null),
-  country: Joi.string().max(100).optional(),
+  country: Joi.string().max(100).optional().allow('', null),
   date_of_birth: Joi.alternatives().try(
     Joi.date().max('now'),
     Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/)
-  ).optional().allow(null),
+  ).optional().allow('', null),
   dateOfBirth: Joi.alternatives().try(
     Joi.date().max('now'),
     Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/)
-  ).optional().allow(null),
+  ).optional().allow('', null),
   grade_level: Joi.string().valid(
     'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12', 
     'Freshman', 'Sophomore', 'Junior', 'Senior',
     'Gap Year', 'College Freshman'
-  ).optional(),
+  ).optional().allow('', null),
   gradeLevel: Joi.string().valid(
     'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12', 
     'Freshman', 'Sophomore', 'Junior', 'Senior',
     'Gap Year', 'College Freshman'
-  ).optional(),
-  graduation_year: Joi.number().integer().min(MIN_GRADUATION_YEAR).max(MAX_GRADUATION_YEAR).optional(),
-  graduationYear: Joi.number().integer().min(MIN_GRADUATION_YEAR).max(MAX_GRADUATION_YEAR).optional()
+  ).optional().allow('', null),
+  graduation_year: Joi.number().integer().min(MIN_GRADUATION_YEAR).max(MAX_GRADUATION_YEAR).optional().allow(null),
+  graduationYear: Joi.number().integer().min(MIN_GRADUATION_YEAR).max(MAX_GRADUATION_YEAR).optional().allow(null)
 }).options({ stripUnknown: true });
 
-// Academic Info Schema
+// Academic Info Schema - allow empty strings for all optional fields
 const academicInfoSchema = Joi.object({
   curriculum_type: Joi.string().valid(
     'IB', 'A-Level', 'CBSE', 'ICSE', 'ISC', 'State Board',
     'AP', 'US', 'IGCSE', 'Cambridge', 'Other'
-  ).optional(),
+  ).optional().allow('', null),
   curriculumType: Joi.string().valid(
     'IB', 'A-Level', 'CBSE', 'ICSE', 'ISC', 'State Board',
     'AP', 'US', 'IGCSE', 'Cambridge', 'Other'
-  ).optional(),
-  stream: Joi.string().when('curriculum_type', {
-    is: 'CBSE',
-    then: Joi.string().valid(
-      'Science with Medical', 'Science without Medical', 
-      'Commerce', 'Humanities/Arts'
-    ).required(),
-    otherwise: Joi.string().optional()
-  }),
-  gpa: Joi.number().min(0).max(Joi.ref('gpa_scale')).optional(),
-  gpaWeighted: Joi.number().min(0).max(5.0).optional(),
-  gpaUnweighted: Joi.number().min(0).max(4.0).optional(),
-  gpa_weighted: Joi.number().min(0).max(5.0).optional(),
-  gpa_unweighted: Joi.number().min(0).max(4.0).optional(),
-  gpa_scale: Joi.number().valid(4.0, 5.0, 10.0, 100).optional(),
-  gpaScale: Joi.number().valid(4.0, 5.0, 10.0, 100).optional(),
-  class_rank: Joi.number().integer().min(1).optional(),
-  classRank: Joi.number().integer().min(1).optional(),
-  class_size: Joi.number().integer().min(1).optional(),
-  classSize: Joi.number().integer().min(1).optional(),
-  high_school_name: Joi.string().max(255).optional(),
-  highSchoolName: Joi.string().max(255).optional(),
-  school_name: Joi.string().max(255).optional(),
-  schoolName: Joi.string().max(255).optional(),
-  board_type: Joi.string().optional(),
-  boardType: Joi.string().optional(),
+  ).optional().allow('', null),
+  stream: Joi.string().valid(
+    'Science with Medical', 'Science without Medical', 
+    'Commerce', 'Humanities/Arts'
+  ).optional().allow('', null),
+  gpa: Joi.number().min(0).max(100).optional().allow(null),
+  gpaWeighted: Joi.number().min(0).max(5.0).optional().allow(null),
+  gpaUnweighted: Joi.number().min(0).max(4.0).optional().allow(null),
+  gpa_weighted: Joi.number().min(0).max(5.0).optional().allow(null),
+  gpa_unweighted: Joi.number().min(0).max(4.0).optional().allow(null),
+  gpa_scale: Joi.number().valid(4.0, 5.0, 10.0, 100).optional().allow(null),
+  gpaScale: Joi.number().valid(4.0, 5.0, 10.0, 100).optional().allow(null),
+  class_rank: Joi.number().integer().min(1).optional().allow(null),
+  classRank: Joi.number().integer().min(1).optional().allow(null),
+  class_size: Joi.number().integer().min(1).optional().allow(null),
+  classSize: Joi.number().integer().min(1).optional().allow(null),
+  high_school_name: Joi.string().max(255).optional().allow('', null),
+  highSchoolName: Joi.string().max(255).optional().allow('', null),
+  school_name: Joi.string().max(255).optional().allow('', null),
+  schoolName: Joi.string().max(255).optional().allow('', null),
+  board_type: Joi.string().optional().allow('', null),
+  boardType: Joi.string().optional().allow('', null),
   exam_board: Joi.string().valid(
     'Cambridge International (CIE)', 'Edexcel Pearson', 
     'AQA', 'OCR', 'Other'
-  ).optional(),
+  ).optional().allow('', null),
   examBoard: Joi.string().valid(
     'Cambridge International (CIE)', 'Edexcel Pearson', 
     'AQA', 'OCR', 'Other'
-  ).optional()
+  ).optional().allow('', null)
 }).options({ stripUnknown: true });
 
 // IB Subject Schema
@@ -192,10 +188,10 @@ const testScoresSchema = Joi.object({
   // IB
   ib_predicted_score: Joi.number().integer().min(0).max(45).optional().allow(null),
   ibPredictedScore: Joi.number().integer().min(0).max(45).optional().allow(null),
-  tok_grade: Joi.string().valid('A', 'B', 'C', 'D', 'E').optional().allow(null),
-  tokGrade: Joi.string().valid('A', 'B', 'C', 'D', 'E').optional().allow(null),
-  ee_grade: Joi.string().valid('A', 'B', 'C', 'D', 'E').optional().allow(null),
-  eeGrade: Joi.string().valid('A', 'B', 'C', 'D', 'E').optional().allow(null)
+  tok_grade: Joi.string().valid('A', 'B', 'C', 'D', 'E').optional().allow('', null),
+  tokGrade: Joi.string().valid('A', 'B', 'C', 'D', 'E').optional().allow('', null),
+  ee_grade: Joi.string().valid('A', 'B', 'C', 'D', 'E').optional().allow('', null),
+  eeGrade: Joi.string().valid('A', 'B', 'C', 'D', 'E').optional().allow('', null)
 }).options({ stripUnknown: true });
 
 // Activities Schema
