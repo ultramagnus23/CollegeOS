@@ -11,6 +11,7 @@ import TodaysTasks from '../components/dashboard/TodaysTasks';
 import UrgentAlerts from '../components/dashboard/UrgentAlerts';
 import RecommendedActions from '../components/dashboard/RecommendedActions';
 import CollegeListOverview from '../components/dashboard/CollegeListOverview';
+import ProfileCompletionWidget from '../components/common/ProfileCompletionWidget';
 import { 
   School, 
   FileText, 
@@ -344,6 +345,9 @@ const Dashboard = () => {
 
       {/* Progress Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Profile Completion Widget - Sidebar */}
+        <ProfileCompletionWidget variant="full" showMissingFields={true} />
+
         {/* Overall Progress */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
