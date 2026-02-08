@@ -90,16 +90,18 @@ const Settings = () => {
     hours_per_week: '',
     weeks_per_year: ''
   });
+// Delay in ms before scrolling to section - allows DOM to render after navigation
+const SCROLL_DELAY_MS = 100;
 
   // Handle hash-based navigation
   useEffect(() => {
     const hash = location.hash.replace('#', '') as SectionId;
     if (hash && SECTIONS.some(s => s.id === hash)) {
       setActiveSection(hash);
-      // Scroll to section after a short delay to allow render
+      // Scroll to section after a short delay to allow DOM render
       setTimeout(() => {
         sectionRefs.current[hash]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+      }, SCROLL_DELAY_MS);
     }
   }, [location.hash]);
 

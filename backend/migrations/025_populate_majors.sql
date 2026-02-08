@@ -1,10 +1,16 @@
 -- Migration 025: Populate Majors Table
 -- This migration populates the majors table from college_programs and adds common majors
+--
+-- NOTE: Uses INSERT OR IGNORE to handle duplicates gracefully:
+-- - Duplicates are silently skipped (due to UNIQUE constraint on major_name)
+-- - This is intentional as the migration may be run multiple times or after partial completion
+-- - The majors table will contain the first version inserted; subsequent duplicates are ignored
 
 -- ==========================================
 -- POPULATE MAJORS FROM COLLEGE_PROGRAMS
 -- ==========================================
 -- Insert unique program names from college_programs into majors table
+-- Duplicates are ignored via INSERT OR IGNORE (see note above)
 INSERT OR IGNORE INTO majors (major_name, major_category, stem_flag)
 SELECT DISTINCT 
   program_name,
@@ -40,7 +46,7 @@ SELECT DISTINCT
     WHEN program_name IN ('Education', 'Teaching', 'Special Education', 'Early Childhood', 'Curriculum')
       THEN 'Education'
     WHEN program_name IN ('Architecture', 'Urban Planning', 'Landscape Architecture', 'Construction')
-      THEN 'Architecture & Planning'
+      THEN 'Architecture & Design'
     WHEN program_name IN ('Agriculture', 'Agribusiness', 'Animal Science', 'Plant Science', 'Forestry', 
                           'Horticulture', 'Food Science')
       THEN 'Agriculture'
@@ -66,6 +72,8 @@ WHERE program_name IS NOT NULL AND TRIM(program_name) != '';
 -- ==========================================
 -- ADD ADDITIONAL COMMON MAJORS IF MISSING
 -- ==========================================
+-- These are common majors that might not exist in college_programs
+-- INSERT OR IGNORE ensures duplicates from above are skipped
 INSERT OR IGNORE INTO majors (major_name, major_category, stem_flag) VALUES
 -- Technology/Computer Science
 ('Computer Science', 'Technology', 1),
