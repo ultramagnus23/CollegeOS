@@ -665,6 +665,26 @@ function main() {
     // Re-enable foreign keys
     db.pragma('foreign_keys = ON');
     
+    // Populate major_categories in colleges table from college_programs
+    // Use GROUP_CONCAT to efficiently aggregate programs per college in a single query
+    console.log('📚 Populating major_categories from college_programs...');
+    const aggregatedPrograms = db.prepare(`
+      SELECT college_id, GROUP_CONCAT(DISTINCT program_name) as programs 
+      FROM college_programs 
+      GROUP BY college_id
+    `).all();
+    
+    const updateStmt = db.prepare('UPDATE colleges SET major_categories = ? WHERE id = ?');
+    let majorCategoriesUpdated = 0;
+    for (const row of aggregatedPrograms) {
+      if (row.programs) {
+        const majorArray = row.programs.split(',');
+        updateStmt.run(JSON.stringify(majorArray), row.college_id);
+        majorCategoriesUpdated++;
+      }
+    }
+    console.log(`   ✅ Updated major_categories for ${majorCategoriesUpdated} colleges`);
+    
     // Print summary
     printSummary(stats);
     
