@@ -569,7 +569,10 @@ const CollegeDetail: React.FC = () => {
 
   const majorCategories = parseArray(college.major_categories);
   const academicStrengths = parseArray(college.academic_strengths);
-  const programs = parseArray(college.programs);
+  // Handle programs - can be array of strings or array of objects
+  const programs = Array.isArray(college.programs) 
+    ? (typeof college.programs[0] === 'string' ? college.programs as string[] : (college.programs as Array<{ programName: string }>).map(p => p.programName))
+    : parseArray(college.programs as string | string[]);
 
   // Format helpers - return null for missing data instead of "N/A"
   const formatAcceptanceRate = (rate: number | null | undefined): string | null => {
@@ -1529,46 +1532,47 @@ const CollegeDetail: React.FC = () => {
               {!college.academicOutcomes && college.graduationRates && (
                 <Card title="Graduation Rates">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {college.graduationRates?.fourYear && (
-                    <div className="text-center">
-                      <div className="relative w-32 h-32 mx-auto">
-                        <svg className="w-full h-full" viewBox="0 0 100 100">
-                          <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
-                          <circle 
-                            cx="50" cy="50" r="45" fill="none" stroke="#10B981" strokeWidth="10"
-                            strokeDasharray={`${college.graduationRates.fourYear * 2.83} 283`}
-                            strokeLinecap="round"
-                            transform="rotate(-90 50 50)"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-2xl font-bold">{college.graduationRates.fourYear}%</span>
+                    {college.graduationRates?.fourYear && (
+                      <div className="text-center">
+                        <div className="relative w-32 h-32 mx-auto">
+                          <svg className="w-full h-full" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
+                            <circle 
+                              cx="50" cy="50" r="45" fill="none" stroke="#10B981" strokeWidth="10"
+                              strokeDasharray={`${college.graduationRates.fourYear * 2.83} 283`}
+                              strokeLinecap="round"
+                              transform="rotate(-90 50 50)"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-2xl font-bold">{college.graduationRates.fourYear}%</span>
+                          </div>
                         </div>
+                        <p className="mt-2 font-medium">4-Year Graduation Rate</p>
                       </div>
-                      <p className="mt-2 font-medium">4-Year Graduation Rate</p>
-                    </div>
-                  )}
-                  {college.graduationRates?.sixYear && (
-                    <div className="text-center">
-                      <div className="relative w-32 h-32 mx-auto">
-                        <svg className="w-full h-full" viewBox="0 0 100 100">
-                          <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
-                          <circle 
-                            cx="50" cy="50" r="45" fill="none" stroke="#3B82F6" strokeWidth="10"
-                            strokeDasharray={`${college.graduationRates.sixYear * 2.83} 283`}
-                            strokeLinecap="round"
-                            transform="rotate(-90 50 50)"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-2xl font-bold">{college.graduationRates.sixYear}%</span>
+                    )}
+                    {college.graduationRates?.sixYear && (
+                      <div className="text-center">
+                        <div className="relative w-32 h-32 mx-auto">
+                          <svg className="w-full h-full" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
+                            <circle 
+                              cx="50" cy="50" r="45" fill="none" stroke="#3B82F6" strokeWidth="10"
+                              strokeDasharray={`${college.graduationRates.sixYear * 2.83} 283`}
+                              strokeLinecap="round"
+                              transform="rotate(-90 50 50)"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-2xl font-bold">{college.graduationRates.sixYear}%</span>
+                          </div>
                         </div>
+                        <p className="mt-2 font-medium">6-Year Graduation Rate</p>
                       </div>
-                      <p className="mt-2 font-medium">6-Year Graduation Rate</p>
-                    </div>
-                  )}
-                </div>
-              </Card>
+                    )}
+                  </div>
+                </Card>
+              )}
 
               {/* India-specific: Placements in Outcomes */}
               {college.country === 'India' && college.placements && (
