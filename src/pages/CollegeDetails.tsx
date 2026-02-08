@@ -715,25 +715,54 @@ const CollegeDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Stats Bar - Only show stats with values */}
+          {/* Quick Stats Bar - Enhanced with comprehensive data */}
           <div className="flex flex-wrap gap-4 mt-8 bg-white/10 rounded-xl p-4">
             {(() => {
               const acceptanceRateStr = formatAcceptanceRate(acceptanceRate);
               return acceptanceRateStr && <QuickStat label="Acceptance Rate" value={acceptanceRateStr} />;
             })()}
+            
+            {/* Show comprehensive enrollment if available, otherwise fallback */}
             {(() => {
+              if (college.comprehensiveData?.totalEnrollment) {
+                return <QuickStat label="Total Enrollment" value={college.comprehensiveData.totalEnrollment.toLocaleString()} />;
+              }
               const enrollmentStr = formatEnrollment(college.enrollment);
               return enrollmentStr && <QuickStat label="Enrollment" value={enrollmentStr} />;
             })()}
+            
+            {/* Show undergrad enrollment if available */}
+            {college.comprehensiveData?.undergraduateEnrollment && (
+              <QuickStat label="Undergrad" value={college.comprehensiveData.undergraduateEnrollment.toLocaleString()} />
+            )}
+            
+            {/* Show net price prominently if available */}
             {(() => {
+              // Try to get average net price from financial data
+              const avgNetPrice = college.financialData?.netPriceLowIncome || 
+                                 college.financialData?.netPriceMidIncome || 
+                                 college.financialData?.netPriceHighIncome;
+              if (avgNetPrice) {
+                return <QuickStat label="Avg Net Price" value={`$${avgNetPrice.toLocaleString()}`} />;
+              }
+              // Fallback to tuition
               const tuitionStr = formatCurrency(college.tuition_cost, college.country);
               return tuitionStr && <QuickStat label="Tuition" value={tuitionStr} />;
             })()}
-            {testScores.averageGPA && (
-              <QuickStat label="Avg GPA" value={testScores.averageGPA.toFixed(2)} />
+            
+            {/* Show retention rate if available */}
+            {college.academicOutcomes?.retentionRate && (
+              <QuickStat label="Retention Rate" value={`${(college.academicOutcomes.retentionRate * 100).toFixed(1)}%`} />
             )}
-            {college.studentFacultyRatio && (
-              <QuickStat label="Student:Faculty" value={college.studentFacultyRatio} />
+            
+            {/* Show average GPA/SAT if available */}
+            {(testScores.averageGPA || college.studentStats?.gpa50) && (
+              <QuickStat label="Avg GPA" value={(college.studentStats?.gpa50 || testScores.averageGPA)?.toFixed(2) || ''} />
+            )}
+            
+            {/* Show student-faculty ratio */}
+            {(college.comprehensiveData?.studentFacultyRatio || college.studentFacultyRatio) && (
+              <QuickStat label="Student:Faculty" value={college.comprehensiveData?.studentFacultyRatio || college.studentFacultyRatio || ''} />
             )}
           </div>
         </div>
@@ -814,28 +843,107 @@ const CollegeDetail: React.FC = () => {
                 </Card>
               )}
 
-              {/* Key Stats - Only show items with values */}
+              {/* Key Statistics - Enhanced with comprehensive data */}
               <Card title="Key Statistics">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {/* Acceptance Rate */}
                   {(() => {
                     const acceptanceRateStr = formatAcceptanceRate(acceptanceRate);
                     return acceptanceRateStr && <StatItem label="Acceptance Rate" value={acceptanceRateStr} icon={<TrendingUp />} />;
                   })()}
+                  
+                  {/* Total Enrollment */}
                   {(() => {
+                    if (college.comprehensiveData?.totalEnrollment) {
+                      return <StatItem label="Total Enrollment" value={college.comprehensiveData.totalEnrollment.toLocaleString()} icon={<Users />} />;
+                    }
                     const enrollmentStr = formatEnrollment(college.enrollment);
                     return enrollmentStr && <StatItem label="Total Enrollment" value={enrollmentStr} icon={<Users />} />;
                   })()}
-                  {college.studentFacultyRatio && (
-                    <StatItem label="Student:Faculty Ratio" value={college.studentFacultyRatio} icon={<GraduationCap />} />
+                  
+                  {/* Undergraduate Enrollment */}
+                  {college.comprehensiveData?.undergraduateEnrollment && (
+                    <StatItem label="Undergraduate" value={college.comprehensiveData.undergraduateEnrollment.toLocaleString()} icon={<Users />} />
                   )}
-                  {college.graduationRates?.fourYear && (
-                    <StatItem label="4-Year Grad Rate" value={`${college.graduationRates.fourYear}%`} icon={<Award />} />
+                  
+                  {/* Graduate Enrollment */}
+                  {college.comprehensiveData?.graduateEnrollment && (
+                    <StatItem label="Graduate" value={college.comprehensiveData.graduateEnrollment.toLocaleString()} icon={<GraduationCap />} />
                   )}
-                  {college.graduationRates?.sixYear && (
-                    <StatItem label="6-Year Grad Rate" value={`${college.graduationRates.sixYear}%`} icon={<Award />} />
+                  
+                  {/* Student-Faculty Ratio */}
+                  {(college.comprehensiveData?.studentFacultyRatio || college.studentFacultyRatio) && (
+                    <StatItem 
+                      label="Student:Faculty Ratio" 
+                      value={college.comprehensiveData?.studentFacultyRatio || college.studentFacultyRatio || ''} 
+                      icon={<GraduationCap />} 
+                    />
                   )}
-                  {college.type && (
-                    <StatItem label="Institution Type" value={college.type} icon={<Building />} />
+                  
+                  {/* 4-Year Graduation Rate */}
+                  {(college.academicOutcomes?.graduationRate4yr || college.graduationRates?.fourYear) && (
+                    <StatItem 
+                      label="4-Year Grad Rate" 
+                      value={college.academicOutcomes?.graduationRate4yr 
+                        ? `${(college.academicOutcomes.graduationRate4yr * 100).toFixed(1)}%`
+                        : `${college.graduationRates?.fourYear}%`
+                      } 
+                      icon={<Award />} 
+                    />
+                  )}
+                  
+                  {/* Retention Rate */}
+                  {college.academicOutcomes?.retentionRate && (
+                    <StatItem 
+                      label="Retention Rate" 
+                      value={`${(college.academicOutcomes.retentionRate * 100).toFixed(1)}%`} 
+                      icon={<Award />} 
+                    />
+                  )}
+                  
+                  {/* Average SAT */}
+                  {college.studentStats?.sat50 && (
+                    <StatItem label="Average SAT" value={college.studentStats.sat50.toString()} icon={<FileText />} />
+                  )}
+                  
+                  {/* Average ACT */}
+                  {college.studentStats?.act50 && (
+                    <StatItem label="Average ACT" value={college.studentStats.act50.toString()} icon={<FileText />} />
+                  )}
+                  
+                  {/* Average GPA */}
+                  {(college.studentStats?.gpa50 || testScores.averageGPA) && (
+                    <StatItem 
+                      label="Average GPA" 
+                      value={(college.studentStats?.gpa50 || testScores.averageGPA)?.toFixed(2) || ''} 
+                      icon={<FileText />} 
+                    />
+                  )}
+                  
+                  {/* Average Net Price */}
+                  {(() => {
+                    const avgNetPrice = college.financialData?.netPriceLowIncome || 
+                                       college.financialData?.netPriceMidIncome || 
+                                       college.financialData?.netPriceHighIncome;
+                    return avgNetPrice && <StatItem label="Avg Net Price" value={`$${avgNetPrice.toLocaleString()}`} icon={<DollarSign />} />;
+                  })()}
+                  
+                  {/* Median Starting Salary */}
+                  {college.academicOutcomes?.medianStartSalary && (
+                    <StatItem 
+                      label="Median Starting Salary" 
+                      value={`$${college.academicOutcomes.medianStartSalary.toLocaleString()}`} 
+                      icon={<Briefcase />} 
+                    />
+                  )}
+                  
+                  {/* Institution Type */}
+                  {(college.comprehensiveData?.institutionType || college.type) && (
+                    <StatItem 
+                      label="Institution Type" 
+                      value={college.comprehensiveData?.institutionType || college.type || ''} 
+                      icon={<Building />} 
+                    />
                   )}
                 </div>
               </Card>
@@ -902,33 +1010,106 @@ const CollegeDetail: React.FC = () => {
                 </div>
               </Card>
 
-              {/* Test Scores */}
-              <Card title="Test Score Ranges (Middle 50%)">
+              {/* Test Scores - Enhanced with studentStats data */}
+              <Card title="Test Score Ranges">
+                {/* Test Optional Badge */}
+                {college.admissionsData?.testOptionalFlag === 1 && (
+                  <div className="mb-4">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                      <CheckCircle className="w-4 h-4" />
+                      Test Optional
+                    </span>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {testScores.satRange && (
+                  {/* SAT Scores */}
+                  {(testScores.satRange || college.studentStats?.sat25) && (
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">SAT</h4>
-                      <div className="space-y-2">
-                        <ScoreBar label="Total" low={testScores.satRange.percentile25} high={testScores.satRange.percentile75} max={1600} />
+                      <h4 className="font-medium text-gray-900 mb-3">SAT</h4>
+                      <div className="space-y-3">
+                        {testScores.satRange && (
+                          <ScoreBar label="Middle 50%" low={testScores.satRange.percentile25} high={testScores.satRange.percentile75} max={1600} />
+                        )}
+                        {college.studentStats?.sat25 && college.studentStats?.sat75 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">25th: {college.studentStats.sat25}</span>
+                            {college.studentStats.sat50 && (
+                              <span className="font-semibold text-blue-600">Avg: {college.studentStats.sat50}</span>
+                            )}
+                            <span className="text-gray-600">75th: {college.studentStats.sat75}</span>
+                          </div>
+                        )}
+                        {college.studentStats?.sat50 && !college.studentStats?.sat25 && (
+                          <div className="p-3 bg-blue-50 rounded-lg text-center">
+                            <div className="text-2xl font-bold text-blue-700">{college.studentStats.sat50}</div>
+                            <div className="text-sm text-blue-600">Average SAT</div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
-                  {testScores.actRange && (
+                  
+                  {/* ACT Scores */}
+                  {(testScores.actRange || college.studentStats?.act25) && (
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">ACT</h4>
-                      <div className="space-y-2">
-                        <ScoreBar label="Composite" low={testScores.actRange.percentile25} high={testScores.actRange.percentile75} max={36} />
+                      <h4 className="font-medium text-gray-900 mb-3">ACT</h4>
+                      <div className="space-y-3">
+                        {testScores.actRange && (
+                          <ScoreBar label="Middle 50%" low={testScores.actRange.percentile25} high={testScores.actRange.percentile75} max={36} />
+                        )}
+                        {college.studentStats?.act25 && college.studentStats?.act75 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">25th: {college.studentStats.act25}</span>
+                            {college.studentStats.act50 && (
+                              <span className="font-semibold text-blue-600">Avg: {college.studentStats.act50}</span>
+                            )}
+                            <span className="text-gray-600">75th: {college.studentStats.act75}</span>
+                          </div>
+                        )}
+                        {college.studentStats?.act50 && !college.studentStats?.act25 && (
+                          <div className="p-3 bg-purple-50 rounded-lg text-center">
+                            <div className="text-2xl font-bold text-purple-700">{college.studentStats.act50}</div>
+                            <div className="text-sm text-purple-600">Average ACT</div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
-                  {!testScores.satRange && !testScores.actRange && (
-                    <p className="text-gray-600">Test score data not available</p>
+                  
+                  {!testScores.satRange && !testScores.actRange && !college.studentStats?.sat25 && !college.studentStats?.act25 && (
+                    <div className="col-span-2">
+                      <p className="text-gray-600 text-center">Test score data not available</p>
+                    </div>
                   )}
                 </div>
-                {testScores.averageGPA && (
+                
+                {/* GPA */}
+                {(testScores.averageGPA || college.studentStats?.gpa50) && (
                   <div className="mt-6 pt-6 border-t">
-                    <h4 className="font-medium text-gray-900 mb-2">Average GPA</h4>
-                    <div className="text-3xl font-bold text-blue-600">{testScores.averageGPA.toFixed(2)}</div>
+                    <h4 className="font-medium text-gray-900 mb-3">GPA</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {college.studentStats?.gpa25 && (
+                        <div className="text-center p-3 bg-gray-50 rounded-lg">
+                          <div className="text-xl font-bold text-gray-700">{college.studentStats.gpa25.toFixed(2)}</div>
+                          <div className="text-xs text-gray-500">25th Percentile</div>
+                        </div>
+                      )}
+                      {(testScores.averageGPA || college.studentStats?.gpa50) && (
+                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                          <div className="text-2xl font-bold text-blue-600">
+                            {(college.studentStats?.gpa50 || testScores.averageGPA)?.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-blue-600">Average GPA</div>
+                        </div>
+                      )}
+                      {college.studentStats?.gpa75 && (
+                        <div className="text-center p-3 bg-gray-50 rounded-lg">
+                          <div className="text-xl font-bold text-gray-700">{college.studentStats.gpa75.toFixed(2)}</div>
+                          <div className="text-xs text-gray-500">75th Percentile</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </Card>
@@ -1145,47 +1326,80 @@ const CollegeDetail: React.FC = () => {
         {activeTab === 'cost' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              {/* Enhanced Financial Data */}
+              {/* Enhanced Financial Data - Handle Private vs Public Schools */}
               {college.financialData && (
                 <Card title="Tuition & Costs">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {college.financialData.tuitionInState && (
-                      <div className="p-4 bg-blue-50 rounded-xl text-center">
-                        <DollarSign className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-blue-600">
-                          ${college.financialData.tuitionInState.toLocaleString()}
+                  {/* Check if it's a private school (all tuitions are the same) */}
+                  {(() => {
+                    const isPrivate = college.comprehensiveData?.institutionType?.toLowerCase().includes('private') ||
+                                     college.type?.toLowerCase().includes('private') ||
+                                     (college.financialData.tuitionInState === college.financialData.tuitionOutState &&
+                                      college.financialData.tuitionInState === college.financialData.tuitionInternational);
+                    
+                    if (isPrivate && college.financialData.tuitionInState) {
+                      // Show single tuition for private schools
+                      return (
+                        <div>
+                          <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl text-center mb-4">
+                            <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                            <div className="text-3xl font-bold text-blue-700">
+                              ${college.financialData.tuitionInState.toLocaleString()}
+                            </div>
+                            <p className="text-blue-600 mt-2 font-medium">Annual Tuition</p>
+                            <p className="text-xs text-blue-500 mt-1">
+                              Private universities charge the same tuition regardless of residency
+                            </p>
+                          </div>
                         </div>
-                        <p className="text-sm text-blue-700 mt-1">In-State Tuition</p>
-                      </div>
-                    )}
-                    {college.financialData.tuitionOutState && (
-                      <div className="p-4 bg-purple-50 rounded-xl text-center">
-                        <DollarSign className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-purple-600">
-                          ${college.financialData.tuitionOutState.toLocaleString()}
+                      );
+                    } else {
+                      // Show different tuitions for public schools
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {college.financialData.tuitionInState && (
+                            <div className="p-4 bg-blue-50 rounded-xl text-center">
+                              <DollarSign className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                              <div className="text-2xl font-bold text-blue-600">
+                                ${college.financialData.tuitionInState.toLocaleString()}
+                              </div>
+                              <p className="text-sm text-blue-700 mt-1">In-State Tuition</p>
+                            </div>
+                          )}
+                          {college.financialData.tuitionOutState && (
+                            <div className="p-4 bg-purple-50 rounded-xl text-center">
+                              <DollarSign className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                              <div className="text-2xl font-bold text-purple-600">
+                                ${college.financialData.tuitionOutState.toLocaleString()}
+                              </div>
+                              <p className="text-sm text-purple-700 mt-1">Out-of-State Tuition</p>
+                            </div>
+                          )}
+                          {college.financialData.tuitionInternational && (
+                            <div className="p-4 bg-indigo-50 rounded-xl text-center">
+                              <DollarSign className="w-6 h-6 text-indigo-600 mx-auto mb-2" />
+                              <div className="text-2xl font-bold text-indigo-600">
+                                ${college.financialData.tuitionInternational.toLocaleString()}
+                              </div>
+                              <p className="text-sm text-indigo-700 mt-1">International Tuition</p>
+                            </div>
+                          )}
                         </div>
-                        <p className="text-sm text-purple-700 mt-1">Out-of-State Tuition</p>
-                      </div>
-                    )}
-                    {college.financialData.tuitionInternational && (
-                      <div className="p-4 bg-indigo-50 rounded-xl text-center">
-                        <DollarSign className="w-6 h-6 text-indigo-600 mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-indigo-600">
-                          ${college.financialData.tuitionInternational.toLocaleString()}
-                        </div>
-                        <p className="text-sm text-indigo-700 mt-1">International Tuition</p>
-                      </div>
-                    )}
-                    {college.financialData.costOfAttendance && (
-                      <div className="p-4 bg-red-50 rounded-xl text-center">
-                        <DollarSign className="w-6 h-6 text-red-600 mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-red-600">
+                      );
+                    }
+                  })()}
+                  
+                  {/* Total Cost of Attendance */}
+                  {college.financialData.costOfAttendance && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Total Cost of Attendance</span>
+                        <span className="text-xl font-bold text-gray-900">
                           ${college.financialData.costOfAttendance.toLocaleString()}
-                        </div>
-                        <p className="text-sm text-red-700 mt-1">Total Cost</p>
+                        </span>
                       </div>
-                    )}
-                  </div>
+                      <p className="text-xs text-gray-500 mt-1">Includes tuition, room, board, and other fees</p>
+                    </div>
+                  )}
                 </Card>
               )}
 
@@ -1334,14 +1548,63 @@ const CollegeDetail: React.FC = () => {
                 </div>
               </Card>
 
-              {/* Student Demographics */}
+              {/* Student Demographics - Enhanced */}
               {college.demographics && (
                 <Card title="Student Demographics">
-                  <div className="space-y-4">
+                  <div className="space-y-6">
+                    {/* Gender Distribution */}
+                    {college.demographics.genderRatio && (
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-3">Gender Distribution</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-4 bg-blue-50 rounded-lg text-center">
+                            <div className="text-2xl font-bold text-blue-700">
+                              {college.demographics.genderRatio.split(':')[0] || '50'}%
+                            </div>
+                            <div className="text-sm text-blue-600">Male</div>
+                          </div>
+                          <div className="p-4 bg-pink-50 rounded-lg text-center">
+                            <div className="text-2xl font-bold text-pink-700">
+                              {college.demographics.genderRatio.split(':')[1] || '50'}%
+                            </div>
+                            <div className="text-sm text-pink-600">Female</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Ethnic Distribution */}
+                    {college.demographics.ethnicDistribution && Object.keys(college.demographics.ethnicDistribution).length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-3">Ethnic Diversity</h4>
+                        <div className="space-y-2">
+                          {Object.entries(college.demographics.ethnicDistribution)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([ethnicity, percentage]) => (
+                              <div key={ethnicity} className="space-y-1">
+                                <div className="flex justify-between text-sm">
+                                  <span className="capitalize text-gray-700">{ethnicity.replace(/_/g, ' ')}</span>
+                                  <span className="font-semibold text-gray-900">
+                                    {(percentage * 100).toFixed(1)}%
+                                  </span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all"
+                                    style={{ width: `${(percentage * 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* International Students */}
                     {college.demographics.percentInternational && (
                       <div className="p-4 bg-blue-50 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-blue-600">International Students</span>
+                          <span className="text-sm text-blue-600 font-medium">International Students</span>
                           <Globe className="w-4 h-4 text-blue-600" />
                         </div>
                         <p className="text-2xl font-bold text-blue-700">
@@ -1349,15 +1612,11 @@ const CollegeDetail: React.FC = () => {
                         </p>
                       </div>
                     )}
-                    {college.demographics.genderRatio && (
-                      <div className="p-4 bg-purple-50 rounded-lg">
-                        <p className="text-sm text-purple-600 mb-2">Gender Ratio</p>
-                        <p className="text-lg font-bold text-purple-700">{college.demographics.genderRatio}</p>
-                      </div>
-                    )}
+                    
+                    {/* First-Generation Students */}
                     {college.demographics.percentFirstGen && (
                       <div className="p-4 bg-green-50 rounded-lg">
-                        <p className="text-sm text-green-600 mb-2">First-Generation Students</p>
+                        <p className="text-sm text-green-600 mb-2 font-medium">First-Generation Students</p>
                         <p className="text-2xl font-bold text-green-700">
                           {(college.demographics.percentFirstGen * 100).toFixed(1)}%
                         </p>
@@ -1367,11 +1626,59 @@ const CollegeDetail: React.FC = () => {
                 </Card>
               )}
 
-              {/* Campus Life Details */}
-              {college.campusLife && (
-                <Card title="Campus Life">
+              {/* Campus Life Details - Enhanced */}
+              {(college.campusLife || college.comprehensiveData) && (
+                <Card title="Campus Life & Setting">
                   <div className="space-y-3">
-                    {college.campusLife.housingGuarantee && (
+                    {/* Urban Classification */}
+                    {college.comprehensiveData?.urbanClassification && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Building className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm text-gray-600">Campus Setting</span>
+                        </div>
+                        <span className="font-semibold text-gray-900">{college.comprehensiveData.urbanClassification}</span>
+                      </div>
+                    )}
+                    
+                    {/* Location */}
+                    {(college.comprehensiveData?.city || college.location) && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm text-gray-600">Location</span>
+                        </div>
+                        <span className="font-semibold text-gray-900">
+                          {college.comprehensiveData?.city && college.comprehensiveData?.stateRegion
+                            ? `${college.comprehensiveData.city}, ${college.comprehensiveData.stateRegion}`
+                            : college.location}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Founding Year */}
+                    {college.comprehensiveData?.foundingYear && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm text-gray-600">Founded</span>
+                        </div>
+                        <span className="font-semibold text-gray-900">{college.comprehensiveData.foundingYear}</span>
+                      </div>
+                    )}
+                    
+                    {/* Campus Size */}
+                    {college.comprehensiveData?.campusSizeAcres && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Home className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm text-gray-600">Campus Size</span>
+                        </div>
+                        <span className="font-semibold text-gray-900">{college.comprehensiveData.campusSizeAcres} acres</span>
+                      </div>
+                    )}
+                    
+                    {college.campusLife?.housingGuarantee && (
                       <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-2">
                           <Home className="w-4 h-4 text-blue-600" />
@@ -1380,7 +1687,7 @@ const CollegeDetail: React.FC = () => {
                         <span className="font-semibold text-gray-900">{college.campusLife.housingGuarantee}</span>
                       </div>
                     )}
-                    {college.campusLife.athleticsDivision && (
+                    {college.campusLife?.athleticsDivision && (
                       <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-2">
                           <Award className="w-4 h-4 text-blue-600" />
@@ -1389,7 +1696,7 @@ const CollegeDetail: React.FC = () => {
                         <span className="font-semibold text-gray-900">{college.campusLife.athleticsDivision}</span>
                       </div>
                     )}
-                    {college.campusLife.clubCount && (
+                    {college.campusLife?.clubCount && (
                       <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 text-blue-600" />
@@ -1398,13 +1705,24 @@ const CollegeDetail: React.FC = () => {
                         <span className="font-semibold text-gray-900">{college.campusLife.clubCount}+ clubs</span>
                       </div>
                     )}
-                    {college.campusLife.campusSafetyScore && (
+                    {college.campusLife?.campusSafetyScore && (
                       <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-2">
                           <CheckCircle className="w-4 h-4 text-green-600" />
                           <span className="text-sm text-gray-600">Campus Safety Score</span>
                         </div>
                         <span className="font-semibold text-gray-900">{college.campusLife.campusSafetyScore}/10</span>
+                      </div>
+                    )}
+                    
+                    {/* Show message if no data */}
+                    {!college.campusLife?.housingGuarantee && 
+                     !college.campusLife?.athleticsDivision && 
+                     !college.campusLife?.clubCount &&
+                     !college.comprehensiveData?.urbanClassification &&
+                     !college.comprehensiveData?.city && (
+                      <div className="text-center p-4 text-gray-500">
+                        <p className="text-sm">More student life information coming soon</p>
                       </div>
                     )}
                   </div>
