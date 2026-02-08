@@ -362,7 +362,13 @@ interface College {
   application_portal_url?: string;
   academic_strengths?: string[] | string;
   major_categories?: string[] | string;
-  programs?: string[] | string;
+  programs?: Array<{
+    programName: string;
+    degreeType: string;
+    enrollment?: number | null;
+    acceptanceRate?: number | null;
+    source?: string;
+  }> | string[] | string;
   trust_tier?: string;
   is_verified?: number;
   acceptance_rate?: number | null;
@@ -389,6 +395,88 @@ interface College {
   abiturRequirement?: string | null;
   germanLevel?: string | null;
   englishLevel?: string | null;
+  // Comprehensive data from new schema
+  comprehensiveData?: {
+    stateRegion?: string | null;
+    city?: string | null;
+    urbanClassification?: string | null;
+    institutionType?: string | null;
+    classification?: string | null;
+    religiousAffiliation?: string | null;
+    foundingYear?: number | null;
+    campusSizeAcres?: number | null;
+    undergraduateEnrollment?: number | null;
+    graduateEnrollment?: number | null;
+    totalEnrollment?: number | null;
+    studentFacultyRatio?: string | null;
+    websiteUrl?: string | null;
+  };
+  admissionsData?: {
+    year?: number;
+    acceptanceRate?: number | null;
+    earlyDecisionRate?: number | null;
+    earlyActionRate?: number | null;
+    testOptionalFlag?: number;
+    source?: string;
+    confidenceScore?: number;
+  };
+  studentStats?: {
+    year?: number;
+    gpa25?: number | null;
+    gpa50?: number | null;
+    gpa75?: number | null;
+    sat25?: number | null;
+    sat50?: number | null;
+    sat75?: number | null;
+    act25?: number | null;
+    act50?: number | null;
+    act75?: number | null;
+    source?: string;
+  };
+  financialData?: {
+    year?: number;
+    tuitionInState?: number | null;
+    tuitionOutState?: number | null;
+    tuitionInternational?: number | null;
+    costOfAttendance?: number | null;
+    avgFinancialAid?: number | null;
+    percentReceivingAid?: number | null;
+    avgDebt?: number | null;
+    netPriceLowIncome?: number | null;
+    netPriceMidIncome?: number | null;
+    netPriceHighIncome?: number | null;
+    source?: string;
+  };
+  academicOutcomes?: {
+    year?: number;
+    graduationRate4yr?: number | null;
+    graduationRate6yr?: number | null;
+    retentionRate?: number | null;
+    employmentRate?: number | null;
+    medianStartSalary?: number | null;
+    source?: string;
+  };
+  demographics?: {
+    year?: number;
+    percentInternational?: number | null;
+    genderRatio?: string | null;
+    ethnicDistribution?: Record<string, number>;
+    percentFirstGen?: number | null;
+    source?: string;
+  };
+  campusLife?: {
+    housingGuarantee?: string | null;
+    campusSafetyScore?: number | null;
+    athleticsDivision?: string | null;
+    clubCount?: number | null;
+    source?: string;
+  };
+  rankings?: Array<{
+    year: number;
+    rankingBody: string;
+    nationalRank?: number | null;
+    globalRank?: number | null;
+  }>;
 }
 
 type TabName = 'overview' | 'admissions' | 'academics' | 'cost' | 'studentLife' | 'outcomes';
@@ -929,6 +1017,97 @@ const CollegeDetail: React.FC = () => {
                   </div>
                 </Card>
               )}
+
+              {/* Rankings - Display if available */}
+              {college.rankings && college.rankings.length > 0 && (
+                <Card title="University Rankings">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {college.rankings.map((ranking, index) => (
+                      <div key={index} className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm font-medium text-blue-600">{ranking.rankingBody}</p>
+                          <Award className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="space-y-1">
+                          {ranking.nationalRank && (
+                            <p className="text-2xl font-bold text-gray-900">#{ranking.nationalRank}</p>
+                          )}
+                          {ranking.globalRank && !ranking.nationalRank && (
+                            <p className="text-2xl font-bold text-gray-900">#{ranking.globalRank}</p>
+                          )}
+                          <p className="text-xs text-gray-500">
+                            {ranking.nationalRank ? 'National Rank' : 'Global Rank'} ({ranking.year})
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              {/* Comprehensive Institution Info */}
+              {college.comprehensiveData && (
+                <Card title="Institution Details">
+                  <div className="space-y-4">
+                    {college.comprehensiveData.institutionType && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm text-gray-600">Type</span>
+                        <span className="font-semibold text-gray-900">{college.comprehensiveData.institutionType}</span>
+                      </div>
+                    )}
+                    {college.comprehensiveData.classification && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm text-gray-600">Classification</span>
+                        <span className="font-semibold text-gray-900">{college.comprehensiveData.classification}</span>
+                      </div>
+                    )}
+                    {college.comprehensiveData.urbanClassification && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm text-gray-600">Setting</span>
+                        <span className="font-semibold text-gray-900">{college.comprehensiveData.urbanClassification}</span>
+                      </div>
+                    )}
+                    {college.comprehensiveData.foundingYear && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm text-gray-600">Founded</span>
+                        <span className="font-semibold text-gray-900">{college.comprehensiveData.foundingYear}</span>
+                      </div>
+                    )}
+                    {college.comprehensiveData.campusSizeAcres && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm text-gray-600">Campus Size</span>
+                        <span className="font-semibold text-gray-900">{college.comprehensiveData.campusSizeAcres} acres</span>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+
+              {/* Enhanced Enrollment Data */}
+              {college.comprehensiveData && (
+                <Card title="Enrollment">
+                  <div className="space-y-4">
+                    {college.comprehensiveData.undergraduateEnrollment && (
+                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <span className="text-sm text-blue-600">Undergraduate</span>
+                        <span className="font-bold text-blue-900">{college.comprehensiveData.undergraduateEnrollment.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {college.comprehensiveData.graduateEnrollment && (
+                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                        <span className="text-sm text-purple-600">Graduate</span>
+                        <span className="font-bold text-purple-900">{college.comprehensiveData.graduateEnrollment.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {college.comprehensiveData.totalEnrollment && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm text-gray-600">Total</span>
+                        <span className="font-bold text-gray-900">{college.comprehensiveData.totalEnrollment.toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
             </div>
 
             {/* Sidebar */}
@@ -963,8 +1142,52 @@ const CollegeDetail: React.FC = () => {
         {activeTab === 'cost' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              {/* Only show tuition card if there's data */}
-              {formatCurrency(college.tuition_cost, college.country) && (
+              {/* Enhanced Financial Data */}
+              {college.financialData && (
+                <Card title="Tuition & Costs">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {college.financialData.tuitionInState && (
+                      <div className="p-4 bg-blue-50 rounded-xl text-center">
+                        <DollarSign className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                        <div className="text-2xl font-bold text-blue-600">
+                          ${college.financialData.tuitionInState.toLocaleString()}
+                        </div>
+                        <p className="text-sm text-blue-700 mt-1">In-State Tuition</p>
+                      </div>
+                    )}
+                    {college.financialData.tuitionOutState && (
+                      <div className="p-4 bg-purple-50 rounded-xl text-center">
+                        <DollarSign className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                        <div className="text-2xl font-bold text-purple-600">
+                          ${college.financialData.tuitionOutState.toLocaleString()}
+                        </div>
+                        <p className="text-sm text-purple-700 mt-1">Out-of-State Tuition</p>
+                      </div>
+                    )}
+                    {college.financialData.tuitionInternational && (
+                      <div className="p-4 bg-indigo-50 rounded-xl text-center">
+                        <DollarSign className="w-6 h-6 text-indigo-600 mx-auto mb-2" />
+                        <div className="text-2xl font-bold text-indigo-600">
+                          ${college.financialData.tuitionInternational.toLocaleString()}
+                        </div>
+                        <p className="text-sm text-indigo-700 mt-1">International Tuition</p>
+                      </div>
+                    )}
+                    {college.financialData.costOfAttendance && (
+                      <div className="p-4 bg-red-50 rounded-xl text-center">
+                        <DollarSign className="w-6 h-6 text-red-600 mx-auto mb-2" />
+                        <div className="text-2xl font-bold text-red-600">
+                          ${college.financialData.costOfAttendance.toLocaleString()}
+                        </div>
+                        <p className="text-sm text-red-700 mt-1">Total Cost</p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+
+              {/* Fallback to basic tuition if comprehensive data not available */}
+              {!college.financialData && formatCurrency(college.tuition_cost, college.country) && (
                 <Card title="Tuition & Costs">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-6 bg-blue-50 rounded-xl text-center">
@@ -979,6 +1202,64 @@ const CollegeDetail: React.FC = () => {
                         <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
                         <div className="text-3xl font-bold text-green-600">Free</div>
                         <p className="text-green-700 mt-1">Public University</p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+
+              {/* Financial Aid Details */}
+              {college.financialData && (college.financialData.avgFinancialAid || college.financialData.percentReceivingAid) && (
+                <Card title="Financial Aid">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {college.financialData.avgFinancialAid && (
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <p className="text-sm text-green-600 mb-1">Average Aid Package</p>
+                        <p className="text-2xl font-bold text-green-700">
+                          ${college.financialData.avgFinancialAid.toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                    {college.financialData.percentReceivingAid && (
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-600 mb-1">Students Receiving Aid</p>
+                        <p className="text-2xl font-bold text-blue-700">
+                          {(college.financialData.percentReceivingAid * 100).toFixed(0)}%
+                        </p>
+                      </div>
+                    )}
+                    {college.financialData.avgDebt && (
+                      <div className="p-4 bg-orange-50 rounded-lg">
+                        <p className="text-sm text-orange-600 mb-1">Average Student Debt</p>
+                        <p className="text-2xl font-bold text-orange-700">
+                          ${college.financialData.avgDebt.toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+
+              {/* Net Price by Income */}
+              {college.financialData && (college.financialData.netPriceLowIncome || college.financialData.netPriceMidIncome || college.financialData.netPriceHighIncome) && (
+                <Card title="Net Price by Income Level">
+                  <div className="space-y-3">
+                    {college.financialData.netPriceLowIncome && (
+                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <span className="text-sm text-green-600">Low Income ($0-$30k)</span>
+                        <span className="font-bold text-green-700">${college.financialData.netPriceLowIncome.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {college.financialData.netPriceMidIncome && (
+                      <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                        <span className="text-sm text-yellow-600">Middle Income ($30k-$75k)</span>
+                        <span className="font-bold text-yellow-700">${college.financialData.netPriceMidIncome.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {college.financialData.netPriceHighIncome && (
+                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <span className="text-sm text-blue-600">High Income ($75k+)</span>
+                        <span className="font-bold text-blue-700">${college.financialData.netPriceHighIncome.toLocaleString()}</span>
                       </div>
                     )}
                   </div>
@@ -1050,6 +1331,83 @@ const CollegeDetail: React.FC = () => {
                 </div>
               </Card>
 
+              {/* Student Demographics */}
+              {college.demographics && (
+                <Card title="Student Demographics">
+                  <div className="space-y-4">
+                    {college.demographics.percentInternational && (
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-blue-600">International Students</span>
+                          <Globe className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-blue-700">
+                          {(college.demographics.percentInternational * 100).toFixed(1)}%
+                        </p>
+                      </div>
+                    )}
+                    {college.demographics.genderRatio && (
+                      <div className="p-4 bg-purple-50 rounded-lg">
+                        <p className="text-sm text-purple-600 mb-2">Gender Ratio</p>
+                        <p className="text-lg font-bold text-purple-700">{college.demographics.genderRatio}</p>
+                      </div>
+                    )}
+                    {college.demographics.percentFirstGen && (
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <p className="text-sm text-green-600 mb-2">First-Generation Students</p>
+                        <p className="text-2xl font-bold text-green-700">
+                          {(college.demographics.percentFirstGen * 100).toFixed(1)}%
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+
+              {/* Campus Life Details */}
+              {college.campusLife && (
+                <Card title="Campus Life">
+                  <div className="space-y-3">
+                    {college.campusLife.housingGuarantee && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Home className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm text-gray-600">Housing Guarantee</span>
+                        </div>
+                        <span className="font-semibold text-gray-900">{college.campusLife.housingGuarantee}</span>
+                      </div>
+                    )}
+                    {college.campusLife.athleticsDivision && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Award className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm text-gray-600">Athletics</span>
+                        </div>
+                        <span className="font-semibold text-gray-900">{college.campusLife.athleticsDivision}</span>
+                      </div>
+                    )}
+                    {college.campusLife.clubCount && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm text-gray-600">Student Organizations</span>
+                        </div>
+                        <span className="font-semibold text-gray-900">{college.campusLife.clubCount}+ clubs</span>
+                      </div>
+                    )}
+                    {college.campusLife.campusSafetyScore && (
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span className="text-sm text-gray-600">Campus Safety Score</span>
+                        </div>
+                        <span className="font-semibold text-gray-900">{college.campusLife.campusSafetyScore}/10</span>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
+
               {college.country === 'United Kingdom' && college.russellGroup && (
                 <Card title="Affiliations">
                   <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg">
@@ -1085,8 +1443,92 @@ const CollegeDetail: React.FC = () => {
         {activeTab === 'outcomes' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <Card title="Graduation Rates">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Enhanced Academic Outcomes */}
+              {college.academicOutcomes && (
+                <>
+                  <Card title="Graduation Rates">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {college.academicOutcomes.graduationRate4yr && (
+                        <div className="text-center">
+                          <div className="relative w-32 h-32 mx-auto">
+                            <svg className="w-full h-full" viewBox="0 0 100 100">
+                              <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
+                              <circle 
+                                cx="50" cy="50" r="45" fill="none" stroke="#10B981" strokeWidth="10"
+                                strokeDasharray={`${college.academicOutcomes.graduationRate4yr * 100 * 2.83} 283`}
+                                strokeLinecap="round"
+                                transform="rotate(-90 50 50)"
+                              />
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-2xl font-bold">{(college.academicOutcomes.graduationRate4yr * 100).toFixed(0)}%</span>
+                            </div>
+                          </div>
+                          <p className="mt-2 font-medium">4-Year Graduation Rate</p>
+                        </div>
+                      )}
+                      {college.academicOutcomes.graduationRate6yr && (
+                        <div className="text-center">
+                          <div className="relative w-32 h-32 mx-auto">
+                            <svg className="w-full h-full" viewBox="0 0 100 100">
+                              <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
+                              <circle 
+                                cx="50" cy="50" r="45" fill="none" stroke="#3B82F6" strokeWidth="10"
+                                strokeDasharray={`${college.academicOutcomes.graduationRate6yr * 100 * 2.83} 283`}
+                                strokeLinecap="round"
+                                transform="rotate(-90 50 50)"
+                              />
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-2xl font-bold">{(college.academicOutcomes.graduationRate6yr * 100).toFixed(0)}%</span>
+                            </div>
+                          </div>
+                          <p className="mt-2 font-medium">6-Year Graduation Rate</p>
+                        </div>
+                      )}
+                    </div>
+                    {college.academicOutcomes.retentionRate && (
+                      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-600 mb-1">Retention Rate</p>
+                        <p className="text-2xl font-bold text-blue-700">
+                          {(college.academicOutcomes.retentionRate * 100).toFixed(1)}%
+                        </p>
+                      </div>
+                    )}
+                  </Card>
+
+                  {/* Career Outcomes */}
+                  {(college.academicOutcomes.employmentRate || college.academicOutcomes.medianStartSalary) && (
+                    <Card title="Career Outcomes">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {college.academicOutcomes.employmentRate && (
+                          <div className="p-6 bg-green-50 rounded-xl text-center">
+                            <Briefcase className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                            <div className="text-3xl font-bold text-green-600">
+                              {(college.academicOutcomes.employmentRate * 100).toFixed(0)}%
+                            </div>
+                            <p className="text-green-700 mt-1">Employment Rate</p>
+                          </div>
+                        )}
+                        {college.academicOutcomes.medianStartSalary && (
+                          <div className="p-6 bg-blue-50 rounded-xl text-center">
+                            <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                            <div className="text-3xl font-bold text-blue-600">
+                              ${college.academicOutcomes.medianStartSalary.toLocaleString()}
+                            </div>
+                            <p className="text-blue-700 mt-1">Median Starting Salary</p>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  )}
+                </>
+              )}
+
+              {/* Fallback to legacy graduation rates if comprehensive data not available */}
+              {!college.academicOutcomes && college.graduationRates && (
+                <Card title="Graduation Rates">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {college.graduationRates?.fourYear && (
                     <div className="text-center">
                       <div className="relative w-32 h-32 mx-auto">
