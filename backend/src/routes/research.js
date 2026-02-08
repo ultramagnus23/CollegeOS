@@ -24,12 +24,12 @@ router.get('/majors', async (req, res, next) => {
     const db = dbManager.getDatabase();
     
     // Search in major_categories JSON field
-    // SQLite JSON functions: JSON_EXTRACT or LIKE for pattern matching
+    // Use LOWER() for case-insensitive matching
     let query = `
       SELECT * FROM colleges 
-      WHERE major_categories LIKE ?
+      WHERE LOWER(major_categories) LIKE LOWER(?)
     `;
-    const params = [`%"${major.trim()}"%`];
+    const params = [`%${major.trim()}%`];
     
     if (country) {
       query += ' AND country = ?';
