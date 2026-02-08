@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,17 @@ import ProfileCompletionWidget from '@/components/common/ProfileCompletionWidget
 import HelpTooltip, { FIELD_HELP_TEXT } from '@/components/common/HelpTooltip';
 import { ValidationMessage, useFormValidation, ValidationRules } from '@/hooks/useFormValidation';
 import { useAutosave, DraftRestoreBanner } from '@/hooks/useAutosave';
+
+// Section configuration for navigation
+const SECTIONS = [
+  { id: 'basic', label: 'Basic Information', icon: UserIcon },
+  { id: 'academic', label: 'Academic Info', icon: BookOpen },
+  { id: 'test-scores', label: 'Test Scores', icon: TestTube },
+  { id: 'preferences', label: 'Preferences', icon: Target },
+  { id: 'activities', label: 'Activities', icon: Trophy },
+] as const;
+
+type SectionId = typeof SECTIONS[number]['id'];
 
 // Constants
 const COUNTRIES = [
@@ -41,11 +53,23 @@ interface ProfileData {
 
 const Settings = () => {
   const { user, refreshUser } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [completionStatus, setCompletionStatus] = useState<any>(null);
+  const [activeSection, setActiveSection] = useState<SectionId>('basic');
+  
+  // Section refs for scrolling
+  const sectionRefs = useRef<Record<SectionId, HTMLDivElement | null>>({
+    basic: null,
+    academic: null,
+    'test-scores': null,
+    preferences: null,
+    activities: null
+  });
   
   // Edit modes for each section
   const [editMode, setEditMode] = useState<{ [key: string]: boolean }>({
@@ -66,6 +90,24 @@ const Settings = () => {
     hours_per_week: '',
     weeks_per_year: ''
   });
+
+  // Handle hash-based navigation
+  useEffect(() => {
+    const hash = location.hash.replace('#', '') as SectionId;
+    if (hash && SECTIONS.some(s => s.id === hash)) {
+      setActiveSection(hash);
+      // Scroll to section after a short delay to allow render
+      setTimeout(() => {
+        sectionRefs.current[hash]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [location.hash]);
+
+  const navigateToSection = (sectionId: SectionId) => {
+    setActiveSection(sectionId);
+    navigate(`/settings#${sectionId}`, { replace: true });
+    sectionRefs.current[sectionId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   // Load profile data
   useEffect(() => {
@@ -320,7 +362,7 @@ const Settings = () => {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
@@ -344,23 +386,78 @@ const Settings = () => {
         <ProfileCompletionWidget variant="full" showMissingFields={true} />
       </div>
 
-      <div className="space-y-6">
-        {/* Basic Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <UserIcon className="text-blue-600" size={24} />
-              <h2 className="text-xl font-bold text-gray-900">Basic Information</h2>
-            </div>
-            <Button
-              variant={editMode.basic ? "ghost" : "outline"}
-              size="sm"
-              onClick={() => toggleEditMode('basic')}
-            >
-              {editMode.basic ? <X size={16} /> : <Edit2 size={16} />}
-              <span className="ml-2">{editMode.basic ? 'Cancel' : 'Edit'}</span>
-            </Button>
+      {/* Navigation Sidebar + Content */}
+      <div className="flex gap-6">
+        {/* Section Navigation - Fixed Sidebar */}
+        <nav className="hidden md:block w-48 flex-shrink-0">
+          <div className="sticky top-8 bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-1">
+            {SECTIONS.map((section) => {
+              const Icon = section.icon;
+              const isActive = activeSection === section.id;
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => navigateToSection(section.id)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive 
+                      ? 'bg-blue-50 text-blue-600 border border-blue-200' 
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon size={16} />
+                  {section.label}
+                </button>
+              );
+            })}
           </div>
+        </nav>
+
+        {/* Mobile Navigation - Horizontal Tabs */}
+        <div className="md:hidden mb-4 w-full">
+          <div className="flex overflow-x-auto gap-2 pb-2">
+            {SECTIONS.map((section) => {
+              const Icon = section.icon;
+              const isActive = activeSection === section.id;
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => navigateToSection(section.id)}
+                  className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                    isActive 
+                      ? 'bg-blue-50 text-blue-600 border border-blue-200' 
+                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon size={14} />
+                  {section.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 space-y-6">
+          {/* Basic Information */}
+          <div 
+            ref={(el) => { sectionRefs.current.basic = el; }}
+            id="basic"
+            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <UserIcon className="text-blue-600" size={24} />
+                <h2 className="text-xl font-bold text-gray-900">Basic Information</h2>
+              </div>
+              <Button
+                variant={editMode.basic ? "ghost" : "outline"}
+                size="sm"
+                onClick={() => toggleEditMode('basic')}
+              >
+                {editMode.basic ? <X size={16} /> : <Edit2 size={16} />}
+                <span className="ml-2">{editMode.basic ? 'Cancel' : 'Edit'}</span>
+              </Button>
+            </div>
 
           {editMode.basic ? (
             <div className="space-y-4">
@@ -473,7 +570,11 @@ const Settings = () => {
         </div>
 
         {/* Academic Profile */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div 
+          ref={(el) => { sectionRefs.current.academic = el; }}
+          id="academic"
+          className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+        >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <BookOpen className="text-green-600" size={24} />
@@ -612,7 +713,11 @@ const Settings = () => {
         </div>
 
         {/* Test Scores */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div 
+          ref={(el) => { sectionRefs.current['test-scores'] = el; }}
+          id="test-scores"
+          className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+        >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <TestTube className="text-purple-600" size={24} />
@@ -753,7 +858,11 @@ const Settings = () => {
         </div>
 
         {/* Preferences */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div 
+          ref={(el) => { sectionRefs.current.preferences = el; }}
+          id="preferences"
+          className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+        >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Heart className="text-pink-600" size={24} />
@@ -900,7 +1009,11 @@ const Settings = () => {
         </div>
 
         {/* Activities */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div 
+          ref={(el) => { sectionRefs.current.activities = el; }}
+          id="activities"
+          className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+        >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Trophy className="text-yellow-600" size={24} />
@@ -1028,7 +1141,8 @@ const Settings = () => {
             </div>
           </div>
         </div>
-      </div>
+        </div> {/* End of Main Content flex-1 */}
+      </div> {/* End of Navigation + Content flex container */}
     </div>
   );
 };
