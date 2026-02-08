@@ -570,7 +570,7 @@ const CollegeDetail: React.FC = () => {
   const majorCategories = parseArray(college.major_categories);
   const academicStrengths = parseArray(college.academic_strengths);
   // Handle programs - can be array of strings or array of objects
-  const programs = Array.isArray(college.programs) 
+  const programs = Array.isArray(college.programs) && college.programs.length > 0
     ? (typeof college.programs[0] === 'string' ? college.programs as string[] : (college.programs as Array<{ programName: string }>).map(p => p.programName))
     : parseArray(college.programs as string | string[]);
 
