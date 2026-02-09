@@ -8,7 +8,17 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "backend:dev": "cd backend && npm run dev",
+    "backend:start": "cd backend && npm start",
+    "backend:migrate": "cd backend && npm run migrate",
+    "backend:seed": "cd backend && npm run seed",
+    "scrape:init": "cd backend && npm run scrape:init",
+    "scrape:batch": "cd backend && npm run scrape:batch",
+    "scrape:stats": "cd backend && npm run scrape:stats",
+    "scrape:metrics": "cd backend && npm run scrape:metrics",
+    "monitor:report": "cd backend && npm run monitor:report",
+    "monitor:ml-export": "cd backend && npm run monitor:ml-export"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
