@@ -79,6 +79,46 @@ const getCountryGradient = (country: string): string => {
 };
 
 /* =========================
+   SAT-ACT Concordance Helper
+   Based on official College Board concordance tables
+========================= */
+const getSATACTConcordance = (score: number, type: 'SAT' | 'ACT'): number | null => {
+  if (type === 'SAT') {
+    // Convert SAT to ACT (simplified concordance)
+    if (score >= 1560) return 36;
+    if (score >= 1510) return 35;
+    if (score >= 1460) return 34;
+    if (score >= 1420) return 33;
+    if (score >= 1380) return 32;
+    if (score >= 1340) return 31;
+    if (score >= 1300) return 30;
+    if (score >= 1260) return 29;
+    if (score >= 1220) return 28;
+    if (score >= 1180) return 27;
+    if (score >= 1140) return 26;
+    if (score >= 1100) return 25;
+    if (score >= 1060) return 24;
+    return 24;
+  } else {
+    // Convert ACT to SAT (simplified concordance)
+    if (score >= 36) return 1600;
+    if (score >= 35) return 1540;
+    if (score >= 34) return 1500;
+    if (score >= 33) return 1460;
+    if (score >= 32) return 1430;
+    if (score >= 31) return 1390;
+    if (score >= 30) return 1350;
+    if (score >= 29) return 1310;
+    if (score >= 28) return 1270;
+    if (score >= 27) return 1230;
+    if (score >= 26) return 1190;
+    if (score >= 25) return 1150;
+    if (score >= 24) return 1110;
+    return 1110;
+  }
+};
+
+/* =========================
    Chancing Calculator Utility
    
    This is a CONSERVATIVE, REALISTIC calculator that:
@@ -1964,7 +2004,14 @@ const QuickLink: React.FC<{ href: string; label: string }> = ({ href, label }) =
   </a>
 );
 
-const ScoreBar: React.FC<{ label: string; low: number; high: number; max: number }> = ({ label, low, high, max }) => {
+const ScoreBar: React.FC<{ 
+  label: string; 
+  low: number; 
+  high: number; 
+  max: number;
+  userScore?: number;
+  showContext?: boolean;
+}> = ({ label, low, high, max, userScore, showContext = false }) => {
   // Handle edge cases where values might be undefined or zero
   const safeLow = low || 0;
   const safeHigh = high || 0;
@@ -1973,19 +2020,72 @@ const ScoreBar: React.FC<{ label: string; low: number; high: number; max: number
   const lowPercent = (safeLow / safeMax) * 100;
   const highPercent = (safeHigh / safeMax) * 100;
   const rangeWidth = Math.max(0, highPercent - lowPercent);
+  const midPoint = (safeLow + safeHigh) / 2;
+  
+  // Calculate user score position if provided
+  const userScorePercent = userScore ? (userScore / safeMax) * 100 : null;
+  
+  // Determine user score context
+  const getUserContext = () => {
+    if (!userScore) return null;
+    if (userScore >= safeHigh) return { text: 'Above typical range (strong)', color: 'text-green-600' };
+    if (userScore >= midPoint) return { text: 'Upper half of admitted students', color: 'text-blue-600' };
+    if (userScore >= safeLow) return { text: 'Lower half of admitted students', color: 'text-yellow-600' };
+    return { text: 'Below typical range (reach)', color: 'text-orange-600' };
+  };
+  
+  const context = getUserContext();
   
   return (
-    <div>
+    <div className="space-y-2">
       <div className="flex justify-between text-sm text-gray-600 mb-1">
         <span>{label}</span>
         <span className="font-medium">{safeLow} - {safeHigh}</span>
       </div>
-      <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
-        <div 
-          className="absolute h-full bg-blue-500 rounded-full"
-          style={{ left: `${lowPercent}%`, width: `${rangeWidth}%` }}
-        />
+      
+      {/* Score bar with scale */}
+      <div className="relative">
+        {/* Background bar with light scale indicators */}
+        <div className="relative h-4 bg-gray-100 rounded-full overflow-visible">
+          {/* Middle 50% range */}
+          <div 
+            className="absolute h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"
+            style={{ left: `${lowPercent}%`, width: `${rangeWidth}%` }}
+          />
+          
+          {/* User score marker */}
+          {userScorePercent !== null && (
+            <div 
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10"
+              style={{ left: `${userScorePercent}%` }}
+            >
+              <div className="w-3 h-3 bg-red-500 border-2 border-white rounded-full shadow-lg" />
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <span className="text-xs font-semibold bg-red-500 text-white px-1.5 py-0.5 rounded">
+                  You: {userScore}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Scale labels */}
+        <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <span>{max === 1600 ? '400' : '1'}</span>
+          <span className="text-gray-500">25th</span>
+          <span className="text-gray-600 font-medium">Avg: {Math.round(midPoint)}</span>
+          <span className="text-gray-500">75th</span>
+          <span>{max}</span>
+        </div>
       </div>
+      
+      {/* Context message for user score */}
+      {showContext && context && (
+        <div className={`text-sm ${context.color} flex items-center gap-1`}>
+          <Target className="w-3 h-3" />
+          <span>{context.text}</span>
+        </div>
+      )}
     </div>
   );
 };
