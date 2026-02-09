@@ -80,12 +80,14 @@ class ScrapingOrchestrator {
     logger.info('Initializing scraping queue...');
     
     // Get all colleges
+    // Note: Ordering by ID since colleges are typically seeded with more important ones first
+    // First 1000 colleges by ID will be Tier 1 (top priority), rest will be Tier 2
     const colleges = this.db.prepare(`
-      SELECT id, name, ranking, 
+      SELECT id, name, 
              (SELECT COUNT(*) FROM scrape_queue WHERE college_id = colleges.id) as queued
       FROM colleges
       WHERE id IS NOT NULL
-      ORDER BY ranking ASC NULLS LAST
+      ORDER BY id ASC
     `).all();
 
     let tier1Count = 0;
