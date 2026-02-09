@@ -40,9 +40,43 @@ class ScrapingOrchestrator {
   }
 
   /**
+   * Check if required tables exist
+   */
+  checkRequiredTables() {
+    const requiredTables = ['scrape_queue', 'scrape_audit_log', 'field_metadata', 'scrape_statistics'];
+    const missingTables = [];
+
+    for (const table of requiredTables) {
+      try {
+        this.db.prepare(`SELECT 1 FROM ${table} LIMIT 1`).get();
+      } catch (error) {
+        if (error.message.includes('no such table')) {
+          missingTables.push(table);
+        }
+      }
+    }
+
+    if (missingTables.length > 0) {
+      logger.error(`Missing required tables: ${missingTables.join(', ')}`);
+      console.error('\n❌ ERROR: Required database tables are missing!');
+      console.error('\nMissing tables:', missingTables.join(', '));
+      console.error('\n📋 SOLUTION: Run database migrations first:');
+      console.error('   cd backend && npm run migrate');
+      console.error('\nOr from root directory:');
+      console.error('   npm run backend:migrate');
+      console.error('\nThen try again:');
+      console.error('   npm run scrape:init\n');
+      process.exit(1);
+    }
+  }
+
+  /**
    * Initialize scraping queue with priorities
    */
   initializeQueue() {
+    // Check if tables exist first
+    this.checkRequiredTables();
+    
     logger.info('Initializing scraping queue...');
     
     // Get all colleges
@@ -286,27 +320,36 @@ module.exports = ScrapingOrchestrator;
 
 // CLI usage
 if (require.main === module) {
-  const orchestrator = new ScrapingOrchestrator();
-  
-  const command = process.argv[2] || 'status';
-  
-  switch(command) {
-    case 'init':
-      orchestrator.initializeQueue();
-      break;
-    case 'batch':
-      const batch = orchestrator.getTodaysBatch();
-      console.log(JSON.stringify(batch, null, 2));
-      break;
-    case 'stats':
-      const stats = orchestrator.recordDailyStats();
-      console.log('Daily stats:', stats);
-      break;
-    case 'metrics':
-      const metrics = orchestrator.getMetrics();
-      console.log(JSON.stringify(metrics, null, 2));
-      break;
-    default:
-      console.log('Usage: node scrapeOrchestrator.js [init|batch|stats|metrics]');
+  try {
+    const orchestrator = new ScrapingOrchestrator();
+    
+    const command = process.argv[2] || 'status';
+    
+    switch(command) {
+      case 'init':
+        orchestrator.initializeQueue();
+        break;
+      case 'batch':
+        const batch = orchestrator.getTodaysBatch();
+        console.log(JSON.stringify(batch, null, 2));
+        break;
+      case 'stats':
+        const stats = orchestrator.recordDailyStats();
+        console.log('Daily stats:', stats);
+        break;
+      case 'metrics':
+        const metrics = orchestrator.getMetrics();
+        console.log(JSON.stringify(metrics, null, 2));
+        break;
+      default:
+        console.log('Usage: node scrapeOrchestrator.js [init|batch|stats|metrics]');
+    }
+  } catch (error) {
+    if (!error.message.includes('no such table')) {
+      // Only log if it's not a table error (those are already handled)
+      logger.error('Scraping orchestrator error:', error);
+      console.error('\n❌ ERROR:', error.message);
+      process.exit(1);
+    }
   }
 }
