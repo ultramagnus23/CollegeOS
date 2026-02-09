@@ -461,9 +461,11 @@ class College {
       acceptance_rate: acceptanceRate,
       tuitionDomestic: college.tuition_domestic,
       tuitionInternational: college.tuition_international,
+      tuition_cost: college.tuition_domestic || college.tuition_international, // Add tuition_cost alias
       studentPopulation: college.student_population,
       enrollment: college.student_population, // Alias
       averageGpa: college.average_gpa,
+      averageGPA: college.average_gpa, // Add uppercase version for frontend compatibility
       satRange: college.sat_range,
       actRange: college.act_range,
       graduationRate: college.graduation_rate,

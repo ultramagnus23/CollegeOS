@@ -157,7 +157,7 @@ class ProfileService {
       stmt.run(...values);
     }
     
-    // Update user table fields (full_name, country)
+    // Update user table fields (full_name, country, phone)
     if (data.first_name || data.firstName || data.last_name || data.lastName) {
       const profile = db.prepare('SELECT first_name, last_name FROM student_profiles WHERE user_id = ?').get(userId);
       const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
@@ -170,6 +170,12 @@ class ProfileService {
     if (data.country) {
       db.prepare('UPDATE users SET country = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
         .run(data.country, userId);
+    }
+    
+    // Sync phone to users table as well (for easier access)
+    if (data.phone !== undefined) {
+      db.prepare('UPDATE users SET phone = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+        .run(data.phone, userId);
     }
     
     // Recalculate completion percentage
