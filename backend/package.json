@@ -16,6 +16,12 @@
     "parse:colleges": "node scripts/parseCollegeData.js",
     "scrape": "node scripts/scrapeAllColleges.js",
     "scrape:reset": "node scripts/scrapeAllColleges.js --reset",
+    "scrape:init": "node scripts/scrapeOrchestrator.js init",
+    "scrape:batch": "node scripts/scrapeOrchestrator.js batch",
+    "scrape:stats": "node scripts/scrapeOrchestrator.js stats",
+    "scrape:metrics": "node scripts/scrapeOrchestrator.js metrics",
+    "monitor:report": "node scripts/scrapingMonitor.js report",
+    "monitor:ml-export": "node scripts/scrapingMonitor.js ml-export",
     "test": "jest --coverage",
     "lint": "eslint src/"
   },
