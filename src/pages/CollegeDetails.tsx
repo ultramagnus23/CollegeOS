@@ -494,6 +494,10 @@ interface College {
     retentionRate?: number | null;
     employmentRate?: number | null;
     medianStartSalary?: number | null;
+    medianMidCareerSalary?: number | null;
+    salaryGrowthRate?: number | null;
+    employedAt6MonthsRate?: number | null;
+    employedInFieldRate?: number | null;
     source?: string;
   };
   demographics?: {
@@ -1858,10 +1862,11 @@ const CollegeDetail: React.FC = () => {
                     )}
                   </Card>
 
-                  {/* Career Outcomes */}
+                  {/* Career Outcomes - Enhanced with Salary Growth */}
                   {(college.academicOutcomes.employmentRate || college.academicOutcomes.medianStartSalary) && (
                     <Card title="Career Outcomes">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Employment and Salary Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         {college.academicOutcomes.employmentRate && (
                           <div className="p-6 bg-green-50 rounded-xl text-center">
                             <Briefcase className="w-8 h-8 text-green-600 mx-auto mb-2" />
@@ -1877,10 +1882,85 @@ const CollegeDetail: React.FC = () => {
                             <div className="text-3xl font-bold text-blue-600">
                               ${college.academicOutcomes.medianStartSalary.toLocaleString()}
                             </div>
-                            <p className="text-blue-700 mt-1">Median Starting Salary</p>
+                            <p className="text-blue-700 mt-1">Starting Salary</p>
+                            <p className="text-xs text-blue-600 mt-1">Median after graduation</p>
                           </div>
                         )}
                       </div>
+                      
+                      {/* Salary Growth Visualization */}
+                      {college.academicOutcomes.medianMidCareerSalary && (
+                        <div className="space-y-4">
+                          <h4 className="font-medium text-gray-900">Career Salary Progression</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="p-4 bg-purple-50 rounded-lg text-center">
+                              <div className="text-2xl font-bold text-purple-600">
+                                ${college.academicOutcomes.medianMidCareerSalary.toLocaleString()}
+                              </div>
+                              <p className="text-sm text-purple-700 mt-1">Mid-Career Salary</p>
+                              <p className="text-xs text-purple-600">~10 years experience</p>
+                            </div>
+                            
+                            {/* Calculate salary growth */}
+                            {college.academicOutcomes.medianStartSalary && (
+                              <div className="p-4 bg-emerald-50 rounded-lg text-center">
+                                <div className="text-2xl font-bold text-emerald-600">
+                                  +{(((college.academicOutcomes.medianMidCareerSalary - college.academicOutcomes.medianStartSalary) / college.academicOutcomes.medianStartSalary) * 100).toFixed(0)}%
+                                </div>
+                                <p className="text-sm text-emerald-700 mt-1">Salary Growth</p>
+                                <p className="text-xs text-emerald-600">
+                                  +${(college.academicOutcomes.medianMidCareerSalary - college.academicOutcomes.medianStartSalary).toLocaleString()} over career
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Visual salary progression bar */}
+                          <div className="mt-4">
+                            <div className="flex justify-between text-xs text-gray-600 mb-2">
+                              <span>Starting</span>
+                              <span>Mid-Career</span>
+                            </div>
+                            <div className="relative h-6 bg-gray-100 rounded-full overflow-hidden">
+                              <div 
+                                className="absolute h-full bg-gradient-to-r from-blue-400 to-purple-600 rounded-full flex items-center justify-end pr-2"
+                                style={{ width: '100%' }}
+                              >
+                                <TrendingUp className="w-4 h-4 text-white" />
+                              </div>
+                            </div>
+                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                              <span>${(college.academicOutcomes.medianStartSalary || 0).toLocaleString()}</span>
+                              <span>${college.academicOutcomes.medianMidCareerSalary.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Additional Employment Metrics */}
+                      {(college.academicOutcomes.employedAt6MonthsRate || college.academicOutcomes.employedInFieldRate) && (
+                        <div className="mt-6 pt-6 border-t border-gray-200">
+                          <h4 className="font-medium text-gray-900 mb-3">Employment Details</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                            {college.academicOutcomes.employedAt6MonthsRate && (
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <div className="text-lg font-bold text-gray-700">
+                                  {(college.academicOutcomes.employedAt6MonthsRate * 100).toFixed(0)}%
+                                </div>
+                                <p className="text-xs text-gray-600">Employed within 6 months</p>
+                              </div>
+                            )}
+                            {college.academicOutcomes.employedInFieldRate && (
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <div className="text-lg font-bold text-gray-700">
+                                  {(college.academicOutcomes.employedInFieldRate * 100).toFixed(0)}%
+                                </div>
+                                <p className="text-xs text-gray-600">Working in their field</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </Card>
                   )}
                 </>
