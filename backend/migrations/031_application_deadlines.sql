@@ -64,74 +64,10 @@ CREATE INDEX IF NOT EXISTS idx_app_deadlines_ea ON application_deadlines(offers_
 CREATE INDEX IF NOT EXISTS idx_app_deadlines_verified ON application_deadlines(last_verified);
 
 -- ============================================================================
--- Sample data for top colleges (will be updated by scraper)
+-- NOTE: Sample data is NOT inserted here to avoid foreign key errors
+-- Data is inserted by backend/scripts/populateDeadlines.js AFTER seeding
+-- Run: npm run populate:deadlines
 -- ============================================================================
-
--- Duke University (ID: 2378)
-INSERT OR IGNORE INTO application_deadlines (
-  college_id,
-  early_decision_1_date,
-  early_decision_1_notification,
-  regular_decision_date,
-  regular_decision_notification,
-  offers_early_decision,
-  offers_early_action,
-  offers_restrictive_ea,
-  application_fee,
-  application_fee_waiver_available,
-  source_url,
-  last_verified,
-  confidence_score
-) VALUES (
-  2378,
-  '2024-11-01',
-  '2024-12-15',
-  '2025-01-02',
-  '2025-04-01',
-  1,  -- Offers ED
-  0,  -- No EA
-  0,  -- No REA
-  85,
-  1,
-  'https://admissions.duke.edu/apply/deadlines',
-  DATE('now'),
-  0.95
-);
-
--- Harvard University (ID: 2145) - Example with REA
-INSERT OR IGNORE INTO application_deadlines (
-  college_id,
-  restrictive_early_action_date,
-  restrictive_early_action_notification,
-  regular_decision_date,
-  regular_decision_notification,
-  offers_early_decision,
-  offers_early_action,
-  offers_restrictive_ea,
-  application_fee,
-  application_fee_waiver_available,
-  source_url,
-  last_verified,
-  confidence_score
-) VALUES (
-  2145,
-  '2024-11-01',
-  '2024-12-15',
-  '2025-01-01',
-  '2025-04-01',
-  0,  -- No ED
-  0,  -- No regular EA
-  1,  -- Has REA
-  85,
-  1,
-  'https://college.harvard.edu/admissions/apply',
-  DATE('now'),
-  0.95
-);
-
--- Stanford University (ID: 2xxx) - Example with REA
--- MIT (ID: 2xxx) - Example with EA
--- Add more examples as needed
 
 -- Migration complete
 SELECT 'Migration 031 complete: Created application_deadlines table';
