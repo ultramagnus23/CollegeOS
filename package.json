@@ -18,7 +18,10 @@
     "scrape:stats": "cd backend && npm run scrape:stats",
     "scrape:metrics": "cd backend && npm run scrape:metrics",
     "monitor:report": "cd backend && npm run monitor:report",
-    "monitor:ml-export": "cd backend && npm run monitor:ml-export"
+    "monitor:ml-export": "cd backend && npm run monitor:ml-export",
+    "db:setup": "cd backend && npm run db:setup",
+    "db:check": "cd backend && npm run db:check",
+    "db:diagnose": "cd backend && npm run db:diagnose"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

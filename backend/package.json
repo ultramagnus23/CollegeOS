@@ -22,6 +22,9 @@
     "scrape:metrics": "node scripts/scrapeOrchestrator.js metrics",
     "monitor:report": "node scripts/scrapingMonitor.js report",
     "monitor:ml-export": "node scripts/scrapingMonitor.js ml-export",
+    "db:setup": "node scripts/setupDatabase.js",
+    "db:diagnose": "node scripts/diagnoseDatabase.js",
+    "db:check": "node scripts/diagnoseDatabase.js",
     "test": "jest --coverage",
     "lint": "eslint src/"
   },
