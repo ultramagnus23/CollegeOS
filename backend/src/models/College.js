@@ -444,6 +444,17 @@ class College {
     const requirements = getCountryRequirements(college.country);
     const region = getRegion(college.country);
     
+    // Determine best tuition value (priority: tuition_in_state > tuition_domestic > tuition_out_of_state > tuition_international)
+    const tuitionCost = college.tuition_in_state || college.tuition_domestic || 
+                       college.tuition_out_of_state || college.cf_tuition_international || 
+                       college.tuition_international;
+    
+    // Determine best enrollment value
+    const enrollmentValue = college.total_enrollment || college.student_population;
+    
+    // Use gpa_50 from comprehensive data if available, fallback to average_gpa
+    const gpaValue = college.gpa_50 || college.average_gpa;
+    
     return {
       id: college.id,
       name: college.name,
@@ -459,17 +470,26 @@ class College {
       academicStrengths: academicStrengths,
       majorCategories: majorCategories,
       programs: majorCategories, // Alias for compatibility
+      programCount: college.program_count || majorCategories.length, // New: actual program count
       
-      // Stats
+      // Stats (enhanced with comprehensive data)
       acceptanceRate: acceptanceRate,
       acceptance_rate: acceptanceRate,
-      tuitionDomestic: college.tuition_domestic,
-      tuitionInternational: college.tuition_international,
-      tuition_cost: college.tuition_domestic || college.tuition_international, // Add tuition_cost alias
+      tuitionDomestic: college.tuition_domestic || college.tuition_in_state,
+      tuitionInternational: college.tuition_international || college.cf_tuition_international,
+      tuition_cost: tuitionCost, // Enhanced with priority fallback
+      tuitionInState: college.tuition_in_state, // New
+      tuitionOutOfState: college.tuition_out_of_state, // New
       studentPopulation: college.student_population,
-      enrollment: college.student_population, // Alias
-      averageGpa: college.average_gpa,
-      averageGPA: college.average_gpa, // Add uppercase version for frontend compatibility
+      enrollment: enrollmentValue, // Enhanced: total_enrollment > student_population
+      totalEnrollment: college.total_enrollment, // New
+      undergraduateEnrollment: college.undergraduate_enrollment, // New
+      graduateEnrollment: college.graduate_enrollment, // New
+      averageGpa: gpaValue,
+      averageGPA: gpaValue, // Enhanced with gpa_50 from comprehensive
+      gpa50: college.gpa_50, // New: 50th percentile GPA
+      satAvg: college.sat_avg, // New
+      actAvg: college.act_avg, // New
       satRange: college.sat_range,
       actRange: college.act_range,
       graduationRate: college.graduation_rate,
@@ -494,7 +514,26 @@ class College {
   static findAll(filters = {}) {
     const db = dbManager.getDatabase();
     
-    let query = 'SELECT * FROM colleges WHERE 1=1';
+    // Enhanced query with JOINs to get comprehensive data for list view
+    let query = `
+      SELECT 
+        c.*,
+        cc.total_enrollment,
+        cc.undergraduate_enrollment,
+        cc.graduate_enrollment,
+        cf.tuition_in_state,
+        cf.tuition_out_of_state,
+        cf.tuition_international as cf_tuition_international,
+        ass.gpa_50,
+        ass.sat_avg,
+        ass.act_avg,
+        (SELECT COUNT(*) FROM college_programs WHERE college_id = c.id) as program_count
+      FROM colleges c
+      LEFT JOIN colleges_comprehensive cc ON c.id = cc.college_id
+      LEFT JOIN college_financial_data cf ON c.id = cf.college_id
+      LEFT JOIN admitted_student_stats ass ON c.id = ass.college_id
+      WHERE 1=1
+    `;
     const params = [];
     
     // Country filter - support region grouping
