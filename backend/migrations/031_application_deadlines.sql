@@ -2,9 +2,14 @@
 -- Creates per-college deadline system with only relevant deadline types
 
 -- ============================================================================
+-- Drop old application_deadlines table from migration 014 (has different schema)
+-- ============================================================================
+DROP TABLE IF EXISTS application_deadlines;
+
+-- ============================================================================
 -- Table: application_deadlines - College-specific deadlines
 -- ============================================================================
-CREATE TABLE IF NOT EXISTS application_deadlines (
+CREATE TABLE application_deadlines (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   college_id INTEGER NOT NULL,
   
