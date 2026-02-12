@@ -534,7 +534,7 @@ class College {
           ass.act_50 as act_avg,
           (SELECT COUNT(*) FROM college_programs WHERE college_id = c.id) as program_count
         FROM colleges c
-        LEFT JOIN colleges_comprehensive cc ON c.id = cc.college_id
+        LEFT JOIN colleges_comprehensive cc ON c.id = cc.id
         LEFT JOIN college_financial_data cf ON c.id = cf.college_id
         LEFT JOIN admitted_student_stats ass ON c.id = ass.college_id
         WHERE 1=1
