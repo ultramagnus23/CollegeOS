@@ -523,15 +523,15 @@ class College {
       query = `
         SELECT 
           c.*,
-          cc.total_enrollment,
-          cc.undergraduate_enrollment,
-          cc.graduate_enrollment,
-          cf.tuition_in_state,
-          cf.tuition_out_state as tuition_out_of_state,
-          cf.tuition_international as cf_tuition_international,
-          ass.gpa_50,
-          ass.sat_50 as sat_avg,
-          ass.act_50 as act_avg,
+          MAX(cc.total_enrollment) as total_enrollment,
+          MAX(cc.undergraduate_enrollment) as undergraduate_enrollment,
+          MAX(cc.graduate_enrollment) as graduate_enrollment,
+          MAX(cf.tuition_in_state) as tuition_in_state,
+          MAX(cf.tuition_out_state) as tuition_out_of_state,
+          MAX(cf.tuition_international) as cf_tuition_international,
+          MAX(ass.gpa_50) as gpa_50,
+          MAX(ass.sat_50) as sat_avg,
+          MAX(ass.act_50) as act_avg,
           (SELECT COUNT(*) FROM college_programs WHERE college_id = c.id) as program_count
         FROM colleges c
         LEFT JOIN colleges_comprehensive cc ON c.id = cc.id
@@ -597,6 +597,11 @@ class College {
     if (filters.maxAcceptanceRate !== undefined) {
       query += ' AND c.acceptance_rate <= ?';
       params.push(filters.maxAcceptanceRate);
+    }
+    
+    // Group by college ID to prevent duplicates from JOINs
+    if (tablesExist) {
+      query += ' GROUP BY c.id';
     }
     
     // Ordering
