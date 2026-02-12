@@ -514,26 +514,50 @@ class College {
   static findAll(filters = {}) {
     const db = dbManager.getDatabase();
     
-    // Enhanced query with JOINs to get comprehensive data for list view
-    let query = `
-      SELECT 
-        c.*,
-        cc.total_enrollment,
-        cc.undergraduate_enrollment,
-        cc.graduate_enrollment,
-        cf.tuition_in_state,
-        cf.tuition_out_of_state,
-        cf.tuition_international as cf_tuition_international,
-        ass.gpa_50,
-        ass.sat_avg,
-        ass.act_avg,
-        (SELECT COUNT(*) FROM college_programs WHERE college_id = c.id) as program_count
-      FROM colleges c
-      LEFT JOIN colleges_comprehensive cc ON c.id = cc.college_id
-      LEFT JOIN college_financial_data cf ON c.id = cf.college_id
-      LEFT JOIN admitted_student_stats ass ON c.id = ass.college_id
-      WHERE 1=1
-    `;
+    // Check if comprehensive tables exist
+    const tablesExist = this.checkComprehensiveTables(db);
+    
+    let query;
+    if (tablesExist) {
+      // Enhanced query with JOINs to get comprehensive data for list view
+      query = `
+        SELECT 
+          c.*,
+          cc.total_enrollment,
+          cc.undergraduate_enrollment,
+          cc.graduate_enrollment,
+          cf.tuition_in_state,
+          cf.tuition_out_of_state,
+          cf.tuition_international as cf_tuition_international,
+          ass.gpa_50,
+          ass.sat_avg,
+          ass.act_avg,
+          (SELECT COUNT(*) FROM college_programs WHERE college_id = c.id) as program_count
+        FROM colleges c
+        LEFT JOIN colleges_comprehensive cc ON c.id = cc.college_id
+        LEFT JOIN college_financial_data cf ON c.id = cf.college_id
+        LEFT JOIN admitted_student_stats ass ON c.id = ass.college_id
+        WHERE 1=1
+      `;
+    } else {
+      // Fallback to basic query if comprehensive tables don't exist
+      query = `
+        SELECT 
+          c.*,
+          NULL as total_enrollment,
+          NULL as undergraduate_enrollment,
+          NULL as graduate_enrollment,
+          NULL as tuition_in_state,
+          NULL as tuition_out_of_state,
+          NULL as cf_tuition_international,
+          NULL as gpa_50,
+          NULL as sat_avg,
+          NULL as act_avg,
+          0 as program_count
+        FROM colleges c
+        WHERE 1=1
+      `;
+    }
     const params = [];
     
     // Country filter - support region grouping
@@ -598,6 +622,22 @@ class College {
     return colleges.map(college => this.formatCollege(college));
   }
   
+  /**
+   * Check if comprehensive tables exist in the database
+   */
+  static checkComprehensiveTables(db) {
+    try {
+      const result = db.prepare(`
+        SELECT name FROM sqlite_master 
+        WHERE type='table' AND name IN ('colleges_comprehensive', 'college_financial_data', 'admitted_student_stats')
+      `).all();
+      return result.length === 3;
+    } catch (error) {
+      console.warn('Error checking for comprehensive tables:', error.message);
+      return false;
+    }
+  }
+
   /**
    * Get total count for pagination
    */
