@@ -527,7 +527,7 @@ class College {
           cc.undergraduate_enrollment,
           cc.graduate_enrollment,
           cf.tuition_in_state,
-          cf.tuition_out_of_state,
+          cf.tuition_out_state as tuition_out_of_state,
           cf.tuition_international as cf_tuition_international,
           ass.gpa_50,
           ass.sat_avg,
