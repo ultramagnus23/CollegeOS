@@ -565,13 +565,13 @@ class College {
       const countryLower = filters.country.toLowerCase();
       if (countryLower === 'europe') {
         // Europe includes all countries except USA, UK, India
-        query += ` AND country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`;
+        query += ` AND c.country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`;
       } else if (countryLower === 'united states' || countryLower === 'usa') {
-        query += ` AND (country = 'United States' OR country = 'USA')`;
+        query += ` AND (c.country = 'United States' OR c.country = 'USA')`;
       } else if (countryLower === 'united kingdom' || countryLower === 'uk') {
-        query += ` AND (country = 'United Kingdom' OR country = 'UK')`;
+        query += ` AND (c.country = 'United Kingdom' OR c.country = 'UK')`;
       } else {
-        query += ' AND LOWER(country) = LOWER(?)';
+        query += ' AND LOWER(c.country) = LOWER(?)';
         params.push(filters.country);
       }
     }
@@ -579,11 +579,11 @@ class College {
     // Search filter
     if (filters.search) {
       query += ` AND (
-        name LIKE ? OR 
-        location LIKE ? OR 
-        country LIKE ? OR 
-        major_categories LIKE ? OR 
-        academic_strengths LIKE ?
+        c.name LIKE ? OR 
+        c.location LIKE ? OR 
+        c.country LIKE ? OR 
+        c.major_categories LIKE ? OR 
+        c.academic_strengths LIKE ?
       )`;
       const searchPattern = `%${filters.search}%`;
       params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
@@ -591,11 +591,11 @@ class College {
     
     // Acceptance rate range
     if (filters.minAcceptanceRate !== undefined) {
-      query += ' AND acceptance_rate >= ?';
+      query += ' AND c.acceptance_rate >= ?';
       params.push(filters.minAcceptanceRate);
     }
     if (filters.maxAcceptanceRate !== undefined) {
-      query += ' AND acceptance_rate <= ?';
+      query += ' AND c.acceptance_rate <= ?';
       params.push(filters.maxAcceptanceRate);
     }
     
@@ -605,9 +605,9 @@ class College {
       const validSorts = ['name', 'acceptance_rate', 'ranking', 'student_population'];
       const sortField = validSorts.includes(filters.sortBy) ? filters.sortBy : 'name';
       const sortDir = filters.sortDir === 'desc' ? 'DESC' : 'ASC';
-      query += `${sortField} ${sortDir}`;
+      query += `c.${sortField} ${sortDir}`;
     } else {
-      query += 'name ASC';
+      query += 'c.name ASC';
     }
     
     // Pagination using constants
