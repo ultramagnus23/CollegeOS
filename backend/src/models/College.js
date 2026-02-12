@@ -530,8 +530,8 @@ class College {
           cf.tuition_out_state as tuition_out_of_state,
           cf.tuition_international as cf_tuition_international,
           ass.gpa_50,
-          ass.sat_avg,
-          ass.act_avg,
+          ass.sat_50 as sat_avg,
+          ass.act_50 as act_avg,
           (SELECT COUNT(*) FROM college_programs WHERE college_id = c.id) as program_count
         FROM colleges c
         LEFT JOIN colleges_comprehensive cc ON c.id = cc.college_id
