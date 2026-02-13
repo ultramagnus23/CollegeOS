@@ -37,6 +37,7 @@ function logError(requestId: string, stage: string, message: string, error?: any
 class ApiService {
   private baseUrl: string;
   private token: string | null;
+  private refreshing: boolean = false;
 
   constructor() {
     this.baseUrl = API_BASE_URL;
@@ -71,15 +72,17 @@ class ApiService {
     return headers;
   }
 
-  private async request(endpoint: string, options: RequestInit = {}) {
+  private async request(endpoint: string, options: RequestInit = {}, retryCount: number = 0) {
     const requestId = generateRequestId();
     const method = options.method || 'GET';
     const startTime = performance.now();
+    const MAX_RETRIES = 1; // Only retry once to prevent infinite loops
     
     // Log request start
     logDebug(requestId, 'REQUEST', `${method} ${endpoint}`, {
       hasBody: !!options.body,
-      bodySize: options.body ? (options.body as string).length : 0
+      bodySize: options.body ? (options.body as string).length : 0,
+      retryCount
     });
     
     // Refresh token from localStorage before each request
@@ -119,13 +122,14 @@ class ApiService {
       data = {};
     }
 
-    // Handle 401 Unauthorized - try to refresh token
-    if (response.status === 401 && (data as any)?.errorType === 'TOKEN_EXPIRED') {
+    // Handle 401 Unauthorized - try to refresh token (only once)
+    if (response.status === 401 && (data as any)?.errorType === 'TOKEN_EXPIRED' && retryCount < MAX_RETRIES) {
       logDebug(requestId, 'TOKEN_REFRESH', 'Access token expired, attempting refresh');
       const refreshToken = localStorage.getItem('refreshToken');
       
-      if (refreshToken && endpoint !== '/auth/refresh') {
+      if (refreshToken && endpoint !== '/auth/refresh' && !this.refreshing) {
         try {
+          this.refreshing = true;
           // Attempt to refresh the access token
           const refreshResponse = await fetch(`${this.baseUrl}/auth/refresh`, {
             method: 'POST',
@@ -141,8 +145,8 @@ class ApiService {
             this.setToken(newAccessToken);
             logDebug(requestId, 'TOKEN_REFRESH', 'Token refreshed successfully, retrying request');
             
-            // Retry original request with new token
-            return this.request(endpoint, options);
+            // Retry original request with new token (increment retry count)
+            return this.request(endpoint, options, retryCount + 1);
           } else {
             logError(requestId, 'TOKEN_REFRESH', 'Failed to refresh token', refreshData);
             // Clear tokens and force re-login
@@ -152,11 +156,17 @@ class ApiService {
           logError(requestId, 'TOKEN_REFRESH', 'Error during token refresh', refreshError);
           // Clear tokens and force re-login
           this.clearTokens();
+        } finally {
+          this.refreshing = false;
         }
       } else {
-        logDebug(requestId, 'TOKEN_REFRESH', 'No refresh token available or already on refresh endpoint');
-        // Clear tokens and force re-login
-        this.clearTokens();
+        if (this.refreshing) {
+          logDebug(requestId, 'TOKEN_REFRESH', 'Already refreshing token, skipping');
+        } else {
+          logDebug(requestId, 'TOKEN_REFRESH', 'No refresh token available or already on refresh endpoint');
+          // Clear tokens and force re-login
+          this.clearTokens();
+        }
       }
     }
 
@@ -216,8 +226,9 @@ class ApiService {
           body: JSON.stringify({ refreshToken }),
         });
       } catch (error) {
-        // Ignore errors during logout
-        console.error('Logout error:', error);
+        // Ignore errors during logout - user is logging out anyway
+        const requestId = generateRequestId();
+        logError(requestId, 'LOGOUT', 'Logout error (ignored)', error);
       }
     }
     this.clearTokens();

@@ -551,13 +551,25 @@ class CollegeController {
         if (!byCategory[major.major_category]) {
           byCategory[major.major_category] = [];
         }
+        
+        // Safely parse degree_types JSON
+        let degreeTypes = [];
+        if (major.degree_types) {
+          try {
+            degreeTypes = JSON.parse(major.degree_types);
+          } catch (e) {
+            // Invalid JSON, default to empty array
+            degreeTypes = [];
+          }
+        }
+        
         byCategory[major.major_category].push({
           id: major.id,
           name: major.major_name,
           programName: major.program_name,
           cipCode: major.cip_code,
           description: major.description,
-          degreeTypes: major.degree_types ? JSON.parse(major.degree_types) : [],
+          degreeTypes,
           department: major.department,
           isPopular: major.is_popular === 1,
           ranking: major.ranking_in_major
@@ -568,18 +580,31 @@ class CollegeController {
         success: true,
         collegeName: college.name,
         count: majors.length,
-        data: majors.map(m => ({
-          id: m.id,
-          name: m.major_name,
-          category: m.major_category,
-          programName: m.program_name,
-          cipCode: m.cip_code,
-          description: m.description,
-          degreeTypes: m.degree_types ? JSON.parse(m.degree_types) : [],
-          department: m.department,
-          isPopular: m.is_popular === 1,
-          ranking: m.ranking_in_major
-        })),
+        data: majors.map(m => {
+          // Safely parse degree_types JSON
+          let degreeTypes = [];
+          if (m.degree_types) {
+            try {
+              degreeTypes = JSON.parse(m.degree_types);
+            } catch (e) {
+              // Invalid JSON, default to empty array
+              degreeTypes = [];
+            }
+          }
+          
+          return {
+            id: m.id,
+            name: m.major_name,
+            category: m.major_category,
+            programName: m.program_name,
+            cipCode: m.cip_code,
+            description: m.description,
+            degreeTypes,
+            department: m.department,
+            isPopular: m.is_popular === 1,
+            ranking: m.ranking_in_major
+          };
+        }),
         byCategory
       });
     } catch (error) {
