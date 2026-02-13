@@ -506,6 +506,87 @@ class CollegeController {
   }
   
   // Get contributions for a college
+  /**
+   * Get all majors offered by a specific college
+   */
+  static async getCollegeMajors(req, res, next) {
+    try {
+      const { id } = req.params;
+      const collegeId = parseInt(id);
+      
+      const dbManager = require('../config/database');
+      const db = dbManager.getDatabase();
+      
+      // Get college name for context
+      const college = db.prepare('SELECT name FROM colleges WHERE id = ?').get(collegeId);
+      if (!college) {
+        return res.status(404).json({
+          success: false,
+          message: 'College not found'
+        });
+      }
+      
+      // Get all majors offered by this college
+      const majors = db.prepare(`
+        SELECT 
+          m.id,
+          m.major_name,
+          m.major_category,
+          m.cip_code,
+          m.description,
+          cmo.program_name,
+          cmo.degree_types,
+          cmo.department,
+          cmo.is_popular,
+          cmo.ranking_in_major
+        FROM college_majors_offered cmo
+        JOIN master_majors m ON cmo.major_id = m.id
+        WHERE cmo.college_id = ? AND cmo.is_offered = 1
+        ORDER BY m.major_category, m.major_name
+      `).all(collegeId);
+      
+      // Group by category
+      const byCategory = {};
+      majors.forEach(major => {
+        if (!byCategory[major.major_category]) {
+          byCategory[major.major_category] = [];
+        }
+        byCategory[major.major_category].push({
+          id: major.id,
+          name: major.major_name,
+          programName: major.program_name,
+          cipCode: major.cip_code,
+          description: major.description,
+          degreeTypes: major.degree_types ? JSON.parse(major.degree_types) : [],
+          department: major.department,
+          isPopular: major.is_popular === 1,
+          ranking: major.ranking_in_major
+        });
+      });
+      
+      res.json({
+        success: true,
+        collegeName: college.name,
+        count: majors.length,
+        data: majors.map(m => ({
+          id: m.id,
+          name: m.major_name,
+          category: m.major_category,
+          programName: m.program_name,
+          cipCode: m.cip_code,
+          description: m.description,
+          degreeTypes: m.degree_types ? JSON.parse(m.degree_types) : [],
+          department: m.department,
+          isPopular: m.is_popular === 1,
+          ranking: m.ranking_in_major
+        })),
+        byCategory
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getContributions(req, res, next) {
     try {
       const { collegeId } = req.params;
