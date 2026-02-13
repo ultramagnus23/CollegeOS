@@ -753,9 +753,26 @@ class ApiService {
   // Applications namespace (as used by pages)
   applications = {
     get: (filters: any = {}) => this.getApplications(filters),
+    getAll: (filters: any = {}) => this.getApplications(filters),
     create: (data: any) => this.createApplication(data),
     update: (id: number, data: any) => this.updateApplication(id, data),
     delete: (id: number) => this.deleteApplication(id),
+  };
+
+  // Deadlines namespace
+  deadlines = {
+    getAll: (daysAhead?: number) => this.getDeadlines(daysAhead),
+    create: (data: any) => this.createDeadline(data),
+    update: (id: number, data: any) => this.updateDeadline(id, data),
+    delete: (id: number) => this.deleteDeadline(id),
+  };
+
+  // Essays namespace
+  essays = {
+    getAll: () => this.getEssays(),
+    create: (data: any) => this.createEssay(data),
+    update: (id: number, data: any) => this.updateEssay(id, data),
+    delete: (id: number) => this.deleteEssay(id),
   };
 
   // ==================== DOCUMENTS ENDPOINTS ====================
