@@ -55,6 +55,14 @@ class ApiService {
     }
   }
 
+  clearTokens() {
+    const requestId = generateRequestId();
+    logDebug(requestId, 'TOKEN', 'Clearing all tokens');
+    this.token = null;
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+  }
+
   private getHeaders() {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -103,11 +111,53 @@ class ApiService {
         success: data?.success,
         hasData: !!data?.data,
         dataType: typeof data?.data,
-        count: data?.count
+        count: data?.count,
+        errorType: data?.errorType
       });
     } catch (e: any) {
       logError(requestId, 'PARSE', 'Failed to parse JSON response', e);
       data = {};
+    }
+
+    // Handle 401 Unauthorized - try to refresh token
+    if (response.status === 401 && (data as any)?.errorType === 'TOKEN_EXPIRED') {
+      logDebug(requestId, 'TOKEN_REFRESH', 'Access token expired, attempting refresh');
+      const refreshToken = localStorage.getItem('refreshToken');
+      
+      if (refreshToken && endpoint !== '/auth/refresh') {
+        try {
+          // Attempt to refresh the access token
+          const refreshResponse = await fetch(`${this.baseUrl}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+          });
+          
+          const refreshData = await refreshResponse.json();
+          
+          if (refreshResponse.ok && (refreshData as any)?.data?.accessToken) {
+            // Update access token and retry the original request
+            const newAccessToken = (refreshData as any).data.accessToken;
+            this.setToken(newAccessToken);
+            logDebug(requestId, 'TOKEN_REFRESH', 'Token refreshed successfully, retrying request');
+            
+            // Retry original request with new token
+            return this.request(endpoint, options);
+          } else {
+            logError(requestId, 'TOKEN_REFRESH', 'Failed to refresh token', refreshData);
+            // Clear tokens and force re-login
+            this.clearTokens();
+          }
+        } catch (refreshError: any) {
+          logError(requestId, 'TOKEN_REFRESH', 'Error during token refresh', refreshError);
+          // Clear tokens and force re-login
+          this.clearTokens();
+        }
+      } else {
+        logDebug(requestId, 'TOKEN_REFRESH', 'No refresh token available or already on refresh endpoint');
+        // Clear tokens and force re-login
+        this.clearTokens();
+      }
     }
 
     if (!response.ok) {
@@ -137,6 +187,7 @@ class ApiService {
 
     if ((response as any).data?.tokens) {
       this.setToken((response as any).data.tokens.accessToken);
+      localStorage.setItem('refreshToken', (response as any).data.tokens.refreshToken);
     }
 
     return response;
@@ -150,13 +201,26 @@ class ApiService {
 
     if ((response as any).data?.tokens) {
       this.setToken((response as any).data.tokens.accessToken);
+      localStorage.setItem('refreshToken', (response as any).data.tokens.refreshToken);
     }
 
     return response;
   }
 
   async logout() {
-    this.setToken(null);
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (refreshToken) {
+      try {
+        await this.request('/auth/logout', {
+          method: 'POST',
+          body: JSON.stringify({ refreshToken }),
+        });
+      } catch (error) {
+        // Ignore errors during logout
+        console.error('Logout error:', error);
+      }
+    }
+    this.clearTokens();
     return { success: true };
   }
 
