@@ -176,17 +176,257 @@ class College {
   }
   
   /**
-   * Find college by ID
+   * Find college by ID with comprehensive data from all tables
    */
   static findById(id) {
     const db = dbManager.getDatabase();
+    
+    // Get basic college info
     const stmt = db.prepare('SELECT * FROM colleges WHERE id = ?');
     const college = stmt.get(id);
     
-    if (college) {
-      return this.formatCollege(college);
+    if (!college) {
+      return null;
     }
-    return null;
+    
+    // Format basic college data
+    const formattedCollege = this.formatCollege(college);
+    
+    // Try to fetch comprehensive data if tables exist
+    try {
+      // Get comprehensive college info
+      const comprehensiveStmt = db.prepare(`
+        SELECT * FROM colleges_comprehensive 
+        WHERE LOWER(name) = LOWER(?) AND LOWER(country) = LOWER(?)
+      `);
+      const comprehensive = comprehensiveStmt.get(college.name, college.country);
+      
+      if (comprehensive) {
+        // Merge comprehensive data
+        formattedCollege.comprehensiveData = {
+          // Basic Information
+          alternateName: comprehensive.alternate_names,
+          stateRegion: comprehensive.state_region,
+          city: comprehensive.city,
+          urbanClassification: comprehensive.urban_classification,
+          institutionType: comprehensive.institution_type,
+          classification: comprehensive.classification,
+          religiousAffiliation: comprehensive.religious_affiliation,
+          foundingYear: comprehensive.founding_year,
+          campusSizeAcres: comprehensive.campus_size_acres,
+          
+          // Enrollment
+          undergraduateEnrollment: comprehensive.undergraduate_enrollment,
+          graduateEnrollment: comprehensive.graduate_enrollment,
+          totalEnrollment: comprehensive.total_enrollment,
+          studentFacultyRatio: comprehensive.student_faculty_ratio,
+          
+          // URLs
+          websiteUrl: comprehensive.website_url,
+        };
+        
+        // Get admissions data
+        const admissionsStmt = db.prepare(`
+          SELECT * FROM college_admissions 
+          WHERE college_id = ?
+          ORDER BY year DESC LIMIT 1
+        `);
+        const admissions = admissionsStmt.get(comprehensive.id);
+        if (admissions) {
+          formattedCollege.admissionsData = {
+            year: admissions.year,
+            acceptanceRate: admissions.acceptance_rate,
+            earlyDecisionRate: admissions.early_decision_rate,
+            earlyActionRate: admissions.early_action_rate,
+            regularDecisionRate: admissions.regular_decision_rate,
+            waitlistRate: admissions.waitlist_rate,
+            transferAcceptanceRate: admissions.transfer_acceptance_rate,
+            yieldRate: admissions.yield_rate,
+            applicationVolume: admissions.application_volume,
+            admitVolume: admissions.admit_volume,
+            enrollmentVolume: admissions.enrollment_volume,
+            internationalAcceptRate: admissions.international_accept_rate,
+            inStateAcceptRate: admissions.in_state_accept_rate,
+            outStateAcceptRate: admissions.out_state_accept_rate,
+            testOptionalFlag: admissions.test_optional_flag,
+            source: admissions.source,
+            confidenceScore: admissions.confidence_score,
+          };
+        }
+        
+        // Get student stats
+        const statsStmt = db.prepare(`
+          SELECT * FROM admitted_student_stats 
+          WHERE college_id = ?
+          ORDER BY year DESC LIMIT 1
+        `);
+        const stats = statsStmt.get(comprehensive.id);
+        if (stats) {
+          formattedCollege.studentStats = {
+            year: stats.year,
+            gpa25: stats.gpa_25,
+            gpa50: stats.gpa_50,
+            gpa75: stats.gpa_75,
+            sat25: stats.sat_25,
+            sat50: stats.sat_50,
+            sat75: stats.sat_75,
+            act25: stats.act_25,
+            act50: stats.act_50,
+            act75: stats.act_75,
+            classRankTop10Percent: stats.class_rank_top10_percent,
+            avgCourseRigorIndex: stats.avg_course_rigor_index,
+            source: stats.source,
+            confidenceScore: stats.confidence_score,
+          };
+        }
+        
+        // Get financial data
+        const financialStmt = db.prepare(`
+          SELECT * FROM college_financial_data 
+          WHERE college_id = ?
+          ORDER BY year DESC LIMIT 1
+        `);
+        const financial = financialStmt.get(comprehensive.id);
+        if (financial) {
+          formattedCollege.financialData = {
+            year: financial.year,
+            tuitionInState: financial.tuition_in_state,
+            tuitionOutState: financial.tuition_out_state,
+            tuitionInternational: financial.tuition_international,
+            costOfAttendance: financial.cost_of_attendance,
+            avgFinancialAid: financial.avg_financial_aid,
+            percentReceivingAid: financial.percent_receiving_aid,
+            avgDebt: financial.avg_debt,
+            netPriceLowIncome: financial.net_price_low_income,
+            netPriceMidIncome: financial.net_price_mid_income,
+            netPriceHighIncome: financial.net_price_high_income,
+            meritScholarshipFlag: financial.merit_scholarship_flag,
+            needBlindFlag: financial.need_blind_flag,
+            loanDefaultRate: financial.loan_default_rate,
+            source: financial.source,
+            confidenceScore: financial.confidence_score,
+          };
+        }
+        
+        // Get academic outcomes
+        const outcomesStmt = db.prepare(`
+          SELECT * FROM academic_outcomes 
+          WHERE college_id = ?
+          ORDER BY year DESC LIMIT 1
+        `);
+        const outcomes = outcomesStmt.get(comprehensive.id);
+        if (outcomes) {
+          formattedCollege.academicOutcomes = {
+            year: outcomes.year,
+            graduationRate4yr: outcomes.graduation_rate_4yr,
+            graduationRate6yr: outcomes.graduation_rate_6yr,
+            retentionRate: outcomes.retention_rate,
+            dropoutRate: outcomes.dropout_rate,
+            avgTimeToDegree: outcomes.avg_time_to_degree,
+            employmentRate: outcomes.employment_rate,
+            gradSchoolRate: outcomes.grad_school_rate,
+            medianStartSalary: outcomes.median_start_salary,
+            medianMidCareerSalary: outcomes.median_mid_career_salary,
+            salaryGrowthRate: outcomes.salary_growth_rate,
+            employedAt6MonthsRate: outcomes.employed_6_months_rate,
+            employedInFieldRate: outcomes.employed_in_field_rate,
+            internshipRate: outcomes.internship_rate,
+            source: outcomes.source,
+            confidenceScore: outcomes.confidence_score,
+          };
+        }
+        
+        // Get programs (top 20 for performance)
+        const programsStmt = db.prepare(`
+          SELECT * FROM college_programs 
+          WHERE college_id = ?
+          LIMIT 20
+        `);
+        const programs = programsStmt.all(comprehensive.id);
+        if (programs && programs.length > 0) {
+          formattedCollege.programs = programs.map(p => ({
+            programName: p.program_name,
+            degreeType: p.degree_type,
+            enrollment: p.enrollment,
+            acceptanceRate: p.acceptance_rate,
+            accreditationStatus: p.accreditation_status,
+            rankingScore: p.ranking_score,
+            researchFunding: p.research_funding,
+            coopAvailable: p.coop_available,
+            licensingPassRate: p.licensing_pass_rate,
+            source: p.source,
+          }));
+        }
+        
+        // Get student demographics
+        const demographicsStmt = db.prepare(`
+          SELECT * FROM student_demographics 
+          WHERE college_id = ?
+          ORDER BY year DESC LIMIT 1
+        `);
+        const demographics = demographicsStmt.get(comprehensive.id);
+        if (demographics) {
+          formattedCollege.demographics = {
+            year: demographics.year,
+            percentInternational: demographics.percent_international,
+            genderRatio: demographics.gender_ratio,
+            ethnicDistribution: safeJsonParse(demographics.ethnic_distribution, {}),
+            percentFirstGen: demographics.percent_first_gen,
+            socioeconomicIndex: demographics.socioeconomic_index,
+            geographicDiversityIndex: demographics.geographic_diversity_index,
+            legacyPercent: demographics.legacy_percent,
+            athletePercent: demographics.athlete_percent,
+            transferPercent: demographics.transfer_percent,
+            source: demographics.source,
+          };
+        }
+        
+        // Get campus life
+        const campusLifeStmt = db.prepare(`
+          SELECT * FROM campus_life 
+          WHERE college_id = ?
+        `);
+        const campusLife = campusLifeStmt.get(comprehensive.id);
+        if (campusLife) {
+          formattedCollege.campusLife = {
+            housingGuarantee: campusLife.housing_guarantee,
+            campusSafetyScore: campusLife.campus_safety_score,
+            costOfLivingIndex: campusLife.cost_of_living_index,
+            climateZone: campusLife.climate_zone,
+            studentSatisfactionScore: campusLife.student_satisfaction_score,
+            athleticsDivision: campusLife.athletics_division,
+            clubCount: campusLife.club_count,
+            mentalHealthRating: campusLife.mental_health_rating,
+            source: campusLife.source,
+          };
+        }
+        
+        // Get rankings
+        const rankingsStmt = db.prepare(`
+          SELECT * FROM college_rankings 
+          WHERE college_id = ?
+          ORDER BY year DESC
+        `);
+        const rankings = rankingsStmt.all(comprehensive.id);
+        if (rankings && rankings.length > 0) {
+          formattedCollege.rankings = rankings.map(r => ({
+            year: r.year,
+            rankingBody: r.ranking_body,
+            nationalRank: r.national_rank,
+            globalRank: r.global_rank,
+            subjectRank: r.subject_rank,
+            employerReputationScore: r.employer_reputation_score,
+            peerAssessmentScore: r.peer_assessment_score,
+            prestigeIndex: r.prestige_index,
+          }));
+        }
+      }
+    } catch (error) {
+      // If comprehensive tables don't exist or there's an error, just return basic data
+      console.warn(`Could not fetch comprehensive data for college ${id}:`, error.message);
+    }
+    
+    return formattedCollege;
   }
   
   /**
@@ -204,6 +444,17 @@ class College {
     const requirements = getCountryRequirements(college.country);
     const region = getRegion(college.country);
     
+    // Determine best tuition value (priority: tuition_in_state > tuition_domestic > tuition_out_of_state > tuition_international)
+    const tuitionCost = college.tuition_in_state || college.tuition_domestic || 
+                       college.tuition_out_of_state || college.cf_tuition_international || 
+                       college.tuition_international;
+    
+    // Determine best enrollment value
+    const enrollmentValue = college.total_enrollment || college.student_population;
+    
+    // Use gpa_50 from comprehensive data if available, fallback to average_gpa
+    const gpaValue = college.gpa_50 || college.average_gpa;
+    
     return {
       id: college.id,
       name: college.name,
@@ -219,15 +470,26 @@ class College {
       academicStrengths: academicStrengths,
       majorCategories: majorCategories,
       programs: majorCategories, // Alias for compatibility
+      programCount: college.program_count || majorCategories.length, // New: actual program count
       
-      // Stats
+      // Stats (enhanced with comprehensive data)
       acceptanceRate: acceptanceRate,
       acceptance_rate: acceptanceRate,
-      tuitionDomestic: college.tuition_domestic,
-      tuitionInternational: college.tuition_international,
+      tuitionDomestic: college.tuition_domestic || college.tuition_in_state,
+      tuitionInternational: college.tuition_international || college.cf_tuition_international,
+      tuition_cost: tuitionCost, // Enhanced with priority fallback
+      tuitionInState: college.tuition_in_state, // New
+      tuitionOutOfState: college.tuition_out_of_state, // New
       studentPopulation: college.student_population,
-      enrollment: college.student_population, // Alias
-      averageGpa: college.average_gpa,
+      enrollment: enrollmentValue, // Enhanced: total_enrollment > student_population
+      totalEnrollment: college.total_enrollment, // New
+      undergraduateEnrollment: college.undergraduate_enrollment, // New
+      graduateEnrollment: college.graduate_enrollment, // New
+      averageGpa: gpaValue,
+      averageGPA: gpaValue, // Enhanced with gpa_50 from comprehensive
+      gpa50: college.gpa_50, // New: 50th percentile GPA
+      satAvg: college.sat_avg, // New
+      actAvg: college.act_avg, // New
       satRange: college.sat_range,
       actRange: college.act_range,
       graduationRate: college.graduation_rate,
@@ -252,7 +514,50 @@ class College {
   static findAll(filters = {}) {
     const db = dbManager.getDatabase();
     
-    let query = 'SELECT * FROM colleges WHERE 1=1';
+    // Check if comprehensive tables exist
+    const tablesExist = this.checkComprehensiveTables(db);
+    
+    let query;
+    if (tablesExist) {
+      // Enhanced query with JOINs to get comprehensive data for list view
+      query = `
+        SELECT 
+          c.*,
+          MAX(cc.total_enrollment) as total_enrollment,
+          MAX(cc.undergraduate_enrollment) as undergraduate_enrollment,
+          MAX(cc.graduate_enrollment) as graduate_enrollment,
+          MAX(cf.tuition_in_state) as tuition_in_state,
+          MAX(cf.tuition_out_state) as tuition_out_of_state,
+          MAX(cf.tuition_international) as cf_tuition_international,
+          MAX(ass.gpa_50) as gpa_50,
+          MAX(ass.sat_50) as sat_avg,
+          MAX(ass.act_50) as act_avg,
+          (SELECT COUNT(*) FROM college_programs WHERE college_id = c.id) as program_count
+        FROM colleges c
+        LEFT JOIN colleges_comprehensive cc ON c.id = cc.id
+        LEFT JOIN college_financial_data cf ON c.id = cf.college_id
+        LEFT JOIN admitted_student_stats ass ON c.id = ass.college_id
+        WHERE 1=1
+      `;
+    } else {
+      // Fallback to basic query if comprehensive tables don't exist
+      query = `
+        SELECT 
+          c.*,
+          NULL as total_enrollment,
+          NULL as undergraduate_enrollment,
+          NULL as graduate_enrollment,
+          NULL as tuition_in_state,
+          NULL as tuition_out_of_state,
+          NULL as cf_tuition_international,
+          NULL as gpa_50,
+          NULL as sat_avg,
+          NULL as act_avg,
+          0 as program_count
+        FROM colleges c
+        WHERE 1=1
+      `;
+    }
     const params = [];
     
     // Country filter - support region grouping
@@ -260,13 +565,13 @@ class College {
       const countryLower = filters.country.toLowerCase();
       if (countryLower === 'europe') {
         // Europe includes all countries except USA, UK, India
-        query += ` AND country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`;
+        query += ` AND c.country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`;
       } else if (countryLower === 'united states' || countryLower === 'usa') {
-        query += ` AND (country = 'United States' OR country = 'USA')`;
+        query += ` AND (c.country = 'United States' OR c.country = 'USA')`;
       } else if (countryLower === 'united kingdom' || countryLower === 'uk') {
-        query += ` AND (country = 'United Kingdom' OR country = 'UK')`;
+        query += ` AND (c.country = 'United Kingdom' OR c.country = 'UK')`;
       } else {
-        query += ' AND LOWER(country) = LOWER(?)';
+        query += ' AND LOWER(c.country) = LOWER(?)';
         params.push(filters.country);
       }
     }
@@ -274,11 +579,11 @@ class College {
     // Search filter
     if (filters.search) {
       query += ` AND (
-        name LIKE ? OR 
-        location LIKE ? OR 
-        country LIKE ? OR 
-        major_categories LIKE ? OR 
-        academic_strengths LIKE ?
+        c.name LIKE ? OR 
+        c.location LIKE ? OR 
+        c.country LIKE ? OR 
+        c.major_categories LIKE ? OR 
+        c.academic_strengths LIKE ?
       )`;
       const searchPattern = `%${filters.search}%`;
       params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
@@ -286,12 +591,17 @@ class College {
     
     // Acceptance rate range
     if (filters.minAcceptanceRate !== undefined) {
-      query += ' AND acceptance_rate >= ?';
+      query += ' AND c.acceptance_rate >= ?';
       params.push(filters.minAcceptanceRate);
     }
     if (filters.maxAcceptanceRate !== undefined) {
-      query += ' AND acceptance_rate <= ?';
+      query += ' AND c.acceptance_rate <= ?';
       params.push(filters.maxAcceptanceRate);
+    }
+    
+    // Group by college ID to prevent duplicates from JOINs
+    if (tablesExist) {
+      query += ' GROUP BY c.id';
     }
     
     // Ordering
@@ -300,9 +610,9 @@ class College {
       const validSorts = ['name', 'acceptance_rate', 'ranking', 'student_population'];
       const sortField = validSorts.includes(filters.sortBy) ? filters.sortBy : 'name';
       const sortDir = filters.sortDir === 'desc' ? 'DESC' : 'ASC';
-      query += `${sortField} ${sortDir}`;
+      query += `c.${sortField} ${sortDir}`;
     } else {
-      query += 'name ASC';
+      query += 'c.name ASC';
     }
     
     // Pagination using constants
@@ -317,6 +627,22 @@ class College {
     return colleges.map(college => this.formatCollege(college));
   }
   
+  /**
+   * Check if comprehensive tables exist in the database
+   */
+  static checkComprehensiveTables(db) {
+    try {
+      const result = db.prepare(`
+        SELECT name FROM sqlite_master 
+        WHERE type='table' AND name IN ('colleges_comprehensive', 'college_financial_data', 'admitted_student_stats')
+      `).all();
+      return result.length === 3;
+    } catch (error) {
+      console.warn('Error checking for comprehensive tables:', error.message);
+      return false;
+    }
+  }
+
   /**
    * Get total count for pagination
    */
