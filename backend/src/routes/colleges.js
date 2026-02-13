@@ -20,6 +20,7 @@ router.get('/filters/countries', CollegeController.getCountries);
 router.get('/filters/programs', CollegeController.getPrograms);
 router.get('/stats', CollegeController.getDatabaseStats);
 router.get('/:id', CollegeController.getCollegeById);
+router.get('/:id/majors', CollegeController.getCollegeMajors);
 
 // Protected routes - require authentication
 router.post('/', authenticate, CollegeController.createCollege); // Add college manually (Layer 1)
