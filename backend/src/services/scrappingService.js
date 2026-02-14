@@ -260,6 +260,148 @@ class ScrapingService {
     if (lower.includes('rolling')) return 'Rolling Admission';
     return 'Application Deadline';
   }
+  
+  /**
+   * Find deadline page URL for a college
+   * Tries common URL patterns and fallback strategies
+   * @param {object} college - College object with domain/website
+   * @returns {Promise<string|null>} Deadline page URL or null
+   */
+  async findDeadlinePage(college) {
+    const domain = college.website_url || college.domain;
+    if (!domain) {
+      logger.warn(`No domain found for college ${college.id}`);
+      return null;
+    }
+    
+    // Normalize domain (remove http/https and trailing slash)
+    const baseUrl = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    
+    // Common deadline page patterns
+    const patterns = [
+      `https://${baseUrl}/admissions/deadlines`,
+      `https://${baseUrl}/admissions/apply`,
+      `https://${baseUrl}/apply/deadlines`,
+      `https://${baseUrl}/undergraduate-admissions/deadlines`,
+      `https://${baseUrl}/admissions/how-to-apply`,
+      `https://${baseUrl}/admissions/first-year/deadlines`,
+      `https://${baseUrl}/admissions/application-deadlines`,
+      `https://${baseUrl}/apply/first-year/deadlines`
+    ];
+    
+    // Try each pattern
+    for (const url of patterns) {
+      try {
+        const response = await axios.head(url, { timeout: 5000 });
+        if (response.status === 200) {
+          logger.info(`Found deadline page for ${college.name}: ${url}`);
+          return url;
+        }
+      } catch (error) {
+        // Continue to next pattern
+      }
+    }
+    
+    // Fallback: Try to find link from main admissions page
+    try {
+      const admissionsUrl = `https://${baseUrl}/admissions`;
+      const scrapedData = await this.scrape(admissionsUrl);
+      
+      if (scrapedData.success) {
+        const { $ } = scrapedData;
+        
+        // Look for links with deadline keywords
+        const deadlineLink = $('a').filter((i, el) => {
+          const text = $(el).text().toLowerCase();
+          const href = $(el).attr('href');
+          return href && (
+            text.includes('deadline') ||
+            text.includes('important dates') ||
+            text.includes('when to apply') ||
+            href.includes('deadline')
+          );
+        }).first();
+        
+        if (deadlineLink.length > 0) {
+          let href = deadlineLink.attr('href');
+          if (href.startsWith('/')) {
+            href = `https://${baseUrl}${href}`;
+          } else if (!href.startsWith('http')) {
+            href = `https://${baseUrl}/${href}`;
+          }
+          
+          logger.info(`Found deadline page via link: ${href}`);
+          return href;
+        }
+      }
+    } catch (error) {
+      logger.error(`Fallback deadline page search failed for ${college.name}:`, error.message);
+    }
+    
+    logger.warn(`Could not find deadline page for ${college.name}`);
+    return null;
+  }
+  
+  /**
+   * Scrape application deadlines for a college
+   * Integrates with deadlineExtractionService
+   * @param {object} college - College object
+   * @returns {Promise<object>} Scraping result with deadlines
+   */
+  async scrapeCollegeDeadlines(college) {
+    const startTime = Date.now();
+    const result = {
+      collegeId: college.id,
+      collegeName: college.name,
+      success: false,
+      deadlines: [],
+      confidence: 0.0,
+      error: null,
+      url: null,
+      duration: 0
+    };
+    
+    try {
+      // Find deadline page URL
+      let deadlineUrl = college.deadlines_page_url;
+      if (!deadlineUrl) {
+        deadlineUrl = await this.findDeadlinePage(college);
+        if (!deadlineUrl) {
+          result.error = 'Could not find deadline page';
+          return result;
+        }
+      }
+      
+      result.url = deadlineUrl;
+      
+      // Scrape the page
+      const scrapedData = await this.scrape(deadlineUrl);
+      if (!scrapedData.success) {
+        result.error = scrapedData.error;
+        return result;
+      }
+      
+      // Extract deadlines using specialized service
+      const deadlineExtractionService = require('./deadlineExtractionService');
+      const extraction = await deadlineExtractionService.extract(scrapedData);
+      
+      result.deadlines = extraction.deadlines;
+      result.confidence = deadlineExtractionService.calculateConfidence(extraction, deadlineUrl);
+      result.extractionMethod = extraction.extractionMethod;
+      result.offeredTypes = deadlineExtractionService.getOfferedTypes(extraction.deadlines);
+      result.success = extraction.deadlines.length > 0;
+      
+      logger.info(`Scraped deadlines for ${college.name}: ${result.deadlines.length} found (confidence: ${result.confidence.toFixed(2)})`);
+      
+    } catch (error) {
+      logger.error(`Deadline scraping failed for ${college.name}:`, error);
+      result.error = error.message;
+    } finally {
+      result.duration = Date.now() - startTime;
+    }
+    
+    return result;
+  }
 }
 
 module.exports = new ScrapingService();

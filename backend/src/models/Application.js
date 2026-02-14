@@ -1,4 +1,7 @@
 const dbManager = require('../config/database');
+const DeadlineAutoPopulationService = require('../services/deadlineAutoPopulationService');
+const EssayAutoLoadingService = require('../services/essayAutoLoadingService');
+const logger = require('../utils/logger');
 
 class Application {
   static create(userId, data) {
@@ -19,16 +22,47 @@ class Application {
       ) VALUES (?, ?, ?, ?, ?, ?)
     `);
     
+    const collegeId = data.collegeId || data.college_id;
     const result = stmt.run(
       userId,
-      data.collegeId || data.college_id,
+      collegeId,
       data.status || 'researching',
       data.applicationType || data.application_type || null,
       data.priority || null,
       data.notes || null
     );
     
-    return this.findById(result.lastInsertRowid);
+    const applicationId = result.lastInsertRowid;
+    
+    // Auto-populate deadlines for this application (TASK 1)
+    try {
+      const deadlineResult = DeadlineAutoPopulationService.populateDeadlinesForApplication(
+        userId, 
+        applicationId, 
+        collegeId
+      );
+      
+      logger.info('Auto-populated deadlines:', deadlineResult);
+    } catch (error) {
+      logger.error('Failed to auto-populate deadlines, but application was created:', error);
+      // Don't fail the application creation if deadline population fails
+    }
+    
+    // Auto-load essays for this application (TASK 4)
+    try {
+      const essayResult = EssayAutoLoadingService.loadEssaysForApplication(
+        userId,
+        applicationId,
+        collegeId
+      );
+      
+      logger.info('Auto-loaded essays:', essayResult);
+    } catch (error) {
+      logger.error('Failed to auto-load essays, but application was created:', error);
+      // Don't fail the application creation if essay loading fails
+    }
+    
+    return this.findById(applicationId);
   }
   
   static findByUserAndCollege(userId, collegeId) {

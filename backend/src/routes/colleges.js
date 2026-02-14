@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const CollegeController = require('../controllers/collegeController');
+const CollegeDeadlineController = require('../controllers/collegeDeadlineController');
 const { authenticate } = require('../middleware/auth');
 
 // Public routes - no authentication required for browsing
@@ -20,6 +21,8 @@ router.get('/filters/countries', CollegeController.getCountries);
 router.get('/filters/programs', CollegeController.getPrograms);
 router.get('/stats', CollegeController.getDatabaseStats);
 router.get('/:id', CollegeController.getCollegeById);
+router.get('/:id/majors', CollegeController.getCollegeMajors);
+router.get('/:id/deadlines', CollegeDeadlineController.getCollegeDeadlines);
 
 // Protected routes - require authentication
 router.post('/', authenticate, CollegeController.createCollege); // Add college manually (Layer 1)

@@ -5,23 +5,56 @@ const authenticate = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader) {
+      logger.warn('Authentication failed: No Authorization header');
       return res.status(401).json({
         success: false,
-        message: 'No token provided'
+        message: 'No token provided',
+        errorType: 'MISSING_TOKEN'
+      });
+    }
+    
+    if (!authHeader.startsWith('Bearer ')) {
+      logger.warn('Authentication failed: Invalid Authorization header format', {
+        format: authHeader.substring(0, 20)
+      });
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token format. Expected: Bearer <token>',
+        errorType: 'INVALID_FORMAT'
       });
     }
     
     const token = authHeader.substring(7);
+    
+    if (!token || token.trim() === '') {
+      logger.warn('Authentication failed: Empty token');
+      return res.status(401).json({
+        success: false,
+        message: 'Empty token provided',
+        errorType: 'EMPTY_TOKEN'
+      });
+    }
+    
     const decoded = AuthService.verifyToken(token);
     
     req.user = decoded;
     next();
   } catch (error) {
     logger.error('Authentication failed:', error);
+    
+    // Determine error type for better client handling
+    let errorType = 'INVALID_TOKEN';
+    if (error.message.includes('expired')) {
+      errorType = 'TOKEN_EXPIRED';
+    } else if (error.message.includes('malformed')) {
+      errorType = 'TOKEN_MALFORMED';
+    }
+    
     return res.status(401).json({
       success: false,
-      message: 'Invalid or expired token'
+      message: error.message || 'Invalid or expired token',
+      errorType
     });
   }
 };
