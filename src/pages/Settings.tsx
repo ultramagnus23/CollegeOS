@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
+import { profileService } from '../services/profileService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -123,6 +124,18 @@ const SCROLL_DELAY_MS = 100;
     
     setLoading(true);
     try {
+      // First try to load from ProfileService (immediate)
+      const cachedProfile = profileService.getProfile();
+      if (cachedProfile) {
+        // Pre-populate form with cached data while we fetch from backend
+        initFormData({
+          user: cachedProfile,
+          profile: cachedProfile,
+          activities: cachedProfile.activities || []
+        });
+      }
+      
+      // Then fetch from backend (may have newer data)
       const [profileResponse, completionResponse] = await Promise.all([
         api.getProfileById(user.id),
         api.getCompletionStatus(user.id)
@@ -131,6 +144,11 @@ const SCROLL_DELAY_MS = 100;
       setProfileData(profileResponse.data);
       setCompletionStatus(completionResponse.data);
       initFormData(profileResponse.data);
+      
+      // Sync backend data to ProfileService
+      if (profileResponse.data.user) {
+        profileService.syncFromBackend(profileResponse.data.user);
+      }
     } catch (error) {
       console.error('Failed to load profile:', error);
       showMessage('error', 'Failed to load profile');
@@ -222,6 +240,15 @@ const SCROLL_DELAY_MS = 100;
         graduation_year: formData.graduation_year ? parseInt(formData.graduation_year) : null
       });
       
+      // Also update ProfileService
+      profileService.updateProfile({
+        full_name: `${formData.first_name} ${formData.last_name}`,
+        email: formData.email,
+        country: formData.country,
+        grade_level: formData.grade_level,
+        graduation_year: formData.graduation_year ? parseInt(formData.graduation_year) : null
+      });
+      
       await loadProfile();
       await refreshUser?.();
       setEditMode(prev => ({ ...prev, basic: false }));
@@ -248,6 +275,14 @@ const SCROLL_DELAY_MS = 100;
         high_school_name: formData.high_school_name
       });
       
+      // Also update ProfileService
+      profileService.updateProfile({
+        academic_board: formData.curriculum_type,
+        gpa: formData.gpa_weighted ? parseFloat(formData.gpa_weighted) : null,
+        currentBoard: formData.curriculum_type,
+        currentGPA: formData.gpa_weighted
+      });
+      
       await loadProfile();
       setEditMode(prev => ({ ...prev, academic: false }));
       showMessage('success', 'Academic info saved successfully');
@@ -272,6 +307,17 @@ const SCROLL_DELAY_MS = 100;
         toefl_score: formData.toefl_score ? parseInt(formData.toefl_score) : null
       });
       
+      // Also update ProfileService
+      profileService.updateProfile({
+        satScore: formData.sat_total,
+        actScore: formData.act_composite,
+        test_status: {
+          satScore: formData.sat_total || null,
+          actScore: formData.act_composite || null,
+          ibPredicted: null
+        }
+      });
+      
       await loadProfile();
       setEditMode(prev => ({ ...prev, testScores: false }));
       showMessage('success', 'Test scores saved successfully');
@@ -294,6 +340,18 @@ const SCROLL_DELAY_MS = 100;
         budget_max: formData.budget_max ? parseInt(formData.budget_max) : null,
         preferred_college_size: formData.preferred_college_size,
         preferred_setting: formData.preferred_setting
+      });
+      
+      // Also update ProfileService
+      profileService.updateProfile({
+        intended_majors: formData.intended_majors,
+        potentialMajors: formData.intended_majors,
+        target_countries: formData.preferred_countries,
+        preferredCountries: formData.preferred_countries,
+        budgetRange: `${formData.budget_min}-${formData.budget_max}`,
+        max_budget_per_year: formData.budget_max ? parseInt(formData.budget_max) : null,
+        campusSize: formData.preferred_college_size,
+        locationPreference: formData.preferred_setting
       });
       
       await loadProfile();
