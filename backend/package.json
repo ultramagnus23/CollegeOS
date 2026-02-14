@@ -27,7 +27,9 @@
     "db:diagnose": "node scripts/diagnoseDatabase.js",
     "db:check": "node scripts/diagnoseDatabase.js",
     "test": "jest --coverage",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "populate:majors": "node scripts/populateMajorsMapping.js",
+    "populate:real-data": "node scripts/populateRealCollegeData.js"
   },
   "keywords": [
     "college",
