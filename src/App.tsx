@@ -9,6 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
+import { profileService } from "./services/profileService";
 
 // Page Imports
 import AuthPage from "./pages/Auth";
@@ -41,14 +42,11 @@ const AppContent = () => {
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
 
   useEffect(() => {
-    const savedProfile = localStorage.getItem('studentProfile');
-    if (savedProfile) {
-      try {
-        const profile = JSON.parse(savedProfile);
-        setStudentProfile(profile);
-      } catch (e) {
-        console.error('Failed to load profile:', e);
-      }
+    // Load profile from ProfileService on mount
+    const profile = profileService.getProfile();
+    if (profile) {
+      // Map to StudentProfile format for backward compatibility
+      setStudentProfile(profile as any);
     }
   }, []);
 
@@ -66,9 +64,17 @@ const AppContent = () => {
         languagePreferences: [], // Can be expanded later if needed
       };
 
+      // Complete onboarding via AuthContext (this will also update ProfileService)
       await completeOnboarding(onboardingData);
+      
+      // Also save the full profile data to ProfileService
+      profileService.saveProfile({
+        ...profile,
+        onboarding_complete: true,
+        profileCompleted: true,
+      });
+      
       setStudentProfile(profile);
-      localStorage.setItem('studentProfile', JSON.stringify(profile));
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
       // You might want to show an error message to the user here
