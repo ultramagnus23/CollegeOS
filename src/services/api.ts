@@ -997,6 +997,166 @@ class ApiService {
         body: JSON.stringify(profile),
       }),
   };
+
+  // ==================== CHANCING ENDPOINTS ====================
+  
+  // Chancing namespace - Admission probability calculation
+  chancing = {
+    calculate: (data: { collegeId: number; useML?: boolean }) =>
+      this.request('/chancing/calculate', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    
+    getForStudent: () =>
+      this.request('/chancing/student'),
+    
+    batchCalculate: (collegeIds: number[]) =>
+      this.request('/chancing/batch', {
+        method: 'POST',
+        body: JSON.stringify({ collegeIds }),
+      }),
+  };
+
+  // ==================== ANALYTICS ENDPOINTS ====================
+  
+  // Analytics namespace - Profile strength and analytics
+  analytics = {
+    profileStrength: (data?: any) =>
+      this.request('/analytics/profile-strength', {
+        method: 'POST',
+        body: JSON.stringify(data || {}),
+      }),
+    
+    compareProfiles: (profiles: any[]) =>
+      this.request('/analytics/compare-profiles', {
+        method: 'POST',
+        body: JSON.stringify({ profiles }),
+      }),
+    
+    collegeList: () =>
+      this.request('/analytics/college-list'),
+    
+    whatIf: (scenarios: any) =>
+      this.request('/analytics/what-if', {
+        method: 'POST',
+        body: JSON.stringify(scenarios),
+      }),
+  };
+
+  // ==================== NOTIFICATIONS ENDPOINTS ====================
+  
+  // Notifications namespace
+  notifications = {
+    getAll: () =>
+      this.request('/notifications'),
+    
+    getUnreadCount: () =>
+      this.request('/notifications/unread-count'),
+    
+    markAsRead: (id: number) =>
+      this.request(`/notifications/${id}/read`, {
+        method: 'PUT',
+      }),
+    
+    markAllAsRead: () =>
+      this.request('/notifications/read-all', {
+        method: 'PUT',
+      }),
+    
+    createTest: () =>
+      this.request('/notifications/test', {
+        method: 'POST',
+      }),
+  };
+
+  // ==================== FIT CLASSIFICATION ENDPOINTS ====================
+  
+  // Fit namespace - College fit classification
+  fit = {
+    get: (collegeId: number) =>
+      this.request(`/fit/${collegeId}`),
+    
+    batchGet: (collegeIds: number[]) =>
+      this.request('/fit/batch', {
+        method: 'POST',
+        body: JSON.stringify({ collegeIds }),
+      }),
+    
+    refresh: (collegeId: number) =>
+      this.request(`/fit/${collegeId}/refresh`, {
+        method: 'POST',
+      }),
+  };
+
+  // ==================== RISK ASSESSMENT ENDPOINTS ====================
+  
+  // Risk namespace - Deadline and task risk
+  risk = {
+    overview: () =>
+      this.request('/risk/overview'),
+    
+    criticalDeadlines: (days: number = 14) =>
+      this.request(`/risk/critical?days=${days}`),
+    
+    impossibleColleges: () =>
+      this.request('/risk/impossible'),
+    
+    alerts: () =>
+      this.request('/risk/alerts'),
+  };
+
+  // ==================== WARNINGS ENDPOINTS ====================
+  
+  // Warnings namespace - System warnings
+  warnings = {
+    getAll: () =>
+      this.request('/warnings'),
+    
+    getDependencies: (collegeId: number) =>
+      this.request(`/warnings/dependencies/${collegeId}`),
+    
+    dismiss: (id: number) =>
+      this.request(`/warnings/${id}/dismiss`, {
+        method: 'PUT',
+      }),
+  };
+
+  // ==================== TASKS ENDPOINTS ====================
+  
+  // Tasks namespace - Task management
+  tasks = {
+    getAll: (filters?: { collegeId?: number; status?: string; type?: string }) => {
+      const params = new URLSearchParams();
+      if (filters?.collegeId) params.append('collegeId', String(filters.collegeId));
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.type) params.append('type', filters.type);
+      const queryString = params.toString();
+      return this.request(`/tasks${queryString ? `?${queryString}` : ''}`);
+    },
+    
+    create: (data: any) =>
+      this.request('/tasks', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    
+    update: (id: number, data: any) =>
+      this.request(`/tasks/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    
+    delete: (id: number) =>
+      this.request(`/tasks/${id}`, {
+        method: 'DELETE',
+      }),
+    
+    decompose: (collegeId: number) =>
+      this.request(`/tasks/decompose/${collegeId}`, {
+        method: 'POST',
+      }),
+  };
 }
 
 // Export singleton instance
