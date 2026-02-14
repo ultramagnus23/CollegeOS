@@ -9,23 +9,20 @@ cd backend
 node scripts/runMigrations.js
 ```
 
-This creates the tables with the unified schema (30+ fields).
+This creates all necessary tables using the SQL migrations in `backend/migrations/`.
 
 ## Seeding the Database
 
-### ✅ Use This Script
+### ✅ Primary Seeding Script
+
 ```bash
-node scripts/seedCollegesNew.js
+node scripts/seedColleges.js
 ```
 
-This is the **correct** script that:
+This is the **recommended** seeding script used by `fresh-start.sh`. It:
 - Uses the proper database path: `database/college_app.db`
-- Matches the new unified schema (30+ fields)
 - Seeds 1100+ colleges with comprehensive data
-- **Checks schema before running** - will error if migrations not run
-
-**Options:**
-- `--force` - Clear existing data and reseed
+- Checks schema before running - will error if migrations not run
 
 **Example:**
 ```bash
@@ -35,12 +32,26 @@ cd backend
 node scripts/runMigrations.js
 
 # Step 2: Seed data
-node scripts/seedCollegesNew.js --force
+node scripts/seedColleges.js
 ```
 
-### Common Error: "table colleges has no column named type"
+### 📦 Other Available Seeding Scripts
 
-**Cause:** You're trying to seed without running migrations first. The old schema doesn't have the `type` column and other new fields.
+The following seeding scripts are available for specific use cases:
+
+- **`populateRealCollegeData.js`** - Populates REAL 2025-2026 cycle data for 25 top universities (all Ivies, Stanford, MIT, Duke, UChicago, etc.) with actual deadlines and essay prompts. Use this for realistic test data.
+- **`seedVerifiedData.js`** - Seeds verified college data with quality checks
+- **`seedComprehensiveData.js`** - Comprehensive data with extended fields
+- **`seedFromUnifiedData.js`** - Unified data import script
+- **`seedMasterData.js`** - Master dataset seeder
+- **`seedNormalizedMajors.js`** - Populates normalized majors data
+- **`seedComprehensiveSampleData.js`** - Sample data for testing
+
+**Note:** Most users should use `seedColleges.js` unless you have a specific need for one of the specialized seeders above.
+
+### Common Error: "table colleges has no column named [column]"
+
+**Cause:** You're trying to seed without running migrations first.
 
 **Solution:**
 ```bash
@@ -48,11 +59,8 @@ node scripts/seedCollegesNew.js --force
 node scripts/runMigrations.js
 
 # Then seed
-node scripts/seedCollegesNew.js
+node scripts/seedColleges.js
 ```
-
-### ❌ Deprecated Scripts
-- `seedColleges.js` - **Do not use**. Points to old database path and old schema.
 
 ## Running Migrations
 
@@ -60,20 +68,14 @@ node scripts/seedCollegesNew.js
 node scripts/runMigrations.js
 ```
 
-This runs all SQL migrations in the `migrations/` directory in order:
-- `001_create_colleges.sql` - Original schema
-- `002_recommendations.sql` - Recommendations table
-- `003_timeline.sql` - Timeline table
-- `004_user_profile.sql` - User profile updates
-- `005_unified_colleges_schema.sql` - **NEW unified schema with 30+ fields**
-
-Migrations are tracked, so running this multiple times is safe - it only runs new migrations.
+This runs all SQL migrations in the `migrations/` directory in order (001 through 034).
+Migrations are tracked in a `migrations` table, so running this multiple times is safe - it only runs new migrations.
 
 ## Database Location
 
 The database is located at: `backend/database/college_app.db`
 
-All scripts have been updated to use this path via `src/config/env.js`.
+All scripts use this path via `src/config/env.js`.
 
 ## Complete Setup Process
 
@@ -87,7 +89,7 @@ npm install
 node scripts/runMigrations.js
 
 # 3. Seed data
-node scripts/seedCollegesNew.js
+node scripts/seedColleges.js
 
 # 4. Verify
 sqlite3 database/college_app.db "SELECT COUNT(*) FROM colleges;"
@@ -108,7 +110,7 @@ sqlite3 database/college_app.db "SELECT country, COUNT(*) FROM colleges GROUP BY
 
 ## Troubleshooting
 
-**Error: "table colleges has no column named type"**
+**Error: "table colleges has no column named [column]"**
 - You're using old schema
 - Solution: Run `node scripts/runMigrations.js` first
 
@@ -121,6 +123,13 @@ sqlite3 database/college_app.db "SELECT country, COUNT(*) FROM colleges GROUP BY
 - Solution: Run `node scripts/runMigrations.js`
 
 **Need to reset everything?**
+Use the fresh-start script:
+```bash
+cd backend
+./fresh-start.sh
+```
+
+Or manually:
 ```bash
 # Delete database
 rm -f database/college_app.db
@@ -129,7 +138,7 @@ rm -f database/college_app.db
 node scripts/runMigrations.js
 
 # Seed data
-node scripts/seedCollegesNew.js
+node scripts/seedColleges.js
 ```
 
 ## Migration Order Matters!

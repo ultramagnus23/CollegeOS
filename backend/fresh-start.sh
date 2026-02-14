@@ -78,7 +78,7 @@ fi
 
 echo ""
 echo "Step 4: Seeding database with 1100 colleges..."
-node scripts/seedCollegesNew.js
+node scripts/seedColleges.js
 
 if [ $? -ne 0 ]; then
     echo ""
