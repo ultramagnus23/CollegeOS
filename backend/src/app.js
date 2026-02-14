@@ -40,6 +40,7 @@ const scholarshipsRoutes = require('./routes/scholarships');
 const recommendersRoutes = require('./routes/recommenders');
 const analyticsRoutes = require('./routes/analytics');
 const eligibilityRoutes = require('./routes/eligibility');
+const notificationRoutes = require('./routes/notifications');
 
 // Create Express app
 const app = express();
@@ -120,6 +121,7 @@ app.use('/api/scholarships', scholarshipsRoutes);
 app.use('/api/recommenders', recommendersRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/eligibility', eligibilityRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // 404 handler
 app.use((req, res) => {

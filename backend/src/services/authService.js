@@ -305,7 +305,29 @@ class AuthService {
     try {
       return jwt.verify(token, config.jwt.secret);
     } catch (error) {
-      throw new Error('Invalid token');
+      // Provide detailed error logging to distinguish different error types
+      if (error.name === 'TokenExpiredError') {
+        logger.warn('Token verification failed: Token expired', {
+          expiredAt: error.expiredAt
+        });
+        throw new Error('Token expired');
+      } else if (error.name === 'JsonWebTokenError') {
+        logger.warn('Token verification failed: Malformed token', {
+          message: error.message
+        });
+        throw new Error('Invalid token - malformed');
+      } else if (error.name === 'NotBeforeError') {
+        logger.warn('Token verification failed: Token not yet valid', {
+          date: error.date
+        });
+        throw new Error('Token not yet valid');
+      } else {
+        logger.error('Token verification failed: Unknown error', {
+          name: error.name,
+          message: error.message
+        });
+        throw new Error('Invalid token');
+      }
     }
   }
 }

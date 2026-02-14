@@ -37,6 +37,7 @@ function logError(requestId: string, stage: string, message: string, error?: any
 class ApiService {
   private baseUrl: string;
   private token: string | null;
+  private refreshing: boolean = false;
 
   constructor() {
     this.baseUrl = API_BASE_URL;
@@ -55,6 +56,14 @@ class ApiService {
     }
   }
 
+  clearTokens() {
+    const requestId = generateRequestId();
+    logDebug(requestId, 'TOKEN', 'Clearing all tokens');
+    this.token = null;
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+  }
+
   private getHeaders() {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -63,15 +72,17 @@ class ApiService {
     return headers;
   }
 
-  private async request(endpoint: string, options: RequestInit = {}) {
+  private async request(endpoint: string, options: RequestInit = {}, retryCount: number = 0) {
     const requestId = generateRequestId();
     const method = options.method || 'GET';
     const startTime = performance.now();
+    const MAX_RETRIES = 1; // Only retry once to prevent infinite loops
     
     // Log request start
     logDebug(requestId, 'REQUEST', `${method} ${endpoint}`, {
       hasBody: !!options.body,
-      bodySize: options.body ? (options.body as string).length : 0
+      bodySize: options.body ? (options.body as string).length : 0,
+      retryCount
     });
     
     // Refresh token from localStorage before each request
@@ -103,11 +114,60 @@ class ApiService {
         success: data?.success,
         hasData: !!data?.data,
         dataType: typeof data?.data,
-        count: data?.count
+        count: data?.count,
+        errorType: data?.errorType
       });
     } catch (e: any) {
       logError(requestId, 'PARSE', 'Failed to parse JSON response', e);
       data = {};
+    }
+
+    // Handle 401 Unauthorized - try to refresh token (only once)
+    if (response.status === 401 && (data as any)?.errorType === 'TOKEN_EXPIRED' && retryCount < MAX_RETRIES) {
+      logDebug(requestId, 'TOKEN_REFRESH', 'Access token expired, attempting refresh');
+      const refreshToken = localStorage.getItem('refreshToken');
+      
+      if (refreshToken && endpoint !== '/auth/refresh' && !this.refreshing) {
+        try {
+          this.refreshing = true;
+          // Attempt to refresh the access token
+          const refreshResponse = await fetch(`${this.baseUrl}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+          });
+          
+          const refreshData = await refreshResponse.json();
+          
+          if (refreshResponse.ok && (refreshData as any)?.data?.accessToken) {
+            // Update access token and retry the original request
+            const newAccessToken = (refreshData as any).data.accessToken;
+            this.setToken(newAccessToken);
+            logDebug(requestId, 'TOKEN_REFRESH', 'Token refreshed successfully, retrying request');
+            
+            // Retry original request with new token (increment retry count)
+            return this.request(endpoint, options, retryCount + 1);
+          } else {
+            logError(requestId, 'TOKEN_REFRESH', 'Failed to refresh token', refreshData);
+            // Clear tokens and force re-login
+            this.clearTokens();
+          }
+        } catch (refreshError: any) {
+          logError(requestId, 'TOKEN_REFRESH', 'Error during token refresh', refreshError);
+          // Clear tokens and force re-login
+          this.clearTokens();
+        } finally {
+          this.refreshing = false;
+        }
+      } else {
+        if (this.refreshing) {
+          logDebug(requestId, 'TOKEN_REFRESH', 'Already refreshing token, skipping');
+        } else {
+          logDebug(requestId, 'TOKEN_REFRESH', 'No refresh token available or already on refresh endpoint');
+          // Clear tokens and force re-login
+          this.clearTokens();
+        }
+      }
     }
 
     if (!response.ok) {
@@ -137,6 +197,7 @@ class ApiService {
 
     if ((response as any).data?.tokens) {
       this.setToken((response as any).data.tokens.accessToken);
+      localStorage.setItem('refreshToken', (response as any).data.tokens.refreshToken);
     }
 
     return response;
@@ -150,13 +211,27 @@ class ApiService {
 
     if ((response as any).data?.tokens) {
       this.setToken((response as any).data.tokens.accessToken);
+      localStorage.setItem('refreshToken', (response as any).data.tokens.refreshToken);
     }
 
     return response;
   }
 
   async logout() {
-    this.setToken(null);
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (refreshToken) {
+      try {
+        await this.request('/auth/logout', {
+          method: 'POST',
+          body: JSON.stringify({ refreshToken }),
+        });
+      } catch (error) {
+        // Ignore errors during logout - user is logging out anyway
+        const requestId = generateRequestId();
+        logError(requestId, 'LOGOUT', 'Logout error (ignored)', error);
+      }
+    }
+    this.clearTokens();
     return { success: true };
   }
 
@@ -689,9 +764,26 @@ class ApiService {
   // Applications namespace (as used by pages)
   applications = {
     get: (filters: any = {}) => this.getApplications(filters),
+    getAll: (filters: any = {}) => this.getApplications(filters),
     create: (data: any) => this.createApplication(data),
     update: (id: number, data: any) => this.updateApplication(id, data),
     delete: (id: number) => this.deleteApplication(id),
+  };
+
+  // Deadlines namespace
+  deadlines = {
+    getAll: (daysAhead?: number) => this.getDeadlines(daysAhead),
+    create: (data: any) => this.createDeadline(data),
+    update: (id: number, data: any) => this.updateDeadline(id, data),
+    delete: (id: number) => this.deleteDeadline(id),
+  };
+
+  // Essays namespace
+  essays = {
+    getAll: () => this.getEssays(),
+    create: (data: any) => this.createEssay(data),
+    update: (id: number, data: any) => this.updateEssay(id, data),
+    delete: (id: number) => this.deleteEssay(id),
   };
 
   // ==================== DOCUMENTS ENDPOINTS ====================
