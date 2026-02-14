@@ -64,16 +64,10 @@ const AppContent = () => {
         languagePreferences: [], // Can be expanded later if needed
       };
 
-      // Complete onboarding via AuthContext (this will also update ProfileService)
+      // Complete onboarding via AuthContext (this automatically updates ProfileService)
       await completeOnboarding(onboardingData);
       
-      // Also save the full profile data to ProfileService
-      profileService.saveProfile({
-        ...profile,
-        onboarding_complete: true,
-        profileCompleted: true,
-      });
-      
+      // Update local state for backward compatibility
       setStudentProfile(profile);
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
