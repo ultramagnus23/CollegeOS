@@ -76,7 +76,7 @@ export interface UserProfile {
   // Metadata
   created_at?: string;
   updated_at?: string;
-  lastSyncedAt?: string;
+  lastPersistedAt?: string; // Tracks localStorage persistence, not backend sync
 }
 
 export interface ProfileUpdateOptions {
@@ -133,15 +133,19 @@ class ProfileService {
         ...existingProfile,
         ...profile,
         updated_at: new Date().toISOString(),
-        lastSyncedAt: new Date().toISOString(),
+        lastPersistedAt: new Date().toISOString(),
       };
       
-      // Ensure profileCompleted is in sync with onboarding_complete
-      if (profile.onboarding_complete !== undefined) {
-        updatedProfile.profileCompleted = profile.onboarding_complete;
-      } else if (profile.profileCompleted !== undefined) {
-        updatedProfile.onboarding_complete = profile.profileCompleted;
-      }
+      // Helper to ensure profileCompleted is in sync with onboarding_complete
+      const normalizeOnboardingFlags = (prof: Partial<UserProfile>) => {
+        if (prof.onboarding_complete !== undefined) {
+          prof.profileCompleted = prof.onboarding_complete;
+        } else if (prof.profileCompleted !== undefined) {
+          prof.onboarding_complete = prof.profileCompleted;
+        }
+      };
+      
+      normalizeOnboardingFlags(updatedProfile);
       
       // Create backup of current profile before overwriting
       const currentProfile = localStorage.getItem(ProfileService.PROFILE_KEY);

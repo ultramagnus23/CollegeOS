@@ -119,9 +119,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Update ProfileService immediately
     profileService.updateProfile(updates);
     
-    // Update local user state
+    // Update local user state (only merge compatible fields)
     if (user) {
-      setUser({ ...user, ...updates } as User);
+      // Create a new user object with only valid User interface fields
+      const validUpdates: Partial<User> = {};
+      const validKeys: (keyof User)[] = ['id', 'email', 'full_name', 'country', 'onboarding_complete', 
+                                          'target_countries', 'intended_majors', 'test_status', 'language_preferences'];
+      
+      validKeys.forEach(key => {
+        if (key in updates && updates[key] !== undefined) {
+          (validUpdates as any)[key] = updates[key];
+        }
+      });
+      
+      setUser({ ...user, ...validUpdates });
     }
     
     // Note: Backend sync should be handled by the calling component
