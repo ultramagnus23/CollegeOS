@@ -29,7 +29,10 @@
     "test": "jest --coverage",
     "lint": "eslint src/",
     "populate:majors": "node scripts/populateMajorsMapping.js",
-    "populate:real-data": "node scripts/populateRealCollegeData.js"
+    "populate:real-data": "node scripts/populateRealCollegeData.js",
+    "scrape:test-deadlines": "node scripts/testDeadlineScraper.js",
+    "scrape:weekly": "node -e \"require('./src/jobs/deadlineScrapingScheduler').runWeeklyHighPriority()\"",
+    "scrape:monthly": "node -e \"require('./src/jobs/deadlineScrapingScheduler').runMonthlyAllColleges()\""
   },
   "keywords": [
     "college",
