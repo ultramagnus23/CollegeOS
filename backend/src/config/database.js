@@ -1,6 +1,7 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
 const logger = require('../utils/logger');
 const config = require('./env');
 
@@ -49,7 +50,6 @@ class DatabaseManager {
       
       // Call the external migration script as the single source of truth
       // This consolidates all migrations into the SQL files in backend/migrations/
-      const { execSync } = require('child_process');
       const migrationScript = path.join(__dirname, '../../scripts/runMigrations.js');
       
       try {
@@ -67,14 +67,20 @@ class DatabaseManager {
         
         logger.info('Database migrations completed successfully');
       } catch (error) {
-        logger.error('Database migrations failed:', error.message);
-        if (error.stdout) {
-          logger.error('Migration stdout:', error.stdout);
-        }
-        if (error.stderr) {
-          logger.error('Migration stderr:', error.stderr);
-        }
-        throw error;
+        // Consolidate error information for better debugging
+        const errorDetails = [
+          `Database migration failed: ${error.message}`,
+          error.stdout ? `\nMigration output:\n${error.stdout}` : '',
+          error.stderr ? `\nMigration errors:\n${error.stderr}` : '',
+          '\n\n💡 Troubleshooting:',
+          '   1. Check backend/migrations/ directory for SQL syntax errors',
+          '   2. Ensure all previous migrations completed successfully',
+          '   3. Try running: ./backend/fresh-start.sh to reset database',
+          '   4. See docs/TROUBLESHOOTING.md for more help'
+        ].filter(Boolean).join('');
+        
+        logger.error(errorDetails);
+        throw new Error(`Migration failed. ${error.message}`);
       }
     }
   
