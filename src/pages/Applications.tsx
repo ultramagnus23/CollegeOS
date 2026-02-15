@@ -5,9 +5,24 @@ import { Trash2, ExternalLink, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
+// Define types for API responses
+interface Application {
+  id: number;
+  college_id: number;
+  college_name: string;
+  status: string;
+  application_type?: string;
+  priority?: string;
+  notes?: string;
+  submitted_at?: string;
+  decision_received_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const Applications = () => {
   const navigate = useNavigate();
-  const [applications, setApplications] = useState<any[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<number | null>(null);
 
