@@ -7,12 +7,40 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, ExternalLink, Trash2, Loader2, PenTool } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Define types for API responses
+interface Application {
+  id: number;
+  college_name: string;
+  status: string;
+}
+
+interface Essay {
+  id: number;
+  application_id: number;
+  college_name: string;
+  essay_type: string;
+  prompt: string;
+  word_limit?: number;
+  google_drive_link?: string;
+  status: string;
+  notes?: string;
+}
+
+interface EssayFormData {
+  applicationId: string;
+  essayType: string;
+  prompt: string;
+  wordLimit: string;
+  googleDriveLink: string;
+  notes: string;
+}
+
 const Essays = () => {
-  const [essays, setEssays] = useState<any[]>([]);
-  const [applications, setApplications] = useState<any[]>([]);
+  const [essays, setEssays] = useState<Essay[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<EssayFormData>({
     applicationId: '',
     essayType: 'personal_statement',
     prompt: '',

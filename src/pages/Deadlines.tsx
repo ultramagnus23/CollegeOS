@@ -6,12 +6,36 @@ import { Label } from '@/components/ui/label';
 import { Plus, Trash2, CheckCircle, Circle, Calendar, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Define types for API responses
+interface Application {
+  id: number;
+  college_name: string;
+  status: string;
+}
+
+interface Deadline {
+  id: number;
+  application_id: number;
+  college_name: string;
+  deadline_type: string;
+  deadline_date: string;
+  description?: string;
+  is_completed: number;
+}
+
+interface DeadlineFormData {
+  applicationId: string;
+  deadlineType: string;
+  deadlineDate: string;
+  description: string;
+}
+
 const Deadlines = () => {
-  const [deadlines, setDeadlines] = useState<any[]>([]);
-  const [applications, setApplications] = useState<any[]>([]);
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<DeadlineFormData>({
     applicationId: '',
     deadlineType: 'application',
     deadlineDate: '',
