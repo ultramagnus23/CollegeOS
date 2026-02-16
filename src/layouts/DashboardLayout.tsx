@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationBadge from '../components/NotificationBadge';
+import AIChatbot from '../components/AIChatbot';
 import { 
   Home, 
   School, 
@@ -173,6 +174,9 @@ const DashboardLayout = () => {
           ))}
         </div>
       </nav>
+
+      {/* AI Chatbot - Floating on all dashboard pages */}
+      <AIChatbot />
     </div>
   );
 };
