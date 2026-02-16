@@ -153,12 +153,14 @@ class ProgressManager {
         const data = JSON.parse(fsSync.readFileSync(this.progressFile, 'utf-8'));
         // Migrate legacy format on load
         if (data.completedIds && data.completedIds.length > 0) {
+          // Use an old timestamp for legacy entries so they expire naturally
+          const legacyTimestamp = data.lastUpdated || new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
           data.completedIds = data.completedIds.map(entry => {
             if (typeof entry === 'object') return entry;
-            // Convert legacy plain ID to new format
+            // Convert legacy plain ID to new format with old timestamp
             return {
               id: entry,
-              completedAt: data.lastUpdated || new Date().toISOString()
+              completedAt: legacyTimestamp
             };
           });
         }
@@ -208,7 +210,15 @@ class ProgressManager {
     if (!completedAt) return false;
     
     // Check if entry is expired (30 days default)
-    const ageMs = Date.now() - new Date(completedAt).getTime();
+    const completedDate = new Date(completedAt);
+    
+    // Handle invalid dates - treat as expired
+    if (isNaN(completedDate.getTime())) {
+      logger.warn(`Invalid completion date for college ${collegeId}: ${completedAt}`);
+      return false;
+    }
+    
+    const ageMs = Date.now() - completedDate.getTime();
     const expiryMs = (CONFIG.PROGRESS_EXPIRY_DAYS || 30) * 24 * 60 * 60 * 1000;
     return ageMs < expiryMs;
   }
