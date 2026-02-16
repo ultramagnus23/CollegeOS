@@ -134,47 +134,89 @@ const Dashboard = () => {
         return Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
       };
       
-      // Transform deadlines into urgent alerts
-      const alerts = deadlines
-        .filter((d: any) => !d.is_completed)
-        .slice(0, 5)
-        .map((d: any) => {
-          const daysRemaining = calculateDaysRemaining(d.deadline_date);
-          return {
-            id: d.id,
-            type: 'deadline' as const,
-            severity: daysRemaining <= 1 ? 'critical' as const : 
-                      daysRemaining <= 3 ? 'warning' as const : 
-                      daysRemaining <= 7 ? 'info' as const : 'success' as const,
-            title: `${d.deadline_type} - ${d.college_name}`,
-            description: `Due ${daysRemaining <= 0 ? 'today' : `in ${daysRemaining} days`}`,
-            college: d.college_name,
-            daysRemaining,
+      // Load alerts from Risk API (fallback to deadline-based alerts)
+      try {
+        const riskRes = await api.risk.alerts();
+        if (riskRes.success && riskRes.data && Array.isArray(riskRes.data)) {
+          const formattedAlerts = riskRes.data.map((alert: any) => ({
+            id: alert.id,
+            type: alert.type || 'warning',
+            severity: alert.severity || 'warning',
+            title: alert.title || alert.message,
+            description: alert.description || '',
+            college: alert.college_name,
+            daysRemaining: alert.days_remaining,
             action: { label: 'View', href: '/deadlines' }
-          };
-        });
-      setUrgentAlerts(alerts);
+          }));
+          setUrgentAlerts(formattedAlerts);
+        } else {
+          throw new Error('Risk API not available');
+        }
+      } catch (riskError) {
+        console.warn('Risk API not available, using deadline fallback:', riskError);
+        // Fallback: Transform deadlines into urgent alerts
+        const alerts = deadlines
+          .filter((d: any) => !d.is_completed)
+          .slice(0, 5)
+          .map((d: any) => {
+            const daysRemaining = calculateDaysRemaining(d.deadline_date);
+            return {
+              id: d.id,
+              type: 'deadline' as const,
+              severity: daysRemaining <= 1 ? 'critical' as const : 
+                        daysRemaining <= 3 ? 'warning' as const : 
+                        daysRemaining <= 7 ? 'info' as const : 'success' as const,
+              title: `${d.deadline_type} - ${d.college_name}`,
+              description: `Due ${daysRemaining <= 0 ? 'today' : `in ${daysRemaining} days`}`,
+              college: d.college_name,
+              daysRemaining,
+              action: { label: 'View', href: '/deadlines' }
+            };
+          });
+        setUrgentAlerts(alerts);
+      }
       
-      // Generate today's tasks from deadlines
-      const tasks = deadlines
-        .filter((d: any) => !d.is_completed)
-        .slice(0, 5)
-        .map((d: any) => {
-          const daysRemaining = calculateDaysRemaining(d.deadline_date);
-          return {
-            id: d.id,
-            title: d.deadline_type,
-            category: 'deadline',
-            priority: daysRemaining <= 1 ? 'critical' as const :
-                      daysRemaining <= 3 ? 'high' as const :
-                      daysRemaining <= 7 ? 'medium' as const : 'low' as const,
-            dueDate: d.deadline_date,
-            college: d.college_name,
-            status: 'pending' as const,
-            estimatedTime: 30
-          };
-        });
-      setTodaysTasks(tasks);
+      // Load tasks from Tasks API (fallback to deadline-based tasks)
+      try {
+        const tasksRes = await api.tasks.getAll({ status: 'pending' });
+        if (tasksRes.success && tasksRes.data && Array.isArray(tasksRes.data)) {
+          const formattedTasks = tasksRes.data.slice(0, 5).map((task: any) => ({
+            id: task.id,
+            title: task.title || task.type,
+            category: task.type || 'deadline',
+            priority: task.priority || 'medium',
+            dueDate: task.due_date,
+            college: task.college_name,
+            status: task.status || 'pending',
+            estimatedTime: task.estimated_time || 30
+          }));
+          setTodaysTasks(formattedTasks);
+        } else {
+          throw new Error('Tasks API not available');
+        }
+      } catch (tasksError) {
+        console.warn('Tasks API not available, using deadline fallback:', tasksError);
+        // Fallback: Generate today's tasks from deadlines
+        const tasks = deadlines
+          .filter((d: any) => !d.is_completed)
+          .slice(0, 5)
+          .map((d: any) => {
+            const daysRemaining = calculateDaysRemaining(d.deadline_date);
+            return {
+              id: d.id,
+              title: d.deadline_type,
+              category: 'deadline',
+              priority: daysRemaining <= 1 ? 'critical' as const :
+                        daysRemaining <= 3 ? 'high' as const :
+                        daysRemaining <= 7 ? 'medium' as const : 'low' as const,
+              dueDate: d.deadline_date,
+              college: d.college_name,
+              status: 'pending' as const,
+              estimatedTime: 30
+            };
+          });
+        setTodaysTasks(tasks);
+      }
       
       // Load automation data (profile strength and recommended actions)
       try {
