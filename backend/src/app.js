@@ -45,6 +45,9 @@ const notificationRoutes = require('./routes/notifications');
 // Create Express app
 const app = express();
 
+// Job instances for graceful shutdown
+let deadlineSchedulerInstance = null;
+
 // Trust proxy for proper IP detection behind reverse proxies
 app.set('trust proxy', 1);
 
@@ -163,8 +166,8 @@ const server = app.listen(PORT, () => {
 
     try {
       const DeadlineScrapingScheduler = require('./jobs/deadlineScrapingScheduler');
-      const deadlineScheduler = new DeadlineScrapingScheduler();
-      deadlineScheduler.setupCronJobs();
+      deadlineSchedulerInstance = new DeadlineScrapingScheduler();
+      deadlineSchedulerInstance.setupCronJobs();
       logger.info('Deadline scraping scheduler started');
     } catch (error) {
       logger.warn('Deadline scraping scheduler failed to start:', error.message);
@@ -188,6 +191,12 @@ process.on('SIGTERM', () => {
     dataRefreshJob.stop();
   } catch (e) { /* ignore */ }
   
+  if (deadlineSchedulerInstance) {
+    try {
+      deadlineSchedulerInstance.stop();
+    } catch (e) { /* ignore */ }
+  }
+  
   server.close(() => {
     logger.info('HTTP server closed');
     dbManager.close();
@@ -209,6 +218,12 @@ process.on('SIGINT', () => {
     const dataRefreshJob = require('./jobs/dataRefresh');
     dataRefreshJob.stop();
   } catch (e) { /* ignore */ }
+  
+  if (deadlineSchedulerInstance) {
+    try {
+      deadlineSchedulerInstance.stop();
+    } catch (e) { /* ignore */ }
+  }
   
   server.close(() => {
     logger.info('HTTP server closed');

@@ -143,12 +143,26 @@ class ProgressManager {
   constructor(progressFile) {
     this.progressFile = progressFile;
     this.progress = this.load();
+    this.completedMap = new Map(); // For O(1) lookups
+    this._buildCompletedMap();
   }
 
   load() {
     try {
       if (fsSync.existsSync(this.progressFile)) {
-        return JSON.parse(fsSync.readFileSync(this.progressFile, 'utf-8'));
+        const data = JSON.parse(fsSync.readFileSync(this.progressFile, 'utf-8'));
+        // Migrate legacy format on load
+        if (data.completedIds && data.completedIds.length > 0) {
+          data.completedIds = data.completedIds.map(entry => {
+            if (typeof entry === 'object') return entry;
+            // Convert legacy plain ID to new format
+            return {
+              id: entry,
+              completedAt: data.lastUpdated || new Date().toISOString()
+            };
+          });
+        }
+        return data;
       }
     } catch (e) {
       logger.warn('Could not load progress file, starting fresh');
@@ -160,35 +174,43 @@ class ProgressManager {
     };
   }
 
+  _buildCompletedMap() {
+    this.completedMap.clear();
+    if (this.progress.completedIds) {
+      for (const entry of this.progress.completedIds) {
+        if (typeof entry === 'object') {
+          this.completedMap.set(entry.id, entry.completedAt);
+        } else {
+          // Legacy format fallback (shouldn't happen after load migration)
+          this.completedMap.set(entry, this.progress.lastUpdated || new Date().toISOString());
+        }
+      }
+    }
+  }
+
   async save() {
     await fs.writeFile(this.progressFile, JSON.stringify(this.progress, null, 2));
   }
 
   markCompleted(collegeId) {
+    const completedAt = new Date().toISOString();
     this.progress.completedIds.push({
       id: collegeId,
-      completedAt: new Date().toISOString()
+      completedAt: completedAt
     });
+    this.completedMap.set(collegeId, completedAt);
     this.progress.lastCompletedId = collegeId;
-    this.progress.lastUpdated = new Date().toISOString();
+    this.progress.lastUpdated = completedAt;
   }
 
   isCompleted(collegeId) {
-    const entry = this.progress.completedIds.find(e => {
-      if (typeof e === 'object') return e.id === collegeId;
-      return e === collegeId; // backward compatibility with old format
-    });
+    const completedAt = this.completedMap.get(collegeId);
+    if (!completedAt) return false;
     
-    if (!entry) return false;
-    
-    // If entry has a timestamp, check if it's expired (30 days default)
-    if (typeof entry === 'object' && entry.completedAt) {
-      const ageMs = Date.now() - new Date(entry.completedAt).getTime();
-      const expiryMs = (CONFIG.PROGRESS_EXPIRY_DAYS || 30) * 24 * 60 * 60 * 1000;
-      return ageMs < expiryMs;
-    }
-    
-    return true; // Legacy entries without timestamp are considered completed
+    // Check if entry is expired (30 days default)
+    const ageMs = Date.now() - new Date(completedAt).getTime();
+    const expiryMs = (CONFIG.PROGRESS_EXPIRY_DAYS || 30) * 24 * 60 * 60 * 1000;
+    return ageMs < expiryMs;
   }
 
   reset() {
@@ -197,6 +219,7 @@ class ProgressManager {
       completedIds: [], 
       startedAt: new Date().toISOString() 
     };
+    this.completedMap.clear();
   }
 }
 
