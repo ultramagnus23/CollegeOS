@@ -154,7 +154,9 @@ class ProgressManager {
         // Migrate legacy format on load
         if (data.completedIds && data.completedIds.length > 0) {
           // Use an old timestamp for legacy entries so they expire naturally
-          const legacyTimestamp = data.lastUpdated || new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
+          // Set to (PROGRESS_EXPIRY_DAYS + 1) days ago to ensure they're expired
+          const expiryDays = CONFIG.PROGRESS_EXPIRY_DAYS + 1;
+          const legacyTimestamp = data.lastUpdated || new Date(Date.now() - expiryDays * 24 * 60 * 60 * 1000).toISOString();
           data.completedIds = data.completedIds.map(entry => {
             if (typeof entry === 'object') return entry;
             // Convert legacy plain ID to new format with old timestamp
@@ -209,7 +211,7 @@ class ProgressManager {
     const completedAt = this.completedMap.get(collegeId);
     if (!completedAt) return false;
     
-    // Check if entry is expired (30 days default)
+    // Check if entry is expired
     const completedDate = new Date(completedAt);
     
     // Handle invalid dates - treat as expired
@@ -219,7 +221,7 @@ class ProgressManager {
     }
     
     const ageMs = Date.now() - completedDate.getTime();
-    const expiryMs = (CONFIG.PROGRESS_EXPIRY_DAYS || 30) * 24 * 60 * 60 * 1000;
+    const expiryMs = CONFIG.PROGRESS_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
     return ageMs < expiryMs;
   }
 
