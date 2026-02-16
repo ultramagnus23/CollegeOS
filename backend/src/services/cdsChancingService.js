@@ -1,3 +1,4 @@
+// DEPRECATED: This service is now part of consolidatedChancingService.js (P3 consolidation)
 /**
  * CDSChancingService.js
  * Enhanced chancing calculator using Common Data Set (CDS) information

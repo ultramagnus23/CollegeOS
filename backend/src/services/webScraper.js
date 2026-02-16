@@ -76,55 +76,78 @@ class WebScraper {
   }
   
   /**
-   * Scrape a URL with safety checks
+   * Scrape a URL with safety checks and retry logic
    * @param {string} url - URL to scrape
+   * @param {number} maxRetries - Maximum retry attempts (default: 3)
+   * @param {number} retryDelay - Delay between retries in ms (default: 2000)
    * @returns {object} - Scraped content
    */
-  async scrapeUrl(url) {
-    try {
-      // Check robots.txt
-      const allowed = await this.checkRobotsTxt(url);
-      if (!allowed) {
-        console.warn(`🚫 Robots.txt disallows scraping: ${url}`);
-        return { success: false, error: 'Disallowed by robots.txt' };
-      }
-      
-      // Extract domain
-      const urlObj = new URL(url);
-      const domain = urlObj.host;
-      
-      // Enforce rate limiting
-      await this.enforceRateLimit(domain);
-      
-      // Fetch content
-      console.log(`🌐 Scraping: ${url}`);
-      const response = await axios.get(url, {
-        timeout: 10000,
-        headers: {
-          'User-Agent': this.userAgent,
-          'Accept': 'text/html,application/xhtml+xml',
-          'Accept-Language': 'en-US,en;q=0.9'
+  async scrapeUrl(url, maxRetries = 3, retryDelay = 2000) {
+    let lastError = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Check robots.txt
+        const allowed = await this.checkRobotsTxt(url);
+        if (!allowed) {
+          console.warn(`🚫 Robots.txt disallows scraping: ${url}`);
+          return { success: false, error: 'Disallowed by robots.txt' };
         }
-      });
-      
-      // Parse HTML
-      const $ = cheerio.load(response.data);
-      
-      return {
-        success: true,
-        html: response.data,
-        $: $,
-        url: url,
-        scrapedAt: new Date().toISOString()
-      };
-      
-    } catch (error) {
-      console.error(`❌ Scraping failed for ${url}:`, error.message);
-      return {
-        success: false,
-        error: error.message
-      };
+        
+        // Extract domain
+        const urlObj = new URL(url);
+        const domain = urlObj.host;
+        
+        // Enforce rate limiting
+        await this.enforceRateLimit(domain);
+        
+        // Fetch content
+        console.log(`🌐 Scraping (attempt ${attempt}/${maxRetries}): ${url}`);
+        const response = await axios.get(url, {
+          timeout: 10000,
+          headers: {
+            'User-Agent': this.userAgent,
+            'Accept': 'text/html,application/xhtml+xml',
+            'Accept-Language': 'en-US,en;q=0.9'
+          }
+        });
+        
+        // Parse HTML
+        const $ = cheerio.load(response.data);
+        
+        return {
+          success: true,
+          html: response.data,
+          $: $,
+          url: url,
+          scrapedAt: new Date().toISOString(),
+          attempt: attempt
+        };
+        
+      } catch (error) {
+        lastError = error;
+        console.error(`❌ Scraping failed (attempt ${attempt}/${maxRetries}) for ${url}:`, error.message);
+        
+        // Don't retry on client errors (4xx) or robots.txt blocks
+        if (error.response && error.response.status >= 400 && error.response.status < 500) {
+          console.log(`⚠️ Client error (${error.response.status}), not retrying`);
+          break;
+        }
+        
+        // Wait before retrying (exponential backoff)
+        if (attempt < maxRetries) {
+          const waitTime = retryDelay * Math.pow(2, attempt - 1);
+          console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      }
     }
+    
+    return {
+      success: false,
+      error: lastError?.message || 'Scraping failed after all retries',
+      attempts: maxRetries
+    };
   }
   
   /**
