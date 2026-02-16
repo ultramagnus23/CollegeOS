@@ -1,13 +1,20 @@
 /**
  * Fit Classification Routes
  * API endpoints for college fit classification
+ * 
+ * P3: Now uses consolidated chancing service
  */
 
 const express = require('express');
 const router = express.Router();
-const FitClassificationService = require('../services/fitClassificationService');
 const { authenticate } = require('../middleware/auth');
 const logger = require('../utils/logger');
+
+// Use consolidated service (P3 improvement)
+const consolidatedChancingService = require('../services/consolidatedChancingService');
+
+// Legacy service import (deprecated, kept for backward compatibility)
+const FitClassificationService = require('../services/fitClassificationService');
 
 /**
  * GET /api/fit/:collegeId
@@ -25,9 +32,23 @@ router.get('/:collegeId', authenticate, async (req, res) => {
       });
     }
     
-    // Try cache first, then calculate
-    let result = await FitClassificationService.getCachedFit(userId, collegeId);
+    // Use consolidated service (P3 improvement)
+    const result = await consolidatedChancingService.classifyFit(userId, collegeId);
     
+    res.json({
+      success: true,
+      data: result
+    });
+    
+  } catch (error) {
+    logger.error('Fit classification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to calculate fit classification',
+      error: error.message
+    });
+  }
+});
     if (!result) {
       result = await FitClassificationService.classifyCollege(userId, collegeId);
     }
