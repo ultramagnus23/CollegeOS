@@ -44,6 +44,9 @@ const CONFIG = {
   RATE_LIMIT_MIN_TIME_MS: 1000, // Minimum 1 second between requests to same domain
   RATE_LIMIT_MAX_CONCURRENT: 2, // Max 2 concurrent requests per domain
   
+  // Progress expiry
+  PROGRESS_EXPIRY_DAYS: 30, // Reset progress after 30 days
+  
   // Files
   PROGRESS_FILE: path.join(__dirname, '..', 'data', 'scrape_progress.json'),
   LOG_FILE: path.join(__dirname, '..', 'data', 'scrape_log.json'),
@@ -162,13 +165,30 @@ class ProgressManager {
   }
 
   markCompleted(collegeId) {
-    this.progress.completedIds.push(collegeId);
+    this.progress.completedIds.push({
+      id: collegeId,
+      completedAt: new Date().toISOString()
+    });
     this.progress.lastCompletedId = collegeId;
     this.progress.lastUpdated = new Date().toISOString();
   }
 
   isCompleted(collegeId) {
-    return this.progress.completedIds.includes(collegeId);
+    const entry = this.progress.completedIds.find(e => {
+      if (typeof e === 'object') return e.id === collegeId;
+      return e === collegeId; // backward compatibility with old format
+    });
+    
+    if (!entry) return false;
+    
+    // If entry has a timestamp, check if it's expired (30 days default)
+    if (typeof entry === 'object' && entry.completedAt) {
+      const ageMs = Date.now() - new Date(entry.completedAt).getTime();
+      const expiryMs = (CONFIG.PROGRESS_EXPIRY_DAYS || 30) * 24 * 60 * 60 * 1000;
+      return ageMs < expiryMs;
+    }
+    
+    return true; // Legacy entries without timestamp are considered completed
   }
 
   reset() {
@@ -961,9 +981,10 @@ async function main() {
   console.log('║       Enhanced CollegeOS Data Scraper - Production        ║');
   console.log('╚════════════════════════════════════════════════════════════╝\n');
 
-  if (process.argv.includes('--reset')) {
+  if (process.argv.includes('--reset') || process.argv.includes('--force') || process.argv.includes('--fresh')) {
     console.log('🔄 Resetting progress...');
     progressManager.reset();
+    await progressManager.save();
   }
 
   stats.startTime = new Date();
