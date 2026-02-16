@@ -3,8 +3,9 @@ import { api } from '../services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, CheckCircle, Circle, Calendar, Loader2 } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Circle, Calendar, Loader2, List, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
+import { DeadlineCalendar } from '@/components/DeadlineCalendar';
 
 // Define types for API responses
 interface Application {
@@ -35,6 +36,7 @@ const Deadlines = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [formData, setFormData] = useState<DeadlineFormData>({
     applicationId: '',
     deadlineType: 'application',
@@ -133,10 +135,33 @@ const Deadlines = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Deadlines</h1>
           <p className="text-gray-600">Stay on top of your application timeline</p>
         </div>
-        <Button onClick={() => setShowAddForm(!showAddForm)}>
-          <Plus className="mr-2" size={20} />
-          Add Deadline
-        </Button>
+        <div className="flex gap-3">
+          {/* View Toggle */}
+          <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-4 py-2 flex items-center gap-2 ${
+                viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <List size={18} />
+              List
+            </button>
+            <button
+              onClick={() => setViewMode('calendar')}
+              className={`px-4 py-2 flex items-center gap-2 border-l ${
+                viewMode === 'calendar' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <CalendarDays size={18} />
+              Calendar
+            </button>
+          </div>
+          <Button onClick={() => setShowAddForm(!showAddForm)}>
+            <Plus className="mr-2" size={20} />
+            Add Deadline
+          </Button>
+        </div>
       </div>
 
       {/* Add Form */}
@@ -201,11 +226,13 @@ const Deadlines = () => {
         </div>
       )}
 
-      {/* Deadlines List */}
+      {/* Deadlines Display */}
       {deadlines.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
           <p className="text-gray-500">No deadlines yet. Add one to get started!</p>
         </div>
+      ) : viewMode === 'calendar' ? (
+        <DeadlineCalendar deadlines={deadlines} />
       ) : (
         <div className="space-y-4">
           {deadlines.map((deadline) => (
