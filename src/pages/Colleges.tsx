@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Globe, BookOpen, MapPin, GraduationCap, DollarSign, Users, Award, TrendingUp, Filter, ChevronDown } from 'lucide-react';
 import api from '../services/api';
 import { normalizeCountryData } from '../types';
+import FitBadge from '../components/FitBadge';
 
 /* ==================== TYPES ==================== */
 
@@ -403,6 +404,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
         <div className="flex items-center gap-2 mt-2">
           <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{college.type}</span>
           <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{college.country}</span>
+          <FitBadge collegeId={college.id} className="ml-auto" />
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import NotificationBadge from '../components/NotificationBadge';
 import { 
   Home, 
   School, 
@@ -15,7 +16,8 @@ import {
   ClipboardList,
   FolderOpen,
   Award,
-  Users
+  Users,
+  Bell
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -73,13 +75,23 @@ const DashboardLayout = () => {
               <h1 className="text-2xl font-bold text-white">College App OS</h1>
               <p className="text-sm text-white/80 mt-1">Welcome, {user?.full_name}</p>
             </div>
-            <button 
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-white"
-              aria-label="Close sidebar"
-            >
-              <X size={20} />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Notification Badge */}
+              <NavLink
+                to="/notifications"
+                className="p-2 rounded-lg hover:bg-white/10 text-white transition-colors"
+                aria-label="Notifications"
+              >
+                <NotificationBadge />
+              </NavLink>
+              <button 
+                onClick={() => setSidebarOpen(false)}
+                className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-white"
+                aria-label="Close sidebar"
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Navigation */}

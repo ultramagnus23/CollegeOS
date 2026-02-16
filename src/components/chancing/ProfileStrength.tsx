@@ -40,12 +40,31 @@ export default function ProfileStrength() {
   const fetchStrength = async () => {
     try {
       setLoading(true);
+      
+      // Try analytics.profileStrength first (new API)
+      try {
+        const response = await api.analytics.profileStrength();
+        if (response.success && response.data) {
+          setData({
+            overallStrength: response.data.overallStrength || response.data.overall || 0,
+            sections: response.data.sections || [],
+            recommendations: response.data.recommendations || response.data.suggestions || [],
+            profile: response.data.profile || {}
+          });
+          return;
+        }
+      } catch (analyticsError) {
+        console.warn('Analytics API not available, trying fallback:', analyticsError);
+      }
+      
+      // Fallback to old getProfileStrength method
       const response = await api.getProfileStrength();
       if (response.success) {
         setData(response.data);
       }
     } catch (err: any) {
-      setError(err.message);
+      console.error('Error fetching profile strength:', err);
+      setError(err.message || 'Failed to load profile strength');
     } finally {
       setLoading(false);
     }
