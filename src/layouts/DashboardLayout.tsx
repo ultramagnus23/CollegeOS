@@ -18,7 +18,8 @@ import {
   FolderOpen,
   Award,
   Users,
-  Bell
+  Bell,
+  Clock
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -37,6 +38,7 @@ const DashboardLayout = () => {
     { name: 'Documents', href: '/documents', icon: FolderOpen },
     { name: 'Scholarships', href: '/scholarships', icon: Award },
     { name: 'Recommendations', href: '/recommendations', icon: Users },
+    { name: 'Timeline', href: '/timeline', icon: Clock },
     { name: 'Settings', href: '/settings', icon: SettingsIcon },
   ];
 

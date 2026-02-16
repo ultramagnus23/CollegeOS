@@ -12,6 +12,7 @@ import UrgentAlerts from '../components/dashboard/UrgentAlerts';
 import RecommendedActions from '../components/dashboard/RecommendedActions';
 import CollegeListOverview from '../components/dashboard/CollegeListOverview';
 import ProfileCompletionWidget from '../components/common/ProfileCompletionWidget';
+import { CompactDecisionCountdown } from '@/components/DecisionCountdown';
 import { 
   School, 
   FileText, 
@@ -48,6 +49,7 @@ const Dashboard = () => {
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<any[]>([]);
   const [recentApplications, setRecentApplications] = useState<any[]>([]);
   const [essayProgress, setEssayProgress] = useState<any[]>([]);
+  const [decisionDates, setDecisionDates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Magic automation states
@@ -91,6 +93,18 @@ const Dashboard = () => {
       setUpcomingDeadlines(deadlines.slice(0, 5));
       setRecentApplications(applications.slice(0, 5));
       setEssayProgress(essays.slice(0, 3));
+      
+      // Extract decision dates from submitted applications
+      const decisions = applications
+        .filter((app: any) => app.status === 'submitted' && app.notification_date)
+        .map((app: any) => ({
+          collegeName: app.college_name,
+          deadlineType: app.deadline_type || 'Regular Decision',
+          notificationDate: app.notification_date,
+          applicationDate: app.application_date || app.created_at,
+          collegeId: app.college_id
+        }));
+      setDecisionDates(decisions);
       
       // Transform applications into college list format for CollegeListOverview
       const transformedColleges = applications.map((app: any) => ({
@@ -364,6 +378,11 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Completion Widget - Sidebar */}
         <ProfileCompletionWidget variant="full" showMissingFields={true} />
+
+        {/* Decision Countdown */}
+        {decisionDates.length > 0 && (
+          <CompactDecisionCountdown decisions={decisionDates} />
+        )}
 
         {/* Overall Progress */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

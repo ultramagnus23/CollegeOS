@@ -31,6 +31,7 @@ import Activities from "./pages/Activities";
 import Documents from "./pages/Documents";
 import Scholarships from "./pages/Scholarships";
 import Recommendations from "./pages/Recommendations";
+import { Timeline } from "./pages/Timeline";
 
 // FIXED: Import the type from the new types.ts file
 import { StudentProfile } from "./types";
@@ -115,6 +116,7 @@ const AppContent = () => {
             <Route path="documents" element={<Documents />} />
             <Route path="scholarships" element={<Scholarships />} />
             <Route path="recommendations" element={<Recommendations />} />
+            <Route path="timeline" element={<Timeline />} />
             <Route path="settings" element={<Settings />} />
 
             <Route
