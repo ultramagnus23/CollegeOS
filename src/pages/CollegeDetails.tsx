@@ -24,6 +24,7 @@ import {
   Target
 } from 'lucide-react';
 import api from '../services/api';
+import { DataFreshnessIndicator } from '@/components/DataFreshnessIndicator';
 
 /* =========================
    Country-based Gradient Mapping
@@ -810,6 +811,15 @@ const CollegeDetail: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Data Freshness Indicator */}
+      <div className="max-w-6xl mx-auto px-6 py-4">
+        <DataFreshnessIndicator
+          lastUpdated={college.updated_at || college.last_scraped || new Date().toISOString()}
+          sourceUrl={college.official_website}
+          collegeName={college.name}
+        />
       </div>
 
       {/* Tabs Navigation */}

@@ -31,32 +31,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-// ============================================
-// FILE: src/layouts/DashboardLayout.tsx - ADD CHATBOT
-// ============================================
-// Add this import at the top
 
-
-// Add this component before the closing div
-// Inside your return statement, add:
-// <AIChatbot />
-
-// Example:
-/*
-return (
-  <div className="min-h-screen bg-gray-50">
-    <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg">
-      // ... sidebar content
-    </div>
-    
-    <div className="ml-64 min-h-screen">
-      <Outlet />
-    </div>
-    
-    <AIChatbot />  // ADD THIS LINE
-  </div>
-);
-*/
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
