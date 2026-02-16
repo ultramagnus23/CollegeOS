@@ -32,9 +32,11 @@ export const NotificationCenter: React.FC = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/api/notifications?unreadOnly=${filter === 'unread'}`);
-      if (response.data.success) {
-        setNotifications(response.data.notifications);
+      // Use new notifications API
+      const response = await api.notifications.getAll();
+      if (response.success || response.data) {
+        const notifs = response.data || response.notifications || [];
+        setNotifications(filter === 'unread' ? notifs.filter((n: Notification) => !n.read) : notifs);
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -45,7 +47,7 @@ export const NotificationCenter: React.FC = () => {
 
   const markAsRead = async (notificationId: number) => {
     try {
-      await api.put(`/api/notifications/${notificationId}/read`);
+      await api.notifications.markAsRead(notificationId);
       setNotifications(notifications.map(n => 
         n.id === notificationId ? { ...n, read: true } : n
       ));
@@ -56,7 +58,7 @@ export const NotificationCenter: React.FC = () => {
 
   const markAllAsRead = async () => {
     try {
-      await api.put('/api/notifications/read-all');
+      await api.notifications.markAllAsRead();
       setNotifications(notifications.map(n => ({ ...n, read: true })));
     } catch (error) {
       console.error('Error marking all as read:', error);
