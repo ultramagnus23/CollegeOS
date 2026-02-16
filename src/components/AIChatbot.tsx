@@ -6,6 +6,7 @@ import { Send, X, MessageCircle, Loader2, Bot, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { api } from '@/services/api';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -56,24 +57,8 @@ const AIChatbot = () => {
         content: msg.content
       }));
 
-      // Call backend chatbot endpoint
-      const response = await fetch('http://localhost:5000/api/chatbot/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`
-        },
-        body: JSON.stringify({
-          message: userMessage.content,
-          conversationHistory: conversationHistory
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get response from chatbot');
-      }
-
-      const data = await response.json();
+      // Call backend chatbot endpoint using api service
+      const data = await api.chatbot.chat(userMessage.content, conversationHistory);
       
       if (!data.success) {
         throw new Error(data.message || 'Chatbot request failed');
