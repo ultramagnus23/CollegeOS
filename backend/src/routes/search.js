@@ -346,9 +346,17 @@ router.delete('/history', authenticate, async (req, res, next) => {
  */
 router.get('/suggestions', async (req, res, next) => {
   try {
-    const { q } = req.query;
-    
-    if (!q || q.length < 2) {
+    const rawQ = req.query.q;
+    let q;
+
+    // Normalize q to a string to avoid type confusion (e.g., arrays from repeated query params)
+    if (Array.isArray(rawQ)) {
+      q = rawQ[0];
+    } else {
+      q = rawQ;
+    }
+
+    if (typeof q !== 'string' || q.length < 2) {
       return res.json({
         success: true,
         data: { colleges: [], majors: [] }
