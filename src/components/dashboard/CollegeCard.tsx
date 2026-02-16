@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { CountdownBadge } from '@/components/common/CountdownBadge';
 import { RequirementFlags } from '@/components/common/RequirementFlags';
+import FitBadge from '@/components/FitBadge';
 import { cn } from '@/lib/utils';
 import { ExternalLink, MapPin, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { countries } from '@/data/mockData';
@@ -78,11 +79,14 @@ export function CollegeCard({ college, application, onClick, className }: Colleg
       <CardContent className="space-y-4">
         {/* Status and deadline row */}
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          {application ? (
-            <StatusBadge status={application.status} size="sm" />
-          ) : (
-            <span className="text-xs text-muted-foreground">Not started</span>
-          )}
+          <div className="flex items-center gap-2">
+            {application ? (
+              <StatusBadge status={application.status} size="sm" />
+            ) : (
+              <span className="text-xs text-muted-foreground">Not started</span>
+            )}
+            <FitBadge collegeId={college.id} />
+          </div>
           <CountdownBadge 
             targetDate={application?.targetDeadline || nextDeadline?.date || null} 
           />
