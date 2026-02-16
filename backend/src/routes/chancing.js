@@ -4,6 +4,11 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
+
+// Use consolidated chancing service (P3 consolidation)
+const consolidatedChancingService = require('../services/consolidatedChancingService');
+
+// Legacy imports kept for backward compatibility (deprecated)
 const { 
   calculateAdmissionChance, 
   calculateJEEChance, 
@@ -13,6 +18,7 @@ const {
 } = require('../services/chancingCalculator');
 const { calculateCDSChance, hasCDSData } = require('../services/cdsChancingService');
 const { calculateEnhancedChance, hasCDSData: hasImprovedCDS } = require('../services/improvedChancingService');
+
 const StudentProfile = require('../models/StudentProfile');
 const College = require('../models/College');
 const mlPredictionService = require('../services/mlPredictionService');
