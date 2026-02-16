@@ -1,3 +1,4 @@
+// DEPRECATED: This service is now part of consolidatedChancingService.js (P3 consolidation)
 /**
  * SmartRecommendationService - Auto-generate college lists based on profile
  * Implements "magic" college discovery with reach/target/safety distribution
