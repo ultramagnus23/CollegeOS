@@ -3,41 +3,10 @@ import React, { useEffect, useState, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Globe, BookOpen, MapPin, GraduationCap, DollarSign, Users, Award, TrendingUp, Filter, ChevronDown } from 'lucide-react';
 import api from '../services/api';
-import { normalizeCountryData } from '../types';
+import { normalizeCountryData, College, TestScores, GraduationRates } from '../types';
 import FitBadge from '../components/FitBadge';
 
 /* ==================== TYPES ==================== */
-
-interface TestScores {
-  satRange?: { percentile25: number; percentile75: number } | null;
-  actRange?: { percentile25: number; percentile75: number } | null;
-}
-
-interface GraduationRates {
-  fourYear?: number;
-  sixYear?: number;
-}
-
-interface College {
-  id: number;
-  name: string;
-  location: string;
-  country: string;
-  type: string;
-  acceptance_rate?: number | null;
-  acceptanceRate?: number | null;
-  programs: string[];
-  majorCategories?: string[];
-  academicStrengths?: string[];
-  description?: string | null;
-  tuition_cost?: number | null;
-  enrollment?: number | null;
-  ranking?: number | null;
-  averageGPA?: number | null;
-  testScores?: TestScores;
-  graduationRates?: GraduationRates | null;
-  studentFacultyRatio?: string | null;
-}
 
 interface CollegeCardProps {
   college: College;

@@ -13,84 +13,8 @@
  */
 
 const logger = require('../utils/logger');
-const { calculateEnhancedChance } = require('./improvedChancingService');
+const { calculateChance } = require('./consolidatedChancingService');
 const { calculateProfileStrength } = require('./profileStrengthService');
-
-/**
- * Helper function to calculate chance
- * Falls back to rule-based calculation when CDS data isn't available
- */
-function calculateChance(profile, college) {
-  // Try CDS-based calculation first
-  const cdsResult = calculateEnhancedChance(profile, college);
-  
-  if (cdsResult) {
-    return {
-      chance: cdsResult.percentage,
-      category: cdsResult.category,
-      cdsAvailable: true
-    };
-  }
-  
-  // Fallback: Rule-based calculation for non-CDS colleges
-  const acceptanceRate = college.acceptance_rate || 50;
-  const baseChance = acceptanceRate;
-  
-  // Calculate profile strength modifier
-  let modifier = 1.0;
-  
-  // GPA modifier
-  const gpa = profile.gpa_weighted || profile.gpa_unweighted || profile.gpa || 3.0;
-  if (gpa >= 3.9) modifier += 0.15;
-  else if (gpa >= 3.7) modifier += 0.10;
-  else if (gpa >= 3.5) modifier += 0.05;
-  else if (gpa < 3.0) modifier -= 0.15;
-  else if (gpa < 3.3) modifier -= 0.05;
-  
-  // Test score modifier
-  const sat = profile.sat_total || 0;
-  const act = profile.act_composite || 0;
-  
-  if (sat >= 1500 || act >= 34) modifier += 0.15;
-  else if (sat >= 1400 || act >= 31) modifier += 0.10;
-  else if (sat >= 1300 || act >= 28) modifier += 0.05;
-  else if (sat > 0 && sat < 1100) modifier -= 0.10;
-  
-  // Activity modifier
-  const activities = profile.activities || [];
-  const tier1Count = activities.filter(a => a.tier_rating === 1).length;
-  const tier2Count = activities.filter(a => a.tier_rating === 2).length;
-  
-  if (tier1Count >= 2) modifier += 0.10;
-  else if (tier1Count >= 1) modifier += 0.05;
-  if (tier2Count >= 3) modifier += 0.05;
-  
-  // Calculate final chance
-  let chance = baseChance * modifier;
-  
-  // Apply tier-based caps
-  if (acceptanceRate <= 5) chance = Math.min(chance, 15);
-  else if (acceptanceRate <= 10) chance = Math.min(chance, 28);
-  else if (acceptanceRate <= 20) chance = Math.min(chance, 45);
-  else if (acceptanceRate <= 40) chance = Math.min(chance, 75);
-  else chance = Math.min(chance, 92);
-  
-  // Ensure reasonable bounds
-  chance = Math.max(1, Math.min(92, chance));
-  
-  // Categorize
-  let category;
-  if (chance >= 65) category = 'safety';
-  else if (chance >= 35) category = 'target';
-  else if (chance >= 15) category = 'reach';
-  else category = 'far_reach';
-  
-  return {
-    chance: Math.round(chance),
-    category,
-    cdsAvailable: false
-  };
-}
 
 /**
  * Apply hypothetical changes to a profile
