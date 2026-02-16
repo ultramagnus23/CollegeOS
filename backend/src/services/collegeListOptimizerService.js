@@ -1,3 +1,4 @@
+// DEPRECATED: This service is now part of consolidatedChancingService.js (P3 consolidation)
 /**
  * collegeListOptimizerService.js
  * 
