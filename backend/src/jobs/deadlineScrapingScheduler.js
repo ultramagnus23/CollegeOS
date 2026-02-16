@@ -108,7 +108,7 @@ class DeadlineScrapingScheduler {
             OR last_scraped_deadlines < datetime('now', '-30 days')
           )
         ORDER BY ranking ASC NULLS LAST
-        LIMIT 500
+        LIMIT 1500
       `).all();
       
       logger.info(`Found ${colleges.length} Tier 2 colleges to scrape`);

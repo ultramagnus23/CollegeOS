@@ -150,6 +150,26 @@ const server = app.listen(PORT, () => {
       logger.warn('ML retraining jobs failed to start:', error.message);
     }
   }
+  
+  // Start data refresh cron jobs (scraping auto-refresh)
+  if (config.nodeEnv === 'production' || process.env.ENABLE_SCRAPING_JOBS === 'true') {
+    try {
+      const dataRefreshJob = require('./jobs/dataRefresh');
+      dataRefreshJob.start();
+      logger.info('Data refresh cron jobs started');
+    } catch (error) {
+      logger.warn('Data refresh jobs failed to start:', error.message);
+    }
+
+    try {
+      const DeadlineScrapingScheduler = require('./jobs/deadlineScrapingScheduler');
+      const deadlineScheduler = new DeadlineScrapingScheduler();
+      deadlineScheduler.setupCronJobs();
+      logger.info('Deadline scraping scheduler started');
+    } catch (error) {
+      logger.warn('Deadline scraping scheduler failed to start:', error.message);
+    }
+  }
 });
 
 // Graceful shutdown
@@ -160,6 +180,12 @@ process.on('SIGTERM', () => {
   try {
     const mlRetrainingJob = require('./jobs/mlRetraining');
     mlRetrainingJob.stop();
+  } catch (e) { /* ignore */ }
+  
+  // Stop scraping jobs
+  try {
+    const dataRefreshJob = require('./jobs/dataRefresh');
+    dataRefreshJob.stop();
   } catch (e) { /* ignore */ }
   
   server.close(() => {
@@ -176,6 +202,12 @@ process.on('SIGINT', () => {
   try {
     const mlRetrainingJob = require('./jobs/mlRetraining');
     mlRetrainingJob.stop();
+  } catch (e) { /* ignore */ }
+  
+  // Stop scraping jobs
+  try {
+    const dataRefreshJob = require('./jobs/dataRefresh');
+    dataRefreshJob.stop();
   } catch (e) { /* ignore */ }
   
   server.close(() => {
