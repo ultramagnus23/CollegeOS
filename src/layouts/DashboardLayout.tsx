@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationBadge from '../components/NotificationBadge';
+import AIChatbot from '../components/AIChatbot';
 import { 
   Home, 
   School, 
@@ -17,7 +18,8 @@ import {
   FolderOpen,
   Award,
   Users,
-  Bell
+  Bell,
+  Clock
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -36,6 +38,7 @@ const DashboardLayout = () => {
     { name: 'Documents', href: '/documents', icon: FolderOpen },
     { name: 'Scholarships', href: '/scholarships', icon: Award },
     { name: 'Recommendations', href: '/recommendations', icon: Users },
+    { name: 'Timeline', href: '/timeline', icon: Clock },
     { name: 'Settings', href: '/settings', icon: SettingsIcon },
   ];
 
@@ -173,6 +176,9 @@ const DashboardLayout = () => {
           ))}
         </div>
       </nav>
+
+      {/* AI Chatbot - Floating on all dashboard pages */}
+      <AIChatbot />
     </div>
   );
 };

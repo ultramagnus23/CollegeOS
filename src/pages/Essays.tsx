@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, ExternalLink, Trash2, Loader2, PenTool } from 'lucide-react';
+import { Plus, ExternalLink, Trash2, Loader2, PenTool, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { WordCountTracker } from '@/components/WordCountTracker';
 
 // Define types for API responses
 interface Application {
@@ -40,6 +41,8 @@ const Essays = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [expandedEssay, setExpandedEssay] = useState<number | null>(null);
+  const [essayPreview, setEssayPreview] = useState<{ [key: number]: string }>({});
   const [formData, setFormData] = useState<EssayFormData>({
     applicationId: '',
     essayType: 'personal_statement',
@@ -311,6 +314,43 @@ const Essays = () => {
                   📝 {essay.notes}
                 </p>
               )}
+
+              {/* Word Count Checker */}
+              <div className="mt-4 border-t pt-4">
+                <Button
+                  onClick={() => setExpandedEssay(expandedEssay === essay.id ? null : essay.id)}
+                  variant="outline"
+                  size="sm"
+                  className="mb-3"
+                >
+                  <FileText className="mr-2" size={16} />
+                  {expandedEssay === essay.id ? 'Hide' : 'Show'} Word Count Checker
+                </Button>
+                
+                {expandedEssay === essay.id && (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-sm text-gray-600">Paste your essay to check word count</Label>
+                      <Textarea
+                        placeholder="Paste your essay here to check if it meets the word limit..."
+                        value={essayPreview[essay.id] || ''}
+                        onChange={(e) => setEssayPreview({ ...essayPreview, [essay.id]: e.target.value })}
+                        className="mt-1 min-h-[120px]"
+                        rows={6}
+                      />
+                    </div>
+                    
+                    {essayPreview[essay.id] && (
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <WordCountTracker
+                          text={essayPreview[essay.id]}
+                          wordLimit={essay.word_limit || undefined}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
