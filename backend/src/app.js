@@ -45,6 +45,9 @@ const notificationRoutes = require('./routes/notifications');
 // Create Express app
 const app = express();
 
+// Job instances for graceful shutdown
+let deadlineSchedulerInstance = null;
+
 // Trust proxy for proper IP detection behind reverse proxies
 app.set('trust proxy', 1);
 
@@ -150,6 +153,26 @@ const server = app.listen(PORT, () => {
       logger.warn('ML retraining jobs failed to start:', error.message);
     }
   }
+  
+  // Start data refresh cron jobs (scraping auto-refresh)
+  if (config.nodeEnv === 'production' || process.env.ENABLE_SCRAPING_JOBS === 'true') {
+    try {
+      const dataRefreshJob = require('./jobs/dataRefresh');
+      dataRefreshJob.start();
+      logger.info('Data refresh cron jobs started');
+    } catch (error) {
+      logger.warn('Data refresh jobs failed to start:', error.message);
+    }
+
+    try {
+      const DeadlineScrapingScheduler = require('./jobs/deadlineScrapingScheduler');
+      deadlineSchedulerInstance = new DeadlineScrapingScheduler();
+      deadlineSchedulerInstance.setupCronJobs();
+      logger.info('Deadline scraping scheduler started');
+    } catch (error) {
+      logger.warn('Deadline scraping scheduler failed to start:', error.message);
+    }
+  }
 });
 
 // Graceful shutdown
@@ -161,6 +184,18 @@ process.on('SIGTERM', () => {
     const mlRetrainingJob = require('./jobs/mlRetraining');
     mlRetrainingJob.stop();
   } catch (e) { /* ignore */ }
+  
+  // Stop scraping jobs
+  try {
+    const dataRefreshJob = require('./jobs/dataRefresh');
+    dataRefreshJob.stop();
+  } catch (e) { /* ignore */ }
+  
+  if (deadlineSchedulerInstance) {
+    try {
+      deadlineSchedulerInstance.stop();
+    } catch (e) { /* ignore */ }
+  }
   
   server.close(() => {
     logger.info('HTTP server closed');
@@ -177,6 +212,18 @@ process.on('SIGINT', () => {
     const mlRetrainingJob = require('./jobs/mlRetraining');
     mlRetrainingJob.stop();
   } catch (e) { /* ignore */ }
+  
+  // Stop scraping jobs
+  try {
+    const dataRefreshJob = require('./jobs/dataRefresh');
+    dataRefreshJob.stop();
+  } catch (e) { /* ignore */ }
+  
+  if (deadlineSchedulerInstance) {
+    try {
+      deadlineSchedulerInstance.stop();
+    } catch (e) { /* ignore */ }
+  }
   
   server.close(() => {
     logger.info('HTTP server closed');

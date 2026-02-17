@@ -24,11 +24,11 @@ class DataRefreshJob {
       })
     );
     
-    // Quarterly: Refresh college data
-    // Runs at midnight on the 1st day every 3 months
+    // Monthly: Refresh college data
+    // Runs at midnight on the 1st day of every month
     this.jobs.push(
-      cron.schedule('0 0 1 */3 *', async () => {
-        logger.info('Quarterly college data refresh starting...');
+      cron.schedule('0 0 1 * *', async () => {
+        logger.info('Monthly college data refresh starting...');
         await this.refreshCollegeData();
       })
     );
@@ -57,7 +57,7 @@ class DataRefreshJob {
         JOIN applications a ON c.id = a.college_id
         WHERE a.status IN ('researching', 'preparing')
           AND c.admissions_url IS NOT NULL
-        LIMIT 50
+        LIMIT 200
       `);
       
       const colleges = stmt.all();
@@ -95,9 +95,9 @@ class DataRefreshJob {
         SELECT id, admissions_url, programs_url
         FROM colleges
         WHERE (admissions_url IS NOT NULL OR programs_url IS NOT NULL)
-          AND (last_scraped_at IS NULL OR last_scraped_at < date('now', '-3 months'))
+          AND (last_scraped_at IS NULL OR last_scraped_at < date('now', '-2 months'))
         ORDER BY RANDOM()
-        LIMIT 20
+        LIMIT 500
       `);
       
       const colleges = stmt.all();

@@ -44,6 +44,9 @@ const CONFIG = {
   RATE_LIMIT_MIN_TIME_MS: 1000, // Minimum 1 second between requests to same domain
   RATE_LIMIT_MAX_CONCURRENT: 2, // Max 2 concurrent requests per domain
   
+  // Progress expiry
+  PROGRESS_EXPIRY_DAYS: 30, // Reset progress after 30 days
+  
   // Files
   PROGRESS_FILE: path.join(__dirname, '..', 'data', 'scrape_progress.json'),
   LOG_FILE: path.join(__dirname, '..', 'data', 'scrape_log.json'),
@@ -140,12 +143,30 @@ class ProgressManager {
   constructor(progressFile) {
     this.progressFile = progressFile;
     this.progress = this.load();
+    this.completedMap = new Map(); // For O(1) lookups
+    this._buildCompletedMap();
   }
 
   load() {
     try {
       if (fsSync.existsSync(this.progressFile)) {
-        return JSON.parse(fsSync.readFileSync(this.progressFile, 'utf-8'));
+        const data = JSON.parse(fsSync.readFileSync(this.progressFile, 'utf-8'));
+        // Migrate legacy format on load
+        if (data.completedIds && data.completedIds.length > 0) {
+          // Use an old timestamp for legacy entries so they expire naturally
+          // Set to (PROGRESS_EXPIRY_DAYS + 1) days ago to ensure they're expired
+          const expiryDays = CONFIG.PROGRESS_EXPIRY_DAYS + 1;
+          const legacyTimestamp = data.lastUpdated || new Date(Date.now() - expiryDays * 24 * 60 * 60 * 1000).toISOString();
+          data.completedIds = data.completedIds.map(entry => {
+            if (typeof entry === 'object') return entry;
+            // Convert legacy plain ID to new format with old timestamp
+            return {
+              id: entry,
+              completedAt: legacyTimestamp
+            };
+          });
+        }
+        return data;
       }
     } catch (e) {
       logger.warn('Could not load progress file, starting fresh');
@@ -157,18 +178,51 @@ class ProgressManager {
     };
   }
 
+  _buildCompletedMap() {
+    this.completedMap.clear();
+    if (this.progress.completedIds) {
+      for (const entry of this.progress.completedIds) {
+        if (typeof entry === 'object') {
+          this.completedMap.set(entry.id, entry.completedAt);
+        } else {
+          // Legacy format fallback (shouldn't happen after load migration)
+          this.completedMap.set(entry, this.progress.lastUpdated || new Date().toISOString());
+        }
+      }
+    }
+  }
+
   async save() {
     await fs.writeFile(this.progressFile, JSON.stringify(this.progress, null, 2));
   }
 
   markCompleted(collegeId) {
-    this.progress.completedIds.push(collegeId);
+    const completedAt = new Date().toISOString();
+    this.progress.completedIds.push({
+      id: collegeId,
+      completedAt: completedAt
+    });
+    this.completedMap.set(collegeId, completedAt);
     this.progress.lastCompletedId = collegeId;
-    this.progress.lastUpdated = new Date().toISOString();
+    this.progress.lastUpdated = completedAt;
   }
 
   isCompleted(collegeId) {
-    return this.progress.completedIds.includes(collegeId);
+    const completedAt = this.completedMap.get(collegeId);
+    if (!completedAt) return false;
+    
+    // Check if entry is expired
+    const completedDate = new Date(completedAt);
+    
+    // Handle invalid dates - treat as expired
+    if (isNaN(completedDate.getTime())) {
+      logger.warn(`Invalid completion date for college ${collegeId}: ${completedAt}`);
+      return false;
+    }
+    
+    const ageMs = Date.now() - completedDate.getTime();
+    const expiryMs = CONFIG.PROGRESS_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+    return ageMs < expiryMs;
   }
 
   reset() {
@@ -177,6 +231,7 @@ class ProgressManager {
       completedIds: [], 
       startedAt: new Date().toISOString() 
     };
+    this.completedMap.clear();
   }
 }
 
@@ -961,9 +1016,10 @@ async function main() {
   console.log('║       Enhanced CollegeOS Data Scraper - Production        ║');
   console.log('╚════════════════════════════════════════════════════════════╝\n');
 
-  if (process.argv.includes('--reset')) {
+  if (process.argv.includes('--reset') || process.argv.includes('--force') || process.argv.includes('--fresh')) {
     console.log('🔄 Resetting progress...');
     progressManager.reset();
+    await progressManager.save();
   }
 
   stats.startTime = new Date();
