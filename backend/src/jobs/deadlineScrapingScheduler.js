@@ -11,6 +11,7 @@ class DeadlineScrapingScheduler {
   constructor() {
     this.isRunning = false;
     this.currentJob = null;
+    this.cronJobs = [];
   }
   
   /**
@@ -108,7 +109,7 @@ class DeadlineScrapingScheduler {
             OR last_scraped_deadlines < datetime('now', '-30 days')
           )
         ORDER BY ranking ASC NULLS LAST
-        LIMIT 500
+        LIMIT 1500
       `).all();
       
       logger.info(`Found ${colleges.length} Tier 2 colleges to scrape`);
@@ -259,22 +260,28 @@ class DeadlineScrapingScheduler {
       const cron = require('node-cron');
       
       // Weekly job: Every Sunday at 2 AM
-      cron.schedule('0 2 * * 0', async () => {
-        logger.info('Triggered: Weekly high-priority deadline scraping');
-        await this.runWeeklyHighPriority();
-      });
+      this.cronJobs.push(
+        cron.schedule('0 2 * * 0', async () => {
+          logger.info('Triggered: Weekly high-priority deadline scraping');
+          await this.runWeeklyHighPriority();
+        })
+      );
       
       // Monthly job: 1st of month at 3 AM
-      cron.schedule('0 3 1 * *', async () => {
-        logger.info('Triggered: Monthly all-colleges deadline scraping');
-        await this.runMonthlyAllColleges();
-      });
+      this.cronJobs.push(
+        cron.schedule('0 3 1 * *', async () => {
+          logger.info('Triggered: Monthly all-colleges deadline scraping');
+          await this.runMonthlyAllColleges();
+        })
+      );
       
       // Priority recalculation: Every Monday at 1 AM
-      cron.schedule('0 1 * * 1', async () => {
-        logger.info('Triggered: Priority tier recalculation');
-        await this.recalculatePriorities();
-      });
+      this.cronJobs.push(
+        cron.schedule('0 1 * * 1', async () => {
+          logger.info('Triggered: Priority tier recalculation');
+          await this.recalculatePriorities();
+        })
+      );
       
       logger.info('Deadline scraping cron jobs setup complete');
       
@@ -282,6 +289,19 @@ class DeadlineScrapingScheduler {
       logger.warn('node-cron not available, cron jobs not setup:', error.message);
       logger.info('Install with: npm install node-cron');
     }
+  }
+  
+  /**
+   * Stop all cron jobs
+   */
+  stop() {
+    this.cronJobs.forEach(job => {
+      if (job && job.stop) {
+        job.stop();
+      }
+    });
+    this.cronJobs = [];
+    logger.info('Deadline scraping cron jobs stopped');
   }
 }
 
