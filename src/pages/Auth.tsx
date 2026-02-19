@@ -118,7 +118,7 @@ const AuthPage = () => {
         <div className="mt-6 text-center">
           <button
             onClick={() => setView(view === 'login' ? 'register' : 'login')}
-            className="text-primary hover:text-blue-700 text-sm"
+            className="text-primary hover:text-primary/80 text-sm"
           >
             {view === 'login' ? "Don't have an account? Register" : 'Already have an account? Login'}
           </button>

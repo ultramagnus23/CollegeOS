@@ -547,7 +547,7 @@ const Requirements = () => {
                     <div className="w-32">
                       <Progress value={progress} className="h-2" />
                     </div>
-                    <span className={`text-sm font-medium ${progress === 100 ? 'text-success' : 'text-gray-600'}`}>
+                    <span className={`text-sm font-medium ${progress === 100 ? 'text-success' : 'text-muted-foreground'}`}>
                       {progress}%
                     </span>
                   </div>
