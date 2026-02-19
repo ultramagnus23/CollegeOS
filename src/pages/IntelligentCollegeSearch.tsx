@@ -101,12 +101,12 @@ const IntelligentCollegeSearch: React.FC<Props> = ({ studentProfile }) => {
               onChange={(e) => setQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && performSearch()}
               placeholder="Search for colleges, programs, or requirements..."
-              className="flex-1 px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-1 px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             />
             <button
               onClick={performSearch}
               disabled={searching || !query.trim()}
-              className="px-8 py-3 bg-primary hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 flex items-center gap-2"
+              className="px-8 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition disabled:opacity-50 flex items-center gap-2"
             >
               <Search className="w-5 h-5" />
               {searching ? 'Searching...' : 'Search'}

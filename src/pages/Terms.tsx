@@ -197,10 +197,10 @@ const Terms = () => {
                     id="terms-checkbox"
                     checked={termsAccepted}
                     onChange={(e) => setTermsAccepted(e.target.checked)}
-                    className="mt-1 h-5 w-5 text-primary focus:ring-blue-500 border-border rounded"
+                    className="mt-1 h-5 w-5 text-primary focus:ring-primary border-border rounded"
                   />
                   <span className="text-sm text-foreground">
-                    I agree to the <a href="/terms" target="_blank" className="text-primary hover:text-blue-800 font-medium">Terms and Conditions</a> including 
+                    I agree to the <a href="/terms" target="_blank" className="text-primary hover:text-primary/80 font-medium">Terms and Conditions</a> including 
                     data collection for service improvement as described above
                   </span>
                 </label>

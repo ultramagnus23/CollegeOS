@@ -186,7 +186,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             id={field.key}
             value={value}
             onChange={(e) => handleChange(field.key, e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-border rounded-md text-sm focus:ring-2 focus:ring-primary focus:border-primary"
           >
             {field.options?.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>

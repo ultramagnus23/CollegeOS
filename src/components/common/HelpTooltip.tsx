@@ -54,7 +54,7 @@ const HelpTooltip: React.FC<HelpTooltipProps> = ({
         <TooltipTrigger asChild>
           <button
             type="button"
-            className={`inline-flex items-center justify-center text-muted-foreground hover:text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded-full transition-colors ${className}`}
+            className={`inline-flex items-center justify-center text-muted-foreground hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded-full transition-colors ${className}`}
             aria-label="Help information"
           >
             <HelpCircle size={iconSize} />
