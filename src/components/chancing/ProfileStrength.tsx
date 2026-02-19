@@ -118,7 +118,7 @@ export default function ProfileStrength() {
           <div className={`text-5xl font-bold ${getStrengthColor(data.overallStrength)}`}>
             {data.overallStrength}%
           </div>
-          <p className="text-gray-500 mt-1">Overall Profile Strength</p>
+          <p className="text-muted-foreground mt-1">Overall Profile Strength</p>
         </div>
 
         {/* Sections */}
@@ -127,7 +127,7 @@ export default function ProfileStrength() {
             <div key={index}>
               <div className="flex justify-between mb-1">
                 <span className="text-sm font-medium">{section.name}</span>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   {section.score}/{section.maxScore} ({section.percentage}%)
                 </span>
               </div>
@@ -145,32 +145,32 @@ export default function ProfileStrength() {
             {data.profile.gpa && (
               <div>
                 <div className="text-2xl font-bold">{data.profile.gpa.toFixed(2)}</div>
-                <div className="text-xs text-gray-500">GPA</div>
+                <div className="text-xs text-muted-foreground">GPA</div>
               </div>
             )}
             {data.profile.sat && (
               <div>
                 <div className="text-2xl font-bold">{data.profile.sat}</div>
-                <div className="text-xs text-gray-500">SAT</div>
+                <div className="text-xs text-muted-foreground">SAT</div>
               </div>
             )}
             {data.profile.act && (
               <div>
                 <div className="text-2xl font-bold">{data.profile.act}</div>
-                <div className="text-xs text-gray-500">ACT</div>
+                <div className="text-xs text-muted-foreground">ACT</div>
               </div>
             )}
             <div>
               <div className="text-2xl font-bold">{data.profile.activitiesCount}</div>
-              <div className="text-xs text-gray-500">Activities</div>
+              <div className="text-xs text-muted-foreground">Activities</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-yellow-600">{data.profile.tier1Count}</div>
-              <div className="text-xs text-gray-500">Tier 1</div>
+              <div className="text-xs text-muted-foreground">Tier 1</div>
             </div>
             <div>
               <div className="text-2xl font-bold">{data.profile.courseworkCount}</div>
-              <div className="text-xs text-gray-500">AP/IB</div>
+              <div className="text-xs text-muted-foreground">AP/IB</div>
             </div>
           </div>
         )}
@@ -184,7 +184,7 @@ export default function ProfileStrength() {
             </h4>
             <ul className="space-y-2">
               {data.recommendations.map((rec, index) => (
-                <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
                   <span className="text-yellow-500">•</span>
                   {rec}
                 </li>

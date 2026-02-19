@@ -406,10 +406,10 @@ const Requirements = () => {
 
     return (
       <div className="mb-4">
-        <div className="flex items-center gap-2 mb-2 text-gray-700">
+        <div className="flex items-center gap-2 mb-2 text-foreground">
           {icon}
           <span className="font-medium">{title}</span>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             ({completedCount}/{totalCount} completed)
           </span>
         </div>
@@ -417,14 +417,14 @@ const Requirements = () => {
           {filteredReqs.map(req => (
             <div 
               key={req.id} 
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer"
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted cursor-pointer"
               onClick={() => toggleRequirement(req.id)}
             >
               <Checkbox 
                 checked={completionData[req.id] || false}
                 className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500 pointer-events-none"
               />
-              <span className={`text-sm ${completionData[req.id] ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+              <span className={`text-sm ${completionData[req.id] ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                 {req.text}
               </span>
             </div>
@@ -446,21 +446,21 @@ const Requirements = () => {
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-3">
           <ClipboardList className="text-purple-600" size={32} />
           Application Requirements
         </h1>
-        <p className="text-gray-600">Track what each college requires from your application</p>
+        <p className="text-muted-foreground">Track what each college requires from your application</p>
       </div>
 
       {/* Overall Progress */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+      <div className="bg-card rounded-xl border border-border p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Overall Progress</h2>
+          <h2 className="text-lg font-bold text-foreground">Overall Progress</h2>
           <span className="text-2xl font-bold text-purple-600">{getOverallProgress()}%</span>
         </div>
         <Progress value={getOverallProgress()} className="h-3" />
-        <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+        <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
           <span>{collegeRequirements.length} colleges in your list</span>
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
@@ -468,7 +468,7 @@ const Requirements = () => {
               Completed
             </span>
             <span className="flex items-center gap-1">
-              <Circle className="text-gray-300" size={16} />
+              <Circle className="text-muted-foreground/30" size={16} />
               Pending
             </span>
           </div>
@@ -478,7 +478,7 @@ const Requirements = () => {
       {/* Filters */}
       <div className="flex items-center gap-4 mb-6">
         <div className="flex items-center gap-2">
-          <Filter size={18} className="text-gray-500" />
+          <Filter size={18} className="text-muted-foreground" />
           <select
             value={selectedCountry}
             onChange={(e) => setSelectedCountry(e.target.value)}
@@ -496,13 +496,13 @@ const Requirements = () => {
             checked={showIncompleteOnly}
             onCheckedChange={(checked) => setShowIncompleteOnly(checked as boolean)}
           />
-          <span className="text-sm text-gray-600">Show incomplete only</span>
+          <span className="text-sm text-muted-foreground">Show incomplete only</span>
         </label>
       </div>
 
       {/* College Requirements List */}
       {filteredColleges.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+        <div className="bg-card rounded-xl border border-border p-12 text-center">
           <ClipboardList className="mx-auto text-gray-400 mb-4" size={48} />
           <p className="text-gray-500 mb-4">
             {collegeRequirements.length === 0 
@@ -525,29 +525,29 @@ const Requirements = () => {
             return (
               <div 
                 key={college.college_id} 
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+                className="bg-card rounded-xl border border-border overflow-hidden"
               >
                 {/* College Header */}
                 <div 
-                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
+                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-muted"
                   onClick={() => toggleCollege(college.college_id)}
                 >
                   <div className="flex items-center gap-3">
                     {isExpanded ? (
-                      <ChevronDown className="text-gray-400" size={20} />
+                      <ChevronDown className="text-muted-foreground" size={20} />
                     ) : (
-                      <ChevronRight className="text-gray-400" size={20} />
+                      <ChevronRight className="text-muted-foreground" size={20} />
                     )}
                     <div>
-                      <h3 className="font-bold text-gray-900">{college.college_name}</h3>
-                      <span className="text-sm text-gray-500">{college.country}</span>
+                      <h3 className="font-bold text-foreground">{college.college_name}</h3>
+                      <span className="text-sm text-muted-foreground">{college.country}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="w-32">
                       <Progress value={progress} className="h-2" />
                     </div>
-                    <span className={`text-sm font-medium ${progress === 100 ? 'text-green-600' : 'text-gray-600'}`}>
+                    <span className={`text-sm font-medium ${progress === 100 ? 'text-success' : 'text-gray-600'}`}>
                       {progress}%
                     </span>
                   </div>
@@ -559,7 +559,7 @@ const Requirements = () => {
                     {renderRequirementList(
                       college.requirements.application,
                       'Application Requirements',
-                      <FileText className="text-blue-500" size={18} />
+                      <FileText className="text-primary" size={18} />
                     )}
                     {renderRequirementList(
                       college.requirements.academic,

@@ -72,21 +72,21 @@ const Discover: React.FC = () => {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Recommendations</h1>
+    <div className="p-8 min-h-screen bg-background">
+      <h1 className="text-2xl font-bold mb-6 text-foreground">Recommendations</h1>
 
       {recommendations.map(r => (
         <div
           key={r.college.id}
-          className="bg-white border-l-4 p-4 mb-4 shadow"
+          className="bg-card border-l-4 border-primary p-4 mb-4 shadow rounded-lg"
         >
-          <h2 className="font-semibold">{r.college.name}</h2>
+          <h2 className="font-semibold text-foreground">{r.college.name}</h2>
           <p>{r.college.country}</p>
           <p>₹{(r.financial_fit.total_per_year / 100000).toFixed(1)}L</p>
 
           <button
             onClick={() => handleAddCollege(r.college.id)}
-            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded"
+            className="mt-2 px-4 py-2 bg-primary text-primary-foreground rounded"
           >
             Add College
           </button>
