@@ -186,7 +186,7 @@ const QuickEditModal: React.FC<QuickEditModalProps> = ({
             id={field.key}
             value={value}
             onChange={(e) => handleChange(field.key, e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             {field.options?.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -267,7 +267,7 @@ export const QuickEditButton: React.FC<QuickEditButtonProps> = ({
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className={`p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors ${className}`}
+        className={`p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors ${className}`}
         aria-label={`Edit ${editType}`}
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

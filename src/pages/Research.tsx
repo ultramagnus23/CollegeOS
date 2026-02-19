@@ -99,22 +99,22 @@ const Research: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">College Research Engine</h1>
-        <p className="text-gray-600 mb-8">
+        <h1 className="text-3xl font-bold mb-6 text-foreground">College Research Engine</h1>
+        <p className="text-muted-foreground mb-8">
           Search colleges by major, program, or name. All results link to official university sources.
         </p>
 
         {/* Search Type Toggle */}
-        <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+        <div className="bg-card p-4 rounded-lg border border-border mb-6">
           <div className="flex gap-4">
             <button
               onClick={() => setSearchType('major')}
               className={`px-4 py-2 rounded-lg ${
                 searchType === 'major'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-foreground'
               }`}
             >
               <GraduationCap className="w-4 h-4 inline mr-2" />
@@ -124,8 +124,8 @@ const Research: React.FC = () => {
               onClick={() => setSearchType('all')}
               className={`px-4 py-2 rounded-lg ${
                 searchType === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-foreground'
               }`}
             >
               <Search className="w-4 h-4 inline mr-2" />
@@ -135,7 +135,7 @@ const Research: React.FC = () => {
         </div>
 
         {/* Search Form */}
-        <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+        <div className="bg-card p-6 rounded-lg border border-border mb-6">
           {searchType === 'major' ? (
             <div className="space-y-4">
               <div>
@@ -158,7 +158,7 @@ const Research: React.FC = () => {
                   <button
                     onClick={handleMajorSearch}
                     disabled={loading}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50"
+                    className="px-6 py-3 bg-primary text-primary-foreground rounded-lg disabled:opacity-50"
                   >
                     {loading ? 'Searching...' : 'Search'}
                   </button>
@@ -181,7 +181,7 @@ const Research: React.FC = () => {
                   <button
                     onClick={handleGeneralSearch}
                     disabled={loading}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg disabled:opacity-50"
+                    className="px-6 py-3 bg-primary text-primary-foreground rounded-lg disabled:opacity-50"
                   >
                     {loading ? 'Searching...' : 'Search'}
                   </button>
@@ -210,7 +210,7 @@ const Research: React.FC = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg mb-6">
             <AlertCircle className="w-5 h-5 inline mr-2" />
             {error}
           </div>
@@ -219,19 +219,19 @@ const Research: React.FC = () => {
         {/* Results */}
         {loading && (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Searching colleges...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Searching colleges...</p>
           </div>
         )}
 
         {!loading && colleges.length > 0 && (
-          <div className="mb-4 text-gray-600">
+          <div className="mb-4 text-muted-foreground">
             Found {colleges.length} college{colleges.length !== 1 ? 's' : ''}
           </div>
         )}
 
         {!loading && colleges.length === 0 && !error && (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-muted-foreground">
             {searchType === 'major'
               ? 'Enter a major/program name to search'
               : 'Enter a search query to find colleges'}
@@ -242,22 +242,22 @@ const Research: React.FC = () => {
           {colleges.map((college) => (
             <div
               key={college.id}
-              className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow"
+              className="bg-card p-6 rounded-lg border border-border hover:shadow-md transition-shadow"
             >
-              <h3 className="text-lg font-semibold mb-2">{college.name}</h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <h3 className="text-lg font-semibold mb-2 text-foreground">{college.name}</h3>
+              <p className="text-sm text-muted-foreground mb-4">
                 {college.location || ''} {college.location && college.country ? ', ' : ''}
                 {college.country}
               </p>
 
               {college.majorCategories && college.majorCategories.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-xs text-gray-500 mb-2">Major Categories:</p>
+                  <p className="text-xs text-muted-foreground mb-2">Major Categories:</p>
                   <div className="flex flex-wrap gap-1">
                     {college.majorCategories.slice(0, 5).map((major, i) => (
                       <span
                         key={i}
-                        className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full"
+                        className="text-xs px-2 py-1 bg-accent text-accent-foreground rounded-full"
                       >
                         {major}
                       </span>
@@ -271,7 +271,7 @@ const Research: React.FC = () => {
                   href={college.official_website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:underline flex items-center"
+                  className="text-sm text-primary hover:underline flex items-center"
                 >
                   <Globe className="w-4 h-4 mr-1" />
                   Official Website
@@ -282,7 +282,7 @@ const Research: React.FC = () => {
                     href={college.admissions_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:underline flex items-center"
+                    className="text-sm text-primary hover:underline flex items-center"
                   >
                     Admissions Page
                     <ExternalLink className="w-3 h-3 ml-1" />
@@ -290,7 +290,7 @@ const Research: React.FC = () => {
                 )}
                 <button
                   onClick={() => navigate(`/colleges/${college.id}`)}
-                  className="text-sm text-gray-700 hover:text-blue-600 mt-2 text-left"
+                  className="text-sm text-muted-foreground hover:text-primary mt-2 text-left"
                 >
                   View Details →
                 </button>

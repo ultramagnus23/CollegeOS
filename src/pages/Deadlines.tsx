@@ -123,7 +123,7 @@ const Deadlines = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="animate-spin text-blue-600" size={40} />
+        <Loader2 className="animate-spin text-primary" size={40} />
       </div>
     );
   }
@@ -132,8 +132,8 @@ const Deadlines = () => {
     <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Deadlines</h1>
-          <p className="text-gray-600">Stay on top of your application timeline</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Deadlines</h1>
+          <p className="text-muted-foreground">Stay on top of your application timeline</p>
         </div>
         <div className="flex gap-3">
           {/* View Toggle */}
@@ -141,7 +141,7 @@ const Deadlines = () => {
             <button
               onClick={() => setViewMode('list')}
               className={`px-4 py-2 flex items-center gap-2 ${
-                viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+                viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground hover:bg-muted'
               }`}
             >
               <List size={18} />
@@ -150,7 +150,7 @@ const Deadlines = () => {
             <button
               onClick={() => setViewMode('calendar')}
               className={`px-4 py-2 flex items-center gap-2 border-l ${
-                viewMode === 'calendar' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+                viewMode === 'calendar' ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground hover:bg-muted'
               }`}
             >
               <CalendarDays size={18} />
@@ -166,7 +166,7 @@ const Deadlines = () => {
 
       {/* Add Form */}
       {showAddForm && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+        <div className="bg-card rounded-xl border border-border p-6 mb-6">
           <h3 className="text-lg font-bold mb-4">Add New Deadline</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -228,8 +228,8 @@ const Deadlines = () => {
 
       {/* Deadlines Display */}
       {deadlines.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-          <p className="text-gray-500">No deadlines yet. Add one to get started!</p>
+        <div className="bg-card rounded-xl border border-border p-12 text-center">
+          <p className="text-muted-foreground">No deadlines yet. Add one to get started!</p>
         </div>
       ) : viewMode === 'calendar' ? (
         <DeadlineCalendar deadlines={deadlines} />
@@ -239,7 +239,7 @@ const Deadlines = () => {
             <div 
               key={deadline.id} 
               className={`bg-white rounded-xl shadow-sm border p-6 ${
-                deadline.is_completed ? 'border-green-200 bg-green-50/30' : 'border-gray-100'
+                deadline.is_completed ? 'border-success/30 bg-success/5' : 'border-border'
               }`}
             >
               <div className="flex items-start justify-between">
@@ -251,28 +251,28 @@ const Deadlines = () => {
                     {deadline.is_completed ? (
                       <CheckCircle className="text-green-600" size={24} />
                     ) : (
-                      <Circle className="text-gray-400" size={24} />
+                      <Circle className="text-muted-foreground" size={24} />
                     )}
                   </button>
 
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className={`text-lg font-bold ${deadline.is_completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                      <h3 className={`text-lg font-bold ${deadline.is_completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                         {deadline.college_name}
                       </h3>
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+                      <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium">
                         {deadline.deadline_type}
                       </span>
                     </div>
 
                     {deadline.description && (
-                      <p className="text-sm text-gray-600 mb-2">{deadline.description}</p>
+                      <p className="text-sm text-muted-foreground mb-4">{deadline.description}</p>
                     )}
 
                     <div className="flex items-center gap-4 text-sm">
                       <div className="flex items-center gap-2">
-                        <Calendar size={16} className="text-gray-400" />
-                        <span className="text-gray-600">
+                        <Calendar size={16} className="text-muted-foreground" />
+                        <span className="text-muted-foreground">
                           {new Date(deadline.deadline_date).toLocaleDateString()}
                         </span>
                       </div>

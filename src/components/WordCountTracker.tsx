@@ -43,7 +43,7 @@ export const WordCountTracker = ({
   if (!limit) {
     // No limit set, show basic counts
     return (
-      <div className={`text-sm text-gray-600 ${className}`}>
+      <div className={`text-sm text-muted-foreground ${className}`}>
         <span>{wordCount} words</span>
         <span className="mx-2">•</span>
         <span>{characterCount} characters</span>
@@ -91,11 +91,11 @@ export const WordCountTracker = ({
       <div className="flex items-center justify-between gap-3">
         <div className={`flex items-center gap-2 text-sm font-medium ${color}`}>
           <span>{displayText}</span>
-          <span className="text-gray-400">({percentage.toFixed(0)}%)</span>
+          <span className="text-muted-foreground">({percentage.toFixed(0)}%)</span>
         </div>
         
         {/* Progress bar */}
-        <div className="flex-1 max-w-xs h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div className="flex-1 max-w-xs h-2 bg-muted rounded-full overflow-hidden">
           <div
             className={`h-full transition-all duration-300 ${
               percentage < 90 ? 'bg-green-500' :
@@ -120,12 +120,12 @@ export const WordCountTracker = ({
       
       {/* Additional counts for reference */}
       {limitType === 'words' && (
-        <div className="mt-1 text-xs text-gray-500">
+        <div className="mt-1 text-xs text-muted-foreground">
           {characterCount} characters ({characterCountNoSpaces} without spaces)
         </div>
       )}
       {limitType === 'characters' && (
-        <div className="mt-1 text-xs text-gray-500">
+        <div className="mt-1 text-xs text-muted-foreground">
           {wordCount} words • {characterCountNoSpaces} characters (no spaces)
         </div>
       )}

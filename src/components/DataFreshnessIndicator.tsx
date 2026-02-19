@@ -59,7 +59,7 @@ export const DataFreshnessIndicator = ({
               href={sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+              className="text-sm text-primary hover:text-blue-800 flex items-center gap-1"
             >
               <span>Source: {collegeName || 'College Official Page'}</span>
               <ExternalLink size={14} />
@@ -72,7 +72,7 @@ export const DataFreshnessIndicator = ({
               href={sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-red-300 text-red-700 text-sm font-medium rounded hover:bg-red-50 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-card border border-red-300 text-red-700 text-sm font-medium rounded hover:bg-red-50 transition-colors"
             >
               Verify Now
               <ExternalLink size={14} />
