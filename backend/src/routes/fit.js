@@ -49,22 +49,6 @@ router.get('/:collegeId', authenticate, async (req, res) => {
     });
   }
 });
-    if (!result) {
-      result = await FitClassificationService.classifyCollege(userId, collegeId);
-    }
-    
-    res.json({
-      success: true,
-      data: result
-    });
-  } catch (error) {
-    logger.error('Fit classification error:', error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
 
 /**
  * GET /api/fit/:collegeId/explain
