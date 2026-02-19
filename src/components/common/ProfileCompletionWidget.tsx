@@ -97,7 +97,7 @@ const ProfileCompletionWidget: React.FC<ProfileCompletionWidgetProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+        <Loader2 className="w-5 h-5 animate-spin text-primary" />
       </div>
     );
   }
@@ -113,7 +113,7 @@ const ProfileCompletionWidget: React.FC<ProfileCompletionWidgetProps> = ({
         <div className="flex-1">
           <Progress value={status.percentage} className="h-2" />
         </div>
-        <span className="text-sm font-medium text-gray-600">{status.percentage}%</span>
+        <span className="text-sm font-medium text-muted-foreground">{status.percentage}%</span>
       </div>
     );
   }
@@ -122,11 +122,11 @@ const ProfileCompletionWidget: React.FC<ProfileCompletionWidgetProps> = ({
   if (variant === 'compact') {
     return (
       <div 
-        className="p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-blue-300 transition-colors"
+        className="p-3 bg-card rounded-lg border border-border cursor-pointer hover:border-blue-300 transition-colors"
         onClick={() => navigate('/settings')}
       >
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700">Profile Completion</span>
+          <span className="text-sm font-medium text-foreground">Profile Completion</span>
           <span className={`text-sm font-bold ${status.percentage >= 80 ? 'text-green-600' : status.percentage >= 50 ? 'text-yellow-600' : 'text-orange-600'}`}>
             {status.percentage}%
           </span>
@@ -144,10 +144,10 @@ const ProfileCompletionWidget: React.FC<ProfileCompletionWidgetProps> = ({
 
   // Full variant - complete widget with all details
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+    <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900">Profile Completion</h3>
+        <h3 className="font-semibold text-foreground">Profile Completion</h3>
         <span className={`text-2xl font-bold ${status.percentage >= 80 ? 'text-green-600' : status.percentage >= 50 ? 'text-yellow-600' : 'text-orange-600'}`}>
           {status.percentage}%
         </span>
@@ -155,21 +155,21 @@ const ProfileCompletionWidget: React.FC<ProfileCompletionWidgetProps> = ({
 
       {/* Progress Bar */}
       <div className="mb-4">
-        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+        <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
           <div 
             className={`h-full rounded-full transition-all duration-500 ${getProgressColor(status.percentage)}`}
             style={{ width: `${status.percentage}%` }}
           />
         </div>
-        <p className="text-sm text-gray-500 mt-2">
+        <p className="text-sm text-muted-foreground mt-2">
           Your profile is {status.percentage}% complete
         </p>
       </div>
 
       {/* Missing Fields */}
       {showMissingFields && (status.missing_critical.length > 0 || status.missing_optional.length > 0) && (
-        <div className="border-t border-gray-100 pt-4">
-          <h4 className="text-sm font-medium text-gray-700 mb-3">To improve your profile:</h4>
+        <div className="border-t border-border pt-4">
+          <h4 className="text-sm font-medium text-foreground mb-3">To improve your profile:</h4>
           
           {/* Critical Fields */}
           {status.missing_critical.length > 0 && (
@@ -182,13 +182,13 @@ const ProfileCompletionWidget: React.FC<ProfileCompletionWidgetProps> = ({
                   <button
                     key={field}
                     onClick={() => handleFieldClick(field)}
-                    className="w-full flex items-center justify-between p-2 text-left text-sm text-gray-700 hover:bg-orange-50 rounded-lg transition-colors group"
+                    className="w-full flex items-center justify-between p-2 text-left text-sm text-foreground hover:bg-orange-50 rounded-lg transition-colors group"
                   >
                     <div className="flex items-center gap-2">
                       <AlertCircle size={14} className="text-orange-500" />
                       <span>{field}</span>
                     </div>
-                    <ChevronRight size={14} className="text-gray-400 group-hover:text-orange-500" />
+                    <ChevronRight size={14} className="text-muted-foreground group-hover:text-orange-500" />
                   </button>
                 ))}
               </div>
@@ -198,7 +198,7 @@ const ProfileCompletionWidget: React.FC<ProfileCompletionWidgetProps> = ({
           {/* Optional Fields */}
           {status.missing_optional.length > 0 && (
             <div>
-              <div className="text-xs font-medium text-blue-600 uppercase tracking-wider mb-2">
+              <div className="text-xs font-medium text-primary uppercase tracking-wider mb-2">
                 Good to have
               </div>
               <div className="space-y-1">
@@ -206,13 +206,13 @@ const ProfileCompletionWidget: React.FC<ProfileCompletionWidgetProps> = ({
                   <button
                     key={field}
                     onClick={() => handleFieldClick(field)}
-                    className="w-full flex items-center justify-between p-2 text-left text-sm text-gray-600 hover:bg-blue-50 rounded-lg transition-colors group"
+                    className="w-full flex items-center justify-between p-2 text-left text-sm text-muted-foreground hover:bg-primary/10 rounded-lg transition-colors group"
                   >
                     <div className="flex items-center gap-2">
-                      <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300" />
+                      <div className="w-3.5 h-3.5 rounded-full border-2 border-border" />
                       <span>{field}</span>
                     </div>
-                    <ChevronRight size={14} className="text-gray-400 group-hover:text-blue-500" />
+                    <ChevronRight size={14} className="text-muted-foreground group-hover:text-primary" />
                   </button>
                 ))}
               </div>

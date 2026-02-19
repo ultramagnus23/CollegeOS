@@ -44,11 +44,11 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{background: "var(--color-bg-primary)"}}>
+      <div className="bg-card rounded-2xl border border-border p-8 w-full max-w-md shadow-lg">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">College App OS</h1>
-          <p className="text-gray-600 mt-2">Your global college application hub</p>
+          <h1 className="text-3xl font-bold text-foreground">College App OS</h1>
+          <p className="text-muted-foreground mt-2">Your global college application hub</p>
         </div>
 
         <div className="space-y-4">
@@ -118,7 +118,7 @@ const AuthPage = () => {
         <div className="mt-6 text-center">
           <button
             onClick={() => setView(view === 'login' ? 'register' : 'login')}
-            className="text-blue-600 hover:text-blue-700 text-sm"
+            className="text-primary hover:text-primary/80 text-sm"
           >
             {view === 'login' ? "Don't have an account? Register" : 'Already have an account? Login'}
           </button>

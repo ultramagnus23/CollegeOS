@@ -145,7 +145,7 @@ const Scholarships = () => {
   if (loading && scholarships.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="animate-spin text-blue-600" size={40} />
+        <Loader2 className="animate-spin text-primary" size={40} />
       </div>
     );
   }
@@ -153,8 +153,8 @@ const Scholarships = () => {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Scholarship Database</h1>
-        <p className="text-gray-600">Find and track scholarships from around the world</p>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Scholarship Database</h1>
+        <p className="text-muted-foreground">Find and track scholarships from around the world</p>
       </div>
 
       {/* Stats Cards */}
@@ -222,11 +222,11 @@ const Scholarships = () => {
 
       {/* Filters */}
       {activeTab === 'all' && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+        <div className="bg-card rounded-xl border border-border p-4 mb-6">
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex-1 min-w-[200px]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -289,20 +289,20 @@ const Scholarships = () => {
       {activeTab === 'all' ? (
         <div className="space-y-4">
           {scholarships.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+            <div className="bg-card rounded-xl border border-border p-12 text-center">
               <GraduationCap className="mx-auto text-gray-400 mb-4" size={48} />
-              <p className="text-gray-500">No scholarships found matching your criteria</p>
+              <p className="text-muted-foreground">No scholarships found matching your criteria</p>
             </div>
           ) : (
             scholarships.map((scholarship) => (
               <div
                 key={scholarship.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:border-blue-200 transition"
+                className="bg-card rounded-xl border border-border p-6 hover:border-primary/40 transition"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-bold text-gray-900">{scholarship.name}</h3>
+                      <h3 className="text-lg font-bold text-foreground">{scholarship.name}</h3>
                       <div className="flex gap-2">
                         {scholarship.need_based === 1 && (
                           <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
@@ -315,27 +315,27 @@ const Scholarships = () => {
                           </span>
                         )}
                         {scholarship.is_renewable === 1 && (
-                          <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                          <span className="px-2 py-0.5 bg-success/10 text-success text-xs rounded-full">
                             Renewable
                           </span>
                         )}
                       </div>
                     </div>
                     
-                    <p className="text-sm text-gray-600 mb-3">{scholarship.provider}</p>
+                    <p className="text-sm text-muted-foreground mb-3">{scholarship.provider}</p>
                     
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
+                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
                       <div className="flex items-center gap-1">
-                        <Globe size={16} className="text-gray-400" />
+                        <Globe size={16} className="text-muted-foreground" />
                         {scholarship.country}
                       </div>
                       <div className="flex items-center gap-1">
-                        <DollarSign size={16} className="text-gray-400" />
+                        <DollarSign size={16} className="text-muted-foreground" />
                         {formatAmount(scholarship)}
                       </div>
                       {scholarship.deadline && (
                         <div className="flex items-center gap-1">
-                          <Calendar size={16} className="text-gray-400" />
+                          <Calendar size={16} className="text-muted-foreground" />
                           <span className={
                             new Date(scholarship.deadline) < new Date() 
                               ? 'text-red-600' 
@@ -348,13 +348,13 @@ const Scholarships = () => {
                     </div>
                     
                     {scholarship.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                         {scholarship.description}
                       </p>
                     )}
                     
                     {scholarship.eligibility && (
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         <strong>Eligibility:</strong> {scholarship.eligibility}
                       </p>
                     )}
@@ -363,7 +363,7 @@ const Scholarships = () => {
                   <div className="flex flex-col gap-2 ml-4">
                     {isTracked(scholarship.id) ? (
                       <Button variant="outline" size="sm" disabled>
-                        <BookmarkCheck size={16} className="mr-1 text-green-600" />
+                        <BookmarkCheck size={16} className="mr-1 text-success" />
                         Tracked
                       </Button>
                     ) : (
@@ -400,7 +400,7 @@ const Scholarships = () => {
       ) : (
         <div className="space-y-4">
           {trackedScholarships.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+            <div className="bg-card rounded-xl border border-border p-12 text-center">
               <Bookmark className="mx-auto text-gray-400 mb-4" size={48} />
               <p className="text-gray-500 mb-4">You haven't tracked any scholarships yet</p>
               <Button onClick={() => setActiveTab('all')}>
@@ -411,25 +411,25 @@ const Scholarships = () => {
             trackedScholarships.map((tracked) => (
               <div
                 key={tracked.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+                className="bg-card rounded-xl border border-border p-6"
               >
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 mb-1">{tracked.name}</h3>
                     <p className="text-sm text-gray-600 mb-2">{tracked.provider}</p>
                     
-                    <div className="flex gap-4 text-sm text-gray-600">
+                    <div className="flex gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
-                        <Globe size={16} className="text-gray-400" />
+                        <Globe size={16} className="text-muted-foreground" />
                         {tracked.country}
                       </div>
                       <div className="flex items-center gap-1">
-                        <DollarSign size={16} className="text-gray-400" />
+                        <DollarSign size={16} className="text-muted-foreground" />
                         {tracked.amount}
                       </div>
                       {tracked.deadline && (
                         <div className="flex items-center gap-1">
-                          <Calendar size={16} className="text-gray-400" />
+                          <Calendar size={16} className="text-muted-foreground" />
                           {getDaysUntilDeadline(tracked.deadline)}
                         </div>
                       )}

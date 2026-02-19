@@ -69,13 +69,13 @@ export const NotificationCenter: React.FC = () => {
     switch (type) {
       case 'deadline_change':
       case 'deadline_approaching':
-        return <Calendar className="w-5 h-5 text-blue-500" />;
+        return <Calendar className="w-5 h-5 text-primary" />;
       case 'essay_change':
         return <FileText className="w-5 h-5 text-purple-500" />;
       case 'decision_approaching':
         return <AlertCircle className="w-5 h-5 text-yellow-500" />;
       default:
-        return <Bell className="w-5 h-5 text-gray-500" />;
+        return <Bell className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
@@ -89,7 +89,7 @@ export const NotificationCenter: React.FC = () => {
       case 'decision_approaching':
         return 'border-l-4 border-yellow-500';
       default:
-        return 'border-l-4 border-gray-300';
+        return 'border-l-4 border-border';
     }
   };
 
@@ -153,9 +153,9 @@ export const NotificationCenter: React.FC = () => {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="text-center py-8 text-gray-500">Loading notifications...</div>
+          <div className="text-center py-8 text-muted-foreground">Loading notifications...</div>
         ) : notifications.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             {filter === 'unread' ? 'No unread notifications' : 'No notifications yet'}
           </div>
         ) : (
@@ -164,7 +164,7 @@ export const NotificationCenter: React.FC = () => {
               <div
                 key={notification.id}
                 className={`p-4 rounded-lg ${getNotificationColor(notification.type)} ${
-                  notification.read ? 'bg-gray-50' : 'bg-white shadow-sm'
+                  notification.read ? 'bg-muted/50' : 'bg-card shadow-sm'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -175,16 +175,16 @@ export const NotificationCenter: React.FC = () => {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <h4 className={`text-sm font-semibold ${
-                          notification.read ? 'text-gray-700' : 'text-gray-900'
+                          notification.read ? 'text-foreground' : 'text-foreground'
                         }`}>
                           {notification.title}
                         </h4>
                         <p className={`text-sm mt-1 ${
-                          notification.read ? 'text-gray-600' : 'text-gray-700'
+                          notification.read ? 'text-muted-foreground' : 'text-foreground'
                         }`}>
                           {notification.message}
                         </p>
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs text-muted-foreground mt-2">
                           {formatDate(notification.created_at)}
                         </p>
                       </div>
@@ -238,9 +238,9 @@ export const NotificationBadge: React.FC<{ onClick?: () => void }> = ({ onClick 
   return (
     <button
       onClick={onClick}
-      className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
+      className="relative p-2 hover:bg-muted rounded-full transition-colors"
     >
-      <Bell className="w-5 h-5 text-gray-700" />
+      <Bell className="w-5 h-5 text-foreground" />
       {unreadCount > 0 && (
         <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full min-w-[20px]">
           {unreadCount > 99 ? '99+' : unreadCount}

@@ -45,7 +45,7 @@ export const DecisionCountdown: React.FC<DecisionCountdownProps> = ({
     if (daysUntil <= 0) return 'bg-green-500';
     if (daysUntil <= 7) return 'bg-red-500';
     if (daysUntil <= 30) return 'bg-yellow-500';
-    return 'bg-blue-500';
+    return 'bg-primary';
   };
 
   const getUrgencyText = (daysUntil: number): string => {
@@ -65,8 +65,8 @@ export const DecisionCountdown: React.FC<DecisionCountdownProps> = ({
   if (decisions.length === 0) {
     return (
       <Card className="p-6">
-        <div className="text-center text-gray-500">
-          <Calendar className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+        <div className="text-center text-muted-foreground">
+          <Calendar className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
           <p>No decision dates to track yet</p>
           <p className="text-sm mt-1">Submit applications to see decision dates here</p>
         </div>
@@ -94,7 +94,7 @@ export const DecisionCountdown: React.FC<DecisionCountdownProps> = ({
                     <div className={`w-1 h-full ${getUrgencyColor(daysUntil)} rounded-full`} />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-semibold text-gray-900">
+                        <h4 className="font-semibold text-foreground">
                           {decision.collegeName}
                         </h4>
                         <Badge variant="outline" className="text-xs">
@@ -110,16 +110,16 @@ export const DecisionCountdown: React.FC<DecisionCountdownProps> = ({
                       
                       {showTimeline && (
                         <div className="mt-3 space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <div className="w-2 h-2 rounded-full bg-blue-400" />
                             <span className="font-medium">Applied:</span>
                             <span>{formatDate(decision.applicationDate)}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm">
                             <div className={`w-2 h-2 rounded-full ${getUrgencyColor(daysUntil)}`} />
-                            <span className="font-medium text-gray-900">Decision:</span>
+                            <span className="font-medium text-foreground">Decision:</span>
                             <span className={`font-semibold ${
-                              daysUntil <= 7 && !isPast ? 'text-red-600' : 'text-gray-900'
+                              daysUntil <= 7 && !isPast ? 'text-red-600' : 'text-foreground'
                             }`}>
                               {formatDate(decision.notificationDate)}
                             </span>
@@ -137,7 +137,7 @@ export const DecisionCountdown: React.FC<DecisionCountdownProps> = ({
                     {getUrgencyText(daysUntil)}
                   </Badge>
                   {!isPast && (
-                    <p className="text-2xl font-bold mt-2 text-gray-900">
+                    <p className="text-2xl font-bold mt-2 text-foreground">
                       {daysUntil === 0 ? 'Today' : daysUntil === 1 ? '1 day' : `${daysUntil} days`}
                     </p>
                   )}
@@ -175,7 +175,7 @@ export const CompactDecisionCountdown: React.FC<{ decisions: DecisionDate[] }> =
 
   return (
     <Card className="p-4">
-      <h4 className="font-semibold text-sm text-gray-700 mb-3 flex items-center gap-2">
+      <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
         <Clock className="w-4 h-4" />
         Upcoming Decisions
       </h4>
@@ -184,11 +184,11 @@ export const CompactDecisionCountdown: React.FC<{ decisions: DecisionDate[] }> =
           const daysUntil = calculateDaysUntil(decision.notificationDate);
           return (
             <div key={index} className="flex items-center justify-between text-sm">
-              <span className="text-gray-700 truncate flex-1">
+              <span className="text-foreground truncate flex-1">
                 {decision.collegeName}
               </span>
               <span className={`font-semibold ml-2 ${
-                daysUntil <= 7 ? 'text-red-600' : 'text-blue-600'
+                daysUntil <= 7 ? 'text-red-600' : 'text-primary'
               }`}>
                 {daysUntil === 0 ? 'Today!' : daysUntil === 1 ? '1 day' : `${daysUntil} days`}
               </span>

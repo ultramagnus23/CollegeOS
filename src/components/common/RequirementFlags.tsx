@@ -16,7 +16,7 @@ interface RequirementFlagsProps {
 
 const flags = [
   { key: 'hasPortfolio', icon: Palette, label: 'Portfolio Required', color: 'text-purple-600' },
-  { key: 'hasInterview', icon: Video, label: 'Interview Required', color: 'text-blue-600' },
+  { key: 'hasInterview', icon: Video, label: 'Interview Required', color: 'text-primary' },
   { key: 'hasLanguage', icon: Languages, label: 'Language Test Required', color: 'text-amber-600' },
   { key: 'hasFinancial', icon: FileText, label: 'Financial Documents Required', color: 'text-emerald-600' },
 ] as const;
