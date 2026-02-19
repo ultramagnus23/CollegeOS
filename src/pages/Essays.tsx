@@ -1,361 +1,309 @@
+// src/pages/Essays.tsx — Dark Editorial Redesign
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Plus, ExternalLink, Trash2, Loader2, PenTool, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { WordCountTracker } from '@/components/WordCountTracker';
 
-// Define types for API responses
-interface Application {
-  id: number;
-  college_name: string;
-  status: string;
-}
-
+/* ─── Types ──────────────────────────────────────────────────────────── */
+interface Application { id: number; college_name: string; status: string; }
 interface Essay {
-  id: number;
-  application_id: number;
-  college_name: string;
-  essay_type: string;
-  prompt: string;
-  word_limit?: number;
-  google_drive_link?: string;
-  status: string;
-  notes?: string;
+  id: number; application_id: number; college_name: string; essay_type: string;
+  prompt: string; word_limit?: number; google_drive_link?: string;
+  status: string; notes?: string; last_edited_at?: string;
 }
+interface EssayFormData { applicationId:string; essayType:string; prompt:string; wordLimit:string; googleDriveLink:string; notes:string; }
 
-interface EssayFormData {
-  applicationId: string;
-  essayType: string;
-  prompt: string;
-  wordLimit: string;
-  googleDriveLink: string;
-  notes: string;
-}
+/* ─── Design ─────────────────────────────────────────────────────────── */
+const h2r = (hex:string,a:number) => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return `rgba(${r},${g},${b},${a})`; };
+const ACCENT = '#A855F7';
+const S = { bg:'#080810', surface:'#0F0F1C', surface2:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.08)', border2:'rgba(255,255,255,0.13)', muted:'rgba(255,255,255,0.45)', dim:'rgba(255,255,255,0.22)', font:"'DM Sans',sans-serif" };
+const inp: React.CSSProperties = { width:'100%', padding:'10px 14px', background:S.surface2, border:`1px solid ${S.border2}`, borderRadius:10, color:'#fff', fontSize:14, fontFamily:S.font };
+const lbl: React.CSSProperties = { fontSize:11, color:S.dim, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6, fontWeight:600, display:'block', fontFamily:S.font };
 
+const STATUS_CFG: Record<string,{label:string,color:string,bg:string}> = {
+  not_started:    { label:'Not Started',    color:'rgba(255,255,255,0.4)', bg:'rgba(255,255,255,0.07)' },
+  in_progress:    { label:'In Progress',    color:'#FBBF24', bg:'rgba(251,191,36,0.12)' },
+  draft_complete: { label:'Draft Complete', color:'#3B9EFF', bg:'rgba(59,158,255,0.12)' },
+  final:          { label:'Final',          color:'#10B981', bg:'rgba(16,185,129,0.12)' },
+};
+
+const GLOBAL = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}body{background:#080810;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  input::placeholder,textarea::placeholder{color:rgba(255,255,255,0.2)!important;}
+  select option,option{background:#0F0F1C;color:#fff;}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
+`;
+
+/* ─── Essay Card ─────────────────────────────────────────────────────── */
+const EssayCard: React.FC<{
+  essay: Essay; index: number;
+  onStatusChange: (id:number, s:string) => void;
+  onDelete: (id:number) => void;
+}> = ({ essay, index, onStatusChange, onDelete }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [preview, setPreview] = useState('');
+  const status = STATUS_CFG[essay.status] || STATUS_CFG.not_started;
+
+  const progressPct = {
+    not_started:0, in_progress:33, draft_complete:66, final:100,
+  }[essay.status] ?? 0;
+
+  return (
+    <div style={{
+      background: S.surface, border:`1px solid ${S.border}`,
+      borderLeft:`3px solid ${status.color}`,
+      borderRadius:16, overflow:'hidden',
+      animation:'fadeUp 0.35s ease both', animationDelay:`${index*0.06}s`,
+      transition:'border-color 0.2s',
+    }}>
+      {/* Progress bar */}
+      <div style={{ height:2, background:'rgba(255,255,255,0.06)' }}>
+        <div style={{ width:`${progressPct}%`, height:'100%', background:status.color, transition:'width 0.6s ease' }} />
+      </div>
+
+      <div style={{ padding:'20px 22px' }}>
+        {/* Header */}
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:6 }}>
+              <h3 style={{ fontSize:17, fontWeight:800, color:'#fff', fontFamily:S.font }}>{essay.college_name}</h3>
+              <span style={{ fontSize:11, padding:'2px 8px', borderRadius:100, background:h2r(ACCENT,0.15), color:ACCENT, fontWeight:600, fontFamily:S.font }}>
+                {essay.essay_type.replace(/_/g,' ')}
+              </span>
+            </div>
+            {/* Status selector as pills */}
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+              {Object.entries(STATUS_CFG).map(([key,cfg]) => (
+                <button key={key} onClick={() => onStatusChange(essay.id, key)} style={{
+                  padding:'4px 12px', borderRadius:100, fontSize:11, fontWeight:essay.status===key?700:400,
+                  background:essay.status===key ? cfg.bg : 'transparent',
+                  border:`1px solid ${essay.status===key ? cfg.color : 'rgba(255,255,255,0.1)'}`,
+                  color:essay.status===key ? cfg.color : S.dim,
+                  cursor:'pointer', fontFamily:S.font, transition:'all 0.12s',
+                }}>{cfg.label}</button>
+              ))}
+            </div>
+          </div>
+          <button onClick={() => onDelete(essay.id)} style={{
+            width:32, height:32, borderRadius:8, cursor:'pointer', flexShrink:0, marginLeft:12,
+            background:'rgba(248,113,113,0.1)', border:'1px solid rgba(248,113,113,0.2)',
+            color:'#F87171', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center',
+          }}
+            onMouseEnter={e=>(e.currentTarget.style.background='rgba(248,113,113,0.2)')}
+            onMouseLeave={e=>(e.currentTarget.style.background='rgba(248,113,113,0.1)')}
+          >🗑</button>
+        </div>
+
+        {/* Prompt */}
+        <div style={{
+          padding:'14px 16px', background:'rgba(255,255,255,0.04)', borderRadius:10,
+          marginBottom:14, borderLeft:`2px solid ${h2r(ACCENT,0.4)}`,
+        }}>
+          <div style={{ fontSize:11, color:S.dim, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6, fontFamily:S.font }}>Prompt</div>
+          <p style={{ fontSize:14, color:'rgba(255,255,255,0.7)', lineHeight:1.6, fontStyle:'italic', fontFamily:S.font }}>{essay.prompt}</p>
+        </div>
+
+        {/* Meta row */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10 }}>
+          <div style={{ display:'flex', gap:16 }}>
+            {essay.word_limit && (
+              <span style={{ fontSize:12, color:S.dim, fontFamily:S.font }}>📝 {essay.word_limit} words</span>
+            )}
+            {essay.last_edited_at && (
+              <span style={{ fontSize:12, color:S.dim, fontFamily:S.font }}>
+                🕐 {new Date(essay.last_edited_at).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            {essay.google_drive_link && (
+              <button onClick={() => window.open(essay.google_drive_link,'_blank')} style={{
+                padding:'7px 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer',
+                background:h2r(ACCENT,0.15), border:`1px solid ${h2r(ACCENT,0.3)}`, color:ACCENT, fontFamily:S.font,
+              }}>↗ Open in Docs</button>
+            )}
+            <button onClick={()=>setExpanded(e=>!e)} style={{
+              padding:'7px 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer',
+              background:'rgba(255,255,255,0.06)', border:`1px solid ${S.border2}`, color:S.muted, fontFamily:S.font,
+            }}>{expanded ? 'Hide' : '≡ Word Check'}</button>
+          </div>
+        </div>
+
+        {/* Notes */}
+        {essay.notes && (
+          <div style={{ marginTop:12, padding:'10px 14px', background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:10, fontSize:13, color:'rgba(245,158,11,0.9)', fontFamily:S.font }}>
+            📝 {essay.notes}
+          </div>
+        )}
+
+        {/* Word count expander */}
+        {expanded && (
+          <div style={{ marginTop:16, paddingTop:16, borderTop:`1px solid ${S.border}` }}>
+            <div style={{ fontSize:11, color:S.dim, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:8, fontFamily:S.font }}>Paste essay to check</div>
+            <textarea value={preview} onChange={e=>setPreview(e.target.value)}
+              placeholder="Paste your essay here…"
+              rows={5} style={{ ...inp, resize:'vertical', lineHeight:1.6 }} />
+            {preview && (
+              <div style={{ marginTop:10, padding:12, background:'rgba(255,255,255,0.04)', borderRadius:10 }}>
+                <WordCountTracker text={preview} wordLimit={essay.word_limit} />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ─── Main ────────────────────────────────────────────────────────────── */
 const Essays = () => {
   const [essays, setEssays] = useState<Essay[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [expandedEssay, setExpandedEssay] = useState<number | null>(null);
-  const [essayPreview, setEssayPreview] = useState<{ [key: number]: string }>({});
-  const [formData, setFormData] = useState<EssayFormData>({
-    applicationId: '',
-    essayType: 'personal_statement',
-    prompt: '',
-    wordLimit: '',
-    googleDriveLink: '',
-    notes: ''
-  });
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<EssayFormData>({ applicationId:'', essayType:'personal_statement', prompt:'', wordLimit:'', googleDriveLink:'', notes:'' });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
-      const [essaysRes, appsRes] = await Promise.all([
-        api.essays.getAll<{ data: any[] }>(),
-        api.applications.getAll<{ data: any[] }>()
+      const [er, ar] = await Promise.all([
+        api.essays.getAll<{data:any[]}>(),
+        api.applications.getAll<{data:any[]}>(),
       ]);
-      setEssays(essaysRes.data || []);
-      setApplications(appsRes.data || []);
-    } catch (error: any) {
-      toast.error('Failed to load essays');
-    } finally {
-      setLoading(false);
-    }
+      setEssays(er.data || []);
+      setApplications(ar.data || []);
+    } catch { toast.error('Failed to load'); } finally { setLoading(false); }
   };
 
   const handleAdd = async () => {
-    if (!formData.applicationId || !formData.prompt) {
-      toast.error('Please fill required fields');
-      return;
-    }
-
+    if (!form.applicationId || !form.prompt) { toast.error('Fill required fields'); return; }
     try {
-      await api.essays.create({
-        ...formData,
-        applicationId: Number(formData.applicationId),
-        wordLimit: formData.wordLimit ? Number(formData.wordLimit) : null
-      });
+      await api.essays.create({ ...form, applicationId:Number(form.applicationId), wordLimit:form.wordLimit?Number(form.wordLimit):null });
       toast.success('Essay added');
-      setShowAddForm(false);
-      setFormData({
-        applicationId: '',
-        essayType: 'personal_statement',
-        prompt: '',
-        wordLimit: '',
-        googleDriveLink: '',
-        notes: ''
-      });
+      setShowForm(false);
+      setForm({ applicationId:'', essayType:'personal_statement', prompt:'', wordLimit:'', googleDriveLink:'', notes:'' });
       loadData();
-    } catch (error: any) {
-      toast.error('Failed to add essay');
-    }
+    } catch { toast.error('Failed to add'); }
   };
 
-  const handleStatusChange = async (id: number, newStatus: string) => {
-    try {
-      await api.essays.update(id, { status: newStatus });
-      toast.success('Status updated');
-      loadData();
-    } catch (error: any) {
-      toast.error('Failed to update status');
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm('Delete this essay?')) return;
-
-    try {
-      await api.essays.delete(id);
-      toast.success('Essay deleted');
-      loadData();
-    } catch (error: any) {
-      toast.error('Failed to delete essay');
-    }
-  };
-
-  const statusOptions = [
-    { value: 'not_started', label: 'Not Started', color: 'bg-gray-100 text-gray-700' },
-    { value: 'in_progress', label: 'In Progress', color: 'bg-yellow-100 text-yellow-700' },
-    { value: 'draft_complete', label: 'Draft Complete', color: 'bg-blue-100 text-blue-700' },
-    { value: 'final', label: 'Final', color: 'bg-green-100 text-green-700' }
-  ];
-
-  const getStatusColor = (status: string) => {
-    return statusOptions.find(s => s.value === status)?.color || 'bg-gray-100 text-gray-700';
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="animate-spin text-blue-600" size={40} />
-      </div>
-    );
-  }
+  const statusCounts = Object.keys(STATUS_CFG).reduce((acc,k) => ({
+    ...acc, [k]: essays.filter(e=>e.status===k).length,
+  }), {} as Record<string,number>);
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Essays</h1>
-          <p className="text-gray-600">Track your essays and link to Google Docs</p>
-        </div>
-        <Button onClick={() => setShowAddForm(!showAddForm)}>
-          <Plus className="mr-2" size={20} />
-          Add Essay
-        </Button>
-      </div>
+    <>
+      <style>{GLOBAL}</style>
+      <div style={{ minHeight:'100vh', background:S.bg, color:'#fff', fontFamily:S.font }}>
 
-      {/* Add Form */}
-      {showAddForm && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-          <h3 className="text-lg font-bold mb-4">Add New Essay</h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Header */}
+        <div style={{ padding:'44px 48px 0', background:'linear-gradient(180deg,rgba(168,85,247,0.07) 0%,transparent 100%)', borderBottom:`1px solid ${S.border}` }}>
+          <div style={{ maxWidth:860, margin:'0 auto' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', paddingBottom:28, flexWrap:'wrap', gap:16 }}>
               <div>
-                <Label>Application *</Label>
-                <select
-                  value={formData.applicationId}
-                  onChange={(e) => setFormData({ ...formData, applicationId: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg mt-1"
-                >
-                  <option value="">Select application</option>
-                  {applications.map(app => (
-                    <option key={app.id} value={app.id}>{app.college_name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <Label>Essay Type</Label>
-                <select
-                  value={formData.essayType}
-                  onChange={(e) => setFormData({ ...formData, essayType: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg mt-1"
-                >
-                  <option value="personal_statement">Personal Statement</option>
-                  <option value="supplemental">Supplemental Essay</option>
-                  <option value="why_us">Why Us Essay</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <Label>Essay Prompt *</Label>
-              <Textarea
-                placeholder="Enter the essay prompt..."
-                value={formData.prompt}
-                onChange={(e) => setFormData({ ...formData, prompt: e.target.value })}
-                className="mt-1"
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Word Limit</Label>
-                <Input
-                  type="number"
-                  placeholder="e.g., 650"
-                  value={formData.wordLimit}
-                  onChange={(e) => setFormData({ ...formData, wordLimit: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label>Google Drive Link</Label>
-                <Input
-                  type="url"
-                  placeholder="https://docs.google.com/..."
-                  value={formData.googleDriveLink}
-                  onChange={(e) => setFormData({ ...formData, googleDriveLink: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label>Notes</Label>
-              <Textarea
-                placeholder="Optional notes..."
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="mt-1"
-                rows={2}
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-3 mt-4">
-            <Button onClick={handleAdd}>Add Essay</Button>
-            <Button onClick={() => setShowAddForm(false)} variant="outline">Cancel</Button>
-          </div>
-        </div>
-      )}
-
-      {/* Essays List */}
-      {essays.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-          <PenTool className="mx-auto text-gray-400 mb-4" size={48} />
-          <p className="text-gray-500 mb-4">No essays yet. Add one to get started!</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {essays.map((essay) => (
-            <div key={essay.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-bold text-gray-900">{essay.college_name}</h3>
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
-                      {essay.essay_type.replace('_', ' ')}
-                    </span>
-                  </div>
-
-                  <div className="mb-3">
-                    <label className="text-xs text-gray-500 block mb-1">Status</label>
-                    <select
-                      value={essay.status}
-                      onChange={(e) => handleStatusChange(essay.id, e.target.value)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(essay.status)}`}
-                    >
-                      {statusOptions.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={() => handleDelete(essay.id)}
-                  variant="ghost"
-                  size="sm"
-                >
-                  <Trash2 size={16} className="text-red-600" />
-                </Button>
-              </div>
-
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <p className="text-sm text-gray-700 italic">{essay.prompt}</p>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  {essay.word_limit && (
-                    <span>Word Limit: {essay.word_limit}</span>
-                  )}
-                  {essay.last_edited_at && (
-                    <span>Last edited: {new Date(essay.last_edited_at).toLocaleDateString()}</span>
-                  )}
-                </div>
-
-                {essay.google_drive_link && (
-                  <Button
-                    onClick={() => window.open(essay.google_drive_link, '_blank')}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <ExternalLink className="mr-2" size={16} />
-                    Open in Google Docs
-                  </Button>
-                )}
-              </div>
-
-              {essay.notes && (
-                <p className="text-sm text-gray-600 mt-4 p-3 bg-yellow-50 rounded-lg">
-                  📝 {essay.notes}
+                <div style={{ fontSize:12, color:h2r(ACCENT,0.8), textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:10, fontWeight:600 }}>Writing Center</div>
+                <h1 style={{ fontSize:40, fontWeight:900, letterSpacing:'-0.02em', marginBottom:6 }}>
+                  Es<span style={{ color:ACCENT }}>says.</span>
+                </h1>
+                <p style={{ color:S.muted, fontSize:14 }}>
+                  {essays.length} essays · {statusCounts.final || 0} finalized · {statusCounts.in_progress || 0} in progress
                 </p>
-              )}
+              </div>
+              <button onClick={() => setShowForm(f=>!f)} style={{
+                padding:'10px 22px', background:ACCENT, border:'none', borderRadius:10,
+                color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:S.font,
+                boxShadow:`0 0 16px ${h2r(ACCENT,0.35)}`,
+              }}>+ Add Essay</button>
+            </div>
 
-              {/* Word Count Checker */}
-              <div className="mt-4 border-t pt-4">
-                <Button
-                  onClick={() => setExpandedEssay(expandedEssay === essay.id ? null : essay.id)}
-                  variant="outline"
-                  size="sm"
-                  className="mb-3"
-                >
-                  <FileText className="mr-2" size={16} />
-                  {expandedEssay === essay.id ? 'Hide' : 'Show'} Word Count Checker
-                </Button>
-                
-                {expandedEssay === essay.id && (
-                  <div className="space-y-3">
-                    <div>
-                      <Label className="text-sm text-gray-600">Paste your essay to check word count</Label>
-                      <Textarea
-                        placeholder="Paste your essay here to check if it meets the word limit..."
-                        value={essayPreview[essay.id] || ''}
-                        onChange={(e) => setEssayPreview({ ...essayPreview, [essay.id]: e.target.value })}
-                        className="mt-1 min-h-[120px]"
-                        rows={6}
-                      />
-                    </div>
-                    
-                    {essayPreview[essay.id] && (
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <WordCountTracker
-                          text={essayPreview[essay.id]}
-                          wordLimit={essay.word_limit || undefined}
-                        />
-                      </div>
-                    )}
+            {/* Status summary bar */}
+            {essays.length > 0 && (
+              <div style={{ display:'flex', gap:12, paddingBottom:24, flexWrap:'wrap' }}>
+                {Object.entries(STATUS_CFG).map(([key,cfg]) => (
+                  <div key={key} style={{ padding:'8px 16px', background:cfg.bg, border:`1px solid ${h2r(cfg.color,0.3)}`, borderRadius:10, display:'flex', alignItems:'center', gap:8 }}>
+                    <span style={{ fontSize:18, fontWeight:800, color:cfg.color, fontFamily:S.font }}>{statusCounts[key] || 0}</span>
+                    <span style={{ fontSize:12, color:cfg.color, fontFamily:S.font }}>{cfg.label}</span>
                   </div>
-                )}
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div style={{ maxWidth:860, margin:'0 auto', padding:'32px 48px 80px' }}>
+
+          {/* Add form */}
+          {showForm && (
+            <div style={{ background:S.surface, border:`1px solid ${h2r(ACCENT,0.3)}`, borderRadius:16, padding:24, marginBottom:24, animation:'fadeUp 0.25s ease' }}>
+              <div style={{ fontSize:14, fontWeight:700, marginBottom:18, fontFamily:S.font }}>New Essay</div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                <div>
+                  <span style={lbl}>Application *</span>
+                  <select value={form.applicationId} onChange={e=>setForm({...form,applicationId:e.target.value})} style={inp}>
+                    <option value="">Select application</option>
+                    {applications.map(a=><option key={a.id} value={a.id}>{a.college_name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <span style={lbl}>Essay Type</span>
+                  <select value={form.essayType} onChange={e=>setForm({...form,essayType:e.target.value})} style={inp}>
+                    <option value="personal_statement">Personal Statement</option>
+                    <option value="supplemental">Supplemental Essay</option>
+                    <option value="why_us">Why Us Essay</option>
+                  </select>
+                </div>
+                <div style={{ gridColumn:'1/-1' }}>
+                  <span style={lbl}>Prompt *</span>
+                  <textarea rows={3} value={form.prompt} onChange={e=>setForm({...form,prompt:e.target.value})} placeholder="Essay prompt…" style={{ ...inp, resize:'vertical', lineHeight:1.6 }} />
+                </div>
+                <div>
+                  <span style={lbl}>Word Limit</span>
+                  <input type="number" value={form.wordLimit} onChange={e=>setForm({...form,wordLimit:e.target.value})} placeholder="650" style={inp} />
+                </div>
+                <div>
+                  <span style={lbl}>Google Drive Link</span>
+                  <input type="url" value={form.googleDriveLink} onChange={e=>setForm({...form,googleDriveLink:e.target.value})} placeholder="https://docs.google.com/…" style={inp} />
+                </div>
+                <div style={{ gridColumn:'1/-1' }}>
+                  <span style={lbl}>Notes</span>
+                  <textarea rows={2} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Optional notes…" style={{ ...inp, resize:'none', lineHeight:1.6 }} />
+                </div>
+              </div>
+              <div style={{ display:'flex', gap:10, marginTop:18 }}>
+                <button onClick={handleAdd} style={{ padding:'10px 24px', background:ACCENT, border:'none', borderRadius:10, color:'#fff', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:S.font }}>Add Essay</button>
+                <button onClick={()=>setShowForm(false)} style={{ padding:'10px 20px', background:'rgba(255,255,255,0.06)', border:`1px solid ${S.border2}`, borderRadius:10, color:S.muted, fontSize:13, cursor:'pointer', fontFamily:S.font }}>Cancel</button>
               </div>
             </div>
-          ))}
+          )}
+
+          {loading && (
+            <div style={{ display:'flex', justifyContent:'center', padding:'80px 0' }}>
+              <div style={{ width:40, height:40, borderRadius:'50%', border:'3px solid rgba(255,255,255,0.08)', borderTopColor:ACCENT, animation:'spin 0.8s linear infinite' }} />
+            </div>
+          )}
+
+          {!loading && essays.length === 0 && (
+            <div style={{ textAlign:'center', padding:'80px 0' }}>
+              <div style={{ fontSize:48, marginBottom:16 }}>✍️</div>
+              <div style={{ fontSize:20, fontWeight:700, marginBottom:8 }}>No essays yet</div>
+              <div style={{ color:S.muted, fontSize:14 }}>Add your first essay to start tracking your writing</div>
+            </div>
+          )}
+
+          <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+            {essays.map((essay, i) => (
+              <EssayCard key={essay.id} essay={essay} index={i}
+                onStatusChange={(id,s) => api.essays.update(id,{status:s}).then(()=>{toast.success('Updated');loadData();}).catch(()=>toast.error('Failed'))}
+                onDelete={(id) => { if(confirm('Delete this essay?')) api.essays.delete(id).then(()=>{toast.success('Deleted');loadData();}).catch(()=>toast.error('Failed')); }}
+              />
+            ))}
+          </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 };
 

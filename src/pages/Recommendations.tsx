@@ -1,760 +1,472 @@
+// src/pages/Recommendations.tsx — Dark Editorial Redesign
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  Plus, 
-  Trash2, 
-  Loader2, 
-  Users,
-  Mail,
-  Phone,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  Send,
-  Copy,
-  School,
-  Briefcase,
-  UserCheck
-} from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
+/* ─── Types ──────────────────────────────────────────────────────────── */
 interface Recommender {
-  id: number;
-  name: string;
-  email?: string;
-  phone?: string;
-  type: string;
-  relationship?: string;
-  subject?: string;
-  institution?: string;
-  years_known?: number;
-  notes?: string;
-  letters_submitted?: number;
-  total_requests?: number;
+  id: number; name: string; email?: string; phone?: string; type: string;
+  relationship?: string; subject?: string; institution?: string;
+  years_known?: number; notes?: string; letters_submitted?: number; total_requests?: number;
 }
-
 interface RecommendationRequest {
-  id: number;
-  recommender_id: number;
-  recommender_name: string;
-  recommender_email?: string;
-  recommender_type: string;
-  college_id?: number;
-  college_name?: string;
-  application_system?: string;
-  status: string;
-  request_date?: string;
-  deadline?: string;
-  submitted_date?: string;
-  reminder_sent?: number;
-  thank_you_sent?: number;
-  notes?: string;
+  id: number; recommender_id: number; recommender_name: string; recommender_email?: string;
+  recommender_type: string; college_id?: number; college_name?: string;
+  application_system?: string; status: string; request_date?: string; deadline?: string;
+  submitted_date?: string; reminder_sent?: number; thank_you_sent?: number; notes?: string;
 }
-
 interface Summary {
-  total_requests: number;
-  not_requested: number;
-  requested: number;
-  in_progress: number;
-  submitted: number;
-  declined: number;
-  overdue: number;
-  needs_thank_you: number;
-  overdueRequests: RecommendationRequest[];
-  pendingReminders: RecommendationRequest[];
+  total_requests: number; not_requested: number; requested: number; in_progress: number;
+  submitted: number; declined: number; overdue: number; needs_thank_you: number;
+  overdueRequests: RecommendationRequest[]; pendingReminders: RecommendationRequest[];
 }
 
-const RECOMMENDER_TYPES = {
-  teacher: { label: 'Teacher', icon: School, color: 'bg-blue-100 text-blue-700' },
-  counselor: { label: 'Counselor', icon: UserCheck, color: 'bg-green-100 text-green-700' },
-  mentor: { label: 'Mentor', icon: Users, color: 'bg-purple-100 text-purple-700' },
-  employer: { label: 'Employer', icon: Briefcase, color: 'bg-orange-100 text-orange-700' },
-  other: { label: 'Other', icon: Users, color: 'bg-gray-100 text-gray-700' },
+/* ─── Design ─────────────────────────────────────────────────────────── */
+const h2r = (hex: string, a: number) => {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+};
+const ACCENT = '#F59E0B'; // gold — recommendation/trust theme
+const S = { bg:'#080810', surface:'#0F0F1C', border:'rgba(255,255,255,0.08)', border2:'rgba(255,255,255,0.13)', muted:'rgba(255,255,255,0.45)', dim:'rgba(255,255,255,0.22)', font:"'DM Sans',sans-serif" };
+const inp: React.CSSProperties = { width:'100%', padding:'10px 14px', background:'rgba(255,255,255,0.05)', border:`1px solid ${S.border2}`, borderRadius:10, color:'#fff', fontSize:14, fontFamily:S.font };
+const lbl: React.CSSProperties = { fontSize:11, color:S.dim, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6, fontWeight:600, display:'block', fontFamily:S.font };
+
+const REC_TYPES: Record<string,{emoji:string;label:string;color:string}> = {
+  teacher:   { emoji:'🏫', label:'Teacher',   color:'#3B9EFF' },
+  counselor: { emoji:'🧭', label:'Counselor', color:'#10B981' },
+  mentor:    { emoji:'⭐', label:'Mentor',    color:'#A855F7' },
+  employer:  { emoji:'💼', label:'Employer',  color:'#F97316' },
+  other:     { emoji:'👤', label:'Other',     color:'rgba(255,255,255,0.4)' },
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  not_requested: 'bg-gray-100 text-gray-700',
-  requested: 'bg-yellow-100 text-yellow-700',
-  in_progress: 'bg-blue-100 text-blue-700',
-  submitted: 'bg-green-100 text-green-700',
-  declined: 'bg-red-100 text-red-700',
+const STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
+  not_requested: { label:'Not Requested', color:'rgba(255,255,255,0.4)', bg:'rgba(255,255,255,0.06)' },
+  requested:     { label:'Requested',     color:'#FBBF24', bg:'rgba(251,191,36,0.12)' },
+  in_progress:   { label:'In Progress',   color:'#3B9EFF', bg:'rgba(59,158,255,0.12)' },
+  submitted:     { label:'Submitted',     color:'#10B981', bg:'rgba(16,185,129,0.12)' },
+  declined:      { label:'Declined',      color:'#F87171', bg:'rgba(248,113,113,0.12)' },
 };
 
+const GLOBAL = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}body{background:#080810;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  input::placeholder,textarea::placeholder{color:rgba(255,255,255,0.2)!important;}
+  select option{background:#0F0F1C;color:#fff;}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
+`;
+
+/* ─── Recommender Card ───────────────────────────────────────────────── */
+const RecommenderCard: React.FC<{
+  rec: Recommender; index: number;
+  onDelete: (id: number) => void;
+  onRequest: (rec: Recommender) => void;
+}> = ({ rec, index, onDelete, onRequest }) => {
+  const type = REC_TYPES[rec.type] || REC_TYPES.other;
+  const submitted = rec.letters_submitted || 0;
+  const total = rec.total_requests || 0;
+  const pct = total > 0 ? (submitted / total) * 100 : 0;
+
+  return (
+    <div style={{
+      background: S.surface, border: `1px solid ${S.border}`,
+      borderTop: `2px solid ${type.color}`,
+      borderRadius: 16, padding: '18px 20px',
+      animation: 'fadeUp 0.35s ease both', animationDelay: `${index * 0.06}s`,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: h2r(type.color, 0.15), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{type.emoji}</div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: S.font }}>{rec.name}</div>
+            <div style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(type.color, 0.15), color: type.color, fontWeight: 600, display: 'inline-block', marginTop: 4, fontFamily: S.font }}>{type.label}</div>
+          </div>
+        </div>
+        <button onClick={() => onDelete(rec.id)} style={{
+          width: 30, height: 30, borderRadius: 8, cursor: 'pointer', flexShrink: 0,
+          background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.15)',
+          color: '#F87171', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>🗑</button>
+      </div>
+
+      {rec.subject && <div style={{ fontSize: 13, color: S.muted, marginBottom: 4, fontFamily: S.font }}>📚 {rec.subject}</div>}
+      {rec.institution && <div style={{ fontSize: 12, color: S.dim, marginBottom: 10, fontFamily: S.font }}>🏛 {rec.institution}</div>}
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+        {rec.email && (
+          <a href={`mailto:${rec.email}`} style={{ fontSize: 12, color: '#3B9EFF', fontFamily: S.font, display: 'flex', alignItems: 'center', gap: 4 }}>
+            ✉ {rec.email}
+          </a>
+        )}
+        {rec.phone && <span style={{ fontSize: 12, color: S.dim, fontFamily: S.font }}>📞 {rec.phone}</span>}
+      </div>
+
+      {/* Letter progress bar */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={{ fontSize: 11, color: S.dim, fontFamily: S.font }}>Letters</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#10B981', fontFamily: S.font }}>{submitted}/{total}</span>
+        </div>
+        <div style={{ height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 4 }}>
+          <div style={{ width: `${pct}%`, height: '100%', background: '#10B981', borderRadius: 4, transition: 'width 0.6s ease' }} />
+        </div>
+      </div>
+
+      <button onClick={() => onRequest(rec)} style={{
+        width: '100%', padding: '9px 0', borderRadius: 10, fontSize: 13, fontWeight: 700,
+        background: h2r(ACCENT, 0.15), border: `1px solid ${h2r(ACCENT, 0.35)}`,
+        color: ACCENT, cursor: 'pointer', fontFamily: S.font,
+        transition: 'all 0.15s',
+      }}
+        onMouseEnter={e => (e.currentTarget.style.background = h2r(ACCENT, 0.25))}
+        onMouseLeave={e => (e.currentTarget.style.background = h2r(ACCENT, 0.15))}
+      >+ New Request</button>
+    </div>
+  );
+};
+
+/* ─── Request Row ────────────────────────────────────────────────────── */
+const RequestRow: React.FC<{
+  req: RecommendationRequest; index: number;
+  onStatusChange: (id: number, s: string) => void;
+  onReminder: (req: RecommendationRequest) => void;
+  onThankYou: (req: RecommendationRequest) => void;
+}> = ({ req, index, onStatusChange, onReminder, onThankYou }) => {
+  const status = STATUS_CFG[req.status] || STATUS_CFG.not_requested;
+  const isOverdue = req.deadline && new Date(req.deadline) < new Date() && req.status !== 'submitted';
+  const days = req.deadline ? Math.ceil((new Date(req.deadline).getTime() - Date.now()) / 86400000) : null;
+
+  return (
+    <div style={{
+      background: S.surface, border: `1px solid ${isOverdue ? 'rgba(248,113,113,0.3)' : S.border}`,
+      borderLeft: `3px solid ${isOverdue ? '#F87171' : status.color}`,
+      borderRadius: 14, padding: '14px 18px',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+      animation: 'fadeUp 0.3s ease both', animationDelay: `${index * 0.04}s`,
+    }}>
+      <div style={{ flex: 1, minWidth: 220 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: '#fff', fontFamily: S.font }}>{req.recommender_name}</span>
+          <span style={{ fontSize: 12, color: S.dim, fontFamily: S.font }}>for</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#3B9EFF', fontFamily: S.font }}>{req.college_name || 'General'}</span>
+        </div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {req.application_system && (
+            <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(255,255,255,0.07)', borderRadius: 6, color: S.dim, fontFamily: S.font }}>{req.application_system}</span>
+          )}
+          {days !== null && req.status !== 'submitted' && (
+            <span style={{ fontSize: 12, color: isOverdue ? '#F87171' : days <= 7 ? '#FBBF24' : S.dim, fontFamily: S.font }}>
+              {isOverdue ? `⚠ Overdue ${Math.abs(days)}d` : days === 0 ? '⚡ Due today' : `📅 ${days}d left`}
+            </span>
+          )}
+          {req.submitted_date && (
+            <span style={{ fontSize: 12, color: '#10B981', fontFamily: S.font }}>✓ {new Date(req.submitted_date).toLocaleDateString()}</span>
+          )}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <select value={req.status} onChange={e => onStatusChange(req.id, e.target.value)} style={{
+          padding: '5px 10px', borderRadius: 100, fontSize: 11, fontWeight: 600,
+          background: status.bg, border: `1px solid ${h2r(status.color, 0.4)}`,
+          color: status.color, cursor: 'pointer', fontFamily: S.font,
+        }}>
+          {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+        </select>
+        {req.status === 'requested' && (
+          <button onClick={() => onReminder(req)} style={{ padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: h2r(ACCENT, 0.15), border: `1px solid ${h2r(ACCENT, 0.3)}`, color: ACCENT, fontFamily: S.font }}>
+            📨 Remind
+          </button>
+        )}
+        {req.status === 'submitted' && !req.thank_you_sent && (
+          <button onClick={() => onThankYou(req)} style={{ padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer', background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10B981', fontFamily: S.font }}>
+            🙏 Thank You
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ─── Main ────────────────────────────────────────────────────────────── */
 const Recommendations = () => {
   const [recommenders, setRecommenders] = useState<Recommender[]>([]);
   const [requests, setRequests] = useState<RecommendationRequest[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'recommenders' | 'requests' | 'templates'>('recommenders');
+  const [activeTab, setActiveTab] = useState<'recommenders'|'requests'|'templates'>('recommenders');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [selectedRecommender, setSelectedRecommender] = useState<Recommender | null>(null);
   const [emailTemplate, setEmailTemplate] = useState('');
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    type: 'teacher',
-    relationship: '',
-    subject: '',
-    institution: '',
-    yearsKnown: '',
-    notes: '',
-  });
-  
-  const [requestFormData, setRequestFormData] = useState({
-    collegeName: '',
-    applicationSystem: 'CommonApp',
-    deadline: '',
-    notes: '',
-  });
+  const [form, setForm] = useState({ name:'', email:'', phone:'', type:'teacher', relationship:'', subject:'', institution:'', yearsKnown:'', notes:'' });
+  const [reqForm, setReqForm] = useState({ collegeName:'', applicationSystem:'CommonApp', deadline:'', notes:'' });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [recommendersRes, requestsRes, summaryRes] = await Promise.all([
+      const [rr, reqR, sr] = await Promise.all([
         api.recommenders.getAll(),
         api.recommenders.requests.getAll(),
         api.recommenders.getSummary(),
-      ]) as [any, any, any];
-      
-      setRecommenders(recommendersRes.data || []);
-      setRequests(requestsRes.data || []);
-      setSummary(summaryRes.data || null);
-    } catch (error: any) {
-      console.error('Failed to load data:', error);
-      toast.error('Failed to load recommendations data');
-    } finally {
-      setLoading(false);
-    }
+      ]) as [any,any,any];
+      setRecommenders(rr.data||[]);
+      setRequests(reqR.data||[]);
+      setSummary(sr.data||null);
+    } catch { toast.error('Failed to load'); } finally { setLoading(false); }
   };
 
   const handleAddRecommender = async () => {
-    if (!formData.name || !formData.type) {
-      toast.error('Please fill required fields');
-      return;
-    }
-
+    if (!form.name) { toast.error('Name required'); return; }
     try {
-      await api.recommenders.create({
-        ...formData,
-        yearsKnown: formData.yearsKnown ? parseInt(formData.yearsKnown) : undefined,
-      });
+      await api.recommenders.create({ ...form, yearsKnown: form.yearsKnown ? parseInt(form.yearsKnown) : undefined });
       toast.success('Recommender added');
       setShowAddForm(false);
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        type: 'teacher',
-        relationship: '',
-        subject: '',
-        institution: '',
-        yearsKnown: '',
-        notes: '',
-      });
+      setForm({ name:'', email:'', phone:'', type:'teacher', relationship:'', subject:'', institution:'', yearsKnown:'', notes:'' });
       loadData();
-    } catch (error: any) {
-      toast.error('Failed to add recommender');
-    }
-  };
-
-  const handleDeleteRecommender = async (id: number) => {
-    if (!confirm('Delete this recommender and all their requests?')) return;
-
-    try {
-      await api.recommenders.delete(id);
-      toast.success('Recommender deleted');
-      loadData();
-    } catch (error: any) {
-      toast.error('Failed to delete recommender');
-    }
+    } catch { toast.error('Failed'); }
   };
 
   const handleCreateRequest = async () => {
     if (!selectedRecommender) return;
-
     try {
-      await api.recommenders.requests.create(selectedRecommender.id, {
-        collegeName: requestFormData.collegeName,
-        applicationSystem: requestFormData.applicationSystem,
-        deadline: requestFormData.deadline || undefined,
-        notes: requestFormData.notes,
-        status: 'not_requested',
-      });
+      await api.recommenders.requests.create(selectedRecommender.id, { ...reqForm, deadline: reqForm.deadline||undefined, status:'not_requested' });
       toast.success('Request created');
       setShowRequestForm(false);
       setSelectedRecommender(null);
-      setRequestFormData({
-        collegeName: '',
-        applicationSystem: 'CommonApp',
-        deadline: '',
-        notes: '',
-      });
+      setReqForm({ collegeName:'', applicationSystem:'CommonApp', deadline:'', notes:'' });
       loadData();
-    } catch (error: any) {
-      toast.error('Failed to create request');
-    }
+    } catch { toast.error('Failed'); }
   };
 
-  const handleUpdateRequestStatus = async (id: number, status: string) => {
+  const handleGenerateEmail = async (type: 'request'|'reminder'|'thank_you', req?: RecommendationRequest) => {
     try {
-      await api.recommenders.requests.update(id, { status });
-      toast.success('Status updated');
-      loadData();
-    } catch (error: any) {
-      toast.error('Failed to update status');
-    }
-  };
-
-  const handleGenerateEmail = async (type: 'request' | 'reminder' | 'thank_you', request?: RecommendationRequest) => {
-    try {
-      const recommender = request 
-        ? recommenders.find(r => r.id === request.recommender_id)
-        : selectedRecommender;
-        
+      const rec = req ? recommenders.find(r => r.id === req.recommender_id) : selectedRecommender;
       const res = await api.recommenders.generateEmailTemplate(type, {
-        recommenderName: recommender?.name || 'Teacher',
-        collegeName: request?.college_name || requestFormData.collegeName || 'the university',
-        subject: recommender?.subject || 'the subject',
-        deadline: request?.deadline || requestFormData.deadline || 'soon',
+        recommenderName: rec?.name || 'Teacher',
+        collegeName: req?.college_name || reqForm.collegeName || 'the university',
+        subject: rec?.subject || 'the subject',
+        deadline: req?.deadline || reqForm.deadline || 'soon',
       }) as any;
-      
       setEmailTemplate(res.data?.template || '');
       setActiveTab('templates');
-    } catch (error: any) {
-      toast.error('Failed to generate template');
-    }
+    } catch { toast.error('Failed to generate'); }
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(emailTemplate);
-    toast.success('Copied to clipboard');
-  };
-
-  const getDaysUntilDeadline = (dateStr: string) => {
-    const days = Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    if (days < 0) return 'Overdue';
-    if (days === 0) return 'Today';
-    if (days === 1) return 'Tomorrow';
-    return `${days} days`;
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="animate-spin text-blue-600" size={40} />
-      </div>
-    );
-  }
+  const TABS = [
+    { key: 'recommenders', label: `People (${recommenders.length})` },
+    { key: 'requests',     label: `Requests (${requests.length})` },
+    { key: 'templates',    label: 'Email Templates' },
+  ] as const;
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Recommendation Manager</h1>
-        <p className="text-gray-600">Track and manage your recommendation letters</p>
-      </div>
+    <>
+      <style>{GLOBAL}</style>
+      <div style={{ minHeight:'100vh', background:S.bg, color:'#fff', fontFamily:S.font }}>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Users className="text-blue-600" size={24} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{recommenders.length}</p>
-              <p className="text-sm text-gray-600">Recommenders</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Clock className="text-yellow-600" size={24} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{summary?.requested || 0}</p>
-              <p className="text-sm text-gray-600">Pending</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircle className="text-green-600" size={24} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{summary?.submitted || 0}</p>
-              <p className="text-sm text-gray-600">Submitted</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <AlertTriangle className="text-red-600" size={24} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{summary?.overdue || 0}</p>
-              <p className="text-sm text-gray-600">Overdue</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Alerts */}
-      {summary?.overdueRequests && summary.overdueRequests.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="text-red-600" size={20} />
-            <h3 className="font-semibold text-red-800">Overdue Recommendations</h3>
-          </div>
-          <div className="space-y-2">
-            {summary.overdueRequests.map((req) => (
-              <div key={req.id} className="flex items-center justify-between text-sm">
-                <span className="text-red-700">
-                  {req.recommender_name} - {req.college_name}
-                </span>
-                <Button size="sm" variant="outline" onClick={() => handleGenerateEmail('reminder', req)}>
-                  Send Reminder
-                </Button>
+        {/* Header */}
+        <div style={{ padding:'44px 48px 0', background:`linear-gradient(180deg,${h2r(ACCENT,0.07)} 0%,transparent 100%)`, borderBottom:`1px solid ${S.border}` }}>
+          <div style={{ maxWidth:1100, margin:'0 auto' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', paddingBottom:28, flexWrap:'wrap', gap:16 }}>
+              <div>
+                <div style={{ fontSize:12, color:h2r(ACCENT,0.8), textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:10, fontWeight:600 }}>Letters of Rec</div>
+                <h1 style={{ fontSize:40, fontWeight:900, letterSpacing:'-0.02em', marginBottom:6 }}>
+                  Recom<span style={{ color:ACCENT }}>mendations.</span>
+                </h1>
+                <p style={{ color:S.muted, fontSize:14 }}>
+                  {recommenders.length} recommenders · {summary?.submitted||0} submitted · {summary?.overdue||0} overdue
+                </p>
               </div>
-            ))}
+              {/* Summary stat pills */}
+              <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+                {[
+                  { label:'People', value:recommenders.length, color:'#3B9EFF' },
+                  { label:'Pending', value:summary?.requested||0, color:'#FBBF24' },
+                  { label:'Done', value:summary?.submitted||0, color:'#10B981' },
+                  { label:'Overdue', value:summary?.overdue||0, color:'#F87171' },
+                ].map(s=>(
+                  <div key={s.label} style={{ padding:'10px 16px', background:h2r(s.color,0.1), border:`1px solid ${h2r(s.color,0.25)}`, borderRadius:12, textAlign:'center', minWidth:72 }}>
+                    <div style={{ fontSize:22, fontWeight:800, color:s.color, fontFamily:S.font }}>{s.value}</div>
+                    <div style={{ fontSize:11, color:h2r(s.color,0.7), fontFamily:S.font }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div style={{ display:'flex', gap:4 }}>
+              {TABS.map(t=>(
+                <button key={t.key} onClick={()=>setActiveTab(t.key)} style={{
+                  padding:'10px 20px', fontSize:13, fontWeight:activeTab===t.key?700:400,
+                  background:'transparent', border:'none', borderBottom:`2px solid ${activeTab===t.key?ACCENT:'transparent'}`,
+                  color:activeTab===t.key?ACCENT:S.muted, cursor:'pointer', fontFamily:S.font, transition:'all 0.15s',
+                }}>{t.label}</button>
+              ))}
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <Button
-          variant={activeTab === 'recommenders' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('recommenders')}
-        >
-          Recommenders
-        </Button>
-        <Button
-          variant={activeTab === 'requests' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('requests')}
-        >
-          Requests ({requests.length})
-        </Button>
-        <Button
-          variant={activeTab === 'templates' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('templates')}
-        >
-          Email Templates
-        </Button>
-      </div>
+        <div style={{ maxWidth:1100, margin:'0 auto', padding:'32px 48px 80px' }}>
 
-      {/* Recommenders Tab */}
-      {activeTab === 'recommenders' && (
-        <>
-          <div className="flex justify-end mb-4">
-            <Button onClick={() => setShowAddForm(true)}>
-              <Plus className="mr-2" size={20} />
-              Add Recommender
-            </Button>
-          </div>
-
-          {recommenders.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-              <Users className="mx-auto text-gray-400 mb-4" size={48} />
-              <p className="text-gray-500 mb-4">No recommenders added yet</p>
-              <Button onClick={() => setShowAddForm(true)}>
-                <Plus className="mr-2" size={20} />
-                Add Your First Recommender
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recommenders.map((rec) => {
-                const typeInfo = RECOMMENDER_TYPES[rec.type as keyof typeof RECOMMENDER_TYPES] || RECOMMENDER_TYPES.other;
-                const Icon = typeInfo.icon;
-                
-                return (
-                  <div key={rec.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${typeInfo.color}`}>
-                          <Icon size={20} />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{rec.name}</h3>
-                          <p className="text-xs text-gray-500">{typeInfo.label}</p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => handleDeleteRecommender(rec.id)}>
-                        <Trash2 size={16} className="text-red-500" />
-                      </Button>
-                    </div>
-                    
-                    {rec.subject && (
-                      <p className="text-sm text-gray-600 mb-2">{rec.subject}</p>
-                    )}
-                    
-                    {rec.institution && (
-                      <p className="text-sm text-gray-500 mb-2">{rec.institution}</p>
-                    )}
-                    
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {rec.email && (
-                        <a href={`mailto:${rec.email}`} className="flex items-center gap-1 text-xs text-blue-600">
-                          <Mail size={12} />
-                          {rec.email}
-                        </a>
-                      )}
-                      {rec.phone && (
-                        <span className="flex items-center gap-1 text-xs text-gray-500">
-                          <Phone size={12} />
-                          {rec.phone}
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center justify-between pt-3 border-t">
-                      <div className="text-sm">
-                        <span className="text-green-600 font-medium">{rec.letters_submitted || 0}</span>
-                        <span className="text-gray-500"> / {rec.total_requests || 0} letters</span>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedRecommender(rec);
-                          setShowRequestForm(true);
-                        }}
-                      >
-                        <Plus size={14} className="mr-1" />
-                        Request
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
+          {/* Overdue alert */}
+          {(summary?.overdueRequests?.length||0)>0 && (
+            <div style={{ background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.25)', borderRadius:14, padding:'14px 18px', marginBottom:24 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:'#F87171', marginBottom:10 }}>⚠ Overdue Recommendations</div>
+              {summary!.overdueRequests.map(req=>(
+                <div key={req.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:13, color:'rgba(255,255,255,0.6)', marginBottom:6 }}>
+                  <span>{req.recommender_name} → {req.college_name}</span>
+                  <button onClick={()=>handleGenerateEmail('reminder',req)} style={{ padding:'4px 12px', background:h2r(ACCENT,0.15), border:`1px solid ${h2r(ACCENT,0.3)}`, borderRadius:8, color:ACCENT, fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:S.font }}>Send Reminder</button>
+                </div>
+              ))}
             </div>
           )}
-        </>
-      )}
 
-      {/* Requests Tab */}
-      {activeTab === 'requests' && (
-        <div className="space-y-4">
-          {requests.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-              <Mail className="mx-auto text-gray-400 mb-4" size={48} />
-              <p className="text-gray-500 mb-4">No recommendation requests yet</p>
-              <p className="text-sm text-gray-400">Add a recommender and create a request to get started</p>
+          {loading && (
+            <div style={{ display:'flex', justifyContent:'center', padding:'80px 0' }}>
+              <div style={{ width:40, height:40, borderRadius:'50%', border:'3px solid rgba(255,255,255,0.08)', borderTopColor:ACCENT, animation:'spin 0.8s linear infinite' }} />
             </div>
-          ) : (
-            requests.map((req) => (
-              <div key={req.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-gray-900">{req.recommender_name}</h3>
-                      <span className="text-xs text-gray-500">for</span>
-                      <span className="font-medium text-blue-600">{req.college_name || 'General'}</span>
+          )}
+
+          {/* ── Recommenders Tab ── */}
+          {!loading && activeTab==='recommenders' && (
+            <>
+              <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:20 }}>
+                <button onClick={()=>setShowAddForm(f=>!f)} style={{ padding:'10px 22px', background:ACCENT, border:'none', borderRadius:10, color:'#000', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:S.font, boxShadow:`0 0 16px ${h2r(ACCENT,0.35)}` }}>+ Add Recommender</button>
+              </div>
+
+              {/* Add form */}
+              {showAddForm && (
+                <div style={{ background:S.surface, border:`1px solid ${h2r(ACCENT,0.3)}`, borderRadius:16, padding:24, marginBottom:24, animation:'fadeUp 0.25s ease' }}>
+                  <div style={{ fontSize:14, fontWeight:700, marginBottom:18, fontFamily:S.font }}>New Recommender</div>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                    <div><span style={lbl}>Name *</span><input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Dr. John Smith" style={inp} /></div>
+                    <div>
+                      <span style={lbl}>Type</span>
+                      <select value={form.type} onChange={e=>setForm({...form,type:e.target.value})} style={inp}>
+                        {Object.entries(REC_TYPES).map(([k,v])=><option key={k} value={k}>{v.emoji} {v.label}</option>)}
+                      </select>
                     </div>
-                    
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      {req.application_system && (
-                        <span className="px-2 py-0.5 bg-gray-100 rounded text-xs">
-                          {req.application_system}
-                        </span>
-                      )}
-                      {req.deadline && (
-                        <span className={
-                          new Date(req.deadline) < new Date() ? 'text-red-600' : ''
-                        }>
-                          Deadline: {getDaysUntilDeadline(req.deadline)}
-                        </span>
-                      )}
-                      {req.submitted_date && (
-                        <span className="text-green-600">
-                          Submitted: {new Date(req.submitted_date).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
+                    <div><span style={lbl}>Email</span><input type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="teacher@school.edu" style={inp} /></div>
+                    <div><span style={lbl}>Phone</span><input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} placeholder="+1 234 567 8900" style={inp} /></div>
+                    <div><span style={lbl}>Subject</span><input value={form.subject} onChange={e=>setForm({...form,subject:e.target.value})} placeholder="AP Physics" style={inp} /></div>
+                    <div><span style={lbl}>Institution</span><input value={form.institution} onChange={e=>setForm({...form,institution:e.target.value})} placeholder="School Name" style={inp} /></div>
+                    <div style={{gridColumn:'1/-1'}}><span style={lbl}>Notes</span><textarea rows={2} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Optional notes…" style={{...inp,resize:'none',lineHeight:1.6}} /></div>
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Select
-                      value={req.status}
-                      onValueChange={(v) => handleUpdateRequestStatus(req.id, v)}
-                    >
-                      <SelectTrigger className={`w-36 ${STATUS_COLORS[req.status] || ''}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="not_requested">Not Requested</SelectItem>
-                        <SelectItem value="requested">Requested</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="submitted">Submitted</SelectItem>
-                        <SelectItem value="declined">Declined</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    {req.status === 'requested' && (
-                      <Button size="sm" variant="outline" onClick={() => handleGenerateEmail('reminder', req)}>
-                        <Send size={14} />
-                      </Button>
-                    )}
-                    
-                    {req.status === 'submitted' && !req.thank_you_sent && (
-                      <Button size="sm" variant="outline" onClick={() => handleGenerateEmail('thank_you', req)}>
-                        Thank You
-                      </Button>
-                    )}
+                  <div style={{ display:'flex', gap:10, marginTop:18 }}>
+                    <button onClick={handleAddRecommender} style={{ padding:'10px 24px', background:ACCENT, border:'none', borderRadius:10, color:'#000', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:S.font }}>Add</button>
+                    <button onClick={()=>setShowAddForm(false)} style={{ padding:'10px 20px', background:'rgba(255,255,255,0.06)', border:`1px solid ${S.border2}`, borderRadius:10, color:S.muted, fontSize:13, cursor:'pointer', fontFamily:S.font }}>Cancel</button>
                   </div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
+              )}
 
-      {/* Email Templates Tab */}
-      {activeTab === 'templates' && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Email Templates</h3>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => handleGenerateEmail('request')}>
-                Request Template
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => handleGenerateEmail('reminder')}>
-                Reminder Template
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => handleGenerateEmail('thank_you')}>
-                Thank You Template
-              </Button>
-            </div>
-          </div>
-          
-          {emailTemplate ? (
-            <>
-              <div className="relative">
-                <Textarea
-                  value={emailTemplate}
-                  onChange={(e) => setEmailTemplate(e.target.value)}
-                  rows={15}
-                  className="font-mono text-sm"
-                />
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="absolute top-2 right-2"
-                  onClick={copyToClipboard}
-                >
-                  <Copy size={14} className="mr-1" />
-                  Copy
-                </Button>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Edit the template as needed, then copy and send via your email client
-              </p>
+              {recommenders.length === 0 ? (
+                <div style={{ textAlign:'center', padding:'80px 0' }}>
+                  <div style={{ fontSize:48, marginBottom:16 }}>👥</div>
+                  <div style={{ fontSize:20, fontWeight:700, marginBottom:8 }}>No recommenders yet</div>
+                  <div style={{ color:S.muted, fontSize:14 }}>Add teachers, counselors, or mentors</div>
+                </div>
+              ) : (
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:18 }}>
+                  {recommenders.map((rec,i)=>(
+                    <RecommenderCard key={rec.id} rec={rec} index={i}
+                      onDelete={id=>{if(confirm('Delete recommender and all their requests?')) api.recommenders.delete(id).then(()=>{toast.success('Deleted');loadData();}).catch(()=>toast.error('Failed'));}}
+                      onRequest={rec=>{setSelectedRecommender(rec);setShowRequestForm(true);}}
+                    />
+                  ))}
+                </div>
+              )}
             </>
-          ) : (
-            <div className="text-center py-8">
-              <Mail className="mx-auto text-gray-400 mb-4" size={48} />
-              <p className="text-gray-500">Select a template type to generate</p>
+          )}
+
+          {/* ── Requests Tab ── */}
+          {!loading && activeTab==='requests' && (
+            requests.length === 0 ? (
+              <div style={{ textAlign:'center', padding:'80px 0' }}>
+                <div style={{ fontSize:48, marginBottom:16 }}>✉️</div>
+                <div style={{ fontSize:20, fontWeight:700, marginBottom:8 }}>No requests yet</div>
+                <div style={{ color:S.muted, fontSize:14 }}>Go to Recommenders and click + New Request</div>
+              </div>
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {requests.map((req,i)=>(
+                  <RequestRow key={req.id} req={req} index={i}
+                    onStatusChange={(id,s)=>api.recommenders.requests.update(id,{status:s}).then(()=>{toast.success('Updated');loadData();}).catch(()=>toast.error('Failed'))}
+                    onReminder={req=>handleGenerateEmail('reminder',req)}
+                    onThankYou={req=>handleGenerateEmail('thank_you',req)}
+                  />
+                ))}
+              </div>
+            )
+          )}
+
+          {/* ── Templates Tab ── */}
+          {!loading && activeTab==='templates' && (
+            <div style={{ background:S.surface, border:`1px solid ${S.border}`, borderRadius:16, padding:24 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20, flexWrap:'wrap', gap:12 }}>
+                <div style={{ fontSize:15, fontWeight:700, fontFamily:S.font }}>AI-Generated Email Templates</div>
+                <div style={{ display:'flex', gap:8 }}>
+                  {(['request','reminder','thank_you'] as const).map(t=>(
+                    <button key={t} onClick={()=>handleGenerateEmail(t)} style={{
+                      padding:'7px 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer',
+                      background:'rgba(255,255,255,0.06)', border:`1px solid ${S.border2}`, color:S.muted, fontFamily:S.font,
+                    }}>{{ request:'📨 Request', reminder:'🔔 Reminder', thank_you:'🙏 Thank You' }[t]}</button>
+                  ))}
+                </div>
+              </div>
+
+              {emailTemplate ? (
+                <div style={{ position:'relative' }}>
+                  <textarea value={emailTemplate} onChange={e=>setEmailTemplate(e.target.value)} rows={15}
+                    style={{ ...inp, resize:'vertical', lineHeight:1.7, fontFamily:'monospace', fontSize:13 }} />
+                  <button onClick={()=>{navigator.clipboard.writeText(emailTemplate);toast.success('Copied!');}} style={{
+                    position:'absolute', top:10, right:10, padding:'5px 12px', borderRadius:8, fontSize:11, fontWeight:600, cursor:'pointer',
+                    background:'rgba(255,255,255,0.1)', border:`1px solid ${S.border2}`, color:S.muted, fontFamily:S.font,
+                  }}>📋 Copy</button>
+                  <div style={{ fontSize:12, color:S.dim, marginTop:8, fontFamily:S.font }}>Edit as needed, then copy and send via your email client</div>
+                </div>
+              ) : (
+                <div style={{ textAlign:'center', padding:'60px 0' }}>
+                  <div style={{ fontSize:40, marginBottom:14 }}>✉️</div>
+                  <div style={{ color:S.muted, fontSize:14, fontFamily:S.font }}>Click a template type above to generate</div>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+      </div>
 
-      {/* Add Recommender Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4">Add Recommender</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <Label>Name *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="Dr. John Smith"
-                />
-              </div>
-              
-              <div>
-                <Label>Type *</Label>
-                <Select value={formData.type} onValueChange={(v) => setFormData({...formData, type: v})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(RECOMMENDER_TYPES).map(([key, { label }]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="teacher@school.edu"
-                />
-              </div>
-              
-              <div>
-                <Label>Phone</Label>
-                <Input
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  placeholder="+1 234 567 8900"
-                />
-              </div>
-              
-              <div>
-                <Label>Subject/Department</Label>
-                <Input
-                  value={formData.subject}
-                  onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                  placeholder="AP Physics"
-                />
-              </div>
-              
-              <div>
-                <Label>Institution</Label>
-                <Input
-                  value={formData.institution}
-                  onChange={(e) => setFormData({...formData, institution: e.target.value})}
-                  placeholder="School Name"
-                />
-              </div>
-              
-              <div>
-                <Label>Years Known</Label>
-                <Input
-                  type="number"
-                  value={formData.yearsKnown}
-                  onChange={(e) => setFormData({...formData, yearsKnown: e.target.value})}
-                  placeholder="2"
-                />
-              </div>
-              
-              <div>
-                <Label>Notes</Label>
-                <Textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                  placeholder="Additional notes..."
-                  rows={2}
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
-              <Button onClick={handleAddRecommender}>Add Recommender</Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Request Modal */}
+      {/* ── Request Modal ── */}
       {showRequestForm && selectedRecommender && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">
-              Request from {selectedRecommender.name}
-            </h2>
-            
-            <div className="space-y-4">
-              <div>
-                <Label>College/University</Label>
-                <Input
-                  value={requestFormData.collegeName}
-                  onChange={(e) => setRequestFormData({...requestFormData, collegeName: e.target.value})}
-                  placeholder="Stanford University"
-                />
-              </div>
-              
-              <div>
-                <Label>Application System</Label>
-                <Select
-                  value={requestFormData.applicationSystem}
-                  onValueChange={(v) => setRequestFormData({...requestFormData, applicationSystem: v})}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CommonApp">Common App</SelectItem>
-                    <SelectItem value="Coalition">Coalition</SelectItem>
-                    <SelectItem value="UCAS">UCAS</SelectItem>
-                    <SelectItem value="Direct">Direct Application</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label>Deadline</Label>
-                <Input
-                  type="date"
-                  value={requestFormData.deadline}
-                  onChange={(e) => setRequestFormData({...requestFormData, deadline: e.target.value})}
-                />
-              </div>
-              
-              <div>
-                <Label>Notes</Label>
-                <Textarea
-                  value={requestFormData.notes}
-                  onChange={(e) => setRequestFormData({...requestFormData, notes: e.target.value})}
-                  placeholder="Any specific requirements..."
-                  rows={2}
-                />
-              </div>
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:50 }}>
+          <div style={{ background:S.surface, border:`1px solid ${h2r(ACCENT,0.3)}`, borderRadius:18, padding:28, width:'100%', maxWidth:440, animation:'fadeUp 0.25s ease' }}>
+            <div style={{ fontSize:16, fontWeight:800, marginBottom:20, fontFamily:S.font }}>
+              Request from <span style={{ color:ACCENT }}>{selectedRecommender.name}</span>
             </div>
-            
-            <div className="flex justify-between mt-6">
-              <Button variant="outline" onClick={() => handleGenerateEmail('request')}>
-                <Mail size={16} className="mr-1" />
-                Generate Email
-              </Button>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => {
-                  setShowRequestForm(false);
-                  setSelectedRecommender(null);
-                }}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateRequest}>Create Request</Button>
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              <div><span style={lbl}>College/University</span><input value={reqForm.collegeName} onChange={e=>setReqForm({...reqForm,collegeName:e.target.value})} placeholder="Stanford University" style={inp} /></div>
+              <div>
+                <span style={lbl}>Application System</span>
+                <select value={reqForm.applicationSystem} onChange={e=>setReqForm({...reqForm,applicationSystem:e.target.value})} style={inp}>
+                  {['CommonApp','Coalition','UCAS','Direct','Other'].map(s=><option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div><span style={lbl}>Deadline</span><input type="date" value={reqForm.deadline} onChange={e=>setReqForm({...reqForm,deadline:e.target.value})} style={inp} /></div>
+              <div><span style={lbl}>Notes</span><textarea rows={2} value={reqForm.notes} onChange={e=>setReqForm({...reqForm,notes:e.target.value})} placeholder="Any specific requirements…" style={{...inp,resize:'none',lineHeight:1.6}} /></div>
+            </div>
+            <div style={{ display:'flex', justifyContent:'space-between', marginTop:22 }}>
+              <button onClick={()=>handleGenerateEmail('request')} style={{ padding:'9px 16px', background:'rgba(255,255,255,0.06)', border:`1px solid ${S.border2}`, borderRadius:10, color:S.muted, fontSize:13, cursor:'pointer', fontFamily:S.font }}>✉ Draft Email</button>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={()=>{setShowRequestForm(false);setSelectedRecommender(null);}} style={{ padding:'9px 18px', background:'transparent', border:`1px solid ${S.border2}`, borderRadius:10, color:S.muted, fontSize:13, cursor:'pointer', fontFamily:S.font }}>Cancel</button>
+                <button onClick={handleCreateRequest} style={{ padding:'9px 22px', background:ACCENT, border:'none', borderRadius:10, color:'#000', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:S.font }}>Create</button>
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
