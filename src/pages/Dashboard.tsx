@@ -1,6 +1,4 @@
-// ============================================
-// FILE: src/pages/Dashboard.tsx - MAGIC AUTOMATION DASHBOARD
-// ============================================
+// src/pages/Dashboard.tsx — Dark Editorial Redesign
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
@@ -13,654 +11,477 @@ import RecommendedActions from '../components/dashboard/RecommendedActions';
 import CollegeListOverview from '../components/dashboard/CollegeListOverview';
 import ProfileCompletionWidget from '../components/common/ProfileCompletionWidget';
 import { CompactDecisionCountdown } from '@/components/DecisionCountdown';
-import { 
-  School, 
-  FileText, 
-  Calendar, 
-  PenTool, 
-  ArrowRight, 
-  Clock, 
-  TrendingUp,
-  CheckCircle,
-  AlertCircle,
-  Target,
-  Trophy,
-  BookOpen,
-  Users,
-  Activity,
-  Sparkles
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 
+/* ─── Design tokens ──────────────────────────────────────────────────── */
+const h2r = (hex: string, a: number) => {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+};
+const S = {
+  bg:'#080810', surface:'#0F0F1C', surface2:'rgba(255,255,255,0.04)',
+  border:'rgba(255,255,255,0.08)', border2:'rgba(255,255,255,0.13)',
+  accent:'#6C63FF', accent2:'#3B9EFF', gold:'#F59E0B',
+  text:'#fff', muted:'rgba(255,255,255,0.45)', dim:'rgba(255,255,255,0.22)',
+  font:"'DM Sans',sans-serif",
+};
+
+const GLOBAL = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}body{background:#080810;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
+`;
+
+/* ─── Mini components ─────────────────────────────────────────────────── */
+
+// Stat pill in hero
+const HeroStat: React.FC<{ icon: string; label: string; value: number; accent: string }> = ({ icon, label, value, accent }) => (
+  <div style={{
+    background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)',
+    border: `1px solid ${h2r(accent, 0.3)}`, borderRadius: 16, padding: '16px 20px',
+    animation: 'fadeUp 0.5s ease both',
+  }}>
+    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+      <span style={{ fontSize: 18 }}>{icon}</span>
+      <span style={{ fontSize: 12, color: h2r(accent, 0.8), fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', fontFamily: S.font }}>{label}</span>
+    </div>
+    <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', fontFamily: S.font, lineHeight: 1 }}>{value}</div>
+  </div>
+);
+
+// Section heading
+const SectionHead: React.FC<{ emoji: string; title: string; href?: string; linkLabel?: string }> = ({ emoji, title, href, linkLabel }) => (
+  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 16 }}>
+    <div style={{ display:'flex', alignItems:'center', gap: 10 }}>
+      <span style={{ fontSize: 20 }}>{emoji}</span>
+      <h2 style={{ fontSize: 17, fontWeight: 800, color: '#fff', fontFamily: S.font }}>{title}</h2>
+    </div>
+    {href && linkLabel && (
+      <Link to={href} style={{ fontSize: 12, color: h2r(S.accent, 0.8), fontFamily: S.font, textDecoration: 'none', fontWeight: 600, display:'flex', alignItems:'center', gap:4 }}>
+        {linkLabel} →
+      </Link>
+    )}
+  </div>
+);
+
+// Dark card wrapper
+const Card: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
+  <div style={{ background: S.surface, border: `1px solid ${S.border}`, borderRadius: 18, padding: '22px 24px', ...style }}>
+    {children}
+  </div>
+);
+
+// Progress bar
+const ProgressBar: React.FC<{ value: number; accent: string; height?: number }> = ({ value, accent, height = 6 }) => (
+  <div style={{ height, background: 'rgba(255,255,255,0.07)', borderRadius: height, overflow: 'hidden' }}>
+    <div style={{ width: `${Math.min(value, 100)}%`, height: '100%', background: accent, borderRadius: height, transition: 'width 0.8s ease' }} />
+  </div>
+);
+
+// Deadline row
+const DeadlineRow: React.FC<{ deadline: any; getDaysUntil: (d: string) => string }> = ({ deadline, getDaysUntil }) => {
+  const label = getDaysUntil(deadline.deadline_date);
+  const isUrgent = ['Today','Tomorrow','Overdue'].includes(label);
+  const urgentColor = label === 'Overdue' ? '#F87171' : label === 'Today' ? '#F97316' : '#FBBF24';
+  return (
+    <div style={{
+      display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px',
+      background: isUrgent ? h2r(urgentColor, 0.07) : S.surface2,
+      border: `1px solid ${isUrgent ? h2r(urgentColor, 0.25) : S.border}`,
+      borderLeft: `3px solid ${isUrgent ? urgentColor : S.border2}`,
+      borderRadius: 10, marginBottom: 8,
+    }}>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', fontFamily: S.font, marginBottom: 2 }}>{deadline.college_name}</div>
+        <div style={{ fontSize: 12, color: S.muted, fontFamily: S.font }}>{deadline.deadline_type}</div>
+      </div>
+      <div style={{ padding:'4px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700, background: isUrgent ? h2r(urgentColor, 0.15) : 'rgba(255,255,255,0.07)', color: isUrgent ? urgentColor : S.dim, fontFamily: S.font }}>
+        {label}
+      </div>
+    </div>
+  );
+};
+
+// Application status badge
+const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const cfg: Record<string,{bg:string;color:string}> = {
+    submitted:  { bg:'rgba(16,185,129,0.15)',  color:'#10B981' },
+    accepted:   { bg:'rgba(59,158,255,0.15)',  color:'#3B9EFF' },
+    preparing:  { bg:'rgba(251,191,36,0.15)',  color:'#FBBF24' },
+    researching:{ bg:'rgba(168,85,247,0.15)',  color:'#A855F7' },
+  };
+  const s = cfg[status] || { bg:'rgba(255,255,255,0.07)', color:S.muted };
+  return (
+    <span style={{ padding:'3px 10px', borderRadius:100, fontSize:11, fontWeight:600, background:s.bg, color:s.color, fontFamily:S.font, textTransform:'capitalize' }}>{status}</span>
+  );
+};
+
+// Quick action card
+const QuickAction: React.FC<{ emoji: string; title: string; desc: string; href: string; accent: string }> = ({ emoji, title, desc, href, accent }) => (
+  <Link to={href} style={{ textDecoration:'none' }}>
+    <div style={{
+      background: S.surface, border: `1px solid ${h2r(accent, 0.2)}`,
+      borderTop: `2px solid ${h2r(accent, 0.5)}`,
+      borderRadius: 16, padding: '20px', cursor: 'pointer',
+      transition: 'all 0.2s ease',
+    }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${h2r(accent, 0.15)}`; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'none'; }}
+    >
+      <div style={{ fontSize: 28, marginBottom: 10 }}>{emoji}</div>
+      <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 4, fontFamily: S.font }}>{title}</div>
+      <div style={{ fontSize: 12, color: S.muted, fontFamily: S.font }}>{desc}</div>
+    </div>
+  </Link>
+);
+
+/* ─── Main Dashboard ─────────────────────────────────────────────────── */
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  const [stats, setStats] = useState({
-    applications: 0,
-    deadlines: 0,
-    essays: 0,
-    colleges: 0,
-    completed: 0,
-    inProgress: 0
-  });
-  
+
+  const [stats, setStats] = useState({ applications:0, deadlines:0, essays:0, colleges:0, completed:0, inProgress:0 });
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<any[]>([]);
   const [recentApplications, setRecentApplications] = useState<any[]>([]);
   const [essayProgress, setEssayProgress] = useState<any[]>([]);
   const [decisionDates, setDecisionDates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Magic automation states
   const [recommendedActions, setRecommendedActions] = useState<any[]>([]);
   const [profileStrength, setProfileStrength] = useState(0);
   const [urgentAlerts, setUrgentAlerts] = useState<any[]>([]);
   const [collegeList, setCollegeList] = useState<any[]>([]);
   const [todaysTasks, setTodaysTasks] = useState<any[]>([]);
 
-  // Parse user data
   const targetCountries = user?.target_countries ? JSON.parse(user.target_countries) : [];
   const intendedMajors = user?.intended_majors ? JSON.parse(user.intended_majors) : [];
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  useEffect(() => { loadDashboardData(); }, []);
 
   const loadDashboardData = async () => {
     try {
       const [collegesRes, applicationsRes, deadlinesRes, essaysRes] = await Promise.all([
-        api.getColleges({ limit: 5 }),
-        api.getApplications(),
-        api.getDeadlines(30),
-        api.getEssays()
+        api.getColleges({ limit:5 }), api.getApplications(), api.getDeadlines(30), api.getEssays()
       ]);
-
       const applications = applicationsRes.data || [];
       const deadlines = deadlinesRes.data || [];
       const essays = essaysRes.data || [];
 
-      // Calculate statistics
       setStats({
         applications: applications.length,
-        deadlines: deadlines.filter((d: any) => !d.is_completed).length,
+        deadlines: deadlines.filter((d:any)=>!d.is_completed).length,
         essays: essays.length,
         colleges: collegesRes.data?.length || 0,
-        completed: applications.filter((a: any) => a.status === 'submitted' || a.status === 'accepted').length,
-        inProgress: applications.filter((a: any) => a.status === 'preparing' || a.status === 'researching').length
+        completed: applications.filter((a:any)=>a.status==='submitted'||a.status==='accepted').length,
+        inProgress: applications.filter((a:any)=>a.status==='preparing'||a.status==='researching').length,
       });
 
-      setUpcomingDeadlines(deadlines.slice(0, 5));
-      setRecentApplications(applications.slice(0, 5));
-      setEssayProgress(essays.slice(0, 3));
-      
-      // Extract decision dates from submitted applications
-      const decisions = applications
-        .filter((app: any) => app.status === 'submitted' && app.notification_date)
-        .map((app: any) => ({
-          collegeName: app.college_name,
-          deadlineType: app.deadline_type || 'Regular Decision',
-          notificationDate: app.notification_date,
-          applicationDate: app.application_date || app.created_at,
-          collegeId: app.college_id
-        }));
-      setDecisionDates(decisions);
-      
-      // Transform applications into college list format for CollegeListOverview
-      const transformedColleges = applications.map((app: any) => ({
-        id: app.id,
-        name: app.college_name,
-        category: app.category || 'target', // reach, target, safety
-        chance: app.chance || 50,
-        country: app.country || 'United States',
-        deadline: app.deadline,
-        status: app.status
+      setUpcomingDeadlines(deadlines.slice(0,5));
+      setRecentApplications(applications.slice(0,5));
+      setEssayProgress(essays.slice(0,3));
+
+      const decisions = applications.filter((a:any)=>a.status==='submitted'&&a.notification_date).map((a:any)=>({
+        collegeName:a.college_name, deadlineType:a.deadline_type||'Regular Decision',
+        notificationDate:a.notification_date, applicationDate:a.application_date||a.created_at, collegeId:a.college_id,
       }));
-      setCollegeList(transformedColleges);
-      
-      // Helper function to calculate days remaining
-      const calculateDaysRemaining = (dateStr: string) => {
-        return Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-      };
-      
-      // Load alerts from Risk API (fallback to deadline-based alerts)
+      setDecisionDates(decisions);
+      setCollegeList(applications.map((a:any)=>({ id:a.id, name:a.college_name, category:a.category||'target', chance:a.chance||50, country:a.country||'United States', deadline:a.deadline, status:a.status })));
+
+      const calcDays = (d:string)=>Math.ceil((new Date(d).getTime()-Date.now())/86400000);
+
+      // Alerts
       try {
-        const riskRes = await api.risk.alerts();
-        if (riskRes.success && riskRes.data && Array.isArray(riskRes.data)) {
-          const formattedAlerts = riskRes.data.map((alert: any) => ({
-            id: alert.id,
-            type: alert.type || 'warning',
-            severity: alert.severity || 'warning',
-            title: alert.title || alert.message,
-            description: alert.description || '',
-            college: alert.college_name,
-            daysRemaining: alert.days_remaining,
-            action: { label: 'View', href: '/deadlines' }
-          }));
-          setUrgentAlerts(formattedAlerts);
-        } else {
-          throw new Error('Risk API not available');
-        }
-      } catch (riskError) {
-        console.warn('Risk API not available, using deadline fallback:', riskError);
-        // Fallback: Transform deadlines into urgent alerts
-        const alerts = deadlines
-          .filter((d: any) => !d.is_completed)
-          .slice(0, 5)
-          .map((d: any) => {
-            const daysRemaining = calculateDaysRemaining(d.deadline_date);
-            return {
-              id: d.id,
-              type: 'deadline' as const,
-              severity: daysRemaining <= 1 ? 'critical' as const : 
-                        daysRemaining <= 3 ? 'warning' as const : 
-                        daysRemaining <= 7 ? 'info' as const : 'success' as const,
-              title: `${d.deadline_type} - ${d.college_name}`,
-              description: `Due ${daysRemaining <= 0 ? 'today' : `in ${daysRemaining} days`}`,
-              college: d.college_name,
-              daysRemaining,
-              action: { label: 'View', href: '/deadlines' }
-            };
-          });
-        setUrgentAlerts(alerts);
+        const rr = await api.risk.alerts();
+        if (rr.success&&rr.data&&Array.isArray(rr.data)) {
+          setUrgentAlerts(rr.data.map((a:any)=>({ id:a.id, type:a.type||'warning', severity:a.severity||'warning', title:a.title||a.message, description:a.description||'', college:a.college_name, daysRemaining:a.days_remaining, action:{label:'View',href:'/deadlines'} })));
+        } else throw new Error();
+      } catch {
+        setUrgentAlerts(deadlines.filter((d:any)=>!d.is_completed).slice(0,5).map((d:any)=>{
+          const n=calcDays(d.deadline_date);
+          return { id:d.id, type:'deadline', severity:n<=1?'critical':n<=3?'warning':n<=7?'info':'success', title:`${d.deadline_type} - ${d.college_name}`, description:`Due ${n<=0?'today':`in ${n} days`}`, college:d.college_name, daysRemaining:n, action:{label:'View',href:'/deadlines'} };
+        }));
       }
-      
-      // Load tasks from Tasks API (fallback to deadline-based tasks)
+
+      // Tasks
       try {
-        const tasksRes = await api.tasks.getAll({ status: 'pending' });
-        if (tasksRes.success && tasksRes.data && Array.isArray(tasksRes.data)) {
-          const formattedTasks = tasksRes.data.slice(0, 5).map((task: any) => ({
-            id: task.id,
-            title: task.title || task.type,
-            category: task.type || 'deadline',
-            priority: task.priority || 'medium',
-            dueDate: task.due_date,
-            college: task.college_name,
-            status: task.status || 'pending',
-            estimatedTime: task.estimated_time || 30
-          }));
-          setTodaysTasks(formattedTasks);
-        } else {
-          throw new Error('Tasks API not available');
-        }
-      } catch (tasksError) {
-        console.warn('Tasks API not available, using deadline fallback:', tasksError);
-        // Fallback: Generate today's tasks from deadlines
-        const tasks = deadlines
-          .filter((d: any) => !d.is_completed)
-          .slice(0, 5)
-          .map((d: any) => {
-            const daysRemaining = calculateDaysRemaining(d.deadline_date);
-            return {
-              id: d.id,
-              title: d.deadline_type,
-              category: 'deadline',
-              priority: daysRemaining <= 1 ? 'critical' as const :
-                        daysRemaining <= 3 ? 'high' as const :
-                        daysRemaining <= 7 ? 'medium' as const : 'low' as const,
-              dueDate: d.deadline_date,
-              college: d.college_name,
-              status: 'pending' as const,
-              estimatedTime: 30
-            };
-          });
-        setTodaysTasks(tasks);
+        const tr = await api.tasks.getAll({ status:'pending' });
+        if (tr.success&&tr.data&&Array.isArray(tr.data)) {
+          setTodaysTasks(tr.data.slice(0,5).map((t:any)=>({ id:t.id, title:t.title||t.type, category:t.type||'deadline', priority:t.priority||'medium', dueDate:t.due_date, college:t.college_name, status:t.status||'pending', estimatedTime:t.estimated_time||30 })));
+        } else throw new Error();
+      } catch {
+        setTodaysTasks(deadlines.filter((d:any)=>!d.is_completed).slice(0,5).map((d:any)=>{
+          const n=calcDays(d.deadline_date);
+          return { id:d.id, title:d.deadline_type, category:'deadline', priority:n<=1?'critical':n<=3?'high':n<=7?'medium':'low', dueDate:d.deadline_date, college:d.college_name, status:'pending', estimatedTime:30 };
+        }));
       }
-      
-      // Load automation data (profile strength and recommended actions)
+
+      // Automation
       try {
-        const userProfile = {
-          gpa: user?.gpa || 3.5,
-          satScore: user?.sat_score,
-          actScore: user?.act_score,
-          activities: [], // Would come from activities API
-          grade: user?.grade || 'Grade 12',
-          curriculum: user?.curriculum || 'CBSE'
-        };
-        
-        const strengthRes = await api.automation.getProfileStrength(userProfile);
-        if (strengthRes.success && strengthRes.data) {
-          setProfileStrength(strengthRes.data.percentage || 0);
-        }
-        
-        const actionsRes = await api.automation.getRecommendedActions(userProfile);
-        if (actionsRes.success && actionsRes.data) {
-          setRecommendedActions(actionsRes.data.map((a: any, i: number) => ({
-            id: `action-${i}`,
-            ...a,
-            impactScore: a.impact === 'Unlocks personalized college recommendations' ? 20 :
-                         a.impact === 'Better reach/target/safety classification' ? 15 : 10
-          })));
-        }
-      } catch (automationError) {
-        console.warn('Automation features not available:', automationError);
-        // Fallback: generate basic recommended actions
+        const profile = { gpa:user?.gpa||3.5, satScore:user?.sat_score, actScore:user?.act_score, activities:[], grade:user?.grade||'Grade 12', curriculum:user?.curriculum||'CBSE' };
+        const [str, act] = await Promise.all([api.automation.getProfileStrength(profile), api.automation.getRecommendedActions(profile)]);
+        if (str.success&&str.data) setProfileStrength(str.data.percentage||0);
+        if (act.success&&act.data) setRecommendedActions(act.data.map((a:any,i:number)=>({ id:`action-${i}`, ...a, impactScore:a.impact==='Unlocks personalized college recommendations'?20:a.impact==='Better reach/target/safety classification'?15:10 })));
+      } catch {
         setRecommendedActions([
-          {
-            id: 'action-1',
-            priority: 'high',
-            category: 'profile',
-            action: 'Complete your profile',
-            reason: 'A complete profile unlocks personalized recommendations',
-            impact: 'Unlocks personalized college recommendations',
-            impactScore: 20
-          },
-          {
-            id: 'action-2',
-            priority: 'medium',
-            category: 'applications',
-            action: 'Add colleges to your list',
-            reason: 'Build a balanced list of reach, target, and safety schools',
-            impact: 'Better application strategy',
-            impactScore: 15
-          }
+          { id:'a1', priority:'high', category:'profile', action:'Complete your profile', reason:'Unlocks personalized recommendations', impact:'Unlocks personalized college recommendations', impactScore:20 },
+          { id:'a2', priority:'medium', category:'applications', action:'Add colleges to your list', reason:'Build a balanced reach/target/safety list', impact:'Better application strategy', impactScore:15 },
         ]);
-        setProfileStrength(45); // Default estimate
+        setProfileStrength(45);
       }
-    } catch (error) {
-      console.error('Failed to load dashboard:', error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error('Dashboard load error:', e); } finally { setLoading(false); }
   };
 
-  const getDaysUntil = (dateStr: string) => {
-    const days = Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    if (days < 0) return 'Overdue';
-    if (days === 0) return 'Today';
-    if (days === 1) return 'Tomorrow';
-    return `${days} days`;
+  const getDaysUntil = (d: string) => {
+    const n = Math.ceil((new Date(d).getTime()-Date.now())/86400000);
+    if (n < 0) return 'Overdue';
+    if (n === 0) return 'Today';
+    if (n === 1) return 'Tomorrow';
+    return `${n} days`;
   };
 
-  const getProgressPercentage = () => {
-    if (stats.applications === 0) return 0;
-    return Math.round((stats.completed / stats.applications) * 100);
-  };
+  const progressPct = stats.applications === 0 ? 0 : Math.round((stats.completed/stats.applications)*100);
+  const firstName = user?.full_name?.split(' ')[0] || 'there';
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+  if (loading) return (
+    <>
+      <style>{GLOBAL}</style>
+      <div style={{ minHeight:'100vh', background:S.bg, display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ textAlign:'center' }}>
+          <div style={{ width:48, height:48, borderRadius:'50%', border:'3px solid rgba(255,255,255,0.08)', borderTopColor:S.accent, animation:'spin 0.8s linear infinite', margin:'0 auto 16px' }} />
+          <div style={{ fontSize:14, color:S.muted, fontFamily:S.font }}>Loading your dashboard…</div>
+        </div>
       </div>
-    );
-  }
+    </>
+  );
 
   return (
-    <div className="p-8 space-y-8">
-      {/* Welcome Header with gradient-hero */}
-      <div className="gradient-hero rounded-2xl p-8 text-white">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold">Welcome back, {user?.full_name}! 👋</h1>
-          <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
-            <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium">Magic Mode Active</span>
-          </div>
-        </div>
-        <p className="text-white/90 mb-6">Here's your college application journey at a glance</p>
-        
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <FileText size={20} />
-              <span className="text-sm font-medium">Applications</span>
-            </div>
-            <p className="text-3xl font-bold">{stats.applications}</p>
-          </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar size={20} />
-              <span className="text-sm font-medium">Deadlines</span>
-            </div>
-            <p className="text-3xl font-bold">{stats.deadlines}</p>
-          </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <PenTool size={20} />
-              <span className="text-sm font-medium">Essays</span>
-            </div>
-            <p className="text-3xl font-bold">{stats.essays}</p>
-          </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle size={20} />
-              <span className="text-sm font-medium">Completed</span>
-            </div>
-            <p className="text-3xl font-bold">{stats.completed}</p>
-          </div>
-        </div>
-      </div>
+    <>
+      <style>{GLOBAL}</style>
+      <div style={{ minHeight:'100vh', background:S.bg, color:'#fff', fontFamily:S.font }}>
 
-      {/* MAGIC SECTION: Urgent Alerts Banner */}
-      {urgentAlerts.length > 0 && (
-        <UrgentAlerts 
-          alerts={urgentAlerts}
-          onAlertClick={(alertId) => navigate('/deadlines')}
-        />
-      )}
+        {/* ── HERO ── */}
+        <div style={{
+          padding:'44px 48px 40px',
+          background:`linear-gradient(135deg, ${h2r(S.accent,0.12)} 0%, ${h2r('#3B9EFF',0.06)} 50%, transparent 100%)`,
+          borderBottom:`1px solid ${S.border}`,
+          position:'relative', overflow:'hidden',
+        }}>
+          {/* Ambient orb */}
+          <div style={{ position:'absolute', top:-100, right:-60, width:400, height:400, background:`radial-gradient(circle, ${h2r(S.accent,0.1)} 0%, transparent 70%)`, borderRadius:'50%', pointerEvents:'none' }} />
 
-      {/* MAGIC SECTION: Today's Tasks + Recommended Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TodaysTasks 
-          tasks={todaysTasks}
-          onTaskClick={(taskId) => navigate('/deadlines')}
-          onTaskComplete={(taskId) => {
-            // Mark task as complete
-            console.log('Complete task:', taskId);
-          }}
-        />
-        
-        <RecommendedActions 
-          actions={recommendedActions}
-          profileStrength={profileStrength}
-          onActionClick={(action) => {
-            if (action.category === 'profile') navigate('/settings');
-            else if (action.category === 'testing') navigate('/settings'); // Test scores section
-            else if (action.category === 'essays') navigate('/essays');
-            else if (action.category === 'applications') navigate('/discover');
-            else if (action.category === 'recommendations') navigate('/recommendations');
-            else if (action.category === 'deadlines') navigate('/deadlines');
-          }}
-        />
-      </div>
-
-      {/* MAGIC SECTION: College List Overview */}
-      <CollegeListOverview 
-        colleges={collegeList}
-        onCollegeClick={(collegeId) => navigate(`/colleges/${collegeId}`)}
-        onAddCollege={() => navigate('/discover')}
-      />
-
-      {/* Progress Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Completion Widget - Sidebar */}
-        <ProfileCompletionWidget variant="full" showMissingFields={true} />
-
-        {/* Decision Countdown */}
-        {decisionDates.length > 0 && (
-          <CompactDecisionCountdown decisions={decisionDates} />
-        )}
-
-        {/* Overall Progress */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-900">Overall Progress</h3>
-            <Trophy className="text-yellow-500" size={24} />
-          </div>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-600">Completion</span>
-                <span className="font-medium">{getProgressPercentage()}%</span>
-              </div>
-              <Progress value={getProgressPercentage()} className="h-2" />
-            </div>
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+          <div style={{ maxWidth:1280, margin:'0 auto', position:'relative', zIndex:1 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:28, flexWrap:'wrap', gap:16 }}>
               <div>
-                <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-                <p className="text-xs text-gray-600">Completed</p>
+                <div style={{ fontSize:12, color:h2r(S.accent,0.8), textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:12, fontWeight:600 }}>Mission Control</div>
+                <h1 style={{ fontSize:42, fontWeight:900, letterSpacing:'-0.025em', lineHeight:1.1, marginBottom:6 }}>
+                  Hey, <span style={{ color:S.accent }}>{firstName}.</span> 👋
+                </h1>
+                <p style={{ color:S.muted, fontSize:15 }}>Your college application journey at a glance.</p>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-yellow-600">{stats.inProgress}</p>
-                <p className="text-xs text-gray-600">In Progress</p>
+              <div style={{
+                display:'flex', alignItems:'center', gap:8, padding:'8px 16px',
+                background:'rgba(255,255,255,0.07)', border:`1px solid ${h2r(S.accent,0.3)}`,
+                borderRadius:100, fontSize:13, fontWeight:600, color:h2r(S.accent,0.9),
+                animation:'pulse 2s ease infinite',
+              }}>
+                ✨ Magic Mode Active
               </div>
+            </div>
+
+            {/* Hero stats */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:14 }}>
+              <HeroStat icon="📝" label="Applications" value={stats.applications} accent={S.accent} />
+              <HeroStat icon="📅" label="Deadlines"    value={stats.deadlines}    accent="#F97316" />
+              <HeroStat icon="✍️"  label="Essays"       value={stats.essays}       accent="#A855F7" />
+              <HeroStat icon="✅" label="Completed"    value={stats.completed}    accent="#10B981" />
+              <HeroStat icon="⚡" label="In Progress"  value={stats.inProgress}   accent="#FBBF24" />
             </div>
           </div>
         </div>
 
-        {/* Target Countries */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-900">Target Countries</h3>
-            <Target className="text-blue-500" size={24} />
-          </div>
-          <div className="space-y-2">
-            {targetCountries.length > 0 ? (
-              targetCountries.map((country: string, idx: number) => (
-                <div key={idx} className="flex items-center justify-between p-2 bg-indigo-50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-900">{country}</span>
-                  <span className="text-xs text-indigo-600 bg-white px-2 py-1 rounded">Active</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-gray-500">No target countries set</p>
-            )}
-          </div>
-        </div>
+        <div style={{ maxWidth:1280, margin:'0 auto', padding:'36px 48px 80px' }}>
 
-        {/* Intended Majors */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-900">Intended Majors</h3>
-            <BookOpen className="text-purple-500" size={24} />
-          </div>
-          <div className="space-y-2">
-            {intendedMajors.length > 0 ? (
-              intendedMajors.map((major: string, idx: number) => (
-                <div key={idx} className="flex items-center gap-2 p-2 bg-purple-50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-900">{major}</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-gray-500">No majors selected</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Profile Strength Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Strength Card */}
-        <div className="lg:col-span-2">
-          <ProfileStrength />
-        </div>
-        
-        {/* Quick Actions */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="font-bold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="space-y-3">
-            <Link to="/activities" className="block">
-              <Button variant="outline" className="w-full justify-start">
-                <Activity className="mr-2 h-4 w-4" />
-                Manage Activities
-              </Button>
-            </Link>
-            <Link to="/colleges" className="block">
-              <Button variant="outline" className="w-full justify-start">
-                <School className="mr-2 h-4 w-4" />
-                Explore Colleges
-              </Button>
-            </Link>
-            <Link to="/essays" className="block">
-              <Button variant="outline" className="w-full justify-start">
-                <PenTool className="mr-2 h-4 w-4" />
-                Work on Essays
-              </Button>
-            </Link>
-            <Link to="/deadlines" className="block">
-              <Button variant="outline" className="w-full justify-start">
-                <Calendar className="mr-2 h-4 w-4" />
-                Check Deadlines
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming Deadlines */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Clock className="text-red-600" size={24} />
-              Upcoming Deadlines
-            </h2>
-            <Link to="/deadlines">
-              <Button variant="ghost" size="sm">
-                View all <ArrowRight className="ml-2" size={16} />
-              </Button>
-            </Link>
-          </div>
-          
-          {upcomingDeadlines.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="mx-auto text-gray-400 mb-3" size={48} />
-              <p className="text-gray-500 mb-4">No upcoming deadlines</p>
-              <Link to="/deadlines">
-                <Button size="sm">Add Deadline</Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {upcomingDeadlines.map((deadline: any) => {
-                const daysUntil = getDaysUntil(deadline.deadline_date);
-                const isUrgent = daysUntil === 'Today' || daysUntil === 'Tomorrow' || daysUntil === 'Overdue';
-                
-                return (
-                  <div
-                    key={deadline.id}
-                    className={`flex items-center justify-between p-4 rounded-lg border-2 ${
-                      isUrgent ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{deadline.college_name}</p>
-                      <p className="text-sm text-gray-600">{deadline.deadline_type}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isUrgent && <AlertCircle className="text-red-600" size={16} />}
-                      <span className={`text-sm font-medium ${isUrgent ? 'text-red-600' : 'text-gray-600'}`}>
-                        {daysUntil}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+          {/* ── Urgent alerts ── */}
+          {urgentAlerts.length > 0 && (
+            <div style={{ marginBottom:28 }}>
+              <UrgentAlerts alerts={urgentAlerts} onAlertClick={()=>navigate('/deadlines')} />
             </div>
           )}
-        </div>
 
-        {/* Recent Applications */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <FileText className="text-blue-600" size={24} />
-              Recent Applications
-            </h2>
-            <Link to="/applications">
-              <Button variant="ghost" size="sm">
-                View all <ArrowRight className="ml-2" size={16} />
-              </Button>
-            </Link>
+          {/* ── Tasks + Recommended Actions ── */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
+            <TodaysTasks tasks={todaysTasks} onTaskClick={()=>navigate('/deadlines')} onTaskComplete={(id)=>console.log('Complete:',id)} />
+            <RecommendedActions actions={recommendedActions} profileStrength={profileStrength} onActionClick={(a)=>{
+              const routes: Record<string,string> = { profile:'/settings', testing:'/settings', essays:'/essays', applications:'/discover', recommendations:'/recommendations', deadlines:'/deadlines' };
+              navigate(routes[a.category]||'/');
+            }} />
           </div>
-          
-          {recentApplications.length === 0 ? (
-            <div className="text-center py-8">
-              <School className="mx-auto text-gray-400 mb-3" size={48} />
-              <p className="text-gray-500 mb-4">No applications yet</p>
-              <Link to="/discover">
-                <Button size="sm">Browse Colleges</Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {recentApplications.map((app: any) => (
-                <div key={app.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-indigo-300 transition">
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{app.college_name}</p>
-                    <p className="text-sm text-gray-600">{app.country}</p>
+
+          {/* ── College list overview ── */}
+          <div style={{ marginBottom:24 }}>
+            <CollegeListOverview colleges={collegeList} onCollegeClick={(id)=>navigate(`/colleges/${id}`)} onAddCollege={()=>navigate('/discover')} />
+          </div>
+
+          {/* ── Progress + Profile + Decisions ── */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:20, marginBottom:24 }}>
+            {/* Overall progress */}
+            <Card>
+              <SectionHead emoji="🏆" title="Overall Progress" />
+              <div style={{ marginBottom:16 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+                  <span style={{ fontSize:13, color:S.muted }}>Completion</span>
+                  <span style={{ fontSize:13, fontWeight:700, color:'#10B981' }}>{progressPct}%</span>
+                </div>
+                <ProgressBar value={progressPct} accent="#10B981" height={8} />
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, paddingTop:14, borderTop:`1px solid ${S.border}` }}>
+                <div>
+                  <div style={{ fontSize:28, fontWeight:900, color:'#10B981', fontFamily:S.font }}>{stats.completed}</div>
+                  <div style={{ fontSize:12, color:S.dim }}>Submitted</div>
+                </div>
+                <div>
+                  <div style={{ fontSize:28, fontWeight:900, color:'#FBBF24', fontFamily:S.font }}>{stats.inProgress}</div>
+                  <div style={{ fontSize:12, color:S.dim }}>In Progress</div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Target countries */}
+            <Card>
+              <SectionHead emoji="🌍" title="Target Countries" />
+              {targetCountries.length > 0 ? targetCountries.map((c:string, i:number) => (
+                <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 12px', background:h2r(S.accent2,0.08), border:`1px solid ${h2r(S.accent2,0.2)}`, borderRadius:8, marginBottom:8 }}>
+                  <span style={{ fontSize:14, color:'#fff', fontFamily:S.font }}>{c}</span>
+                  <span style={{ fontSize:11, color:S.accent2, fontWeight:600, fontFamily:S.font }}>Active</span>
+                </div>
+              )) : <p style={{ color:S.dim, fontSize:13 }}>No target countries set</p>}
+            </Card>
+
+            {/* Decision countdown or intended majors */}
+            {decisionDates.length > 0 ? (
+              <div><CompactDecisionCountdown decisions={decisionDates} /></div>
+            ) : (
+              <Card>
+                <SectionHead emoji="📚" title="Intended Majors" />
+                {intendedMajors.length > 0 ? intendedMajors.map((m:string, i:number) => (
+                  <div key={i} style={{ padding:'8px 12px', background:h2r('#A855F7',0.1), border:`1px solid ${h2r('#A855F7',0.2)}`, borderRadius:8, marginBottom:8 }}>
+                    <span style={{ fontSize:14, color:'#fff', fontFamily:S.font }}>{m}</span>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    app.status === 'submitted' ? 'bg-green-100 text-green-700' :
-                    app.status === 'preparing' ? 'bg-yellow-100 text-yellow-700' :
-                    app.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
-                    {app.status}
-                  </span>
+                )) : <p style={{ color:S.dim, fontSize:13 }}>No majors selected</p>}
+              </Card>
+            )}
+          </div>
+
+          {/* ── Profile strength + quick actions ── */}
+          <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:20, marginBottom:24 }}>
+            <ProfileStrength />
+            <Card>
+              <SectionHead emoji="⚡" title="Quick Actions" />
+              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                {[
+                  { emoji:'🎯', label:'Manage Activities', href:'/activities', color:'#6C63FF' },
+                  { emoji:'🏫', label:'Explore Colleges',  href:'/colleges',   color:'#3B9EFF' },
+                  { emoji:'✍️', label:'Work on Essays',    href:'/essays',     color:'#A855F7' },
+                  { emoji:'📅', label:'Check Deadlines',   href:'/deadlines',  color:'#F97316' },
+                ].map(a=>(
+                  <Link key={a.href} to={a.href} style={{ textDecoration:'none' }}>
+                    <div style={{
+                      display:'flex', alignItems:'center', gap:10, padding:'10px 14px',
+                      background:S.surface2, border:`1px solid ${S.border}`, borderRadius:10,
+                      cursor:'pointer', transition:'all 0.15s',
+                    }}
+                      onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.borderColor=h2r(a.color,0.4);(e.currentTarget as HTMLElement).style.background=h2r(a.color,0.07);}}
+                      onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor=S.border;(e.currentTarget as HTMLElement).style.background=S.surface2;}}
+                    >
+                      <span style={{ fontSize:18 }}>{a.emoji}</span>
+                      <span style={{ fontSize:13, color:'rgba(255,255,255,0.75)', fontWeight:500, fontFamily:S.font }}>{a.label}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          {/* ── Profile completion ── */}
+          <div style={{ marginBottom:24 }}>
+            <ProfileCompletionWidget variant="full" showMissingFields={true} />
+          </div>
+
+          {/* ── Deadlines + Applications ── */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
+            <Card>
+              <SectionHead emoji="⏰" title="Upcoming Deadlines" href="/deadlines" linkLabel="View all" />
+              {upcomingDeadlines.length === 0 ? (
+                <div style={{ textAlign:'center', padding:'32px 0' }}>
+                  <div style={{ fontSize:36, marginBottom:10 }}>📅</div>
+                  <div style={{ color:S.dim, fontSize:13 }}>No upcoming deadlines</div>
+                  <Link to="/deadlines"><button style={{ marginTop:12, padding:'8px 18px', background:S.accent, border:'none', borderRadius:10, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:S.font }}>Add Deadline</button></Link>
+                </div>
+              ) : upcomingDeadlines.map((d:any) => <DeadlineRow key={d.id} deadline={d} getDaysUntil={getDaysUntil} />)}
+            </Card>
+
+            <Card>
+              <SectionHead emoji="📋" title="Recent Applications" href="/applications" linkLabel="View all" />
+              {recentApplications.length === 0 ? (
+                <div style={{ textAlign:'center', padding:'32px 0' }}>
+                  <div style={{ fontSize:36, marginBottom:10 }}>🏫</div>
+                  <div style={{ color:S.dim, fontSize:13 }}>No applications yet</div>
+                  <Link to="/discover"><button style={{ marginTop:12, padding:'8px 18px', background:S.accent, border:'none', borderRadius:10, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:S.font }}>Browse Colleges</button></Link>
+                </div>
+              ) : recentApplications.map((app:any)=>(
+                <div key={app.id} style={{
+                  display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 14px',
+                  background:S.surface2, border:`1px solid ${S.border}`, borderRadius:10, marginBottom:8,
+                  cursor:'pointer', transition:'border-color 0.15s',
+                }}
+                  onMouseEnter={e=>(e.currentTarget.style.borderColor=h2r(S.accent,0.35))}
+                  onMouseLeave={e=>(e.currentTarget.style.borderColor=S.border)}
+                  onClick={()=>navigate('/applications')}
+                >
+                  <div>
+                    <div style={{ fontSize:14, fontWeight:700, color:'#fff', fontFamily:S.font, marginBottom:2 }}>{app.college_name}</div>
+                    <div style={{ fontSize:11, color:S.dim }}>{app.country}</div>
+                  </div>
+                  <StatusBadge status={app.status} />
                 </div>
               ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Essay Progress */}
-      {essayProgress.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <PenTool className="text-green-600" size={24} />
-              Essay Progress
-            </h2>
-            <Link to="/essays">
-              <Button variant="ghost" size="sm">
-                View all <ArrowRight className="ml-2" size={16} />
-              </Button>
-            </Link>
+            </Card>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {essayProgress.map((essay: any) => (
-              <div key={essay.id} className="p-4 border border-gray-200 rounded-lg">
-                <p className="font-medium text-gray-900 mb-2">{essay.college_name}</p>
-                <p className="text-sm text-gray-600 mb-3">{essay.essay_type}</p>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${
-                    essay.status === 'final' ? 'bg-green-500' :
-                    essay.status === 'draft_complete' ? 'bg-yellow-500' :
-                    essay.status === 'in_progress' ? 'bg-blue-500' :
-                    'bg-gray-300'
-                  }`} />
-                  <span className="text-xs text-gray-600 capitalize">
-                    {essay.status.replace('_', ' ')}
-                  </span>
-                </div>
+
+          {/* ── Essay progress ── */}
+          {essayProgress.length > 0 && (
+            <Card style={{ marginBottom:24 }}>
+              <SectionHead emoji="✍️" title="Essay Progress" href="/essays" linkLabel="View all" />
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:14 }}>
+                {essayProgress.map((essay:any)=>{
+                  const statusColor: Record<string,string> = { final:'#10B981', draft_complete:'#3B9EFF', in_progress:'#FBBF24' };
+                  const color = statusColor[essay.status] || 'rgba(255,255,255,0.25)';
+                  return (
+                    <div key={essay.id} style={{ padding:'14px 16px', background:S.surface2, border:`1px solid ${h2r(color,0.25)}`, borderTop:`2px solid ${color}`, borderRadius:12 }}>
+                      <div style={{ fontSize:14, fontWeight:700, color:'#fff', marginBottom:4, fontFamily:S.font }}>{essay.college_name}</div>
+                      <div style={{ fontSize:12, color:S.dim, marginBottom:10 }}>{essay.essay_type?.replace(/_/g,' ')}</div>
+                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        <div style={{ width:8, height:8, borderRadius:'50%', background:color }} />
+                        <span style={{ fontSize:11, color:color, fontWeight:600, fontFamily:S.font, textTransform:'capitalize' }}>{essay.status?.replace(/_/g,' ')}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
+            </Card>
+          )}
+
+          {/* ── Quick action nav cards ── */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
+            <QuickAction emoji="🔭" title="Discover Colleges"  desc="Browse universities worldwide"  href="/discover"      accent="#6C63FF" />
+            <QuickAction emoji="📋" title="My Applications"    desc="Track your progress"            href="/applications"  accent="#10B981" />
+            <QuickAction emoji="📅" title="Deadlines"          desc="Never miss a date"              href="/deadlines"     accent="#F97316" />
+            <QuickAction emoji="✍️"  title="Essays"            desc="Write and track your essays"    href="/essays"        accent="#A855F7" />
           </div>
         </div>
-      )}
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Link to="/discover">
-          <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-6 hover:border-indigo-400 transition cursor-pointer">
-            <School className="text-indigo-600 mb-3" size={32} />
-            <h3 className="font-bold text-gray-900 mb-1">Discover Colleges</h3>
-            <p className="text-sm text-gray-600">Browse and research universities</p>
-          </div>
-        </Link>
-
-        <Link to="/applications">
-          <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 hover:border-green-400 transition cursor-pointer">
-            <FileText className="text-green-600 mb-3" size={32} />
-            <h3 className="font-bold text-gray-900 mb-1">My Applications</h3>
-            <p className="text-sm text-gray-600">Track application progress</p>
-          </div>
-        </Link>
-
-        <Link to="/deadlines">
-          <div className="bg-rose-50 border-2 border-rose-200 rounded-xl p-6 hover:border-rose-400 transition cursor-pointer">
-            <Calendar className="text-rose-600 mb-3" size={32} />
-            <h3 className="font-bold text-gray-900 mb-1">Deadlines</h3>
-            <p className="text-sm text-gray-600">Never miss a deadline</p>
-          </div>
-        </Link>
-
-        <Link to="/essays">
-          <div className="bg-violet-50 border-2 border-violet-200 rounded-xl p-6 hover:border-violet-400 transition cursor-pointer">
-            <PenTool className="text-violet-600 mb-3" size={32} />
-            <h3 className="font-bold text-gray-900 mb-1">Essays</h3>
-            <p className="text-sm text-gray-600">Manage your essays</p>
-          </div>
-        </Link>
       </div>
-    </div>
+    </>
   );
 };
 

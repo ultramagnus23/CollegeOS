@@ -1,474 +1,330 @@
+// src/pages/Documents.tsx — Dark Editorial Redesign
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { 
-  Plus, 
-  Trash2, 
-  Loader2, 
-  FileText, 
-  Upload,
-  FolderOpen,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Filter,
-  Tag,
-  ExternalLink
-} from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+/* ─── Types ──────────────────────────────────────────────────────────── */
 interface Document {
-  id: number;
-  name: string;
-  category: string;
-  file_type?: string;
-  file_size?: number;
-  file_url?: string;
-  description?: string;
-  status: string;
-  expiry_date?: string;
-  tags: string[];
-  college_ids: number[];
-  created_at: string;
-  updated_at: string;
+  id:number; name:string; category:string; file_type?:string; file_size?:number;
+  file_url?:string; description?:string; status:string; expiry_date?:string;
+  tags:string[]; college_ids:number[]; created_at:string; updated_at:string;
+}
+interface DocSummary {
+  categories:{category:string;count:number;verified_count:number;expired_count:number}[];
+  expiring:Document[]; totalDocuments:number;
 }
 
-interface DocumentSummary {
-  categories: { category: string; count: number; verified_count: number; expired_count: number }[];
-  expiring: Document[];
-  totalDocuments: number;
-}
+/* ─── Config ─────────────────────────────────────────────────────────── */
+const h2r = (hex:string,a:number) => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return `rgba(${r},${g},${b},${a})`; };
+const ACCENT = '#10B981'; // emerald — document vault theme
+const S = { bg:'#080810', surface:'#0F0F1C', border:'rgba(255,255,255,0.08)', border2:'rgba(255,255,255,0.13)', muted:'rgba(255,255,255,0.45)', dim:'rgba(255,255,255,0.22)', font:"'DM Sans',sans-serif" };
+const inp: React.CSSProperties = { width:'100%', padding:'10px 14px', background:'rgba(255,255,255,0.05)', border:`1px solid ${S.border2}`, borderRadius:10, color:'#fff', fontSize:14, fontFamily:S.font };
+const lbl: React.CSSProperties = { fontSize:11, color:S.dim, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6, fontWeight:600, display:'block', fontFamily:S.font };
 
-const CATEGORIES = {
-  transcript: { label: 'Transcripts', icon: FileText, color: 'bg-blue-100 text-blue-700' },
-  test_score: { label: 'Test Scores', icon: FileText, color: 'bg-green-100 text-green-700' },
-  essay: { label: 'Essays', icon: FileText, color: 'bg-purple-100 text-purple-700' },
-  recommendation: { label: 'Recommendations', icon: FileText, color: 'bg-yellow-100 text-yellow-700' },
-  financial: { label: 'Financial', icon: FileText, color: 'bg-orange-100 text-orange-700' },
-  proof: { label: 'Proof Documents', icon: FileText, color: 'bg-cyan-100 text-cyan-700' },
-  passport: { label: 'Passport/ID', icon: FileText, color: 'bg-red-100 text-red-700' },
-  portfolio: { label: 'Portfolio', icon: FileText, color: 'bg-pink-100 text-pink-700' },
-  other: { label: 'Other', icon: FileText, color: 'bg-gray-100 text-gray-700' },
+const CATS: Record<string,{label:string;emoji:string;color:string}> = {
+  transcript:     { label:'Transcripts',    emoji:'📋', color:'#3B9EFF' },
+  test_score:     { label:'Test Scores',    emoji:'📊', color:'#10B981' },
+  essay:          { label:'Essays',         emoji:'✍️',  color:'#A855F7' },
+  recommendation: { label:'Recs',           emoji:'👤', color:'#F59E0B' },
+  financial:      { label:'Financial',      emoji:'💰', color:'#F97316' },
+  proof:          { label:'Proof Docs',     emoji:'📄', color:'#06B6D4' },
+  passport:       { label:'Passport/ID',    emoji:'🛂', color:'#F87171' },
+  portfolio:      { label:'Portfolio',      emoji:'🎨', color:'#EC4899' },
+  other:          { label:'Other',          emoji:'📁', color:'rgba(255,255,255,0.4)' },
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700',
-  uploaded: 'bg-blue-100 text-blue-700',
-  verified: 'bg-green-100 text-green-700',
-  expired: 'bg-red-100 text-red-700',
-  rejected: 'bg-red-100 text-red-700',
+const STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
+  pending:  { label:'Pending',  color:'#FBBF24', bg:'rgba(251,191,36,0.12)' },
+  uploaded: { label:'Uploaded', color:'#3B9EFF', bg:'rgba(59,158,255,0.12)' },
+  verified: { label:'Verified', color:'#10B981', bg:'rgba(16,185,129,0.12)' },
+  expired:  { label:'Expired',  color:'#F87171', bg:'rgba(248,113,113,0.12)' },
+  rejected: { label:'Rejected', color:'#F87171', bg:'rgba(248,113,113,0.12)' },
 };
 
+const GLOBAL = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}body{background:#080810;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  input::placeholder{color:rgba(255,255,255,0.2)!important;}
+  select option{background:#0F0F1C;color:#fff;}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
+`;
+
+const getDaysUntilExpiry = (dateStr:string) => {
+  const days = Math.ceil((new Date(dateStr).getTime()-Date.now())/86400000);
+  if (days < 0) return { text:'Expired', color:'#F87171' };
+  if (days === 0) return { text:'Expires today', color:'#F97316' };
+  if (days === 1) return { text:'Expires tomorrow', color:'#FBBF24' };
+  return { text:`Expires in ${days}d`, color:'rgba(255,255,255,0.4)' };
+};
+
+/* ─── Stat Card ──────────────────────────────────────────────────────── */
+const StatCard: React.FC<{emoji:string;value:number;label:string;accent:string}> = ({emoji,value,label,accent}) => (
+  <div style={{ background:S.surface, border:`1px solid ${S.border}`, borderRadius:14, padding:'16px 20px', display:'flex', alignItems:'center', gap:14 }}>
+    <div style={{ width:44, height:44, borderRadius:12, background:h2r(accent,0.15), display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>{emoji}</div>
+    <div>
+      <div style={{ fontSize:26, fontWeight:800, color:'#fff', lineHeight:1, fontFamily:S.font }}>{value}</div>
+      <div style={{ fontSize:12, color:S.muted, marginTop:3, fontFamily:S.font }}>{label}</div>
+    </div>
+  </div>
+);
+
+/* ─── Doc Card ───────────────────────────────────────────────────────── */
+const DocCard: React.FC<{
+  doc:Document; index:number;
+  onDelete:(id:number)=>void;
+  onStatusChange:(id:number,s:string)=>void;
+}> = ({doc, index, onDelete, onStatusChange}) => {
+  const cat = CATS[doc.category] || CATS.other;
+  const status = STATUS_CFG[doc.status] || STATUS_CFG.pending;
+
+  return (
+    <div style={{
+      background:S.surface, border:`1px solid ${S.border}`,
+      borderTop:`2px solid ${cat.color}`,
+      borderRadius:14, padding:'16px 18px',
+      animation:'fadeUp 0.35s ease both', animationDelay:`${index*0.05}s`,
+      display:'flex', flexDirection:'column', gap:12,
+    }}>
+      {/* Top row */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+        <div style={{ display:'flex', gap:10, alignItems:'center', flex:1, minWidth:0 }}>
+          <div style={{ width:36, height:36, borderRadius:10, background:h2r(cat.color,0.15), display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{cat.emoji}</div>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:14, fontWeight:700, color:'#fff', fontFamily:S.font, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{doc.name}</div>
+            <div style={{ fontSize:11, color:S.dim, fontFamily:S.font }}>{cat.label}</div>
+          </div>
+        </div>
+        <button onClick={()=>onDelete(doc.id)} style={{
+          width:30, height:30, borderRadius:8, cursor:'pointer', flexShrink:0, marginLeft:8,
+          background:'rgba(248,113,113,0.1)', border:'1px solid rgba(248,113,113,0.15)',
+          color:'#F87171', fontSize:13, display:'flex', alignItems:'center', justifyContent:'center',
+        }}>🗑</button>
+      </div>
+
+      {doc.description && (
+        <div style={{ fontSize:12, color:S.muted, lineHeight:1.5, fontFamily:S.font }}>{doc.description}</div>
+      )}
+
+      {/* Status + actions */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
+        <select value={doc.status} onChange={e=>onStatusChange(doc.id,e.target.value)} style={{
+          padding:'5px 10px', borderRadius:100, fontSize:11, fontWeight:600,
+          background:status.bg, border:`1px solid ${h2r(status.color,0.4)}`,
+          color:status.color, cursor:'pointer', fontFamily:S.font,
+        }}>
+          {Object.entries(STATUS_CFG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+        </select>
+        {doc.file_url && (
+          <button onClick={()=>window.open(doc.file_url,'_blank')} style={{
+            padding:'5px 12px', borderRadius:8, fontSize:11, fontWeight:600, cursor:'pointer',
+            background:'rgba(255,255,255,0.06)', border:`1px solid ${S.border2}`, color:S.muted, fontFamily:S.font,
+          }}>↗ Open</button>
+        )}
+      </div>
+
+      {/* Expiry */}
+      {doc.expiry_date && (() => { const exp = getDaysUntilExpiry(doc.expiry_date); return (
+        <div style={{ fontSize:11, color:exp.color, fontFamily:S.font }}>⏰ {exp.text}</div>
+      );})}
+
+      {/* Tags */}
+      {doc.tags?.length > 0 && (
+        <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
+          {doc.tags.map((t,i)=>(
+            <span key={i} style={{ fontSize:10, padding:'2px 8px', borderRadius:100, background:'rgba(255,255,255,0.06)', color:S.dim, fontFamily:S.font }}>#{t}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ─── Main ────────────────────────────────────────────────────────────── */
 const Documents = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [summary, setSummary] = useState<DocumentSummary | null>(null);
+  const [summary, setSummary] = useState<DocSummary|null>(null);
   const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [formData, setFormData] = useState({
-    name: '',
-    category: 'transcript',
-    description: '',
-    status: 'pending',
-    fileUrl: '',
-    expiryDate: '',
-  });
+  const [showForm, setShowForm] = useState(false);
+  const [selectedCat, setSelectedCat] = useState('');
+  const [form, setForm] = useState({ name:'', category:'transcript', description:'', status:'pending', fileUrl:'', expiryDate:'' });
 
-  useEffect(() => {
-    loadData();
-  }, [selectedCategory]);
+  useEffect(() => { loadData(); }, [selectedCat]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [docsRes, summaryRes] = await Promise.all([
-        api.documents.getAll({ category: selectedCategory || undefined }),
+      const [dr, sr] = await Promise.all([
+        api.documents.getAll({ category:selectedCat||undefined }),
         api.documents.getSummary(),
-      ]) as [any, any];
-      
-      setDocuments(docsRes.data || []);
-      setSummary(summaryRes.data || null);
-    } catch (error: any) {
-      console.error('Failed to load documents:', error);
-      toast.error('Failed to load documents');
-    } finally {
-      setLoading(false);
-    }
+      ]) as [any,any];
+      setDocuments(dr.data||[]);
+      setSummary(sr.data||null);
+    } catch { toast.error('Failed to load'); } finally { setLoading(false); }
   };
 
   const handleAdd = async () => {
-    if (!formData.name || !formData.category) {
-      toast.error('Please fill required fields');
-      return;
-    }
-
+    if (!form.name||!form.category){toast.error('Fill required fields');return;}
     try {
-      await api.documents.create({
-        name: formData.name,
-        category: formData.category,
-        description: formData.description,
-        status: formData.status,
-        fileUrl: formData.fileUrl,
-        expiryDate: formData.expiryDate || undefined,
-      });
+      await api.documents.create({ name:form.name, category:form.category, description:form.description, status:form.status, fileUrl:form.fileUrl, expiryDate:form.expiryDate||undefined });
       toast.success('Document added');
-      setShowAddForm(false);
-      setFormData({
-        name: '',
-        category: 'transcript',
-        description: '',
-        status: 'pending',
-        fileUrl: '',
-        expiryDate: '',
-      });
+      setShowForm(false);
+      setForm({name:'',category:'transcript',description:'',status:'pending',fileUrl:'',expiryDate:''});
       loadData();
-    } catch (error: any) {
-      toast.error('Failed to add document');
-    }
+    } catch { toast.error('Failed'); }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Delete this document?')) return;
-
-    try {
-      await api.documents.delete(id);
-      toast.success('Document deleted');
-      loadData();
-    } catch (error: any) {
-      toast.error('Failed to delete document');
-    }
-  };
-
-  const handleStatusChange = async (id: number, newStatus: string) => {
-    try {
-      await api.documents.update(id, { status: newStatus });
-      toast.success('Status updated');
-      loadData();
-    } catch (error: any) {
-      toast.error('Failed to update status');
-    }
-  };
-
-  const getDaysUntilExpiry = (dateStr: string) => {
-    const days = Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    if (days < 0) return 'Expired';
-    if (days === 0) return 'Expires today';
-    if (days === 1) return 'Expires tomorrow';
-    return `Expires in ${days} days`;
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="animate-spin text-blue-600" size={40} />
-      </div>
-    );
-  }
+  const totalVerified = summary?.categories?.reduce((s,c)=>s+(c.verified_count||0),0)||0;
+  const totalExpired  = summary?.categories?.reduce((s,c)=>s+(c.expired_count||0),0)||0;
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Document Vault</h1>
-          <p className="text-gray-600">Store and manage all your application documents in one place</p>
-        </div>
-        <Button onClick={() => setShowAddForm(true)}>
-          <Plus className="mr-2" size={20} />
-          Add Document
-        </Button>
-      </div>
+    <>
+      <style>{GLOBAL}</style>
+      <div style={{ minHeight:'100vh', background:S.bg, color:'#fff', fontFamily:S.font }}>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FolderOpen className="text-blue-600" size={24} />
+        {/* Header */}
+        <div style={{ padding:'44px 48px 0', background:'linear-gradient(180deg,rgba(16,185,129,0.07) 0%,transparent 100%)', borderBottom:`1px solid ${S.border}` }}>
+          <div style={{ maxWidth:1280, margin:'0 auto' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', paddingBottom:28, flexWrap:'wrap', gap:16 }}>
+              <div>
+                <div style={{ fontSize:12, color:h2r(ACCENT,0.8), textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:10, fontWeight:600 }}>Secure Vault</div>
+                <h1 style={{ fontSize:40, fontWeight:900, letterSpacing:'-0.02em', marginBottom:6 }}>
+                  Doc<span style={{ color:ACCENT }}>uments.</span>
+                </h1>
+                <p style={{ color:S.muted, fontSize:14 }}>{summary?.totalDocuments||0} documents · {totalVerified} verified · {summary?.expiring?.length||0} expiring soon</p>
+              </div>
+              <button onClick={()=>setShowForm(f=>!f)} style={{
+                padding:'10px 22px', background:ACCENT, border:'none', borderRadius:10,
+                color:'#000', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:S.font,
+                boxShadow:`0 0 16px ${h2r(ACCENT,0.35)}`,
+              }}>+ Add Document</button>
             </div>
-            <div>
-              <p className="text-2xl font-bold">{summary?.totalDocuments || 0}</p>
-              <p className="text-sm text-gray-600">Total Documents</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircle className="text-green-600" size={24} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">
-                {summary?.categories?.reduce((sum, c) => sum + (c.verified_count || 0), 0) || 0}
-              </p>
-              <p className="text-sm text-gray-600">Verified</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Clock className="text-yellow-600" size={24} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{summary?.expiring?.length || 0}</p>
-              <p className="text-sm text-gray-600">Expiring Soon</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <AlertTriangle className="text-red-600" size={24} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">
-                {summary?.categories?.reduce((sum, c) => sum + (c.expired_count || 0), 0) || 0}
-              </p>
-              <p className="text-sm text-gray-600">Expired</p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Expiring Soon Alert */}
-      {summary?.expiring && summary.expiring.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="text-yellow-600" size={20} />
-            <h3 className="font-semibold text-yellow-800">Documents Expiring Soon</h3>
-          </div>
-          <div className="space-y-2">
-            {summary.expiring.slice(0, 3).map((doc) => (
-              <div key={doc.id} className="flex items-center justify-between text-sm">
-                <span className="text-yellow-700">{doc.name}</span>
-                <span className="text-yellow-600 font-medium">
-                  {doc.expiry_date ? getDaysUntilExpiry(doc.expiry_date) : ''}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Filter by Category */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <Filter size={20} className="text-gray-500" />
-          <span className="text-sm font-medium text-gray-700">Filter by:</span>
-        </div>
-        <Select value={selectedCategory || 'all'} onValueChange={(v) => setSelectedCategory(v === 'all' ? '' : v)}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {Object.entries(CATEGORIES).map(([key, { label }]) => (
-              <SelectItem key={key} value={key}>{label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {selectedCategory && (
-          <Button variant="ghost" size="sm" onClick={() => setSelectedCategory('')}>
-            Clear
-          </Button>
-        )}
-      </div>
-
-      {/* Category Quick Access */}
-      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2 mb-6">
-        {Object.entries(CATEGORIES).map(([key, { label, color }]) => {
-          const count = summary?.categories?.find(c => c.category === key)?.count || 0;
-          return (
-            <button
-              key={key}
-              onClick={() => setSelectedCategory(selectedCategory === key ? '' : key)}
-              className={`p-3 rounded-lg border text-center transition ${
-                selectedCategory === key ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <p className="text-xs font-medium text-gray-700">{label}</p>
-              <p className="text-lg font-bold text-gray-900">{count}</p>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Add Form Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Add Document</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <Label>Document Name *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="e.g., High School Transcript"
-                />
-              </div>
-              
-              <div>
-                <Label>Category *</Label>
-                <Select value={formData.category} onValueChange={(v) => setFormData({...formData, category: v})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(CATEGORIES).map(([key, { label }]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label>Description</Label>
-                <Input
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Optional description"
-                />
-              </div>
-              
-              <div>
-                <Label>File/Link URL</Label>
-                <Input
-                  value={formData.fileUrl}
-                  onChange={(e) => setFormData({...formData, fileUrl: e.target.value})}
-                  placeholder="https://drive.google.com/..."
-                />
-              </div>
-              
-              <div>
-                <Label>Expiry Date</Label>
-                <Input
-                  type="date"
-                  value={formData.expiryDate}
-                  onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
-                />
-              </div>
-              
-              <div>
-                <Label>Status</Label>
-                <Select value={formData.status} onValueChange={(v) => setFormData({...formData, status: v})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="uploaded">Uploaded</SelectItem>
-                    <SelectItem value="verified">Verified</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
-              <Button onClick={handleAdd}>Add Document</Button>
+            {/* Category filter pills */}
+            <div style={{ display:'flex', gap:8, paddingBottom:24, flexWrap:'wrap' }}>
+              <button onClick={()=>setSelectedCat('')} style={{
+                padding:'7px 16px', borderRadius:100, fontSize:12, fontWeight:!selectedCat?700:400,
+                background:!selectedCat?h2r(ACCENT,0.18):'transparent',
+                border:`1px solid ${!selectedCat?h2r(ACCENT,0.5):S.border}`,
+                color:!selectedCat?ACCENT:S.dim, cursor:'pointer', fontFamily:S.font,
+              }}>All ({summary?.totalDocuments||0})</button>
+              {Object.entries(CATS).map(([key,cfg])=>{
+                const count=summary?.categories?.find(c=>c.category===key)?.count||0;
+                const active=selectedCat===key;
+                return (
+                  <button key={key} onClick={()=>setSelectedCat(active?'':key)} style={{
+                    padding:'7px 14px', borderRadius:100, fontSize:12, fontWeight:active?700:400,
+                    background:active?h2r(cfg.color,0.18):'transparent',
+                    border:`1px solid ${active?h2r(cfg.color,0.5):S.border}`,
+                    color:active?cfg.color:S.dim, cursor:'pointer', fontFamily:S.font,
+                    display:'flex', alignItems:'center', gap:5,
+                  }}>
+                    <span>{cfg.emoji}</span> {cfg.label} {count>0&&<span style={{opacity:0.7}}>({count})</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
-      )}
 
-      {/* Document List */}
-      {documents.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-          <Upload className="mx-auto text-gray-400 mb-4" size={48} />
-          <p className="text-gray-500 mb-4">
-            {selectedCategory ? `No ${CATEGORIES[selectedCategory as keyof typeof CATEGORIES]?.label || 'documents'} found` : 'No documents uploaded yet'}
-          </p>
-          <Button onClick={() => setShowAddForm(true)}>
-            <Plus className="mr-2" size={20} />
-            Add Your First Document
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {documents.map((doc) => {
-            const categoryInfo = CATEGORIES[doc.category as keyof typeof CATEGORIES] || CATEGORIES.other;
-            return (
-              <div key={doc.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${categoryInfo.color}`}>
-                      <FileText size={20} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{doc.name}</h3>
-                      <p className="text-xs text-gray-500">{categoryInfo.label}</p>
-                    </div>
+        <div style={{ maxWidth:1280, margin:'0 auto', padding:'32px 48px 80px' }}>
+
+          {/* Summary stats */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:28 }}>
+            <StatCard emoji="📁" value={summary?.totalDocuments||0} label="Total Documents" accent="#3B9EFF" />
+            <StatCard emoji="✅" value={totalVerified} label="Verified" accent="#10B981" />
+            <StatCard emoji="⏰" value={summary?.expiring?.length||0} label="Expiring Soon" accent="#FBBF24" />
+            <StatCard emoji="⚠️" value={totalExpired} label="Expired" accent="#F87171" />
+          </div>
+
+          {/* Expiring soon alert */}
+          {(summary?.expiring?.length||0)>0 && (
+            <div style={{ background:'rgba(251,191,36,0.08)', border:'1px solid rgba(251,191,36,0.25)', borderRadius:14, padding:'16px 20px', marginBottom:24 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:'#FBBF24', marginBottom:10, fontFamily:S.font }}>⏰ Expiring Soon</div>
+              {summary!.expiring.slice(0,3).map(doc=>{
+                const exp = getDaysUntilExpiry(doc.expiry_date!);
+                return (
+                  <div key={doc.id} style={{ display:'flex', justifyContent:'space-between', fontSize:13, color:'rgba(255,255,255,0.6)', fontFamily:S.font, marginBottom:4 }}>
+                    <span>{doc.name}</span>
+                    <span style={{ color:exp.color, fontWeight:600 }}>{exp.text}</span>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(doc.id)}>
-                    <Trash2 size={16} className="text-red-500" />
-                  </Button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Add form */}
+          {showForm && (
+            <div style={{ background:S.surface, border:`1px solid ${h2r(ACCENT,0.3)}`, borderRadius:16, padding:24, marginBottom:24, animation:'fadeUp 0.25s ease' }}>
+              <div style={{ fontSize:14, fontWeight:700, marginBottom:18, fontFamily:S.font }}>Add Document</div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                <div>
+                  <span style={lbl}>Name *</span>
+                  <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="High School Transcript" style={inp} />
                 </div>
-                
-                {doc.description && (
-                  <p className="text-sm text-gray-600 mb-3">{doc.description}</p>
-                )}
-                
-                <div className="flex items-center justify-between">
-                  <Select
-                    value={doc.status}
-                    onValueChange={(v) => handleStatusChange(doc.id, v)}
-                  >
-                    <SelectTrigger className={`w-28 h-8 text-xs ${STATUS_COLORS[doc.status] || ''}`}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="uploaded">Uploaded</SelectItem>
-                      <SelectItem value="verified">Verified</SelectItem>
-                      <SelectItem value="expired">Expired</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  {doc.file_url && (
-                    <Button variant="ghost" size="sm" onClick={() => window.open(doc.file_url, '_blank')}>
-                      <ExternalLink size={16} />
-                    </Button>
-                  )}
+                <div>
+                  <span style={lbl}>Category *</span>
+                  <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={inp}>
+                    {Object.entries(CATS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+                  </select>
                 </div>
-                
-                {doc.expiry_date && (
-                  <div className={`mt-3 text-xs ${
-                    new Date(doc.expiry_date) < new Date() ? 'text-red-600' : 'text-gray-500'
-                  }`}>
-                    {getDaysUntilExpiry(doc.expiry_date)}
-                  </div>
-                )}
-                
-                {doc.tags && doc.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-3">
-                    {doc.tags.map((tag, i) => (
-                      <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
-                        <Tag size={10} />
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <div>
+                  <span style={lbl}>Description</span>
+                  <input value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Optional" style={inp} />
+                </div>
+                <div>
+                  <span style={lbl}>File / Link URL</span>
+                  <input value={form.fileUrl} onChange={e=>setForm({...form,fileUrl:e.target.value})} placeholder="https://drive.google.com/…" style={inp} />
+                </div>
+                <div>
+                  <span style={lbl}>Expiry Date</span>
+                  <input type="date" value={form.expiryDate} onChange={e=>setForm({...form,expiryDate:e.target.value})} style={inp} />
+                </div>
+                <div>
+                  <span style={lbl}>Status</span>
+                  <select value={form.status} onChange={e=>setForm({...form,status:e.target.value})} style={inp}>
+                    {Object.entries(STATUS_CFG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+                  </select>
+                </div>
               </div>
-            );
-          })}
+              <div style={{ display:'flex', gap:10, marginTop:18 }}>
+                <button onClick={handleAdd} style={{ padding:'10px 24px', background:ACCENT, border:'none', borderRadius:10, color:'#000', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:S.font }}>Add Document</button>
+                <button onClick={()=>setShowForm(false)} style={{ padding:'10px 20px', background:'rgba(255,255,255,0.06)', border:`1px solid ${S.border2}`, borderRadius:10, color:S.muted, fontSize:13, cursor:'pointer', fontFamily:S.font }}>Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {loading && (
+            <div style={{ display:'flex', justifyContent:'center', padding:'80px 0' }}>
+              <div style={{ width:40, height:40, borderRadius:'50%', border:'3px solid rgba(255,255,255,0.08)', borderTopColor:ACCENT, animation:'spin 0.8s linear infinite' }} />
+            </div>
+          )}
+
+          {!loading && documents.length === 0 && (
+            <div style={{ textAlign:'center', padding:'80px 0' }}>
+              <div style={{ fontSize:48, marginBottom:16 }}>📁</div>
+              <div style={{ fontSize:20, fontWeight:700, marginBottom:8 }}>
+                {selectedCat ? `No ${CATS[selectedCat]?.label||'documents'} found` : 'No documents yet'}
+              </div>
+              <div style={{ color:S.muted, fontSize:14 }}>Upload your first document to get started</div>
+            </div>
+          )}
+
+          {!loading && documents.length > 0 && (
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:16 }}>
+              {documents.map((doc,i)=>(
+                <DocCard key={doc.id} doc={doc} index={i}
+                  onDelete={id=>{if(confirm('Delete?'))api.documents.delete(id).then(()=>{toast.success('Deleted');loadData();}).catch(()=>toast.error('Failed'));}}
+                  onStatusChange={(id,s)=>api.documents.update(id,{status:s}).then(()=>{toast.success('Updated');loadData();}).catch(()=>toast.error('Failed'))}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 };
 

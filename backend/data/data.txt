@@ -1,4 +1,4 @@
-[
+git [
   {"name": "Emory University", "country": "United States", "city": "Atlanta", "state": "Georgia", "website": "https://www.emory.edu", "qs_ranking": 163, "acceptance_rate": 11, "tuition_international_usd": 58000, "popular_majors": ["Business", "Nursing", "Biology", "Economics", "Psychology"], "student_population": 15000, "campus_type": "Suburban"},
   {"name": "Georgia Tech", "country": "United States", "city": "Atlanta", "state": "Georgia", "website": "https://www.gatech.edu", "qs_ranking": 97, "acceptance_rate": 17, "tuition_international_usd": 34000, "popular_majors": ["Computer Science", "Engineering", "Business", "Industrial Engineering", "Architecture"], "student_population": 45000, "campus_type": "Urban"},
   {"name": "Kennesaw State University", "country": "United States", "city": "Kennesaw", "state": "Georgia", "website": "https://www.kennesaw.edu", "qs_ranking": 1000, "acceptance_rate": 72, "tuition_international_usd": 21000, "popular_majors": ["Business", "Nursing", "Engineering", "Education", "Psychology"], "student_population": 43000, "campus_type": "Suburban"},
