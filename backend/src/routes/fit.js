@@ -49,6 +49,7 @@ router.get('/:collegeId', authenticate, async (req, res) => {
     });
   }
 });
+<<<<<<< HEAD
     if (!result) {
       result = await FitClassificationService.classifyCollege(userId, collegeId);
     }
@@ -65,6 +66,8 @@ router.get('/:collegeId', authenticate, async (req, res) => {
     });
   }
 });
+=======
+>>>>>>> 1801ea10c6695a6c7869e1ca13384285d4023880
 
 /**
  * GET /api/fit/:collegeId/explain
