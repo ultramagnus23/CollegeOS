@@ -66,6 +66,9 @@ class DatabaseManager {
         }
         
         logger.info('Database migrations completed successfully');
+        
+        // Verify critical tables exist after migrations
+        this.verifyCriticalTables();
       } catch (error) {
         // Consolidate error information for better debugging
         const errorDetails = [
@@ -83,6 +86,39 @@ class DatabaseManager {
         throw new Error(`Migration failed. ${error.message}`);
       }
     }
+  
+  verifyCriticalTables() {
+    const criticalTables = [
+      'users',
+      'refresh_tokens',
+      'colleges',
+      'applications',
+      'deadlines',
+      'essays',
+      'student_profiles'
+    ];
+    
+    const missingTables = [];
+    
+    for (const table of criticalTables) {
+      const result = this.db.prepare(`
+        SELECT name FROM sqlite_master 
+        WHERE type='table' AND name=?
+      `).get(table);
+      
+      if (!result) {
+        missingTables.push(table);
+      }
+    }
+    
+    if (missingTables.length > 0) {
+      const errorMsg = `Critical tables missing: ${missingTables.join(', ')}. Please run migrations again or reset database with ./backend/fresh-start.sh`;
+      logger.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+    
+    logger.info('All critical tables verified successfully');
+  }
   
   getDatabase() {
     if (!this.initialized) {
