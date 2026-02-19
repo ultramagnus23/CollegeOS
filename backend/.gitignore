@@ -1,0 +1,64 @@
+# Environment variables
+.env
+
+# Database files (including WAL files)
+database/*.db
+database/*.db-shm
+database/*.db-wal
+database/*.db-journal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal
+*.sqlite3
+
+# Backups
+*.backup
+backup.sql
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+backend/.env
+*.envlogs/
+
+# Test coverage
+coverage/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# ML Service
+ml-service/venv/
+ml-service/models/*.joblib
+ml-service/data/
+
+# Scraper progress and log files
+data/scrape_progress.json
+data/scrape_log.json
+data/scrape_summary.json
+
