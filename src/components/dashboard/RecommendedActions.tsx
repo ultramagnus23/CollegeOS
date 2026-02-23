@@ -40,8 +40,8 @@ interface RecommendedActionsProps {
 const categoryConfig = {
   profile: { 
     icon: Target, 
-    color: 'text-blue-600', 
-    bg: 'bg-blue-100',
+    color: 'text-primary', 
+    bg: 'bg-primary/15',
     label: 'Profile'
   },
   testing: { 
@@ -103,12 +103,12 @@ const RecommendedActions: React.FC<RecommendedActionsProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-card rounded-xl shadow-sm border border-border p-6">
         <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
+          <div className="h-6 bg-muted rounded w-1/2 mb-4"></div>
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-20 bg-gray-100 rounded"></div>
+              <div key={i} className="h-20 bg-muted rounded"></div>
             ))}
           </div>
         </div>
@@ -117,16 +117,16 @@ const RecommendedActions: React.FC<RecommendedActionsProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div className="bg-card rounded-xl shadow-sm border border-border p-6">
       {/* Header with profile strength */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Lightbulb className="w-5 h-5 text-amber-500" />
-          <h3 className="font-bold text-gray-900">Recommended Actions</h3>
+          <h3 className="font-bold text-foreground">Recommended Actions</h3>
         </div>
         {profileStrength > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Profile:</span>
+            <span className="text-sm text-muted-foreground">Profile:</span>
             <div className="flex items-center gap-1">
               <Progress value={profileStrength} className="w-16 h-2" />
               <span className="text-sm font-medium">{profileStrength}%</span>
@@ -148,8 +148,8 @@ const RecommendedActions: React.FC<RecommendedActionsProps> = ({
       {topActions.length === 0 ? (
         <div className="text-center py-8">
           <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-          <p className="text-gray-600 font-medium">You're all set!</p>
-          <p className="text-sm text-gray-500">No recommended actions right now</p>
+          <p className="text-muted-foreground font-medium">You're all set!</p>
+          <p className="text-sm text-muted-foreground">No recommended actions right now</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -163,7 +163,7 @@ const RecommendedActions: React.FC<RecommendedActionsProps> = ({
                 className={`group relative p-4 rounded-lg border-2 transition-all cursor-pointer hover:shadow-md ${
                   index === 0 
                     ? 'border-indigo-300 bg-indigo-50' 
-                    : 'border-gray-200 bg-gray-50 hover:border-indigo-200'
+                    : 'border-border bg-muted/50 hover:border-indigo-200'
                 }`}
                 onClick={() => onActionClick?.(action)}
               >
@@ -183,15 +183,15 @@ const RecommendedActions: React.FC<RecommendedActionsProps> = ({
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="font-semibold text-gray-900">{action.action}</p>
+                      <p className="font-semibold text-foreground">{action.action}</p>
                       <span className={`text-xs px-2 py-0.5 rounded-full border ${priorityBadge[action.priority]}`}>
                         {action.priority}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">{action.reason}</p>
+                    <p className="text-sm text-muted-foreground mb-2">{action.reason}</p>
                     
                     {/* Impact and time */}
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       {action.impactScore && (
                         <span className="flex items-center gap-1">
                           <TrendingUp className="w-3 h-3" />

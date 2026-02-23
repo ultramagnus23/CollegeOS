@@ -6,6 +6,22 @@
 
 @layer base {
   :root {
+    /* ── Onboarding-aligned Design Tokens (light mode) ────────────────── */
+    --color-bg-primary: #f4f4f8;
+    --color-bg-surface: #ffffff;
+    --color-bg-elevated: #ffffff;
+    --color-border: rgba(0, 0, 0, 0.1);
+    --color-text-primary: #0f0f1c;
+    --color-text-secondary: rgba(15, 15, 28, 0.65);
+    --color-text-disabled: rgba(15, 15, 28, 0.35);
+    --color-accent-primary: #6C63FF;
+    --color-accent-hover: #5a52e0;
+    --color-accent-subtle: rgba(108, 99, 255, 0.1);
+    --color-glow: rgba(108, 99, 255, 0.25);
+    /* Adaptive surface/border tokens for inline-styled components */
+    --color-surface-subtle: rgba(0, 0, 0, 0.04);
+    --color-border-strong: rgba(0, 0, 0, 0.13);
+
     /* Modern Indigo-based palette (Notion/Linear/Stripe inspired) */
     --background: 210 40% 98%;
     --foreground: 222 47% 11%;
@@ -76,13 +92,29 @@
   }
 
   .dark {
-    --background: 222 47% 11%;
+    /* ── Onboarding-aligned Design Tokens (dark mode) ─────────────────── */
+    --color-bg-primary: #080810;
+    --color-bg-surface: #0f0f1c;
+    --color-bg-elevated: #12122a;
+    --color-border: rgba(255, 255, 255, 0.08);
+    --color-text-primary: #ffffff;
+    --color-text-secondary: rgba(255, 255, 255, 0.55);
+    --color-text-disabled: rgba(255, 255, 255, 0.25);
+    --color-accent-primary: #6C63FF;
+    --color-accent-hover: #8b84ff;
+    --color-accent-subtle: rgba(108, 99, 255, 0.15);
+    --color-glow: rgba(108, 99, 255, 0.4);
+    /* Adaptive surface/border tokens for inline-styled components */
+    --color-surface-subtle: rgba(255, 255, 255, 0.04);
+    --color-border-strong: rgba(255, 255, 255, 0.13);
+
+    --background: 240 33% 5%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 13%;
+    --card: 240 30% 8%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 13%;
+    --popover: 240 30% 8%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 239 78% 58%;

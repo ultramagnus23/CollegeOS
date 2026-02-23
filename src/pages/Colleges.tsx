@@ -1,5 +1,5 @@
 // src/pages/Colleges.tsx
-import React, { useEffect, useState, ChangeEvent } from 'react';
+import React, { useEffect, useState, useRef, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Globe, BookOpen, MapPin, GraduationCap, DollarSign, Users, Award, TrendingUp, Filter, ChevronDown } from 'lucide-react';
 import api from '../services/api';
@@ -13,6 +13,8 @@ interface CollegeCardProps {
   onAdd: () => void;
   onViewDetails: () => void;
   isAdding: boolean;
+  /** Pre-fetched fit category from the page-level batch call */
+  fit?: string | null;
 }
 
 /* ==================== MAIN ==================== */
@@ -23,6 +25,8 @@ const Colleges: React.FC = () => {
   const [colleges, setColleges] = useState<College[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
   const [programs, setPrograms] = useState<string[]>([]);
+  // Map of collegeId → fit category, populated by a single batch call after colleges load
+  const [fitMap, setFitMap] = useState<Record<number, string | null>>({});
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
@@ -34,6 +38,9 @@ const Colleges: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [addingCollegeId, setAddingCollegeId] = useState<number | null>(null);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Guard: prevents duplicate or concurrent batch fit calls (React StrictMode double-invoke safe)
+  const fitBatchInFlight = useRef(false);
 
   /* ==================== LOAD FILTERS ==================== */
 
@@ -58,6 +65,42 @@ const Colleges: React.FC = () => {
   useEffect(() => {
     loadColleges();
   }, [searchTerm, selectedCountry, selectedProgram, sortBy]);
+
+  /**
+   * Fetch fit classifications for all college IDs using the batch endpoint.
+   * Splits into chunks of 50 to stay well under the server's 100-ID limit.
+   * The in-flight guard prevents duplicate calls from React StrictMode double-invoke
+   * and from rapid filter changes that each call loadColleges in quick succession.
+   */
+  const loadFitData = async (collegeIds: number[]) => {
+    if (collegeIds.length === 0) return;
+    // JS is single-threaded: the check and set below execute atomically (no await
+    // between them), so two concurrent calls cannot both pass this guard.
+    if (fitBatchInFlight.current) return;
+    fitBatchInFlight.current = true;
+    const CHUNK_SIZE = 50;
+    const merged: Record<number, string | null> = {};
+    try {
+      for (let i = 0; i < collegeIds.length; i += CHUNK_SIZE) {
+        const chunk = collegeIds.slice(i, i + CHUNK_SIZE);
+        const res = await api.fit.batchGet(chunk);
+        if (res?.success && res.data) {
+          const batchData: Record<string, any> = res.data;
+          for (const [idStr, fitData] of Object.entries(batchData)) {
+            // Backend returns fitCategory as the canonical property name
+            const cat = fitData?.fitCategory ?? null;
+            merged[parseInt(idStr)] = cat;
+          }
+        }
+      }
+      setFitMap(merged);
+    } catch (err) {
+      // Fit data is optional — log and continue without it
+      console.warn('Batch fit fetch failed, fit badges will not be shown:', err);
+    } finally {
+      fitBatchInFlight.current = false;
+    }
+  };
 
   const loadColleges = async () => {
     try {
@@ -151,6 +194,9 @@ const Colleges: React.FC = () => {
       
       setTotalCount(sorted.length);
       setColleges(sorted);
+      // Batch-fetch fit data for all loaded colleges (single batch call instead of N individual calls)
+      setFitMap({});
+      loadFitData(sorted.map(c => c.id));
     } catch (err) {
       setError('Failed to load colleges');
       console.error('Error loading colleges:', err);
@@ -189,21 +235,21 @@ const Colleges: React.FC = () => {
   /* ==================== RENDER ==================== */
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Discover Colleges</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-foreground">Discover Colleges</h1>
+            <p className="text-muted-foreground mt-1">
               {loading ? 'Loading...' : `Showing ${colleges.length.toLocaleString()} colleges`}
             </p>
           </div>
           
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+            className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-muted"
           >
             <Filter className="w-4 h-4" />
             Filters
@@ -212,10 +258,10 @@ const Colleges: React.FC = () => {
         </div>
 
         {/* SEARCH / FILTERS */}
-        <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+        <div className="bg-card p-6 rounded-lg border border-border mb-6">
           {/* Search Bar */}
           <div className="relative mb-4">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -228,7 +274,7 @@ const Colleges: React.FC = () => {
           {showFilters && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-100">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                <label className="block text-sm font-medium text-foreground mb-1">Country</label>
                 <select
                   value={selectedCountry}
                   onChange={(e) => setSelectedCountry(e.target.value)}
@@ -240,7 +286,7 @@ const Colleges: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
+                <label className="block text-sm font-medium text-foreground mb-1">Program</label>
                 <select
                   value={selectedProgram}
                   onChange={(e) => setSelectedProgram(e.target.value)}
@@ -252,7 +298,7 @@ const Colleges: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                <label className="block text-sm font-medium text-foreground mb-1">Sort By</label>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
@@ -273,7 +319,7 @@ const Colleges: React.FC = () => {
                     setSelectedProgram('');
                     setSortBy('name');
                   }}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2 hover:bg-gray-50"
+                  className="w-full border border-border rounded-lg px-4 py-2 hover:bg-muted"
                 >
                   Clear All
                 </button>
@@ -291,9 +337,9 @@ const Colleges: React.FC = () => {
         {error && <div className="text-center text-red-600 py-12">{error}</div>}
         {!loading && !error && colleges.length === 0 && (
           <div className="text-center py-12">
-            <Globe className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-gray-600">No colleges found</h3>
-            <p className="text-gray-500 mt-2">Try adjusting your search or filters</p>
+            <Globe className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+            <h3 className="text-xl font-medium text-muted-foreground">No colleges found</h3>
+            <p className="text-muted-foreground mt-2">Try adjusting your search or filters</p>
           </div>
         )}
 
@@ -305,6 +351,7 @@ const Colleges: React.FC = () => {
               onAdd={() => handleAddCollege(college.id)}
               onViewDetails={() => navigate(`/colleges/${college.id}`)}
               isAdding={addingCollegeId === college.id}
+              fit={fitMap[college.id]}
             />
           ))}
         </div>
@@ -320,7 +367,8 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
   college,
   onAdd,
   onViewDetails,
-  isAdding
+  isAdding,
+  fit
 }) => {
   // Format acceptance rate properly
   const formatAcceptanceRate = (rate: number | null | undefined): string => {
@@ -353,7 +401,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
   const acceptanceRate = college.acceptanceRate ?? college.acceptance_rate;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200 card-gradient-hover">
+    <div className="bg-card rounded-xl border border-border overflow-hidden hover:shadow-md transition-shadow duration-200 card-gradient-hover">
       {/* Header with gradient */}
       <div className="gradient-header p-4 text-white">
         <div className="flex justify-between items-start">
@@ -373,7 +421,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
         <div className="flex items-center gap-2 mt-2">
           <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{college.type}</span>
           <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{college.country}</span>
-          <FitBadge collegeId={college.id} className="ml-auto" />
+          <FitBadge fitData={fit} className="ml-auto" />
         </div>
       </div>
 
@@ -385,7 +433,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
           value={formatAcceptanceRate(acceptanceRate)}
         />
         <StatBox
-          icon={<DollarSign className="w-4 h-4 text-blue-600" />}
+          icon={<DollarSign className="w-4 h-4 text-primary" />}
           label="Tuition"
           value={formatCurrency(college.tuition_cost, college.country)}
         />
@@ -413,7 +461,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
             </span>
           ))}
           {(college.majorCategories?.length || college.programs?.length || 0) > 4 && (
-            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
+            <span className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded-full">
               +{(college.majorCategories?.length || college.programs?.length || 0) - 4} more
             </span>
           )}
@@ -423,17 +471,17 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
       {/* Test Scores (if available) */}
       {college.testScores?.satRange && (
         <div className="px-4 pb-3">
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-muted-foreground">
             SAT: {college.testScores.satRange.percentile25}-{college.testScores.satRange.percentile75}
           </div>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex gap-2 p-4 bg-gray-50">
+      <div className="flex gap-2 p-4 bg-muted/50">
         <button
           onClick={onViewDetails}
-          className="flex-1 border border-gray-200 bg-white rounded-lg py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          className="flex-1 border border-border bg-card rounded-lg py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
         >
           View Details
         </button>
@@ -459,10 +507,10 @@ interface StatBoxProps {
 
 const StatBox: React.FC<StatBoxProps> = ({ icon, label, value }) => (
   <div className="flex items-center gap-2">
-    <div className="p-1.5 bg-gray-50 rounded-lg">{icon}</div>
+    <div className="p-1.5 bg-muted rounded-lg">{icon}</div>
     <div>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-sm font-semibold text-gray-900">{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-sm font-semibold text-foreground">{value}</p>
     </div>
   </div>
 );

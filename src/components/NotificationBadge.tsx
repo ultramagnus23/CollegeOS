@@ -14,8 +14,8 @@ export const NotificationBadge: React.FC = () => {
   useEffect(() => {
     fetchUnreadCount();
     
-    // Poll every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
+    // Poll every 60 seconds
+    const interval = setInterval(fetchUnreadCount, 60000);
     
     return () => clearInterval(interval);
   }, []);

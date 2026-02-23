@@ -51,9 +51,9 @@ const ACTIVITY_TYPES = [
 // Tier badge colors
 const TIER_COLORS: Record<number, string> = {
   1: 'bg-yellow-500 text-yellow-900',
-  2: 'bg-gray-400 text-gray-900',
+  2: 'bg-gray-400 text-foreground',
   3: 'bg-amber-600 text-amber-100',
-  4: 'bg-gray-200 text-gray-700'
+  4: 'bg-muted text-foreground'
 };
 
 const TIER_NAMES: Record<number, string> = {
@@ -215,25 +215,25 @@ export default function ActivityManager() {
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold">{activities.length}/10</div>
-            <div className="text-sm text-gray-500">Activities</div>
+            <div className="text-sm text-muted-foreground">Activities</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold text-yellow-600">{summary.tier1?.count || 0}</div>
-            <div className="text-sm text-gray-500">Tier 1 (National)</div>
+            <div className="text-sm text-muted-foreground">Tier 1 (National)</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <div className="text-2xl font-bold text-gray-600">{summary.tier2?.count || 0}</div>
-            <div className="text-sm text-gray-500">Tier 2 (State)</div>
+            <div className="text-2xl font-bold text-muted-foreground">{summary.tier2?.count || 0}</div>
+            <div className="text-sm text-muted-foreground">Tier 2 (State)</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="text-2xl font-bold">{summary.totalHours || 0}</div>
-            <div className="text-sm text-gray-500">Total Hours</div>
+            <div className="text-sm text-muted-foreground">Total Hours</div>
           </CardContent>
         </Card>
       </div>
@@ -250,7 +250,7 @@ export default function ActivityManager() {
       {/* Activities List */}
       {activities.length === 0 ? (
         <Card className="p-8 text-center">
-          <p className="text-gray-500 mb-4">No activities added yet. Add your extracurricular activities to strengthen your college applications.</p>
+          <p className="text-muted-foreground mb-4">No activities added yet. Add your extracurricular activities to strengthen your college applications.</p>
           <Button onClick={handleAddActivity}>
             <Plus className="h-4 w-4 mr-2" />
             Add Your First Activity
@@ -263,16 +263,16 @@ export default function ActivityManager() {
               <CardContent className="pt-4">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 cursor-move">
-                    <GripVertical className="h-5 w-5 text-gray-400" />
+                    <GripVertical className="h-5 w-5 text-muted-foreground" />
                   </div>
                   
                   <div className="flex-grow">
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-semibold text-lg">{activity.activity_name}</h3>
-                        <p className="text-sm text-gray-600">{activity.position_title}</p>
+                        <p className="text-sm text-muted-foreground">{activity.position_title}</p>
                         {activity.organization_name && (
-                          <p className="text-sm text-gray-500">{activity.organization_name}</p>
+                          <p className="text-sm text-muted-foreground">{activity.organization_name}</p>
                         )}
                       </div>
                       <Badge className={TIER_COLORS[activity.tier_rating]}>
@@ -281,10 +281,10 @@ export default function ActivityManager() {
                     </div>
                     
                     {activity.description && (
-                      <p className="mt-2 text-sm text-gray-700">{activity.description}</p>
+                      <p className="mt-2 text-sm text-foreground">{activity.description}</p>
                     )}
                     
-                    <div className="mt-3 flex flex-wrap gap-4 text-sm text-gray-500">
+                    <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
                         {getGradesString(activity)}
@@ -408,7 +408,7 @@ export default function ActivityManager() {
                   placeholder="Describe your role and accomplishments..."
                   className="h-20"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {editingActivity.description.length}/150 characters
                 </p>
               </div>
@@ -479,7 +479,7 @@ export default function ActivityManager() {
                     <SelectItem value="4">Tier 4 - Participation</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Higher tiers indicate more impressive achievements
                 </p>
               </div>

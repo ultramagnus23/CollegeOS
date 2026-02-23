@@ -1,5 +1,5 @@
 // src/pages/Essays.tsx — Dark Editorial Redesign
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { toast } from 'sonner';
 import { WordCountTracker } from '@/components/WordCountTracker';
@@ -16,12 +16,21 @@ interface EssayFormData { applicationId:string; essayType:string; prompt:string;
 /* ─── Design ─────────────────────────────────────────────────────────── */
 const h2r = (hex:string,a:number) => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return `rgba(${r},${g},${b},${a})`; };
 const ACCENT = '#A855F7';
-const S = { bg:'#080810', surface:'#0F0F1C', surface2:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.08)', border2:'rgba(255,255,255,0.13)', muted:'rgba(255,255,255,0.45)', dim:'rgba(255,255,255,0.22)', font:"'DM Sans',sans-serif" };
-const inp: React.CSSProperties = { width:'100%', padding:'10px 14px', background:S.surface2, border:`1px solid ${S.border2}`, borderRadius:10, color:'#fff', fontSize:14, fontFamily:S.font };
+const S = {
+  bg: 'var(--color-bg-primary)',
+  surface: 'var(--color-bg-surface)',
+  surface2: 'var(--color-surface-subtle)',
+  border: 'var(--color-border)',
+  border2: 'var(--color-border-strong)',
+  muted: 'var(--color-text-secondary)',
+  dim: 'var(--color-text-disabled)',
+  font: "'DM Sans',sans-serif",
+};
+const inp: React.CSSProperties = { width:'100%', padding:'10px 14px', background:S.surface2, border:`1px solid ${S.border2}`, borderRadius:10, color:'var(--color-text-primary)', fontSize:14, fontFamily:S.font };
 const lbl: React.CSSProperties = { fontSize:11, color:S.dim, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6, fontWeight:600, display:'block', fontFamily:S.font };
 
 const STATUS_CFG: Record<string,{label:string,color:string,bg:string}> = {
-  not_started:    { label:'Not Started',    color:'rgba(255,255,255,0.4)', bg:'rgba(255,255,255,0.07)' },
+  not_started:    { label:'Not Started',    color:S.dim, bg:'rgba(255,255,255,0.07)' },
   in_progress:    { label:'In Progress',    color:'#FBBF24', bg:'rgba(251,191,36,0.12)' },
   draft_complete: { label:'Draft Complete', color:'#3B9EFF', bg:'rgba(59,158,255,0.12)' },
   final:          { label:'Final',          color:'#10B981', bg:'rgba(16,185,129,0.12)' },
@@ -29,11 +38,11 @@ const STATUS_CFG: Record<string,{label:string,color:string,bg:string}> = {
 
 const GLOBAL = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0;}body{background:#080810;}
+  *{box-sizing:border-box;margin:0;padding:0;}
   @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
   @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-  input::placeholder,textarea::placeholder{color:rgba(255,255,255,0.2)!important;}
-  select option,option{background:#0F0F1C;color:#fff;}
+  input::placeholder,textarea::placeholder{color:var(--color-text-disabled)!important;}
+  select option,option{background:var(--color-bg-surface);color:var(--color-text-primary);}
   ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
 `;
 
@@ -69,7 +78,7 @@ const EssayCard: React.FC<{
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:6 }}>
-              <h3 style={{ fontSize:17, fontWeight:800, color:'#fff', fontFamily:S.font }}>{essay.college_name}</h3>
+              <h3 style={{ fontSize:17, fontWeight:800, color:'var(--color-text-primary)', fontFamily:S.font }}>{essay.college_name}</h3>
               <span style={{ fontSize:11, padding:'2px 8px', borderRadius:100, background:h2r(ACCENT,0.15), color:ACCENT, fontWeight:600, fontFamily:S.font }}>
                 {essay.essay_type.replace(/_/g,' ')}
               </span>
@@ -103,7 +112,7 @@ const EssayCard: React.FC<{
           marginBottom:14, borderLeft:`2px solid ${h2r(ACCENT,0.4)}`,
         }}>
           <div style={{ fontSize:11, color:S.dim, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6, fontFamily:S.font }}>Prompt</div>
-          <p style={{ fontSize:14, color:'rgba(255,255,255,0.7)', lineHeight:1.6, fontStyle:'italic', fontFamily:S.font }}>{essay.prompt}</p>
+          <p style={{ fontSize:14, color:S.muted, lineHeight:1.6, fontStyle:'italic', fontFamily:S.font }}>{essay.prompt}</p>
         </div>
 
         {/* Meta row */}
@@ -197,7 +206,7 @@ const Essays = () => {
   return (
     <>
       <style>{GLOBAL}</style>
-      <div style={{ minHeight:'100vh', background:S.bg, color:'#fff', fontFamily:S.font }}>
+      <div style={{ minHeight:'100vh', background:S.bg, color:'var(--color-text-primary)', fontFamily:S.font }}>
 
         {/* Header */}
         <div style={{ padding:'44px 48px 0', background:'linear-gradient(180deg,rgba(168,85,247,0.07) 0%,transparent 100%)', borderBottom:`1px solid ${S.border}` }}>
@@ -214,7 +223,7 @@ const Essays = () => {
               </div>
               <button onClick={() => setShowForm(f=>!f)} style={{
                 padding:'10px 22px', background:ACCENT, border:'none', borderRadius:10,
-                color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:S.font,
+                color:'var(--color-text-primary)', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:S.font,
                 boxShadow:`0 0 16px ${h2r(ACCENT,0.35)}`,
               }}>+ Add Essay</button>
             </div>
@@ -273,7 +282,7 @@ const Essays = () => {
                 </div>
               </div>
               <div style={{ display:'flex', gap:10, marginTop:18 }}>
-                <button onClick={handleAdd} style={{ padding:'10px 24px', background:ACCENT, border:'none', borderRadius:10, color:'#fff', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:S.font }}>Add Essay</button>
+                <button onClick={handleAdd} style={{ padding:'10px 24px', background:ACCENT, border:'none', borderRadius:10, color:'var(--color-text-primary)', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:S.font }}>Add Essay</button>
                 <button onClick={()=>setShowForm(false)} style={{ padding:'10px 20px', background:'rgba(255,255,255,0.06)', border:`1px solid ${S.border2}`, borderRadius:10, color:S.muted, fontSize:13, cursor:'pointer', fontFamily:S.font }}>Cancel</button>
               </div>
             </div>

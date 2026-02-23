@@ -50,8 +50,8 @@ const categoryConfig = {
   },
   target: {
     icon: Target,
-    color: 'text-blue-600',
-    bg: 'bg-blue-100',
+    color: 'text-primary',
+    bg: 'bg-primary/15',
     border: 'border-blue-200',
     label: 'Target',
     description: 'Good fit'
@@ -67,9 +67,9 @@ const categoryConfig = {
 };
 
 const statusConfig = {
-  researching: { label: 'Researching', color: 'text-gray-600', bg: 'bg-gray-100' },
+  researching: { label: 'Researching', color: 'text-muted-foreground', bg: 'bg-muted' },
   preparing: { label: 'Preparing', color: 'text-yellow-600', bg: 'bg-yellow-100' },
-  submitted: { label: 'Submitted', color: 'text-blue-600', bg: 'bg-blue-100' },
+  submitted: { label: 'Submitted', color: 'text-primary', bg: 'bg-primary/15' },
   accepted: { label: 'Accepted! 🎉', color: 'text-green-600', bg: 'bg-green-100' },
   rejected: { label: 'Rejected', color: 'text-red-600', bg: 'bg-red-100' }
 };
@@ -113,12 +113,12 @@ const CollegeListOverview: React.FC<CollegeListOverviewProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-card rounded-xl shadow-sm border border-border p-6">
         <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="h-6 bg-muted rounded w-1/3 mb-4"></div>
           <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-24 bg-gray-100 rounded"></div>
+              <div key={i} className="h-24 bg-muted rounded"></div>
             ))}
           </div>
         </div>
@@ -127,13 +127,13 @@ const CollegeListOverview: React.FC<CollegeListOverviewProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div className="bg-card rounded-xl shadow-sm border border-border p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <GraduationCap className="w-5 h-5 text-indigo-600" />
-          <h3 className="font-bold text-gray-900">My College List</h3>
-          <span className="text-sm text-gray-500">({colleges.length} schools)</span>
+          <h3 className="font-bold text-foreground">My College List</h3>
+          <span className="text-sm text-muted-foreground">({colleges.length} schools)</span>
         </div>
         <Button variant="outline" size="sm" onClick={onAddCollege}>
           <Plus className="w-4 h-4 mr-1" />
@@ -161,8 +161,8 @@ const CollegeListOverview: React.FC<CollegeListOverviewProps> = ({
               </div>
               <div className="flex items-end justify-between">
                 <div>
-                  <span className="text-2xl font-bold text-gray-900">{count}</span>
-                  <span className="text-sm text-gray-500">/{recommended} rec.</span>
+                  <span className="text-2xl font-bold text-foreground">{count}</span>
+                  <span className="text-sm text-muted-foreground">/{recommended} rec.</span>
                 </div>
                 {count >= recommended && (
                   <CheckCircle className="w-5 h-5 text-green-500" />
@@ -178,12 +178,12 @@ const CollegeListOverview: React.FC<CollegeListOverviewProps> = ({
       <div className={`p-3 rounded-lg mb-4 ${
         health.status === 'healthy' ? 'bg-green-50 border border-green-200' :
         health.status === 'warning' ? 'bg-amber-50 border border-amber-200' :
-        'bg-blue-50 border border-blue-200'
+        'bg-primary/10 border border-blue-200'
       }`}>
         <p className={`text-sm font-medium ${
           health.status === 'healthy' ? 'text-green-700' :
           health.status === 'warning' ? 'text-amber-700' :
-          'text-blue-700'
+          'text-primary'
         }`}>
           {health.status === 'healthy' && '✓ '}
           {health.status === 'warning' && '⚠ '}
@@ -194,7 +194,7 @@ const CollegeListOverview: React.FC<CollegeListOverviewProps> = ({
       {/* Recent colleges */}
       {colleges.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700 mb-2">Recent additions:</p>
+          <p className="text-sm font-medium text-foreground mb-2">Recent additions:</p>
           {colleges.slice(0, 4).map(college => {
             const catConfig = categoryConfig[college.category];
             const statConfig = statusConfig[college.status];
@@ -202,13 +202,13 @@ const CollegeListOverview: React.FC<CollegeListOverviewProps> = ({
             return (
               <div
                 key={college.id}
-                className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-indigo-300 cursor-pointer transition-all"
+                className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-indigo-300 cursor-pointer transition-all"
                 onClick={() => onCollegeClick?.(college.id)}
               >
                 {/* College initial/logo */}
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold ${
                   college.category === 'reach' ? 'bg-purple-500' :
-                  college.category === 'target' ? 'bg-blue-500' :
+                  college.category === 'target' ? 'bg-primary' :
                   'bg-green-500'
                 }`}>
                   {college.name.charAt(0)}
@@ -216,8 +216,8 @@ const CollegeListOverview: React.FC<CollegeListOverviewProps> = ({
 
                 {/* College info */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{college.name}</p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <p className="font-medium text-foreground truncate">{college.name}</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span className={`px-1.5 py-0.5 rounded ${catConfig.bg} ${catConfig.color}`}>
                       {catConfig.label}
                     </span>
@@ -243,9 +243,9 @@ const CollegeListOverview: React.FC<CollegeListOverviewProps> = ({
         </div>
       ) : (
         <div className="text-center py-6">
-          <GraduationCap className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-600 mb-2">No colleges added yet</p>
-          <p className="text-sm text-gray-500 mb-4">
+          <GraduationCap className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+          <p className="text-muted-foreground mb-2">No colleges added yet</p>
+          <p className="text-sm text-muted-foreground mb-4">
             Start building your list with our smart recommendations
           </p>
           <Button onClick={onAddCollege}>
