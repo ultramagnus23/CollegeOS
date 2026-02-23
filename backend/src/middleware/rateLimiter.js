@@ -41,6 +41,12 @@ const batchLimiter = rateLimit({
   handler: rateLimitHandler,
 });
 
+// Polling endpoint limiter (60 per hour per user)
+const pollingLimiter = rateLimit({
+  ...securityConfig.rateLimits.polling,
+  handler: rateLimitHandler,
+});
+
 // Per-route rate limiting for specific endpoints
 const createRouteLimiter = (windowMs, maxRequests, message) => {
   return rateLimit({
@@ -63,5 +69,6 @@ module.exports = {
   authLimiter,
   sensitiveLimiter,
   batchLimiter,
+  pollingLimiter,
   createRouteLimiter,
 };

@@ -162,6 +162,19 @@ module.exports = {
       legacyHeaders: false,
       keyGenerator: (req) => req.user?.id || req.ip,
     },
+    // Polling endpoints (e.g. unread notification count) - per-user limit
+    polling: {
+      windowMs: 60 * 60 * 1000, // 1 hour
+      max: 60, // max 60 polls per hour per user (~1/min sustained)
+      message: {
+        success: false,
+        message: 'Polling rate limit exceeded. Please slow down.',
+        code: 'POLLING_RATE_LIMIT_EXCEEDED',
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+      keyGenerator: (req) => req.user?.id || req.ip,
+    },
   },
 
   // Password requirements
