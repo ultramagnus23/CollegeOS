@@ -1,6 +1,7 @@
 /**
  * FitBadge - Shows college fit classification (Reach/Target/Safety)
- * Fetches fit from API.fit.get() and displays with color coding
+ * Accepts pre-fetched fit data via `fitData` prop (preferred, avoids individual API call),
+ * or falls back to fetching from API.fit.get() when rendering standalone.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -9,16 +10,25 @@ import { api } from '@/services/api';
 
 interface FitBadgeProps {
   collegeId: number;
+  /** Pre-fetched fit category from a batch call. When provided, no individual API call is made. */
+  fitData?: string | null;
   className?: string;
 }
 
-export const FitBadge: React.FC<FitBadgeProps> = ({ collegeId, className = '' }) => {
+export const FitBadge: React.FC<FitBadgeProps> = ({ collegeId, fitData, className = '' }) => {
   const [fit, setFit] = useState<'reach' | 'target' | 'safety' | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!fitData);
 
   useEffect(() => {
+    // If pre-fetched data is provided, use it directly — no API call needed
+    if (fitData !== undefined) {
+      const valid: Array<'reach' | 'target' | 'safety'> = ['reach', 'target', 'safety'];
+      setFit(fitData && valid.includes(fitData as 'reach' | 'target' | 'safety') ? (fitData as 'reach' | 'target' | 'safety') : null);
+      setLoading(false);
+      return;
+    }
     fetchFit();
-  }, [collegeId]);
+  }, [collegeId, fitData]);
 
   const fetchFit = async () => {
     try {
