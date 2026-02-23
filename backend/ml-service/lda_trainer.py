@@ -41,6 +41,18 @@ class LDATrainer:
         """Get the file path for a college's model metadata."""
         return os.path.join(config.MODEL_DIR, f'metadata_college_{college_id}.json')
 
+    def _validate_model_path(self, path: str) -> Optional[str]:
+        """
+        Ensure that the given path resolves inside the configured MODEL_DIR.
+        Returns the normalized path if valid, otherwise None.
+        """
+        base_dir = os.path.abspath(config.MODEL_DIR)
+        normalized_path = os.path.abspath(path)
+        if not normalized_path.startswith(base_dir + os.sep):
+            # Path traversal or access outside MODEL_DIR is not allowed
+            return None
+        return normalized_path
+
     def check_training_readiness(self, college_data: pd.DataFrame) -> Tuple[bool, str]:
         """
         Check if there's enough data to train a model.
@@ -222,8 +234,9 @@ class LDATrainer:
         if college_id in self.models:
             return self.models[college_id]
         
-        model_path = self._get_model_path(college_id)
-        if os.path.exists(model_path):
+        raw_model_path = self._get_model_path(college_id)
+        model_path = self._validate_model_path(raw_model_path)
+        if model_path and os.path.exists(model_path):
             model = joblib.load(model_path)
             self.models[college_id] = model
             return model
@@ -235,8 +248,9 @@ class LDATrainer:
         if college_id in self.scalers:
             return self.scalers[college_id]
         
-        scaler_path = self._get_scaler_path(college_id)
-        if os.path.exists(scaler_path):
+        raw_scaler_path = self._get_scaler_path(college_id)
+        scaler_path = self._validate_model_path(raw_scaler_path)
+        if scaler_path and os.path.exists(scaler_path):
             scaler = joblib.load(scaler_path)
             self.scalers[college_id] = scaler
             return scaler
