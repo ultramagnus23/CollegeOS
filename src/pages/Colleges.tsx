@@ -13,6 +13,8 @@ interface CollegeCardProps {
   onAdd: () => void;
   onViewDetails: () => void;
   isAdding: boolean;
+  /** Pre-fetched fit category from the page-level batch call */
+  fit?: string | null;
 }
 
 /* ==================== MAIN ==================== */
@@ -23,6 +25,8 @@ const Colleges: React.FC = () => {
   const [colleges, setColleges] = useState<College[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
   const [programs, setPrograms] = useState<string[]>([]);
+  // Map of collegeId → fit category, populated by a single batch call after colleges load
+  const [fitMap, setFitMap] = useState<Record<number, string | null>>({});
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
@@ -58,6 +62,34 @@ const Colleges: React.FC = () => {
   useEffect(() => {
     loadColleges();
   }, [searchTerm, selectedCountry, selectedProgram, sortBy]);
+
+  /**
+   * Fetch fit classifications for all college IDs using the batch endpoint.
+   * Splits into chunks of 50 to stay well under the server's 100-ID limit.
+   */
+  const loadFitData = async (collegeIds: number[]) => {
+    if (collegeIds.length === 0) return;
+    const CHUNK_SIZE = 50;
+    const merged: Record<number, string | null> = {};
+    try {
+      for (let i = 0; i < collegeIds.length; i += CHUNK_SIZE) {
+        const chunk = collegeIds.slice(i, i + CHUNK_SIZE);
+        const res = await api.fit.batchGet(chunk);
+        if (res?.success && res.data) {
+          const batchData: Record<string, any> = res.data;
+          for (const [idStr, fitData] of Object.entries(batchData)) {
+            // Backend returns fitCategory as the canonical property name
+            const cat = fitData?.fitCategory ?? null;
+            merged[parseInt(idStr)] = cat;
+          }
+        }
+      }
+      setFitMap(merged);
+    } catch (err) {
+      // Fit data is optional — log and continue without it
+      console.warn('Batch fit fetch failed, fit badges will not be shown:', err);
+    }
+  };
 
   const loadColleges = async () => {
     try {
@@ -151,6 +183,9 @@ const Colleges: React.FC = () => {
       
       setTotalCount(sorted.length);
       setColleges(sorted);
+      // Batch-fetch fit data for all loaded colleges (single batch call instead of N individual calls)
+      setFitMap({});
+      loadFitData(sorted.map(c => c.id));
     } catch (err) {
       setError('Failed to load colleges');
       console.error('Error loading colleges:', err);
@@ -305,6 +340,7 @@ const Colleges: React.FC = () => {
               onAdd={() => handleAddCollege(college.id)}
               onViewDetails={() => navigate(`/colleges/${college.id}`)}
               isAdding={addingCollegeId === college.id}
+              fit={fitMap[college.id]}
             />
           ))}
         </div>
@@ -320,7 +356,8 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
   college,
   onAdd,
   onViewDetails,
-  isAdding
+  isAdding,
+  fit
 }) => {
   // Format acceptance rate properly
   const formatAcceptanceRate = (rate: number | null | undefined): string => {
@@ -373,7 +410,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
         <div className="flex items-center gap-2 mt-2">
           <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{college.type}</span>
           <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{college.country}</span>
-          <FitBadge collegeId={college.id} className="ml-auto" />
+          <FitBadge collegeId={college.id} fitData={fit} className="ml-auto" />
         </div>
       </div>
 

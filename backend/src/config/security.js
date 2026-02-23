@@ -149,6 +149,19 @@ module.exports = {
       legacyHeaders: false,
       keyGenerator: (req) => req.user?.userId || req.ip,
     },
+    // Batch endpoints - per-user limit to prevent abuse
+    batch: {
+      windowMs: 60 * 1000, // 1 minute
+      max: 20, // 20 batch requests per minute per user
+      message: {
+        success: false,
+        message: 'Batch request limit exceeded. Please try again later.',
+        code: 'BATCH_RATE_LIMIT_EXCEEDED',
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+      keyGenerator: (req) => req.user?.id || req.ip,
+    },
   },
 
   // Password requirements
