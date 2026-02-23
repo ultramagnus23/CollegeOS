@@ -1,5 +1,5 @@
 // src/pages/Colleges.tsx
-import React, { useEffect, useState, ChangeEvent } from 'react';
+import React, { useEffect, useState, useRef, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Globe, BookOpen, MapPin, GraduationCap, DollarSign, Users, Award, TrendingUp, Filter, ChevronDown } from 'lucide-react';
 import api from '../services/api';
@@ -39,6 +39,9 @@ const Colleges: React.FC = () => {
   const [addingCollegeId, setAddingCollegeId] = useState<number | null>(null);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Guard: prevents duplicate or concurrent batch fit calls (React StrictMode double-invoke safe)
+  const fitBatchInFlight = useRef(false);
+
   /* ==================== LOAD FILTERS ==================== */
 
   useEffect(() => {
@@ -66,9 +69,15 @@ const Colleges: React.FC = () => {
   /**
    * Fetch fit classifications for all college IDs using the batch endpoint.
    * Splits into chunks of 50 to stay well under the server's 100-ID limit.
+   * The in-flight guard prevents duplicate calls from React StrictMode double-invoke
+   * and from rapid filter changes that each call loadColleges in quick succession.
    */
   const loadFitData = async (collegeIds: number[]) => {
     if (collegeIds.length === 0) return;
+    // JS is single-threaded: the check and set below execute atomically (no await
+    // between them), so two concurrent calls cannot both pass this guard.
+    if (fitBatchInFlight.current) return;
+    fitBatchInFlight.current = true;
     const CHUNK_SIZE = 50;
     const merged: Record<number, string | null> = {};
     try {
@@ -88,6 +97,8 @@ const Colleges: React.FC = () => {
     } catch (err) {
       // Fit data is optional — log and continue without it
       console.warn('Batch fit fetch failed, fit badges will not be shown:', err);
+    } finally {
+      fitBatchInFlight.current = false;
     }
   };
 
