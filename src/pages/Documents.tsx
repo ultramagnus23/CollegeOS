@@ -1,5 +1,5 @@
 // src/pages/Documents.tsx — Dark Editorial Redesign
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,8 +18,17 @@ interface DocSummary {
 /* ─── Config ─────────────────────────────────────────────────────────── */
 const h2r = (hex:string,a:number) => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return `rgba(${r},${g},${b},${a})`; };
 const ACCENT = '#10B981'; // emerald — document vault theme
-const S = { bg:'#080810', surface:'#0F0F1C', border:'rgba(255,255,255,0.08)', border2:'rgba(255,255,255,0.13)', muted:'rgba(255,255,255,0.45)', dim:'rgba(255,255,255,0.22)', font:"'DM Sans',sans-serif" };
-const inp: React.CSSProperties = { width:'100%', padding:'10px 14px', background:'rgba(255,255,255,0.05)', border:`1px solid ${S.border2}`, borderRadius:10, color:'#fff', fontSize:14, fontFamily:S.font };
+const S = {
+  bg: 'var(--color-bg-primary)',
+  surface: 'var(--color-bg-surface)',
+  surface2: 'var(--color-surface-subtle)',
+  border: 'var(--color-border)',
+  border2: 'var(--color-border-strong)',
+  muted: 'var(--color-text-secondary)',
+  dim: 'var(--color-text-disabled)',
+  font: "'DM Sans',sans-serif",
+};
+const inp: React.CSSProperties = { width:'100%', padding:'10px 14px', background:S.surface2, border:`1px solid ${S.border2}`, borderRadius:10, color:'var(--color-text-primary)', fontSize:14, fontFamily:S.font };
 const lbl: React.CSSProperties = { fontSize:11, color:S.dim, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6, fontWeight:600, display:'block', fontFamily:S.font };
 
 const CATS: Record<string,{label:string;emoji:string;color:string}> = {
@@ -31,7 +40,7 @@ const CATS: Record<string,{label:string;emoji:string;color:string}> = {
   proof:          { label:'Proof Docs',     emoji:'📄', color:'#06B6D4' },
   passport:       { label:'Passport/ID',    emoji:'🛂', color:'#F87171' },
   portfolio:      { label:'Portfolio',      emoji:'🎨', color:'#EC4899' },
-  other:          { label:'Other',          emoji:'📁', color:'rgba(255,255,255,0.4)' },
+  other:          { label:'Other',          emoji:'📁', color:S.dim },
 };
 
 const STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
@@ -44,7 +53,7 @@ const STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
 
 const GLOBAL = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0;}body{background:#080810;}
+  *{box-sizing:border-box;margin:0;padding:0;}
   @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
   @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   input::placeholder{color:rgba(255,255,255,0.2)!important;}
@@ -57,7 +66,7 @@ const getDaysUntilExpiry = (dateStr:string) => {
   if (days < 0) return { text:'Expired', color:'#F87171' };
   if (days === 0) return { text:'Expires today', color:'#F97316' };
   if (days === 1) return { text:'Expires tomorrow', color:'#FBBF24' };
-  return { text:`Expires in ${days}d`, color:'rgba(255,255,255,0.4)' };
+  return { text:`Expires in ${days}d`, color:S.dim };
 };
 
 /* ─── Stat Card ──────────────────────────────────────────────────────── */
@@ -65,7 +74,7 @@ const StatCard: React.FC<{emoji:string;value:number;label:string;accent:string}>
   <div style={{ background:S.surface, border:`1px solid ${S.border}`, borderRadius:14, padding:'16px 20px', display:'flex', alignItems:'center', gap:14 }}>
     <div style={{ width:44, height:44, borderRadius:12, background:h2r(accent,0.15), display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>{emoji}</div>
     <div>
-      <div style={{ fontSize:26, fontWeight:800, color:'#fff', lineHeight:1, fontFamily:S.font }}>{value}</div>
+      <div style={{ fontSize:26, fontWeight:800, color:'var(--color-text-primary)', lineHeight:1, fontFamily:S.font }}>{value}</div>
       <div style={{ fontSize:12, color:S.muted, marginTop:3, fontFamily:S.font }}>{label}</div>
     </div>
   </div>
@@ -93,7 +102,7 @@ const DocCard: React.FC<{
         <div style={{ display:'flex', gap:10, alignItems:'center', flex:1, minWidth:0 }}>
           <div style={{ width:36, height:36, borderRadius:10, background:h2r(cat.color,0.15), display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{cat.emoji}</div>
           <div style={{ minWidth:0 }}>
-            <div style={{ fontSize:14, fontWeight:700, color:'#fff', fontFamily:S.font, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{doc.name}</div>
+            <div style={{ fontSize:14, fontWeight:700, color:'var(--color-text-primary)', fontFamily:S.font, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{doc.name}</div>
             <div style={{ fontSize:11, color:S.dim, fontFamily:S.font }}>{cat.label}</div>
           </div>
         </div>
@@ -182,7 +191,7 @@ const Documents = () => {
   return (
     <>
       <style>{GLOBAL}</style>
-      <div style={{ minHeight:'100vh', background:S.bg, color:'#fff', fontFamily:S.font }}>
+      <div style={{ minHeight:'100vh', background:S.bg, color:'var(--color-text-primary)', fontFamily:S.font }}>
 
         {/* Header */}
         <div style={{ padding:'44px 48px 0', background:'linear-gradient(180deg,rgba(16,185,129,0.07) 0%,transparent 100%)', borderBottom:`1px solid ${S.border}` }}>

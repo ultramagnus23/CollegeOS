@@ -18,6 +18,9 @@
     --color-accent-hover: #5a52e0;
     --color-accent-subtle: rgba(108, 99, 255, 0.1);
     --color-glow: rgba(108, 99, 255, 0.25);
+    /* Adaptive surface/border tokens for inline-styled components */
+    --color-surface-subtle: rgba(0, 0, 0, 0.04);
+    --color-border-strong: rgba(0, 0, 0, 0.13);
 
     /* Modern Indigo-based palette (Notion/Linear/Stripe inspired) */
     --background: 210 40% 98%;
@@ -101,6 +104,9 @@
     --color-accent-hover: #8b84ff;
     --color-accent-subtle: rgba(108, 99, 255, 0.15);
     --color-glow: rgba(108, 99, 255, 0.4);
+    /* Adaptive surface/border tokens for inline-styled components */
+    --color-surface-subtle: rgba(255, 255, 255, 0.04);
+    --color-border-strong: rgba(255, 255, 255, 0.13);
 
     --background: 240 33% 5%;
     --foreground: 210 40% 98%;

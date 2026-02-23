@@ -589,7 +589,7 @@ const CollegeDetail: React.FC = () => {
 
   if (!college) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6 text-center">
+      <div className="min-h-screen bg-background p-6 text-center">
         <h1 className="text-2xl font-bold mb-4">College Not Found</h1>
         <button
           onClick={() => navigate('/colleges')}
@@ -672,7 +672,7 @@ const CollegeDetail: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Hero Section - Dynamic gradient based on country */}
       <div className={`bg-gradient-to-r ${heroGradient} text-white`}>
         <div className="max-w-6xl mx-auto px-6 py-8">
@@ -739,7 +739,7 @@ const CollegeDetail: React.FC = () => {
               <button
                 onClick={handleAddCollege}
                 disabled={adding}
-                className="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold disabled:opacity-50 hover:bg-blue-50 transition-colors"
+                className="px-6 py-3 bg-white/90 text-blue-700 rounded-lg font-semibold disabled:opacity-50 hover:bg-white transition-colors"
               >
                 {adding ? 'Adding…' : '+ Add to My List'}
               </button>
@@ -823,7 +823,7 @@ const CollegeDetail: React.FC = () => {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="bg-white border-b sticky top-0 z-10">
+      <div className="bg-background border-b border-border sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex gap-1 overflow-x-auto">
             {tabs.map(tab => (
@@ -1144,7 +1144,7 @@ const CollegeDetail: React.FC = () => {
                     <h4 className="font-medium text-gray-900 mb-3">GPA</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {college.studentStats?.gpa25 && (
-                        <div className="text-center p-3 bg-gray-50 rounded-lg">
+                        <div className="text-center p-3 bg-muted rounded-lg">
                           <div className="text-xl font-bold text-gray-700">{college.studentStats.gpa25.toFixed(2)}</div>
                           <div className="text-xs text-gray-500">25th Percentile</div>
                         </div>
@@ -1158,7 +1158,7 @@ const CollegeDetail: React.FC = () => {
                         </div>
                       )}
                       {college.studentStats?.gpa75 && (
-                        <div className="text-center p-3 bg-gray-50 rounded-lg">
+                        <div className="text-center p-3 bg-muted rounded-lg">
                           <div className="text-xl font-bold text-gray-700">{college.studentStats.gpa75.toFixed(2)}</div>
                           <div className="text-xs text-gray-500">75th Percentile</div>
                         </div>
@@ -1175,7 +1175,7 @@ const CollegeDetail: React.FC = () => {
                     {Object.entries(college.deadlineTemplates)
                       .filter(([, deadline]) => deadline !== null)
                       .map(([key, deadline]) => (
-                      <div key={key} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <div key={key} className="flex justify-between items-center p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-3">
                           <Calendar className="w-5 h-5 text-blue-600" />
                           <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
@@ -1261,7 +1261,7 @@ const CollegeDetail: React.FC = () => {
                 <Card title="University Rankings">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {college.rankings.map((ranking, index) => (
-                      <div key={index} className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
+                      <div key={index} className="p-4 bg-muted rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-sm font-medium text-blue-600">{ranking.rankingBody}</p>
                           <Award className="w-4 h-4 text-blue-600" />
@@ -1288,31 +1288,31 @@ const CollegeDetail: React.FC = () => {
                 <Card title="Institution Details">
                   <div className="space-y-4">
                     {college.comprehensiveData.institutionType && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <span className="text-sm text-gray-600">Type</span>
                         <span className="font-semibold text-gray-900">{college.comprehensiveData.institutionType}</span>
                       </div>
                     )}
                     {college.comprehensiveData.classification && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <span className="text-sm text-gray-600">Classification</span>
                         <span className="font-semibold text-gray-900">{college.comprehensiveData.classification}</span>
                       </div>
                     )}
                     {college.comprehensiveData.urbanClassification && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <span className="text-sm text-gray-600">Setting</span>
                         <span className="font-semibold text-gray-900">{college.comprehensiveData.urbanClassification}</span>
                       </div>
                     )}
                     {college.comprehensiveData.foundingYear && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <span className="text-sm text-gray-600">Founded</span>
                         <span className="font-semibold text-gray-900">{college.comprehensiveData.foundingYear}</span>
                       </div>
                     )}
                     {college.comprehensiveData.campusSizeAcres && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <span className="text-sm text-gray-600">Campus Size</span>
                         <span className="font-semibold text-gray-900">{college.comprehensiveData.campusSizeAcres} acres</span>
                       </div>
@@ -1338,7 +1338,7 @@ const CollegeDetail: React.FC = () => {
                       </div>
                     )}
                     {college.comprehensiveData.totalEnrollment && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <span className="text-sm text-gray-600">Total</span>
                         <span className="font-bold text-gray-900">{college.comprehensiveData.totalEnrollment.toLocaleString()}</span>
                       </div>
@@ -1394,7 +1394,7 @@ const CollegeDetail: React.FC = () => {
                       // Show single tuition for private schools
                       return (
                         <div>
-                          <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl text-center mb-4">
+                          <div className="p-6 bg-muted rounded-xl text-center mb-4">
                             <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-2" />
                             <div className="text-3xl font-bold text-blue-700">
                               ${college.financialData.tuitionInState.toLocaleString()}
@@ -1444,7 +1444,7 @@ const CollegeDetail: React.FC = () => {
                   
                   {/* Total Cost of Attendance */}
                   {college.financialData.costOfAttendance && (
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="mt-4 p-4 bg-muted rounded-lg">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">Total Cost of Attendance</span>
                         <span className="text-xl font-bold text-gray-900">
@@ -1572,7 +1572,7 @@ const CollegeDetail: React.FC = () => {
 
             <div className="space-y-6">
               <Card title="Financial Aid">
-                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <div className="text-center p-4 bg-muted rounded-lg">
                   <p className="text-gray-600">
                     Financial aid information available on the official website
                   </p>
@@ -1686,7 +1686,7 @@ const CollegeDetail: React.FC = () => {
                   <div className="space-y-3">
                     {/* Urban Classification */}
                     {college.comprehensiveData?.urbanClassification && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-2">
                           <Building className="w-4 h-4 text-blue-600" />
                           <span className="text-sm text-gray-600">Campus Setting</span>
@@ -1697,7 +1697,7 @@ const CollegeDetail: React.FC = () => {
                     
                     {/* Location */}
                     {(college.comprehensiveData?.city || college.location) && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-blue-600" />
                           <span className="text-sm text-gray-600">Location</span>
@@ -1712,7 +1712,7 @@ const CollegeDetail: React.FC = () => {
                     
                     {/* Founding Year */}
                     {college.comprehensiveData?.foundingYear && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4 text-blue-600" />
                           <span className="text-sm text-gray-600">Founded</span>
@@ -1723,7 +1723,7 @@ const CollegeDetail: React.FC = () => {
                     
                     {/* Campus Size */}
                     {college.comprehensiveData?.campusSizeAcres && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-2">
                           <Home className="w-4 h-4 text-blue-600" />
                           <span className="text-sm text-gray-600">Campus Size</span>
@@ -1733,7 +1733,7 @@ const CollegeDetail: React.FC = () => {
                     )}
                     
                     {college.campusLife?.housingGuarantee && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-2">
                           <Home className="w-4 h-4 text-blue-600" />
                           <span className="text-sm text-gray-600">Housing Guarantee</span>
@@ -1742,7 +1742,7 @@ const CollegeDetail: React.FC = () => {
                       </div>
                     )}
                     {college.campusLife?.athleticsDivision && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-2">
                           <Award className="w-4 h-4 text-blue-600" />
                           <span className="text-sm text-gray-600">Athletics</span>
@@ -1751,7 +1751,7 @@ const CollegeDetail: React.FC = () => {
                       </div>
                     )}
                     {college.campusLife?.clubCount && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 text-blue-600" />
                           <span className="text-sm text-gray-600">Student Organizations</span>
@@ -1760,7 +1760,7 @@ const CollegeDetail: React.FC = () => {
                       </div>
                     )}
                     {college.campusLife?.campusSafetyScore && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-2">
                           <CheckCircle className="w-4 h-4 text-green-600" />
                           <span className="text-sm text-gray-600">Campus Safety Score</span>
@@ -1805,7 +1805,7 @@ const CollegeDetail: React.FC = () => {
                   href={college.official_website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full py-2 border border-gray-200 text-center rounded-lg text-gray-700 hover:bg-gray-50"
+                  className="block w-full py-2 border border-border text-center rounded-lg text-foreground hover:bg-muted"
                 >
                   Explore Campus Life →
                 </a>
@@ -1949,11 +1949,11 @@ const CollegeDetail: React.FC = () => {
                       
                       {/* Additional Employment Metrics */}
                       {(college.academicOutcomes.employedAt6MonthsRate || college.academicOutcomes.employedInFieldRate) && (
-                        <div className="mt-6 pt-6 border-t border-gray-200">
+                        <div className="mt-6 pt-6 border-t border-border">
                           <h4 className="font-medium text-gray-900 mb-3">Employment Details</h4>
                           <div className="grid grid-cols-2 gap-3">
                             {college.academicOutcomes.employedAt6MonthsRate && (
-                              <div className="p-3 bg-gray-50 rounded-lg">
+                              <div className="p-3 bg-muted rounded-lg">
                                 <div className="text-lg font-bold text-gray-700">
                                   {(college.academicOutcomes.employedAt6MonthsRate * 100).toFixed(0)}%
                                 </div>
@@ -1961,7 +1961,7 @@ const CollegeDetail: React.FC = () => {
                               </div>
                             )}
                             {college.academicOutcomes.employedInFieldRate && (
-                              <div className="p-3 bg-gray-50 rounded-lg">
+                              <div className="p-3 bg-muted rounded-lg">
                                 <div className="text-lg font-bold text-gray-700">
                                   {(college.academicOutcomes.employedInFieldRate * 100).toFixed(0)}%
                                 </div>
@@ -2026,7 +2026,7 @@ const CollegeDetail: React.FC = () => {
               {college.country === 'India' && college.placements && (
                 <Card title="Career Outcomes">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
                       <Briefcase className="w-8 h-8 text-blue-600" />
                       <div>
                         <p className="font-semibold">Strong Placement Record</p>
@@ -2057,8 +2057,8 @@ const CollegeDetail: React.FC = () => {
 ========================= */
 
 const Card: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    <div className="p-4 border-b border-gray-100">
+  <div className="bg-card rounded-xl border border-border overflow-hidden">
+    <div className="p-4 border-b border-border">
       <h3 className="font-semibold text-gray-900">{title}</h3>
     </div>
     <div className="p-4">{children}</div>
@@ -2073,7 +2073,7 @@ const QuickStat: React.FC<{ label: string; value: string }> = ({ label, value })
 );
 
 const StatItem: React.FC<{ label: string; value: string; icon: React.ReactNode }> = ({ label, value, icon }) => (
-  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
     <div className="p-2 bg-white rounded-lg text-blue-600">{icon}</div>
     <div>
       <p className="text-xs text-gray-500">{label}</p>
@@ -2087,7 +2087,7 @@ const QuickLink: React.FC<{ href: string; label: string }> = ({ href, label }) =
     href={href}
     target="_blank"
     rel="noopener noreferrer"
-    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+    className="flex items-center justify-between p-3 bg-muted rounded-lg hover:bg-gray-100 transition-colors"
   >
     <span className="text-gray-700">{label}</span>
     <ExternalLink className="w-4 h-4 text-gray-400" />
@@ -2263,13 +2263,13 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ college, majorCategories, a
                     placeholder="Search majors..."
                     value={majorSearch}
                     onChange={(e) => setMajorSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   {programCategories.map(cat => (
                     <option key={cat} value={cat}>
@@ -2292,7 +2292,7 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ college, majorCategories, a
                 tabIndex={0}
               >
                 {filteredPrograms.map((program, i) => (
-                  <div key={i} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded border border-gray-100">
+                  <div key={i} className="flex items-center gap-2 p-2 hover:bg-muted rounded border border-border">
                     <BookOpen className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <span className="text-sm truncate">{program}</span>
                   </div>
@@ -2327,25 +2327,25 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ college, majorCategories, a
         <Card title="Academic Statistics">
           <div className="flex flex-wrap gap-4">
             {college.studentFacultyRatio && (
-              <div className="text-center p-4 bg-gray-50 rounded-lg min-w-[120px]">
+              <div className="text-center p-4 bg-muted rounded-lg min-w-[120px]">
                 <div className="text-2xl font-bold text-gray-900">{college.studentFacultyRatio}</div>
                 <p className="text-sm text-gray-600">Student:Faculty</p>
               </div>
             )}
             {college.graduationRates?.fourYear && (
-              <div className="text-center p-4 bg-gray-50 rounded-lg min-w-[120px]">
+              <div className="text-center p-4 bg-muted rounded-lg min-w-[120px]">
                 <div className="text-2xl font-bold text-green-600">{college.graduationRates.fourYear}%</div>
                 <p className="text-sm text-gray-600">4-Year Grad Rate</p>
               </div>
             )}
             {college.graduationRates?.sixYear && (
-              <div className="text-center p-4 bg-gray-50 rounded-lg min-w-[120px]">
+              <div className="text-center p-4 bg-muted rounded-lg min-w-[120px]">
                 <div className="text-2xl font-bold text-green-600">{college.graduationRates.sixYear}%</div>
                 <p className="text-sm text-gray-600">6-Year Grad Rate</p>
               </div>
             )}
             {programs.length > 0 && (
-              <div className="text-center p-4 bg-gray-50 rounded-lg min-w-[120px]">
+              <div className="text-center p-4 bg-muted rounded-lg min-w-[120px]">
                 <div className="text-2xl font-bold text-blue-600">{programs.length}</div>
                 <p className="text-sm text-gray-600">Programs</p>
               </div>

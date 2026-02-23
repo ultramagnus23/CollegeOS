@@ -75,24 +75,24 @@ const DashboardLayout = () => {
             className="p-6 flex items-center justify-between"
             style={{
               borderBottom: '1px solid var(--color-border)',
-              background: 'linear-gradient(135deg, #12122A 0%, #1A1A3E 100%)',
+              background: 'var(--color-bg-elevated)',
             }}
           >
             <div>
-              <h1 style={{ fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>College App OS</h1>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>Welcome, {user?.full_name}</p>
+              <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>College App OS</h1>
+              <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 4 }}>Welcome, {user?.full_name}</p>
             </div>
             <div className="flex items-center gap-2">
               <NavLink
                 to="/notifications"
-                className="p-2 rounded-lg hover:bg-white/10 text-white transition-colors"
+                className="p-2 rounded-lg hover:bg-muted transition-colors" style={{ color: "var(--color-text-primary)" }}
                 aria-label="Notifications"
               >
                 <NotificationBadge />
               </NavLink>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-white"
+                className="lg:hidden p-2 rounded-lg hover:bg-muted"
                 aria-label="Close sidebar"
               >
                 <X size={20} />
@@ -147,18 +147,19 @@ const DashboardLayout = () => {
       <header
         className="lg:hidden fixed top-0 left-0 right-0 h-14 z-30 flex items-center justify-between px-4"
         style={{
-          background: '#12122A',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          background: 'var(--color-bg-elevated)',
+          borderBottom: '1px solid var(--color-border)',
         }}
       >
         <button
           onClick={() => setSidebarOpen(true)}
-          className="p-2 rounded-lg hover:bg-white/10 text-white"
+          className="p-2 rounded-lg hover:bg-muted"
+          style={{ color: "var(--color-text-primary)" }}
           aria-label="Open menu"
         >
           <Menu size={22} aria-hidden="true" />
         </button>
-        <h1 style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>College App OS</h1>
+        <h1 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>College App OS</h1>
         <ThemeToggle />
       </header>
 

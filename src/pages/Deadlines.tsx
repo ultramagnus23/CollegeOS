@@ -238,8 +238,8 @@ const Deadlines = () => {
           {deadlines.map((deadline) => (
             <div 
               key={deadline.id} 
-              className={`bg-white rounded-xl shadow-sm border p-6 ${
-                deadline.is_completed ? 'border-success/30 bg-success/5' : 'border-border'
+              className={`rounded-xl border p-6 ${
+                deadline.is_completed ? 'border-success/30 bg-success/5' : 'bg-card border-border'
               }`}
             >
               <div className="flex items-start justify-between">
