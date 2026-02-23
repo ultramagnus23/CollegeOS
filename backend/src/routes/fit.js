@@ -8,6 +8,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
+const { batchLimiter } = require('../middleware/rateLimiter');
 const logger = require('../utils/logger');
 
 // Use consolidated service (primary)
@@ -89,9 +90,10 @@ router.get('/:collegeId/explain', authenticate, async (req, res) => {
 
 /**
  * POST /api/fit/batch
- * Get fit classification for multiple colleges
+ * Get fit classification for multiple colleges (max 100 per request)
+ * Returns data keyed by college ID: { 2115: {...fitData}, 2116: {...fitData} }
  */
-router.post('/batch', authenticate, async (req, res) => {
+router.post('/batch', authenticate, batchLimiter, async (req, res) => {
   try {
     const userId = req.user.id;
     const { collegeIds } = req.body;
@@ -103,26 +105,44 @@ router.post('/batch', authenticate, async (req, res) => {
       });
     }
 
-    if (collegeIds.length > 20) {
+    if (collegeIds.length > 100) {
       return res.status(400).json({
         success: false,
-        message: 'Maximum 20 colleges per batch'
+        message: 'Maximum 100 colleges per batch request'
       });
     }
 
-    const results = await FitClassificationService.classifyColleges(userId, collegeIds);
+    const validIds = collegeIds.map(id => parseInt(id)).filter(id => !isNaN(id));
+
+    const results = await Promise.all(
+      validIds.map(async (collegeId) => {
+        try {
+          const fitData = await consolidatedChancingService.classifyFit(userId, collegeId);
+          return { collegeId, fitData };
+        } catch (err) {
+          logger.warn(`Fit classification failed for college ${collegeId}:`, err.message);
+          return { collegeId, fitData: null };
+        }
+      })
+    );
+
+    // Build map keyed by college ID
+    const data = {};
+    for (const { collegeId, fitData } of results) {
+      data[collegeId] = fitData;
+    }
 
     res.json({
       success: true,
-      data: results,
-      count: results.length
+      data
     });
 
   } catch (error) {
     logger.error('Batch fit classification error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'Failed to process batch fit classification',
+      error: error.message
     });
   }
 });

@@ -48,12 +48,12 @@ const severityConfig = {
     buttonVariant: 'outline' as const
   },
   info: {
-    bg: 'bg-blue-50',
+    bg: 'bg-primary/10',
     border: 'border-blue-300',
     icon: AlertCircle,
-    iconColor: 'text-blue-600',
+    iconColor: 'text-primary',
     titleColor: 'text-blue-800',
-    descColor: 'text-blue-600',
+    descColor: 'text-primary',
     buttonVariant: 'outline' as const
   },
   success: {
@@ -87,7 +87,7 @@ const UrgentAlerts: React.FC<UrgentAlertsProps> = ({
     return (
       <div className="space-y-2">
         {[1, 2].map(i => (
-          <div key={i} className="animate-pulse h-16 bg-gray-100 rounded-lg"></div>
+          <div key={i} className="animate-pulse h-16 bg-muted rounded-lg"></div>
         ))}
       </div>
     );
@@ -137,7 +137,7 @@ const UrgentAlerts: React.FC<UrgentAlertsProps> = ({
                           ? 'bg-red-200 text-red-800' 
                           : alert.daysRemaining <= 7 
                             ? 'bg-amber-200 text-amber-800'
-                            : 'bg-gray-200 text-gray-800'
+                            : 'bg-muted text-foreground'
                       }`}>
                         {formatDaysRemaining(alert.daysRemaining)}
                       </span>
@@ -174,7 +174,7 @@ const UrgentAlerts: React.FC<UrgentAlertsProps> = ({
 
           {/* Show more if there are more alerts */}
           {urgentAlerts.length > 3 && (
-            <p className="text-sm text-gray-600 text-center">
+            <p className="text-sm text-muted-foreground text-center">
               +{urgentAlerts.length - 3} more urgent alerts
             </p>
           )}
@@ -184,7 +184,7 @@ const UrgentAlerts: React.FC<UrgentAlertsProps> = ({
       {/* Info/success alerts (collapsed) */}
       {otherAlerts.length > 0 && (
         <details className="group">
-          <summary className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+          <summary className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground">
             <AlertCircle className="w-4 h-4" />
             {otherAlerts.length} other notification{otherAlerts.length > 1 ? 's' : ''}
           </summary>

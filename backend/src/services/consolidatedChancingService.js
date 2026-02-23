@@ -37,7 +37,7 @@ async function calculateChance(studentProfile, college, options = {}) {
   
   try {
     // Try CDS-based chancing first (most accurate)
-    if (preferCDS && cdsChancingService.hasCDSData && await cdsChancingService.hasCDSData(college.id)) {
+    if (preferCDS && cdsChancingService.hasCDSData && college.name && await cdsChancingService.hasCDSData(college.name)) {
       logger.info(`Using CDS-based chancing for ${college.name}`);
       return await cdsChancingService.calculateCDSChance(studentProfile, college);
     }

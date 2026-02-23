@@ -1,42 +1,30 @@
 /**
  * FitBadge - Shows college fit classification (Reach/Target/Safety)
- * Fetches fit from API.fit.get() and displays with color coding
+ * Requires pre-fetched fit data via `fitData` prop from the page-level batch call.
+ * Does NOT make individual API calls — all fit data must come through the batch endpoint.
  */
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Target, TrendingUp, Shield } from 'lucide-react';
-import { api } from '@/services/api';
 
 interface FitBadgeProps {
-  collegeId: number;
+  /** Fit category from the page-level batch call. Renders nothing when absent or unrecognised. */
+  fitData?: string | null;
   className?: string;
 }
 
-export const FitBadge: React.FC<FitBadgeProps> = ({ collegeId, className = '' }) => {
-  const [fit, setFit] = useState<'reach' | 'target' | 'safety' | null>(null);
-  const [loading, setLoading] = useState(true);
+const VALID_FIT_CATEGORIES = ['reach', 'target', 'safety'] as const;
+type FitCategory = typeof VALID_FIT_CATEGORIES[number];
 
-  useEffect(() => {
-    fetchFit();
-  }, [collegeId]);
+export const FitBadge: React.FC<FitBadgeProps> = ({ fitData, className = '' }) => {
+  // Validate the provided fit category; render nothing if absent or unrecognised
+  if (!fitData || !VALID_FIT_CATEGORIES.includes(fitData as FitCategory)) {
+    return null;
+  }
 
-  const fetchFit = async () => {
-    try {
-      const response = await api.fit.get(collegeId);
-      if (response.success && response.data) {
-        setFit(response.data.category || response.data.fit || null);
-      }
-    } catch (error) {
-      console.error('Error fetching fit:', error);
-      // Fail silently - fit is optional
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fit = fitData as FitCategory;
 
-  if (loading || !fit) return null;
-
-  const config = {
+  const config: Record<FitCategory, { label: string; icon: React.ElementType; bgColor: string; textColor: string; borderColor: string }> = {
     reach: {
       label: 'Reach',
       icon: TrendingUp,

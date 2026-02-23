@@ -5,6 +5,9 @@
 
 const config = require('./env');
 
+// IPs that are always local — used by rate limit skip logic in development
+const LOCALHOST_IPS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
 // Validate CORS origins - never allow wildcard in production
 const getAllowedOrigins = () => {
   const origins = [
@@ -96,10 +99,10 @@ module.exports = {
 
   // Rate limiting configurations
   rateLimits: {
-    // General API rate limit
+    // General API rate limit — relaxed in development to avoid blocking localhost
     general: {
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 100, // 100 requests per window
+      max: config.isProduction ? 100 : 1000, // 1000 req/window in dev, 100 in prod
       message: {
         success: false,
         message: 'Too many requests. Please try again later.',
@@ -108,6 +111,7 @@ module.exports = {
       standardHeaders: true,
       legacyHeaders: false,
       keyGenerator: (req) => req.ip,
+      skip: (req) => !config.isProduction && LOCALHOST_IPS.has(req.ip),
     },
     // Strict rate limit for auth endpoints
     auth: {
@@ -148,6 +152,32 @@ module.exports = {
       standardHeaders: true,
       legacyHeaders: false,
       keyGenerator: (req) => req.user?.userId || req.ip,
+    },
+    // Batch endpoints - per-user limit to prevent abuse
+    batch: {
+      windowMs: 60 * 1000, // 1 minute
+      max: 20, // 20 batch requests per minute per user
+      message: {
+        success: false,
+        message: 'Batch request limit exceeded. Please try again later.',
+        code: 'BATCH_RATE_LIMIT_EXCEEDED',
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+      keyGenerator: (req) => req.user?.id || req.ip,
+    },
+    // Polling endpoints (e.g. unread notification count) - per-user limit
+    polling: {
+      windowMs: 60 * 60 * 1000, // 1 hour
+      max: 60, // max 60 polls per hour per user (~1/min sustained)
+      message: {
+        success: false,
+        message: 'Polling rate limit exceeded. Please slow down.',
+        code: 'POLLING_RATE_LIMIT_EXCEEDED',
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+      keyGenerator: (req) => req.user?.id || req.ip,
     },
   },
 

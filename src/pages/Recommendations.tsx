@@ -1,5 +1,5 @@
 // src/pages/Recommendations.tsx — Dark Editorial Redesign
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import { toast } from 'sonner';
 
@@ -27,8 +27,17 @@ const h2r = (hex: string, a: number) => {
   return `rgba(${r},${g},${b},${a})`;
 };
 const ACCENT = '#F59E0B'; // gold — recommendation/trust theme
-const S = { bg:'#080810', surface:'#0F0F1C', border:'rgba(255,255,255,0.08)', border2:'rgba(255,255,255,0.13)', muted:'rgba(255,255,255,0.45)', dim:'rgba(255,255,255,0.22)', font:"'DM Sans',sans-serif" };
-const inp: React.CSSProperties = { width:'100%', padding:'10px 14px', background:'rgba(255,255,255,0.05)', border:`1px solid ${S.border2}`, borderRadius:10, color:'#fff', fontSize:14, fontFamily:S.font };
+const S = {
+  bg: 'var(--color-bg-primary)',
+  surface: 'var(--color-bg-surface)',
+  surface2: 'var(--color-surface-subtle)',
+  border: 'var(--color-border)',
+  border2: 'var(--color-border-strong)',
+  muted: 'var(--color-text-secondary)',
+  dim: 'var(--color-text-disabled)',
+  font: "'DM Sans',sans-serif",
+};
+const inp: React.CSSProperties = { width:'100%', padding:'10px 14px', background:S.surface2, border:`1px solid ${S.border2}`, borderRadius:10, color:'var(--color-text-primary)', fontSize:14, fontFamily:S.font };
 const lbl: React.CSSProperties = { fontSize:11, color:S.dim, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6, fontWeight:600, display:'block', fontFamily:S.font };
 
 const REC_TYPES: Record<string,{emoji:string;label:string;color:string}> = {
@@ -36,11 +45,11 @@ const REC_TYPES: Record<string,{emoji:string;label:string;color:string}> = {
   counselor: { emoji:'🧭', label:'Counselor', color:'#10B981' },
   mentor:    { emoji:'⭐', label:'Mentor',    color:'#A855F7' },
   employer:  { emoji:'💼', label:'Employer',  color:'#F97316' },
-  other:     { emoji:'👤', label:'Other',     color:'rgba(255,255,255,0.4)' },
+  other:     { emoji:'👤', label:'Other',     color:S.dim },
 };
 
 const STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
-  not_requested: { label:'Not Requested', color:'rgba(255,255,255,0.4)', bg:'rgba(255,255,255,0.06)' },
+  not_requested: { label:'Not Requested', color:S.dim, bg:'rgba(255,255,255,0.06)' },
   requested:     { label:'Requested',     color:'#FBBF24', bg:'rgba(251,191,36,0.12)' },
   in_progress:   { label:'In Progress',   color:'#3B9EFF', bg:'rgba(59,158,255,0.12)' },
   submitted:     { label:'Submitted',     color:'#10B981', bg:'rgba(16,185,129,0.12)' },
@@ -49,10 +58,10 @@ const STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
 
 const GLOBAL = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0;}body{background:#080810;}
+  *{box-sizing:border-box;margin:0;padding:0;}
   @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
   @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-  input::placeholder,textarea::placeholder{color:rgba(255,255,255,0.2)!important;}
+  input::placeholder,textarea::placeholder{color:var(--color-text-disabled)!important;}
   select option{background:#0F0F1C;color:#fff;}
   ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
 `;
@@ -79,7 +88,7 @@ const RecommenderCard: React.FC<{
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <div style={{ width: 44, height: 44, borderRadius: 12, background: h2r(type.color, 0.15), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{type.emoji}</div>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: S.font }}>{rec.name}</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font }}>{rec.name}</div>
             <div style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(type.color, 0.15), color: type.color, fontWeight: 600, display: 'inline-block', marginTop: 4, fontFamily: S.font }}>{type.label}</div>
           </div>
         </div>
@@ -147,7 +156,7 @@ const RequestRow: React.FC<{
     }}>
       <div style={{ flex: 1, minWidth: 220 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: '#fff', fontFamily: S.font }}>{req.recommender_name}</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', fontFamily: S.font }}>{req.recommender_name}</span>
           <span style={{ fontSize: 12, color: S.dim, fontFamily: S.font }}>for</span>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#3B9EFF', fontFamily: S.font }}>{req.college_name || 'General'}</span>
         </div>
@@ -265,7 +274,7 @@ const Recommendations = () => {
   return (
     <>
       <style>{GLOBAL}</style>
-      <div style={{ minHeight:'100vh', background:S.bg, color:'#fff', fontFamily:S.font }}>
+      <div style={{ minHeight:'100vh', background:S.bg, color:'var(--color-text-primary)', fontFamily:S.font }}>
 
         {/* Header */}
         <div style={{ padding:'44px 48px 0', background:`linear-gradient(180deg,${h2r(ACCENT,0.07)} 0%,transparent 100%)`, borderBottom:`1px solid ${S.border}` }}>

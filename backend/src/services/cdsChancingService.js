@@ -36,6 +36,12 @@ function loadCDSData() {
  * @returns {string|null} CDS key or null
  */
 function getCDSKey(collegeName) {
+  // Guard: collegeName must be a non-empty string. Numeric IDs, null, or undefined
+  // are invalid — return null so callers fall through to their fallback.
+  if (!collegeName || typeof collegeName !== 'string') {
+    return null;
+  }
+
   const data = loadCDSData();
   
   // Direct match

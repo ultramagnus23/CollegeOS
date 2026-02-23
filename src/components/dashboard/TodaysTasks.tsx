@@ -77,12 +77,12 @@ const TodaysTasks: React.FC<TodaysTasksProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-card rounded-xl shadow-sm border border-border p-6">
         <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="h-6 bg-muted rounded w-1/3 mb-4"></div>
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-16 bg-gray-100 rounded"></div>
+              <div key={i} className="h-16 bg-muted rounded"></div>
             ))}
           </div>
         </div>
@@ -91,14 +91,14 @@ const TodaysTasks: React.FC<TodaysTasksProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div className="bg-card rounded-xl shadow-sm border border-border p-6">
       {/* Header with progress */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-indigo-600" />
-          <h3 className="font-bold text-gray-900">Today's Tasks</h3>
+          <h3 className="font-bold text-foreground">Today's Tasks</h3>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>{completedToday}/{tasks.length} done</span>
         </div>
       </div>
@@ -106,7 +106,7 @@ const TodaysTasks: React.FC<TodaysTasksProps> = ({
       {/* Progress bar */}
       <div className="mb-6">
         <Progress value={progressPercent} className="h-2" />
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           {progressPercent === 100 
             ? '🎉 All done for today!' 
             : `${100 - progressPercent}% remaining`}
@@ -117,8 +117,8 @@ const TodaysTasks: React.FC<TodaysTasksProps> = ({
       {sortedTasks.length === 0 ? (
         <div className="text-center py-8">
           <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-          <p className="text-gray-600 font-medium">All caught up!</p>
-          <p className="text-sm text-gray-500">No pending tasks for today</p>
+          <p className="text-muted-foreground font-medium">All caught up!</p>
+          <p className="text-sm text-muted-foreground">No pending tasks for today</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -139,13 +139,13 @@ const TodaysTasks: React.FC<TodaysTasksProps> = ({
 
                 {/* Task content */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{task.title}</p>
+                  <p className="font-medium text-foreground truncate">{task.title}</p>
                   <div className="flex items-center gap-2 text-sm">
                     {task.college && (
-                      <span className="text-gray-600">{task.college}</span>
+                      <span className="text-muted-foreground">{task.college}</span>
                     )}
                     {task.estimatedTime && (
-                      <span className="text-gray-500">• {task.estimatedTime} min</span>
+                      <span className="text-muted-foreground">• {task.estimatedTime} min</span>
                     )}
                   </div>
                 </div>

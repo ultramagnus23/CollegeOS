@@ -416,7 +416,7 @@ const SCROLL_DELAY_MS = 100;
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -425,8 +425,8 @@ const SCROLL_DELAY_MS = 100;
     <div className="p-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-        <p className="text-gray-600">Manage your profile and preferences</p>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
+        <p className="text-muted-foreground">Manage your profile and preferences</p>
       </div>
 
       {/* Save Message */}
@@ -450,7 +450,7 @@ const SCROLL_DELAY_MS = 100;
       <div className="flex gap-6">
         {/* Section Navigation - Fixed Sidebar */}
         <nav className="hidden md:block w-48 flex-shrink-0">
-          <div className="sticky top-8 bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-1">
+          <div className="sticky top-8 bg-card rounded-xl border border-border p-4 space-y-1">
             {SECTIONS.map((section) => {
               const Icon = section.icon;
               const isActive = activeSection === section.id;
@@ -460,8 +460,8 @@ const SCROLL_DELAY_MS = 100;
                   onClick={() => navigateToSection(section.id)}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive 
-                      ? 'bg-blue-50 text-blue-600 border border-blue-200' 
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-primary/10 text-primary border border-primary/30' 
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   }`}
                 >
                   <Icon size={16} />
@@ -484,8 +484,8 @@ const SCROLL_DELAY_MS = 100;
                   onClick={() => navigateToSection(section.id)}
                   className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                     isActive 
-                      ? 'bg-blue-50 text-blue-600 border border-blue-200' 
-                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                      ? 'bg-primary/10 text-primary border border-primary/30' 
+                      : 'bg-card text-muted-foreground border border-border hover:bg-muted'
                   }`}
                 >
                   <Icon size={14} />
@@ -502,12 +502,12 @@ const SCROLL_DELAY_MS = 100;
           <div 
             ref={(el) => { sectionRefs.current.basic = el; }}
             id="basic"
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+            className="bg-card rounded-xl border border-border p-6"
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <UserIcon className="text-blue-600" size={24} />
-                <h2 className="text-xl font-bold text-gray-900">Basic Information</h2>
+                <UserIcon className="text-primary" size={24} />
+                <h2 className="text-xl font-bold text-foreground">Basic Information</h2>
               </div>
               <Button
                 variant={editMode.basic ? "ghost" : "outline"}
@@ -608,22 +608,22 @@ const SCROLL_DELAY_MS = 100;
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-gray-500 text-sm">Full Name</Label>
-                <p className="text-gray-900 font-medium">
+                <Label className="text-muted-foreground text-sm">Full Name</Label>
+                <p className="text-foreground font-medium">
                   {`${profileData?.profile?.first_name || ''} ${profileData?.profile?.last_name || ''}`.trim() || 'Not set'}
                 </p>
               </div>
               <div>
-                <Label className="text-gray-500 text-sm">Email</Label>
-                <p className="text-gray-900 font-medium">{profileData?.profile?.email || profileData?.user?.email || 'Not set'}</p>
+                <Label className="text-muted-foreground text-sm">Email</Label>
+                <p className="text-foreground font-medium">{profileData?.profile?.email || profileData?.user?.email || 'Not set'}</p>
               </div>
               <div>
-                <Label className="text-gray-500 text-sm">Country</Label>
-                <p className="text-gray-900 font-medium">{profileData?.profile?.country || profileData?.user?.country || 'Not set'}</p>
+                <Label className="text-muted-foreground text-sm">Country</Label>
+                <p className="text-foreground font-medium">{profileData?.profile?.country || profileData?.user?.country || 'Not set'}</p>
               </div>
               <div>
-                <Label className="text-gray-500 text-sm">Grade Level</Label>
-                <p className="text-gray-900 font-medium">{profileData?.profile?.grade_level || 'Not set'}</p>
+                <Label className="text-muted-foreground text-sm">Grade Level</Label>
+                <p className="text-foreground font-medium">{profileData?.profile?.grade_level || 'Not set'}</p>
               </div>
             </div>
           )}
@@ -633,12 +633,12 @@ const SCROLL_DELAY_MS = 100;
         <div 
           ref={(el) => { sectionRefs.current.academic = el; }}
           id="academic"
-          className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+          className="bg-card rounded-xl border border-border p-6"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <BookOpen className="text-green-600" size={24} />
-              <h2 className="text-xl font-bold text-gray-900">Academic Profile</h2>
+              <h2 className="text-xl font-bold text-foreground">Academic Profile</h2>
             </div>
             <Button
               variant={editMode.academic ? "ghost" : "outline"}
@@ -751,18 +751,18 @@ const SCROLL_DELAY_MS = 100;
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label className="text-gray-500 text-sm">Curriculum</Label>
-                <p className="text-gray-900 font-medium">{profileData?.profile?.curriculum_type || 'Not set'}</p>
+                <Label className="text-muted-foreground text-sm">Curriculum</Label>
+                <p className="text-foreground font-medium">{profileData?.profile?.curriculum_type || 'Not set'}</p>
               </div>
               <div>
-                <Label className="text-gray-500 text-sm">GPA</Label>
-                <p className="text-gray-900 font-medium">
+                <Label className="text-muted-foreground text-sm">GPA</Label>
+                <p className="text-foreground font-medium">
                   {profileData?.profile?.gpa_weighted || profileData?.profile?.gpa_unweighted || 'Not set'}
                 </p>
               </div>
               <div>
-                <Label className="text-gray-500 text-sm">Class Rank</Label>
-                <p className="text-gray-900 font-medium">
+                <Label className="text-muted-foreground text-sm">Class Rank</Label>
+                <p className="text-foreground font-medium">
                   {profileData?.profile?.class_rank && profileData?.profile?.class_size 
                     ? `${profileData.profile.class_rank}/${profileData.profile.class_size}` 
                     : 'Not set'}
@@ -776,12 +776,12 @@ const SCROLL_DELAY_MS = 100;
         <div 
           ref={(el) => { sectionRefs.current['test-scores'] = el; }}
           id="test-scores"
-          className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+          className="bg-card rounded-xl border border-border p-6"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <TestTube className="text-purple-600" size={24} />
-              <h2 className="text-xl font-bold text-gray-900">Test Scores</h2>
+              <h2 className="text-xl font-bold text-foreground">Test Scores</h2>
             </div>
             <Button
               variant={editMode.testScores ? "ghost" : "outline"}
@@ -796,8 +796,8 @@ const SCROLL_DELAY_MS = 100;
           {editMode.testScores ? (
             <div className="space-y-6">
               {/* SAT */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-3">SAT Scores</h3>
+              <div className="bg-muted rounded-lg p-4">
+                <h3 className="font-medium text-foreground mb-3">SAT Scores</h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label>Total</Label>
@@ -839,8 +839,8 @@ const SCROLL_DELAY_MS = 100;
               </div>
 
               {/* ACT */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-3">ACT Score</h3>
+              <div className="bg-muted rounded-lg p-4">
+                <h3 className="font-medium text-foreground mb-3">ACT Score</h3>
                 <div className="max-w-xs">
                   <Label>Composite</Label>
                   <Input 
@@ -856,8 +856,8 @@ const SCROLL_DELAY_MS = 100;
               </div>
 
               {/* English Proficiency */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-3">English Proficiency</h3>
+              <div className="bg-muted rounded-lg p-4">
+                <h3 className="font-medium text-foreground mb-3">English Proficiency</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>IELTS</Label>
@@ -897,21 +897,21 @@ const SCROLL_DELAY_MS = 100;
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <Label className="text-gray-500 text-sm">SAT</Label>
-                <p className="text-gray-900 font-medium text-lg">{profileData?.profile?.sat_total || '—'}</p>
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <Label className="text-muted-foreground text-sm">SAT</Label>
+                <p className="text-foreground font-medium text-lg">{profileData?.profile?.sat_total || '—'}</p>
               </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <Label className="text-gray-500 text-sm">ACT</Label>
-                <p className="text-gray-900 font-medium text-lg">{profileData?.profile?.act_composite || '—'}</p>
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <Label className="text-muted-foreground text-sm">ACT</Label>
+                <p className="text-foreground font-medium text-lg">{profileData?.profile?.act_composite || '—'}</p>
               </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <Label className="text-gray-500 text-sm">IELTS</Label>
-                <p className="text-gray-900 font-medium text-lg">{profileData?.profile?.ielts_score || '—'}</p>
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <Label className="text-muted-foreground text-sm">IELTS</Label>
+                <p className="text-foreground font-medium text-lg">{profileData?.profile?.ielts_score || '—'}</p>
               </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <Label className="text-gray-500 text-sm">TOEFL</Label>
-                <p className="text-gray-900 font-medium text-lg">{profileData?.profile?.toefl_score || '—'}</p>
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <Label className="text-muted-foreground text-sm">TOEFL</Label>
+                <p className="text-foreground font-medium text-lg">{profileData?.profile?.toefl_score || '—'}</p>
               </div>
             </div>
           )}
@@ -921,12 +921,12 @@ const SCROLL_DELAY_MS = 100;
         <div 
           ref={(el) => { sectionRefs.current.preferences = el; }}
           id="preferences"
-          className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+          className="bg-card rounded-xl border border-border p-6"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Heart className="text-pink-600" size={24} />
-              <h2 className="text-xl font-bold text-gray-900">Preferences</h2>
+              <h2 className="text-xl font-bold text-foreground">Preferences</h2>
             </div>
             <Button
               variant={editMode.preferences ? "ghost" : "outline"}
@@ -949,8 +949,8 @@ const SCROLL_DELAY_MS = 100;
                       onClick={() => toggleArrayValue('intended_majors', major)}
                       className={`px-3 py-1.5 rounded-full text-sm transition-all
                         ${formData.intended_majors?.includes(major) 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                          ? 'bg-primary text-white' 
+                          : 'bg-muted text-foreground hover:bg-muted'}`}
                     >
                       {major}
                     </button>
@@ -968,7 +968,7 @@ const SCROLL_DELAY_MS = 100;
                       className={`px-3 py-1.5 rounded-full text-sm transition-all
                         ${formData.preferred_countries?.includes(country) 
                           ? 'bg-green-600 text-white' 
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                          : 'bg-muted text-foreground hover:bg-muted'}`}
                     >
                       {country}
                     </button>
@@ -1037,7 +1037,7 @@ const SCROLL_DELAY_MS = 100;
           ) : (
             <div className="space-y-4">
               <div>
-                <Label className="text-gray-500 text-sm">Intended Majors</Label>
+                <Label className="text-muted-foreground text-sm">Intended Majors</Label>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {(profileData?.profile?.intendedMajors || profileData?.profile?.intended_majors || []).length > 0 ? (
                     (profileData?.profile?.intendedMajors || profileData?.profile?.intended_majors || []).map((major: string) => (
@@ -1046,12 +1046,12 @@ const SCROLL_DELAY_MS = 100;
                       </span>
                     ))
                   ) : (
-                    <span className="text-gray-500 text-sm">Not set</span>
+                    <span className="text-muted-foreground text-sm">Not set</span>
                   )}
                 </div>
               </div>
               <div>
-                <Label className="text-gray-500 text-sm">Preferred Countries</Label>
+                <Label className="text-muted-foreground text-sm">Preferred Countries</Label>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {(profileData?.profile?.preferredCountries || profileData?.profile?.preferred_countries || []).length > 0 ? (
                     (profileData?.profile?.preferredCountries || profileData?.profile?.preferred_countries || []).map((country: string) => (
@@ -1060,7 +1060,7 @@ const SCROLL_DELAY_MS = 100;
                       </span>
                     ))
                   ) : (
-                    <span className="text-gray-500 text-sm">Not set</span>
+                    <span className="text-muted-foreground text-sm">Not set</span>
                   )}
                 </div>
               </div>
@@ -1072,12 +1072,12 @@ const SCROLL_DELAY_MS = 100;
         <div 
           ref={(el) => { sectionRefs.current.activities = el; }}
           id="activities"
-          className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+          className="bg-card rounded-xl border border-border p-6"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Trophy className="text-yellow-600" size={24} />
-              <h2 className="text-xl font-bold text-gray-900">Extracurricular Activities</h2>
+              <h2 className="text-xl font-bold text-foreground">Extracurricular Activities</h2>
             </div>
           </div>
 
@@ -1085,22 +1085,22 @@ const SCROLL_DELAY_MS = 100;
           <div className="space-y-3 mb-6">
             {profileData?.activities && profileData.activities.length > 0 ? (
               profileData.activities.map((activity: any) => (
-                <div key={activity.id} className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
+                <div key={activity.id} className="flex items-start justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">{activity.activity_name}</span>
-                      <span className="px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-xs">
+                      <span className="font-medium text-foreground">{activity.activity_name}</span>
+                      <span className="px-2 py-0.5 bg-muted text-muted-foreground rounded text-xs">
                         {activity.activity_type}
                       </span>
                     </div>
                     {activity.position_title && (
-                      <p className="text-sm text-gray-600 mt-1">{activity.position_title}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{activity.position_title}</p>
                     )}
                     {activity.description && (
-                      <p className="text-sm text-gray-500 mt-1">{activity.description}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
                     )}
                     {(activity.hours_per_week || activity.weeks_per_year) && (
-                      <p className="text-xs text-gray-400 mt-2">
+                      <p className="text-xs text-muted-foreground mt-2">
                         {activity.hours_per_week} hrs/week • {activity.weeks_per_year} weeks/year
                       </p>
                     )}
@@ -1115,13 +1115,13 @@ const SCROLL_DELAY_MS = 100;
                 </div>
               ))
             ) : (
-              <p className="text-gray-500 text-center py-4">No activities added yet</p>
+              <p className="text-muted-foreground text-center py-4">No activities added yet</p>
             )}
           </div>
 
           {/* Add Activity Form */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+          <div className="bg-muted rounded-lg p-4">
+            <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
               <Plus size={18} />
               Add New Activity
             </h3>
