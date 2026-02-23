@@ -410,7 +410,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
         <div className="flex items-center gap-2 mt-2">
           <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{college.type}</span>
           <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{college.country}</span>
-          <FitBadge collegeId={college.id} fitData={fit} className="ml-auto" />
+          <FitBadge fitData={fit} className="ml-auto" />
         </div>
       </div>
 

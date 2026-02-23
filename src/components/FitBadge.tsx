@@ -1,52 +1,30 @@
 /**
  * FitBadge - Shows college fit classification (Reach/Target/Safety)
- * Accepts pre-fetched fit data via `fitData` prop (preferred, avoids individual API call),
- * or falls back to fetching from API.fit.get() when rendering standalone.
+ * Requires pre-fetched fit data via `fitData` prop from the page-level batch call.
+ * Does NOT make individual API calls — all fit data must come through the batch endpoint.
  */
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Target, TrendingUp, Shield } from 'lucide-react';
-import { api } from '@/services/api';
 
 interface FitBadgeProps {
-  collegeId: number;
-  /** Pre-fetched fit category from a batch call. When provided, no individual API call is made. */
+  /** Fit category from the page-level batch call. Renders nothing when absent or unrecognised. */
   fitData?: string | null;
   className?: string;
 }
 
-export const FitBadge: React.FC<FitBadgeProps> = ({ collegeId, fitData, className = '' }) => {
-  const [fit, setFit] = useState<'reach' | 'target' | 'safety' | null>(null);
-  const [loading, setLoading] = useState(!fitData);
+const VALID_FIT_CATEGORIES = ['reach', 'target', 'safety'] as const;
+type FitCategory = typeof VALID_FIT_CATEGORIES[number];
 
-  useEffect(() => {
-    // If pre-fetched data is provided, use it directly — no API call needed
-    if (fitData !== undefined) {
-      const valid: Array<'reach' | 'target' | 'safety'> = ['reach', 'target', 'safety'];
-      setFit(fitData && valid.includes(fitData as 'reach' | 'target' | 'safety') ? (fitData as 'reach' | 'target' | 'safety') : null);
-      setLoading(false);
-      return;
-    }
-    fetchFit();
-  }, [collegeId, fitData]);
+export const FitBadge: React.FC<FitBadgeProps> = ({ fitData, className = '' }) => {
+  // Validate the provided fit category; render nothing if absent or unrecognised
+  if (!fitData || !VALID_FIT_CATEGORIES.includes(fitData as FitCategory)) {
+    return null;
+  }
 
-  const fetchFit = async () => {
-    try {
-      const response = await api.fit.get(collegeId);
-      if (response.success && response.data) {
-        setFit(response.data.category || response.data.fit || null);
-      }
-    } catch (error) {
-      console.error('Error fetching fit:', error);
-      // Fail silently - fit is optional
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fit = fitData as FitCategory;
 
-  if (loading || !fit) return null;
-
-  const config = {
+  const config: Record<FitCategory, { label: string; icon: React.ElementType; bgColor: string; textColor: string; borderColor: string }> = {
     reach: {
       label: 'Reach',
       icon: TrendingUp,
