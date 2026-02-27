@@ -469,10 +469,27 @@ interface College {
     sat25?: number | null;
     sat50?: number | null;
     sat75?: number | null;
+    sat_range?: string | null;
     act25?: number | null;
     act50?: number | null;
     act75?: number | null;
+    act_range?: string | null;
     source?: string;
+  };
+  // Allow accessing hypothetical nested shapes from alternate API responses
+  student_stats?: {
+    sat_range?: string | null;
+    act_range?: string | null;
+  };
+  financial?: {
+    avg_net_price?: number | null;
+  };
+  outcomes?: {
+    median_debt?: number | null;
+    median_salary_6yr?: number | null;
+    median_salary_10yr?: number | null;
+    retention_rate?: number | null;
+    graduation_rate_4yr?: number | null;
   };
   financialData?: {
     year?: number;
@@ -481,8 +498,10 @@ interface College {
     tuitionInternational?: number | null;
     costOfAttendance?: number | null;
     avgFinancialAid?: number | null;
+    avgNetPrice?: number | null;
     percentReceivingAid?: number | null;
     avgDebt?: number | null;
+    medianDebt?: number | null;
     netPriceLowIncome?: number | null;
     netPriceMidIncome?: number | null;
     netPriceHighIncome?: number | null;
@@ -495,7 +514,9 @@ interface College {
     retentionRate?: number | null;
     employmentRate?: number | null;
     medianStartSalary?: number | null;
+    medianSalary6yr?: number | null;
     medianMidCareerSalary?: number | null;
+    medianSalary10yr?: number | null;
     salaryGrowthRate?: number | null;
     employedAt6MonthsRate?: number | null;
     employedInFieldRate?: number | null;
@@ -507,8 +528,41 @@ interface College {
     genderRatio?: string | null;
     ethnicDistribution?: Record<string, number>;
     percentFirstGen?: number | null;
+    // Flat demographic percentage fields (0-1 decimal)
+    percentMale?: number | null;
+    percentFemale?: number | null;
+    percentNonbinary?: number | null;
+    percentWhite?: number | null;
+    percentBlack?: number | null;
+    percentHispanic?: number | null;
+    percentAsian?: number | null;
+    percentNativeAmerican?: number | null;
+    percentPacificIslander?: number | null;
+    percentMultiracial?: number | null;
+    // Alternate snake_case paths from possible API variations
+    percent_male?: number | null;
+    percent_female?: number | null;
+    percent_white?: number | null;
+    percent_black?: number | null;
+    percent_hispanic?: number | null;
+    percent_asian?: number | null;
+    percent_international?: number | null;
     source?: string;
   };
+  // Top-level fields for alternate API shapes / direct fallback paths
+  alternate_names?: string | null;
+  religious_affiliation?: string | null;
+  avg_net_price?: number | null;
+  median_debt?: number | null;
+  median_salary_6yr?: number | null;
+  median_salary_10yr?: number | null;
+  percent_male?: number | null;
+  percent_female?: number | null;
+  percent_white?: number | null;
+  percent_black?: number | null;
+  percent_hispanic?: number | null;
+  percent_asian?: number | null;
+  percent_international?: number | null;
   campusLife?: {
     housingGuarantee?: string | null;
     campusSafetyScore?: number | null;
@@ -658,7 +712,170 @@ const CollegeDetail: React.FC = () => {
 
   const acceptanceRate = college.acceptanceRate ?? college.acceptance_rate;
   const testScores = college.testScores || {};
-  
+
+  /* =========================
+     Robust Field Resolvers
+     Each resolver checks multiple possible paths before returning null.
+  ========================= */
+
+  // Parse a "low-high" range string like "1510-1570" into { low, high }
+  const parseRangeString = (s: string | null | undefined): { low: number; high: number } | null => {
+    if (!s) return null;
+    const parts = s.split('-');
+    if (parts.length !== 2) return null;
+    const low = parseInt(parts[0].trim(), 10);
+    const high = parseInt(parts[1].trim(), 10);
+    if (!isNaN(low) && !isNaN(high)) return { low, high };
+    return null;
+  };
+
+  // Average Net Price
+  const resolvedAvgNetPrice: number | null =
+    college.financialData?.avgNetPrice ??
+    college.financialData?.avgFinancialAid ??
+    (college as any).financial?.avg_net_price ??
+    college.avg_net_price ??
+    null;
+
+  // Median Student Debt
+  const resolvedMedianDebt: number | null =
+    college.financialData?.medianDebt ??
+    college.financialData?.avgDebt ??
+    (college as any).outcomes?.median_debt ??
+    college.median_debt ??
+    null;
+
+  // SAT range: prefer separate percentile fields, fall back to range string
+  const resolvedSATRange: { low: number; high: number } | null = (() => {
+    if (college.studentStats?.sat25 && college.studentStats?.sat75) {
+      return { low: college.studentStats.sat25, high: college.studentStats.sat75 };
+    }
+    if (testScores.satRange) {
+      return { low: testScores.satRange.percentile25, high: testScores.satRange.percentile75 };
+    }
+    return (
+      parseRangeString(college.studentStats?.sat_range) ??
+      parseRangeString(college.student_stats?.sat_range) ??
+      null
+    );
+  })();
+
+  // ACT range: prefer separate percentile fields, fall back to range string
+  const resolvedACTRange: { low: number; high: number } | null = (() => {
+    if (college.studentStats?.act25 && college.studentStats?.act75) {
+      return { low: college.studentStats.act25, high: college.studentStats.act75 };
+    }
+    if (testScores.actRange) {
+      return { low: testScores.actRange.percentile25, high: testScores.actRange.percentile75 };
+    }
+    return (
+      parseRangeString(college.studentStats?.act_range) ??
+      parseRangeString(college.student_stats?.act_range) ??
+      null
+    );
+  })();
+
+  // Median Salary 6yr (start salary)
+  const resolvedSalary6yr: number | null =
+    college.academicOutcomes?.medianSalary6yr ??
+    college.academicOutcomes?.medianStartSalary ??
+    (college as any).outcomes?.median_salary_6yr ??
+    college.median_salary_6yr ??
+    null;
+
+  // Median Salary 10yr (mid-career)
+  const resolvedSalary10yr: number | null =
+    college.academicOutcomes?.medianSalary10yr ??
+    college.academicOutcomes?.medianMidCareerSalary ??
+    (college as any).outcomes?.median_salary_10yr ??
+    college.median_salary_10yr ??
+    null;
+
+  // Retention Rate
+  const resolvedRetentionRate: number | null =
+    college.academicOutcomes?.retentionRate ??
+    (college as any).outcomes?.retention_rate ??
+    null;
+
+  // 4yr Graduation Rate
+  const resolvedGradRate4yr: number | null =
+    college.academicOutcomes?.graduationRate4yr ??
+    (college as any).outcomes?.graduation_rate_4yr ??
+    null;
+
+  // Religious Affiliation
+  const resolvedReligiousAffiliation: string | null =
+    college.comprehensiveData?.religiousAffiliation ??
+    college.religious_affiliation ??
+    null;
+
+  // Alternate Names
+  const resolvedAlternateNames: string | null =
+    college.comprehensiveData?.alternateName ??
+    college.alternate_names ??
+    null;
+
+  // Demographics: flat percent fields (prefer camelCase from model, fall back to snake_case)
+  const resolvedPercentMale: number | null =
+    college.demographics?.percentMale ??
+    college.demographics?.percent_male ??
+    college.percent_male ??
+    null;
+  const resolvedPercentFemale: number | null =
+    college.demographics?.percentFemale ??
+    college.demographics?.percent_female ??
+    college.percent_female ??
+    null;
+  const resolvedPercentWhite: number | null =
+    college.demographics?.percentWhite ??
+    college.demographics?.percent_white ??
+    college.percent_white ??
+    null;
+  const resolvedPercentBlack: number | null =
+    college.demographics?.percentBlack ??
+    college.demographics?.percent_black ??
+    college.percent_black ??
+    null;
+  const resolvedPercentHispanic: number | null =
+    college.demographics?.percentHispanic ??
+    college.demographics?.percent_hispanic ??
+    college.percent_hispanic ??
+    null;
+  const resolvedPercentAsian: number | null =
+    college.demographics?.percentAsian ??
+    college.demographics?.percent_asian ??
+    college.percent_asian ??
+    null;
+  const resolvedPercentNativeAmerican: number | null =
+    college.demographics?.percentNativeAmerican ?? null;
+  const resolvedPercentMultiracial: number | null =
+    college.demographics?.percentMultiracial ?? null;
+  const resolvedPercentInternational: number | null =
+    college.demographics?.percentInternational ??
+    college.demographics?.percent_international ??
+    college.percent_international ??
+    null;
+
+  // Build flat ethnicity map from flat fields (used when ethnicDistribution is empty/missing)
+  const flatEthnicityMap: Record<string, number> = {};
+  if (resolvedPercentWhite != null) flatEthnicityMap['White'] = resolvedPercentWhite;
+  if (resolvedPercentBlack != null) flatEthnicityMap['Black'] = resolvedPercentBlack;
+  if (resolvedPercentHispanic != null) flatEthnicityMap['Hispanic'] = resolvedPercentHispanic;
+  if (resolvedPercentAsian != null) flatEthnicityMap['Asian'] = resolvedPercentAsian;
+  if (resolvedPercentNativeAmerican != null) flatEthnicityMap['Native American'] = resolvedPercentNativeAmerican;
+  if (resolvedPercentMultiracial != null) flatEthnicityMap['Multiracial'] = resolvedPercentMultiracial;
+
+  // Resolved ethnicity distribution: prefer existing ethnicDistribution, fall back to flat fields
+  const resolvedEthnicDistribution: Record<string, number> =
+    (college.demographics?.ethnicDistribution && Object.keys(college.demographics.ethnicDistribution).length > 0)
+      ? college.demographics.ethnicDistribution
+      : flatEthnicityMap;
+
+  // Determine if we have gender data
+  const hasGenderData = resolvedPercentMale != null || resolvedPercentFemale != null || !!college.demographics?.genderRatio;
+  // Determine if we have ethnicity data
+  const hasEthnicityData = Object.keys(resolvedEthnicDistribution).length > 0;
+
   // Get dynamic gradient based on country
   const heroGradient = getCountryGradient(college.country);
 
@@ -783,12 +1000,8 @@ const CollegeDetail: React.FC = () => {
             
             {/* Show net price prominently if available */}
             {(() => {
-              // Try to get average net price from financial data
-              const avgNetPrice = college.financialData?.netPriceLowIncome || 
-                                 college.financialData?.netPriceMidIncome || 
-                                 college.financialData?.netPriceHighIncome;
-              if (avgNetPrice) {
-                return <QuickStat label="Avg Net Price" value={`$${avgNetPrice.toLocaleString()}`} />;
+              if (resolvedAvgNetPrice) {
+                return <QuickStat label="Avg Net Price" value={`$${resolvedAvgNetPrice.toLocaleString()}`} />;
               }
               // Fallback to tuition
               const tuitionStr = formatCurrency(college.tuition_cost, college.country);
@@ -796,8 +1009,8 @@ const CollegeDetail: React.FC = () => {
             })()}
             
             {/* Show retention rate if available */}
-            {college.academicOutcomes?.retentionRate && (
-              <QuickStat label="Retention Rate" value={`${(college.academicOutcomes.retentionRate * 100).toFixed(1)}%`} />
+            {resolvedRetentionRate != null && (
+              <QuickStat label="Retention Rate" value={`${(resolvedRetentionRate * 100).toFixed(1)}%`} />
             )}
             
             {/* Show average GPA/SAT if available */}
@@ -935,11 +1148,11 @@ const CollegeDetail: React.FC = () => {
                   )}
                   
                   {/* 4-Year Graduation Rate */}
-                  {(college.academicOutcomes?.graduationRate4yr || college.graduationRates?.fourYear) && (
+                  {(resolvedGradRate4yr != null || college.graduationRates?.fourYear) && (
                     <StatItem 
                       label="4-Year Grad Rate" 
-                      value={college.academicOutcomes?.graduationRate4yr 
-                        ? `${(college.academicOutcomes.graduationRate4yr * 100).toFixed(1)}%`
+                      value={resolvedGradRate4yr != null
+                        ? `${(resolvedGradRate4yr * 100).toFixed(1)}%`
                         : `${college.graduationRates?.fourYear}%`
                       } 
                       icon={<Award />} 
@@ -947,10 +1160,10 @@ const CollegeDetail: React.FC = () => {
                   )}
                   
                   {/* Retention Rate */}
-                  {college.academicOutcomes?.retentionRate && (
+                  {resolvedRetentionRate != null && (
                     <StatItem 
                       label="Retention Rate" 
-                      value={`${(college.academicOutcomes.retentionRate * 100).toFixed(1)}%`} 
+                      value={`${(resolvedRetentionRate * 100).toFixed(1)}%`} 
                       icon={<Award />} 
                     />
                   )}
@@ -975,18 +1188,15 @@ const CollegeDetail: React.FC = () => {
                   )}
                   
                   {/* Average Net Price */}
-                  {(() => {
-                    const avgNetPrice = college.financialData?.netPriceLowIncome || 
-                                       college.financialData?.netPriceMidIncome || 
-                                       college.financialData?.netPriceHighIncome;
-                    return avgNetPrice && <StatItem label="Avg Net Price" value={`$${avgNetPrice.toLocaleString()}`} icon={<DollarSign />} />;
-                  })()}
+                  {resolvedAvgNetPrice != null && (
+                    <StatItem label="Avg Net Price" value={`$${resolvedAvgNetPrice.toLocaleString()}`} icon={<DollarSign />} />
+                  )}
                   
                   {/* Median Starting Salary */}
-                  {college.academicOutcomes?.medianStartSalary && (
+                  {resolvedSalary6yr != null && (
                     <StatItem 
-                      label="Median Starting Salary" 
-                      value={`$${college.academicOutcomes.medianStartSalary.toLocaleString()}`} 
+                      label="Median Salary (6 yrs)" 
+                      value={`$${resolvedSalary6yr.toLocaleString()}`} 
                       icon={<Briefcase />} 
                     />
                   )}
@@ -1038,6 +1248,26 @@ const CollegeDetail: React.FC = () => {
                   </div>
                 </div>
               </Card>
+
+              {/* Institution Details - religious affiliation, alternate names */}
+              {(resolvedReligiousAffiliation || resolvedAlternateNames) && (
+                <Card title="Institution Details">
+                  <div className="space-y-3">
+                    {resolvedAlternateNames && (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Also Known As</p>
+                        <p className="text-sm font-medium text-gray-800">{resolvedAlternateNames}</p>
+                      </div>
+                    )}
+                    {resolvedReligiousAffiliation && (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Religious Affiliation</p>
+                        <p className="text-sm font-medium text-gray-800">{resolvedReligiousAffiliation}</p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
             </div>
           </div>
         )}
@@ -1078,60 +1308,40 @@ const CollegeDetail: React.FC = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* SAT Scores */}
-                  {(testScores.satRange || college.studentStats?.sat25) && (
+                  {resolvedSATRange != null && (
                     <div>
                       <h4 className="font-medium text-gray-900 mb-3">SAT</h4>
                       <div className="space-y-3">
-                        {testScores.satRange && (
-                          <ScoreBar label="Middle 50%" low={testScores.satRange.percentile25} high={testScores.satRange.percentile75} max={1600} />
-                        )}
-                        {college.studentStats?.sat25 && college.studentStats?.sat75 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">25th: {college.studentStats.sat25}</span>
-                            {college.studentStats.sat50 && (
-                              <span className="font-semibold text-blue-600">Avg: {college.studentStats.sat50}</span>
-                            )}
-                            <span className="text-gray-600">75th: {college.studentStats.sat75}</span>
-                          </div>
-                        )}
-                        {college.studentStats?.sat50 && !college.studentStats?.sat25 && (
-                          <div className="p-3 bg-blue-50 rounded-lg text-center">
-                            <div className="text-2xl font-bold text-blue-700">{college.studentStats.sat50}</div>
-                            <div className="text-sm text-blue-600">Average SAT</div>
-                          </div>
-                        )}
+                        <ScoreBar label="Middle 50%" low={resolvedSATRange.low} high={resolvedSATRange.high} max={1600} />
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">25th: {resolvedSATRange.low}</span>
+                          {college.studentStats?.sat50 && (
+                            <span className="font-semibold text-blue-600">Avg: {college.studentStats.sat50}</span>
+                          )}
+                          <span className="text-gray-600">75th: {resolvedSATRange.high}</span>
+                        </div>
                       </div>
                     </div>
                   )}
                   
                   {/* ACT Scores */}
-                  {(testScores.actRange || college.studentStats?.act25) && (
+                  {resolvedACTRange != null && (
                     <div>
                       <h4 className="font-medium text-gray-900 mb-3">ACT</h4>
                       <div className="space-y-3">
-                        {testScores.actRange && (
-                          <ScoreBar label="Middle 50%" low={testScores.actRange.percentile25} high={testScores.actRange.percentile75} max={36} />
-                        )}
-                        {college.studentStats?.act25 && college.studentStats?.act75 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">25th: {college.studentStats.act25}</span>
-                            {college.studentStats.act50 && (
-                              <span className="font-semibold text-blue-600">Avg: {college.studentStats.act50}</span>
-                            )}
-                            <span className="text-gray-600">75th: {college.studentStats.act75}</span>
-                          </div>
-                        )}
-                        {college.studentStats?.act50 && !college.studentStats?.act25 && (
-                          <div className="p-3 bg-purple-50 rounded-lg text-center">
-                            <div className="text-2xl font-bold text-purple-700">{college.studentStats.act50}</div>
-                            <div className="text-sm text-purple-600">Average ACT</div>
-                          </div>
-                        )}
+                        <ScoreBar label="Middle 50%" low={resolvedACTRange.low} high={resolvedACTRange.high} max={36} />
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">25th: {resolvedACTRange.low}</span>
+                          {college.studentStats?.act50 && (
+                            <span className="font-semibold text-blue-600">Avg: {college.studentStats.act50}</span>
+                          )}
+                          <span className="text-gray-600">75th: {resolvedACTRange.high}</span>
+                        </div>
                       </div>
                     </div>
                   )}
                   
-                  {!testScores.satRange && !testScores.actRange && !college.studentStats?.sat25 && !college.studentStats?.act25 && (
+                  {resolvedSATRange == null && resolvedACTRange == null && (
                     <div className="col-span-2">
                       <p className="text-gray-600 text-center">Test score data not available</p>
                     </div>
@@ -1287,6 +1497,12 @@ const CollegeDetail: React.FC = () => {
               {college.comprehensiveData && (
                 <Card title="Institution Details">
                   <div className="space-y-4">
+                    {resolvedAlternateNames && (
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-gray-600">Also Known As</span>
+                        <span className="font-semibold text-gray-900">{resolvedAlternateNames}</span>
+                      </div>
+                    )}
                     {college.comprehensiveData.institutionType && (
                       <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <span className="text-sm text-gray-600">Type</span>
@@ -1315,6 +1531,12 @@ const CollegeDetail: React.FC = () => {
                       <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <span className="text-sm text-gray-600">Campus Size</span>
                         <span className="font-semibold text-gray-900">{college.comprehensiveData.campusSizeAcres} acres</span>
+                      </div>
+                    )}
+                    {resolvedReligiousAffiliation && (
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-gray-600">Religious Affiliation</span>
+                        <span className="font-semibold text-gray-900">{resolvedReligiousAffiliation}</span>
                       </div>
                     )}
                   </div>
@@ -1480,30 +1702,33 @@ const CollegeDetail: React.FC = () => {
               )}
 
               {/* Financial Aid Details */}
-              {college.financialData && (college.financialData.avgFinancialAid || college.financialData.percentReceivingAid) && (
-                <Card title="Financial Aid">
+              {(college.financialData || resolvedAvgNetPrice != null || resolvedMedianDebt != null) && (
+                <Card title="Financial Aid & Net Price">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {college.financialData.avgFinancialAid && (
-                      <div className="p-4 bg-green-50 rounded-lg">
-                        <p className="text-sm text-green-600 mb-1">Average Aid Package</p>
-                        <p className="text-2xl font-bold text-green-700">
-                          ${college.financialData.avgFinancialAid.toLocaleString()}
+                    {/* Average Net Price - prominently displayed */}
+                    {resolvedAvgNetPrice != null && (
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-600 mb-1">Average Net Price</p>
+                        <p className="text-2xl font-bold text-blue-700">
+                          ${resolvedAvgNetPrice.toLocaleString()}
                         </p>
+                        <p className="text-xs text-blue-500 mt-1">After grants and scholarships</p>
                       </div>
                     )}
-                    {college.financialData.percentReceivingAid && (
-                      <div className="p-4 bg-blue-50 rounded-lg">
-                        <p className="text-sm text-blue-600 mb-1">Students Receiving Aid</p>
-                        <p className="text-2xl font-bold text-blue-700">
+                    {college.financialData?.percentReceivingAid && (
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <p className="text-sm text-green-600 mb-1">Students Receiving Aid</p>
+                        <p className="text-2xl font-bold text-green-700">
                           {(college.financialData.percentReceivingAid * 100).toFixed(0)}%
                         </p>
                       </div>
                     )}
-                    {college.financialData.avgDebt && (
+                    {/* Median Debt */}
+                    {resolvedMedianDebt != null && (
                       <div className="p-4 bg-orange-50 rounded-lg">
-                        <p className="text-sm text-orange-600 mb-1">Average Student Debt</p>
+                        <p className="text-sm text-orange-600 mb-1">Median Student Debt</p>
                         <p className="text-2xl font-bold text-orange-700">
-                          ${college.financialData.avgDebt.toLocaleString()}
+                          ${resolvedMedianDebt.toLocaleString()}
                         </p>
                       </div>
                     )}
@@ -1602,24 +1827,32 @@ const CollegeDetail: React.FC = () => {
                 </div>
               </Card>
 
-              {/* Student Demographics - Enhanced */}
-              {college.demographics && (
+              {/* Student Demographics - Enhanced with flat fields support */}
+              {(college.demographics || hasGenderData || hasEthnicityData || resolvedPercentInternational != null) && (
                 <Card title="Student Demographics">
                   <div className="space-y-6">
-                    {/* Gender Distribution */}
-                    {college.demographics.genderRatio && (
+                    {/* Gender Distribution - use flat fields first, fall back to genderRatio string */}
+                    {hasGenderData && (
                       <div>
                         <h4 className="font-medium text-gray-900 mb-3">Gender Distribution</h4>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="p-4 bg-blue-50 rounded-lg text-center">
                             <div className="text-2xl font-bold text-blue-700">
-                              {college.demographics.genderRatio.split(':')[0] || '50'}%
+                              {resolvedPercentMale != null
+                                ? `${(resolvedPercentMale * 100).toFixed(0)}%`
+                                : college.demographics?.genderRatio?.split(':')[0]
+                                  ? `${college.demographics.genderRatio.split(':')[0]}%`
+                                  : '—'}
                             </div>
                             <div className="text-sm text-blue-600">Male</div>
                           </div>
                           <div className="p-4 bg-pink-50 rounded-lg text-center">
                             <div className="text-2xl font-bold text-pink-700">
-                              {college.demographics.genderRatio.split(':')[1] || '50'}%
+                              {resolvedPercentFemale != null
+                                ? `${(resolvedPercentFemale * 100).toFixed(0)}%`
+                                : college.demographics?.genderRatio?.split(':')[1]
+                                  ? `${college.demographics.genderRatio.split(':')[1]}%`
+                                  : '—'}
                             </div>
                             <div className="text-sm text-pink-600">Female</div>
                           </div>
@@ -1627,12 +1860,12 @@ const CollegeDetail: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Ethnic Distribution */}
-                    {college.demographics.ethnicDistribution && Object.keys(college.demographics.ethnicDistribution).length > 0 && (
+                    {/* Ethnic Distribution - use flat fields or ethnicDistribution object */}
+                    {hasEthnicityData && (
                       <div>
                         <h4 className="font-medium text-gray-900 mb-3">Ethnic Diversity</h4>
                         <div className="space-y-2">
-                          {Object.entries(college.demographics.ethnicDistribution)
+                          {Object.entries(resolvedEthnicDistribution)
                             .sort(([, a], [, b]) => b - a)
                             .map(([ethnicity, percentage]) => (
                               <div key={ethnicity} className="space-y-1">
@@ -1645,7 +1878,7 @@ const CollegeDetail: React.FC = () => {
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                   <div
                                     className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all"
-                                    style={{ width: `${(percentage * 100)}%` }}
+                                    style={{ width: `${Math.min(percentage * 100, 100)}%` }}
                                   />
                                 </div>
                               </div>
@@ -1655,20 +1888,20 @@ const CollegeDetail: React.FC = () => {
                     )}
 
                     {/* International Students */}
-                    {college.demographics.percentInternational && (
+                    {resolvedPercentInternational != null && (
                       <div className="p-4 bg-blue-50 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm text-blue-600 font-medium">International Students</span>
                           <Globe className="w-4 h-4 text-blue-600" />
                         </div>
                         <p className="text-2xl font-bold text-blue-700">
-                          {(college.demographics.percentInternational * 100).toFixed(1)}%
+                          {(resolvedPercentInternational * 100).toFixed(1)}%
                         </p>
                       </div>
                     )}
                     
                     {/* First-Generation Students */}
-                    {college.demographics.percentFirstGen && (
+                    {college.demographics?.percentFirstGen && (
                       <div className="p-4 bg-green-50 rounded-lg">
                         <p className="text-sm text-green-600 mb-2 font-medium">First-Generation Students</p>
                         <p className="text-2xl font-bold text-green-700">
@@ -1818,169 +2051,30 @@ const CollegeDetail: React.FC = () => {
         {activeTab === 'outcomes' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              {/* Enhanced Academic Outcomes */}
-              {college.academicOutcomes && (
-                <>
-                  <Card title="Graduation Rates">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {college.academicOutcomes.graduationRate4yr && (
-                        <div className="text-center">
-                          <div className="relative w-32 h-32 mx-auto">
-                            <svg className="w-full h-full" viewBox="0 0 100 100">
-                              <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
-                              <circle 
-                                cx="50" cy="50" r="45" fill="none" stroke="#10B981" strokeWidth="10"
-                                strokeDasharray={`${college.academicOutcomes.graduationRate4yr * 100 * 2.83} 283`}
-                                strokeLinecap="round"
-                                transform="rotate(-90 50 50)"
-                              />
-                            </svg>
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="text-2xl font-bold">{(college.academicOutcomes.graduationRate4yr * 100).toFixed(0)}%</span>
-                            </div>
-                          </div>
-                          <p className="mt-2 font-medium">4-Year Graduation Rate</p>
-                        </div>
-                      )}
-                      {college.academicOutcomes.graduationRate6yr && (
-                        <div className="text-center">
-                          <div className="relative w-32 h-32 mx-auto">
-                            <svg className="w-full h-full" viewBox="0 0 100 100">
-                              <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
-                              <circle 
-                                cx="50" cy="50" r="45" fill="none" stroke="#3B82F6" strokeWidth="10"
-                                strokeDasharray={`${college.academicOutcomes.graduationRate6yr * 100 * 2.83} 283`}
-                                strokeLinecap="round"
-                                transform="rotate(-90 50 50)"
-                              />
-                            </svg>
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="text-2xl font-bold">{(college.academicOutcomes.graduationRate6yr * 100).toFixed(0)}%</span>
-                            </div>
-                          </div>
-                          <p className="mt-2 font-medium">6-Year Graduation Rate</p>
-                        </div>
-                      )}
-                    </div>
-                    {college.academicOutcomes.retentionRate && (
-                      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                        <p className="text-sm text-blue-600 mb-1">Retention Rate</p>
-                        <p className="text-2xl font-bold text-blue-700">
-                          {(college.academicOutcomes.retentionRate * 100).toFixed(1)}%
-                        </p>
-                      </div>
-                    )}
-                  </Card>
-
-                  {/* Career Outcomes - Enhanced with Salary Growth */}
-                  {(college.academicOutcomes.employmentRate || college.academicOutcomes.medianStartSalary) && (
-                    <Card title="Career Outcomes">
-                      {/* Employment and Salary Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        {college.academicOutcomes.employmentRate && (
-                          <div className="p-6 bg-green-50 rounded-xl text-center">
-                            <Briefcase className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                            <div className="text-3xl font-bold text-green-600">
-                              {(college.academicOutcomes.employmentRate * 100).toFixed(0)}%
-                            </div>
-                            <p className="text-green-700 mt-1">Employment Rate</p>
-                          </div>
-                        )}
-                        {college.academicOutcomes.medianStartSalary && (
-                          <div className="p-6 bg-blue-50 rounded-xl text-center">
-                            <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                            <div className="text-3xl font-bold text-blue-600">
-                              ${college.academicOutcomes.medianStartSalary.toLocaleString()}
-                            </div>
-                            <p className="text-blue-700 mt-1">Starting Salary</p>
-                            <p className="text-xs text-blue-600 mt-1">Median after graduation</p>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Salary Growth Visualization */}
-                      {college.academicOutcomes.medianMidCareerSalary && (
-                        <div className="space-y-4">
-                          <h4 className="font-medium text-gray-900">Career Salary Progression</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="p-4 bg-purple-50 rounded-lg text-center">
-                              <div className="text-2xl font-bold text-purple-600">
-                                ${college.academicOutcomes.medianMidCareerSalary.toLocaleString()}
-                              </div>
-                              <p className="text-sm text-purple-700 mt-1">Mid-Career Salary</p>
-                              <p className="text-xs text-purple-600">~10 years experience</p>
-                            </div>
-                            
-                            {/* Calculate salary growth */}
-                            {college.academicOutcomes.medianStartSalary && (
-                              <div className="p-4 bg-emerald-50 rounded-lg text-center">
-                                <div className="text-2xl font-bold text-emerald-600">
-                                  +{(((college.academicOutcomes.medianMidCareerSalary - college.academicOutcomes.medianStartSalary) / college.academicOutcomes.medianStartSalary) * 100).toFixed(0)}%
-                                </div>
-                                <p className="text-sm text-emerald-700 mt-1">Salary Growth</p>
-                                <p className="text-xs text-emerald-600">
-                                  +${(college.academicOutcomes.medianMidCareerSalary - college.academicOutcomes.medianStartSalary).toLocaleString()} over career
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Visual salary progression bar */}
-                          <div className="mt-4">
-                            <div className="flex justify-between text-xs text-gray-600 mb-2">
-                              <span>Starting</span>
-                              <span>Mid-Career</span>
-                            </div>
-                            <div className="relative h-6 bg-gray-100 rounded-full overflow-hidden">
-                              <div 
-                                className="absolute h-full bg-gradient-to-r from-blue-400 to-purple-600 rounded-full flex items-center justify-end pr-2"
-                                style={{ width: '100%' }}
-                              >
-                                <TrendingUp className="w-4 h-4 text-white" />
-                              </div>
-                            </div>
-                            <div className="flex justify-between text-xs text-gray-500 mt-1">
-                              <span>${(college.academicOutcomes.medianStartSalary || 0).toLocaleString()}</span>
-                              <span>${college.academicOutcomes.medianMidCareerSalary.toLocaleString()}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Additional Employment Metrics */}
-                      {(college.academicOutcomes.employedAt6MonthsRate || college.academicOutcomes.employedInFieldRate) && (
-                        <div className="mt-6 pt-6 border-t border-border">
-                          <h4 className="font-medium text-gray-900 mb-3">Employment Details</h4>
-                          <div className="grid grid-cols-2 gap-3">
-                            {college.academicOutcomes.employedAt6MonthsRate && (
-                              <div className="p-3 bg-muted rounded-lg">
-                                <div className="text-lg font-bold text-gray-700">
-                                  {(college.academicOutcomes.employedAt6MonthsRate * 100).toFixed(0)}%
-                                </div>
-                                <p className="text-xs text-gray-600">Employed within 6 months</p>
-                              </div>
-                            )}
-                            {college.academicOutcomes.employedInFieldRate && (
-                              <div className="p-3 bg-muted rounded-lg">
-                                <div className="text-lg font-bold text-gray-700">
-                                  {(college.academicOutcomes.employedInFieldRate * 100).toFixed(0)}%
-                                </div>
-                                <p className="text-xs text-gray-600">Working in their field</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </Card>
-                  )}
-                </>
-              )}
-
-              {/* Fallback to legacy graduation rates if comprehensive data not available */}
-              {!college.academicOutcomes && college.graduationRates && (
+              {/* Graduation & Retention - use resolved fields */}
+              {(resolvedGradRate4yr != null || college.academicOutcomes?.graduationRate6yr || resolvedRetentionRate != null || college.graduationRates) && (
                 <Card title="Graduation Rates">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {college.graduationRates?.fourYear && (
+                    {resolvedGradRate4yr != null && (
+                      <div className="text-center">
+                        <div className="relative w-32 h-32 mx-auto">
+                          <svg className="w-full h-full" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
+                            <circle 
+                              cx="50" cy="50" r="45" fill="none" stroke="#10B981" strokeWidth="10"
+                              strokeDasharray={`${resolvedGradRate4yr * 100 * 2.83} 283`}
+                              strokeLinecap="round"
+                              transform="rotate(-90 50 50)"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-2xl font-bold">{(resolvedGradRate4yr * 100).toFixed(1)}%</span>
+                          </div>
+                        </div>
+                        <p className="mt-2 font-medium">4-Year Graduation Rate</p>
+                      </div>
+                    )}
+                    {(!resolvedGradRate4yr && college.graduationRates?.fourYear) && (
                       <div className="text-center">
                         <div className="relative w-32 h-32 mx-auto">
                           <svg className="w-full h-full" viewBox="0 0 100 100">
@@ -1999,7 +2093,26 @@ const CollegeDetail: React.FC = () => {
                         <p className="mt-2 font-medium">4-Year Graduation Rate</p>
                       </div>
                     )}
-                    {college.graduationRates?.sixYear && (
+                    {college.academicOutcomes?.graduationRate6yr && (
+                      <div className="text-center">
+                        <div className="relative w-32 h-32 mx-auto">
+                          <svg className="w-full h-full" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
+                            <circle 
+                              cx="50" cy="50" r="45" fill="none" stroke="#3B82F6" strokeWidth="10"
+                              strokeDasharray={`${college.academicOutcomes.graduationRate6yr * 100 * 2.83} 283`}
+                              strokeLinecap="round"
+                              transform="rotate(-90 50 50)"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-2xl font-bold">{(college.academicOutcomes.graduationRate6yr * 100).toFixed(1)}%</span>
+                          </div>
+                        </div>
+                        <p className="mt-2 font-medium">6-Year Graduation Rate</p>
+                      </div>
+                    )}
+                    {(!college.academicOutcomes?.graduationRate6yr && college.graduationRates?.sixYear) && (
                       <div className="text-center">
                         <div className="relative w-32 h-32 mx-auto">
                           <svg className="w-full h-full" viewBox="0 0 100 100">
@@ -2019,6 +2132,116 @@ const CollegeDetail: React.FC = () => {
                       </div>
                     )}
                   </div>
+                  {resolvedRetentionRate != null && (
+                    <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-600 mb-1">Retention Rate</p>
+                      <p className="text-2xl font-bold text-blue-700">
+                        {(resolvedRetentionRate * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                  )}
+                </Card>
+              )}
+
+              {/* Career Outcomes - using resolved salary fields */}
+              {(college.academicOutcomes?.employmentRate || resolvedSalary6yr != null || resolvedSalary10yr != null) && (
+                <Card title="Career Outcomes">
+                  {/* Employment and Salary Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    {college.academicOutcomes?.employmentRate && (
+                      <div className="p-6 bg-green-50 rounded-xl text-center">
+                        <Briefcase className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                        <div className="text-3xl font-bold text-green-600">
+                          {(college.academicOutcomes.employmentRate * 100).toFixed(0)}%
+                        </div>
+                        <p className="text-green-700 mt-1">Employment Rate</p>
+                      </div>
+                    )}
+                    {resolvedSalary6yr != null && (
+                      <div className="p-6 bg-blue-50 rounded-xl text-center">
+                        <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                        <div className="text-3xl font-bold text-blue-600">
+                          ${resolvedSalary6yr.toLocaleString()}
+                        </div>
+                        <p className="text-blue-700 mt-1">Median Salary (6 years out)</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Salary 10yr with growth % */}
+                  {resolvedSalary10yr != null && (
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-gray-900">Career Salary Progression</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-purple-50 rounded-lg text-center">
+                          <div className="text-2xl font-bold text-purple-600">
+                            ${resolvedSalary10yr.toLocaleString()}
+                          </div>
+                          <p className="text-sm text-purple-700 mt-1">Median Salary (10 years out)</p>
+                        </div>
+                        
+                        {/* Calculate salary growth 6yr → 10yr */}
+                        {resolvedSalary6yr != null && (
+                          <div className="p-4 bg-emerald-50 rounded-lg text-center">
+                            <div className="text-2xl font-bold text-emerald-600">
+                              +{(((resolvedSalary10yr - resolvedSalary6yr) / resolvedSalary6yr) * 100).toFixed(0)}%
+                            </div>
+                            <p className="text-sm text-emerald-700 mt-1">Salary Growth</p>
+                            <p className="text-xs text-emerald-600">
+                              +${(resolvedSalary10yr - resolvedSalary6yr).toLocaleString()} (6yr → 10yr)
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Visual salary progression bar */}
+                      {resolvedSalary6yr != null && (
+                        <div className="mt-4">
+                          <div className="flex justify-between text-xs text-gray-600 mb-2">
+                            <span>6 Years Out</span>
+                            <span>10 Years Out</span>
+                          </div>
+                          <div className="relative h-6 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className="absolute h-full bg-gradient-to-r from-blue-400 to-purple-600 rounded-full flex items-center justify-end pr-2"
+                              style={{ width: '100%' }}
+                            >
+                              <TrendingUp className="w-4 h-4 text-white" />
+                            </div>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>${resolvedSalary6yr.toLocaleString()}</span>
+                            <span>${resolvedSalary10yr.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Additional Employment Metrics */}
+                  {(college.academicOutcomes?.employedAt6MonthsRate || college.academicOutcomes?.employedInFieldRate) && (
+                    <div className="mt-6 pt-6 border-t border-border">
+                      <h4 className="font-medium text-gray-900 mb-3">Employment Details</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        {college.academicOutcomes?.employedAt6MonthsRate && (
+                          <div className="p-3 bg-muted rounded-lg">
+                            <div className="text-lg font-bold text-gray-700">
+                              {(college.academicOutcomes.employedAt6MonthsRate * 100).toFixed(0)}%
+                            </div>
+                            <p className="text-xs text-gray-600">Employed within 6 months</p>
+                          </div>
+                        )}
+                        {college.academicOutcomes?.employedInFieldRate && (
+                          <div className="p-3 bg-muted rounded-lg">
+                            <div className="text-lg font-bold text-gray-700">
+                              {(college.academicOutcomes.employedInFieldRate * 100).toFixed(0)}%
+                            </div>
+                            <p className="text-xs text-gray-600">Working in their field</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </Card>
               )}
 
