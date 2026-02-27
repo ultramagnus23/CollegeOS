@@ -288,6 +288,8 @@ class College {
         `);
         const financial = financialStmt.get(comprehensive.id);
         if (financial) {
+          // avg_net_price: use avg_financial_aid as a proxy for average net price
+          const avgNetPrice = financial.avg_net_price || financial.avg_financial_aid || null;
           formattedCollege.financialData = {
             year: financial.year,
             tuitionInState: financial.tuition_in_state,
@@ -295,8 +297,10 @@ class College {
             tuitionInternational: financial.tuition_international,
             costOfAttendance: financial.cost_of_attendance,
             avgFinancialAid: financial.avg_financial_aid,
+            avgNetPrice: avgNetPrice,
             percentReceivingAid: financial.percent_receiving_aid,
             avgDebt: financial.avg_debt,
+            medianDebt: financial.avg_debt, // DB stores avg_debt; exposed as medianDebt for API compatibility with callers expecting median_debt
             netPriceLowIncome: financial.net_price_low_income,
             netPriceMidIncome: financial.net_price_mid_income,
             netPriceHighIncome: financial.net_price_high_income,
@@ -326,7 +330,9 @@ class College {
             employmentRate: outcomes.employment_rate,
             gradSchoolRate: outcomes.grad_school_rate,
             medianStartSalary: outcomes.median_start_salary,
+            medianSalary6yr: outcomes.median_start_salary, // median_start_salary represents early career (~6yr out) salary
             medianMidCareerSalary: outcomes.median_mid_career_salary,
+            medianSalary10yr: outcomes.median_mid_career_salary, // median_mid_career_salary represents ~10yr out salary
             salaryGrowthRate: outcomes.salary_growth_rate,
             employedAt6MonthsRate: outcomes.employed_6_months_rate,
             employedInFieldRate: outcomes.employed_in_field_rate,
@@ -377,6 +383,17 @@ class College {
             legacyPercent: demographics.legacy_percent,
             athletePercent: demographics.athlete_percent,
             transferPercent: demographics.transfer_percent,
+            // Flat demographic percentage fields
+            percentMale: demographics.percent_male,
+            percentFemale: demographics.percent_female,
+            percentNonbinary: demographics.percent_nonbinary,
+            percentWhite: demographics.percent_white,
+            percentBlack: demographics.percent_black,
+            percentHispanic: demographics.percent_hispanic,
+            percentAsian: demographics.percent_asian,
+            percentNativeAmerican: demographics.percent_native_american,
+            percentPacificIslander: demographics.percent_pacific_islander,
+            percentMultiracial: demographics.percent_multiracial,
             source: demographics.source,
           };
         }
