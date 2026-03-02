@@ -107,7 +107,7 @@ class DataAggregator {
       return cached;
       
     } catch (error) {
-      logger.error('Error getting cached data:', error.message);
+      logger.error('Error getting cached data', { error: error.message });
       return null;
     }
   }
@@ -131,7 +131,7 @@ class DataAggregator {
       return result.count > 0;
       
     } catch (error) {
-      logger.error('Error checking cache validity:', error.message);
+      logger.error('Error checking cache validity', { error: error.message });
       return false;
     }
   }
@@ -153,7 +153,7 @@ class DataAggregator {
       logger.debug('Invalidated cache for college', { collegeId });
       
     } catch (error) {
-      logger.error('Error invalidating cache:', error.message);
+      logger.error('Error invalidating cache', { error: error.message });
     }
   }
 }
