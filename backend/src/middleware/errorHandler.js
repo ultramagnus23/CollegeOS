@@ -56,7 +56,7 @@ const errorHandler = (err, req, res, next) => {
     errorCode = 'APPLICATION_NOT_FOUND';
   } else if (err.message.includes('already exists')) {
     status = 400;
-    message = err.message;
+    message = 'Resource already exists';
     errorCode = 'DUPLICATE_ENTRY';
   } else if (err.message.includes('Invalid email or password')) {
     // Generic auth error - don't reveal if email exists
@@ -65,7 +65,7 @@ const errorHandler = (err, req, res, next) => {
     errorCode = 'AUTH_FAILED';
   } else if (err.message.includes('Invalid')) {
     status = 400;
-    message = err.message;
+    message = 'Invalid request';
     errorCode = 'VALIDATION_ERROR';
   } else if (err.code === 'SQLITE_CONSTRAINT') {
     status = 400;

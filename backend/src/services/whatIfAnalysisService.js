@@ -13,6 +13,7 @@
  */
 
 const logger = require('../utils/logger');
+const { sanitizeObject } = require('../utils/security');
 const { calculateChance } = require('./consolidatedChancingService');
 const { calculateProfileStrength } = require('./profileStrengthService');
 
@@ -26,8 +27,11 @@ function applyChanges(originalProfile, changes) {
   // Deep clone the profile
   const modifiedProfile = JSON.parse(JSON.stringify(originalProfile));
   
+  // Sanitize changes to prevent prototype pollution
+  const safeChanges = sanitizeObject(changes);
+  
   // Apply each change
-  Object.entries(changes).forEach(([key, value]) => {
+  Object.entries(safeChanges).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
       // Handle nested paths like 'sat_ebrw' or 'gpa_weighted'
       modifiedProfile[key] = value;

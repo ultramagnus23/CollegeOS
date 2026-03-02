@@ -24,6 +24,7 @@ const College = require('../models/College');
 const mlPredictionService = require('../services/mlPredictionService');
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
+const { sanitizeForLog, sanitizeObject } = require('../utils/security');
 
 // ML Configuration Constants
 const ML_CONTRIBUTION_SCALE_FACTOR = 10; // Factor to convert LDA coefficients to percentage impacts
@@ -539,8 +540,9 @@ router.post('/scenario', authenticate, async (req, res, next) => {
     // Create temporary merged profile with changes
     const scenarioProfile = { ...currentProfile };
     
-    // Apply changes to the scenario profile
-    for (const [key, value] of Object.entries(profileChanges)) {
+    // Apply changes to the scenario profile (sanitize to prevent prototype pollution)
+    const safeChanges = sanitizeObject(profileChanges);
+    for (const [key, value] of Object.entries(safeChanges)) {
       scenarioProfile[key] = value;
     }
     
@@ -1311,7 +1313,7 @@ router.post('/outcome', authenticate, async (req, res, next) => {
       logger.debug('Stats tracking failed:', statsError.message);
     }
     
-    logger.info(`Outcome submitted: user ${userId}, college ${collegeId}, decision: ${decision}`);
+    logger.info(`Outcome submitted: user ${userId}, college ${sanitizeForLog(collegeId)}, decision: ${sanitizeForLog(decision)}`);
     
     res.status(201).json({
       success: true,
