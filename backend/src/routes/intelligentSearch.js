@@ -23,7 +23,9 @@ router.post('/', async (req, res) => {
       });
     }
     
-    console.log('🔍 Intelligent search:', query);
+    const { sanitizeForLog } = require('../utils/security');
+    
+    logger.info('Intelligent search request', { query: sanitizeForLog(query) });
     
     // Perform intelligent search
     const result = await IntelligentSearch.search(query, { filters });

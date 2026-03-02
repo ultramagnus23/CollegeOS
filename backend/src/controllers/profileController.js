@@ -255,7 +255,7 @@ const deleteActivity = async (req, res, next) => {
     if (error.message === 'Profile not found' || error.message === 'Activity not found') {
       return res.status(404).json({
         success: false,
-        message: error.message
+        message: 'Resource not found'
       });
     }
     logger.error('Delete activity failed:', error);

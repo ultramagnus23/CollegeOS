@@ -95,7 +95,7 @@ class AuthService {
       // Store refresh token
       this.storeRefreshToken(user.id, tokens.refreshToken);
       
-      logger.info(`User registered: ${normalizedEmail}`);
+      logger.info(`User registered: ${sanitizeForLog(normalizedEmail)}`);
       
       return {
         user: this.sanitizeUser(user),
@@ -115,7 +115,7 @@ class AuthService {
     try {
       // Check if account is locked
       if (this.isAccountLocked(normalizedEmail)) {
-        logger.warn(`Login attempt on locked account: ${normalizedEmail}`);
+        logger.warn(`Login attempt on locked account: ${sanitizeForLog(normalizedEmail)}`);
         throw new Error('Account temporarily locked. Please try again later.');
       }
       
