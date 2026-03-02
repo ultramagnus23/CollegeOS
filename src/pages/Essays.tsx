@@ -1,6 +1,6 @@
 // src/pages/Essays.tsx — Dark Editorial Redesign
 import React, { useEffect, useState } from 'react';
-import api from '../services/api';
+import { api } from '../services/api';
 import { toast } from 'sonner';
 import { WordCountTracker } from '@/components/WordCountTracker';
 

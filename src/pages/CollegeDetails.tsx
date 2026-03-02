@@ -23,7 +23,7 @@ import {
   Search,
   Target
 } from 'lucide-react';
-import api from '../services/api';
+import { api } from '../services/api';
 import { DataFreshnessIndicator } from '@/components/DataFreshnessIndicator';
 
 /* =========================
