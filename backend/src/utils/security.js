@@ -7,18 +7,25 @@ const path = require('path');
 
 /**
  * Sanitize a string for safe logging.
- * Strips newlines, carriage returns, and ANSI escape codes to prevent log injection.
+ * Strips newlines, carriage returns, ANSI escape codes, and control characters.
+ * Truncates excessively long strings to prevent log flooding.
  * @param {*} input - Value to sanitize
+ * @param {number} [maxLength=500] - Maximum output length
  * @returns {string} Sanitized string safe for logging
  */
-function sanitizeForLog(input) {
+function sanitizeForLog(input, maxLength = 500) {
   if (input === null || input === undefined) return '';
   const str = String(input);
-  // Strip newlines, carriage returns, and ANSI escape codes
-  return str
+  // Strip newlines, carriage returns, ANSI escape codes, and control characters
+  let sanitized = str
     .replace(/[\r\n]+/g, ' ')
     .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
     .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, '');
+  // Truncate to prevent log flooding
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.substring(0, maxLength) + '...[truncated]';
+  }
+  return sanitized;
 }
 
 /**

@@ -3,6 +3,7 @@
 
 const webScraper = require('./webScraper');
 const dbManager = require('../config/database');
+const logger = require('../utils/logger');
 
 class DataAggregator {
   /**
@@ -93,7 +94,7 @@ class DataAggregator {
             cached.programs.push(...content);
           }
         } catch (parseError) {
-          console.error(`Error parsing college_data for row ${row.id}:`, parseError.message);
+          logger.error('Error parsing college_data', { rowId: row.id, error: parseError.message });
           // Continue with other rows
         }
       });
@@ -106,7 +107,7 @@ class DataAggregator {
       return cached;
       
     } catch (error) {
-      console.error('Error getting cached data:', error.message);
+      logger.error('Error getting cached data:', error.message);
       return null;
     }
   }
@@ -130,7 +131,7 @@ class DataAggregator {
       return result.count > 0;
       
     } catch (error) {
-      console.error('Error checking cache validity:', error.message);
+      logger.error('Error checking cache validity:', error.message);
       return false;
     }
   }
@@ -149,10 +150,10 @@ class DataAggregator {
       `);
       
       stmt.run(collegeId);
-      console.log(`🗑️  Invalidated cache for college ${collegeId}`);
+      logger.debug('Invalidated cache for college', { collegeId });
       
     } catch (error) {
-      console.error('Error invalidating cache:', error.message);
+      logger.error('Error invalidating cache:', error.message);
     }
   }
 }

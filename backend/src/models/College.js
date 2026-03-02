@@ -1,4 +1,5 @@
 const dbManager = require('../config/database');
+const logger = require('../utils/logger');
 
 // Pagination constants
 const DEFAULT_PAGE_SIZE = 100;
@@ -10,7 +11,7 @@ function normalizeAcceptanceRate(rate) {
   const numRate = Number(rate);
   if (isNaN(numRate)) return null;
   if (numRate > 100) {
-    console.warn(`Invalid acceptance rate value: ${numRate}. Expected 0-100 or 0-1.`);
+    logger.warn('Invalid acceptance rate value', { rate: numRate });
     return null;
   }
   if (numRate > 1) {
@@ -440,7 +441,7 @@ class College {
       }
     } catch (error) {
       // If comprehensive tables don't exist or there's an error, just return basic data
-      console.warn(`Could not fetch comprehensive data for college ${id}:`, error.message);
+      logger.warn('Could not fetch comprehensive data for college', { collegeId: id, error: error.message });
     }
     
     return formattedCollege;
@@ -655,7 +656,7 @@ class College {
       `).all();
       return result.length === 3;
     } catch (error) {
-      console.warn('Error checking for comprehensive tables:', error.message);
+      logger.warn('Error checking for comprehensive tables', { error: error.message });
       return false;
     }
   }
