@@ -5,6 +5,7 @@ const dbManager = require('../config/database');
 const config = require('../config/env');
 const securityConfig = require('../config/security');
 const logger = require('../utils/logger');
+const { sanitizeForLog } = require('../utils/security');
 
 // In-memory store for login attempts (use Redis in production)
 const loginAttempts = new Map();
@@ -51,7 +52,7 @@ class AuthService {
     // Lock account if max attempts exceeded
     if (attempts.count >= securityConfig.accountLockout.maxAttempts) {
       attempts.lockedUntil = now + securityConfig.accountLockout.lockoutDuration;
-      logger.warn(`Account locked due to failed login attempts: ${email}`);
+      logger.warn(`Account locked due to failed login attempts: ${sanitizeForLog(email)}`);
     }
     
     loginAttempts.set(email, attempts);
@@ -141,7 +142,7 @@ class AuthService {
       // Store refresh token
       this.storeRefreshToken(user.id, tokens.refreshToken);
       
-      logger.info(`User logged in: ${normalizedEmail}`);
+      logger.info(`User logged in: ${sanitizeForLog(normalizedEmail)}`);
       
       return {
         user: this.sanitizeUser(user),
@@ -186,7 +187,7 @@ class AuthService {
       // Store refresh token
       this.storeRefreshToken(user.id, tokens.refreshToken);
       
-      logger.info(`User authenticated via Google: ${user.email}`);
+      logger.info(`User authenticated via Google: ${sanitizeForLog(user.email)}`);
       
       return {
         user: this.sanitizeUser(user),
