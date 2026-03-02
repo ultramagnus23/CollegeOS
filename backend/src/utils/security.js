@@ -38,10 +38,11 @@ function sanitizePath(userInput, baseDir) {
     throw new Error('Invalid path: null bytes detected');
   }
 
+  const resolvedBase = path.resolve(baseDir);
   const resolved = path.resolve(baseDir, path.normalize(userInput));
 
-  // Ensure resolved path starts with the base directory
-  if (!resolved.startsWith(path.resolve(baseDir) + path.sep) && resolved !== path.resolve(baseDir)) {
+  // Ensure resolved path is within the base directory
+  if (resolved !== resolvedBase && !resolved.startsWith(resolvedBase + path.sep)) {
     throw new Error('Invalid path: directory traversal detected');
   }
 
@@ -58,7 +59,7 @@ function sanitizeObject(obj) {
   if (Array.isArray(obj)) return obj.map(sanitizeObject);
 
   const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
-  const cleaned = Object.create(null);
+  const cleaned = {};
 
   for (const key of Object.keys(obj)) {
     if (dangerousKeys.includes(key)) continue;
