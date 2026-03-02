@@ -769,7 +769,14 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
 
   const majors = ['Computer Science','Engineering','Business / Management','Medicine','Psychology','Economics','Data Science','Biology','Mathematics','Physics','Chemistry','Arts & Design','Political Science','Law','Architecture','Environmental Science','Communications','Undecided'];
   const skills = ['Problem Solving','Creativity','Analytical Thinking','Leadership','Communication','Research','Programming','Writing','Mathematics','Science','Languages','Public Speaking','Teamwork','Design'];
-  const subjects = ['Mathematics','Physics','Chemistry','Biology','Computer Science','Economics','History','English','Literature','Geography'];
+  const subjects = [
+    'Mathematics','Further Mathematics','Physics','Chemistry','Biology','Computer Science',
+    'Environmental Science','Statistics','Data Science','History','Geography','Economics',
+    'Psychology','Sociology','Philosophy','Political Science','English Language','English Literature',
+    'French','Spanish','German','Mandarin Chinese','Hindi','Arabic','Business Studies','Accounting',
+    'Information Technology','Art & Design','Music','Theatre Studies','Film Studies',
+    'Physical Education','Health Science','Environmental Systems & Societies','Global Politics',
+  ];
   const BUDGETS = [
     { val: 'under-20k', label: 'Under $20,000 / yr', note: '~$800 universities globally' },
     { val: '20-40k', label: '$20,000 – $40,000 / yr', note: '~1,200 universities globally' },

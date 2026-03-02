@@ -154,8 +154,9 @@ const Dashboard = () => {
   const [collegeList, setCollegeList] = useState<any[]>([]);
   const [todaysTasks, setTodaysTasks] = useState<any[]>([]);
 
-  const targetCountries = user?.target_countries ? JSON.parse(user.target_countries) : [];
-  const intendedMajors = user?.intended_majors ? JSON.parse(user.intended_majors) : [];
+  const safe = (s: any, f: any) => { try { return s ? JSON.parse(s) : f; } catch { return f; } };
+  const targetCountries = safe(user?.target_countries, []);
+  const intendedMajors = safe(user?.intended_majors, []);
 
   useEffect(() => { loadDashboardData(); }, []);
 
@@ -188,7 +189,7 @@ const Dashboard = () => {
       setDecisionDates(decisions);
       setCollegeList(applications.map((a:any)=>({ id:a.id, name:a.college_name, category:a.category||'target', chance:a.chance||50, country:a.country||'United States', deadline:a.deadline, status:a.status })));
 
-      const calcDays = (d:string)=>Math.ceil((new Date(d).getTime()-Date.now())/86400000);
+      const calcDays = (d:string)=>Math.ceil((new Date(d+'T00:00:00').getTime()-Date.now())/86400000);
 
       // Alerts
       try {
@@ -233,7 +234,7 @@ const Dashboard = () => {
   };
 
   const getDaysUntil = (d: string) => {
-    const n = Math.ceil((new Date(d).getTime()-Date.now())/86400000);
+    const n = Math.ceil((new Date(d+'T00:00:00').getTime()-Date.now())/86400000);
     if (n < 0) return 'Overdue';
     if (n === 0) return 'Today';
     if (n === 1) return 'Tomorrow';
@@ -311,7 +312,7 @@ const Dashboard = () => {
 
           {/* ── Tasks + Recommended Actions ── */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
-            <TodaysTasks tasks={todaysTasks} onTaskClick={()=>navigate('/deadlines')} onTaskComplete={(id)=>console.log('Complete:',id)} />
+            <TodaysTasks tasks={todaysTasks} onTaskClick={()=>navigate('/deadlines')} onTaskComplete={async (id)=>{ try { await api.tasks.update(id,{status:'completed'}); setTodaysTasks(prev=>prev.filter(t=>t.id!==id)); } catch { /* silent */ } }} />
             <RecommendedActions actions={recommendedActions} profileStrength={profileStrength} onActionClick={(a)=>{
               const routes: Record<string,string> = { profile:'/settings', testing:'/settings', essays:'/essays', applications:'/discover', recommendations:'/recommendations', deadlines:'/deadlines' };
               navigate(routes[a.category]||'/');
