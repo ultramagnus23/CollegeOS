@@ -5,6 +5,7 @@
 
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
+const { sanitizeForLog } = require('../utils/security');
 const EligibilityAutoFulfillService = require('./eligibilityAutoFulfillService');
 
 // ==========================================
@@ -221,7 +222,7 @@ class ProfileService {
           WHERE user_id = ?
         `).run(userId);
         subjectsCleared = true;
-        logger.info(`Cleared subjects for user ${userId} due to curriculum change from ${existingProfile.curriculum_type} to ${newCurriculumType}`);
+        logger.info(`Cleared subjects for user ${userId} due to curriculum change from ${existingProfile.curriculum_type} to ${sanitizeForLog(newCurriculumType)}`);
       }
     }
     
