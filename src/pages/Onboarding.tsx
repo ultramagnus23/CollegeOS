@@ -8,6 +8,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import { toast } from 'sonner';
 import { api } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import { StudentProfile } from '../types';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -632,6 +633,7 @@ const Insight: React.FC<{ message: string; onDone: () => void }> = ({ message, o
 // ── Main Component ─────────────────────────────────────────────────────────
 const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAuthSuccess }) => {
   const navigate = useNavigate();
+  const { user, completeOnboarding } = useAuth();
   const [step, setStep] = useState(1);
   const [showInsight, setShowInsight] = useState(false);
   const [insightMsg, setInsightMsg] = useState('');
@@ -657,6 +659,18 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
       careerGoals: '', whyCollege: '',
     };
   }
+
+  // On mount: restore draft from backend if newer than localStorage
+  useEffect(() => {
+    if (!user?.id) return;
+    api.getOnboardingDraft(user.id).then((res: any) => {
+      const draft = res?.data;
+      if (!draft) return;
+      // Prefer backend draft (multi-device resume)
+      setStudentData((prev: any) => ({ ...defaultData(), ...prev, ...draft }));
+      try { localStorage.setItem('onboarding_data', JSON.stringify({ ...draft })); } catch {}
+    }).catch(() => { /* silent */ });
+  }, [user?.id]);
 
   const handleGoogleSuccess = useCallback((credentialResponse: { credential?: string }) => {
     const credential = credentialResponse.credential;
@@ -685,17 +699,21 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
     setStudentData((prev: any) => {
       const next = { ...prev, [field]: value };
       try { localStorage.setItem('onboarding_data', JSON.stringify(next)); } catch {}
-      // Debounced server-side progress save
+      // Debounced server-side draft save
       if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
       progressDebounceRef.current = setTimeout(async () => {
-        const auth = googleAuth;
-        if (auth?.googleId) {
-          try { await api.auth.saveOnboardingProgress(auth.googleId, next); } catch { /* silent */ }
+        if (user?.id) {
+          try { await api.saveOnboardingDraft(user.id, { ...next, onboarding_step: step }); } catch { /* silent */ }
+        } else {
+          const auth = googleAuth;
+          if (auth?.googleId) {
+            try { await api.auth.saveOnboardingProgress(auth.googleId, next); } catch { /* silent */ }
+          }
         }
       }, 1500);
       return next;
     });
-  }, [googleAuth]);
+  }, [googleAuth, user?.id, step]);
 
   const theme = STEP_THEMES[step - 1];
   const { accent, bg, surface } = theme;
@@ -1215,13 +1233,51 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
       {googleAuth && (
         <>
           {showLoading && <LoadingSequence name={studentData.name} onDone={async () => {
-        await onComplete(studentData);
-        if (googleAuth) {
+        try {
+          // 1. Save full extended profile to student_profiles table
+          await api.saveExtendedProfile({ ...studentData });
+
+          // 2. Mark onboarding complete in users table
+          await completeOnboarding({
+            targetCountries: studentData.preferredCountries,
+            intendedMajors: studentData.potentialMajors,
+            testStatus: {
+              satScore: studentData.satScore || null,
+              actScore: studentData.actScore || null,
+              ibPredicted: studentData.ibPredicted || null,
+            },
+            gpa: studentData.currentGPA,
+            subjects: studentData.subjects,
+            activities: studentData.activities,
+          });
+
+          // 3. Pre-compute instant recommendations and store in localStorage
           try {
-            await api.auth.googleOnboarding(googleAuth.googleId, googleAuth.email, studentData.name || googleAuth.name, studentData);
-          } catch (err) { console.error('Failed to sync onboarding profile:', err); toast.error('Failed to sync profile to server'); }
+            const recRes = await api.automation.getInstantRecommendations({
+              gpa: studentData.currentGPA,
+              satScore: studentData.satScore,
+              preferredCountries: studentData.preferredCountries,
+              potentialMajors: studentData.potentialMajors,
+              budgetRange: studentData.budgetRange,
+              activities: studentData.activities,
+            });
+            localStorage.setItem('instant_recommendations', JSON.stringify(recRes?.data || recRes || []));
+          } catch { /* non-critical */ }
+
+          // Also sync Google profile if using Google auth
+          if (googleAuth) {
+            try {
+              await api.auth.googleOnboarding(googleAuth.googleId, googleAuth.email, studentData.name || googleAuth.name, studentData);
+            } catch { /* non-critical */ }
+          }
+
+          await onComplete(studentData);
+          navigate('/research');
+        } catch (err) {
+          console.error('Failed to save profile:', err);
+          toast.error('Failed to save profile. Please try again.');
+          setShowLoading(false);
         }
-        navigate('/research');
       }} />}
       {showInsight && <Insight message={insightMsg} onDone={() => { setShowInsight(false); doNextStep(); }} />}
 
