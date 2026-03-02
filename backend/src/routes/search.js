@@ -161,8 +161,7 @@ router.get('/colleges', async (req, res) => {
     logger.error('Search error:', error);
     res.status(500).json({
       success: false,
-      message: 'Search failed',
-      error: error.message
+      message: 'Search failed'
     });
   }
 });
@@ -241,8 +240,7 @@ router.get('/filters', async (req, res) => {
     logger.error('Filters error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get filters',
-      error: error.message
+      message: 'Failed to get filters'
     });
   }
 });
