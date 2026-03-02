@@ -1,6 +1,7 @@
 const Essay = require('../models/Essay');
 const Application = require('../models/Application');
 const logger = require('../utils/logger');
+const { sanitizeForLog } = require('../utils/security');
 
 class EssayController {
   // Get all essays for user
@@ -50,7 +51,7 @@ class EssayController {
       }
       
       if (application.user_id !== userId) {
-        logger.warn(`User ${userId} attempted to create essay for application ${data.applicationId} owned by user ${application.user_id}`);
+        logger.warn(`User ${sanitizeForLog(userId)} attempted to create essay for application ${sanitizeForLog(data.applicationId)} owned by user ${application.user_id}`);
         return res.status(403).json({
           success: false,
           message: 'Access denied',
@@ -89,7 +90,7 @@ class EssayController {
       }
       
       if (!check.authorized) {
-        logger.warn(`User ${userId} attempted to update essay ${id} they don't own`);
+        logger.warn(`User ${sanitizeForLog(userId)} attempted to update essay ${sanitizeForLog(id)} they don't own`);
         return res.status(403).json({
           success: false,
           message: 'Access denied',
@@ -127,7 +128,7 @@ class EssayController {
       }
       
       if (!check.authorized) {
-        logger.warn(`User ${userId} attempted to delete essay ${id} they don't own`);
+        logger.warn(`User ${sanitizeForLog(userId)} attempted to delete essay ${sanitizeForLog(id)} they don't own`);
         return res.status(403).json({
           success: false,
           message: 'Access denied',
