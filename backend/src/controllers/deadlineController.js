@@ -1,6 +1,7 @@
 const Deadline = require('../models/Deadline');
 const Application = require('../models/Application');
 const logger = require('../utils/logger');
+const { sanitizeForLog } = require('../utils/security');
 
 class DeadlineController {
   // Get all deadlines for user
@@ -51,7 +52,7 @@ class DeadlineController {
       }
       
       if (application.user_id !== userId) {
-        logger.warn(`User ${userId} attempted to create deadline for application ${data.applicationId} owned by user ${application.user_id}`);
+        logger.warn(`User ${sanitizeForLog(userId)} attempted to create deadline for application ${sanitizeForLog(data.applicationId)} owned by user ${application.user_id}`);
         return res.status(403).json({
           success: false,
           message: 'Access denied',
@@ -90,7 +91,7 @@ class DeadlineController {
       }
       
       if (!check.authorized) {
-        logger.warn(`User ${userId} attempted to update deadline ${id} they don't own`);
+        logger.warn(`User ${sanitizeForLog(userId)} attempted to update deadline ${sanitizeForLog(id)} they don't own`);
         return res.status(403).json({
           success: false,
           message: 'Access denied',
@@ -128,7 +129,7 @@ class DeadlineController {
       }
       
       if (!check.authorized) {
-        logger.warn(`User ${userId} attempted to delete deadline ${id} they don't own`);
+        logger.warn(`User ${sanitizeForLog(userId)} attempted to delete deadline ${sanitizeForLog(id)} they don't own`);
         return res.status(403).json({
           success: false,
           message: 'Access denied',

@@ -1,5 +1,6 @@
 const Application = require('../models/Application');
 const logger = require('../utils/logger');
+const { sanitizeForLog } = require('../utils/security');
 
 // Generate request ID for tracking
 function generateRequestId() {
@@ -24,7 +25,7 @@ class ApplicationController {
       const userId = req.user?.userId;
       const { status, priority } = req.query;
       
-      logger.info(`[${requestId}] GET /applications - User: ${userId}, Filters: status=${status}, priority=${priority}`);
+      logger.info(`[${requestId}] GET /applications - User: ${userId}, Filters: status=${sanitizeForLog(status)}, priority=${sanitizeForLog(priority)}`);
       
       if (!userId) {
         logger.warn(`[${requestId}] No userId in request - authentication may have failed`);
@@ -76,7 +77,7 @@ class ApplicationController {
       // Normalize collegeId field
       if (data.college_id && !data.collegeId) {
         data.collegeId = data.college_id;
-        logger.debug(`[${requestId}] Normalized college_id to collegeId: ${data.collegeId}`);
+        logger.debug(`[${requestId}] Normalized college_id to collegeId: ${sanitizeForLog(data.collegeId)}`);
       }
       
       if (!data.collegeId) {
@@ -88,7 +89,7 @@ class ApplicationController {
         });
       }
       
-      logger.debug(`[${requestId}] Creating application for college: ${data.collegeId}`);
+      logger.debug(`[${requestId}] Creating application for college: ${sanitizeForLog(data.collegeId)}`);
       const application = Application.create(userId, data);
       
       if (!application) {
@@ -150,14 +151,14 @@ class ApplicationController {
       const userId = req.user?.userId;
       const data = req.validatedData || req.body;
       
-      logger.info(`[${requestId}] PUT /applications/${id}`);
+      logger.info(`[${requestId}] PUT /applications/${sanitizeForLog(id)}`);
       logger.debug(`[${requestId}] Update data keys: ${Object.keys(data || {}).join(', ')}`);
       
       // Get old application to check ownership and status change
       const oldApplication = Application.findById(parseInt(id));
       
       if (!oldApplication) {
-        logger.warn(`[${requestId}] Application ${id} not found`);
+        logger.warn(`[${requestId}] Application ${sanitizeForLog(id)} not found`);
         return res.status(404).json({
           success: false,
           message: 'Application not found',
@@ -167,7 +168,7 @@ class ApplicationController {
       
       // SECURITY: Verify user owns this application
       if (oldApplication.user_id !== userId) {
-        logger.warn(`[${requestId}] User ${userId} attempted to access application ${id} owned by user ${oldApplication.user_id}`);
+        logger.warn(`[${requestId}] User ${userId} attempted to access application ${sanitizeForLog(id)} owned by user ${oldApplication.user_id}`);
         return res.status(403).json({
           success: false,
           message: 'Access denied',
@@ -177,7 +178,7 @@ class ApplicationController {
       
       const application = Application.update(parseInt(id), data);
       
-      logger.info(`[${requestId}] Application ${id} updated successfully`);
+      logger.info(`[${requestId}] Application ${sanitizeForLog(id)} updated successfully`);
       
       // Auto-collect ML training data when decision status changes
       if (oldApplication && data.status && 
@@ -233,7 +234,7 @@ class ApplicationController {
                 new Date().getFullYear()
               );
               
-              logger.info(`[${requestId}] ML training data auto-collected for application ${id}`);
+              logger.info(`[${requestId}] ML training data auto-collected for application ${sanitizeForLog(id)}`);
             }
           }
         } catch (mlError) {
@@ -261,13 +262,13 @@ class ApplicationController {
       const { id } = req.params;
       const userId = req.user?.userId;
       
-      logger.info(`[${requestId}] DELETE /applications/${id}`);
+      logger.info(`[${requestId}] DELETE /applications/${sanitizeForLog(id)}`);
       
       // SECURITY: Verify user owns this application
       const application = Application.findById(parseInt(id));
       
       if (!application) {
-        logger.warn(`[${requestId}] Application ${id} not found`);
+        logger.warn(`[${requestId}] Application ${sanitizeForLog(id)} not found`);
         return res.status(404).json({
           success: false,
           message: 'Application not found',
@@ -276,7 +277,7 @@ class ApplicationController {
       }
       
       if (application.user_id !== userId) {
-        logger.warn(`[${requestId}] User ${userId} attempted to delete application ${id} owned by user ${application.user_id}`);
+        logger.warn(`[${requestId}] User ${userId} attempted to delete application ${sanitizeForLog(id)} owned by user ${application.user_id}`);
         return res.status(403).json({
           success: false,
           message: 'Access denied',
@@ -286,7 +287,7 @@ class ApplicationController {
       
       Application.delete(parseInt(id));
       
-      logger.info(`[${requestId}] Application ${id} deleted successfully`);
+      logger.info(`[${requestId}] Application ${sanitizeForLog(id)} deleted successfully`);
       
       res.json(addDebugInfo({
         success: true,
@@ -306,13 +307,13 @@ class ApplicationController {
       const { id } = req.params;
       const userId = req.user?.userId;
       
-      logger.info(`[${requestId}] GET /applications/${id}/timeline`);
+      logger.info(`[${requestId}] GET /applications/${sanitizeForLog(id)}/timeline`);
       
       // SECURITY: Verify user owns this application
       const application = Application.findById(parseInt(id));
       
       if (!application) {
-        logger.warn(`[${requestId}] Application ${id} not found`);
+        logger.warn(`[${requestId}] Application ${sanitizeForLog(id)} not found`);
         return res.status(404).json({
           success: false,
           message: 'Application not found',
@@ -321,7 +322,7 @@ class ApplicationController {
       }
       
       if (application.user_id !== userId) {
-        logger.warn(`[${requestId}] User ${userId} attempted to access timeline for application ${id} owned by user ${application.user_id}`);
+        logger.warn(`[${requestId}] User ${userId} attempted to access timeline for application ${sanitizeForLog(id)} owned by user ${application.user_id}`);
         return res.status(403).json({
           success: false,
           message: 'Access denied',
