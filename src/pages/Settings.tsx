@@ -14,6 +14,7 @@ import ProfileCompletionWidget from '@/components/common/ProfileCompletionWidget
 import HelpTooltip, { FIELD_HELP_TEXT } from '@/components/common/HelpTooltip';
 import { ValidationMessage, useFormValidation, ValidationRules } from '@/hooks/useFormValidation';
 import { useAutosave, DraftRestoreBanner } from '@/hooks/useAutosave';
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 // Section configuration for navigation
 const SECTIONS = [
@@ -83,6 +84,7 @@ const Settings = () => {
   
   // Form data for editing
   const [formData, setFormData] = useState<any>({});
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [newActivity, setNewActivity] = useState<any>({
     activity_name: '',
     activity_type: '',
@@ -399,9 +401,11 @@ const SCROLL_DELAY_MS = 100;
 
   const deleteActivity = async (activityId: number) => {
     if (!user?.id) return;
-    
-    if (!confirm('Are you sure you want to delete this activity?')) return;
-    
+    setConfirmDelete(activityId);
+  };
+
+  const doDeleteActivity = async (activityId: number) => {
+    if (!user?.id) return;
     setSaving(true);
     try {
       await api.deleteActivity(activityId);
@@ -423,6 +427,14 @@ const SCROLL_DELAY_MS = 100;
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
+      <ConfirmModal
+        isOpen={confirmDelete !== null}
+        title="Delete Activity"
+        message="Are you sure you want to delete this activity?"
+        confirmLabel="Delete"
+        onConfirm={() => { const id = confirmDelete!; setConfirmDelete(null); doDeleteActivity(id); }}
+        onCancel={() => setConfirmDelete(null)}
+      />
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>

@@ -1,5 +1,6 @@
 const AuthService = require('../services/authService');
 const User = require('../models/User');
+const StudentProfile = require('../models/StudentProfile');
 const logger = require('../utils/logger');
 
 class AuthController {
@@ -106,7 +107,12 @@ class AuthController {
       const data = req.validatedData;
       
       const user = User.updateOnboarding(userId, data);
-      
+
+      // Also persist extended profile fields if present
+      if (data.gpa || data.subjects || data.activities || data.gpaWeighted || data.satScore) {
+        try { StudentProfile.upsert(userId, data); } catch { /* non-critical */ }
+      }
+
       res.json({
         success: true,
         message: 'Onboarding completed successfully',

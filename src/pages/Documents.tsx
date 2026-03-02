@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 interface Document {
@@ -160,6 +161,7 @@ const Documents = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [selectedCat, setSelectedCat] = useState('');
+  const [confirmDeleteDocId, setConfirmDeleteDocId] = useState<number|null>(null);
   const [form, setForm] = useState({ name:'', category:'transcript', description:'', status:'pending', fileUrl:'', expiryDate:'' });
 
   useEffect(() => { loadData(); }, [selectedCat]);
@@ -193,6 +195,14 @@ const Documents = () => {
   return (
     <>
       <style>{GLOBAL}</style>
+      <ConfirmModal
+        isOpen={confirmDeleteDocId !== null}
+        title="Delete Document"
+        message="Delete this document?"
+        confirmLabel="Delete"
+        onConfirm={() => { const id = confirmDeleteDocId!; setConfirmDeleteDocId(null); api.deleteDocument(id).then(()=>{toast.success('Deleted');loadData();}).catch(()=>toast.error('Failed')); }}
+        onCancel={() => setConfirmDeleteDocId(null)}
+      />
       <div style={{ minHeight:'100vh', background:S.bg, color:'var(--color-text-primary)', fontFamily:S.font }}>
 
         {/* Header */}
@@ -327,7 +337,7 @@ const Documents = () => {
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:16 }}>
               {documents.map((doc,i)=>(
                 <DocCard key={doc.id} doc={doc} index={i}
-                  onDelete={id=>{if(confirm('Delete?'))api.deleteDocument(id).then(()=>{toast.success('Deleted');loadData();}).catch(()=>toast.error('Failed'));}}
+                  onDelete={id=>setConfirmDeleteDocId(id)}
                   onStatusChange={(id,s)=>api.updateDocument(id,{status:s}).then(()=>{toast.success('Updated');loadData();}).catch(()=>toast.error('Failed'))}
                 />
               ))}
