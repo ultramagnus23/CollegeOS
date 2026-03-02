@@ -297,7 +297,7 @@ class WebScraper {
       return true;
       
     } catch (error) {
-      logger.error('Failed to save scraped data:', error.message);
+      logger.error('Failed to save scraped data', { error: error.message });
       return false;
     }
   }
