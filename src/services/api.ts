@@ -1206,6 +1206,38 @@ class ApiService {
         method: 'POST',
       }),
   };
+
+  // ==================== AUTH NAMESPACE ====================
+
+  auth = {
+    googleOnboarding: (googleId: string, email: string, name: string, profile: any) =>
+      this.request('/auth/google-onboarding', {
+        method: 'POST',
+        body: JSON.stringify({ googleId, email, name, profile }),
+      }),
+
+    saveOnboardingProgress: (googleId: string, stepData: any) =>
+      this.request(`/users/${googleId}/onboarding-progress`, {
+        method: 'PATCH',
+        body: JSON.stringify(stepData),
+      }),
+
+    getProfile: (googleId: string) =>
+      this.request(`/users/${googleId}/profile`),
+  };
+
+  // ==================== USER NAMESPACE ====================
+
+  user = {
+    getSettings: (googleId: string) =>
+      this.request(`/users/${googleId}/settings`),
+
+    updateSettings: (googleId: string, data: any) =>
+      this.request(`/users/${googleId}/settings`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+  };
 }
 
 // Export singleton instance
