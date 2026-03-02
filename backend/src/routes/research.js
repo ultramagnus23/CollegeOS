@@ -48,7 +48,7 @@ router.get('/majors', async (req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Database query failed',
-        error: error.message
+        error: 'An internal error occurred'
       });
     }
     
@@ -143,7 +143,7 @@ router.get('/search', async (req, res, next) => {
       return res.status(500).json({
         success: false,
         message: 'Database query failed',
-        error: error.message
+        error: 'An internal error occurred'
       });
     }
     

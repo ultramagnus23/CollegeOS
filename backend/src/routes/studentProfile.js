@@ -6,6 +6,7 @@ const router = express.Router();
 const StudentProfile = require('../models/StudentProfile');
 const StudentActivity = require('../models/StudentActivity');
 const { authenticateToken } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 /**
  * GET /api/profile
@@ -29,11 +30,11 @@ router.get('/', authenticateToken, async (req, res) => {
       data: profile
     });
   } catch (error) {
-    console.error('Error fetching profile:', error);
+    logger.error('Error fetching profile:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch profile',
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });
@@ -52,11 +53,11 @@ router.post('/', authenticateToken, async (req, res) => {
       message: 'Profile saved successfully'
     });
   } catch (error) {
-    console.error('Error saving profile:', error);
+    logger.error('Error saving profile:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to save profile',
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });
@@ -75,11 +76,11 @@ router.put('/', authenticateToken, async (req, res) => {
       message: 'Profile updated successfully'
     });
   } catch (error) {
-    console.error('Error updating profile:', error);
+    logger.error('Error updating profile:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update profile',
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });
@@ -104,11 +105,11 @@ router.delete('/', authenticateToken, async (req, res) => {
       message: 'Profile deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting profile:', error);
+    logger.error('Error deleting profile:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete profile',
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });
@@ -144,11 +145,11 @@ router.get('/activities', authenticateToken, async (req, res) => {
       tierDefinitions: StudentActivity.TIER_DEFINITIONS
     });
   } catch (error) {
-    console.error('Error fetching activities:', error);
+    logger.error('Error fetching activities:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch activities',
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });
@@ -175,11 +176,11 @@ router.post('/activities', authenticateToken, async (req, res) => {
       message: 'Activity added successfully'
     });
   } catch (error) {
-    console.error('Error creating activity:', error);
+    logger.error('Error creating activity:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to add activity',
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });
@@ -217,11 +218,11 @@ router.put('/activities/:id', authenticateToken, async (req, res) => {
       message: 'Activity updated successfully'
     });
   } catch (error) {
-    console.error('Error updating activity:', error);
+    logger.error('Error updating activity:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update activity',
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });
@@ -258,11 +259,11 @@ router.delete('/activities/:id', authenticateToken, async (req, res) => {
       message: 'Activity deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting activity:', error);
+    logger.error('Error deleting activity:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete activity',
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });
@@ -298,11 +299,11 @@ router.post('/activities/reorder', authenticateToken, async (req, res) => {
       message: 'Activities reordered successfully'
     });
   } catch (error) {
-    console.error('Error reordering activities:', error);
+    logger.error('Error reordering activities:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to reorder activities',
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });
@@ -336,11 +337,11 @@ router.get('/activities/summary', authenticateToken, async (req, res) => {
       data: summary
     });
   } catch (error) {
-    console.error('Error fetching summary:', error);
+    logger.error('Error fetching summary:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch summary',
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });

@@ -52,7 +52,7 @@ router.get('/', authenticate, async (req, res) => {
     logger.error('Get tasks error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -90,7 +90,7 @@ router.get('/college/:collegeId', authenticate, async (req, res) => {
     logger.error('Get college tasks error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -137,7 +137,7 @@ router.post('/decompose/:collegeId', authenticate, async (req, res) => {
     logger.error('Decompose tasks error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -168,7 +168,7 @@ router.get('/template/:collegeId', async (req, res) => {
     logger.error('Get task template error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -199,7 +199,7 @@ router.get('/dependencies/:collegeId', authenticate, async (req, res) => {
     logger.error('Get dependencies error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -242,7 +242,7 @@ router.get('/blocked', authenticate, async (req, res) => {
     logger.error('Get blocked tasks error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -275,7 +275,7 @@ router.get('/critical-path/:collegeId', authenticate, async (req, res) => {
     logger.error('Get critical path error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -327,7 +327,7 @@ router.patch('/:taskId/status', authenticate, async (req, res) => {
     logger.error('Update task status error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -384,7 +384,7 @@ router.put('/:taskId', authenticate, async (req, res) => {
     logger.error('Update task error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -436,7 +436,7 @@ router.post('/', authenticate, async (req, res) => {
     logger.error('Create task error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -479,7 +479,7 @@ router.delete('/:taskId', authenticate, async (req, res) => {
     logger.error('Delete task error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -501,7 +501,7 @@ router.get('/reusable', authenticate, async (req, res) => {
     logger.error('Get reusable content error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
