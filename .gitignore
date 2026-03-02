@@ -27,3 +27,6 @@ backend/.env
 
 # Database backups
 *.backup
+# SQLite WAL/SHM files (runtime artifacts)
+*.db-wal
+*.db-shm
