@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const IntelligentSearch = require('../services/intelligentSearch');
+const logger = require('../utils/logger');
 
 /**
  * Intelligent search endpoint
@@ -33,11 +34,11 @@ router.post('/', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Search error:', error);
+    logger.error('Search error:', error);
     res.status(500).json({
       success: false,
       message: 'Search failed',
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });
@@ -66,9 +67,10 @@ router.post('/classify', (req, res) => {
     });
     
   } catch (error) {
+    logger.error('Classification error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });
