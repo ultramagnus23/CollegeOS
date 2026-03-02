@@ -6,6 +6,7 @@
 
 const db = require('../config/database');
 const logger = require('../utils/logger');
+const { sanitizeForLog } = require('../utils/security');
 
 class NotificationService {
   /**
@@ -32,7 +33,7 @@ class NotificationService {
         JSON.stringify(metadata)
       );
       
-      logger.info(`Notification created for user ${userId}: ${type}`);
+      logger.info(`Notification created for user ${userId}: ${sanitizeForLog(type)}`);
       
       return {
         id: result.lastInsertRowid,
