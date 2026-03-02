@@ -690,7 +690,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
       progressDebounceRef.current = setTimeout(async () => {
         const auth = googleAuth;
         if (auth?.googleId) {
-          try { await api.patchOnboardingProgress(auth.googleId, next); } catch { /* silent */ }
+          try { await api.auth.saveOnboardingProgress(auth.googleId, next); } catch { /* silent */ }
         }
       }, 1500);
       return next;
@@ -1211,7 +1211,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
         await onComplete(studentData);
         if (googleAuth) {
           try {
-            await api.googleOnboarding({ googleId: googleAuth.googleId, email: googleAuth.email, name: studentData.name || googleAuth.name, profile: studentData });
+            await api.auth.googleOnboarding(googleAuth.googleId, googleAuth.email, studentData.name || googleAuth.name, studentData);
           } catch (err) { console.error('Failed to sync onboarding profile:', err); toast.error('Failed to sync profile to server'); }
         }
         navigate('/research');
