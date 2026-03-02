@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import AIChatbot from '../components/AIChatbot';
 import ProfileStrength from '../components/chancing/ProfileStrength';
 import TodaysTasks from '../components/dashboard/TodaysTasks';
@@ -312,7 +313,7 @@ const Dashboard = () => {
 
           {/* ── Tasks + Recommended Actions ── */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
-            <TodaysTasks tasks={todaysTasks} onTaskClick={()=>navigate('/deadlines')} onTaskComplete={async (id)=>{ try { await api.tasks.update(id,{status:'completed'}); setTodaysTasks(prev=>prev.filter(t=>t.id!==id)); } catch { /* silent */ } }} />
+            <TodaysTasks tasks={todaysTasks} onTaskClick={()=>navigate('/deadlines')} onTaskComplete={async (id)=>{ try { await api.tasks.update(id,{status:'completed'}); setTodaysTasks(prev=>prev.filter(t=>t.id!==id)); } catch { toast.error('Failed to complete task'); } }} />
             <RecommendedActions actions={recommendedActions} profileStrength={profileStrength} onActionClick={(a)=>{
               const routes: Record<string,string> = { profile:'/settings', testing:'/settings', essays:'/essays', applications:'/discover', recommendations:'/recommendations', deadlines:'/deadlines' };
               navigate(routes[a.category]||'/');

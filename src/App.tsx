@@ -11,6 +11,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
 import { profileService } from "./services/profileService";
+import { api } from "./services/api";
 
 // Page Imports
 import AuthPage from "./pages/Auth";
@@ -40,7 +41,7 @@ import { StudentProfile } from "./types";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { completeOnboarding } = useAuth();
+  const { completeOnboarding, refreshUser } = useAuth();
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
 
   useEffect(() => {
@@ -54,26 +55,18 @@ const AppContent = () => {
 
   const handleOnboardingComplete = async (profile: StudentProfile) => {
     try {
-      // Map the profile data to the format expected by the backend
-      const onboardingData = {
-        targetCountries: profile.preferredCountries,
-        intendedMajors: profile.potentialMajors,
-        testStatus: {
-          satScore: profile.satScore || null,
-          actScore: profile.actScore || null,
-          ibPredicted: profile.ibPredicted || null,
-        },
-        languagePreferences: [], // Can be expanded later if needed
-      };
-
-      // Complete onboarding via AuthContext (this automatically updates ProfileService)
-      await completeOnboarding(onboardingData);
-      
-      // Update local state for backward compatibility
+      // All heavy lifting (saveExtendedProfile, completeOnboarding, getInstantRecommendations)
+      // is now done inside Onboarding.tsx's LoadingSequence onDone handler.
+      // Here we just refresh the user session and save any activities.
+      await refreshUser();
+      if (profile.activities && Array.isArray(profile.activities)) {
+        for (const activity of profile.activities) {
+          try { await api.addActivity(activity); } catch { /* non-critical */ }
+        }
+      }
       setStudentProfile(profile);
     } catch (error) {
-      console.error('Failed to complete onboarding:', error);
-      // You might want to show an error message to the user here
+      console.error('Failed to refresh after onboarding:', error);
     }
   };
 

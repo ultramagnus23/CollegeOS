@@ -110,7 +110,9 @@ class AuthController {
 
       // Also persist extended profile fields if present
       if (data.gpa || data.subjects || data.activities || data.gpaWeighted || data.satScore) {
-        try { StudentProfile.upsert(userId, data); } catch { /* non-critical */ }
+        try { StudentProfile.upsert(userId, data); } catch (profileErr) {
+          logger.error('Failed to upsert student profile during onboarding', { userId, error: profileErr?.message });
+        }
       }
 
       res.json({

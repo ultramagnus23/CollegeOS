@@ -27,9 +27,22 @@ const Research: React.FC = () => {
   const [countries, setCountries] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showInstantBanner, setShowInstantBanner] = useState(false);
 
   useEffect(() => {
     loadFilters();
+    // Load instant_recommendations from localStorage if present
+    try {
+      const raw = localStorage.getItem('instant_recommendations');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const recs = parsed.recommendations || parsed;
+        if (Array.isArray(recs) && recs.length > 0) {
+          setColleges(recs);
+          setShowInstantBanner(true);
+        }
+      }
+    } catch { /* ignore */ }
   }, []);
 
   const loadFilters = async () => {
@@ -55,6 +68,8 @@ const Research: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      setShowInstantBanner(false);
+      try { localStorage.removeItem('instant_recommendations'); } catch {}
       
       // Use the correct API method from the namespace
       const res = await api.research.searchByMajor(majorQuery.trim(), selectedCountry || undefined);
@@ -81,6 +96,8 @@ const Research: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      setShowInstantBanner(false);
+      try { localStorage.removeItem('instant_recommendations'); } catch {}
       
       // Use the correct API method from the namespace
       const res = await api.research.search(generalQuery.trim(), selectedCountry || undefined, 'all');
@@ -226,6 +243,11 @@ const Research: React.FC = () => {
 
         {!loading && colleges.length > 0 && (
           <div className="mb-4 text-muted-foreground">
+            {showInstantBanner ? (
+              <div className="mb-3 px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-sm font-medium">
+                Your personalised matches based on your profile.
+              </div>
+            ) : null}
             Found {colleges.length} college{colleges.length !== 1 ? 's' : ''}
           </div>
         )}
