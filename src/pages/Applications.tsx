@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '../services/api';
+import { api } from '../services/api';
 import { Button } from '@/components/ui/button';
 import { Trash2, ExternalLink, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';

@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Search, Database, Globe, Layers, TrendingUp } from 'lucide-react';
 import { StudentProfile } from '../types';
-import api from '../services/api';
+import { api } from '../services/api';
 
 interface Props {
   studentProfile: StudentProfile | null;
