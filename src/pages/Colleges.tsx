@@ -235,7 +235,7 @@ const Colleges: React.FC = () => {
   /* ==================== RENDER ==================== */
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="p-6">
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
@@ -266,7 +266,7 @@ const Colleges: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search colleges by name, location, or major..."
-              className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg"
+              className="w-full pl-12 pr-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg text-foreground bg-background placeholder:text-muted-foreground"
             />
           </div>
           
@@ -278,7 +278,7 @@ const Colleges: React.FC = () => {
                 <select
                   value={selectedCountry}
                   onChange={(e) => setSelectedCountry(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2"
+                  className="w-full border border-border rounded-lg px-4 py-2"
                 >
                   <option value="">All Countries</option>
                   {countries.map(c => <option key={c}>{c}</option>)}
@@ -290,7 +290,7 @@ const Colleges: React.FC = () => {
                 <select
                   value={selectedProgram}
                   onChange={(e) => setSelectedProgram(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2"
+                  className="w-full border border-border rounded-lg px-4 py-2"
                 >
                   <option value="">All Programs</option>
                   {programs.map(p => <option key={p}>{p}</option>)}
@@ -302,7 +302,7 @@ const Colleges: React.FC = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2"
+                  className="w-full border border-border rounded-lg px-4 py-2"
                 >
                   <option value="name">Name (A-Z)</option>
                   <option value="ranking">Ranking (Best First)</option>
@@ -428,7 +428,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3 p-4 border-b border-gray-100">
         <StatBox
-          icon={<TrendingUp className="w-4 h-4 text-green-600" />}
+          icon={<TrendingUp className="w-4 h-4 text-emerald-500" />}
           label="Acceptance"
           value={formatAcceptanceRate(acceptanceRate)}
         />

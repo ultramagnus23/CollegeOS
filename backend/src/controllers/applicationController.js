@@ -103,7 +103,7 @@ class ApplicationController {
       if (application && application.college_id) {
         try {
           logger.debug(`[${requestId}] Generating deadlines for college ${application.college_id}`);
-          const { generateDeadlinesForCollege } = require('../../services/deadlineGenerator');
+          const { generateDeadlinesForCollege } = require('../services/deadlineGenerator');
           const College = require('../models/College');
           const college = await College.findById(application.college_id);
           

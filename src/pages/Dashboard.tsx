@@ -19,16 +19,16 @@ const h2r = (hex: string, a: number) => {
   return `rgba(${r},${g},${b},${a})`;
 };
 const S = {
-  bg:'#080810', surface:'#0F0F1C', surface2:'rgba(255,255,255,0.04)',
-  border:'rgba(255,255,255,0.08)', border2:'rgba(255,255,255,0.13)',
+  bg:'var(--color-bg-primary, #080810)', surface:'var(--color-bg-surface, #0F0F1C)', surface2:'var(--color-bg-surface2, rgba(255,255,255,0.04))',
+  border:'var(--color-border, rgba(255,255,255,0.08))', border2:'var(--color-border-strong, rgba(255,255,255,0.13))',
   accent:'#6C63FF', accent2:'#3B9EFF', gold:'#F59E0B',
-  text:'#fff', muted:'rgba(255,255,255,0.45)', dim:'rgba(255,255,255,0.22)',
+  text:'var(--color-text-primary, #fff)', muted:'var(--color-text-secondary, rgba(255,255,255,0.45))', dim:'var(--color-text-muted, rgba(255,255,255,0.22))',
   font:"'DM Sans',sans-serif",
 };
 
 const GLOBAL = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0;}body{background:#080810;}
+  *{box-sizing:border-box;margin:0;padding:0;}
   @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
@@ -315,14 +315,14 @@ const Dashboard = () => {
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
             <TodaysTasks tasks={todaysTasks} onTaskClick={()=>navigate('/deadlines')} onTaskComplete={async (id)=>{ try { await api.tasks.update(id,{status:'completed'}); setTodaysTasks(prev=>prev.filter(t=>t.id!==id)); } catch { toast.error('Failed to complete task'); } }} />
             <RecommendedActions actions={recommendedActions} profileStrength={profileStrength} onActionClick={(a)=>{
-              const routes: Record<string,string> = { profile:'/settings', testing:'/settings', essays:'/essays', applications:'/discover', recommendations:'/recommendations', deadlines:'/deadlines' };
+              const routes: Record<string,string> = { profile:'/settings', testing:'/settings', essays:'/essays', applications:'/colleges', recommendations:'/recommendations', deadlines:'/deadlines' };
               navigate(routes[a.category]||'/');
             }} />
           </div>
 
           {/* ── College list overview ── */}
           <div style={{ marginBottom:24 }}>
-            <CollegeListOverview colleges={collegeList} onCollegeClick={(id)=>navigate(`/colleges/${id}`)} onAddCollege={()=>navigate('/discover')} />
+            <CollegeListOverview colleges={collegeList} onCollegeClick={(id)=>navigate(`/colleges/${id}`)} onAddCollege={()=>navigate('/colleges')} />
           </div>
 
           {/* ── Progress + Profile + Decisions ── */}
@@ -382,7 +382,7 @@ const Dashboard = () => {
               <SectionHead emoji="⚡" title="Quick Actions" />
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                 {[
-                  { emoji:'🎯', label:'Manage Activities', href:'/activities', color:'#6C63FF' },
+                  { emoji:'🎯', label:'Manage Activities', href:'/settings', color:'#6C63FF' },
                   { emoji:'🏫', label:'Explore Colleges',  href:'/colleges',   color:'#3B9EFF' },
                   { emoji:'✍️', label:'Work on Essays',    href:'/essays',     color:'#A855F7' },
                   { emoji:'📅', label:'Check Deadlines',   href:'/deadlines',  color:'#F97316' },
@@ -429,7 +429,7 @@ const Dashboard = () => {
                 <div style={{ textAlign:'center', padding:'32px 0' }}>
                   <div style={{ fontSize:36, marginBottom:10 }}>🏫</div>
                   <div style={{ color:S.dim, fontSize:13 }}>No applications yet</div>
-                  <Link to="/discover"><button style={{ marginTop:12, padding:'8px 18px', background:S.accent, border:'none', borderRadius:10, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:S.font }}>Browse Colleges</button></Link>
+                  <Link to="/colleges"><button style={{ marginTop:12, padding:'8px 18px', background:S.accent, border:'none', borderRadius:10, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:S.font }}>Browse Colleges</button></Link>
                 </div>
               ) : recentApplications.map((app:any)=>(
                 <div key={app.id} style={{
@@ -476,7 +476,7 @@ const Dashboard = () => {
 
           {/* ── Quick action nav cards ── */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
-            <QuickAction emoji="🔭" title="Discover Colleges"  desc="Browse universities worldwide"  href="/discover"      accent="#6C63FF" />
+            <QuickAction emoji="🔭" title="Discover Colleges"  desc="Browse universities worldwide"  href="/colleges"      accent="#6C63FF" />
             <QuickAction emoji="📋" title="My Applications"    desc="Track your progress"            href="/applications"  accent="#10B981" />
             <QuickAction emoji="📅" title="Deadlines"          desc="Never miss a date"              href="/deadlines"     accent="#F97316" />
             <QuickAction emoji="✍️"  title="Essays"            desc="Write and track your essays"    href="/essays"        accent="#A855F7" />

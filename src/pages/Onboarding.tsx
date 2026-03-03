@@ -1197,41 +1197,6 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
       `}</style>
 
-      {/* Google Sign-in Gate — shown before Step 1 */}
-      {!googleAuth && (
-        <div style={{
-          minHeight: '100vh', background: '#0A0A1A', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'DM Sans', sans-serif",
-        }}>
-          <div style={{
-            background: '#12122A', border: '1px solid rgba(108,99,255,0.3)', borderRadius: 20,
-            padding: '48px 56px', maxWidth: 420, width: '100%', textAlign: 'center',
-            boxShadow: '0 0 60px rgba(108,99,255,0.15)',
-          }}>
-            <div style={{ fontSize: 40, marginBottom: 16 }}>🎓</div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginBottom: 10, letterSpacing: '-0.02em' }}>
-              Welcome to <span style={{ color: '#6C63FF' }}>CollegeOS</span>
-            </h1>
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32, lineHeight: 1.6 }}>
-              Sign in with Google to start your college journey. We'll personalize everything for you.
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => toast.error('Google sign-in failed')}
-                useOneTap={false}
-                theme="filled_black"
-                shape="rectangular"
-                size="large"
-                text="continue_with"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {googleAuth && (
-        <>
           {showLoading && <LoadingSequence name={studentData.name} onDone={async () => {
         try {
           // 1. Save full extended profile to student_profiles table
@@ -1337,8 +1302,6 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
           )}
         </div>
       </div>
-        </>
-      )}
     </>
   );
 };

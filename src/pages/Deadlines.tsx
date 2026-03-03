@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,7 @@ interface DeadlineFormData {
 }
 
 const Deadlines = () => {
+  const navigate = useNavigate();
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,12 +123,12 @@ const Deadlines = () => {
     if (days < 0) return 'text-red-600';
     if (days <= 7) return 'text-orange-600';
     if (days <= 30) return 'text-yellow-600';
-    return 'text-green-600';
+    return 'text-emerald-500';
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="animate-spin text-primary" size={40} />
       </div>
     );
@@ -149,7 +151,7 @@ const Deadlines = () => {
         </div>
         <div className="flex gap-3">
           {/* View Toggle */}
-          <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+          <div className="flex border border-border rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('list')}
               className={`px-4 py-2 flex items-center gap-2 ${
@@ -186,7 +188,7 @@ const Deadlines = () => {
               <select
                 value={formData.applicationId}
                 onChange={(e) => setFormData({ ...formData, applicationId: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mt-1"
+                className="w-full px-4 py-2 border border-border rounded-lg mt-1"
               >
                 <option value="">Select application</option>
                 {applications.map(app => (
@@ -200,7 +202,7 @@ const Deadlines = () => {
               <select
                 value={formData.deadlineType}
                 onChange={(e) => setFormData({ ...formData, deadlineType: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mt-1"
+                className="w-full px-4 py-2 border border-border rounded-lg mt-1"
               >
                 <option value="application">Application</option>
                 <option value="essay">Essay</option>
@@ -241,7 +243,14 @@ const Deadlines = () => {
       {/* Deadlines Display */}
       {deadlines.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
-          <p className="text-muted-foreground">No deadlines yet. Add one to get started!</p>
+          <Calendar className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+          <p className="text-foreground font-medium mb-2">No deadlines yet</p>
+          <p className="text-muted-foreground mb-6">
+            Add a college to your list to automatically get deadlines for it.
+          </p>
+          <Button onClick={() => navigate('/colleges')}>
+            Browse Colleges
+          </Button>
         </div>
       ) : viewMode === 'calendar' ? (
         <DeadlineCalendar deadlines={deadlines} />
@@ -261,7 +270,7 @@ const Deadlines = () => {
                     className="mt-1"
                   >
                     {deadline.is_completed === 1 ? (
-                      <CheckCircle className="text-green-600" size={24} />
+                      <CheckCircle className="text-emerald-500" size={24} />
                     ) : (
                       <Circle className="text-muted-foreground" size={24} />
                     )}

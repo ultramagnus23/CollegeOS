@@ -2,6 +2,29 @@
 
 export type TrustTier = 'official' | 'secondary' | 'forum' | 'unverified';
 
+export interface StudentProfile {
+  name: string;
+  grade: string;
+  currentBoard: string;
+  country: string;
+  currentGPA: string;
+  satScore: string;
+  actScore: string;
+  ibPredicted: string;
+  subjects: string[];
+  majorCertain: boolean | null;
+  potentialMajors: string[];
+  skillsStrengths: string[];
+  preferredCountries: string[];
+  budgetRange: string;
+  campusSize: string;
+  locationPreference: string;
+  activities: string[];
+  awards: string[];
+  careerGoals: string;
+  whyCollege: string;
+}
+
 // Shared filter option types
 export interface CountryOption {
   value: string;
@@ -57,6 +80,47 @@ export interface Deadline {
   notes?: string;
 }
 
+export interface ApplicationDeadlines {
+  earlyDecision1Date?: string | null;
+  earlyDecision1Notification?: string | null;
+  earlyDecision2Date?: string | null;
+  earlyDecision2Notification?: string | null;
+  earlyActionDate?: string | null;
+  earlyActionNotification?: string | null;
+  restrictiveEarlyActionDate?: string | null;
+  regularDecisionDate?: string | null;
+  regularDecisionNotification?: string | null;
+  transferFallDate?: string | null;
+  internationalDeadlineDate?: string | null;
+  offersEarlyDecision?: number;
+  offersEarlyAction?: number;
+  offersRestrictiveEa?: number;
+  offersRollingAdmission?: number;
+  applicationFee?: number | null;
+  applicationFeeWaiverAvailable?: number;
+  sourceUrl?: string | null;
+  confidenceScore?: number | null;
+}
+
+export interface CollegeRequirements {
+  testPolicy?: string | null;
+  satRequired?: number;
+  actRequired?: number;
+  supplementalEssaysCount?: number | null;
+  teacherRecommendationsRequired?: number | null;
+  counselorRecommendationRequired?: number;
+  interviewOffered?: number;
+  interviewRequired?: number;
+  interviewType?: string | null;
+  portfolioRequired?: number;
+  toeflRequiredInternational?: number;
+  toeflMinimumScore?: number | null;
+  ieltsMinimumScore?: number | null;
+  demonstratedInterestConsidered?: number;
+  sourceUrl?: string | null;
+  confidenceScore?: number | null;
+}
+
 export interface College {
   id: string;
   name: string;
@@ -80,6 +144,10 @@ export interface College {
   hasLanguageRequirement: boolean;
   requiresFinancialDocs: boolean;
   
+  // Scraped deadline and requirements data
+  applicationDeadlines?: ApplicationDeadlines;
+  collegeRequirements?: CollegeRequirements;
+
   lastUpdated: Date;
 }
 

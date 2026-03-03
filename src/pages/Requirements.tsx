@@ -422,7 +422,7 @@ const Requirements = () => {
             >
               <Checkbox 
                 checked={completionData[req.id] || false}
-                className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500 pointer-events-none"
+                className="data-[state=checked]:bg-emerald-500/100 data-[state=checked]:border-green-500 pointer-events-none"
               />
               <span className={`text-sm ${completionData[req.id] ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                 {req.text}
@@ -436,7 +436,7 @@ const Requirements = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="animate-spin text-purple-600" size={40} />
       </div>
     );
@@ -482,7 +482,7 @@ const Requirements = () => {
           <select
             value={selectedCountry}
             onChange={(e) => setSelectedCountry(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+            className="border border-border rounded-lg px-3 py-2 text-sm"
             aria-label="Filter by country"
           >
             <option value="">All Countries</option>
@@ -503,8 +503,8 @@ const Requirements = () => {
       {/* College Requirements List */}
       {filteredColleges.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
-          <ClipboardList className="mx-auto text-gray-400 mb-4" size={48} />
-          <p className="text-gray-500 mb-4">
+          <ClipboardList className="mx-auto text-muted-foreground/50 mb-4" size={48} />
+          <p className="text-muted-foreground/70 mb-4">
             {collegeRequirements.length === 0 
               ? "You haven't added any colleges to your application list yet"
               : "No colleges match the selected filters"
