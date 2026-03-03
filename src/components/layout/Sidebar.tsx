@@ -36,7 +36,6 @@ const navSections = [
     items: [
       { id: 'colleges',     label: 'Colleges',     icon: Building2,        path: '/colleges' },
       { id: 'research',     label: 'Research',     icon: Search,           path: '/research' },
-      { id: 'search',       label: 'AI Search',    icon: Search,           path: '/search' },
     ]
   },
   {

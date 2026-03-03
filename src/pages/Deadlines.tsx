@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,7 @@ interface DeadlineFormData {
 }
 
 const Deadlines = () => {
+  const navigate = useNavigate();
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -241,7 +243,14 @@ const Deadlines = () => {
       {/* Deadlines Display */}
       {deadlines.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
-          <p className="text-muted-foreground">No deadlines yet. Add one to get started!</p>
+          <Calendar className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+          <p className="text-foreground font-medium mb-2">No deadlines yet</p>
+          <p className="text-muted-foreground mb-6">
+            Add a college to your list to automatically get deadlines for it.
+          </p>
+          <Button onClick={() => navigate('/colleges')}>
+            Browse Colleges
+          </Button>
         </div>
       ) : viewMode === 'calendar' ? (
         <DeadlineCalendar deadlines={deadlines} />

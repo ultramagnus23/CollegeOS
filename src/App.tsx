@@ -16,7 +16,6 @@ import { api } from "./services/api";
 // Page Imports
 import AuthPage from "./pages/Auth";
 import OnboardingPage from "./pages/Onboarding"; // Make sure this matches your file name
-import IntelligentCollegeSearch from './pages/IntelligentCollegeSearch';
 
 // Dashboard Pages
 import Dashboard from "./pages/Dashboard";
@@ -117,15 +116,6 @@ const AppContent = () => {
             <Route path="recommendations" element={<Recommendations />} />
             <Route path="timeline" element={<Timeline />} />
             <Route path="settings" element={<Settings />} />
-
-            <Route
-              path="/search"
-              element={
-                <IntelligentCollegeSearch
-                  studentProfile={studentProfile}
-                />
-              }
-            />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

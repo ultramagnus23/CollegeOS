@@ -41,7 +41,6 @@ const DashboardLayout = () => {
     { name: 'Scholarships', href: '/scholarships', icon: Award },
     { name: 'Recommendations', href: '/recommendations', icon: Users },
     { name: 'Timeline', href: '/timeline', icon: Clock },
-    { name: 'AI Search', href: '/search', icon: Search },
     { name: 'Settings', href: '/settings', icon: SettingsIcon },
   ];
 

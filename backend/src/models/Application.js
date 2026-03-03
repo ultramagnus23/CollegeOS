@@ -35,32 +35,28 @@ class Application {
     const applicationId = result.lastInsertRowid;
     
     // Auto-populate deadlines for this application (TASK 1)
-    try {
-      const deadlineResult = DeadlineAutoPopulationService.populateDeadlinesForApplication(
-        userId, 
-        applicationId, 
-        collegeId
-      );
-      
-      logger.info('Auto-populated deadlines:', deadlineResult);
-    } catch (error) {
+    // Service is async — attach .catch() so unhandled rejection doesn't crash Node
+    DeadlineAutoPopulationService.populateDeadlinesForApplication(
+      userId, 
+      applicationId, 
+      collegeId
+    ).then(deadlineResult => {
+      logger.info('Auto-populated deadlines', { applicationId, deadlinesAdded: deadlineResult.deadlinesAdded.length });
+    }).catch(error => {
       logger.error('Failed to auto-populate deadlines, but application was created:', error);
-      // Don't fail the application creation if deadline population fails
-    }
+    });
     
     // Auto-load essays for this application (TASK 4)
-    try {
-      const essayResult = EssayAutoLoadingService.loadEssaysForApplication(
-        userId,
-        applicationId,
-        collegeId
-      );
-      
-      logger.info('Auto-loaded essays:', essayResult);
-    } catch (error) {
+    // Service is async — attach .catch() so unhandled rejection doesn't crash Node
+    EssayAutoLoadingService.loadEssaysForApplication(
+      userId,
+      applicationId,
+      collegeId
+    ).then(essayResult => {
+      logger.info('Auto-loaded essays', { applicationId, essaysAdded: essayResult.essaysAdded.length });
+    }).catch(error => {
       logger.error('Failed to auto-load essays, but application was created:', error);
-      // Don't fail the application creation if essay loading fails
-    }
+    });
     
     return this.findById(applicationId);
   }
