@@ -126,7 +126,11 @@ router.post('/calculate', authenticate, async (req, res, next) => {
     if (!chancing) {
       // Try IMPROVED CDS-based calculation for US colleges (priority)
       if (country === 'USA' || country === 'United States') {
-        const enhancedResult = await consolidatedChancingService.calculateChance(profile, college, { preferCDS: false, preferML: false });
+        const enhancedResult = await consolidatedChancingService.calculateChance(
+          profile, college,
+          // Skip CDS and ML here since ML was already tried above; use improved algorithm only
+          { preferCDS: false, preferML: false }
+        );
         if (enhancedResult) {
           chancing = enhancedResult;
           predictionType = 'cds_bayesian';
