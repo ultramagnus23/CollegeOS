@@ -1,0 +1,30 @@
+[
+  {
+    "caller": "GET /:id",
+    "callee": "controllers/CollegeController"
+  },
+  {
+    "caller": "GET /:id",
+    "callee": "controllers/collegeController"
+  },
+  {
+    "caller": "GET /:id",
+    "callee": "middleware/security"
+  },
+  {
+    "caller": "GET /:id",
+    "callee": "services/CollegeService"
+  },
+  {
+    "caller": "middleware/security",
+    "callee": "config/security"
+  },
+  {
+    "caller": "models/College",
+    "callee": "config/DatabaseManager"
+  },
+  {
+    "caller": "services/CollegeService",
+    "callee": "models/College"
+  }
+]

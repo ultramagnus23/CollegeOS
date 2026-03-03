@@ -1,0 +1,22 @@
+[
+  {
+    "caller": "POST /batch",
+    "callee": "middleware/auth"
+  },
+  {
+    "caller": "POST /batch",
+    "callee": "middleware/security"
+  },
+  {
+    "caller": "POST /batch",
+    "callee": "services/consolidatedChancingService"
+  },
+  {
+    "caller": "middleware/auth",
+    "callee": "services/AuthService"
+  },
+  {
+    "caller": "middleware/security",
+    "callee": "config/security"
+  }
+]

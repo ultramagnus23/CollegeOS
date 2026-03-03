@@ -1,0 +1,18 @@
+[
+  {
+    "caller": "HTTP server requests",
+    "callee": "middleware"
+  },
+  {
+    "caller": "HTTP server requests",
+    "callee": "services"
+  },
+  {
+    "caller": "middleware",
+    "callee": "config"
+  },
+  {
+    "caller": "middleware",
+    "callee": "services"
+  }
+]

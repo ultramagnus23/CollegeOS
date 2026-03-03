@@ -1,0 +1,192 @@
+[
+  {
+    "name": "config",
+    "type": "package",
+    "children": [
+      {
+        "type": "class",
+        "name": "DatabaseManager",
+        "children": [
+          {
+            "type": "function",
+            "name": "getDatabase",
+            "static": false,
+            "location": "backend\\src\\config\\database.js:87"
+          }
+        ]
+      },
+      {
+        "type": "class",
+        "name": "security",
+        "children": [
+          {
+            "type": "function",
+            "name": "getAllowedOrigins",
+            "static": true,
+            "location": "backend\\src\\config\\security.js:9"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "controllers",
+    "type": "package",
+    "children": [
+      {
+        "type": "class",
+        "name": "collegeController",
+        "children": [
+          {
+            "type": "function",
+            "name": "addDebugInfo",
+            "static": true,
+            "location": "backend\\src\\controllers\\collegeController.js:10"
+          },
+          {
+            "type": "function",
+            "name": "generateRequestId",
+            "static": true,
+            "location": "backend\\src\\controllers\\collegeController.js:5"
+          }
+        ]
+      },
+      {
+        "type": "class",
+        "name": "CollegeController",
+        "children": [
+          {
+            "type": "function",
+            "name": "getCollegeById",
+            "static": true,
+            "location": "backend\\src\\controllers\\collegeController.js:51"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "middleware",
+    "type": "package",
+    "children": [
+      {
+        "type": "class",
+        "name": "security",
+        "children": [
+          {
+            "type": "function",
+            "name": "generateRequestId",
+            "static": true,
+            "location": "backend\\src\\middleware\\security.js:11"
+          },
+          {
+            "type": "function",
+            "name": "securityLogger",
+            "static": true,
+            "location": "backend\\src\\middleware\\security.js:113"
+          },
+          {
+            "type": "function",
+            "name": "validateContentType",
+            "static": true,
+            "location": "backend\\src\\middleware\\security.js:158"
+          },
+          {
+            "type": "function",
+            "name": "requestIdMiddleware",
+            "static": true,
+            "location": "backend\\src\\middleware\\security.js:18"
+          },
+          {
+            "type": "function",
+            "name": "detectSuspiciousPatterns",
+            "static": true,
+            "location": "backend\\src\\middleware\\security.js:27"
+          },
+          {
+            "type": "function",
+            "name": "securityValidation",
+            "static": true,
+            "location": "backend\\src\\middleware\\security.js:49"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "models",
+    "type": "package",
+    "children": [
+      {
+        "type": "class",
+        "name": "College",
+        "children": [
+          {
+            "type": "function",
+            "name": "getRegion",
+            "static": true,
+            "location": "backend\\src\\models\\College.js:107"
+          },
+          {
+            "type": "function",
+            "name": "findById",
+            "static": true,
+            "location": "backend\\src\\models\\College.js:181"
+          },
+          {
+            "type": "function",
+            "name": "safeJsonParse",
+            "static": true,
+            "location": "backend\\src\\models\\College.js:23"
+          },
+          {
+            "type": "function",
+            "name": "getCountryRequirements",
+            "static": true,
+            "location": "backend\\src\\models\\College.js:34"
+          },
+          {
+            "type": "function",
+            "name": "formatCollege",
+            "static": true,
+            "location": "backend\\src\\models\\College.js:435"
+          },
+          {
+            "type": "function",
+            "name": "normalizeAcceptanceRate",
+            "static": true,
+            "location": "backend\\src\\models\\College.js:8"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "services",
+    "type": "package",
+    "children": [
+      {
+        "type": "class",
+        "name": "CollegeService",
+        "children": [
+          {
+            "type": "function",
+            "name": "getCollegeById",
+            "static": true,
+            "location": "backend\\src\\services\\collegeService.js:18"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "http",
+    "name": "HTTP server requests",
+    "children": [
+      {
+        "type": "route",
+        "name": "GET /:id"
+      }
+    ]
+  }
+]
