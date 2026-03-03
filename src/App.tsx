@@ -52,6 +52,8 @@ const AppContent = () => {
       if (profile) {
         setStudentProfile(profile as any);
       }
+    }).catch(err => {
+      console.error('Failed to load profile on init:', err);
     });
   }, []);
 
