@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Globe, BookOpen, MapPin, GraduationCap, DollarSign, Users, Award, TrendingUp, Filter, ChevronDown } from 'lucide-react';
-import api from '../services/api';
+import { api } from '../services/api';
 import { normalizeCountryData, College, TestScores, GraduationRates } from '../types';
 import FitBadge from '../components/FitBadge';
 

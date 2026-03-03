@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Trash2, CheckCircle, Circle, Calendar, Loader2, List, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 import { DeadlineCalendar } from '@/components/DeadlineCalendar';
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 // Define types for API responses
 interface Application {
@@ -37,6 +38,7 @@ const Deadlines = () => {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [formData, setFormData] = useState<DeadlineFormData>({
     applicationId: '',
     deadlineType: 'application',
@@ -83,9 +85,9 @@ const Deadlines = () => {
     }
   };
 
-  const handleToggleComplete = async (id: number, isCompleted: boolean) => {
+  const handleToggleComplete = async (id: number, isCompleted: number) => {
     try {
-      await api.updateDeadline(id, { isCompleted: !isCompleted });
+      await api.updateDeadline(id, { isCompleted: isCompleted === 1 ? 0 : 1 });
       loadData();
     } catch (error: any) {
       toast.error('Failed to update deadline');
@@ -93,8 +95,10 @@ const Deadlines = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this deadline?')) return;
+    setConfirmDeleteId(id);
+  };
 
+  const doDelete = async (id: number) => {
     try {
       await api.deleteDeadline(id);
       toast.success('Deadline deleted');
@@ -105,7 +109,7 @@ const Deadlines = () => {
   };
 
   const getDaysUntil = (dateStr: string) => {
-    const days = Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    const days = Math.ceil((new Date(dateStr+'T00:00:00').getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
     if (days < 0) return 'Overdue';
     if (days === 0) return 'Today';
     if (days === 1) return 'Tomorrow';
@@ -113,7 +117,7 @@ const Deadlines = () => {
   };
 
   const getUrgencyColor = (dateStr: string) => {
-    const days = Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    const days = Math.ceil((new Date(dateStr+'T00:00:00').getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
     if (days < 0) return 'text-red-600';
     if (days <= 7) return 'text-orange-600';
     if (days <= 30) return 'text-yellow-600';
@@ -130,6 +134,14 @@ const Deadlines = () => {
 
   return (
     <div className="p-8">
+      <ConfirmModal
+        isOpen={confirmDeleteId !== null}
+        title="Delete Deadline"
+        message="Delete this deadline?"
+        confirmLabel="Delete"
+        onConfirm={() => { const id = confirmDeleteId!; setConfirmDeleteId(null); doDelete(id); }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Deadlines</h1>
@@ -239,7 +251,7 @@ const Deadlines = () => {
             <div 
               key={deadline.id} 
               className={`rounded-xl border p-6 ${
-                deadline.is_completed ? 'border-success/30 bg-success/5' : 'bg-card border-border'
+                deadline.is_completed === 1 ? 'border-success/30 bg-success/5' : 'bg-card border-border'
               }`}
             >
               <div className="flex items-start justify-between">
@@ -248,7 +260,7 @@ const Deadlines = () => {
                     onClick={() => handleToggleComplete(deadline.id, deadline.is_completed)}
                     className="mt-1"
                   >
-                    {deadline.is_completed ? (
+                    {deadline.is_completed === 1 ? (
                       <CheckCircle className="text-green-600" size={24} />
                     ) : (
                       <Circle className="text-muted-foreground" size={24} />
@@ -257,7 +269,7 @@ const Deadlines = () => {
 
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className={`text-lg font-bold ${deadline.is_completed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                      <h3 className={`text-lg font-bold ${deadline.is_completed === 1 ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                         {deadline.college_name}
                       </h3>
                       <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium">
@@ -273,10 +285,10 @@ const Deadlines = () => {
                       <div className="flex items-center gap-2">
                         <Calendar size={16} className="text-muted-foreground" />
                         <span className="text-muted-foreground">
-                          {new Date(deadline.deadline_date).toLocaleDateString()}
+                          {new Date(deadline.deadline_date+'T00:00:00').toLocaleDateString()}
                         </span>
                       </div>
-                      {!deadline.is_completed && (
+                      {deadline.is_completed !== 1 && (
                         <span className={`font-medium ${getUrgencyColor(deadline.deadline_date)}`}>
                           {getDaysUntil(deadline.deadline_date)}
                         </span>

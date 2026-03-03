@@ -1,7 +1,8 @@
 // src/pages/Recommendations.tsx — Dark Editorial Redesign
 import React, { useEffect, useState } from 'react';
-import api from '../services/api';
+import { api } from '../services/api';
 import { toast } from 'sonner';
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 interface Recommender {
@@ -209,6 +210,7 @@ const Recommendations = () => {
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [selectedRecommender, setSelectedRecommender] = useState<Recommender | null>(null);
   const [emailTemplate, setEmailTemplate] = useState('');
+  const [confirmDeleteRecId, setConfirmDeleteRecId] = useState<number|null>(null);
   const [form, setForm] = useState({ name:'', email:'', phone:'', type:'teacher', relationship:'', subject:'', institution:'', yearsKnown:'', notes:'' });
   const [reqForm, setReqForm] = useState({ collegeName:'', applicationSystem:'CommonApp', deadline:'', notes:'' });
 
@@ -274,6 +276,14 @@ const Recommendations = () => {
   return (
     <>
       <style>{GLOBAL}</style>
+      <ConfirmModal
+        isOpen={confirmDeleteRecId !== null}
+        title="Delete Recommender"
+        message="Delete recommender and all their requests?"
+        confirmLabel="Delete"
+        onConfirm={() => { const id = confirmDeleteRecId!; setConfirmDeleteRecId(null); api.recommenders.delete(id).then(()=>{toast.success('Deleted');loadData();}).catch(()=>toast.error('Failed')); }}
+        onCancel={() => setConfirmDeleteRecId(null)}
+      />
       <div style={{ minHeight:'100vh', background:S.bg, color:'var(--color-text-primary)', fontFamily:S.font }}>
 
         {/* Header */}
@@ -381,7 +391,7 @@ const Recommendations = () => {
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:18 }}>
                   {recommenders.map((rec,i)=>(
                     <RecommenderCard key={rec.id} rec={rec} index={i}
-                      onDelete={id=>{if(confirm('Delete recommender and all their requests?')) api.recommenders.delete(id).then(()=>{toast.success('Deleted');loadData();}).catch(()=>toast.error('Failed'));}}
+                      onDelete={id=>setConfirmDeleteRecId(id)}
                       onRequest={rec=>{setSelectedRecommender(rec);setShowRequestForm(true);}}
                     />
                   ))}
