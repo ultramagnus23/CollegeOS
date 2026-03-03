@@ -1,5 +1,6 @@
 const College = require('../models/College');
 const logger = require('../utils/logger');
+const { sanitizeForLog } = require('../utils/security');
 
 class CollegeService {
   // Get all colleges with filters
@@ -32,7 +33,7 @@ class CollegeService {
   static async searchColleges(searchTerm, filters = {}) {
     try {
       const colleges = await College.search(searchTerm, filters);
-      logger.debug(`Search "${searchTerm}" returned ${colleges.length} results`);
+      logger.debug(`Search "${sanitizeForLog(searchTerm)}" returned ${colleges.length} results`);
       return colleges;
     } catch (error) {
       logger.error('College search failed:', error);
@@ -44,7 +45,7 @@ class CollegeService {
   static async createCollege(data) {
     try {
       const college = await College.create(data);
-      logger.info(`Created college: ${data.name}`);
+      logger.info(`Created college: ${sanitizeForLog(data.name)}`);
       return college;
     } catch (error) {
       logger.error('Failed to create college:', error);
@@ -241,7 +242,7 @@ class CollegeService {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).run(data.name, data.website, data.city, data.state, data.country, data.reason, data.userId, data.email);
       
-      logger.info(`New college request: ${data.name} (${data.country})`);
+      logger.info(`New college request: ${sanitizeForLog(data.name)} (${sanitizeForLog(data.country)})`);
       
       return {
         id: result.lastInsertRowid,
@@ -320,7 +321,7 @@ class CollegeService {
         data.sourceUrl || null
       );
       
-      logger.info(`Data contribution received for college ${data.collegeId || data.requestedCollegeId}: ${data.dataType}`);
+      logger.info(`Data contribution received for college ${sanitizeForLog(data.collegeId || data.requestedCollegeId)}: ${sanitizeForLog(data.dataType)}`);
       
       return {
         id: result.lastInsertRowid,

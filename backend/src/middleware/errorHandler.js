@@ -1,5 +1,6 @@
 const logger = require('../utils/logger');
 const config = require('../config/env');
+const { sanitizeForLog } = require('../utils/security');
 
 // Generate a unique request ID for tracking
 function generateRequestId() {
@@ -12,29 +13,29 @@ const isProduction = () => config.nodeEnv === 'production';
 const errorHandler = (err, req, res, next) => {
   const errorId = req.requestId || generateRequestId();
   
-  // Log comprehensive error details (always, for debugging)
-  logger.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  logger.error(`[${errorId}] UNHANDLED ERROR CAUGHT`);
-  logger.error(`[${errorId}] Endpoint: ${req.method} ${req.originalUrl}`);
-  logger.error(`[${errorId}] User ID: ${req.user?.userId || 'Not authenticated'}`);
-  logger.error(`[${errorId}] IP: ${req.ip}`);
-  logger.error(`[${errorId}] Error Name: ${err.name || 'Unknown'}`);
-  logger.error(`[${errorId}] Error Message: ${err.message || 'No message'}`);
-  logger.error(`[${errorId}] Error Code: ${err.code || 'No code'}`);
+  // Log comprehensive error details using structured fields (not template literals with user data)
+  logger.error('Unhandled error caught', {
+    errorId,
+    endpoint: `${req.method} ${sanitizeForLog(req.originalUrl)}`,
+    userId: req.user?.userId || 'Not authenticated',
+    ip: req.ip,
+    errorName: err.name || 'Unknown',
+    errorMessage: err.message || 'No message',
+    errorCode: err.code || 'No code',
+  });
   
   if (req.body && Object.keys(req.body).length > 0) {
     // Don't log sensitive fields
     const safeKeys = Object.keys(req.body).filter(k => 
       !['password', 'token', 'refreshToken', 'secret'].includes(k.toLowerCase())
     );
-    logger.error(`[${errorId}] Request Body Keys: ${safeKeys.join(', ')}`);
+    logger.error('Request body keys', { errorId, keys: safeKeys.join(', ') });
   }
   
   if (err.stack) {
     const stackLines = err.stack.split('\n').slice(0, 8);
-    logger.error(`[${errorId}] Stack Trace:\n${stackLines.join('\n')}`);
+    logger.error('Stack trace', { errorId, stack: stackLines.join('\n') });
   }
-  logger.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   
   // Default error response
   let status = 500;
@@ -56,7 +57,7 @@ const errorHandler = (err, req, res, next) => {
     errorCode = 'APPLICATION_NOT_FOUND';
   } else if (err.message.includes('already exists')) {
     status = 400;
-    message = err.message;
+    message = 'Resource already exists';
     errorCode = 'DUPLICATE_ENTRY';
   } else if (err.message.includes('Invalid email or password')) {
     // Generic auth error - don't reveal if email exists
@@ -65,7 +66,7 @@ const errorHandler = (err, req, res, next) => {
     errorCode = 'AUTH_FAILED';
   } else if (err.message.includes('Invalid')) {
     status = 400;
-    message = err.message;
+    message = 'Invalid request';
     errorCode = 'VALIDATION_ERROR';
   } else if (err.code === 'SQLITE_CONSTRAINT') {
     status = 400;
