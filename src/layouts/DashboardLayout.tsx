@@ -29,16 +29,19 @@ const DashboardLayout = () => {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Discover', href: '/discover', icon: Search },
     { name: 'Research', href: '/research', icon: Search },
     { name: 'Colleges', href: '/colleges', icon: School },
     { name: 'Applications', href: '/applications', icon: FileText },
     { name: 'Requirements', href: '/requirements', icon: ClipboardList },
     { name: 'Deadlines', href: '/deadlines', icon: Calendar },
     { name: 'Essays', href: '/essays', icon: PenTool },
+    { name: 'Activities', href: '/activities', icon: FolderOpen },
     { name: 'Documents', href: '/documents', icon: FolderOpen },
     { name: 'Scholarships', href: '/scholarships', icon: Award },
     { name: 'Recommendations', href: '/recommendations', icon: Users },
     { name: 'Timeline', href: '/timeline', icon: Clock },
+    { name: 'AI Search', href: '/search', icon: Search },
     { name: 'Settings', href: '/settings', icon: SettingsIcon },
   ];
 

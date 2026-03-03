@@ -72,7 +72,7 @@ const Discover: React.FC = () => {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="p-8 min-h-screen bg-background">
+    <div className="p-8">
       <h1 className="text-2xl font-bold mb-6 text-foreground">Recommendations</h1>
 
       {recommendations.map(r => (

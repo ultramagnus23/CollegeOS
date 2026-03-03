@@ -34,9 +34,11 @@ import Documents from "./pages/Documents";
 import Scholarships from "./pages/Scholarships";
 import Recommendations from "./pages/Recommendations";
 import { Timeline } from "./pages/Timeline";
+import Terms from "./pages/Terms";
+import NotFound from "./pages/NotFound";
 
-// FIXED: Import the type from the new types.ts file
-import { StudentProfile } from "./types";
+// FIXED: Import the type from the types directory
+import { StudentProfile } from "./types/index";
 
 const queryClient = new QueryClient();
 
@@ -45,12 +47,12 @@ const AppContent = () => {
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
 
   useEffect(() => {
-    // Load profile from ProfileService on mount
-    const profile = profileService.getProfile();
-    if (profile) {
-      // Map to StudentProfile format for backward compatibility
-      setStudentProfile(profile as any);
-    }
+    // Load profile from backend (with localStorage fallback) on mount
+    profileService.getProfileFromBackend().then(profile => {
+      if (profile) {
+        setStudentProfile(profile as any);
+      }
+    });
   }, []);
 
   const handleOnboardingComplete = async (profile: StudentProfile) => {
@@ -78,6 +80,7 @@ const AppContent = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/terms" element={<Terms />} />
 
           <Route
             path="/onboarding"
@@ -122,6 +125,7 @@ const AppContent = () => {
               }
             />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

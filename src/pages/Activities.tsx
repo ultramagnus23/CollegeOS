@@ -11,8 +11,7 @@ export default function Activities() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto py-8 px-4">
+    <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="mb-6">
           <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
@@ -28,7 +27,6 @@ export default function Activities() {
 
         {/* Activity Manager Component */}
         <ActivityManager />
-      </div>
     </div>
   );
 }

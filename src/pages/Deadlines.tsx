@@ -121,12 +121,12 @@ const Deadlines = () => {
     if (days < 0) return 'text-red-600';
     if (days <= 7) return 'text-orange-600';
     if (days <= 30) return 'text-yellow-600';
-    return 'text-green-600';
+    return 'text-emerald-500';
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="animate-spin text-primary" size={40} />
       </div>
     );
@@ -149,7 +149,7 @@ const Deadlines = () => {
         </div>
         <div className="flex gap-3">
           {/* View Toggle */}
-          <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+          <div className="flex border border-border rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('list')}
               className={`px-4 py-2 flex items-center gap-2 ${
@@ -186,7 +186,7 @@ const Deadlines = () => {
               <select
                 value={formData.applicationId}
                 onChange={(e) => setFormData({ ...formData, applicationId: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mt-1"
+                className="w-full px-4 py-2 border border-border rounded-lg mt-1"
               >
                 <option value="">Select application</option>
                 {applications.map(app => (
@@ -200,7 +200,7 @@ const Deadlines = () => {
               <select
                 value={formData.deadlineType}
                 onChange={(e) => setFormData({ ...formData, deadlineType: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mt-1"
+                className="w-full px-4 py-2 border border-border rounded-lg mt-1"
               >
                 <option value="application">Application</option>
                 <option value="essay">Essay</option>
@@ -261,7 +261,7 @@ const Deadlines = () => {
                     className="mt-1"
                   >
                     {deadline.is_completed === 1 ? (
-                      <CheckCircle className="text-green-600" size={24} />
+                      <CheckCircle className="text-emerald-500" size={24} />
                     ) : (
                       <Circle className="text-muted-foreground" size={24} />
                     )}

@@ -144,7 +144,7 @@ const Scholarships = () => {
 
   if (loading && scholarships.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="animate-spin text-primary" size={40} />
       </div>
     );
@@ -290,7 +290,7 @@ const Scholarships = () => {
         <div className="space-y-4">
           {scholarships.length === 0 ? (
             <div className="bg-card rounded-xl border border-border p-12 text-center">
-              <GraduationCap className="mx-auto text-gray-400 mb-4" size={48} />
+              <GraduationCap className="mx-auto text-muted-foreground/50 mb-4" size={48} />
               <p className="text-muted-foreground">No scholarships found matching your criteria</p>
             </div>
           ) : (
@@ -401,8 +401,8 @@ const Scholarships = () => {
         <div className="space-y-4">
           {trackedScholarships.length === 0 ? (
             <div className="bg-card rounded-xl border border-border p-12 text-center">
-              <Bookmark className="mx-auto text-gray-400 mb-4" size={48} />
-              <p className="text-gray-500 mb-4">You haven't tracked any scholarships yet</p>
+              <Bookmark className="mx-auto text-muted-foreground/50 mb-4" size={48} />
+              <p className="text-muted-foreground/70 mb-4">You haven't tracked any scholarships yet</p>
               <Button onClick={() => setActiveTab('all')}>
                 Browse Scholarships
               </Button>
@@ -415,8 +415,8 @@ const Scholarships = () => {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">{tracked.name}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{tracked.provider}</p>
+                    <h3 className="text-lg font-bold text-foreground mb-1">{tracked.name}</h3>
+                    <p className="text-sm text-muted-foreground mb-2">{tracked.provider}</p>
                     
                     <div className="flex gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">

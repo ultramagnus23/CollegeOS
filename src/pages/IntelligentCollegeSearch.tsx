@@ -76,7 +76,7 @@ const IntelligentCollegeSearch: React.FC<Props> = ({ studentProfile }) => {
   const layerInfo = getLayerInfo();
 
   return (
-    <div className="min-h-screen bg-muted/50 p-6">
+    <div className="p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="bg-card rounded-lg shadow-sm p-6 mb-6">
@@ -138,7 +138,7 @@ const IntelligentCollegeSearch: React.FC<Props> = ({ studentProfile }) => {
         <div className="bg-card rounded-lg shadow-sm p-6 mb-6">
           <h3 className="font-semibold text-foreground mb-4">Search Process</h3>
           <div className="space-y-3">
-            <div className={`flex items-center gap-4 p-3 rounded-lg border ${searchLayer! >= 1 ? 'bg-green-50 border-green-300' : 'bg-muted/50 border-border'}`}>
+            <div className={`flex items-center gap-4 p-3 rounded-lg border ${searchLayer! >= 1 ? 'bg-emerald-500/10 border-green-300' : 'bg-muted/50 border-border'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${searchLayer! >= 1 ? 'bg-green-600 text-white' : 'bg-gray-300 text-muted-foreground'}`}>
                 1
               </div>
@@ -247,7 +247,7 @@ const IntelligentCollegeSearch: React.FC<Props> = ({ studentProfile }) => {
                       {result.programs && result.programs.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-3">
                           {result.programs.map((prog: string, i: number) => (
-                            <span key={i} className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-full">
+                            <span key={i} className="px-3 py-1 bg-emerald-500/10 text-green-700 text-xs rounded-full">
                               {prog}
                             </span>
                           ))}
