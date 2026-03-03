@@ -1378,26 +1378,161 @@ const CollegeDetail: React.FC = () => {
                 )}
               </Card>
 
-              {/* Application Deadlines */}
-              {college.deadlineTemplates && Object.keys(college.deadlineTemplates).length > 0 && (
-                <Card title="Application Deadlines">
-                  <div className="space-y-3">
-                    {Object.entries(college.deadlineTemplates)
-                      .filter(([, deadline]) => deadline !== null)
-                      .map(([key, deadline]) => (
-                      <div key={key} className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Calendar className="w-5 h-5 text-primary" />
-                          <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+              {/* Application Deadlines — from application_deadlines table */}
+              {(() => {
+                const ad = (college as any).applicationDeadlines;
+                const legacyTemplates = college.deadlineTemplates;
+
+                // Build a flat list of deadline entries to display
+                const items: { label: string; date: string | null; notification?: string | null }[] = [];
+
+                if (ad) {
+                  if (ad.offersEarlyDecision && ad.earlyDecision1Date) {
+                    items.push({ label: 'Early Decision I', date: ad.earlyDecision1Date, notification: ad.earlyDecision1Notification });
+                  }
+                  if (ad.offersEarlyDecision && ad.earlyDecision2Date) {
+                    items.push({ label: 'Early Decision II', date: ad.earlyDecision2Date, notification: ad.earlyDecision2Notification });
+                  }
+                  if (ad.offersEarlyAction && ad.earlyActionDate) {
+                    items.push({ label: ad.offersRestrictiveEa ? 'Restrictive Early Action' : 'Early Action', date: ad.earlyActionDate, notification: ad.earlyActionNotification });
+                  }
+                  if (ad.regularDecisionDate) {
+                    items.push({ label: 'Regular Decision', date: ad.regularDecisionDate, notification: ad.regularDecisionNotification });
+                  }
+                  if (ad.transferFallDate) {
+                    items.push({ label: 'Transfer (Fall)', date: ad.transferFallDate });
+                  }
+                  if (ad.internationalDeadlineDate) {
+                    items.push({ label: 'International', date: ad.internationalDeadlineDate });
+                  }
+                } else if (legacyTemplates) {
+                  Object.entries(legacyTemplates)
+                    .filter(([, v]) => v !== null)
+                    .forEach(([key, v]) => {
+                      items.push({
+                        label: key.replace(/([A-Z])/g, ' $1').trim(),
+                        date: typeof v === 'string' ? v : (v as { date: string })?.date || null,
+                      });
+                    });
+                }
+
+                if (items.length === 0) return null;
+
+                return (
+                  <Card title="Application Deadlines">
+                    <div className="space-y-2">
+                      {items.map((item, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
+                            <span className="font-medium text-foreground capitalize">{item.label}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-foreground/90 font-medium">{item.date ?? 'Data not available'}</span>
+                            {item.notification && (
+                              <p className="text-xs text-muted-foreground">Decision: {item.notification}</p>
+                            )}
+                          </div>
                         </div>
-                        <span className="text-foreground/80">
-                          {typeof deadline === 'string' ? deadline : (deadline as { date: string })?.date || 'N/A'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
+                      ))}
+                      {ad?.applicationFee != null && (
+                        <div className="mt-3 pt-3 border-t border-border flex justify-between text-sm">
+                          <span className="text-muted-foreground">Application Fee</span>
+                          <span className="font-medium">${ad.applicationFee}
+                            {ad.applicationFeeWaiverAvailable === 1 && (
+                              <span className="ml-2 text-xs text-green-600">(Waiver available)</span>
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })()}
+
+              {/* Application Requirements Checklist — from college_requirements table */}
+              {(() => {
+                const req = (college as any).collegeRequirements;
+                if (!req) return null;
+                return (
+                  <Card title="Application Requirements">
+                    <div className="space-y-3">
+                      {/* Test Policy */}
+                      {req.testPolicy && (
+                        <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                          <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                          <div>
+                            <span className="font-medium capitalize text-foreground">Test Policy: </span>
+                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ml-1 ${
+                              req.testPolicy === 'required' ? 'bg-orange-100 text-orange-700' :
+                              req.testPolicy === 'optional' ? 'bg-green-100 text-green-700' :
+                              req.testPolicy === 'test-blind' ? 'bg-red-100 text-red-700' :
+                              'bg-muted-foreground/10 text-muted-foreground'
+                            }`}>
+                              {req.testPolicy}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {/* Recommendations */}
+                      {req.teacherRecommendationsRequired != null && (
+                        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <Users className="w-4 h-4 text-primary flex-shrink-0" />
+                            <span className="font-medium text-foreground">Teacher Recommendations</span>
+                          </div>
+                          <span className="text-foreground/80">{req.teacherRecommendationsRequired}</span>
+                        </div>
+                      )}
+                      {req.counselorRecommendationRequired === 1 && (
+                        <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                          <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                          <span className="font-medium text-foreground">Counselor Recommendation Required</span>
+                        </div>
+                      )}
+                      {/* Supplemental Essays */}
+                      {req.supplementalEssaysCount != null && (
+                        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <BookOpen className="w-4 h-4 text-primary flex-shrink-0" />
+                            <span className="font-medium text-foreground">Supplemental Essays</span>
+                          </div>
+                          <span className="text-foreground/80">{req.supplementalEssaysCount}</span>
+                        </div>
+                      )}
+                      {/* Interview */}
+                      {req.interviewOffered === 1 && (
+                        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <Users className="w-4 h-4 text-primary flex-shrink-0" />
+                            <span className="font-medium text-foreground">Interview</span>
+                          </div>
+                          <span className="text-foreground/80 capitalize">{req.interviewType || 'Available'}</span>
+                        </div>
+                      )}
+                      {/* International: TOEFL / IELTS */}
+                      {req.toeflMinimumScore != null && (
+                        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <Globe className="w-4 h-4 text-primary flex-shrink-0" />
+                            <span className="font-medium text-foreground">TOEFL Minimum</span>
+                          </div>
+                          <span className="text-foreground/80">{req.toeflMinimumScore}</span>
+                        </div>
+                      )}
+                      {req.ieltsMinimumScore != null && (
+                        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <Globe className="w-4 h-4 text-primary flex-shrink-0" />
+                            <span className="font-medium text-foreground">IELTS Minimum</span>
+                          </div>
+                          <span className="text-foreground/80">{req.ieltsMinimumScore}</span>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })()}
 
               {/* Country-Specific: India */}
               {college.country === 'India' && (

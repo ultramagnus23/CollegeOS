@@ -1,5 +1,6 @@
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
+const { sanitizeForLog } = require('../utils/security');
 
 // Pagination constants
 const DEFAULT_PAGE_SIZE = 100;
@@ -443,6 +444,67 @@ class College {
       // If comprehensive tables don't exist or there's an error, just return basic data
       logger.warn('Could not fetch comprehensive data for college', { collegeId: id, error: error.message });
     }
+
+    // Fetch application_deadlines (keyed directly by college id, not via colleges_comprehensive)
+    try {
+      const deadlineRow = db.prepare(`
+        SELECT * FROM application_deadlines WHERE college_id = ? ORDER BY id DESC LIMIT 1
+      `).get(id);
+      if (deadlineRow) {
+        formattedCollege.applicationDeadlines = {
+          earlyDecision1Date: deadlineRow.early_decision_1_date,
+          earlyDecision1Notification: deadlineRow.early_decision_1_notification,
+          earlyDecision2Date: deadlineRow.early_decision_2_date,
+          earlyDecision2Notification: deadlineRow.early_decision_2_notification,
+          earlyActionDate: deadlineRow.early_action_date,
+          earlyActionNotification: deadlineRow.early_action_notification,
+          restrictiveEarlyActionDate: deadlineRow.restrictive_early_action_date,
+          regularDecisionDate: deadlineRow.regular_decision_date,
+          regularDecisionNotification: deadlineRow.regular_decision_notification,
+          transferFallDate: deadlineRow.transfer_fall_date,
+          internationalDeadlineDate: deadlineRow.international_deadline_date,
+          offersEarlyDecision: deadlineRow.offers_early_decision,
+          offersEarlyAction: deadlineRow.offers_early_action,
+          offersRestrictiveEa: deadlineRow.offers_restrictive_ea,
+          offersRollingAdmission: deadlineRow.offers_rolling_admission,
+          applicationFee: deadlineRow.application_fee,
+          applicationFeeWaiverAvailable: deadlineRow.application_fee_waiver_available,
+          sourceUrl: deadlineRow.source_url,
+          confidenceScore: deadlineRow.confidence_score,
+        };
+      }
+    } catch (error) {
+      logger.warn('Could not fetch application_deadlines for college', { collegeId: id, error: error.message });
+    }
+
+    // Fetch college_requirements
+    try {
+      const reqRow = db.prepare(`
+        SELECT * FROM college_requirements WHERE college_id = ? ORDER BY id DESC LIMIT 1
+      `).get(id);
+      if (reqRow) {
+        formattedCollege.collegeRequirements = {
+          testPolicy: reqRow.test_policy,
+          satRequired: reqRow.sat_required,
+          actRequired: reqRow.act_required,
+          supplementalEssaysCount: reqRow.supplemental_essays_count,
+          teacherRecommendationsRequired: reqRow.teacher_recommendations_required,
+          counselorRecommendationRequired: reqRow.counselor_recommendation_required,
+          interviewOffered: reqRow.interview_offered,
+          interviewRequired: reqRow.interview_required,
+          interviewType: reqRow.interview_type,
+          portfolioRequired: reqRow.portfolio_required,
+          toeflRequiredInternational: reqRow.toefl_required_international,
+          toeflMinimumScore: reqRow.toefl_minimum_score,
+          ieltsMinimumScore: reqRow.ielts_minimum_score,
+          demonstratedInterestConsidered: reqRow.demonstrated_interest_considered,
+          sourceUrl: reqRow.source_url,
+          confidenceScore: reqRow.confidence_score,
+        };
+      }
+    } catch (error) {
+      logger.warn('Could not fetch college_requirements for college', { collegeId: id, error: error.message });
+    }
     
     return formattedCollege;
   }
@@ -704,10 +766,136 @@ class College {
    * Search colleges
    */
   static search(searchTerm, filters = {}) {
-    return this.findAll({
+    if (!searchTerm || searchTerm.trim() === '') {
+      return this.findAll(filters);
+    }
+
+    const term = searchTerm.trim();
+
+    // --- 1. Try exact phrase match first (fast path) ---
+    let results = this.findAll({ ...filters, search: term });
+    if (results.length > 0) return results;
+
+    // --- 2. Smart parsing: extract location, type, and keyword tokens ---
+    const lower = term.toLowerCase();
+
+    // Parse US state names / abbreviations
+    const US_STATES = {
+      'alabama': 'Alabama', 'alaska': 'Alaska', 'arizona': 'Arizona',
+      'arkansas': 'Arkansas', 'california': 'California', 'colorado': 'Colorado',
+      'connecticut': 'Connecticut', 'delaware': 'Delaware', 'florida': 'Florida',
+      'georgia': 'Georgia', 'hawaii': 'Hawaii', 'idaho': 'Idaho',
+      'illinois': 'Illinois', 'indiana': 'Indiana', 'iowa': 'Iowa',
+      'kansas': 'Kansas', 'kentucky': 'Kentucky', 'louisiana': 'Louisiana',
+      'maine': 'Maine', 'maryland': 'Maryland', 'massachusetts': 'Massachusetts',
+      'michigan': 'Michigan', 'minnesota': 'Minnesota', 'mississippi': 'Mississippi',
+      'missouri': 'Missouri', 'montana': 'Montana', 'nebraska': 'Nebraska',
+      'nevada': 'Nevada', 'new hampshire': 'New Hampshire', 'new jersey': 'New Jersey',
+      'new mexico': 'New Mexico', 'new york': 'New York', 'north carolina': 'North Carolina',
+      'north dakota': 'North Dakota', 'ohio': 'Ohio', 'oklahoma': 'Oklahoma',
+      'oregon': 'Oregon', 'pennsylvania': 'Pennsylvania', 'rhode island': 'Rhode Island',
+      'south carolina': 'South Carolina', 'south dakota': 'South Dakota',
+      'tennessee': 'Tennessee', 'texas': 'Texas', 'utah': 'Utah',
+      'vermont': 'Vermont', 'virginia': 'Virginia', 'washington': 'Washington',
+      'west virginia': 'West Virginia', 'wisconsin': 'Wisconsin', 'wyoming': 'Wyoming',
+      'ny': 'New York', 'ca': 'California', 'tx': 'Texas', 'fl': 'Florida',
+      'il': 'Illinois', 'ma': 'Massachusetts', 'pa': 'Pennsylvania'
+    };
+
+    // Parse country keywords
+    const COUNTRY_KEYWORDS = {
+      'uk': 'United Kingdom', 'united kingdom': 'United Kingdom', 'england': 'United Kingdom',
+      'britain': 'United Kingdom', 'india': 'India', 'canada': 'Canada',
+      'australia': 'Australia', 'germany': 'Germany', 'france': 'France'
+    };
+
+    let locationFilter = null;
+    let countryFilter = filters.country || null;
+
+    // Check for state mention (implies US)
+    for (const [key, state] of Object.entries(US_STATES)) {
+      if (lower.includes(key)) {
+        locationFilter = state;
+        if (!countryFilter) countryFilter = 'United States';
+        break;
+      }
+    }
+
+    // Check for country mention
+    if (!countryFilter) {
+      for (const [key, country] of Object.entries(COUNTRY_KEYWORDS)) {
+        if (lower.includes(key)) {
+          countryFilter = country;
+          break;
+        }
+      }
+    }
+
+    // Parse selectivity keywords → acceptance rate filters
+    const maxAcceptanceRate = (() => {
+      if (lower.includes('ivy league') || lower.includes('top 10') || lower.includes('elite')) return 15;
+      if (lower.includes('top 20') || lower.includes('top twenty')) return 25;
+      if (lower.includes('top 50') || lower.includes('top fifty')) return 40;
+      if (lower.includes('selective') || lower.includes('competitive')) return 35;
+      return null;
+    })();
+
+    const minAcceptanceRate = (() => {
+      if (lower.includes('easy') || lower.includes('safety') || lower.includes('less selective')) return 60;
+      if (lower.includes('affordable') && !lower.includes('university')) return null;
+      return null;
+    })();
+
+    // Extract meaningful keyword tokens (remove stopwords)
+    const STOPWORDS = new Set([
+      'in', 'at', 'for', 'the', 'a', 'an', 'and', 'or', 'of', 'to', 'with',
+      'school', 'schools', 'college', 'colleges', 'university', 'universities',
+      'program', 'programs', 'major', 'majors', 'degree', 'best', 'top',
+      'good', 'great', 'my', 'i', 'want', 'looking', 'find', 'near', 'close',
+      'about', 'that', 'have', 'has', 'is', 'are', 'where', 'which'
+    ]);
+    // Also strip location/selectivity tokens already handled above
+    const allHandledTokens = new Set([
+      ...Object.keys(US_STATES), ...Object.keys(COUNTRY_KEYWORDS),
+      'ivy', 'league', 'easy', 'safety', 'elite', 'selective', 'affordable',
+      'need', 'blind', 'full', 'scholarship', 'liberal', 'arts', 'research',
+      'public', 'private', 'hbcu', 'tech'
+    ]);
+
+    const keywords = lower
+      .split(/[\s,]+/)
+      .map(w => w.replace(/[^\w]/g, ''))
+      .filter(w => w.length > 2 && !STOPWORDS.has(w) && !allHandledTokens.has(w));
+
+    // --- 3. Try each keyword individually + location/acceptance filters ---
+    const baseFilters = {
       ...filters,
-      search: searchTerm
-    });
+      ...(countryFilter ? { country: countryFilter } : {}),
+      ...(maxAcceptanceRate !== null ? { maxAcceptanceRate } : {}),
+      ...(minAcceptanceRate !== null ? { minAcceptanceRate } : {}),
+    };
+
+    // Try location filter alone if we found a state
+    if (locationFilter) {
+      results = this.findAll({ ...baseFilters, search: locationFilter });
+      if (results.length > 0) return results;
+    }
+
+    // Try each keyword
+    for (const kw of keywords) {
+      results = this.findAll({ ...baseFilters, search: kw });
+      if (results.length > 0) return results;
+    }
+
+    // Try with country/acceptance filter only (no keyword)
+    if (countryFilter || maxAcceptanceRate !== null || minAcceptanceRate !== null) {
+      results = this.findAll({ ...baseFilters });
+      if (results.length > 0) return results;
+    }
+
+    // --- 4. Ultimate fallback: return top 20 colleges ---
+    logger.info('Search fallback: no results for specific query, returning top 20', { term: sanitizeForLog(term) });
+    return this.findAll({ limit: 20 });
   }
   
   /**

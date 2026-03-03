@@ -266,7 +266,7 @@ const Colleges: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search colleges by name, location, or major..."
-              className="w-full pl-12 pr-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg"
+              className="w-full pl-12 pr-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg text-foreground bg-background placeholder:text-muted-foreground"
             />
           </div>
           
