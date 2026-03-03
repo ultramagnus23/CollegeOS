@@ -18,7 +18,6 @@ import {
   Users,
   FileCheck,
   Clock,
-  Compass
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -28,7 +27,6 @@ const navSections = [
     label: 'Overview',
     items: [
       { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard,  path: '/' },
-      { id: 'discover',     label: 'Discover',     icon: Compass,          path: '/discover' },
     ]
   },
   {
@@ -50,7 +48,7 @@ const navSections = [
   {
     label: 'Profile',
     items: [
-      { id: 'activities',   label: 'Activities',   icon: BookOpen,         path: '/activities' },
+      { id: 'activities',   label: 'Activities',   icon: BookOpen,         path: '/settings' },
       { id: 'documents',    label: 'Documents',    icon: Award,            path: '/documents' },
       { id: 'scholarships', label: 'Scholarships', icon: Award,            path: '/scholarships' },
       { id: 'recommendations', label: 'Recommenders', icon: Users,         path: '/recommendations' },

@@ -1,6 +1,6 @@
 // FILE: src/App.tsx
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { Toaster } from "@/components/ui/toaster";
@@ -19,7 +19,6 @@ import OnboardingPage from "./pages/Onboarding"; // Make sure this matches your 
 
 // Dashboard Pages
 import Dashboard from "./pages/Dashboard";
-import Discover from "./pages/Discover";
 import Colleges from "./pages/Colleges";
 import CollegeDetails from "./pages/CollegeDetails";
 import Research from "./pages/Research";
@@ -28,7 +27,6 @@ import Requirements from "./pages/Requirements";
 import Deadlines from "./pages/Deadlines";
 import Essays from "./pages/Essays";
 import Settings from "./pages/Settings";
-import Activities from "./pages/Activities";
 import Documents from "./pages/Documents";
 import Scholarships from "./pages/Scholarships";
 import Recommendations from "./pages/Recommendations";
@@ -102,7 +100,7 @@ const AppContent = () => {
             }
           >
             <Route index element={<Dashboard />} />
-            <Route path="discover" element={<Discover />} />
+            <Route path="discover" element={<Navigate to="/colleges" replace />} />
             <Route path="colleges" element={<Colleges />} />
             <Route path="colleges/:id" element={<CollegeDetails />} />
             <Route path="research" element={<Research />} />
@@ -110,7 +108,7 @@ const AppContent = () => {
             <Route path="requirements" element={<Requirements />} />
             <Route path="deadlines" element={<Deadlines />} />
             <Route path="essays" element={<Essays />} />
-            <Route path="activities" element={<Activities />} />
+            <Route path="activities" element={<Navigate to="/settings" replace />} />
             <Route path="documents" element={<Documents />} />
             <Route path="scholarships" element={<Scholarships />} />
             <Route path="recommendations" element={<Recommendations />} />

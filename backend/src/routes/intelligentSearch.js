@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const IntelligentSearch = require('../services/intelligentSearch');
 const logger = require('../utils/logger');
+const { authenticate } = require('../middleware/auth');
 
 /**
  * Intelligent search endpoint
@@ -12,7 +13,7 @@ const logger = require('../utils/logger');
  * @body {string} query - Search query
  * @body {object} filters - Optional filters (country, type, etc.)
  */
-router.post('/', async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
     const { query, filters = {} } = req.body;
     
