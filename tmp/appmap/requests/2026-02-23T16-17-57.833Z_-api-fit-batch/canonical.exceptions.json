@@ -1,0 +1,9 @@
+[
+  {
+    "class": "TypeError",
+    "message": "Cannot read properties of undefined (reading 'sat_total')",
+    "stack": [
+      "backend\\src\\services\\consolidatedChancingService.js:70"
+    ]
+  }
+]

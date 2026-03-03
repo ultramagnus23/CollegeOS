@@ -1,0 +1,10 @@
+[
+  {
+    "caller": "OPTIONS /api/colleges/1686",
+    "callee": "middleware/security"
+  },
+  {
+    "caller": "middleware/security",
+    "callee": "config/security"
+  }
+]

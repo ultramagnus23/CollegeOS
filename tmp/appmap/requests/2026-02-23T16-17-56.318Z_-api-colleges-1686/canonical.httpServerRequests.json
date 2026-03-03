@@ -1,0 +1,7 @@
+[
+  {
+    "route": "OPTIONS /api/colleges/1686",
+    "parameters": "()",
+    "status": 204
+  }
+]
