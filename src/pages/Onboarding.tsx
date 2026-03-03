@@ -4,6 +4,11 @@
 // ==========================================
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
+import { toast } from 'sonner';
+import { api } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import { StudentProfile } from '../types';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -17,8 +22,17 @@ interface StructuredActivity {
   achievements: string;
 }
 
+interface GoogleAuthInfo {
+  credential: string;
+  googleId: string;
+  email: string;
+  name: string;
+  picture: string;
+}
+
 interface StudentOnboardingProps {
   onComplete: (profile: StudentProfile) => void;
+  onAuthSuccess?: (auth: GoogleAuthInfo) => void;
 }
 
 // ── Color System ───────────────────────────────────────────────────────────
@@ -617,13 +631,16 @@ const Insight: React.FC<{ message: string; onDone: () => void }> = ({ message, o
 };
 
 // ── Main Component ─────────────────────────────────────────────────────────
-const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => {
+const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAuthSuccess }) => {
   const navigate = useNavigate();
+  const { user, completeOnboarding } = useAuth();
   const [step, setStep] = useState(1);
   const [showInsight, setShowInsight] = useState(false);
   const [insightMsg, setInsightMsg] = useState('');
   const [showLoading, setShowLoading] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
+  const [googleAuth, setGoogleAuth] = useState<GoogleAuthInfo | null>(null);
+  const progressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [studentData, setStudentData] = useState<any>(() => {
     try {
@@ -643,13 +660,60 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     };
   }
 
+  // On mount: restore draft from backend if newer than localStorage
+  useEffect(() => {
+    if (!user?.id) return;
+    api.getOnboardingDraft(user.id).then((res: any) => {
+      const draft = res?.data;
+      if (!draft) return;
+      // Prefer backend draft (multi-device resume)
+      setStudentData((prev: any) => ({ ...defaultData(), ...prev, ...draft }));
+      try { localStorage.setItem('onboarding_data', JSON.stringify({ ...draft })); } catch {}
+    }).catch(() => { /* silent */ });
+  }, [user?.id]);
+
+  const handleGoogleSuccess = useCallback((credentialResponse: { credential?: string }) => {
+    const credential = credentialResponse.credential;
+    if (!credential) { toast.error('No credential received from Google sign-in'); return; }
+    try {
+      const decoded = jwtDecode<{ sub: string; email: string; name: string; given_name?: string; picture?: string }>(credential);
+      const authInfo: GoogleAuthInfo = {
+        credential,
+        googleId: decoded.sub,
+        email: decoded.email,
+        name: decoded.name,
+        picture: decoded.picture || '',
+      };
+      setGoogleAuth(authInfo);
+      const givenName = decoded.given_name || decoded.name.split(' ')[0];
+      setStudentData((prev: any) => {
+        const next = { ...prev, name: prev.name || givenName };
+        try { localStorage.setItem('onboarding_data', JSON.stringify(next)); } catch {}
+        return next;
+      });
+      onAuthSuccess?.(authInfo);
+    } catch (err) { console.error('Google token decode failed:', err); toast.error('Unable to decode Google authentication token'); }
+  }, [onAuthSuccess]);
+
   const updateData = useCallback((field: string, value: any) => {
     setStudentData((prev: any) => {
       const next = { ...prev, [field]: value };
       try { localStorage.setItem('onboarding_data', JSON.stringify(next)); } catch {}
+      // Debounced server-side draft save
+      if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
+      progressDebounceRef.current = setTimeout(async () => {
+        if (user?.id) {
+          try { await api.saveOnboardingDraft(user.id, { ...next, onboarding_step: step }); } catch { /* silent */ }
+        } else {
+          const auth = googleAuth;
+          if (auth?.googleId) {
+            try { await api.auth.saveOnboardingProgress(auth.googleId, next); } catch { /* silent */ }
+          }
+        }
+      }, 1500);
       return next;
     });
-  }, []);
+  }, [googleAuth, user?.id, step]);
 
   const theme = STEP_THEMES[step - 1];
   const { accent, bg, surface } = theme;
@@ -723,7 +787,14 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
 
   const majors = ['Computer Science','Engineering','Business / Management','Medicine','Psychology','Economics','Data Science','Biology','Mathematics','Physics','Chemistry','Arts & Design','Political Science','Law','Architecture','Environmental Science','Communications','Undecided'];
   const skills = ['Problem Solving','Creativity','Analytical Thinking','Leadership','Communication','Research','Programming','Writing','Mathematics','Science','Languages','Public Speaking','Teamwork','Design'];
-  const subjects = ['Mathematics','Physics','Chemistry','Biology','Computer Science','Economics','History','English','Literature','Geography'];
+  const subjects = [
+    'Mathematics','Further Mathematics','Physics','Chemistry','Biology','Computer Science',
+    'Environmental Science','Statistics','Data Science','History','Geography','Economics',
+    'Psychology','Sociology','Philosophy','Political Science','English Language','English Literature',
+    'French','Spanish','German','Mandarin Chinese','Hindi','Arabic','Business Studies','Accounting',
+    'Information Technology','Art & Design','Music','Theatre Studies','Film Studies',
+    'Physical Education','Health Science','Environmental Systems & Societies','Global Politics',
+  ];
   const BUDGETS = [
     { val: 'under-20k', label: 'Under $20,000 / yr', note: '~$800 universities globally' },
     { val: '20-40k', label: '$20,000 – $40,000 / yr', note: '~1,200 universities globally' },
@@ -1113,8 +1184,6 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     <>
       {/* Global styles */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
         @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.3); } }
         @keyframes float { 0%,100% { transform: translateY(0); opacity: 0; } 50% { transform: translateY(-200px); opacity: 0.6; } 0% { opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.4; } }
         @keyframes shimmer { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
@@ -1128,7 +1197,88 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
       `}</style>
 
-      {showLoading && <LoadingSequence name={studentData.name} onDone={async () => { await onComplete(studentData); navigate('/research'); }} />}
+      {/* Google Sign-in Gate — shown before Step 1 */}
+      {!googleAuth && (
+        <div style={{
+          minHeight: '100vh', background: '#0A0A1A', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: "'DM Sans', sans-serif",
+        }}>
+          <div style={{
+            background: '#12122A', border: '1px solid rgba(108,99,255,0.3)', borderRadius: 20,
+            padding: '48px 56px', maxWidth: 420, width: '100%', textAlign: 'center',
+            boxShadow: '0 0 60px rgba(108,99,255,0.15)',
+          }}>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>🎓</div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginBottom: 10, letterSpacing: '-0.02em' }}>
+              Welcome to <span style={{ color: '#6C63FF' }}>CollegeOS</span>
+            </h1>
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32, lineHeight: 1.6 }}>
+              Sign in with Google to start your college journey. We'll personalize everything for you.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => toast.error('Google sign-in failed')}
+                useOneTap={false}
+                theme="filled_black"
+                shape="rectangular"
+                size="large"
+                text="continue_with"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {googleAuth && (
+        <>
+          {showLoading && <LoadingSequence name={studentData.name} onDone={async () => {
+        try {
+          // 1. Save full extended profile to student_profiles table
+          await api.saveExtendedProfile({ ...studentData });
+
+          // 2. Mark onboarding complete in users table
+          await completeOnboarding({
+            targetCountries: studentData.preferredCountries,
+            intendedMajors: studentData.potentialMajors,
+            testStatus: {
+              satScore: studentData.satScore || null,
+              actScore: studentData.actScore || null,
+              ibPredicted: studentData.ibPredicted || null,
+            },
+            gpa: studentData.currentGPA,
+            subjects: studentData.subjects,
+            activities: studentData.activities,
+          });
+
+          // 3. Pre-compute instant recommendations and store in localStorage
+          try {
+            const recRes = await api.automation.getInstantRecommendations({
+              gpa: studentData.currentGPA,
+              satScore: studentData.satScore,
+              preferredCountries: studentData.preferredCountries,
+              potentialMajors: studentData.potentialMajors,
+              budgetRange: studentData.budgetRange,
+              activities: studentData.activities,
+            });
+            localStorage.setItem('instant_recommendations', JSON.stringify(recRes?.data || recRes || []));
+          } catch { /* non-critical */ }
+
+          // Also sync Google profile if using Google auth
+          if (googleAuth) {
+            try {
+              await api.auth.googleOnboarding(googleAuth.googleId, googleAuth.email, studentData.name || googleAuth.name, studentData);
+            } catch { /* non-critical */ }
+          }
+
+          await onComplete(studentData);
+          navigate('/research');
+        } catch (err) {
+          console.error('Failed to save profile:', err);
+          toast.error('Failed to save profile. Please try again.');
+          setShowLoading(false);
+        }
+      }} />}
       {showInsight && <Insight message={insightMsg} onDone={() => { setShowInsight(false); doNextStep(); }} />}
 
       <div style={{
@@ -1187,6 +1337,8 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           )}
         </div>
       </div>
+        </>
+      )}
     </>
   );
 };

@@ -14,6 +14,7 @@ import ProfileCompletionWidget from '@/components/common/ProfileCompletionWidget
 import HelpTooltip, { FIELD_HELP_TEXT } from '@/components/common/HelpTooltip';
 import { ValidationMessage, useFormValidation, ValidationRules } from '@/hooks/useFormValidation';
 import { useAutosave, DraftRestoreBanner } from '@/hooks/useAutosave';
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 // Section configuration for navigation
 const SECTIONS = [
@@ -76,6 +77,7 @@ const Settings = () => {
   const [editMode, setEditMode] = useState<{ [key: string]: boolean }>({
     basic: false,
     academic: false,
+    subjects: false,
     testScores: false,
     preferences: false,
     activities: false
@@ -83,6 +85,7 @@ const Settings = () => {
   
   // Form data for editing
   const [formData, setFormData] = useState<any>({});
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [newActivity, setNewActivity] = useState<any>({
     activity_name: '',
     activity_type: '',
@@ -158,41 +161,64 @@ const SCROLL_DELAY_MS = 100;
 
   const initFormData = (data: ProfileData) => {
     if (!data) return;
+    const p = data.profile as any;
     
+    // Split name → first_name / last_name if flat name field provided
+    let firstName = p?.first_name || '';
+    let lastName = p?.last_name || '';
+    if (!firstName && p?.name) {
+      const parts = (p.name as string).split(' ');
+      firstName = parts[0] || '';
+      lastName = parts.slice(1).join(' ') || '';
+    }
+
+    // Parse budgetRange string → budget_min / budget_max
+    let budgetMin = p?.budget_min || '';
+    let budgetMax = p?.budget_max || '';
+    if (!budgetMin && !budgetMax && p?.budgetRange) {
+      const br: string = p.budgetRange;
+      if (br === 'under-20k')      { budgetMin = '';      budgetMax = '20000'; }
+      else if (br === '20-40k')    { budgetMin = '20000'; budgetMax = '40000'; }
+      else if (br === '40-60k')    { budgetMin = '40000'; budgetMax = '60000'; }
+      else if (br === '60k+')      { budgetMin = '60000'; budgetMax = '';      }
+      else if (br === 'aid')       { budgetMin = '0';     budgetMax = '0';     }
+    }
+
     setFormData({
       // Basic info
-      first_name: data.profile?.first_name || '',
-      last_name: data.profile?.last_name || '',
-      email: data.profile?.email || data.user?.email || '',
-      phone: data.profile?.phone || '',
-      country: data.profile?.country || data.user?.country || '',
-      grade_level: data.profile?.grade_level || '',
-      graduation_year: data.profile?.graduation_year || '',
+      first_name: firstName,
+      last_name: lastName,
+      email: p?.email || data.user?.email || '',
+      phone: p?.phone || '',
+      country: p?.country || data.user?.country || '',
+      grade_level: p?.grade_level || '',
+      graduation_year: p?.graduation_year || '',
       
       // Academic
-      curriculum_type: data.profile?.curriculum_type || '',
-      stream: data.profile?.stream || '',
-      gpa_weighted: data.profile?.gpa_weighted || '',
-      gpa_unweighted: data.profile?.gpa_unweighted || '',
-      class_rank: data.profile?.class_rank || '',
-      class_size: data.profile?.class_size || '',
-      high_school_name: data.profile?.high_school_name || '',
+      curriculum_type: p?.currentBoard || p?.curriculum_type || '',
+      stream: p?.stream || '',
+      gpa_weighted: p?.currentGPA || p?.gpa_weighted || '',
+      gpa_unweighted: p?.gpa_unweighted || '',
+      class_rank: p?.class_rank || '',
+      class_size: p?.class_size || '',
+      high_school_name: p?.high_school_name || '',
+      subjects: p?.subjects || [],
       
       // Test scores
-      sat_total: data.profile?.sat_total || '',
-      sat_math: data.profile?.sat_math || '',
-      sat_ebrw: data.profile?.sat_ebrw || '',
-      act_composite: data.profile?.act_composite || '',
-      ielts_score: data.profile?.ielts_score || '',
-      toefl_score: data.profile?.toefl_score || '',
+      sat_total: p?.satScore || p?.sat_total || '',
+      sat_math: p?.sat_math || '',
+      sat_ebrw: p?.sat_ebrw || '',
+      act_composite: p?.actScore || p?.act_composite || '',
+      ielts_score: p?.ielts_score || '',
+      toefl_score: p?.toefl_score || '',
       
       // Preferences
-      intended_majors: data.profile?.intendedMajors || data.profile?.intended_majors || [],
-      preferred_countries: data.profile?.preferredCountries || data.profile?.preferred_countries || [],
-      budget_min: data.profile?.budget_min || '',
-      budget_max: data.profile?.budget_max || '',
-      preferred_college_size: data.profile?.preferred_college_size || '',
-      preferred_setting: data.profile?.preferred_setting || ''
+      intended_majors: p?.potentialMajors || p?.intendedMajors || p?.intended_majors || [],
+      preferred_countries: p?.preferredCountries || p?.preferred_countries || [],
+      budget_min: budgetMin,
+      budget_max: budgetMax,
+      preferred_college_size: p?.campusSize || p?.preferred_college_size || '',
+      preferred_setting: p?.locationPreference || p?.preferred_setting || '',
     });
   };
 
@@ -399,9 +425,11 @@ const SCROLL_DELAY_MS = 100;
 
   const deleteActivity = async (activityId: number) => {
     if (!user?.id) return;
-    
-    if (!confirm('Are you sure you want to delete this activity?')) return;
-    
+    setConfirmDelete(activityId);
+  };
+
+  const doDeleteActivity = async (activityId: number) => {
+    if (!user?.id) return;
     setSaving(true);
     try {
       await api.deleteActivity(activityId);
@@ -423,6 +451,14 @@ const SCROLL_DELAY_MS = 100;
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
+      <ConfirmModal
+        isOpen={confirmDelete !== null}
+        title="Delete Activity"
+        message="Are you sure you want to delete this activity?"
+        confirmLabel="Delete"
+        onConfirm={() => { const id = confirmDelete!; setConfirmDelete(null); doDeleteActivity(id); }}
+        onCancel={() => setConfirmDelete(null)}
+      />
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
@@ -768,6 +804,68 @@ const SCROLL_DELAY_MS = 100;
                     : 'Not set'}
                 </p>
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Subjects */}
+        <div className="bg-card rounded-xl border border-border p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <BookOpen className="text-blue-500" size={24} />
+              <h2 className="text-xl font-bold text-foreground">Subjects</h2>
+            </div>
+            <Button
+              variant={editMode.subjects ? "ghost" : "outline"}
+              size="sm"
+              onClick={() => {
+                toggleEditMode('subjects');
+              }}
+            >
+              {editMode.subjects ? <><X size={16} className="mr-2" />Cancel</> : <><Edit2 size={16} className="mr-2" />Edit</>}
+            </Button>
+          </div>
+          {editMode.subjects ? (
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">Select your subjects</p>
+              <div className="flex flex-wrap gap-2">
+                {['Mathematics','Further Mathematics','Physics','Chemistry','Biology','Computer Science',
+                  'Environmental Science','Statistics','Data Science','History','Geography','Economics',
+                  'Psychology','Sociology','Philosophy','Political Science','English Language','English Literature',
+                  'French','Spanish','German','Mandarin Chinese','Hindi','Arabic','Business Studies','Accounting',
+                  'Information Technology','Art & Design','Music','Theatre Studies','Film Studies',
+                  'Physical Education','Health Science','Environmental Systems & Societies','Global Politics',
+                ].map(s => {
+                  const selected = (formData.subjects || []).includes(s);
+                  return (
+                    <button key={s} onClick={() => {
+                      const prev: string[] = formData.subjects || [];
+                      const next = selected ? prev.filter((x: string) => x !== s) : [...prev, s];
+                      updateFormField('subjects', next);
+                    }} className={`px-3 py-1 rounded-full text-sm border transition-colors ${selected ? 'bg-primary/20 border-primary text-primary' : 'border-border text-muted-foreground hover:border-primary/50'}`}>
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+              <Button className="mt-4" size="sm" onClick={async () => {
+                if (user?.id) {
+                  try {
+                    await api.updateSubjects(user.id, { subjects: formData.subjects || [] });
+                    showMessage('success', 'Subjects saved');
+                    toggleEditMode('subjects');
+                  } catch { showMessage('error', 'Failed to save subjects'); }
+                }
+              }}><Save size={16} className="mr-2" />Save Subjects</Button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {(formData.subjects || profileData?.profile?.subjects || []).length > 0
+                ? (formData.subjects || profileData?.profile?.subjects || []).map((s: string) => (
+                    <span key={s} className="px-3 py-1 rounded-full text-sm bg-primary/10 border border-primary/30 text-primary">{s}</span>
+                  ))
+                : <p className="text-muted-foreground text-sm">No subjects selected</p>
+              }
             </div>
           )}
         </div>

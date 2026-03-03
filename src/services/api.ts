@@ -246,6 +246,20 @@ class ApiService {
     });
   }
 
+  async googleOnboarding(payload: { googleId: string; email: string; name: string; profile: any }) {
+    return this.request('/auth/google-onboarding', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async patchOnboardingProgress(googleId: string, progress: any) {
+    return this.request(`/users/${googleId}/onboarding-progress`, {
+      method: 'PATCH',
+      body: JSON.stringify(progress),
+    });
+  }
+
   // ==================== PROFILE ENDPOINTS ====================
 
   async getProfile() {
@@ -509,6 +523,41 @@ class ApiService {
     return this.request(`/deadlines/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  // ==================== DOCUMENT ENDPOINTS (flat methods) ====================
+
+  async getDocuments(filters: { category?: string; status?: string; limit?: number } = {}) {
+    const params = new URLSearchParams();
+    if (filters.category) params.append('category', filters.category);
+    if (filters.status) params.append('status', filters.status);
+    if (filters.limit) params.append('limit', String(filters.limit));
+    const qs = params.toString();
+    return this.request(`/documents${qs ? `?${qs}` : ''}`);
+  }
+
+  async createDocument(data: any) {
+    return this.request('/documents', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateDocument(id: number, data: any) {
+    return this.request(`/documents/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteDocument(id: number) {
+    return this.request(`/documents/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getDocumentSummary() {
+    return this.request('/documents/summary');
   }
 
   // ==================== ESSAY ENDPOINTS ====================
@@ -1155,6 +1204,38 @@ class ApiService {
     decompose: (collegeId: number) =>
       this.request(`/tasks/decompose/${collegeId}`, {
         method: 'POST',
+      }),
+  };
+
+  // ==================== AUTH NAMESPACE ====================
+
+  auth = {
+    googleOnboarding: (googleId: string, email: string, name: string, profile: any) =>
+      this.request('/auth/google-onboarding', {
+        method: 'POST',
+        body: JSON.stringify({ googleId, email, name, profile }),
+      }),
+
+    saveOnboardingProgress: (googleId: string, stepData: any) =>
+      this.request(`/users/${googleId}/onboarding-progress`, {
+        method: 'PATCH',
+        body: JSON.stringify(stepData),
+      }),
+
+    getProfile: (googleId: string) =>
+      this.request(`/users/${googleId}/profile`),
+  };
+
+  // ==================== USER NAMESPACE ====================
+
+  user = {
+    getSettings: (googleId: string) =>
+      this.request(`/users/${googleId}/settings`),
+
+    updateSettings: (googleId: string, data: any) =>
+      this.request(`/users/${googleId}/settings`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
       }),
   };
 }

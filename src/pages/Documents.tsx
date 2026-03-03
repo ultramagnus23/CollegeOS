@@ -1,8 +1,9 @@
 // src/pages/Documents.tsx — Dark Editorial Redesign
 import React, { useEffect, useState } from 'react';
-import api from '../services/api';
+import { api } from '../services/api';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 interface Document {
@@ -52,8 +53,6 @@ const STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
 };
 
 const GLOBAL = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0;}
   @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
   @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   input::placeholder{color:rgba(255,255,255,0.2)!important;}
@@ -67,6 +66,12 @@ const getDaysUntilExpiry = (dateStr:string) => {
   if (days === 0) return { text:'Expires today', color:'#F97316' };
   if (days === 1) return { text:'Expires tomorrow', color:'#FBBF24' };
   return { text:`Expires in ${days}d`, color:S.dim };
+};
+
+/* ─── Expiry Badge ───────────────────────────────────────────────────────── */
+const ExpiryBadge: React.FC<{dateStr:string}> = ({dateStr}) => {
+  const exp = getDaysUntilExpiry(dateStr);
+  return <div style={{ fontSize:11, color:exp.color, fontFamily:S.font }}>⏰ {exp.text}</div>;
 };
 
 /* ─── Stat Card ──────────────────────────────────────────────────────── */
@@ -135,9 +140,7 @@ const DocCard: React.FC<{
       </div>
 
       {/* Expiry */}
-      {doc.expiry_date && (() => { const exp = getDaysUntilExpiry(doc.expiry_date); return (
-        <div style={{ fontSize:11, color:exp.color, fontFamily:S.font }}>⏰ {exp.text}</div>
-      );})}
+      {doc.expiry_date && <ExpiryBadge dateStr={doc.expiry_date} />}
 
       {/* Tags */}
       {doc.tags?.length > 0 && (
@@ -158,6 +161,7 @@ const Documents = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [selectedCat, setSelectedCat] = useState('');
+  const [confirmDeleteDocId, setConfirmDeleteDocId] = useState<number|null>(null);
   const [form, setForm] = useState({ name:'', category:'transcript', description:'', status:'pending', fileUrl:'', expiryDate:'' });
 
   useEffect(() => { loadData(); }, [selectedCat]);
@@ -166,18 +170,18 @@ const Documents = () => {
     try {
       setLoading(true);
       const [dr, sr] = await Promise.all([
-        api.documents.getAll({ category:selectedCat||undefined }),
-        api.documents.getSummary(),
-      ]) as [any,any];
-      setDocuments(dr.data||[]);
-      setSummary(sr.data||null);
+        api.getDocuments({ category:selectedCat||undefined }),
+        api.getDocumentSummary(),
+      ]);
+      setDocuments((dr as { data?: Document[] }).data||[]);
+      setSummary((sr as { data?: DocSummary }).data||null);
     } catch { toast.error('Failed to load'); } finally { setLoading(false); }
   };
 
   const handleAdd = async () => {
     if (!form.name||!form.category){toast.error('Fill required fields');return;}
     try {
-      await api.documents.create({ name:form.name, category:form.category, description:form.description, status:form.status, fileUrl:form.fileUrl, expiryDate:form.expiryDate||undefined });
+      await api.createDocument({ name:form.name, category:form.category, description:form.description, status:form.status, fileUrl:form.fileUrl, expiryDate:form.expiryDate||undefined });
       toast.success('Document added');
       setShowForm(false);
       setForm({name:'',category:'transcript',description:'',status:'pending',fileUrl:'',expiryDate:''});
@@ -191,6 +195,14 @@ const Documents = () => {
   return (
     <>
       <style>{GLOBAL}</style>
+      <ConfirmModal
+        isOpen={confirmDeleteDocId !== null}
+        title="Delete Document"
+        message="Delete this document?"
+        confirmLabel="Delete"
+        onConfirm={() => { const id = confirmDeleteDocId!; setConfirmDeleteDocId(null); api.deleteDocument(id).then(()=>{toast.success('Deleted');loadData();}).catch(()=>toast.error('Failed')); }}
+        onCancel={() => setConfirmDeleteDocId(null)}
+      />
       <div style={{ minHeight:'100vh', background:S.bg, color:'var(--color-text-primary)', fontFamily:S.font }}>
 
         {/* Header */}
@@ -325,8 +337,8 @@ const Documents = () => {
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:16 }}>
               {documents.map((doc,i)=>(
                 <DocCard key={doc.id} doc={doc} index={i}
-                  onDelete={id=>{if(confirm('Delete?'))api.documents.delete(id).then(()=>{toast.success('Deleted');loadData();}).catch(()=>toast.error('Failed'));}}
-                  onStatusChange={(id,s)=>api.documents.update(id,{status:s}).then(()=>{toast.success('Updated');loadData();}).catch(()=>toast.error('Failed'))}
+                  onDelete={id=>setConfirmDeleteDocId(id)}
+                  onStatusChange={(id,s)=>api.updateDocument(id,{status:s}).then(()=>{toast.success('Updated');loadData();}).catch(()=>toast.error('Failed'))}
                 />
               ))}
             </div>
