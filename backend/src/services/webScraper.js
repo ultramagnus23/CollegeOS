@@ -6,6 +6,7 @@ const cheerio = require('cheerio');
 const robotsParser = require('robots-parser');
 const dbManager = require('../config/database');
 const config = require('../config/env');
+const logger = require('../utils/logger');
 
 class WebScraper {
   constructor() {
@@ -52,7 +53,7 @@ class WebScraper {
       return true;
     } catch (error) {
       // If robots.txt doesn't exist or error, allow scraping
-      console.warn(`Could not fetch robots.txt for ${url}:`, error.message);
+      logger.warn('Could not fetch robots.txt', { url, error: error.message });
       return true;
     }
   }
@@ -68,7 +69,7 @@ class WebScraper {
     
     if (timeSinceLastRequest < this.rateLimitMs) {
       const waitTime = this.rateLimitMs - timeSinceLastRequest;
-      console.log(`⏳ Rate limiting: waiting ${waitTime}ms for ${domain}`);
+      logger.debug('Rate limiting', { waitTime, domain });
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
     
@@ -90,7 +91,7 @@ class WebScraper {
         // Check robots.txt
         const allowed = await this.checkRobotsTxt(url);
         if (!allowed) {
-          console.warn(`🚫 Robots.txt disallows scraping: ${url}`);
+          logger.warn('Robots.txt disallows scraping', { url });
           return { success: false, error: 'Disallowed by robots.txt' };
         }
         
@@ -102,7 +103,7 @@ class WebScraper {
         await this.enforceRateLimit(domain);
         
         // Fetch content
-        console.log(`🌐 Scraping (attempt ${attempt}/${maxRetries}): ${url}`);
+        logger.info('Scraping URL', { attempt, maxRetries, url });
         const response = await axios.get(url, {
           timeout: 10000,
           headers: {
@@ -126,18 +127,18 @@ class WebScraper {
         
       } catch (error) {
         lastError = error;
-        console.error(`❌ Scraping failed (attempt ${attempt}/${maxRetries}) for ${url}:`, error.message);
+        logger.error('Scraping failed', { attempt, maxRetries, url, error: error.message });
         
         // Don't retry on client errors (4xx) or robots.txt blocks
         if (error.response && error.response.status >= 400 && error.response.status < 500) {
-          console.log(`⚠️ Client error (${error.response.status}), not retrying`);
+          logger.info('Client error, not retrying', { status: error.response.status });
           break;
         }
         
         // Wait before retrying (exponential backoff)
         if (attempt < maxRetries) {
           const waitTime = retryDelay * Math.pow(2, attempt - 1);
-          console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+          logger.debug('Waiting before retry', { waitTime });
           await new Promise(resolve => setTimeout(resolve, waitTime));
         }
       }
@@ -260,7 +261,7 @@ class WebScraper {
         break;
       
       default:
-        console.warn(`Unknown data type: ${dataType}`);
+        logger.warn('Unknown data type', { dataType });
         return false;
     }
     
@@ -292,11 +293,11 @@ class WebScraper {
         1
       );
       
-      console.log(`✅ Saved ${dataType} data for college ${collegeId}`);
+      logger.info('Saved scraped data', { dataType, collegeId });
       return true;
       
     } catch (error) {
-      console.error(`❌ Failed to save scraped data:`, error.message);
+      logger.error('Failed to save scraped data', { error: error.message });
       return false;
     }
   }

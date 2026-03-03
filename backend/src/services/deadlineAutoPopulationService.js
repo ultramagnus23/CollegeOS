@@ -1,5 +1,6 @@
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
+const { sanitizeForLog } = require('../utils/security');
 
 /**
  * Service for automatically populating deadlines when a college is added to user's list
@@ -29,7 +30,7 @@ class DeadlineAutoPopulationService {
       
       // Check if data exists with confidence_score >= 0.7
       if (!collegeDeadlines || (collegeDeadlines.confidence_score && collegeDeadlines.confidence_score < 0.7)) {
-        logger.info(`No reliable current year data for college ${collegeId}, trying previous year`);
+        logger.info(`No reliable current year data for college ${sanitizeForLog(collegeId)}, trying previous year`);
         
         // Try previous year as fallback
         collegeDeadlines = this._getCollegeDeadlines(collegeId, currentYear - 1);

@@ -1,5 +1,6 @@
 const CollegeService = require('../services/collegeService');
 const logger = require('../utils/logger');
+const { sanitizeForLog } = require('../utils/security');
 
 // Generate request ID for tracking
 function generateRequestId() {
@@ -23,7 +24,7 @@ class CollegeController {
     try {
       const { country, search, limit } = req.query;
       
-      logger.info(`[${requestId}] GET /colleges - country=${country}, search=${search}, limit=${limit}`);
+      logger.info(`[${requestId}] GET /colleges - country=${sanitizeForLog(country)}, search=${sanitizeForLog(search)}, limit=${sanitizeForLog(limit)}`);
       
       // Default to returning all colleges (no limit) unless specified
       // This supports the goal of showing 500-1000 colleges
@@ -55,10 +56,10 @@ class CollegeController {
     try {
       const { id } = req.params;
       
-      logger.info(`[${requestId}] GET /colleges/${id}`);
+      logger.info(`[${requestId}] GET /colleges/${sanitizeForLog(id)}`);
       
       if (!id || isNaN(parseInt(id))) {
-        logger.warn(`[${requestId}] Invalid college ID: ${id}`);
+        logger.warn(`[${requestId}] Invalid college ID: ${sanitizeForLog(id)}`);
         return res.status(400).json({
           success: false,
           message: 'Invalid college ID',
@@ -69,7 +70,7 @@ class CollegeController {
       const college = await CollegeService.getCollegeById(parseInt(id));
       
       if (!college) {
-        logger.warn(`[${requestId}] College ${id} not found`);
+        logger.warn(`[${requestId}] College ${sanitizeForLog(id)} not found`);
         return res.status(404).json({
           success: false,
           message: 'College not found',
@@ -78,7 +79,7 @@ class CollegeController {
       }
       
       const duration = Date.now() - startTime;
-      logger.debug(`[${requestId}] College ${id} retrieved in ${duration}ms`);
+      logger.debug(`[${requestId}] College ${sanitizeForLog(id)} retrieved in ${duration}ms`);
       
       res.json(addDebugInfo({
         success: true,
@@ -98,7 +99,7 @@ class CollegeController {
     try {
       const { q, country, program, limit } = req.query;
       
-      logger.info(`[${requestId}] GET /colleges/search - q="${q}", country=${country}, program=${program}`);
+      logger.info(`[${requestId}] GET /colleges/search - q="${sanitizeForLog(q)}", country=${sanitizeForLog(country)}, program=${sanitizeForLog(program)}`);
       
       if (!q || q.trim() === '') {
         logger.debug(`[${requestId}] Empty search query - returning all colleges`);
@@ -134,7 +135,7 @@ class CollegeController {
       const { id } = req.params;
       const { type } = req.query;
       
-      logger.info(`[${requestId}] GET /colleges/${id}/data - type=${type}`);
+      logger.info(`[${requestId}] GET /colleges/${sanitizeForLog(id)}/data - type=${sanitizeForLog(type)}`);
       
       if (!type) {
         logger.warn(`[${requestId}] Missing data type parameter`);
@@ -147,7 +148,7 @@ class CollegeController {
       
       const data = await CollegeService.getCollegeData(parseInt(id), type);
       
-      logger.debug(`[${requestId}] Retrieved ${type} data for college ${id}`);
+      logger.debug(`[${requestId}] Retrieved ${sanitizeForLog(type)} data for college ${sanitizeForLog(id)}`);
       
       res.json(addDebugInfo({
         success: true,

@@ -585,13 +585,25 @@ async function scrapeCDSData(college) {
     // Download and parse PDF
     const pdfPath = path.join(CONFIG.PDF_CACHE_DIR, `cds_${college.id}.pdf`);
     
+    // Validate the resolved path stays within the cache directory
+    const resolvedPath = path.resolve(pdfPath);
+    if (!resolvedPath.startsWith(path.resolve(CONFIG.PDF_CACHE_DIR) + path.sep)) {
+      throw new Error('Invalid PDF cache path');
+    }
+    
     // Check cache first
     if (!fsSync.existsSync(pdfPath)) {
       logger.info(`Downloading CDS PDF for ${college.name}`);
       const pdfResponse = await axios.get(pdfUrl, {
         responseType: 'arraybuffer',
+        maxContentLength: 50 * 1024 * 1024, // 50MB max
         ...getAxiosConfig(college.country, pdfUrl)
       });
+      
+      // Validate response before writing to disk
+      if (!pdfResponse.data || pdfResponse.data.length === 0) {
+        throw new Error('Empty PDF response');
+      }
       
       await fs.writeFile(pdfPath, pdfResponse.data);
     }

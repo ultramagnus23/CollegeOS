@@ -52,7 +52,7 @@ router.get('/overview', authenticate, async (req, res) => {
     logger.error('Risk overview error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -115,7 +115,7 @@ router.get('/college/:collegeId', authenticate, async (req, res) => {
     logger.error('College risk error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -140,7 +140,7 @@ router.get('/deadlines', authenticate, async (req, res) => {
     logger.error('Get deadlines with risk error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -163,7 +163,7 @@ router.get('/impossible', authenticate, async (req, res) => {
     logger.error('Get impossible colleges error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -186,7 +186,7 @@ router.get('/alerts', authenticate, async (req, res) => {
     logger.error('Get alerts error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -216,7 +216,7 @@ router.patch('/alerts/:alertId/read', authenticate, async (req, res) => {
     logger.error('Mark alert read error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -255,7 +255,7 @@ router.post('/deadlines', authenticate, async (req, res) => {
     logger.error('Create deadline error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -291,7 +291,7 @@ router.post('/sync/:collegeId', authenticate, async (req, res) => {
     logger.error('Sync deadlines error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -317,7 +317,7 @@ router.post('/check', authenticate, async (req, res) => {
     logger.error('Risk check error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -347,7 +347,7 @@ router.post('/calculate', async (req, res) => {
     logger.error('Calculate risk error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });

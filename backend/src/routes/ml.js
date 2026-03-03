@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const { authenticate } = require('../middleware/auth');
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
+const { sanitizeForLog } = require('../utils/security');
 
 /**
  * Check if user has given ML consent
@@ -103,7 +104,7 @@ router.post('/student-outcome', authenticate, async (req, res, next) => {
       applicationYear || new Date().getFullYear()
     );
     
-    logger.info(`ML training data recorded for user ${userId}, college ${collegeId}, decision: ${decision}`);
+    logger.info(`ML training data recorded for user ${userId}, college ${sanitizeForLog(collegeId)}, decision: ${sanitizeForLog(decision)}`);
     
     res.status(201).json({
       success: true,
@@ -234,7 +235,7 @@ router.post('/essay-submission', authenticate, async (req, res, next) => {
       qualityScore || null
     );
     
-    logger.info(`ML essay submission recorded for user ${userId}, ${wordCount} words`);
+    logger.info(`ML essay submission recorded for user ${userId}, ${sanitizeForLog(wordCount)} words`);
     
     res.status(201).json({
       success: true,
@@ -425,7 +426,7 @@ router.put('/consent', authenticate, async (req, res, next) => {
     const db = dbManager.getDatabase();
     db.prepare('UPDATE users SET ml_consent = ? WHERE id = ?').run(consent ? 1 : 0, req.user.userId);
     
-    logger.info(`User ${req.user.userId} updated ML consent to: ${consent}`);
+    logger.info(`User ${req.user.userId} updated ML consent to: ${sanitizeForLog(consent)}`);
     
     res.json({
       success: true,

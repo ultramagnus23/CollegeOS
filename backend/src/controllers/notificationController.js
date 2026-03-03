@@ -27,7 +27,7 @@ class NotificationController {
       logger.error('Error in getNotifications:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to fetch notifications'
+        message: 'Failed to fetch notifications'
       });
     }
   }
@@ -49,7 +49,7 @@ class NotificationController {
       logger.error('Error in getUnreadCount:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to fetch unread count'
+        message: 'Failed to fetch unread count'
       });
     }
   }
@@ -66,7 +66,7 @@ class NotificationController {
       if (isNaN(notificationId)) {
         return res.status(400).json({
           success: false,
-          error: 'Invalid notification ID'
+          message: 'Invalid notification ID'
         });
       }
       
@@ -80,7 +80,7 @@ class NotificationController {
       logger.error('Error in markAsRead:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to mark notification as read'
+        message: 'Failed to mark notification as read'
       });
     }
   }
@@ -96,14 +96,14 @@ class NotificationController {
       
       res.json({
         success: true,
-        message: `Marked ${count} notifications as read`,
+        message: 'Notifications marked as read',
         count
       });
     } catch (error) {
       logger.error('Error in markAllAsRead:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to mark all notifications as read'
+        message: 'Failed to mark all notifications as read'
       });
     }
   }
@@ -133,7 +133,7 @@ class NotificationController {
       logger.error('Error in createTestNotification:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to create test notification'
+        message: 'Failed to create test notification'
       });
     }
   }

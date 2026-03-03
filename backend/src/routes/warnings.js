@@ -31,7 +31,7 @@ router.get('/', authenticate, async (req, res) => {
     logger.error('Get warnings error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -53,7 +53,7 @@ router.get('/summary', authenticate, async (req, res) => {
     logger.error('Get warnings summary error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -85,7 +85,7 @@ router.get('/task-load', authenticate, async (req, res) => {
     logger.error('Get task load error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -117,7 +117,7 @@ router.get('/dependencies/:collegeId', authenticate, async (req, res) => {
     logger.error('Get dependencies error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -152,7 +152,7 @@ router.post('/dependencies', authenticate, async (req, res) => {
     logger.error('Create dependency error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -184,7 +184,7 @@ router.post('/auto-dependencies/:collegeId', authenticate, async (req, res) => {
     logger.error('Auto-create dependencies error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -215,7 +215,7 @@ router.get('/recommended-order/:collegeId', authenticate, async (req, res) => {
     logger.error('Get recommended order error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -245,7 +245,7 @@ router.get('/impact/:taskId', authenticate, async (req, res) => {
     logger.error('Get impact error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });

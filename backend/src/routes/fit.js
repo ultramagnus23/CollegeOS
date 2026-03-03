@@ -45,7 +45,7 @@ router.get('/:collegeId', authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to calculate fit classification',
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });
@@ -82,7 +82,7 @@ router.get('/:collegeId/explain', authenticate, async (req, res) => {
     logger.error('Fit explanation error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -142,7 +142,7 @@ router.post('/batch', authenticate, batchLimiter, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to process batch fit classification',
-      error: error.message
+      error: 'An internal error occurred'
     });
   }
 });
@@ -201,7 +201,7 @@ router.post('/:collegeId/override', authenticate, async (req, res) => {
     logger.error('Fit override error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -252,7 +252,7 @@ router.put('/weights', authenticate, async (req, res) => {
     logger.error('Update weights error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });
@@ -276,7 +276,7 @@ router.get('/weights', authenticate, async (req, res) => {
     logger.error('Get weights error:', error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: 'An internal error occurred'
     });
   }
 });

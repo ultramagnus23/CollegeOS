@@ -1,5 +1,6 @@
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
+const { sanitizeForLog } = require('../utils/security');
 
 /**
  * Service for automatically loading essay templates based on application platform
@@ -209,7 +210,7 @@ class EssayAutoLoadingService {
 
     // If no current year data, try to get historical prompts
     if (supplements.length === 0) {
-      logger.info(`No current essay prompts for college ${collegeId}, checking historical data`);
+      logger.info(`No current essay prompts for college ${sanitizeForLog(collegeId)}, checking historical data`);
       
       // For now, we'll note this but not load historical data
       // In production, you would query historical prompts here
