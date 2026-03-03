@@ -1380,7 +1380,7 @@ const CollegeDetail: React.FC = () => {
 
               {/* Application Deadlines — from application_deadlines table */}
               {(() => {
-                const ad = (college as any).applicationDeadlines;
+                const ad = college.applicationDeadlines;
                 const legacyTemplates = college.deadlineTemplates;
 
                 // Build a flat list of deadline entries to display
@@ -1452,7 +1452,7 @@ const CollegeDetail: React.FC = () => {
 
               {/* Application Requirements Checklist — from college_requirements table */}
               {(() => {
-                const req = (college as any).collegeRequirements;
+                const req = college.collegeRequirements;
                 if (!req) return null;
                 return (
                   <Card title="Application Requirements">

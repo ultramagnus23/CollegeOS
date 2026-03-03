@@ -6,6 +6,53 @@ const { sanitizeForLog } = require('../utils/security');
 const DEFAULT_PAGE_SIZE = 100;
 const MAX_PAGE_SIZE = 500;
 
+// Search: US state names and abbreviations (module-level constant for performance)
+const US_STATES = {
+  'alabama': 'Alabama', 'alaska': 'Alaska', 'arizona': 'Arizona',
+  'arkansas': 'Arkansas', 'california': 'California', 'colorado': 'Colorado',
+  'connecticut': 'Connecticut', 'delaware': 'Delaware', 'florida': 'Florida',
+  'georgia': 'Georgia', 'hawaii': 'Hawaii', 'idaho': 'Idaho',
+  'illinois': 'Illinois', 'indiana': 'Indiana', 'iowa': 'Iowa',
+  'kansas': 'Kansas', 'kentucky': 'Kentucky', 'louisiana': 'Louisiana',
+  'maine': 'Maine', 'maryland': 'Maryland', 'massachusetts': 'Massachusetts',
+  'michigan': 'Michigan', 'minnesota': 'Minnesota', 'mississippi': 'Mississippi',
+  'missouri': 'Missouri', 'montana': 'Montana', 'nebraska': 'Nebraska',
+  'nevada': 'Nevada', 'new hampshire': 'New Hampshire', 'new jersey': 'New Jersey',
+  'new mexico': 'New Mexico', 'new york': 'New York', 'north carolina': 'North Carolina',
+  'north dakota': 'North Dakota', 'ohio': 'Ohio', 'oklahoma': 'Oklahoma',
+  'oregon': 'Oregon', 'pennsylvania': 'Pennsylvania', 'rhode island': 'Rhode Island',
+  'south carolina': 'South Carolina', 'south dakota': 'South Dakota',
+  'tennessee': 'Tennessee', 'texas': 'Texas', 'utah': 'Utah',
+  'vermont': 'Vermont', 'virginia': 'Virginia', 'washington': 'Washington',
+  'west virginia': 'West Virginia', 'wisconsin': 'Wisconsin', 'wyoming': 'Wyoming',
+  'ny': 'New York', 'ca': 'California', 'tx': 'Texas', 'fl': 'Florida',
+  'il': 'Illinois', 'ma': 'Massachusetts', 'pa': 'Pennsylvania'
+};
+
+// Search: country keyword → canonical country name
+const COUNTRY_KEYWORDS = {
+  'uk': 'United Kingdom', 'united kingdom': 'United Kingdom', 'england': 'United Kingdom',
+  'britain': 'United Kingdom', 'india': 'India', 'canada': 'Canada',
+  'australia': 'Australia', 'germany': 'Germany', 'france': 'France'
+};
+
+// Search: common English stopwords to strip from query tokens
+const SEARCH_STOPWORDS = new Set([
+  'in', 'at', 'for', 'the', 'a', 'an', 'and', 'or', 'of', 'to', 'with',
+  'school', 'schools', 'college', 'colleges', 'university', 'universities',
+  'program', 'programs', 'major', 'majors', 'degree', 'best', 'top',
+  'good', 'great', 'my', 'i', 'want', 'looking', 'find', 'near', 'close',
+  'about', 'that', 'have', 'has', 'is', 'are', 'where', 'which'
+]);
+
+// Tokens already handled by selectivity/type parsing — don't pass as keyword search
+const SEARCH_HANDLED_TOKENS = new Set([
+  ...Object.keys(US_STATES), ...Object.keys(COUNTRY_KEYWORDS),
+  'ivy', 'league', 'easy', 'safety', 'elite', 'selective', 'affordable',
+  'need', 'blind', 'full', 'scholarship', 'liberal', 'arts', 'research',
+  'public', 'private', 'hbcu', 'tech'
+]);
+
 // Helper to normalize acceptance rate (ensure it's in decimal form 0-1)
 function normalizeAcceptanceRate(rate) {
   if (rate === null || rate === undefined) return null;
@@ -779,36 +826,6 @@ class College {
     // --- 2. Smart parsing: extract location, type, and keyword tokens ---
     const lower = term.toLowerCase();
 
-    // Parse US state names / abbreviations
-    const US_STATES = {
-      'alabama': 'Alabama', 'alaska': 'Alaska', 'arizona': 'Arizona',
-      'arkansas': 'Arkansas', 'california': 'California', 'colorado': 'Colorado',
-      'connecticut': 'Connecticut', 'delaware': 'Delaware', 'florida': 'Florida',
-      'georgia': 'Georgia', 'hawaii': 'Hawaii', 'idaho': 'Idaho',
-      'illinois': 'Illinois', 'indiana': 'Indiana', 'iowa': 'Iowa',
-      'kansas': 'Kansas', 'kentucky': 'Kentucky', 'louisiana': 'Louisiana',
-      'maine': 'Maine', 'maryland': 'Maryland', 'massachusetts': 'Massachusetts',
-      'michigan': 'Michigan', 'minnesota': 'Minnesota', 'mississippi': 'Mississippi',
-      'missouri': 'Missouri', 'montana': 'Montana', 'nebraska': 'Nebraska',
-      'nevada': 'Nevada', 'new hampshire': 'New Hampshire', 'new jersey': 'New Jersey',
-      'new mexico': 'New Mexico', 'new york': 'New York', 'north carolina': 'North Carolina',
-      'north dakota': 'North Dakota', 'ohio': 'Ohio', 'oklahoma': 'Oklahoma',
-      'oregon': 'Oregon', 'pennsylvania': 'Pennsylvania', 'rhode island': 'Rhode Island',
-      'south carolina': 'South Carolina', 'south dakota': 'South Dakota',
-      'tennessee': 'Tennessee', 'texas': 'Texas', 'utah': 'Utah',
-      'vermont': 'Vermont', 'virginia': 'Virginia', 'washington': 'Washington',
-      'west virginia': 'West Virginia', 'wisconsin': 'Wisconsin', 'wyoming': 'Wyoming',
-      'ny': 'New York', 'ca': 'California', 'tx': 'Texas', 'fl': 'Florida',
-      'il': 'Illinois', 'ma': 'Massachusetts', 'pa': 'Pennsylvania'
-    };
-
-    // Parse country keywords
-    const COUNTRY_KEYWORDS = {
-      'uk': 'United Kingdom', 'united kingdom': 'United Kingdom', 'england': 'United Kingdom',
-      'britain': 'United Kingdom', 'india': 'India', 'canada': 'Canada',
-      'australia': 'Australia', 'germany': 'Germany', 'france': 'France'
-    };
-
     let locationFilter = null;
     let countryFilter = filters.country || null;
 
@@ -842,30 +859,14 @@ class College {
 
     const minAcceptanceRate = (() => {
       if (lower.includes('easy') || lower.includes('safety') || lower.includes('less selective')) return 60;
-      if (lower.includes('affordable') && !lower.includes('university')) return null;
       return null;
     })();
 
-    // Extract meaningful keyword tokens (remove stopwords)
-    const STOPWORDS = new Set([
-      'in', 'at', 'for', 'the', 'a', 'an', 'and', 'or', 'of', 'to', 'with',
-      'school', 'schools', 'college', 'colleges', 'university', 'universities',
-      'program', 'programs', 'major', 'majors', 'degree', 'best', 'top',
-      'good', 'great', 'my', 'i', 'want', 'looking', 'find', 'near', 'close',
-      'about', 'that', 'have', 'has', 'is', 'are', 'where', 'which'
-    ]);
-    // Also strip location/selectivity tokens already handled above
-    const allHandledTokens = new Set([
-      ...Object.keys(US_STATES), ...Object.keys(COUNTRY_KEYWORDS),
-      'ivy', 'league', 'easy', 'safety', 'elite', 'selective', 'affordable',
-      'need', 'blind', 'full', 'scholarship', 'liberal', 'arts', 'research',
-      'public', 'private', 'hbcu', 'tech'
-    ]);
-
+    // Extract meaningful keyword tokens using module-level stopword sets
     const keywords = lower
       .split(/[\s,]+/)
       .map(w => w.replace(/[^\w]/g, ''))
-      .filter(w => w.length > 2 && !STOPWORDS.has(w) && !allHandledTokens.has(w));
+      .filter(w => w.length > 2 && !SEARCH_STOPWORDS.has(w) && !SEARCH_HANDLED_TOKENS.has(w));
 
     // --- 3. Try each keyword individually + location/acceptance filters ---
     const baseFilters = {
