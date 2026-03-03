@@ -30,8 +30,7 @@ class EssayAutoLoadingService {
       
       if (!college) {
         result.message = 'College not found';
-        result.success = true; // Not a crash — just no data
-        return result;
+        return result; // success remains false — this is expected for non-existent colleges
       }
 
       const platform = this._detectApplicationPlatform(college);
