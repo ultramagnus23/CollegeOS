@@ -261,7 +261,7 @@ class CollegeController {
       }
       
       // Check eligibility using the eligibility checker service
-      const { checkEligibility } = require('../../services/eligibilityChecker');
+      const { checkEligibility } = require('../services/eligibilityChecker');
       const eligibility = checkEligibility(userProfile, college, program);
       
       res.json({

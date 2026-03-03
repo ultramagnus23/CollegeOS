@@ -2,10 +2,10 @@ import { Header } from '@/components/layout/Header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TimelineItem } from '@/components/dashboard/TimelineItem';
-import { sampleTimelineEvents, sampleColleges } from '@/data/mockData';
 import { TimelineEvent } from '@/types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { api } from '@/services/api';
 import {
   Calendar,
   ChevronLeft,
@@ -26,10 +26,25 @@ import {
 } from '@/components/ui/select';
 
 export function Timeline() {
-  const [events, setEvents] = useState(sampleTimelineEvents);
+  const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const eventsRes = await api.getMonthlyTimeline();
+        setEvents(eventsRes?.data || []);
+      } catch (err) {
+        console.error('Failed to load timeline:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   const toggleEvent = (id: string) => {
     setEvents(prev => 
@@ -68,7 +83,13 @@ export function Timeline() {
 
   return (
     <div className="space-y-6">
-      <Header 
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+      {!loading && (
+      <><Header 
         title="Timeline" 
         subtitle="View all your deadlines and milestones"
       />
@@ -240,6 +261,8 @@ export function Timeline() {
           </Card>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

@@ -96,7 +96,7 @@ const AuthPage = () => {
                 <select
                   value={formData.country}
                   onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-4 py-2 border border-border rounded-lg"
                 >
                   <option value="India">India</option>
                   <option value="USA">USA</option>

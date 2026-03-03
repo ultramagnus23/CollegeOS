@@ -11,6 +11,8 @@
  * - Easy to migrate to backend API later
  */
 
+import { api } from './api';
+
 // ============================================
 // TypeScript Interfaces
 // ============================================
@@ -120,10 +122,10 @@ class ProfileService {
   }
   
   /**
-   * Save user profile to localStorage
+   * Save user profile to localStorage and sync to backend
    * Creates automatic backup before saving
    */
-  saveProfile(profile: Partial<UserProfile>, options: ProfileUpdateOptions = {}): void {
+  async saveProfile(profile: Partial<UserProfile>, options: ProfileUpdateOptions = {}): Promise<void> {
     try {
       // Get existing profile
       const existingProfile = this.getProfile() || {} as UserProfile;
@@ -162,6 +164,15 @@ class ProfileService {
         onboardingComplete: updatedProfile.onboarding_complete,
         profileCompleted: updatedProfile.profileCompleted,
       });
+
+      // Sync to backend
+      if (!options.silent) {
+        try {
+          await api.updateAcademicProfile(updatedProfile);
+        } catch (err) {
+          console.warn('ProfileService: Backend sync failed, data saved locally only', err);
+        }
+      }
     } catch (error) {
       console.error('ProfileService: Error saving profile to localStorage', error);
       throw new Error('Failed to save profile');
@@ -171,20 +182,20 @@ class ProfileService {
   /**
    * Update specific fields in the profile
    */
-  updateProfile(updates: Partial<UserProfile>, options: ProfileUpdateOptions = {}): void {
-    this.saveProfile(updates, options);
+  async updateProfile(updates: Partial<UserProfile>, options: ProfileUpdateOptions = {}): Promise<void> {
+    await this.saveProfile(updates, options);
   }
   
   /**
    * Mark onboarding as complete
    */
-  completeOnboarding(profileData?: Partial<UserProfile>): void {
+  async completeOnboarding(profileData?: Partial<UserProfile>): Promise<void> {
     const updates: Partial<UserProfile> = {
       ...profileData,
       onboarding_complete: true,
       profileCompleted: true,
     };
-    this.saveProfile(updates);
+    await this.saveProfile(updates);
   }
   
   /**
@@ -211,6 +222,22 @@ class ProfileService {
     }
   }
   
+  /**
+   * Fetch profile from backend, falling back to localStorage cache
+   */
+  async getProfileFromBackend(): Promise<UserProfile | null> {
+    try {
+      const res = await api.getProfile();
+      if (res?.data) {
+        localStorage.setItem(ProfileService.PROFILE_KEY, JSON.stringify(res.data));
+        return res.data as UserProfile;
+      }
+    } catch (err) {
+      console.warn('ProfileService: Backend fetch failed, using local cache', err);
+    }
+    return this.getProfile();
+  }
+
   /**
    * Clear all profile data (logout, reset)
    */

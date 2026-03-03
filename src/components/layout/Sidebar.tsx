@@ -10,26 +10,64 @@ import {
   GraduationCap,
   LogOut,
   ChevronLeft,
-  Menu
+  Menu,
+  BookOpen,
+  Building2,
+  Bell,
+  Award,
+  Users,
+  FileCheck,
+  Clock,
+  Compass
 } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+const navSections = [
+  {
+    label: 'Overview',
+    items: [
+      { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard,  path: '/' },
+      { id: 'discover',     label: 'Discover',     icon: Compass,          path: '/discover' },
+    ]
+  },
+  {
+    label: 'Colleges',
+    items: [
+      { id: 'colleges',     label: 'Colleges',     icon: Building2,        path: '/colleges' },
+      { id: 'research',     label: 'Research',     icon: Search,           path: '/research' },
+      { id: 'search',       label: 'AI Search',    icon: Search,           path: '/search' },
+    ]
+  },
+  {
+    label: 'Applications',
+    items: [
+      { id: 'applications', label: 'Applications', icon: ClipboardList,    path: '/applications' },
+      { id: 'requirements', label: 'Requirements', icon: FileCheck,        path: '/requirements' },
+      { id: 'deadlines',    label: 'Deadlines',    icon: Clock,            path: '/deadlines' },
+      { id: 'essays',       label: 'Essays',       icon: FileText,         path: '/essays' },
+    ]
+  },
+  {
+    label: 'Profile',
+    items: [
+      { id: 'activities',   label: 'Activities',   icon: BookOpen,         path: '/activities' },
+      { id: 'documents',    label: 'Documents',    icon: Award,            path: '/documents' },
+      { id: 'scholarships', label: 'Scholarships', icon: Award,            path: '/scholarships' },
+      { id: 'recommendations', label: 'Recommenders', icon: Users,         path: '/recommendations' },
+      { id: 'timeline',     label: 'Timeline',     icon: Calendar,         path: '/timeline' },
+    ]
+  },
+];
 
 interface SidebarProps {
-  currentPage: string;
-  onNavigate: (page: string) => void;
   userName?: string;
 }
 
-const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'research', label: 'Research', icon: Search },
-  { id: 'applications', label: 'Applications', icon: ClipboardList },
-  { id: 'timeline', label: 'Timeline', icon: Calendar },
-  { id: 'essays', label: 'Essays', icon: FileText },
-];
-
-export function Sidebar({ currentPage, onNavigate, userName = 'Student' }: SidebarProps) {
+export function Sidebar({ userName = 'Student' }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <>
@@ -76,31 +114,39 @@ export function Sidebar({ currentPage, onNavigate, userName = 'Student' }: Sideb
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentPage === item.id;
-            
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onNavigate(item.id);
-                  if (window.innerWidth < 1024) setCollapsed(true);
-                }}
-                className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
-                  isActive 
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
-                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
-                  collapsed && 'justify-center px-2'
-                )}
-              >
-                <Icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'text-sidebar-primary')} />
-                {!collapsed && <span>{item.label}</span>}
-              </button>
-            );
-          })}
+        <nav className="flex-1 p-3 overflow-y-auto">
+          {navSections.map((section) => (
+            <div key={section.label} className="mb-4">
+              {!collapsed && (
+                <p className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider px-3 mb-1">
+                  {section.label}
+                </p>
+              )}
+              <div className="space-y-1">
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path ||
+                    (item.path !== '/' && location.pathname.startsWith(item.path));
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => navigate(item.path)}
+                      className={cn(
+                        'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
+                        isActive
+                          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                          : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
+                        collapsed && 'justify-center px-2'
+                      )}
+                    >
+                      <Icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'text-sidebar-primary')} />
+                      {!collapsed && <span>{item.label}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Footer */}
@@ -109,7 +155,7 @@ export function Sidebar({ currentPage, onNavigate, userName = 'Student' }: Sideb
           collapsed && 'p-2'
         )}>
           <button
-            onClick={() => onNavigate('settings')}
+            onClick={() => navigate('/settings')}
             className={cn(
               'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
               'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',

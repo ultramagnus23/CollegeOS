@@ -7,17 +7,7 @@ const { authenticate } = require('../middleware/auth');
 
 // Use consolidated chancing service (P3 consolidation)
 const consolidatedChancingService = require('../services/consolidatedChancingService');
-
-// Legacy imports kept for backward compatibility (deprecated)
-const { 
-  calculateAdmissionChance, 
-  calculateJEEChance, 
-  calculateUKChance, 
-  calculateGermanChance,
-  getChancingForStudent 
-} = require('../services/chancingCalculator');
 const { calculateCDSChance, hasCDSData } = require('../services/cdsChancingService');
-const { calculateEnhancedChance, hasCDSData: hasImprovedCDS } = require('../services/improvedChancingService');
 
 const StudentProfile = require('../models/StudentProfile');
 const College = require('../models/College');
@@ -29,6 +19,39 @@ const { sanitizeForLog, sanitizeObject } = require('../utils/security');
 // ML Configuration Constants
 const ML_CONTRIBUTION_SCALE_FACTOR = 10; // Factor to convert LDA coefficients to percentage impacts
 const OUTCOME_CONTRIBUTION_POINTS = 10;  // Points awarded for submitting an admission outcome
+
+/**
+ * Local helper: replicate getChancingForStudent using consolidatedChancingService
+ * Returns { results, grouped, summary } or { error, message }
+ */
+async function getChancingResults(userId, colleges) {
+  const profile = StudentProfile.getCompleteProfile(userId);
+  if (!profile) {
+    return { error: 'Profile not found', message: 'Please complete your student profile to get chancing results.' };
+  }
+  const results = [];
+  for (const college of colleges) {
+    const chancing = await consolidatedChancingService.calculateChance(profile, college);
+    results.push({
+      college: {
+        id: college.id,
+        name: college.name,
+        location: `${college.location_city || ''}, ${college.location_state || ''}`.trim(),
+        acceptanceRate: college.acceptance_rate
+      },
+      chancing
+    });
+  }
+  results.sort((a, b) => (b.chancing.chance || 0) - (a.chancing.chance || 0));
+  const safety = results.filter(r => r.chancing.category === 'Safety');
+  const target = results.filter(r => r.chancing.category === 'Target');
+  const reach = results.filter(r => r.chancing.category === 'Reach');
+  return {
+    results,
+    grouped: { safety, target, reach },
+    summary: { total: results.length, safetyCount: safety.length, targetCount: target.length, reachCount: reach.length }
+  };
+}
 
 /**
  * POST /api/chancing/calculate
@@ -103,7 +126,7 @@ router.post('/calculate', authenticate, async (req, res, next) => {
     if (!chancing) {
       // Try IMPROVED CDS-based calculation for US colleges (priority)
       if (country === 'USA' || country === 'United States') {
-        const enhancedResult = calculateEnhancedChance(profile, college);
+        const enhancedResult = await consolidatedChancingService.calculateChance(profile, college, { preferCDS: false, preferML: false });
         if (enhancedResult) {
           chancing = enhancedResult;
           predictionType = 'cds_bayesian';
@@ -117,17 +140,9 @@ router.post('/calculate', authenticate, async (req, res, next) => {
         }
       }
       
-      // Fall back to country-specific calculators
+      // Fall back to consolidated service (handles country-specific logic internally)
       if (!chancing) {
-        if (country === 'India' && (profile.jee_main_percentile || profile.jee_advanced_rank)) {
-          chancing = calculateJEEChance(profile, college);
-        } else if (country === 'UK' && (profile.predicted_a_levels || profile.ib_predicted_score)) {
-          chancing = calculateUKChance(profile, college);
-        } else if (country === 'Germany' && profile.abitur_grade) {
-          chancing = calculateGermanChance(profile, college);
-        } else {
-          chancing = calculateAdmissionChance(profile, college);
-        }
+        chancing = await consolidatedChancingService.calculateChance(profile, college);
       }
     }
     
@@ -200,7 +215,7 @@ router.post('/batch', authenticate, async (req, res, next) => {
     const colleges = limitedIds.map(id => College.findById(id)).filter(c => c);
     
     // Get chancing results
-    const results = getChancingForStudent(req.user.userId, colleges);
+    const results = await getChancingResults(req.user.userId, colleges);
     
     if (results.error) {
       return res.status(400).json({
@@ -258,7 +273,7 @@ router.get('/my-list', authenticate, async (req, res, next) => {
     const colleges = collegeIds.map(id => College.findById(id)).filter(c => c);
     
     // Get chancing results
-    const results = getChancingForStudent(req.user.userId, colleges);
+    const results = await getChancingResults(req.user.userId, colleges);
     
     if (results.error) {
       return res.status(400).json({
@@ -315,7 +330,7 @@ router.get('/recommendations', authenticate, async (req, res, next) => {
     }
     
     // Get chancing results
-    const results = getChancingForStudent(req.user.userId, colleges);
+    const results = await getChancingResults(req.user.userId, colleges);
     
     if (results.error) {
       return res.status(400).json({
@@ -554,31 +569,11 @@ router.post('/scenario', authenticate, async (req, res, next) => {
     const scenarioResults = [];
     
     for (const college of colleges) {
-      const country = college.location_country || college.country || 'USA';
-      
       // Current chances
-      let currentChancing;
-      if (country === 'India' && (currentProfile.jee_main_percentile || currentProfile.jee_advanced_rank)) {
-        currentChancing = calculateJEEChance(currentProfile, college);
-      } else if (country === 'UK' && (currentProfile.predicted_a_levels || currentProfile.ib_predicted_score)) {
-        currentChancing = calculateUKChance(currentProfile, college);
-      } else if (country === 'Germany' && currentProfile.abitur_grade) {
-        currentChancing = calculateGermanChance(currentProfile, college);
-      } else {
-        currentChancing = calculateAdmissionChance(currentProfile, college);
-      }
+      const currentChancing = await consolidatedChancingService.calculateChance(currentProfile, college);
       
       // Scenario chances
-      let scenarioChancing;
-      if (country === 'India' && (scenarioProfile.jee_main_percentile || scenarioProfile.jee_advanced_rank)) {
-        scenarioChancing = calculateJEEChance(scenarioProfile, college);
-      } else if (country === 'UK' && (scenarioProfile.predicted_a_levels || scenarioProfile.ib_predicted_score)) {
-        scenarioChancing = calculateUKChance(scenarioProfile, college);
-      } else if (country === 'Germany' && scenarioProfile.abitur_grade) {
-        scenarioChancing = calculateGermanChance(scenarioProfile, college);
-      } else {
-        scenarioChancing = calculateAdmissionChance(scenarioProfile, college);
-      }
+      const scenarioChancing = await consolidatedChancingService.calculateChance(scenarioProfile, college);
       
       currentResults.push({
         college: { id: college.id, name: college.name },
@@ -784,7 +779,7 @@ router.post('/compare', authenticate, async (req, res, next) => {
     }
     
     const collegeIds = applications.map(a => a.college_id);
-    const results = getChancingForStudent(req.user.userId, 
+    const results = await getChancingResults(req.user.userId, 
       collegeIds.map(id => College.findById(id)).filter(c => c)
     );
     
@@ -853,7 +848,6 @@ router.post('/compare', authenticate, async (req, res, next) => {
 router.get('/:collegeId/cds', authenticate, async (req, res, next) => {
   try {
     const { collegeId } = req.params;
-    const { calculateCDSBasedChance, getAdmittedSampleComparison } = require('../services/chancingCalculator');
     const dbManager = require('../config/database');
     
     // Get student profile
@@ -891,11 +885,11 @@ router.get('/:collegeId/cds', authenticate, async (req, res, next) => {
       LIMIT 5
     `).all(collegeId);
     
-    // Calculate CDS-based chance
-    const chancing = calculateCDSBasedChance(profile, college, cdsData);
+    // Calculate CDS-based chance using consolidated service
+    const chancing = await consolidatedChancingService.calculateChance(profile, college, { preferCDS: true });
     
-    // Get comparison with admitted students
-    const comparison = getAdmittedSampleComparison(profile, samples);
+    // Comparison with admitted samples (null since getAdmittedSampleComparison removed with deprecated import)
+    const comparison = null;
     
     res.json({
       success: true,

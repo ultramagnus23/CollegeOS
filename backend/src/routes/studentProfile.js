@@ -5,16 +5,26 @@ const express = require('express');
 const router = express.Router();
 const StudentProfile = require('../models/StudentProfile');
 const StudentActivity = require('../models/StudentActivity');
-const { authenticateToken } = require('../middleware/auth');
+const User = require('../models/User');
+const { authenticate } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const profileController = require('../controllers/profileController');
+const {
+  validateBasicInfo,
+  validateAcademicInfo,
+  validateSubjects,
+  validateTestScores,
+  validateActivities,
+  validatePreferences
+} = require('../middleware/profileValidation');
 
 /**
  * GET /api/profile
  * Get the current user's complete profile
  */
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
-    const profile = StudentProfile.getCompleteProfile(req.user.id);
+    const profile = StudentProfile.getCompleteProfile(req.user.userId);
     
     if (!profile) {
       // Return empty profile structure if none exists
@@ -43,9 +53,9 @@ router.get('/', authenticateToken, async (req, res) => {
  * POST /api/profile
  * Create or update student profile
  */
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
-    const profile = StudentProfile.upsert(req.user.id, req.body);
+    const profile = StudentProfile.upsert(req.user.userId, req.body);
     
     res.json({
       success: true,
@@ -66,9 +76,9 @@ router.post('/', authenticateToken, async (req, res) => {
  * PUT /api/profile
  * Update student profile (alias for POST)
  */
-router.put('/', authenticateToken, async (req, res) => {
+router.put('/', authenticate, async (req, res) => {
   try {
-    const profile = StudentProfile.upsert(req.user.id, req.body);
+    const profile = StudentProfile.upsert(req.user.userId, req.body);
     
     res.json({
       success: true,
@@ -89,9 +99,9 @@ router.put('/', authenticateToken, async (req, res) => {
  * DELETE /api/profile
  * Delete student profile and all related data
  */
-router.delete('/', authenticateToken, async (req, res) => {
+router.delete('/', authenticate, async (req, res) => {
   try {
-    const deleted = StudentProfile.delete(req.user.id);
+    const deleted = StudentProfile.delete(req.user.userId);
     
     if (!deleted) {
       return res.status(404).json({
@@ -122,9 +132,9 @@ router.delete('/', authenticateToken, async (req, res) => {
  * GET /api/profile/activities
  * Get all activities for the current user
  */
-router.get('/activities', authenticateToken, async (req, res) => {
+router.get('/activities', authenticate, async (req, res) => {
   try {
-    const profile = StudentProfile.findByUserId(req.user.id);
+    const profile = StudentProfile.findByUserId(req.user.userId);
     
     if (!profile) {
       return res.json({
@@ -158,14 +168,14 @@ router.get('/activities', authenticateToken, async (req, res) => {
  * POST /api/profile/activities
  * Add a new activity
  */
-router.post('/activities', authenticateToken, async (req, res) => {
+router.post('/activities', authenticate, async (req, res) => {
   try {
     // Ensure profile exists
-    let profile = StudentProfile.findByUserId(req.user.id);
+    let profile = StudentProfile.findByUserId(req.user.userId);
     
     if (!profile) {
       // Create minimal profile if it doesn't exist
-      profile = StudentProfile.create(req.user.id, {});
+      profile = StudentProfile.create(req.user.userId, {});
     }
     
     const activity = StudentActivity.create(profile.id, req.body);
@@ -189,12 +199,12 @@ router.post('/activities', authenticateToken, async (req, res) => {
  * PUT /api/profile/activities/:id
  * Update an activity
  */
-router.put('/activities/:id', authenticateToken, async (req, res) => {
+router.put('/activities/:id', authenticate, async (req, res) => {
   try {
     const activityId = parseInt(req.params.id);
     
     // Verify ownership
-    const profile = StudentProfile.findByUserId(req.user.id);
+    const profile = StudentProfile.findByUserId(req.user.userId);
     if (!profile) {
       return res.status(404).json({
         success: false,
@@ -231,12 +241,12 @@ router.put('/activities/:id', authenticateToken, async (req, res) => {
  * DELETE /api/profile/activities/:id
  * Delete an activity
  */
-router.delete('/activities/:id', authenticateToken, async (req, res) => {
+router.delete('/activities/:id', authenticate, async (req, res) => {
   try {
     const activityId = parseInt(req.params.id);
     
     // Verify ownership
-    const profile = StudentProfile.findByUserId(req.user.id);
+    const profile = StudentProfile.findByUserId(req.user.userId);
     if (!profile) {
       return res.status(404).json({
         success: false,
@@ -272,7 +282,7 @@ router.delete('/activities/:id', authenticateToken, async (req, res) => {
  * POST /api/profile/activities/reorder
  * Reorder activities
  */
-router.post('/activities/reorder', authenticateToken, async (req, res) => {
+router.post('/activities/reorder', authenticate, async (req, res) => {
   try {
     const { activityIds } = req.body;
     
@@ -283,7 +293,7 @@ router.post('/activities/reorder', authenticateToken, async (req, res) => {
       });
     }
     
-    const profile = StudentProfile.findByUserId(req.user.id);
+    const profile = StudentProfile.findByUserId(req.user.userId);
     if (!profile) {
       return res.status(404).json({
         success: false,
@@ -312,9 +322,9 @@ router.post('/activities/reorder', authenticateToken, async (req, res) => {
  * GET /api/profile/activities/summary
  * Get activity tier summary
  */
-router.get('/activities/summary', authenticateToken, async (req, res) => {
+router.get('/activities/summary', authenticate, async (req, res) => {
   try {
-    const profile = StudentProfile.findByUserId(req.user.id);
+    const profile = StudentProfile.findByUserId(req.user.userId);
     
     if (!profile) {
       return res.json({
@@ -345,5 +355,170 @@ router.get('/activities/summary', authenticateToken, async (req, res) => {
     });
   }
 });
+
+// ==========================================
+// ADDITIONAL PROFILE ROUTES (merged from profile.js)
+// ==========================================
+
+// Get user profile (basic + extended)
+router.get('/full', authenticate, async (req, res, next) => {
+  try {
+    const user = User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    const basicProfile = {
+      ...user,
+      targetCountries: user.target_countries ? JSON.parse(user.target_countries) : [],
+      intendedMajors: user.intended_majors ? JSON.parse(user.intended_majors) : [],
+      testStatus: user.test_status ? JSON.parse(user.test_status) : {},
+      languagePreferences: user.language_preferences ? JSON.parse(user.language_preferences) : []
+    };
+    const extendedProfile = StudentProfile.getCompleteProfile(req.user.userId);
+    res.json({ success: true, data: { ...basicProfile, studentProfile: extendedProfile } });
+  } catch (error) {
+    logger.error('Get full profile failed:', error);
+    next(error);
+  }
+});
+
+// Update academic profile fields on the users table
+router.patch('/academic', authenticate, async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const updates = req.body;
+    const dbManager = require('../config/database');
+    const db = dbManager.getDatabase();
+    db.prepare(`
+      UPDATE users
+      SET target_countries = ?,
+          intended_majors = ?,
+          test_status = ?,
+          language_preferences = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(
+      JSON.stringify(updates.target_countries || updates.targetCountries || []),
+      JSON.stringify(updates.intended_majors || updates.intendedMajors || []),
+      JSON.stringify(updates.test_status || updates.testStatus || {}),
+      JSON.stringify(updates.language_preferences || updates.languagePreferences || []),
+      userId
+    );
+    const user = User.findById(userId);
+    res.json({ success: true, message: 'Profile updated successfully', data: user });
+  } catch (error) {
+    logger.error('Update academic profile failed:', error);
+    next(error);
+  }
+});
+
+// Create or update extended student profile
+router.post('/extended', authenticate, async (req, res, next) => {
+  try {
+    const profile = StudentProfile.upsert(req.user.userId, req.body);
+    res.json({ success: true, data: profile, message: 'Extended profile saved successfully' });
+  } catch (error) {
+    logger.error('Save extended profile failed:', error);
+    next(error);
+  }
+});
+
+// Get extended student profile
+router.get('/extended', authenticate, async (req, res, next) => {
+  try {
+    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    res.json({ success: true, data: profile });
+  } catch (error) {
+    logger.error('Get extended profile failed:', error);
+    next(error);
+  }
+});
+
+// Update full profile and also sync user table fields
+router.put('/full', authenticate, async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const data = req.body;
+    const profile = StudentProfile.upsert(userId, data);
+    const dbManager = require('../config/database');
+    const db = dbManager.getDatabase();
+    if (data.targetCountries || data.target_countries ||
+        data.intendedMajors || data.intended_majors ||
+        data.testStatus || data.test_status) {
+      db.prepare(`
+        UPDATE users
+        SET target_countries = COALESCE(?, target_countries),
+            intended_majors = COALESCE(?, intended_majors),
+            test_status = COALESCE(?, test_status),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(
+        data.targetCountries || data.target_countries ? JSON.stringify(data.targetCountries || data.target_countries) : null,
+        data.intendedMajors || data.intended_majors ? JSON.stringify(data.intendedMajors || data.intended_majors) : null,
+        data.testStatus || data.test_status ? JSON.stringify(data.testStatus || data.test_status) : null,
+        userId
+      );
+    }
+    const completeProfile = StudentProfile.getCompleteProfile(userId);
+    res.json({ success: true, message: 'Profile updated successfully', data: completeProfile });
+  } catch (error) {
+    logger.error('Full profile update failed:', error);
+    next(error);
+  }
+});
+
+// Get current profile snapshot
+router.get('/snapshot', authenticate, async (req, res, next) => {
+  try {
+    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    if (!profile) {
+      return res.json({ success: true, data: null, message: 'No profile found' });
+    }
+    const snapshot = {
+      timestamp: new Date().toISOString(),
+      academic: {
+        gpa: profile.gpa_unweighted || profile.gpa_weighted,
+        sat: profile.sat_total,
+        act: profile.act_composite,
+        classRank: profile.class_rank_percentile
+      },
+      activities: {
+        total: (profile.activities || []).length,
+        tier1: (profile.activities || []).filter(a => a.tier_rating === 1).length,
+        tier2: (profile.activities || []).filter(a => a.tier_rating === 2).length,
+        tier3: (profile.activities || []).filter(a => a.tier_rating === 3).length
+      },
+      coursework: {
+        total: (profile.coursework || []).length,
+        apIb: (profile.coursework || []).filter(c => c.course_level === 'AP' || c.course_level === 'IB').length
+      },
+      demographics: {
+        isFirstGen: profile.is_first_generation,
+        isLegacy: profile.is_legacy,
+        state: profile.state_province
+      }
+    };
+    res.json({ success: true, data: snapshot });
+  } catch (error) {
+    logger.error('Get snapshot failed:', error);
+    next(error);
+  }
+});
+
+// ==========================================
+// PER-USER PROFILE MANAGEMENT ENDPOINTS
+// ==========================================
+
+router.get('/:userId', authenticate, profileController.getProfile);
+router.put('/:userId/basic', authenticate, validateBasicInfo, profileController.updateBasicInfo);
+router.put('/:userId/academic', authenticate, validateAcademicInfo, profileController.updateAcademicInfo);
+router.put('/:userId/subjects', authenticate, validateSubjects, profileController.updateSubjects);
+router.put('/:userId/test-scores', authenticate, validateTestScores, profileController.updateTestScores);
+router.put('/:userId/activities', authenticate, validateActivities, profileController.updateActivities);
+router.delete('/:userId/activities/:activityId', authenticate, profileController.deleteActivity);
+router.put('/:userId/preferences', authenticate, validatePreferences, profileController.updatePreferences);
+router.get('/:userId/completion-status', authenticate, profileController.getCompletionStatus);
+router.post('/:userId/onboarding-draft', authenticate, profileController.saveOnboardingDraft);
+router.get('/:userId/onboarding-draft', authenticate, profileController.getOnboardingDraft);
 
 module.exports = router;

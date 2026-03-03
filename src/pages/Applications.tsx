@@ -90,14 +90,14 @@ const Applications = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="animate-spin text-primary" size={40} />
       </div>
     );
   }
 
   return (
-    <div className="p-8 min-h-screen bg-background">
+    <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">My Applications</h1>

@@ -469,7 +469,7 @@ const SCROLL_DELAY_MS = 100;
       {saveMessage && (
         <div className={`mb-6 p-4 rounded-lg flex items-center gap-2 ${
           saveMessage.type === 'success' 
-            ? 'bg-green-50 text-green-700 border border-green-200' 
+            ? 'bg-emerald-500/10 text-green-700 border border-green-200' 
             : 'bg-red-50 text-red-700 border border-red-200'
         }`}>
           {saveMessage.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
@@ -601,7 +601,7 @@ const SCROLL_DELAY_MS = 100;
                   <select
                     value={formData.country}
                     onChange={(e) => updateFormField('country', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full mt-1 px-3 py-2 border border-border rounded-md"
                   >
                     <option value="">Select country</option>
                     {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -612,7 +612,7 @@ const SCROLL_DELAY_MS = 100;
                   <select
                     value={formData.grade_level}
                     onChange={(e) => updateFormField('grade_level', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full mt-1 px-3 py-2 border border-border rounded-md"
                   >
                     <option value="">Select grade</option>
                     {['Grade 9', 'Grade 10', 'Grade 11', 'Grade 12', 'Gap Year'].map(g => 
@@ -673,7 +673,7 @@ const SCROLL_DELAY_MS = 100;
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <BookOpen className="text-green-600" size={24} />
+              <BookOpen className="text-emerald-500" size={24} />
               <h2 className="text-xl font-bold text-foreground">Academic Profile</h2>
             </div>
             <Button
@@ -694,7 +694,7 @@ const SCROLL_DELAY_MS = 100;
                   <select
                     value={formData.curriculum_type}
                     onChange={(e) => updateFormField('curriculum_type', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full mt-1 px-3 py-2 border border-border rounded-md"
                   >
                     <option value="">Select curriculum</option>
                     {CURRICULUM_TYPES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -706,7 +706,7 @@ const SCROLL_DELAY_MS = 100;
                     <select
                       value={formData.stream}
                       onChange={(e) => updateFormField('stream', e.target.value)}
-                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                      className="w-full mt-1 px-3 py-2 border border-border rounded-md"
                     >
                       <option value="">Select stream</option>
                       {['Science with Medical', 'Science without Medical', 'Commerce', 'Humanities/Arts'].map(s => 
@@ -1105,7 +1105,7 @@ const SCROLL_DELAY_MS = 100;
                   <select
                     value={formData.preferred_college_size}
                     onChange={(e) => updateFormField('preferred_college_size', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full mt-1 px-3 py-2 border border-border rounded-md"
                   >
                     <option value="">Any</option>
                     {['Small', 'Medium', 'Large'].map(s => <option key={s} value={s}>{s}</option>)}
@@ -1116,7 +1116,7 @@ const SCROLL_DELAY_MS = 100;
                   <select
                     value={formData.preferred_setting}
                     onChange={(e) => updateFormField('preferred_setting', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full mt-1 px-3 py-2 border border-border rounded-md"
                   >
                     <option value="">Any</option>
                     {['Urban', 'Suburban', 'Rural'].map(s => <option key={s} value={s}>{s}</option>)}
@@ -1139,7 +1139,7 @@ const SCROLL_DELAY_MS = 100;
                 <div className="flex flex-wrap gap-2 mt-1">
                   {(profileData?.profile?.intendedMajors || profileData?.profile?.intended_majors || []).length > 0 ? (
                     (profileData?.profile?.intendedMajors || profileData?.profile?.intended_majors || []).map((major: string) => (
-                      <span key={major} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                      <span key={major} className="px-3 py-1 bg-primary/10 text-primary/80 rounded-full text-sm">
                         {major}
                       </span>
                     ))
@@ -1239,7 +1239,7 @@ const SCROLL_DELAY_MS = 100;
                   <select
                     value={newActivity.activity_type}
                     onChange={(e) => setNewActivity((prev: typeof newActivity) => ({ ...prev, activity_type: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full mt-1 px-3 py-2 border border-border rounded-md"
                   >
                     <option value="">Select type</option>
                     {ACTIVITY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
