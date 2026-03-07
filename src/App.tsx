@@ -1,6 +1,6 @@
 // FILE: src/App.tsx
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { Toaster } from "@/components/ui/toaster";
@@ -16,11 +16,9 @@ import { api } from "./services/api";
 // Page Imports
 import AuthPage from "./pages/Auth";
 import OnboardingPage from "./pages/Onboarding"; // Make sure this matches your file name
-import IntelligentCollegeSearch from './pages/IntelligentCollegeSearch';
 
 // Dashboard Pages
 import Dashboard from "./pages/Dashboard";
-import Discover from "./pages/Discover";
 import Colleges from "./pages/Colleges";
 import CollegeDetails from "./pages/CollegeDetails";
 import Research from "./pages/Research";
@@ -29,14 +27,15 @@ import Requirements from "./pages/Requirements";
 import Deadlines from "./pages/Deadlines";
 import Essays from "./pages/Essays";
 import Settings from "./pages/Settings";
-import Activities from "./pages/Activities";
 import Documents from "./pages/Documents";
 import Scholarships from "./pages/Scholarships";
 import Recommendations from "./pages/Recommendations";
 import { Timeline } from "./pages/Timeline";
+import Terms from "./pages/Terms";
+import NotFound from "./pages/NotFound";
 
-// FIXED: Import the type from the new types.ts file
-import { StudentProfile } from "./types";
+// FIXED: Import the type from the types directory
+import { StudentProfile } from "./types/index";
 
 const queryClient = new QueryClient();
 
@@ -45,12 +44,14 @@ const AppContent = () => {
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
 
   useEffect(() => {
-    // Load profile from ProfileService on mount
-    const profile = profileService.getProfile();
-    if (profile) {
-      // Map to StudentProfile format for backward compatibility
-      setStudentProfile(profile as any);
-    }
+    // Load profile from backend (with localStorage fallback) on mount
+    profileService.getProfileFromBackend().then(profile => {
+      if (profile) {
+        setStudentProfile(profile as any);
+      }
+    }).catch(err => {
+      console.error('Failed to load profile on init:', err);
+    });
   }, []);
 
   const handleOnboardingComplete = async (profile: StudentProfile) => {
@@ -78,6 +79,7 @@ const AppContent = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/terms" element={<Terms />} />
 
           <Route
             path="/onboarding"
@@ -98,7 +100,7 @@ const AppContent = () => {
             }
           >
             <Route index element={<Dashboard />} />
-            <Route path="discover" element={<Discover />} />
+            <Route path="discover" element={<Navigate to="/colleges" replace />} />
             <Route path="colleges" element={<Colleges />} />
             <Route path="colleges/:id" element={<CollegeDetails />} />
             <Route path="research" element={<Research />} />
@@ -106,22 +108,14 @@ const AppContent = () => {
             <Route path="requirements" element={<Requirements />} />
             <Route path="deadlines" element={<Deadlines />} />
             <Route path="essays" element={<Essays />} />
-            <Route path="activities" element={<Activities />} />
+            <Route path="activities" element={<Navigate to="/settings" replace />} />
             <Route path="documents" element={<Documents />} />
             <Route path="scholarships" element={<Scholarships />} />
             <Route path="recommendations" element={<Recommendations />} />
             <Route path="timeline" element={<Timeline />} />
             <Route path="settings" element={<Settings />} />
-
-            <Route
-              path="/search"
-              element={
-                <IntelligentCollegeSearch
-                  studentProfile={studentProfile}
-                />
-              }
-            />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

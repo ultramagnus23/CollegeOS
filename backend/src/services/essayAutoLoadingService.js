@@ -30,7 +30,7 @@ class EssayAutoLoadingService {
       
       if (!college) {
         result.message = 'College not found';
-        return result;
+        return result; // success remains false — this is expected for non-existent colleges
       }
 
       const platform = this._detectApplicationPlatform(college);
@@ -51,7 +51,7 @@ class EssayAutoLoadingService {
     } catch (error) {
       logger.error('Error loading essays:', error);
       result.message = 'Failed to load essays';
-      throw error;
+      return result; // Do not re-throw — essay loading is a side-effect, not critical
     }
   }
 
@@ -100,95 +100,100 @@ class EssayAutoLoadingService {
     const db = dbManager.getDatabase();
     const currentYear = new Date().getFullYear();
 
-    if (platform === 'common_app') {
-      // Check if Common App main essay already exists
-      const exists = db.prepare(`
-        SELECT id FROM essays WHERE user_id = ? AND essay_type = 'common_app_main'
-      `).get(userId);
+    try {
+      if (platform === 'common_app') {
+        // Check if Common App main essay already exists (use title column, not essay_type)
+        const exists = db.prepare(`
+          SELECT id FROM essays WHERE user_id = ? AND title = 'common_app_main'
+        `).get(userId);
 
-      if (!exists) {
-        const stmt = db.prepare(`
-          INSERT INTO essays (
-            application_id, user_id, essay_type, prompt, word_limit,
-            is_required, shared_across_colleges, status, platform
-          ) VALUES (NULL, ?, ?, ?, ?, 1, 1, 'not_started', ?)
-        `);
+        if (!exists) {
+          const stmt = db.prepare(`
+            INSERT INTO essays (
+              application_id, user_id, title, prompt, word_limit,
+              shared_across_colleges, status, platform
+            ) VALUES (NULL, ?, ?, ?, ?, 1, 'not_started', ?)
+          `);
 
-        const commonAppPrompts = this._getCommonAppPrompts(currentYear);
-        stmt.run(
-          userId,
-          'common_app_main',
-          commonAppPrompts,
-          650,
-          'Common Application'
-        );
-
-        result.essaysAdded.push({
-          type: 'common_app_main',
-          prompt: 'Common App Personal Statement',
-          wordLimit: 650
-        });
-      }
-    } else if (platform === 'coalition') {
-      const exists = db.prepare(`
-        SELECT id FROM essays WHERE user_id = ? AND essay_type = 'coalition_main'
-      `).get(userId);
-
-      if (!exists) {
-        const stmt = db.prepare(`
-          INSERT INTO essays (
-            application_id, user_id, essay_type, prompt, word_limit,
-            is_required, shared_across_colleges, status, platform
-          ) VALUES (NULL, ?, ?, ?, ?, 1, 1, 'not_started', ?)
-        `);
-
-        const coalitionPrompts = this._getCoalitionPrompts(currentYear);
-        stmt.run(
-          userId,
-          'coalition_main',
-          coalitionPrompts,
-          650,
-          'Coalition Application'
-        );
-
-        result.essaysAdded.push({
-          type: 'coalition_main',
-          prompt: 'Coalition Personal Statement',
-          wordLimit: 650
-        });
-      }
-    } else if (platform === 'uc') {
-      // UC PIQs - 8 prompts, choose 4
-      const exists = db.prepare(`
-        SELECT id FROM essays WHERE user_id = ? AND essay_type LIKE 'uc_piq_%'
-      `).get(userId);
-
-      if (!exists) {
-        const ucPrompts = this._getUCPrompts(currentYear);
-        const stmt = db.prepare(`
-          INSERT INTO essays (
-            application_id, user_id, essay_type, prompt, word_limit,
-            is_required, shared_across_colleges, status, platform, essay_number
-          ) VALUES (NULL, ?, ?, ?, ?, 0, 1, 'not_started', ?, ?)
-        `);
-
-        ucPrompts.forEach((prompt, index) => {
+          const commonAppPrompts = this._getCommonAppPrompts(currentYear);
           stmt.run(
             userId,
-            `uc_piq_${index + 1}`,
-            prompt,
-            350,
-            'UC Application',
-            index + 1
+            'common_app_main',
+            commonAppPrompts,
+            650,
+            'Common Application'
           );
 
           result.essaysAdded.push({
-            type: `uc_piq_${index + 1}`,
-            prompt: `UC PIQ ${index + 1}`,
-            wordLimit: 350
+            type: 'common_app_main',
+            prompt: 'Common App Personal Statement',
+            wordLimit: 650
           });
-        });
+        }
+      } else if (platform === 'coalition') {
+        const exists = db.prepare(`
+          SELECT id FROM essays WHERE user_id = ? AND title = 'coalition_main'
+        `).get(userId);
+
+        if (!exists) {
+          const stmt = db.prepare(`
+            INSERT INTO essays (
+              application_id, user_id, title, prompt, word_limit,
+              shared_across_colleges, status, platform
+            ) VALUES (NULL, ?, ?, ?, ?, 1, 'not_started', ?)
+          `);
+
+          const coalitionPrompts = this._getCoalitionPrompts(currentYear);
+          stmt.run(
+            userId,
+            'coalition_main',
+            coalitionPrompts,
+            650,
+            'Coalition Application'
+          );
+
+          result.essaysAdded.push({
+            type: 'coalition_main',
+            prompt: 'Coalition Personal Statement',
+            wordLimit: 650
+          });
+        }
+      } else if (platform === 'uc') {
+        // UC PIQs - 8 prompts, choose 4
+        const exists = db.prepare(`
+          SELECT id FROM essays WHERE user_id = ? AND title LIKE 'uc_piq_%'
+        `).get(userId);
+
+        if (!exists) {
+          const ucPrompts = this._getUCPrompts(currentYear);
+          const stmt = db.prepare(`
+            INSERT INTO essays (
+              application_id, user_id, title, prompt, word_limit,
+              shared_across_colleges, status, platform, essay_number
+            ) VALUES (NULL, ?, ?, ?, ?, 1, 'not_started', ?, ?)
+          `);
+
+          ucPrompts.forEach((prompt, index) => {
+            stmt.run(
+              userId,
+              `uc_piq_${index + 1}`,
+              prompt,
+              350,
+              'UC Application',
+              index + 1
+            );
+
+            result.essaysAdded.push({
+              type: `uc_piq_${index + 1}`,
+              prompt: `UC PIQ ${index + 1}`,
+              wordLimit: 350
+            });
+          });
+        }
       }
+    } catch (error) {
+      logger.error('Error loading platform main essay:', error);
+      // Non-critical — continue
     }
   }
 
@@ -199,53 +204,55 @@ class EssayAutoLoadingService {
   static async _loadCollegeSupplements(userId, applicationId, collegeId, platform, currentYear, result) {
     const db = dbManager.getDatabase();
     
-    // Query essay_prompts table for college supplements
-    let supplements = db.prepare(`
-      SELECT * FROM essay_prompts 
-      WHERE college_id = ? 
-      ORDER BY prompt_order ASC
-    `).all(collegeId);
+    try {
+      // Query essay_prompts table for college supplements
+      let supplements = db.prepare(`
+        SELECT * FROM essay_prompts 
+        WHERE college_id = ? 
+        ORDER BY prompt_order ASC
+      `).all(collegeId);
 
-    let usedHistorical = false;
+      let usedHistorical = false;
 
-    // If no current year data, try to get historical prompts
-    if (supplements.length === 0) {
-      logger.info(`No current essay prompts for college ${sanitizeForLog(collegeId)}, checking historical data`);
-      
-      // For now, we'll note this but not load historical data
-      // In production, you would query historical prompts here
-      result.usedHistoricalData = true;
-      usedHistorical = true;
-    }
+      // If no current year data, note it but don't crash
+      if (supplements.length === 0) {
+        logger.info(`No essay prompts for college ${sanitizeForLog(collegeId)} — essay_prompts table is empty`);
+        result.usedHistoricalData = true;
+        // Nothing to insert — return gracefully
+        return;
+      }
 
-    // Insert supplements
-    const stmt = db.prepare(`
-      INSERT INTO essays (
-        application_id, user_id, college_id, essay_type, prompt, 
-        word_limit, is_required, status, essay_number, historical_data
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'not_started', ?, ?)
-    `);
+      // Insert supplements using title (not essay_type which doesn't exist)
+      const stmt = db.prepare(`
+        INSERT INTO essays (
+          application_id, user_id, college_id, title, prompt, 
+          word_limit, status, essay_number, historical_data
+        ) VALUES (?, ?, ?, ?, ?, ?, 'not_started', ?, ?)
+      `);
 
-    supplements.forEach((supplement, index) => {
-      stmt.run(
-        applicationId,
-        userId,
-        collegeId,
-        'supplemental',
-        supplement.prompt_text,
-        supplement.word_limit,
-        supplement.is_required || 1,
-        supplement.prompt_order || index + 1,
-        usedHistorical ? 1 : 0
-      );
+      supplements.forEach((supplement, index) => {
+        stmt.run(
+          applicationId,
+          userId,
+          collegeId,
+          'supplemental',
+          supplement.prompt_text,
+          supplement.word_limit,
+          supplement.prompt_order || index + 1,
+          0
+        );
 
-      result.essaysAdded.push({
-        type: 'supplemental',
-        prompt: supplement.prompt_text.substring(0, 50) + '...',
-        wordLimit: supplement.word_limit,
-        historical: usedHistorical
+        result.essaysAdded.push({
+          type: 'supplemental',
+          prompt: supplement.prompt_text.substring(0, 50) + '...',
+          wordLimit: supplement.word_limit,
+          historical: false
+        });
       });
-    });
+    } catch (error) {
+      logger.error('Error loading college supplements:', error);
+      // Non-critical — continue
+    }
   }
 
   /**
