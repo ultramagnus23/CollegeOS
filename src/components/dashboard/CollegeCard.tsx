@@ -1,4 +1,4 @@
-import { College, Application } from '@/types';
+import { VerifiedCollege, Application } from '@/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/common/StatusBadge';
@@ -10,7 +10,7 @@ import { ExternalLink, MapPin, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { countries } from '@/data/mockData';
 
 interface CollegeCardProps {
-  college: College;
+  college: VerifiedCollege;
   application?: Application;
   onClick?: () => void;
   className?: string;
