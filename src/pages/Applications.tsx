@@ -219,7 +219,10 @@ const Applications = () => {
   /* Delete state */
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
-  useEffect(() => { loadApplications(); }, []);
+  useEffect(() => {
+    loadApplications();
+    return () => { if (searchRef.current) clearTimeout(searchRef.current); };
+  }, []);
 
   const loadApplications = async () => {
     try {
