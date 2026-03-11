@@ -1,6 +1,6 @@
 // src/styles/designTokens.ts — Shared design tokens for inline-styled pages
 // CSS variables are defined in index.css and must be used for backgrounds,
-// borders, and text colours. Feature accent hex is allowed per the design system.
+// borders, and text colors. Feature accent hex is allowed per the design system.
 
 import type { CSSProperties } from 'react';
 
