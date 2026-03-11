@@ -3,18 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, GraduationCap, Globe, ExternalLink, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
-import { CountryOption, normalizeCountryData } from '../types';
-
-interface College {
-  id: number;
-  name: string;
-  country: string;
-  location?: string;
-  official_website: string;
-  admissions_url?: string;
-  majorCategories?: string[];
-  academicStrengths?: string[];
-}
+import { CountryOption, normalizeCountryData, College } from '@/types';
 
 const Research: React.FC = () => {
   const navigate = useNavigate();

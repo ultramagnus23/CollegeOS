@@ -57,7 +57,8 @@ export interface Deadline {
   notes?: string;
 }
 
-export interface College {
+// Trust-first college type used by mock data and verified-data components
+export interface VerifiedCollege {
   id: string;
   name: string;
   country: string;
@@ -81,6 +82,33 @@ export interface College {
   requiresFinancialDocs: boolean;
   
   lastUpdated: Date;
+}
+
+// Shared College interface used across pages — matches API response shape
+export interface College {
+  id: number;
+  name: string;
+  location: string;
+  country: string;
+  type: string;
+  acceptance_rate?: number | null;
+  acceptanceRate?: number | null;
+  programs: string[];
+  majorCategories?: string[];
+  academicStrengths?: string[];
+  description?: string | null;
+  tuition_cost?: number | null;
+  enrollment?: number | null;
+  ranking?: number | null;
+  averageGPA?: number | null;
+  testScores?: TestScores;
+  graduationRates?: GraduationRates | null;
+  studentFacultyRatio?: string | null;
+  official_website?: string;
+  updated_at?: string;
+  last_scraped?: string;
+  is_verified?: boolean;
+  admissions_url?: string;
 }
 
 export interface ChecklistItem {

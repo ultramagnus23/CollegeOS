@@ -9,7 +9,7 @@ import { jwtDecode } from 'jwt-decode';
 import { toast } from 'sonner';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { StudentProfile } from '../types';
+import { StudentProfile } from '@/types';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface StructuredActivity {

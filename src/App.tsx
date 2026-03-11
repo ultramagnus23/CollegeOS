@@ -35,8 +35,8 @@ import Scholarships from "./pages/Scholarships";
 import Recommendations from "./pages/Recommendations";
 import { Timeline } from "./pages/Timeline";
 
-// FIXED: Import the type from the new types.ts file
-import { StudentProfile } from "./types";
+// Import shared types from @/types
+import { StudentProfile } from "@/types";
 
 const queryClient = new QueryClient();
 
