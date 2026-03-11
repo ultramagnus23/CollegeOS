@@ -3,6 +3,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/services/api';
 import { toast } from 'sonner';
+import { Loader2, Sparkles, RefreshCw, TrendingUp, AlertCircle, CheckCircle, DollarSign, Globe, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import FitBadge from '@/components/FitBadge';
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 type Classification = 'REACH' | 'TARGET' | 'SAFETY';
