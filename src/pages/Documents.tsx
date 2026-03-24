@@ -17,20 +17,8 @@ interface DocSummary {
 }
 
 /* ─── Config ─────────────────────────────────────────────────────────── */
-const h2r = (hex:string,a:number) => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return `rgba(${r},${g},${b},${a})`; };
-const ACCENT = '#10B981'; // emerald — document vault theme
-const S = {
-  bg: 'var(--color-bg-primary)',
-  surface: 'var(--color-bg-surface)',
-  surface2: 'var(--color-surface-subtle)',
-  border: 'var(--color-border)',
-  border2: 'var(--color-border-strong)',
-  muted: 'var(--color-text-secondary)',
-  dim: 'var(--color-text-disabled)',
-  font: "'DM Sans',sans-serif",
-};
-const inp: React.CSSProperties = { width:'100%', padding:'10px 14px', background:S.surface2, border:`1px solid ${S.border2}`, borderRadius:10, color:'var(--color-text-primary)', fontSize:14, fontFamily:S.font };
-const lbl: React.CSSProperties = { fontSize:11, color:S.dim, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6, fontWeight:600, display:'block', fontFamily:S.font };
+import { h2r, S, GLOBAL, ACCENT_COLORS, inp, lbl } from '../styles/designTokens';
+const ACCENT = ACCENT_COLORS.activities; // emerald — document vault theme
 
 const CATS: Record<string,{label:string;emoji:string;color:string}> = {
   transcript:     { label:'Transcripts',    emoji:'📋', color:'#3B9EFF' },
@@ -52,13 +40,7 @@ const STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
   rejected: { label:'Rejected', color:'#F87171', bg:'rgba(248,113,113,0.12)' },
 };
 
-const GLOBAL = `
-  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-  input::placeholder{color:rgba(255,255,255,0.2)!important;}
-  select option{background:#0F0F1C;color:#fff;}
-  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
-`;
+
 
 const getDaysUntilExpiry = (dateStr:string) => {
   const days = Math.ceil((new Date(dateStr).getTime()-Date.now())/86400000);

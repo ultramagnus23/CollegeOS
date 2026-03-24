@@ -1,4 +1,4 @@
-import { College, Application, TimelineEvent, UserProfile, Country, DashboardStats } from '@/types';
+import { VerifiedCollege, Application, TimelineEvent, UserProfile, Country, DashboardStats } from '@/types';
 
 // Sample countries
 export const countries: Country[] = [
@@ -17,7 +17,7 @@ export const countries: Country[] = [
 ];
 
 // Sample colleges with verified/unverified data
-export const sampleColleges: College[] = [
+export const sampleColleges: VerifiedCollege[] = [
   {
     id: '1',
     name: 'Massachusetts Institute of Technology',
