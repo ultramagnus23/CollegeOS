@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { toast } from 'sonner';
 import { WordCountTracker } from '@/components/WordCountTracker';
+import ConfirmModal from '@/components/common/ConfirmModal';
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 interface Application { id: number; college_name: string; status: string; }
@@ -173,6 +174,7 @@ const Essays = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [deleteEssayId, setDeleteEssayId] = useState<number | null>(null);
   const [form, setForm] = useState<EssayFormData>({ applicationId:'', essayType:'personal_statement', prompt:'', wordLimit:'', googleDriveLink:'', notes:'' });
 
   useEffect(() => { loadData(); }, []);
@@ -306,12 +308,25 @@ const Essays = () => {
             {essays.map((essay, i) => (
               <EssayCard key={essay.id} essay={essay} index={i}
                 onStatusChange={(id,s) => api.essays.update(id,{status:s}).then(()=>{toast.success('Updated');loadData();}).catch(()=>toast.error('Failed'))}
-                onDelete={(id) => { if(confirm('Delete this essay?')) api.essays.delete(id).then(()=>{toast.success('Deleted');loadData();}).catch(()=>toast.error('Failed')); }}
+                onDelete={(id) => setDeleteEssayId(id)}
               />
             ))}
           </div>
         </div>
       </div>
+      <ConfirmModal
+        isOpen={!!deleteEssayId}
+        onCancel={() => setDeleteEssayId(null)}
+        onConfirm={() => {
+          if (!deleteEssayId) return;
+          api.essays.delete(deleteEssayId)
+            .then(() => { toast.success('Essay deleted'); loadData(); })
+            .catch(() => toast.error('Failed to delete'));
+          setDeleteEssayId(null);
+        }}
+        title="Delete Essay"
+        message="Are you sure you want to delete this essay? This cannot be undone."
+      />
     </>
   );
 };

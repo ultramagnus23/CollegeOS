@@ -326,7 +326,7 @@ const CollegeDetail: React.FC = () => {
         const chancingResponse = await api.chancing.calculate({ collegeId });
         setChancingResult(chancingResponse.data);
       } catch (chancingError) {
-        console.debug('Chancing calculation failed (non-critical):', chancingError);
+        console.warn('Chancing calculation failed (non-critical):', chancingError);
       } finally { setChancingLoading(false); }
     } catch (error) {
       console.error('Failed to load college:', error);
