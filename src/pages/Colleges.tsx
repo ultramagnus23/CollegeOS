@@ -5,6 +5,7 @@ import { Search, Globe, BookOpen, MapPin, GraduationCap, DollarSign, Users, Awar
 import { api } from '../services/api';
 import { normalizeCountryData, College, TestScores, GraduationRates } from '../types';
 import FitBadge from '../components/FitBadge';
+import { toast } from 'sonner';
 
 /* ==================== TYPES ==================== */
 
@@ -216,16 +217,16 @@ const Colleges: React.FC = () => {
         application_type: 'regular'
       });
 
-      alert('College added successfully! Check your Applications page.');
+      toast.success('Added to your list!');
       navigate('/applications');
     } catch (err: any) {
       console.error('Add college error:', err);
       
       // Check for duplicate error
       if (err.message && err.message.includes('already added')) {
-        alert('This college is already in your list! Check your Applications page.');
+        toast.info('Already in your list');
       } else {
-        alert('Failed to add college. Please try again.');
+        toast.error('Failed to add college');
       }
     } finally {
       setAddingCollegeId(null);
