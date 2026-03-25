@@ -16,8 +16,8 @@ const getAllowedOrigins = () => {
     'http://localhost:8081',
     'http://localhost:3000',
     'http://localhost:5173',
-    'https://college-os.vercel.app/',     // add this
-    'https://college-os-ultramagnus23s-projects.vercel.app/'
+    'https://college-os.vercel.app',
+    'https://college-os-ultramagnus23s-projects.vercel.app'
   ];
   
   // Add any additional production origins from environment
