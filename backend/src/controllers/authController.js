@@ -124,6 +124,29 @@ class AuthController {
       next(error);
     }
   }
+  // Google login / register via Firebase
+  static async googleLogin(req, res, next) {
+    try {
+      const { googleId, email, name } = req.body;
+
+      if (!googleId || !email) {
+        return res.status(400).json({
+          success: false,
+          message: 'googleId and email are required'
+        });
+      }
+
+      const result = await AuthService.googleLogin(googleId, email, name || 'Google User');
+
+      res.json({
+        success: true,
+        message: 'Google authentication successful',
+        data: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = AuthController;
