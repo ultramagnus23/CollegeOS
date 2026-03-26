@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { auth, googleProvider } from '../lib/firebase';
+import { auth, googleProvider, isFirebaseConfigured } from '../lib/firebase';
 import { signInWithPopup } from 'firebase/auth';
 
 const FIREBASE_POPUP_CLOSED_CODES = new Set([
@@ -20,6 +20,11 @@ const AuthPage = () => {
   }, [user, navigate]);
 
   const handleGoogleSignIn = async () => {
+    if (!isFirebaseConfigured || !auth || !googleProvider) {
+      setError('Firebase is not configured. Please set VITE_FIREBASE_* environment variables.');
+      return;
+    }
+
     setError('');
     setLoading(true);
     try {
@@ -51,6 +56,13 @@ const AuthPage = () => {
         </div>
 
         <div className="space-y-4">
+          {!isFirebaseConfigured && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
+              Firebase is not configured. Add your{' '}
+              <code className="font-mono">VITE_FIREBASE_*</code> environment variables to enable sign-in.
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
@@ -60,7 +72,7 @@ const AuthPage = () => {
           <button
             type="button"
             onClick={handleGoogleSignIn}
-            disabled={loading}
+            disabled={loading || !isFirebaseConfigured}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-border rounded-lg bg-background hover:bg-muted transition-colors font-medium text-foreground disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? (
@@ -83,4 +95,3 @@ const AuthPage = () => {
 };
 
 export default AuthPage;
-
