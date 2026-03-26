@@ -34,8 +34,7 @@ import Documents from "./pages/Documents";
 import Scholarships from "./pages/Scholarships";
 import Recommendations from "./pages/Recommendations";
 import { Timeline } from "./pages/Timeline";
-import Terms from "./pages/Terms";
-import NotFound from "./pages/NotFound";
+import NotificationsPage from "./pages/Notifications";
 
 // FIXED: Import the type from the types directory
 import { StudentProfile } from "./types/index";
@@ -116,6 +115,7 @@ const AppContent = () => {
             <Route path="scholarships" element={<Scholarships />} />
             <Route path="recommendations" element={<Recommendations />} />
             <Route path="timeline" element={<Timeline />} />
+            <Route path="notifications" element={<NotificationsPage />} />
             <Route path="settings" element={<Settings />} />
 
             <Route
