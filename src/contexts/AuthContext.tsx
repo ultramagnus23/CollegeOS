@@ -21,6 +21,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<any>;
+  loginWithGoogle: (googleId: string, email: string, name: string) => Promise<any>;
   register: (email: string, password: string, fullName: string, country: string) => Promise<any>;
   logout: () => Promise<void>;
   completeOnboarding: (data: any) => Promise<any>;
@@ -79,6 +80,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Sync to ProfileService
     profileService.syncFromBackend(user);
     
+    return response;
+  };
+
+  const loginWithGoogle = async (googleId: string, email: string, name: string) => {
+    const response = await api.googleLogin(googleId, email, name);
+    const user = response.data.user;
+    setUser(user);
+
+    // Sync to ProfileService
+    profileService.syncFromBackend(user);
+
     return response;
   };
 
@@ -152,7 +164,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, completeOnboarding, updateProfile, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, register, logout, completeOnboarding, updateProfile, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
