@@ -10,7 +10,7 @@ router.get('/monthly', authenticate, async (req, res, next) => {
     const userId = req.user.userId;
     
     // Use timeline service to generate personalized actions
-    const { generateTimelineActions, getMonthlyActions } = require('../../services/timelineService');
+    const { generateTimelineActions, getMonthlyActions } = require('../services/timelineService');
     
     // Generate timeline actions if needed
     await generateTimelineActions(userId);

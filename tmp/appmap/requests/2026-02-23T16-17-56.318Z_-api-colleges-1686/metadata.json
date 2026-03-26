@@ -1,0 +1,18 @@
+{
+  "client": {
+    "name": "appmap-node",
+    "version": "2.24.3",
+    "url": "https://github.com/getappmap/appmap-node"
+  },
+  "language": {
+    "name": "javascript",
+    "engine": "Node.js",
+    "version": "v22.14.0"
+  },
+  "app": "vite_react_shadcn_ts",
+  "recorder": {
+    "type": "requests",
+    "name": "requests"
+  },
+  "name": "OPTIONS /api/colleges/1686 (204) — 2026-02-23T16:17:56.318Z"
+}

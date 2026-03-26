@@ -36,7 +36,7 @@ router.get('/', authenticate, async (req, res, next) => {
     const allColleges = await College.findAll({ limit: 1000 }); // Get all for recommendations
     
     // Use recommendation engine service
-    const { generateRecommendations } = require('../../services/recommendationEngine');
+    const { generateRecommendations } = require('../services/recommendationEngine');
     const recommendations = generateRecommendations(userProfile, allColleges);
 
     res.json({
@@ -74,7 +74,7 @@ router.post('/generate', authenticate, async (req, res, next) => {
     const College = require('../models/College');
     const allColleges = await College.findAll({ limit: 1000 });
     
-    const { generateRecommendations } = require('../../services/recommendationEngine');
+    const { generateRecommendations } = require('../services/recommendationEngine');
     const recommendations = generateRecommendations(userProfile, allColleges);
 
     res.json({
