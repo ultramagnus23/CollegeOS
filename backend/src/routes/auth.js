@@ -9,6 +9,7 @@ const validators = require('../utils/validators');
 // Public routes
 router.post('/register', authLimiter, validate(validators.registerUser), AuthController.register);
 router.post('/login', authLimiter, validate(validators.loginUser), AuthController.login);
+router.post('/google', authLimiter, AuthController.googleLogin);
 router.post('/refresh', AuthController.refresh);
 router.post('/logout', AuthController.logout);
 

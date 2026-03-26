@@ -154,7 +154,7 @@ class AuthService {
     }
   }
   
-  // Google OAuth login/register
+  // Google OAuth login/register (legacy Passport.js profile format)
   static async googleAuth(profile) {
     try {
       let user = User.findByGoogleId(profile.id);
@@ -198,7 +198,53 @@ class AuthService {
       throw error;
     }
   }
-  
+
+  // Google login / register via Firebase (googleId, email, name)
+  static async googleLogin(googleId, email, name) {
+    try {
+      const normalizedEmail = email.toLowerCase().trim();
+
+      let user = User.findByGoogleId(googleId);
+
+      if (!user) {
+        // Check if email already exists and link account
+        user = User.findByEmail(normalizedEmail);
+
+        if (user) {
+          const db = dbManager.getDatabase();
+          const stmt = db.prepare('UPDATE users SET google_id = ? WHERE id = ?');
+          stmt.run(googleId, user.id);
+          user = User.findById(user.id);
+        } else {
+          // Create new user
+          user = User.create({
+            email: normalizedEmail,
+            passwordHash: null,
+            googleId,
+            fullName: name,
+            country: 'Unknown' // Will be set during onboarding
+          });
+        }
+      }
+
+      // Generate tokens
+      const tokens = this.generateTokens(user);
+
+      // Store refresh token
+      this.storeRefreshToken(user.id, tokens.refreshToken);
+
+      logger.info('User authenticated via Google Firebase', { email: sanitizeForLog(normalizedEmail) });
+
+      return {
+        user: this.sanitizeUser(user),
+        tokens
+      };
+    } catch (error) {
+      logger.error('Google Firebase login failed:', { error: error?.message });
+      throw error;
+    }
+  }
+
   // Refresh access token
   static async refreshAccessToken(refreshToken) {
     try {
