@@ -6,7 +6,8 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, optionalAuth } = require('../middleware/auth');
 const AutoDetectionService = require('../services/autoDetectionService');
-const SmartRecommendationService = require('../services/smartRecommendationService');
+const consolidatedChancingService = require('../services/consolidatedChancingService');
+// SmartRecommendationService has been removed; all recommendations now use consolidatedChancingService/recommendationEngine
 const logger = require('../utils/logger');
 
 // Input validation constants
