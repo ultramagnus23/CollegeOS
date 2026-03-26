@@ -9,6 +9,23 @@ const FIREBASE_POPUP_CLOSED_CODES = new Set([
   'auth/cancelled-popup-request',
 ]);
 
+// Maps Firebase error codes to user-readable messages.
+// Add more codes here as new failure modes are discovered.
+const FIREBASE_ERROR_MESSAGES: Record<string, string> = {
+  'auth/popup-blocked':
+    'The sign-in popup was blocked by your browser. Please allow popups for this site and try again.',
+  'auth/unauthorized-domain':
+    'This domain is not authorised in your Firebase project. Add it to Authentication → Settings → Authorised Domains.',
+  'auth/operation-not-allowed':
+    'Google sign-in is not enabled. Turn it on in Firebase Console → Authentication → Sign-in method.',
+  'auth/invalid-api-key':
+    'Firebase API key is invalid. Check your VITE_FIREBASE_API_KEY environment variable.',
+  'auth/network-request-failed':
+    'Network error. Check your connection and try again.',
+  'auth/internal-error':
+    'Firebase internal error. Verify your Firebase project configuration.',
+};
+
 const AuthPage = () => {
   const { user, loginWithGoogle } = useAuth();
   const [error, setError] = useState('');
@@ -39,9 +56,14 @@ const AuthPage = () => {
       // loginWithGoogle updates AuthContext user state; the Navigate above handles redirect
     } catch (err: any) {
       if (FIREBASE_POPUP_CLOSED_CODES.has(err.code)) {
-        // User closed the popup - not an error
+        // User closed the popup — not an error, clear any previous message
+        setError('');
       } else {
-        setError('Google sign-in failed. Please try again.');
+        // Log the exact code + message so developers can diagnose in the console.
+        console.error('[Firebase sign-in error]', { code: err.code, message: err.message });
+        setError(
+          FIREBASE_ERROR_MESSAGES[err.code] ?? 'Google sign-in failed. Please try again.'
+        );
       }
     } finally {
       setLoading(false);

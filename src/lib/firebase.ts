@@ -12,6 +12,23 @@ const appId = import.meta.env.VITE_FIREBASE_APP_ID as string | undefined;
 // here so a missing .env doesn't crash the entire React tree.
 export const isFirebaseConfigured = Boolean(apiKey && authDomain && projectId && appId);
 
+// In development, log which env vars are missing so misconfiguration is
+// immediately visible in the browser console rather than producing a
+// silent "Firebase not configured" state.
+if (import.meta.env.DEV && !isFirebaseConfigured) {
+  const missing = (
+    [
+      ['VITE_FIREBASE_API_KEY', apiKey],
+      ['VITE_FIREBASE_AUTH_DOMAIN', authDomain],
+      ['VITE_FIREBASE_PROJECT_ID', projectId],
+      ['VITE_FIREBASE_APP_ID', appId],
+    ] as [string, string | undefined][]
+  )
+    .filter(([, v]) => !v)
+    .map(([k]) => k);
+  console.warn('[Firebase] Missing env vars:', missing.join(', '));
+}
+
 let _app: FirebaseApp | null = null;
 let _auth: Auth | null = null;
 let _googleProvider: GoogleAuthProvider | null = null;
