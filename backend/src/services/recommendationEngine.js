@@ -2,6 +2,9 @@
 // The brain of CollegeOS - recommends colleges based on student profile
 
 const { checkEligibility } = require('./eligibilityChecker');
+const { getUSDtoINR } = require('./exchangeRateService');
+
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://127.0.0.1:5050';
 
 /**
  * Generate personalized college recommendations for a student
@@ -9,9 +12,10 @@ const { checkEligibility } = require('./eligibilityChecker');
  * 
  * @param {Object} studentProfile - Complete student profile
  * @param {Array} allColleges - All available colleges
- * @returns {Array} Colleges with recommendation scores and classifications
+ * @returns {Promise<Array>} Colleges with recommendation scores and classifications
  */
-function generateRecommendations(studentProfile, allColleges) {
+async function generateRecommendations(studentProfile, allColleges) {
+  const usdToInr = await getUSDtoINR();
   const recommendations = [];
   
   for (const college of allColleges) {
@@ -27,14 +31,14 @@ function generateRecommendations(studentProfile, allColleges) {
       continue;
     }
     
-    // Compute recommendation scores
-    const scores = computeRecommendationScores(studentProfile, college, eligibility);
+    // Compute recommendation scores (academic fit calls /predict asynchronously)
+    const scores = await computeRecommendationScores(studentProfile, college, eligibility, usdToInr);
     
     // Classify as Reach/Target/Safety
     const classification = classifyCollege(scores, studentProfile, college);
     
-    // Compute financial fit
-    const financialFit = computeFinancialFit(studentProfile, college);
+    // Compute financial fit using live exchange rate
+    const financialFit = computeFinancialFit(studentProfile, college, usdToInr);
     
     // Generate why recommended and concerns
     const reasoning = generateReasoning(studentProfile, college, eligibility, scores, financialFit);
@@ -61,12 +65,12 @@ function generateRecommendations(studentProfile, allColleges) {
 /**
  * Compute multiple recommendation scores
  */
-function computeRecommendationScores(student, college, eligibility) {
+async function computeRecommendationScores(student, college, eligibility, usdToInr = 83) {
   return {
     eligibility_score: computeEligibilityScore(eligibility),
-    academic_fit: computeAcademicFit(student, college),
+    academic_fit: await computeAcademicFit(student, college),
     program_strength: computeProgramStrength(college, student.preferences?.intended_major),
-    cost_affordability: computeCostAffordability(student, college),
+    cost_affordability: computeCostAffordability(student, college, usdToInr),
     outcome_quality: computeOutcomeQuality(college),
     application_feasibility: computeApplicationFeasibility(college)
   };
@@ -86,65 +90,105 @@ function computeEligibilityScore(eligibility) {
 }
 
 /**
- * Academic fit - how well student's profile matches typical admits
+ * Academic fit – calls the synthetic LDA /predict endpoint.
+ * Falls back to a simple percentile heuristic when the ML service is unavailable.
  */
-function computeAcademicFit(student, college) {
-  let score = 0.5; // Baseline
-  
+async function computeAcademicFit(student, college) {
+  try {
+    const axios = require('axios');
+    const response = await axios.post(
+      `${ML_SERVICE_URL}/predict`,
+      { student, college, cds_data: {} },
+      { timeout: 4000 }
+    );
+    const data = response?.data;
+    if (data?.success && typeof data.probability === 'number') {
+      // Mahalanobis distance-based fit: closer to admitted centroid → higher fit
+      // probability is 0-100; normalise to 0-1
+      return Math.min(1.0, data.probability / 100);
+    }
+  } catch (_err) {
+    // ML service unavailable – fall through to heuristic
+  }
+
+  // Fallback heuristic using student percentage vs. college min requirement
+  let score = 0.5;
   const requirements = college.requirements || {};
   const studentPercentage = student.academic?.percentage || 0;
-  
-  // Compare to typical admits
+
   if (requirements.min_percentage) {
     const difference = studentPercentage - requirements.min_percentage;
-    
-    if (difference >= 10) score = 0.95; // Well above
-    else if (difference >= 5) score = 0.85; // Above
-    else if (difference >= 0) score = 0.70; // At level
-    else if (difference >= -5) score = 0.50; // Slightly below
-    else score = 0.30; // Below
+    if (difference >= 10) score = 0.95;
+    else if (difference >= 5) score = 0.85;
+    else if (difference >= 0) score = 0.70;
+    else if (difference >= -5) score = 0.50;
+    else score = 0.30;
   }
-  
-  // Adjust for acceptance rate
+
   const acceptanceRate = college.acceptance_rate || 0.5;
-  if (acceptanceRate < 0.10) score *= 0.8; // Very selective
-  else if (acceptanceRate < 0.20) score *= 0.9; // Selective
-  else if (acceptanceRate > 0.50) score *= 1.1; // More accessible
-  
+  if (acceptanceRate < 0.10) score *= 0.8;
+  else if (acceptanceRate < 0.20) score *= 0.9;
+  else if (acceptanceRate > 0.50) score *= 1.1;
+
   return Math.min(1.0, score);
 }
 
 /**
- * Program strength for student's intended major
+ * Program strength for student's intended major.
+ * Uses college.qs_rank and college.program_rankings when available.
  */
 function computeProgramStrength(college, intendedMajor) {
-  if (!intendedMajor) return 0.7; // Default if no major specified
-  
-  const programs = Array.isArray(college.programs) 
-    ? college.programs 
+  if (!intendedMajor) return 0.7;
+
+  const programs = Array.isArray(college.programs)
+    ? college.programs
     : JSON.parse(college.programs || '[]');
-  
+
   // Check if college offers the program
-  const hasProgram = programs.some(p => 
+  const hasProgram = programs.some(p =>
     p.toLowerCase().includes(intendedMajor.toLowerCase()) ||
     intendedMajor.toLowerCase().includes(p.toLowerCase())
   );
-  
-  if (!hasProgram) return 0.3; // Doesn't offer program
-  
-  // Could be enhanced with actual program rankings
-  // For now, use acceptance rate as proxy for quality
+
+  if (!hasProgram) return 0.3;
+
+  // 1) Use subject/program-specific ranking if available
+  const programRankings = college.program_rankings || {};
+  const majorKey = intendedMajor.toLowerCase().replace(/\s+/g, '_');
+  const programRank = programRankings[majorKey] || programRankings[intendedMajor];
+  if (typeof programRank === 'number' && programRank > 0) {
+    if (programRank <= 10) return 0.98;
+    if (programRank <= 25) return 0.93;
+    if (programRank <= 50) return 0.87;
+    if (programRank <= 100) return 0.80;
+    if (programRank <= 200) return 0.72;
+    return 0.65;
+  }
+
+  // 2) Fall back to overall QS world ranking
+  const qsRank = college.qs_rank;
+  if (typeof qsRank === 'number' && qsRank > 0) {
+    if (qsRank <= 10) return 0.97;
+    if (qsRank <= 50) return 0.90;
+    if (qsRank <= 100) return 0.82;
+    if (qsRank <= 200) return 0.74;
+    if (qsRank <= 500) return 0.66;
+    return 0.60;
+  }
+
+  // 3) Acceptance-rate proxy (existing fallback)
   const acceptanceRate = college.acceptance_rate || 0.5;
-  if (acceptanceRate < 0.15) return 0.95; // Elite program
-  if (acceptanceRate < 0.30) return 0.85; // Strong program
-  if (acceptanceRate < 0.50) return 0.75; // Good program
-  return 0.65; // Decent program
+  if (acceptanceRate < 0.15) return 0.95;
+  if (acceptanceRate < 0.30) return 0.85;
+  if (acceptanceRate < 0.50) return 0.75;
+  return 0.65;
 }
 
 /**
- * Cost affordability based on student's budget
+ * Cost affordability based on student's budget.
+ * usdToInr is the live exchange rate passed in from generateRecommendations.
  */
-function computeCostAffordability(student, college) {
+function computeCostAffordability(student, college, usdToInr = 83) {
   const budget = student.financial?.max_budget_per_year || Infinity;
   const needsAid = student.financial?.need_financial_aid || false;
   
@@ -154,39 +198,54 @@ function computeCostAffordability(student, college) {
   
   // Estimate total annual cost (tuition + living)
   const tuitionUSD = researchData.avg_cost || 50000;
-  const livingUSD = 15000; // Rough estimate
+  const livingUSD = 15000;
   const totalUSD = tuitionUSD + livingUSD;
-  const totalINR = totalUSD * 82; // Rough conversion
+  const totalINR = totalUSD * usdToInr;
   
   // Check if within budget
   const ratio = budget / totalINR;
   
-  if (ratio >= 1.0) return 1.0; // Well within budget
-  if (ratio >= 0.8) return 0.85; // Slightly tight
-  if (ratio >= 0.6) return 0.65; // Need to stretch
+  if (ratio >= 1.0) return 1.0;
+  if (ratio >= 0.8) return 0.85;
+  if (ratio >= 0.6) return 0.65;
   
   // Below budget - check if aid is available
   if (needsAid && researchData.aid_available) {
-    if (researchData.aid_percentage > 0.7) return 0.75; // Good aid
-    if (researchData.aid_percentage > 0.5) return 0.60; // Moderate aid
-    return 0.45; // Limited aid
+    if (researchData.aid_percentage > 0.7) return 0.75;
+    if (researchData.aid_percentage > 0.5) return 0.60;
+    return 0.45;
   }
   
   return 0.25; // Not affordable
 }
 
 /**
- * Outcome quality - employment, salary, etc.
+ * Outcome quality – uses Return on Investment (ROI) as the primary signal.
+ * ROI = median_earnings_6yr / avg_net_price.  Falls back to acceptance-rate proxy.
  */
 function computeOutcomeQuality(college) {
-  const researchData = typeof college.research_data === 'object'
-    ? college.research_data
-    : JSON.parse(college.research_data || '{}');
-  
-  // Use acceptance rate as proxy for outcome quality
-  // (Lower acceptance = better outcomes typically)
+  const medianEarnings = college.median_earnings_6yr
+    || college.median_salary_6yr
+    || college.outcome_salary_6yr
+    || null;
+
+  const avgNetPrice = college.avg_net_price
+    || college.net_price
+    || null;
+
+  if (medianEarnings && avgNetPrice && avgNetPrice > 0) {
+    const roi = medianEarnings / avgNetPrice;
+    // Typical "great" ROI ≈ 1.5–2.0+; normalise to 0-1
+    if (roi >= 2.0) return 1.00;
+    if (roi >= 1.5) return 0.90;
+    if (roi >= 1.0) return 0.78;
+    if (roi >= 0.7) return 0.65;
+    if (roi >= 0.5) return 0.55;
+    return 0.40;
+  }
+
+  // Fallback: acceptance-rate proxy
   const acceptanceRate = college.acceptance_rate || 0.5;
-  
   if (acceptanceRate < 0.10) return 0.95;
   if (acceptanceRate < 0.20) return 0.85;
   if (acceptanceRate < 0.35) return 0.75;
@@ -254,9 +313,10 @@ function classifyCollege(scores, student, college) {
 }
 
 /**
- * Compute financial fit details
+ * Compute financial fit details.
+ * usdToInr is passed from generateRecommendations (live rate with 24h cache).
  */
-function computeFinancialFit(student, college) {
+function computeFinancialFit(student, college, usdToInr = 83) {
   const budget = student.financial?.max_budget_per_year || Infinity;
   const canLoan = student.financial?.can_take_loan || false;
   const needsAid = student.financial?.need_financial_aid || false;
@@ -268,7 +328,7 @@ function computeFinancialFit(student, college) {
   const tuitionUSD = researchData.avg_cost || 50000;
   const livingUSD = 15000;
   const totalUSD = tuitionUSD + livingUSD;
-  const totalINR = totalUSD * 82;
+  const totalINR = totalUSD * usdToInr;
   
   // Check work opportunities
   const canWork = college.country === 'US' || college.country === 'Canada' || college.country === 'UK';
@@ -277,8 +337,8 @@ function computeFinancialFit(student, college) {
   const effectiveCost = totalINR - workEarnings;
   
   return {
-    tuition_inr: tuitionUSD * 82,
-    living_cost_inr: livingUSD * 82,
+    tuition_inr: tuitionUSD * usdToInr,
+    living_cost_inr: livingUSD * usdToInr,
     total_per_year: totalINR,
     four_year_total: totalINR * 4,
     within_budget: totalINR <= budget,

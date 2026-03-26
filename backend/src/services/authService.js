@@ -7,62 +7,83 @@ const securityConfig = require('../config/security');
 const logger = require('../utils/logger');
 const { sanitizeForLog } = require('../utils/security');
 
-// In-memory store for login attempts (use Redis in production)
-const loginAttempts = new Map();
-
 class AuthService {
   /**
-   * Check if an account is locked due to failed login attempts
+   * Check if an account is locked due to failed login attempts (SQLite-backed)
    */
   static isAccountLocked(email) {
-    const attempts = loginAttempts.get(email);
-    if (!attempts) return false;
-    
-    const { count, lastAttempt, lockedUntil } = attempts;
-    
-    // Check if still locked
-    if (lockedUntil && Date.now() < lockedUntil) {
-      return true;
-    }
-    
-    // Reset if lock has expired
-    if (lockedUntil && Date.now() >= lockedUntil) {
-      loginAttempts.delete(email);
+    try {
+      const db = dbManager.getDatabase();
+      const row = db.prepare('SELECT count, last_attempt, locked_until FROM login_attempts WHERE email = ?').get(email);
+      if (!row) return false;
+
+      const now = Date.now();
+
+      // Check if still locked
+      if (row.locked_until && now < row.locked_until) {
+        return true;
+      }
+
+      // Reset if lock has expired
+      if (row.locked_until && now >= row.locked_until) {
+        db.prepare('DELETE FROM login_attempts WHERE email = ?').run(email);
+        return false;
+      }
+
+      return false;
+    } catch (error) {
+      logger.error('isAccountLocked DB error:', { error: error?.message });
       return false;
     }
-    
-    return false;
   }
 
   /**
-   * Record a failed login attempt
+   * Record a failed login attempt (SQLite-backed)
    */
   static recordFailedAttempt(email) {
-    const now = Date.now();
-    const attempts = loginAttempts.get(email) || { count: 0, lastAttempt: now };
-    
-    // Reset count if outside the window
-    if (now - attempts.lastAttempt > securityConfig.accountLockout.resetWindowMs) {
-      attempts.count = 0;
+    try {
+      const db = dbManager.getDatabase();
+      const now = Date.now();
+      const existing = db.prepare('SELECT count, last_attempt FROM login_attempts WHERE email = ?').get(email);
+
+      let newCount = 1;
+      if (existing) {
+        // Reset count if outside the window
+        const resetWindow = securityConfig.accountLockout?.resetWindowMs || 900000;
+        newCount = (now - existing.last_attempt > resetWindow) ? 1 : existing.count + 1;
+      }
+
+      const maxAttempts = securityConfig.accountLockout?.maxAttempts || 5;
+      const lockoutDuration = securityConfig.accountLockout?.lockoutDuration || 900000;
+      const lockedUntil = newCount >= maxAttempts ? now + lockoutDuration : 0;
+
+      if (lockedUntil) {
+        logger.warn('Account locked due to failed login attempts', { email: sanitizeForLog(email) });
+      }
+
+      db.prepare(`
+        INSERT INTO login_attempts (email, count, last_attempt, locked_until)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(email) DO UPDATE SET
+          count = excluded.count,
+          last_attempt = excluded.last_attempt,
+          locked_until = excluded.locked_until
+      `).run(email, newCount, now, lockedUntil);
+    } catch (error) {
+      logger.error('recordFailedAttempt DB error:', { error: error?.message });
     }
-    
-    attempts.count += 1;
-    attempts.lastAttempt = now;
-    
-    // Lock account if max attempts exceeded
-    if (attempts.count >= securityConfig.accountLockout.maxAttempts) {
-      attempts.lockedUntil = now + securityConfig.accountLockout.lockoutDuration;
-      logger.warn(`Account locked due to failed login attempts: ${sanitizeForLog(email)}`);
-    }
-    
-    loginAttempts.set(email, attempts);
   }
 
   /**
-   * Clear failed login attempts after successful login
+   * Clear failed login attempts after successful login (SQLite-backed)
    */
   static clearFailedAttempts(email) {
-    loginAttempts.delete(email);
+    try {
+      const db = dbManager.getDatabase();
+      db.prepare('DELETE FROM login_attempts WHERE email = ?').run(email);
+    } catch (error) {
+      logger.error('clearFailedAttempts DB error:', { error: error?.message });
+    }
   }
 
   // Register new user with email/password
@@ -245,34 +266,39 @@ class AuthService {
     }
   }
 
-  // Refresh access token
+  // Refresh access token — rotates refresh token on each use
   static async refreshAccessToken(refreshToken) {
     try {
-      // Verify refresh token
+      // Verify refresh token signature and expiry
       const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret);
-      
-      // Check if token exists in database
+
+      // Check if token exists in database and has not expired
       const db = dbManager.getDatabase();
-      const stmt = db.prepare(`
-        SELECT * FROM refresh_tokens 
+      const tokenRecord = db.prepare(`
+        SELECT * FROM refresh_tokens
         WHERE token = ? AND user_id = ? AND expires_at > datetime('now')
-      `);
-      const tokenRecord = stmt.get(refreshToken, decoded.userId);
-      
+      `).get(refreshToken, decoded.userId);
+
       if (!tokenRecord) {
         throw new Error('Invalid refresh token');
       }
-      
+
       // Get user
       const user = User.findById(decoded.userId);
       if (!user) {
         throw new Error('User not found');
       }
-      
+
+      // --- Token rotation: delete old token, issue new refresh token ---
+      db.prepare('DELETE FROM refresh_tokens WHERE token = ?').run(refreshToken);
+
+      const newRefreshToken = this.generateRefreshToken(user);
+      this.storeRefreshToken(user.id, newRefreshToken);
+
       // Generate new access token
       const accessToken = this.generateAccessToken(user);
-      
-      return { accessToken };
+
+      return { accessToken, refreshToken: newRefreshToken };
     } catch (error) {
       logger.error('Token refresh failed:', error);
       throw error;
