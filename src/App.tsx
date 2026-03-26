@@ -1,5 +1,5 @@
 // FILE: src/App.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Component, ReactNode } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -40,6 +40,43 @@ import NotificationsPage from "./pages/Notifications";
 import { StudentProfile } from "./types";
 
 const queryClient = new QueryClient();
+
+// ---------------------------------------------------------------------------
+// Top-level error boundary — prevents a blank screen when an unhandled render
+// error occurs anywhere in the tree.
+// ---------------------------------------------------------------------------
+interface ErrorBoundaryState { hasError: boolean; message: string }
+class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, message: '' };
+  }
+
+  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
+    const message = error instanceof Error ? error.message : String(error);
+    return { hasError: true, message };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', fontFamily: 'sans-serif' }}>
+          <div style={{ maxWidth: 480, textAlign: 'center' }}>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem' }}>Something went wrong</h1>
+            <p style={{ color: '#666', marginBottom: '1rem', wordBreak: 'break-word' }}>{this.state.message}</p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{ padding: '0.5rem 1.25rem', borderRadius: '0.5rem', border: '1px solid #ccc', cursor: 'pointer' }}
+            >
+              Reload page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const AppContent = () => {
   const { completeOnboarding, refreshUser } = useAuth();
@@ -132,13 +169,15 @@ const AppContent = () => {
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 
