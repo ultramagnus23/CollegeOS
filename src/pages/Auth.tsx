@@ -166,6 +166,7 @@ const AuthPage = () => {
             )}
             {loading ? 'Signing in…' : 'Continue with Google'}
           </button>
+          </form>
         </div>
       </div>
     </div>
