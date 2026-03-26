@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { auth, googleProvider, isFirebaseConfigured } from '../lib/firebase';
 import { signInWithPopup } from 'firebase/auth';
@@ -10,14 +10,15 @@ const FIREBASE_POPUP_CLOSED_CODES = new Set([
 ]);
 
 const AuthPage = () => {
-  const navigate = useNavigate();
   const { user, loginWithGoogle } = useAuth();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (user) navigate(user.onboarding_complete ? '/' : '/onboarding');
-  }, [user, navigate]);
+  // If the user is already authenticated, redirect declaratively.
+  // This is driven purely by AuthContext state — no imperative navigate() needed.
+  if (user) {
+    return <Navigate to={user.onboarding_complete ? '/' : '/onboarding'} replace />;
+  }
 
   const handleGoogleSignIn = async () => {
     if (!isFirebaseConfigured || !auth || !googleProvider) {
@@ -35,7 +36,7 @@ const AuthPage = () => {
         firebaseUser.email ?? '',
         firebaseUser.displayName ?? ''
       );
-      // navigation handled by useEffect above after user state updates
+      // loginWithGoogle updates AuthContext user state; the Navigate above handles redirect
     } catch (err: any) {
       if (FIREBASE_POPUP_CLOSED_CODES.has(err.code)) {
         // User closed the popup - not an error
