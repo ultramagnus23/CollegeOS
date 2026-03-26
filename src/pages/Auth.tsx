@@ -169,7 +169,6 @@ const AuthPage = () => {
           </form>
         </div>
       </div>
-    </div>
   );
 };
 
