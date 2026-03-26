@@ -78,11 +78,66 @@ const AuthPage = () => {
           <p className="text-muted-foreground mt-2">Your global college application hub</p>
         </div>
 
-        <div className="space-y-4">
-          {!isFirebaseConfigured && (
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
-              Firebase is not configured. Add your{' '}
-              <code className="font-mono">VITE_FIREBASE_*</code> environment variables to enable sign-in.
+        {/* Bug fix 3: proper <form> wrapping for Enter key submission */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {view === 'register' && (
+            <>
+              <div>
+                <Label>Full Name</Label>
+                <Input
+                  type="text"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label>Country</Label>
+                <select
+                  value={formData.country}
+                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                  className="w-full px-4 py-2 border border-border rounded-lg"
+                >
+                  <option value="India">India</option>
+                  <option value="USA">USA</option>
+                  <option value="UK">UK</option>
+                  <option value="Australia">Australia</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          <div>
+            <Label>Email</Label>
+            <Input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
+          </div>
+
+          <div>
+            <Label>Password</Label>
+            <Input
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              required
+            />
+          </div>
+
+          {/* Bug fix 4: confirm password field for registration */}
+          {view === 'register' && (
+            <div>
+              <Label>Confirm Password</Label>
+              <Input
+                type="password"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                required
+              />
             </div>
           )}
 

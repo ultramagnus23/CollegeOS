@@ -165,7 +165,7 @@ const Applications = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex items-center justify-center py-20">
         <Loader2 className="animate-spin text-primary" size={40} />
       </div>
     );

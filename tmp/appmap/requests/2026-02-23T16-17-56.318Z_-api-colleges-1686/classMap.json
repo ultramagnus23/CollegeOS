@@ -1,0 +1,54 @@
+[
+  {
+    "name": "config",
+    "type": "package",
+    "children": [
+      {
+        "type": "class",
+        "name": "security",
+        "children": [
+          {
+            "type": "function",
+            "name": "getAllowedOrigins",
+            "static": true,
+            "location": "backend\\src\\config\\security.js:9"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "middleware",
+    "type": "package",
+    "children": [
+      {
+        "type": "class",
+        "name": "security",
+        "children": [
+          {
+            "type": "function",
+            "name": "generateRequestId",
+            "static": true,
+            "location": "backend\\src\\middleware\\security.js:11"
+          },
+          {
+            "type": "function",
+            "name": "requestIdMiddleware",
+            "static": true,
+            "location": "backend\\src\\middleware\\security.js:18"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "http",
+    "name": "HTTP server requests",
+    "children": [
+      {
+        "type": "route",
+        "name": "OPTIONS /api/colleges/1686"
+      }
+    ]
+  }
+]
