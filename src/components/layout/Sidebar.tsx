@@ -28,7 +28,6 @@ const navSections = [
     label: 'Overview',
     items: [
       { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard,  path: '/' },
-      { id: 'discover',     label: 'Discover',     icon: Compass,          path: '/discover' },
     ]
   },
   {
@@ -36,8 +35,6 @@ const navSections = [
     items: [
       { id: 'colleges',     label: 'Colleges',     icon: Building2,        path: '/colleges' },
       { id: 'research',     label: 'Research',     icon: Search,           path: '/research' },
-      { id: 'search',       label: 'AI Search',    icon: Search,           path: '/search' },
-    ]
   },
   {
     label: 'Applications',
@@ -51,7 +48,6 @@ const navSections = [
   {
     label: 'Profile',
     items: [
-      { id: 'activities',   label: 'Activities',   icon: BookOpen,         path: '/activities' },
       { id: 'documents',    label: 'Documents',    icon: Award,            path: '/documents' },
       { id: 'scholarships', label: 'Scholarships', icon: Award,            path: '/scholarships' },
       { id: 'recommendations', label: 'Recommenders', icon: Users,         path: '/recommendations' },
