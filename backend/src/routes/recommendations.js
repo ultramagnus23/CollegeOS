@@ -11,7 +11,7 @@ const logger = require('../utils/logger');
 // Get recommendations for user - uses recommendationEngine service
 router.get('/', authenticate, async (req, res, next) => {
   try {
-    const user = User.findById(req.user.userId);
+    const user = await User.findById(req.user.userId);
     
     if (!user) {
       return res.status(404).json({
@@ -53,7 +53,7 @@ router.get('/', authenticate, async (req, res, next) => {
 // Generate new recommendations - same as GET but forces refresh
 router.post('/generate', authenticate, async (req, res, next) => {
   try {
-    const user = User.findById(req.user.userId);
+    const user = await User.findById(req.user.userId);
     
     if (!user) {
       return res.status(404).json({

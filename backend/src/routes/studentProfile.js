@@ -388,22 +388,22 @@ router.patch('/academic', authenticate, async (req, res, next) => {
     const userId = req.user.userId;
     const updates = req.body;
     const dbManager = require('../config/database');
-    const db = dbManager.getDatabase();
-    db.prepare(`
+    const pool = dbManager.getDatabase();
+    await pool.query(`
       UPDATE users
-      SET target_countries = ?,
-          intended_majors = ?,
-          test_status = ?,
-          language_preferences = ?,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(
+      SET target_countries = $1,
+          intended_majors = $2,
+          test_status = $3,
+          language_preferences = $4,
+          updated_at = NOW()
+      WHERE id = $5
+    `, [
       JSON.stringify(updates.target_countries || updates.targetCountries || []),
       JSON.stringify(updates.intended_majors || updates.intendedMajors || []),
       JSON.stringify(updates.test_status || updates.testStatus || {}),
       JSON.stringify(updates.language_preferences || updates.languagePreferences || []),
       userId
-    );
+    ]);
     const user = User.findById(userId);
     res.json({ success: true, message: 'Profile updated successfully', data: user });
   } catch (error) {
@@ -441,23 +441,23 @@ router.put('/full', authenticate, async (req, res, next) => {
     const data = req.body;
     const profile = StudentProfile.upsert(userId, data);
     const dbManager = require('../config/database');
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     if (data.targetCountries || data.target_countries ||
         data.intendedMajors || data.intended_majors ||
         data.testStatus || data.test_status) {
-      db.prepare(`
+      await pool.query(`
         UPDATE users
-        SET target_countries = COALESCE(?, target_countries),
-            intended_majors = COALESCE(?, intended_majors),
-            test_status = COALESCE(?, test_status),
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(
+        SET target_countries = COALESCE($1, target_countries),
+            intended_majors = COALESCE($2, intended_majors),
+            test_status = COALESCE($3, test_status),
+            updated_at = NOW()
+        WHERE id = $4
+      `, [
         data.targetCountries || data.target_countries ? JSON.stringify(data.targetCountries || data.target_countries) : null,
         data.intendedMajors || data.intended_majors ? JSON.stringify(data.intendedMajors || data.intended_majors) : null,
         data.testStatus || data.test_status ? JSON.stringify(data.testStatus || data.test_status) : null,
         userId
-      );
+      ]);
     }
     const completeProfile = StudentProfile.getCompleteProfile(userId);
     res.json({ success: true, message: 'Profile updated successfully', data: completeProfile });
