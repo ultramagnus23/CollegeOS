@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import config
 from prediction_service import prediction_service
-from lda_trainer import lda_trainer
+from lda_trainer import lda_trainer, synthetic_lda_score
 from data_processor import data_processor
 
 app = Flask(__name__)
@@ -25,6 +25,44 @@ def health_check():
         'service': 'ml-prediction-service',
         'timestamp': datetime.now().isoformat()
     })
+
+
+@app.route('/predict', methods=['POST'])
+def predict_synthetic():
+    """
+    Synthetic LDA admission probability endpoint.
+
+    Request body:
+    {
+        "student": { "sat_total": 1400, "gpa_unweighted": 3.8, ... },
+        "college": { "name": "MIT", "sat_total_25th": 1510, ... },
+        "cds_data": { ... }   // optional
+    }
+
+    Response:
+    {
+        "success": true,
+        "probability": 72.5,
+        "distance": 0.34,
+        "method": "synthetic_lda",
+        "features_used": ["sat_total", "gpa"]
+    }
+    """
+    try:
+        data = request.get_json(force=True) or {}
+
+        student = data.get('student') or data.get('student_profile', {})
+        college = data.get('college', {})
+        cds_data = data.get('cds_data', {})
+
+        if not student or not college:
+            return jsonify({'error': 'student and college fields are required'}), 400
+
+        result = synthetic_lda_score(student, college, cds_data)
+        return jsonify({'success': True, **result})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/predict', methods=['POST'])

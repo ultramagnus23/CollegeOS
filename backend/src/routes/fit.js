@@ -15,7 +15,7 @@ const logger = require('../utils/logger');
 const consolidatedChancingService = require('../services/consolidatedChancingService');
 
 // Legacy service (used where needed)
-const FitClassificationService = require('../services/fitClassificationService');
+// fitClassificationService has been removed; consolidatedChancingService handles all fit logic
 
 /**
  * GET /api/fit/:collegeId
@@ -67,14 +67,14 @@ router.get('/:collegeId/explain', authenticate, async (req, res) => {
       });
     }
 
-    const result = await FitClassificationService.classifyCollege(userId, collegeId);
+    const result = await consolidatedChancingService.classifyFit(userId, collegeId);
 
     res.json({
       success: true,
       data: {
-        fitCategory: result.fitCategory,
-        overallScore: result.overallScore,
-        explanation: result.explanation
+        fitCategory: result.category || result.fit,
+        overallScore: result.overall || result.academicFit,
+        explanation: result.reasoning || []
       }
     });
 
@@ -176,7 +176,7 @@ router.post('/:collegeId/override', authenticate, async (req, res) => {
     const dbManager = require('../config/database');
     const db = dbManager.getDatabase();
 
-    await FitClassificationService.classifyCollege(userId, collegeId);
+    await consolidatedChancingService.classifyFit(userId, collegeId);
 
     db.prepare(`
       UPDATE college_fits 
@@ -260,16 +260,18 @@ router.put('/weights', authenticate, async (req, res) => {
 
 /**
  * GET /api/fit/weights
- * Get user's current weights
+ * Get user's current weights (defaults returned; personalisation removed with deprecated service)
  */
 router.get('/weights', authenticate, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const weights = await FitClassificationService.getUserWeights(userId);
-
     res.json({
       success: true,
-      data: weights
+      data: {
+        academic: 0.4,
+        financial: 0.3,
+        location: 0.15,
+        outcomes: 0.15
+      }
     });
 
   } catch (error) {
