@@ -902,3 +902,43 @@ try {
     db.close();
   }
 }
+
+// ── pg-based seedIfEmpty for use from app.js ─────────────────────────────
+async function seedIfEmpty() {
+  const dbManager = require('../src/config/database');
+  const pool = dbManager.getDatabase();
+  const { rows } = await pool.query('SELECT COUNT(*) as count FROM colleges');
+  const count = parseInt(rows[0].count);
+  if (count > 0) {
+    return;
+  }
+
+  const insertCollege = async (college) => {
+    await pool.query(
+      `INSERT INTO colleges (name, country, location, official_website, admissions_url, programs_url,
+        application_portal_url, acceptance_rate, major_categories, academic_strengths, trust_tier, is_verified)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       ON CONFLICT DO NOTHING`,
+      [
+        college.name,
+        college.country === 'US' ? 'United States' : college.country,
+        college.location || null,
+        college.official_website || '',
+        college.admissions_url || null,
+        college.programs_url || null,
+        college.application_portal_url || null,
+        college.acceptance_rate || null,
+        college.major_categories || null,
+        college.academic_strengths || null,
+        college.trust_tier || 'official',
+        college.is_verified ? true : false
+      ]
+    );
+  };
+
+  for (const college of colleges) {
+    try { await insertCollege(college); } catch (e) { /* skip duplicate */ }
+  }
+}
+
+module.exports = { seedIfEmpty };

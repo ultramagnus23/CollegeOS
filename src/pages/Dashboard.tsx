@@ -235,7 +235,9 @@ const Dashboard = () => {
   };
 
   const getDaysUntil = (d: string) => {
+    if (!d) return 'Unknown';
     const n = Math.ceil((new Date(d+'T00:00:00').getTime()-Date.now())/86400000);
+    if (!isFinite(n)) return 'Unknown';
     if (n < 0) return 'Overdue';
     if (n === 0) return 'Today';
     if (n === 1) return 'Tomorrow';

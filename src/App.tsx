@@ -34,6 +34,7 @@ import { Timeline } from "./pages/Timeline";
 import NotificationsPage from "./pages/Notifications";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
+import Discover from "./pages/Discover";
 
 import { StudentProfile } from "./types/index";
 
@@ -153,6 +154,7 @@ const AppContent = () => {
             <Route path="timeline" element={<Timeline />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="discover" element={<Discover />} />
           </Route>
 
           {/* ✅ wildcard route OUTSIDE */}
