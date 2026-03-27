@@ -23,7 +23,7 @@ router.get('/', async (req, res, next) => {
       limit 
     } = req.query;
     
-    const scholarships = Scholarship.search({
+    const scholarships = await Scholarship.search({
       country,
       needBased: needBased === 'true',
       meritBased: meritBased === 'true',
@@ -49,7 +49,7 @@ router.get('/', async (req, res, next) => {
  */
 router.get('/countries', async (req, res, next) => {
   try {
-    const countries = Scholarship.getCountries();
+    const countries = await Scholarship.getCountries();
     
     res.json({
       success: true,
@@ -70,7 +70,7 @@ router.use('/user', authenticate);
 router.get('/user/tracked', async (req, res, next) => {
   try {
     const { status } = req.query;
-    const scholarships = Scholarship.getUserScholarships(req.user.id, status);
+    const scholarships = await Scholarship.getUserScholarships(req.user.id, status);
     
     res.json({
       success: true,
@@ -95,7 +95,7 @@ router.get('/user/eligible', async (req, res, next) => {
       academicLevel: req.query.academicLevel
     };
     
-    const scholarships = Scholarship.getEligibleScholarships(userProfile);
+    const scholarships = await Scholarship.getEligibleScholarships(userProfile);
     
     res.json({
       success: true,
@@ -113,7 +113,7 @@ router.get('/user/eligible', async (req, res, next) => {
  */
 router.get('/:id', async (req, res, next) => {
   try {
-    const scholarship = Scholarship.getById(req.params.id);
+    const scholarship = await Scholarship.getById(req.params.id);
     
     if (!scholarship) {
       return res.status(404).json({
@@ -150,7 +150,7 @@ router.post('/:id/track', async (req, res, next) => {
       });
     }
     
-    const tracked = Scholarship.trackForUser(req.user.id, req.params.id, status, notes);
+    const tracked = await Scholarship.trackForUser(req.user.id, req.params.id, status, notes);
     
     res.json({
       success: true,
@@ -168,7 +168,7 @@ router.post('/:id/track', async (req, res, next) => {
  */
 router.put('/:id/track', async (req, res, next) => {
   try {
-    const updated = Scholarship.updateUserScholarship(
+    const updated = await Scholarship.updateUserScholarship(
       req.user.id, 
       req.params.id, 
       req.body
