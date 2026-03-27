@@ -1163,18 +1163,21 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           await api.saveExtendedProfile({ ...studentData });
 
           // 2. Mark onboarding complete in users table
-          await completeOnboarding({
-            target_countries: studentData.preferredCountries,
-            intended_majors: studentData.potentialMajors,
-            test_status: {
-              sat_score: studentData.satScore || null,
-              act_score: studentData.actScore || null,
-              ib_predicted: studentData.ibPredicted || null,
-            },
-            gpa: parseFloat(String(studentData.currentGPA).replace(/[^0-9.]/g, '')) || null,
-            subjects: studentData.subjects,
-            activities: studentData.activities,
-          });
+await completeOnboarding({
+  target_countries: studentData.preferredCountries,
+  intended_majors: studentData.potentialMajors,
+  test_status: {
+    sat_score: studentData.satScore 
+      ? Number(studentData.satScore) : null,
+    act_score: studentData.actScore 
+      ? Number(studentData.actScore) : null,
+    ib_predicted: studentData.ibPredicted 
+      ? Number(studentData.ibPredicted) : null,
+  },
+  gpa: parseFloat(String(studentData.currentGPA).replace(/[^0-9.]/g, '')) || null,
+  subjects: studentData.subjects || [],
+  activities: (studentData.activities || []).filter((a: any) => a?.name?.trim()),
+});
 
           // 3. Pre-compute instant recommendations and store in localStorage
           try {
