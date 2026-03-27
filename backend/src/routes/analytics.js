@@ -15,11 +15,11 @@ const logger = require('../utils/logger');
 
 // Import services
 const { calculateProfileStrength, compareProfiles } = require('../services/profileStrengthService');
-const { 
-  analyzeCollegeList, 
-  suggestAdditions, 
-  calculateWhatIf: calculateListWhatIf 
-} = require('../services/collegeListOptimizerService');
+const {
+  analyzeCollegeList,
+  suggestAdditions,
+  calculateChance
+} = require('../services/consolidatedChancingService');
 const { 
   analyzeWhatIf, 
   sensitivityAnalysis, 
@@ -136,15 +136,9 @@ router.post('/optimize-list', authenticate, async (req, res, next) => {
       });
     }
     
-    // Analyze the list
-    const result = analyzeCollegeList(profile, colleges);
-    
-    if (!result.success) {
-      return res.status(400).json({
-        success: false,
-        message: result.error
-      });
-    }
+    // Analyze the list using consolidated service (takes userId + array of IDs)
+    const ids = colleges.map(c => c.id);
+    const result = await analyzeCollegeList(userId, ids);
     
     res.json({
       success: true,
@@ -178,34 +172,22 @@ router.post('/optimize-list/suggest', authenticate, async (req, res, next) => {
     // Get current colleges
     const applications = Application.findByUser(userId);
     const currentColleges = applications.map(a => College.findById(a.college_id)).filter(c => c);
+    const currentIds = currentColleges.map(c => c.id);
     
-    // Get all available colleges
-    const allColleges = College.findAll({ limit: 200 });
-    
-    // Analyze current distribution
-    const analysis = analyzeCollegeList(profile, currentColleges);
-    
-    if (!analysis.success) {
-      return res.status(400).json({
-        success: false,
-        message: 'Could not analyze current list'
-      });
-    }
-    
-    // Get suggestions
-    const suggestions = suggestAdditions(
-      profile, 
-      currentColleges, 
-      allColleges, 
-      analysis.distribution
-    );
+    // Get suggestions via consolidated service (takes userId + list of IDs)
+    const suggestions = await suggestAdditions(userId, currentIds);
+    const analysis = await analyzeCollegeList(userId, currentIds);
     
     res.json({
       success: true,
       data: {
-        currentDistribution: analysis.distribution,
+        currentDistribution: {
+          reach: analysis.reachCount,
+          target: analysis.targetCount,
+          safety: analysis.safetyCount
+        },
         suggestions: suggestions.slice(0, maxSuggestions),
-        gaps: analysis.gaps
+        gaps: analysis.suggestions
       }
     });
   } catch (error) {
@@ -229,21 +211,7 @@ router.post('/optimize-list/what-if', authenticate, async (req, res, next) => {
         message: 'action ("add" or "remove") and collegeId are required'
       });
     }
-    
-    // Get profile
-    const profile = StudentProfile.getCompleteProfile(userId);
-    
-    if (!profile) {
-      return res.status(404).json({
-        success: false,
-        message: 'Profile not found'
-      });
-    }
-    
-    // Get current colleges
-    const applications = Application.findByUser(userId);
-    const currentColleges = applications.map(a => College.findById(a.college_id)).filter(c => c);
-    
+
     // Get the target college
     const college = College.findById(collegeId);
     
@@ -253,14 +221,50 @@ router.post('/optimize-list/what-if', authenticate, async (req, res, next) => {
         message: 'College not found'
       });
     }
-    
-    // Calculate what-if
-    const result = calculateListWhatIf(profile, currentColleges, { action, college });
-    
+
+    // Get profile for per-college chance calculation
+    const profile = StudentProfile.getCompleteProfile(userId);
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile not found'
+      });
+    }
+
+    // Get current application list
+    const applications = Application.findByUser(userId);
+    const currentColleges = applications.map(a => College.findById(a.college_id)).filter(c => c);
+    const currentIds = currentColleges.map(c => c.id);
+
+    // Simulate the action
+    let simulatedIds;
+    if (action === 'add') {
+      simulatedIds = [...new Set([...currentIds, parseInt(collegeId)])];
+    } else if (action === 'remove') {
+      simulatedIds = currentIds.filter(id => id !== parseInt(collegeId));
+    } else {
+      return res.status(400).json({ success: false, message: 'action must be "add" or "remove"' });
+    }
+
+    const [beforeAnalysis, afterAnalysis, collegeChance] = await Promise.all([
+      analyzeCollegeList(userId, currentIds),
+      analyzeCollegeList(userId, simulatedIds),
+      calculateChance(profile, college)
+    ]);
+
     res.json({
-      success: result.success,
-      data: result.success ? result : null,
-      message: result.error || 'What-if analysis complete'
+      success: true,
+      data: {
+        action,
+        college: { id: college.id, name: college.name },
+        chance: collegeChance,
+        before: beforeAnalysis,
+        after: afterAnalysis,
+        balanceChange: afterAnalysis.balance !== beforeAnalysis.balance
+          ? `${beforeAnalysis.balance} → ${afterAnalysis.balance}`
+          : 'no change'
+      },
+      message: 'What-if analysis complete'
     });
   } catch (error) {
     logger.error('List what-if failed:', error);
@@ -540,7 +544,8 @@ router.get('/summary', authenticate, async (req, res, next) => {
     // Calculate list optimization if colleges exist
     let listAnalysis = null;
     if (colleges.length > 0) {
-      listAnalysis = analyzeCollegeList(profile, colleges);
+      const ids = colleges.map(c => c.id);
+      listAnalysis = await analyzeCollegeList(userId, ids);
     }
     
     res.json({
@@ -552,11 +557,13 @@ router.get('/summary', authenticate, async (req, res, next) => {
           tier: profileStrength.tier,
           percentile: profileStrength.nationalPercentile
         } : null,
-        collegeList: listAnalysis?.success ? {
-          totalColleges: listAnalysis.summary.totalColleges,
-          atLeastOneAcceptance: listAnalysis.summary.atLeastOneAcceptance,
-          balanceScore: listAnalysis.summary.balanceScore,
-          listHealth: listAnalysis.summary.listHealth
+        collegeList: listAnalysis ? {
+          totalColleges: listAnalysis.total,
+          reachCount: listAnalysis.reachCount,
+          targetCount: listAnalysis.targetCount,
+          safetyCount: listAnalysis.safetyCount,
+          balance: listAnalysis.balance,
+          listHealth: listAnalysis.balance
         } : null,
         recommendations: profileStrength.success ? 
           profileStrength.recommendations.slice(0, 3) : []
