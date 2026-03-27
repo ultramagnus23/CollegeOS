@@ -22,11 +22,12 @@ const validators = {
     email: emailSchema,
     password: passwordSchema.required(),
     fullName: Joi.string()
+      .trim()
       .min(2)
       .max(100)
       .pattern(/^[a-zA-Z\s'-]+$/) // Only allow letters, spaces, hyphens, apostrophes
       .required(),
-    country: Joi.string().valid(...COUNTRIES).required()
+    country: Joi.string().trim().valid(...COUNTRIES).required()
   }),
   
   // User login
@@ -37,61 +38,63 @@ const validators = {
   
   // Onboarding
   onboarding: Joi.object({
-    targetCountries: Joi.array().items(Joi.string().valid(...COUNTRIES)).min(1).required(),
-    intendedMajors: Joi.array().items(Joi.string()).min(1).required(),
-    testStatus: Joi.object({
-      sat: Joi.object({ taken: Joi.boolean(), score: Joi.number().optional() }).optional(),
-      act: Joi.object({ taken: Joi.boolean(), score: Joi.number().optional() }).optional(),
-      ielts: Joi.object({ taken: Joi.boolean(), score: Joi.number().optional() }).optional(),
-      toefl: Joi.object({ taken: Joi.boolean(), score: Joi.number().optional() }).optional()
-    }).required(),
-    languagePreferences: Joi.array().items(Joi.string()).required()
+    target_countries: Joi.array().items(Joi.string().trim().valid(...COUNTRIES)).min(1).required(),
+    intended_majors: Joi.array().items(Joi.string().trim()).min(1).required(),
+    test_status: Joi.object({
+      sat_score: Joi.number().options({ convert: true }).optional().allow(null),
+      act_score: Joi.number().options({ convert: true }).optional().allow(null),
+      ib_predicted: Joi.number().options({ convert: true }).optional().allow(null)
+    }).optional(),
+    gpa: Joi.number().options({ convert: true }).min(0).max(100).optional().allow(null),
+    subjects: Joi.array().items(Joi.any()).optional(),
+    activities: Joi.array().items(Joi.any()).optional(),
+    language_preferences: Joi.array().items(Joi.string().trim()).optional()
   }),
   
   // Create application
   createApplication: Joi.object({
-    collegeId: Joi.number().integer().positive().optional(),
-    college_id: Joi.number().integer().positive().optional(),
-    applicationType: Joi.string().optional(),
-    application_type: Joi.string().optional(),
-    priority: Joi.string().valid('reach', 'target', 'safety').optional(),
-    notes: Joi.string().max(1000).optional()
+    collegeId: Joi.number().options({ convert: true }).integer().positive().optional(),
+    college_id: Joi.number().options({ convert: true }).integer().positive().optional(),
+    applicationType: Joi.string().trim().optional(),
+    application_type: Joi.string().trim().optional(),
+    priority: Joi.string().trim().valid('reach', 'target', 'safety').optional(),
+    notes: Joi.string().trim().max(1000).optional()
   }).or('collegeId', 'college_id'),
   
   // Update application
   updateApplication: Joi.object({
-    status: Joi.string().valid(...Object.values(APPLICATION_STATUS)).optional(),
-    applicationType: Joi.string().optional(),
-    priority: Joi.string().valid('reach', 'target', 'safety').optional(),
-    notes: Joi.string().max(1000).optional(),
+    status: Joi.string().trim().valid(...Object.values(APPLICATION_STATUS)).optional(),
+    applicationType: Joi.string().trim().optional(),
+    priority: Joi.string().trim().valid('reach', 'target', 'safety').optional(),
+    notes: Joi.string().trim().max(1000).optional(),
     submittedAt: Joi.date().optional(),
     decisionReceivedAt: Joi.date().optional()
   }),
   
   // Create deadline
   createDeadline: Joi.object({
-    applicationId: Joi.number().integer().positive().required(),
-    deadlineType: Joi.string().required(),
+    applicationId: Joi.number().options({ convert: true }).integer().positive().required(),
+    deadlineType: Joi.string().trim().required(),
     deadlineDate: Joi.date().required(),
-    description: Joi.string().max(500).optional(),
+    description: Joi.string().trim().max(500).optional(),
     sourceUrl: Joi.string().uri().optional()
   }),
   
   // Create essay
   createEssay: Joi.object({
-    applicationId: Joi.number().integer().positive().required(),
-    essayType: Joi.string().required(),
-    prompt: Joi.string().max(2000).required(),
-    wordLimit: Joi.number().integer().positive().optional(),
+    applicationId: Joi.number().options({ convert: true }).integer().positive().required(),
+    essayType: Joi.string().trim().required(),
+    prompt: Joi.string().trim().max(2000).required(),
+    wordLimit: Joi.number().options({ convert: true }).integer().positive().optional(),
     googleDriveLink: Joi.string().uri().optional(),
-    notes: Joi.string().max(1000).optional()
+    notes: Joi.string().trim().max(1000).optional()
   }),
   
   // Update essay
   updateEssay: Joi.object({
     googleDriveLink: Joi.string().uri().optional(),
-    status: Joi.string().valid(...Object.values(ESSAY_STATUS)).optional(),
-    notes: Joi.string().max(1000).optional()
+    status: Joi.string().trim().valid(...Object.values(ESSAY_STATUS)).optional(),
+    notes: Joi.string().trim().max(1000).optional()
   })
 };
 
