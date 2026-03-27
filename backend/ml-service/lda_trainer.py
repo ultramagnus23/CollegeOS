@@ -387,10 +387,12 @@ def synthetic_lda_score(student: Dict, college: Dict, cds_data: Dict) -> Dict:
     gpa_p75 = _get('gpa_75th', 'avg_gpa_75', 3.9)
 
     # Guard: if both percentiles are equal, widen them slightly to avoid zero variance
+    SAT_PERCENTILE_EPSILON = 50.0   # points to widen equal SAT percentile bands
+    GPA_PERCENTILE_EPSILON = 0.2    # points to widen equal GPA percentile bands
     if sat_p75 <= sat_p25:
-        sat_p25, sat_p75 = sat_p25 - 50, sat_p75 + 50
+        sat_p25, sat_p75 = sat_p25 - SAT_PERCENTILE_EPSILON, sat_p75 + SAT_PERCENTILE_EPSILON
     if gpa_p75 <= gpa_p25:
-        gpa_p25, gpa_p75 = gpa_p25 - 0.2, gpa_p75 + 0.2
+        gpa_p25, gpa_p75 = gpa_p25 - GPA_PERCENTILE_EPSILON, gpa_p75 + GPA_PERCENTILE_EPSILON
 
     # Class means
     mu_admitted = np.array([sat_p75, gpa_p75])

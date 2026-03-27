@@ -9,7 +9,7 @@ const { sanitizeForLog } = require('../utils/security');
 
 const REDDIT_URL = 'https://www.reddit.com/r/collegeresults.json';
 const SCORECARD_URL = 'https://api.data.gov/ed/collegescorecard/v1/schools';
-const REDDIT_USER_AGENT = process.env.REDDIT_USER_AGENT || 'CollegeOS/1.0 (+https://github.com/ultramagnus23/CollegeOS)';
+const REDDIT_USER_AGENT = process.env.REDDIT_USER_AGENT || 'CollegeOS/1.0 (admission outcomes aggregator)';
 const SCORECARD_API_KEY = process.env.COLLEGE_SCORECARD_API_KEY || '';
 
 /**

@@ -5,7 +5,7 @@ const logger = require('../utils/logger');
 
 const EXCHANGE_API_URL = 'https://api.exchangerate-api.com/v4/latest/USD';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const FALLBACK_RATE = 83; // safe default if API is unavailable
+const FALLBACK_RATE = 83; // USD/INR fallback rate (verified Jan 2025); overridden by live API on first call
 
 let cachedRate = null;
 let cacheTimestamp = 0;
