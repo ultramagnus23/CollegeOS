@@ -333,5 +333,116 @@ class LDATrainer:
         }
 
 
+def _clamp(value: float, lo: float, hi: float) -> float:
+    """Clamp value to [lo, hi]."""
+    return max(lo, min(hi, value))
+
+
+def synthetic_lda_score(student: Dict, college: Dict, cds_data: Dict) -> Dict:
+    """
+    Compute a synthetic LDA-style admission probability using CDS percentile data.
+
+    The approach:
+      - mu_admitted  = vector of CDS 75th-percentile stats (SAT, GPA)
+      - mu_rejected  = vector of CDS 25th-percentile stats
+      - Mahalanobis distance to mu_admitted using a diagonal covariance
+        estimated from the spread between the two class means.
+      - P_admit = exp(-0.5 * dist^2), then normalised to 0-100.
+
+    Parameters
+    ----------
+    student  : dict with keys sat_total, gpa_unweighted (or gpa_weighted)
+    college  : dict with CDS keys or top-level stat fields
+    cds_data : optional pre-loaded CDS dict; college fields are used directly
+               when cds_data is empty / None
+
+    Returns
+    -------
+    dict with keys: probability (0-100), distance, method, features_used
+    """
+    # Extract student features
+    sat_student = float(student.get('sat_total') or 0)
+    gpa_student = float(
+        student.get('gpa_unweighted') or student.get('gpa_weighted') or student.get('gpa') or 0
+    )
+
+    # Extract college percentile data – prefer dedicated CDS block, fallback to top-level
+    cds_college = {}
+    if cds_data and isinstance(cds_data, dict):
+        college_name = str(college.get('name', '')).lower().replace(' ', '_')
+        # Try exact and partial match
+        for key, val in cds_data.items():
+            if key == college_name or college_name in key or key in college_name:
+                cds_college = val
+                break
+
+    def _get(primary_key: str, fallback_key: str, default: float) -> float:
+        v = cds_college.get(primary_key) or college.get(primary_key) \
+            or cds_college.get(fallback_key) or college.get(fallback_key)
+        return float(v) if v else default
+
+    sat_p25 = _get('sat_total_25th', 'sat_25th', 1050.0)
+    sat_p75 = _get('sat_total_75th', 'sat_75th', 1400.0)
+    gpa_p25 = _get('gpa_25th', 'avg_gpa_25', 3.2)
+    gpa_p75 = _get('gpa_75th', 'avg_gpa_75', 3.9)
+
+    # Guard: if both percentiles are equal, widen them slightly to avoid zero variance
+    SAT_PERCENTILE_EPSILON = 50.0   # points to widen equal SAT percentile bands
+    GPA_PERCENTILE_EPSILON = 0.2    # points to widen equal GPA percentile bands
+    if sat_p75 <= sat_p25:
+        sat_p25, sat_p75 = sat_p25 - SAT_PERCENTILE_EPSILON, sat_p75 + SAT_PERCENTILE_EPSILON
+    if gpa_p75 <= gpa_p25:
+        gpa_p25, gpa_p75 = gpa_p25 - GPA_PERCENTILE_EPSILON, gpa_p75 + GPA_PERCENTILE_EPSILON
+
+    # Class means
+    mu_admitted = np.array([sat_p75, gpa_p75])
+    mu_rejected = np.array([sat_p25, gpa_p25])
+
+    # Diagonal covariance: variance estimated from spread between class means
+    var = ((mu_admitted - mu_rejected) / 2.0) ** 2
+    var = np.maximum(var, 1e-6)  # prevent division by zero
+
+    # Student feature vector
+    # If SAT not provided, use only GPA; same for GPA-only cases
+    student_vec = np.array([sat_student, gpa_student])
+    features_used = []
+    mask = np.ones(2, dtype=bool)
+
+    if sat_student <= 0:
+        mask[0] = False
+    else:
+        features_used.append('sat_total')
+
+    if gpa_student <= 0:
+        mask[1] = False
+    else:
+        features_used.append('gpa')
+
+    if not any(mask):
+        # No usable features – return midpoint probability
+        return {'probability': 50.0, 'distance': 0.0, 'method': 'synthetic_lda', 'features_used': []}
+
+    sv = student_vec[mask]
+    ma = mu_admitted[mask]
+    vr = var[mask]
+
+    # Mahalanobis distance to mu_admitted (diagonal covariance)
+    diff = sv - ma
+    dist = float(np.sqrt(np.sum(diff ** 2 / vr)))
+
+    # Raw probability (Gaussian likelihood)
+    raw_prob = np.exp(-0.5 * dist ** 2)
+
+    # Normalise: exp(0) = 1.0 → 100%, cap at 100, floor at 0
+    probability = float(_clamp(raw_prob * 100.0, 0.0, 100.0))
+
+    return {
+        'probability': round(probability, 2),
+        'distance': round(dist, 4),
+        'method': 'synthetic_lda',
+        'features_used': features_used,
+    }
+
+
 # Singleton instance
 lda_trainer = LDATrainer()

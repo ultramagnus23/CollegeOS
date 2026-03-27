@@ -85,6 +85,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loginWithGoogle = async (googleId: string, email: string, name: string) => {
     const response = await api.googleLogin(googleId, email, name);
+    // Explicitly persist the access token before any state update so that
+    // subsequent API calls in the same tick (e.g. during onboarding) can use it.
+    const tokens = (response as any)?.data?.tokens;
+    if (tokens?.accessToken) {
+      localStorage.setItem('accessToken', tokens.accessToken);
+    }
     const user = response.data.user;
     setUser(user);
 

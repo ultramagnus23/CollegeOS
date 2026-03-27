@@ -7,7 +7,7 @@ const { authenticate } = require('../middleware/auth');
 
 // Use consolidated chancing service (P3 consolidation)
 const consolidatedChancingService = require('../services/consolidatedChancingService');
-const { calculateCDSChance, hasCDSData } = require('../services/cdsChancingService');
+// cdsChancingService has been removed; all chancing is now handled by consolidatedChancingService
 
 const StudentProfile = require('../models/StudentProfile');
 const College = require('../models/College');
@@ -122,32 +122,10 @@ router.post('/calculate', authenticate, async (req, res, next) => {
       }
     }
     
-    // Fall back to rule-based if ML not available/successful
-    if (!chancing) {
-      // Try IMPROVED CDS-based calculation for US colleges (priority)
-      if (country === 'USA' || country === 'United States') {
-        const enhancedResult = await consolidatedChancingService.calculateChance(
-          profile, college,
-          // Skip CDS and ML here since ML was already tried above; use improved algorithm only
-          { preferCDS: false, preferML: false }
-        );
-        if (enhancedResult) {
-          chancing = enhancedResult;
-          predictionType = 'cds_bayesian';
-        } else {
-          // Try legacy CDS calculation as fallback
-          const cdsResult = calculateCDSChance(profile, college);
-          if (cdsResult) {
-            chancing = cdsResult;
-            predictionType = 'cds_based';
-          }
-        }
-      }
-      
-      // Fall back to consolidated service (handles country-specific logic internally)
-      if (!chancing) {
-        chancing = await consolidatedChancingService.calculateChance(profile, college);
-      }
+    // Fall back to consolidated service if ML not available/successful
+        if (!chancing) {
+      chancing = await consolidatedChancingService.calculateChance(profile, college);
+      predictionType = chancing.method || 'consolidated';
     }
     
     // Log prediction for analytics
@@ -160,7 +138,7 @@ router.post('/calculate', authenticate, async (req, res, next) => {
         req.user.userId,
         collegeId,
         predictionType,
-        chancing.percentage / 100,
+        (chancing.percentage ?? chancing.chance ?? 50) / 100,
         chancing.category,
         chancing.confidence || null,
         JSON.stringify(chancing.factors || [])

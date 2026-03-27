@@ -4,6 +4,7 @@
 const cron = require('node-cron');
 const dbManager = require('../config/database');
 const mlPredictionService = require('../services/mlPredictionService');
+const admissionOutcomeScraper = require('../services/admissionOutcomeScraper');
 const logger = require('../utils/logger');
 
 class MLRetrainingJob {
@@ -22,6 +23,14 @@ class MLRetrainingJob {
       cron.schedule('0 3 1 * *', async () => {
         logger.info('Monthly ML model retraining starting...');
         await this.runRetrainingCycle();
+      })
+    );
+
+    // Weekly data scrape + conditional retrain - runs every Saturday at 1 AM
+    this.jobs.push(
+      cron.schedule('0 1 * * 6', async () => {
+        logger.info('Weekly admission outcome scrape starting...');
+        await this.runWeeklyScrapeAndRetrain();
       })
     );
 
@@ -188,6 +197,26 @@ class MLRetrainingJob {
       logger.error('Retraining cycle failed:', error);
     } finally {
       this.isRunning = false;
+    }
+  }
+
+  /**
+   * Weekly scrape of admission outcome data, followed by LDA retraining
+   * if new rows were inserted.
+   */
+  async runWeeklyScrapeAndRetrain() {
+    try {
+      const result = await admissionOutcomeScraper.scrapeAndStore();
+      logger.info('Weekly scrape finished', result);
+
+      if (result.inserted > 0) {
+        logger.info('New admission outcome rows inserted; triggering retraining cycle', { inserted: result.inserted });
+        await this.runRetrainingCycle();
+      } else {
+        logger.info('No new admission outcome rows; skipping retraining');
+      }
+    } catch (error) {
+      logger.error('Weekly scrape and retrain failed:', { error: error?.message });
     }
   }
 
