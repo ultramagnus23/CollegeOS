@@ -4,8 +4,6 @@
 // ==========================================
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
-import { jwtDecode } from 'jwt-decode';
 import { toast } from 'sonner';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,17 +20,8 @@ interface StructuredActivity {
   achievements: string;
 }
 
-interface GoogleAuthInfo {
-  credential: string;
-  googleId: string;
-  email: string;
-  name: string;
-  picture: string;
-}
-
 interface StudentOnboardingProps {
   onComplete: (profile: StudentProfile) => void;
-  onAuthSuccess?: (auth: GoogleAuthInfo) => void;
 }
 
 // ── Color System ───────────────────────────────────────────────────────────
@@ -631,7 +620,7 @@ const Insight: React.FC<{ message: string; onDone: () => void }> = ({ message, o
 };
 
 // ── Main Component ─────────────────────────────────────────────────────────
-const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAuthSuccess }) => {
+const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => {
   const navigate = useNavigate();
   const { user, completeOnboarding } = useAuth();
   const [step, setStep] = useState(1);
@@ -639,7 +628,6 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
   const [insightMsg, setInsightMsg] = useState('');
   const [showLoading, setShowLoading] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
-  const [googleAuth, setGoogleAuth] = useState<GoogleAuthInfo | null>(null);
   const progressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [studentData, setStudentData] = useState<any>(() => {
@@ -672,29 +660,6 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
     }).catch(() => { /* silent */ });
   }, [user?.id]);
 
-  const handleGoogleSuccess = useCallback((credentialResponse: { credential?: string }) => {
-    const credential = credentialResponse.credential;
-    if (!credential) { toast.error('No credential received from Google sign-in'); return; }
-    try {
-      const decoded = jwtDecode<{ sub: string; email: string; name: string; given_name?: string; picture?: string }>(credential);
-      const authInfo: GoogleAuthInfo = {
-        credential,
-        googleId: decoded.sub,
-        email: decoded.email,
-        name: decoded.name,
-        picture: decoded.picture || '',
-      };
-      setGoogleAuth(authInfo);
-      const givenName = decoded.given_name || decoded.name.split(' ')[0];
-      setStudentData((prev: any) => {
-        const next = { ...prev, name: prev.name || givenName };
-        try { localStorage.setItem('onboarding_data', JSON.stringify(next)); } catch {}
-        return next;
-      });
-      onAuthSuccess?.(authInfo);
-    } catch (err) { console.error('Google token decode failed:', err); toast.error('Unable to decode Google authentication token'); }
-  }, [onAuthSuccess]);
-
   const updateData = useCallback((field: string, value: any) => {
     setStudentData((prev: any) => {
       const next = { ...prev, [field]: value };
@@ -704,16 +669,11 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
       progressDebounceRef.current = setTimeout(async () => {
         if (user?.id) {
           try { await api.saveOnboardingDraft(user.id, { ...next, onboarding_step: step }); } catch { /* silent */ }
-        } else {
-          const auth = googleAuth;
-          if (auth?.googleId) {
-            try { await api.auth.saveOnboardingProgress(auth.googleId, next); } catch { /* silent */ }
-          }
         }
       }, 1500);
       return next;
     });
-  }, [googleAuth, user?.id, step]);
+  }, [user?.id, step]);
 
   const theme = STEP_THEMES[step - 1];
   const { accent, bg, surface } = theme;
@@ -1197,42 +1157,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
       `}</style>
 
-      {/* Google Sign-in Gate — shown before Step 1 */}
-      {!googleAuth && (
-        <div style={{
-          minHeight: '100vh', background: '#0A0A1A', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'DM Sans', sans-serif",
-        }}>
-          <div style={{
-            background: '#12122A', border: '1px solid rgba(108,99,255,0.3)', borderRadius: 20,
-            padding: '48px 56px', maxWidth: 420, width: '100%', textAlign: 'center',
-            boxShadow: '0 0 60px rgba(108,99,255,0.15)',
-          }}>
-            <div style={{ fontSize: 40, marginBottom: 16 }}>🎓</div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', marginBottom: 10, letterSpacing: '-0.02em' }}>
-              Welcome to <span style={{ color: '#6C63FF' }}>CollegeOS</span>
-            </h1>
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 32, lineHeight: 1.6 }}>
-              Sign in with Google to start your college journey. We'll personalize everything for you.
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => toast.error('Google sign-in failed')}
-                useOneTap={false}
-                theme="filled_black"
-                shape="rectangular"
-                size="large"
-                text="continue_with"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {googleAuth && (
-        <>
-          {showLoading && <LoadingSequence name={studentData.name} onDone={async () => {
+      {showLoading && <LoadingSequence name={studentData.name} onDone={async () => {
         try {
           // 1. Save full extended profile to student_profiles table
           await api.saveExtendedProfile({ ...studentData });
@@ -1263,13 +1188,6 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
             });
             localStorage.setItem('instant_recommendations', JSON.stringify(recRes?.data || recRes || []));
           } catch { /* non-critical */ }
-
-          // Also sync Google profile if using Google auth
-          if (googleAuth) {
-            try {
-              await api.auth.googleOnboarding(googleAuth.googleId, googleAuth.email, studentData.name || googleAuth.name, studentData);
-            } catch { /* non-critical */ }
-          }
 
           await onComplete(studentData);
           navigate('/research');
@@ -1337,8 +1255,6 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onAut
           )}
         </div>
       </div>
-        </>
-      )}
     </>
   );
 };
