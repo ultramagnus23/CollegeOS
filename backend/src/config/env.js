@@ -46,8 +46,10 @@ module.exports = {
   port: process.env.PORT || 5000,
   nodeEnv,
   isProduction,
-  
+
   database: {
+    url: process.env.DATABASE_URL || 'postgresql://localhost:5432/college_app',
+    // Legacy SQLite path kept for migration tooling only
     path: process.env.DATABASE_PATH || path.join(__dirname, '../../database/college_app.db')
   },
   
