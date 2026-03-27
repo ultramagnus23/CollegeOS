@@ -217,6 +217,20 @@ class ApiService {
     return response;
   }
 
+  async googleLogin(googleId: string, email: string, name: string) {
+    const response = await this.request('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ googleId, email, name }),
+    });
+
+    if ((response as any).data?.tokens) {
+      this.setToken((response as any).data.tokens.accessToken);
+      localStorage.setItem('refreshToken', (response as any).data.tokens.refreshToken);
+    }
+
+    return response;
+  }
+
   async logout() {
     const refreshToken = localStorage.getItem('refreshToken');
     if (refreshToken) {
