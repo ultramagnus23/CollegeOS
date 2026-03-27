@@ -21,28 +21,29 @@ router.get('/majors', async (req, res, next) => {
     }
     
     const dbManager = require('../config/database');
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Search in major_categories JSON field
     // Use LOWER() for case-insensitive matching
     let query = `
       SELECT * FROM colleges 
-      WHERE LOWER(major_categories) LIKE LOWER(?)
+      WHERE LOWER(major_categories::text) LIKE LOWER($1)
     `;
     const params = [`%${major.trim()}%`];
+    let idx = 2;
     
     if (country) {
-      query += ' AND country = ?';
+      query += ` AND country = $${idx++}`;
       params.push(country);
     }
     
-    query += ' ORDER BY name ASC LIMIT ?';
+    query += ` ORDER BY name ASC LIMIT $${idx++}`;
     params.push(parseInt(limit));
     
-    const stmt = db.prepare(query);
     let colleges;
     try {
-      colleges = stmt.all(...params);
+      const { rows } = await pool.query(query, params);
+      colleges = rows;
     } catch (error) {
       logger.error('Database query error:', error);
       return res.status(500).json({
@@ -98,46 +99,50 @@ router.get('/search', async (req, res, next) => {
     
     const searchTerm = q.trim();
     const dbManager = require('../config/database');
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     let query = '';
     const params = [];
+    let idx = 1;
     
     if (type === 'major' || type === 'program') {
       // Search only in major_categories
-      query = `SELECT * FROM colleges WHERE major_categories LIKE ?`;
+      query = `SELECT * FROM colleges WHERE major_categories ILIKE $1`;
       params.push(`%"${searchTerm}"%`);
+      idx = 2;
     } else if (type === 'name') {
       // Search only in name
-      query = `SELECT * FROM colleges WHERE name LIKE ?`;
+      query = `SELECT * FROM colleges WHERE name ILIKE $1`;
       params.push(`%${searchTerm}%`);
+      idx = 2;
     } else {
       // Search across name, location, country, major_categories, academic_strengths
+      const searchPattern = `%${searchTerm}%`;
+      params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
       query = `
         SELECT * FROM colleges 
         WHERE (
-          name LIKE ? 
-          OR location LIKE ?
-          OR country LIKE ?
-          OR major_categories LIKE ?
-          OR academic_strengths LIKE ?
+          name ILIKE $1 
+          OR location ILIKE $2
+          OR country ILIKE $3
+          OR major_categories ILIKE $4
+          OR academic_strengths ILIKE $5
         )
       `;
-      const searchPattern = `%${searchTerm}%`;
-      params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      idx = 6;
     }
     
     if (country) {
-      query += ' AND country = ?';
+      query += ` AND country = $${idx++}`;
       params.push(country);
     }
     
     query += ' ORDER BY name ASC LIMIT 500';
     
-    const stmt = db.prepare(query);
     let colleges;
     try {
-      colleges = stmt.all(...params);
+      const { rows } = await pool.query(query, params);
+      colleges = rows;
     } catch (error) {
       logger.error('Database query error:', error);
       return res.status(500).json({
@@ -184,9 +189,8 @@ router.get('/search', async (req, res, next) => {
 router.get('/majors/list', async (req, res, next) => {
   try {
     const dbManager = require('../config/database');
-    const db = dbManager.getDatabase();
-    const stmt = db.prepare('SELECT major_categories FROM colleges WHERE major_categories IS NOT NULL');
-    const rows = stmt.all();
+    const pool = dbManager.getDatabase();
+    const { rows } = await pool.query('SELECT major_categories FROM colleges WHERE major_categories IS NOT NULL');
     
     const majorsSet = new Set();
     rows.forEach(row => {
