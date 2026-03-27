@@ -1164,14 +1164,14 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
 
           // 2. Mark onboarding complete in users table
           await completeOnboarding({
-            targetCountries: studentData.preferredCountries,
-            intendedMajors: studentData.potentialMajors,
-            testStatus: {
-              satScore: studentData.satScore || null,
-              actScore: studentData.actScore || null,
-              ibPredicted: studentData.ibPredicted || null,
+            target_countries: studentData.preferredCountries,
+            intended_majors: studentData.potentialMajors,
+            test_status: {
+              sat_score: studentData.satScore || null,
+              act_score: studentData.actScore || null,
+              ib_predicted: studentData.ibPredicted || null,
             },
-            gpa: studentData.currentGPA,
+            gpa: parseFloat(String(studentData.currentGPA).replace(/[^0-9.]/g, '')) || null,
             subjects: studentData.subjects,
             activities: studentData.activities,
           });

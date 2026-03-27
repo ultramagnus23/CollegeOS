@@ -54,10 +54,10 @@ class User {
     `);
     
     stmt.run(
-      JSON.stringify(data.targetCountries),
-      JSON.stringify(data.intendedMajors),
-      JSON.stringify(data.testStatus),
-      JSON.stringify(data.languagePreferences),
+      JSON.stringify(data.target_countries),
+      JSON.stringify(data.intended_majors),
+      JSON.stringify(data.test_status),
+      JSON.stringify(data.language_preferences),
       userId
     );
     
