@@ -1,0 +1,16 @@
+{
+  "name": "collegeos-scraper",
+  "version": "1.0.0",
+  "description": "Reddit scraper and calibration pipeline for CollegeOS admissions data",
+  "main": "index.js",
+  "scripts": {
+    "seed": "node index.js seed",
+    "incremental": "node index.js incremental"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
+    "axios": "^1.13.5",
+    "better-sqlite3": "^12.8.0",
+    "winston": "^3.11.0"
+  }
+}
