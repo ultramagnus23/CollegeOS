@@ -124,7 +124,7 @@ async function streamCSV(filePath, cb) {
     headers.forEach((h, i) => {
       row[h] = (values[i] || '').replace(/^"|"$/g, '').trim();
     });
-    cb(row);
+    await cb(row);
     count++;
   }
 
@@ -156,50 +156,45 @@ function ownershipText(code) {
  * Process HD file → updates colleges_comprehensive, campus_life
  */
 async function processHD(db, csvPath) {
-  const updateComp = db.prepare(`
-    UPDATE colleges_comprehensive SET
-      urban_classification = COALESCE(?, urban_classification),
-      institution_type = COALESCE(?, institution_type),
-      religious_affiliation = COALESCE(?, religious_affiliation),
-      founding_year = COALESCE(?, founding_year),
-      campus_size_acres = COALESCE(?, campus_size_acres),
-      student_faculty_ratio = COALESCE(?, student_faculty_ratio),
-      last_updated = CURRENT_TIMESTAMP
-    WHERE name = ? AND country = 'United States'
-  `);
-
-  const findCollege = db.prepare(`SELECT id FROM colleges WHERE name = ? LIMIT 1`);
-
-  const upsertCampus = db.prepare(`
-    INSERT INTO campus_life (college_id, athletics_division, source)
-    VALUES (?,?,?)
-    ON CONFLICT(college_id) DO UPDATE SET
-      athletics_division = COALESCE(excluded.athletics_division, athletics_division),
-      source = excluded.source
-  `);
-
   let count = 0;
-  await streamCSV(csvPath, (row) => {
+  await streamCSV(csvPath, async (row) => {
     const name = row.instnm;
     if (!name) return;
 
     const locale = localeText(row.locale);
     const ownership = ownershipText(row.control);
-    const founding = parseInt(row.opeflag) || null; // Not quite founding year but year opened
     const acres = parseFloat(row.campus) || null;
     const religAff = parseInt(row.relaffil) > 0 ? String(row.relaffil) : null;
 
-    updateComp.run(locale, ownership, religAff, null, acres, null, name);
+    try {
+      await db.query(
+        `UPDATE colleges_comprehensive SET
+           urban_classification = COALESCE($1, urban_classification),
+           institution_type = COALESCE($2, institution_type),
+           religious_affiliation = COALESCE($3, religious_affiliation),
+           campus_size_acres = COALESCE($4, campus_size_acres),
+           last_updated = CURRENT_TIMESTAMP
+         WHERE name = $5 AND country = 'United States'`,
+        [locale, ownership, religAff, acres, name]
+      );
+    } catch {}
 
-    // Find college_id for campus_life
-    const c = findCollege.get(name);
+    const c = (await db.query(`SELECT id FROM colleges WHERE name = $1 LIMIT 1`, [name])).rows[0];
     if (c) {
-      const division = row.sport1 ? 'NCAA' : null; // Crude check
-      upsertCampus.run(c.id, division, 'IPEDS_HD');
-      count++;
+      const division = row.sport1 ? 'NCAA' : null;
+      try {
+        await db.query(
+          `INSERT INTO campus_life (college_id, athletics_division, source)
+           VALUES ($1,$2,$3)
+           ON CONFLICT(college_id) DO UPDATE SET
+             athletics_division = COALESCE(EXCLUDED.athletics_division, campus_life.athletics_division),
+             source = EXCLUDED.source`,
+          [c.id, division, 'IPEDS_HD']
+        );
+        count++;
+      } catch {}
     }
   });
-
   return count;
 }
 
@@ -207,86 +202,74 @@ async function processHD(db, csvPath) {
  * Process IC file → updates campus_life, academic_details, application_requirements
  */
 async function processIC(db, csvPath) {
-  const findCollege = db.prepare(`SELECT id FROM colleges WHERE name = ? LIMIT 1`);
-
-  const upsertCampus = db.prepare(`
-    INSERT INTO campus_life
-      (college_id, housing_guarantee, greek_life_available,
-       freshman_housing_required, on_campus_housing_percentage, source)
-    VALUES (?,?,?,?,?,?)
-    ON CONFLICT(college_id) DO UPDATE SET
-      housing_guarantee = COALESCE(excluded.housing_guarantee, housing_guarantee),
-      greek_life_available = COALESCE(excluded.greek_life_available, greek_life_available),
-      freshman_housing_required = COALESCE(excluded.freshman_housing_required, freshman_housing_required),
-      source = excluded.source
-  `);
-
-  const upsertAcademic = db.prepare(`
-    INSERT INTO academic_details
-      (college_id, academic_calendar, honors_program_available,
-       honors_college, double_major_allowed, study_abroad_participation_rate,
-       tutoring_available, writing_center, source, last_verified)
-    VALUES (?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
-    ON CONFLICT(college_id) DO UPDATE SET
-      academic_calendar = COALESCE(excluded.academic_calendar, academic_calendar),
-      honors_program_available = COALESCE(excluded.honors_program_available, honors_program_available),
-      double_major_allowed = COALESCE(excluded.double_major_allowed, double_major_allowed),
-      source = excluded.source,
-      last_verified = CURRENT_TIMESTAMP
-  `);
-
-  const upsertSpecial = db.prepare(`
-    INSERT INTO special_programs
-      (college_id, rotc_army, rotc_navy, rotc_air_force,
-       co_op_program_available, study_abroad_programs_count, source, last_verified)
-    VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
-    ON CONFLICT(college_id) DO UPDATE SET
-      rotc_army = COALESCE(excluded.rotc_army, rotc_army),
-      rotc_navy = COALESCE(excluded.rotc_navy, rotc_navy),
-      rotc_air_force = COALESCE(excluded.rotc_air_force, rotc_air_force),
-      co_op_program_available = COALESCE(excluded.co_op_program_available, co_op_program_available),
-      source = excluded.source
-  `);
-
   let count = 0;
-  await streamCSV(csvPath, (row) => {
+  await streamCSV(csvPath, async (row) => {
     const name = row.instnm;
     if (!name) return;
-    const c = findCollege.get(name);
+    const c = (await db.query(`SELECT id FROM colleges WHERE name = $1 LIMIT 1`, [name])).rows[0];
     if (!c) return;
 
-    // Calendar: 1=semester, 2=quarter, 3=trimester, 4=4-1-4, 5=other
     const calMap = { '1': 'Semester', '2': 'Quarter', '3': 'Trimester', '4': '4-1-4', '5': 'Other' };
     const calendar = calMap[row.calendr] || null;
-
-    // Housing (ROOMAMT > 0 means housing offered)
     const housingGuarantee = parseFloat(row.room) > 0 ? 1 : 0;
 
-    upsertCampus.run(c.id, housingGuarantee, null, null, null, 'IPEDS_IC');
+    try {
+      await db.query(
+        `INSERT INTO campus_life
+           (college_id, housing_guarantee, greek_life_available,
+            freshman_housing_required, on_campus_housing_percentage, source)
+         VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT(college_id) DO UPDATE SET
+           housing_guarantee = COALESCE(EXCLUDED.housing_guarantee, campus_life.housing_guarantee),
+           greek_life_available = COALESCE(EXCLUDED.greek_life_available, campus_life.greek_life_available),
+           freshman_housing_required = COALESCE(EXCLUDED.freshman_housing_required, campus_life.freshman_housing_required),
+           source = EXCLUDED.source`,
+        [c.id, housingGuarantee, null, null, null, 'IPEDS_IC']
+      );
+    } catch {}
 
-    upsertAcademic.run(
-      c.id, calendar,
-      row.hloffer ? 1 : 0,  // offers graduate programs (proxy for honors)
-      0, // honors college - not directly available
-      1, // double major - most schools allow this
-      null, // study abroad rate
-      row.tuitinst ? 1 : 0, // tuition set (proxy for being active)
-      1, // writing center - common
-      'IPEDS_IC'
-    );
+    try {
+      await db.query(
+        `INSERT INTO academic_details
+           (college_id, academic_calendar, honors_program_available,
+            honors_college, double_major_allowed, study_abroad_participation_rate,
+            tutoring_available, writing_center, source, last_verified)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,CURRENT_TIMESTAMP)
+         ON CONFLICT(college_id) DO UPDATE SET
+           academic_calendar = COALESCE(EXCLUDED.academic_calendar, academic_details.academic_calendar),
+           honors_program_available = COALESCE(EXCLUDED.honors_program_available, academic_details.honors_program_available),
+           double_major_allowed = COALESCE(EXCLUDED.double_major_allowed, academic_details.double_major_allowed),
+           source = EXCLUDED.source,
+           last_verified = CURRENT_TIMESTAMP`,
+        [c.id, calendar,
+         row.hloffer ? 1 : 0, 0, 1, null,
+         row.tuitinst ? 1 : 0, 1, 'IPEDS_IC']
+      );
+    } catch {}
 
-    upsertSpecial.run(
-      c.id,
-      row.rotc === '1' ? 1 : 0,    // ROTC any branch
-      row.rotcmod === '1' ? 1 : 0,
-      row.rotcabn === '1' ? 1 : 0,
-      row.coop === '1' ? 1 : 0,    // Co-op available
-      null, 'IPEDS_IC'
-    );
+    try {
+      await db.query(
+        `INSERT INTO special_programs
+           (college_id, rotc_army, rotc_navy, rotc_air_force,
+            co_op_program_available, study_abroad_programs_count, source, last_verified)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,CURRENT_TIMESTAMP)
+         ON CONFLICT(college_id) DO UPDATE SET
+           rotc_army = COALESCE(EXCLUDED.rotc_army, special_programs.rotc_army),
+           rotc_navy = COALESCE(EXCLUDED.rotc_navy, special_programs.rotc_navy),
+           rotc_air_force = COALESCE(EXCLUDED.rotc_air_force, special_programs.rotc_air_force),
+           co_op_program_available = COALESCE(EXCLUDED.co_op_program_available, special_programs.co_op_program_available),
+           source = EXCLUDED.source`,
+        [c.id,
+         row.rotc === '1' ? 1 : 0,
+         row.rotcmod === '1' ? 1 : 0,
+         row.rotcabn === '1' ? 1 : 0,
+         row.coop === '1' ? 1 : 0,
+         null, 'IPEDS_IC']
+      );
+    } catch {}
 
     count++;
   });
-
   return count;
 }
 
@@ -294,58 +277,12 @@ async function processIC(db, csvPath) {
  * Process ADM file → updates college_admissions, test_scores, admitted_student_stats
  */
 async function processADM(db, csvPath) {
-  const findCollege = db.prepare(`SELECT id FROM colleges WHERE name = ? LIMIT 1`);
   const year = parseInt(CURRENT_YEAR);
-
-  const upsertAdm = db.prepare(`
-    INSERT INTO college_admissions
-      (college_id, year, acceptance_rate, application_volume, admit_volume, enrollment_volume,
-       yield_rate, in_state_accept_rate, out_state_accept_rate,
-       test_optional_flag, source, confidence_score)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-    ON CONFLICT(college_id, year) DO UPDATE SET
-      acceptance_rate = COALESCE(excluded.acceptance_rate, acceptance_rate),
-      application_volume = COALESCE(excluded.application_volume, application_volume),
-      admit_volume = COALESCE(excluded.admit_volume, admit_volume),
-      enrollment_volume = COALESCE(excluded.enrollment_volume, enrollment_volume),
-      yield_rate = COALESCE(excluded.yield_rate, yield_rate),
-      test_optional_flag = excluded.test_optional_flag,
-      source = excluded.source,
-      confidence_score = excluded.confidence_score
-  `);
-
-  const upsertTest = db.prepare(`
-    INSERT INTO test_scores
-      (college_id, sat_ebrw_25th, sat_ebrw_75th, sat_math_25th, sat_math_75th,
-       sat_total_25th, sat_total_75th, act_composite_25th, act_composite_75th)
-    VALUES (?,?,?,?,?,?,?,?,?)
-    ON CONFLICT(college_id) DO UPDATE SET
-      sat_ebrw_25th = COALESCE(excluded.sat_ebrw_25th, sat_ebrw_25th),
-      sat_ebrw_75th = COALESCE(excluded.sat_ebrw_75th, sat_ebrw_75th),
-      sat_math_25th = COALESCE(excluded.sat_math_25th, sat_math_25th),
-      sat_math_75th = COALESCE(excluded.sat_math_75th, sat_math_75th),
-      sat_total_25th = COALESCE(excluded.sat_total_25th, sat_total_25th),
-      sat_total_75th = COALESCE(excluded.sat_total_75th, sat_total_75th),
-      act_composite_25th = COALESCE(excluded.act_composite_25th, act_composite_25th),
-      act_composite_75th = COALESCE(excluded.act_composite_75th, act_composite_75th)
-  `);
-
-  const upsertStats = db.prepare(`
-    INSERT INTO admitted_student_stats (college_id, year, sat_25, sat_75, act_25, act_75, source, confidence_score)
-    VALUES (?,?,?,?,?,?,?,?)
-    ON CONFLICT(college_id, year) DO UPDATE SET
-      sat_25 = COALESCE(excluded.sat_25, sat_25),
-      sat_75 = COALESCE(excluded.sat_75, sat_75),
-      act_25 = COALESCE(excluded.act_25, act_25),
-      act_75 = COALESCE(excluded.act_75, act_75),
-      confidence_score = excluded.confidence_score
-  `);
-
   let count = 0;
-  await streamCSV(csvPath, (row) => {
+  await streamCSV(csvPath, async (row) => {
     const name = row.instnm;
     if (!name) return;
-    const c = findCollege.get(name);
+    const c = (await db.query(`SELECT id FROM colleges WHERE name = $1 LIMIT 1`, [name])).rows[0];
     if (!c) return;
 
     const apps = parseInt(row.applcn) || null;
@@ -353,11 +290,27 @@ async function processADM(db, csvPath) {
     const enroll = parseInt(row.enrlt) || null;
     const rate = apps && admits ? admits / apps : null;
     const yield_ = admits && enroll ? enroll / admits : null;
-
-    // Test policy: ADMCON7 = SAT/ACT required (1), recommended (2), considered but not required (3), neither (5)
     const testOpt = row.admcon7 === '2' || row.admcon7 === '3' || row.admcon7 === '5' ? 1 : 0;
 
-    upsertAdm.run(c.id, year, rate, apps, admits, enroll, yield_, null, null, testOpt, 'IPEDS_ADM', 0.98);
+    try {
+      await db.query(
+        `INSERT INTO college_admissions
+           (college_id, year, acceptance_rate, application_volume, admit_volume, enrollment_volume,
+            yield_rate, in_state_accept_rate, out_state_accept_rate,
+            test_optional_flag, source, confidence_score)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         ON CONFLICT(college_id, year) DO UPDATE SET
+           acceptance_rate = COALESCE(EXCLUDED.acceptance_rate, college_admissions.acceptance_rate),
+           application_volume = COALESCE(EXCLUDED.application_volume, college_admissions.application_volume),
+           admit_volume = COALESCE(EXCLUDED.admit_volume, college_admissions.admit_volume),
+           enrollment_volume = COALESCE(EXCLUDED.enrollment_volume, college_admissions.enrollment_volume),
+           yield_rate = COALESCE(EXCLUDED.yield_rate, college_admissions.yield_rate),
+           test_optional_flag = EXCLUDED.test_optional_flag,
+           source = EXCLUDED.source,
+           confidence_score = EXCLUDED.confidence_score`,
+        [c.id, year, rate, apps, admits, enroll, yield_, null, null, testOpt, 'IPEDS_ADM', 0.98]
+      );
+    } catch {}
 
     const satEbrw25 = parseInt(row.satvr25) || null;
     const satEbrw75 = parseInt(row.satvr75) || null;
@@ -369,10 +322,38 @@ async function processADM(db, csvPath) {
     const act75 = parseInt(row.actcm75) || null;
 
     if (satEbrw25 || act25) {
-      upsertTest.run(c.id, satEbrw25, satEbrw75, satMath25, satMath75, sat25, sat75, act25, act75);
-      upsertStats.run(c.id, year, sat25, sat75, act25, act75, 'IPEDS_ADM', 0.98);
+      try {
+        await db.query(
+          `INSERT INTO test_scores
+             (college_id, sat_ebrw_25th, sat_ebrw_75th, sat_math_25th, sat_math_75th,
+              sat_total_25th, sat_total_75th, act_composite_25th, act_composite_75th)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+           ON CONFLICT(college_id) DO UPDATE SET
+             sat_ebrw_25th = COALESCE(EXCLUDED.sat_ebrw_25th, test_scores.sat_ebrw_25th),
+             sat_ebrw_75th = COALESCE(EXCLUDED.sat_ebrw_75th, test_scores.sat_ebrw_75th),
+             sat_math_25th = COALESCE(EXCLUDED.sat_math_25th, test_scores.sat_math_25th),
+             sat_math_75th = COALESCE(EXCLUDED.sat_math_75th, test_scores.sat_math_75th),
+             sat_total_25th = COALESCE(EXCLUDED.sat_total_25th, test_scores.sat_total_25th),
+             sat_total_75th = COALESCE(EXCLUDED.sat_total_75th, test_scores.sat_total_75th),
+             act_composite_25th = COALESCE(EXCLUDED.act_composite_25th, test_scores.act_composite_25th),
+             act_composite_75th = COALESCE(EXCLUDED.act_composite_75th, test_scores.act_composite_75th)`,
+          [c.id, satEbrw25, satEbrw75, satMath25, satMath75, sat25, sat75, act25, act75]
+        );
+      } catch {}
+      try {
+        await db.query(
+          `INSERT INTO admitted_student_stats (college_id, year, sat_25, sat_75, act_25, act_75, source, confidence_score)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+           ON CONFLICT(college_id, year) DO UPDATE SET
+             sat_25 = COALESCE(EXCLUDED.sat_25, admitted_student_stats.sat_25),
+             sat_75 = COALESCE(EXCLUDED.sat_75, admitted_student_stats.sat_75),
+             act_25 = COALESCE(EXCLUDED.act_25, admitted_student_stats.act_25),
+             act_75 = COALESCE(EXCLUDED.act_75, admitted_student_stats.act_75),
+             confidence_score = EXCLUDED.confidence_score`,
+          [c.id, year, sat25, sat75, act25, act75, 'IPEDS_ADM', 0.98]
+        );
+      } catch {}
     }
-
     count++;
   });
   return count;
@@ -382,40 +363,33 @@ async function processADM(db, csvPath) {
  * Process C (completions) file → updates college_majors_offered
  */
 async function processCompletions(db, csvPath) {
-  const findCollege = db.prepare(`SELECT id FROM colleges WHERE name = ? LIMIT 1`);
-  const findMajor = db.prepare(`SELECT id FROM master_majors WHERE cip_code = ? LIMIT 1`);
-
-  const upsertOffered = db.prepare(`
-    INSERT INTO college_majors_offered
-      (college_id, major_id, is_offered, degree_types, created_at)
-    VALUES (?,?,1,?,CURRENT_TIMESTAMP)
-    ON CONFLICT(college_id, major_id) DO UPDATE SET
-      is_offered = 1,
-      degree_types = excluded.degree_types
-  `);
-
-  // Degree level mapping: 3=Associate, 5=Bachelor's, 7=Master's, 17=Doctorate
   const degreeMap = { '3': 'Associate', '5': "Bachelor's", '7': "Master's", '17': 'Doctorate', '18': 'Doctorate' };
-
   let count = 0;
-  await streamCSV(csvPath, (row) => {
+  await streamCSV(csvPath, async (row) => {
     const name = row.instnm;
     const cipCode = row.cipcode;
-    const awlevel = row.awlevel;
     if (!name || !cipCode) return;
 
-    const c = findCollege.get(name);
+    const c = (await db.query(`SELECT id FROM colleges WHERE name = $1 LIMIT 1`, [name])).rows[0];
     if (!c) return;
 
-    // Match to master_majors via CIP code
-    const major = findMajor.get(cipCode);
+    const major = (await db.query(`SELECT id FROM master_majors WHERE cip_code = $1 LIMIT 1`, [cipCode])).rows[0];
     if (!major) return;
 
-    const degreeType = degreeMap[awlevel] || 'Other';
-    upsertOffered.run(c.id, major.id, degreeType);
-    count++;
+    const degreeType = degreeMap[row.awlevel] || 'Other';
+    try {
+      await db.query(
+        `INSERT INTO college_majors_offered
+           (college_id, major_id, is_offered, degree_types, created_at)
+         VALUES ($1,$2,1,$3,CURRENT_TIMESTAMP)
+         ON CONFLICT(college_id, major_id) DO UPDATE SET
+           is_offered = 1,
+           degree_types = EXCLUDED.degree_types`,
+        [c.id, major.id, degreeType]
+      );
+      count++;
+    } catch {}
   });
-
   return count;
 }
 
@@ -423,36 +397,33 @@ async function processCompletions(db, csvPath) {
  * Process GR (graduation rates) file → updates academic_outcomes
  */
 async function processGradRates(db, csvPath) {
-  const findCollege = db.prepare(`SELECT id FROM colleges WHERE name = ? LIMIT 1`);
   const year = parseInt(CURRENT_YEAR);
-
-  const upsertOutcomes = db.prepare(`
-    INSERT INTO academic_outcomes
-      (college_id, year, graduation_rate_4yr, graduation_rate_6yr, source, confidence_score)
-    VALUES (?,?,?,?,?,?)
-    ON CONFLICT(college_id, year) DO UPDATE SET
-      graduation_rate_4yr = COALESCE(excluded.graduation_rate_4yr, graduation_rate_4yr),
-      graduation_rate_6yr = COALESCE(excluded.graduation_rate_6yr, graduation_rate_6yr),
-      confidence_score = excluded.confidence_score
-  `);
-
   let count = 0;
-  await streamCSV(csvPath, (row) => {
+  await streamCSV(csvPath, async (row) => {
     const name = row.instnm;
     if (!name) return;
-    const c = findCollege.get(name);
+    const c = (await db.query(`SELECT id FROM colleges WHERE name = $1 LIMIT 1`, [name])).rows[0];
     if (!c) return;
 
-    // GRTOTLT = total graduation rate (150% time = 6yr for 4yr schools)
     const gr6 = parseFloat(row.grtotlt) ? parseFloat(row.grtotlt) / 100 : null;
     const gr4 = parseFloat(row.grtype) === 8 ? parseFloat(row.grtotlt) / 100 : null;
 
     if (gr6) {
-      upsertOutcomes.run(c.id, year, gr4, gr6, 'IPEDS_GR', 0.98);
-      count++;
+      try {
+        await db.query(
+          `INSERT INTO academic_outcomes
+             (college_id, year, graduation_rate_4yr, graduation_rate_6yr, source, confidence_score)
+           VALUES ($1,$2,$3,$4,$5,$6)
+           ON CONFLICT(college_id, year) DO UPDATE SET
+             graduation_rate_4yr = COALESCE(EXCLUDED.graduation_rate_4yr, academic_outcomes.graduation_rate_4yr),
+             graduation_rate_6yr = COALESCE(EXCLUDED.graduation_rate_6yr, academic_outcomes.graduation_rate_6yr),
+             confidence_score = EXCLUDED.confidence_score`,
+          [c.id, year, gr4, gr6, 'IPEDS_GR', 0.98]
+        );
+        count++;
+      } catch {}
     }
   });
-
   return count;
 }
 
