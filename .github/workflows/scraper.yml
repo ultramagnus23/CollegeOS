@@ -1,0 +1,89 @@
+name: CollegeOS Data Pipeline
+
+on:
+  # Run on the 1st and 15th of every month at midnight UTC
+  schedule:
+    - cron: '0 0 1,15 * *'
+  # Allow manual trigger with optional mode override
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Scrape mode'
+        required: true
+        default: 'incremental'
+        type: choice
+        options:
+          - incremental
+          - seed
+
+permissions:
+  contents: read
+
+jobs:
+  scrape:
+    name: Scrape & Calibrate
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      DATABASE_PATH: ${{ github.workspace }}/backend/database/college_app.db
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+      REDDIT_REFRESH_TOKEN: ${{ secrets.REDDIT_REFRESH_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scraper/package-lock.json
+
+      - name: Install scraper dependencies
+        working-directory: scraper
+        run: npm ci --omit=dev
+
+      - name: Ensure database directory exists
+        run: mkdir -p backend/database
+
+      # Restore the SQLite database from the previous run so we don't
+      # lose scraped data between scheduled executions.
+      # Skipped when DATABASE_URL is set (PostgreSQL mode — data lives in the DB).
+      - name: Restore database cache
+        if: ${{ secrets.DATABASE_URL == '' }}
+        id: restore-db
+        uses: actions/cache/restore@v4
+        with:
+          path: backend/database/college_app.db
+          key: collegeos-db-${{ github.run_id }}
+          restore-keys: |
+            collegeos-db-
+
+      - name: Determine scrape mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
+          else
+            # First scheduled run of the month is seed; mid-month is incremental.
+            # In practice the seed should only be triggered manually on day 0.
+            echo "mode=incremental" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run scraper
+        working-directory: scraper
+        run: node index.js ${{ steps.mode.outputs.mode }}
+
+      # Save the updated database so the next run picks up where we left off.
+      # Skipped when DATABASE_URL is set (PostgreSQL mode — data is persisted externally).
+      - name: Save database cache
+        if: ${{ secrets.DATABASE_URL == '' && always() }}
+        uses: actions/cache/save@v4
+        with:
+          path: backend/database/college_app.db
+          key: collegeos-db-${{ github.run_id }}
