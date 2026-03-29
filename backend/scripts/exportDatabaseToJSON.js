@@ -2,36 +2,37 @@
 
 /**
  * Export Database to JSON
- * 
+ *
  * Exports the entire database back to JSON format.
  * Useful for backups or external analysis tools.
- * 
+ *
  * Creates: backend/data/unified_colleges_updated.json
- * 
+ *
  * Usage:
  *   node scripts/exportDatabaseToJSON.js
  */
 
-const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, '../database/college_app.db');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
 const OUTPUT_PATH = path.join(__dirname, '../data/unified_colleges_updated.json');
 
-function exportDatabaseToJSON() {
+async function exportDatabaseToJSON() {
+  const dbManager = require('../src/config/database');
+  dbManager.initialize();
+  const pool = dbManager.getDatabase();
+
   try {
     console.log('\n' + '═'.repeat(70));
     console.log('     Export Database to JSON');
     console.log('═'.repeat(70) + '\n');
 
-    const db = new Database(DB_PATH, { readonly: true });
-    
     console.log('📊 Reading colleges from database...');
-    
-    // Get all colleges with comprehensive data
-    const colleges = db.prepare(`
-      SELECT 
+
+    const { rows: colleges } = await pool.query(`
+      SELECT
         c.*,
         cc.total_enrollment, cc.undergraduate_enrollment, cc.graduate_enrollment,
         cc.institution_type, cc.classification, cc.religious_affiliation,
@@ -47,7 +48,7 @@ function exportDatabaseToJSON() {
         sd.percent_male, sd.percent_female, sd.percent_white, sd.percent_black,
         sd.percent_hispanic, sd.percent_asian, sd.percent_international,
         cl.housing_guarantee, cl.distance_only,
-        (SELECT GROUP_CONCAT(program_name, '|') FROM college_programs WHERE college_id = c.id) as programs
+        (SELECT STRING_AGG(program_name, '|') FROM college_programs WHERE college_id = c.id) as programs
       FROM colleges c
       LEFT JOIN colleges_comprehensive cc ON c.id = cc.college_id
       LEFT JOIN college_admissions ca ON c.id = ca.college_id
@@ -57,20 +58,16 @@ function exportDatabaseToJSON() {
       LEFT JOIN student_demographics sd ON c.id = sd.college_id
       LEFT JOIN campus_life cl ON c.id = cl.college_id
       ORDER BY c.id
-    `).all();
+    `);
 
     console.log(`✅ Found ${colleges.length} colleges\n`);
 
-    // Convert to JSON format
     console.log('🔄 Converting to JSON format...');
-    
+
     const exportData = colleges.map(college => {
-      // Split programs back into array
       if (college.programs) {
         college.programs = college.programs.split('|');
       }
-      
-      // Add metadata
       return {
         ...college,
         exported_at: new Date().toISOString(),
@@ -78,7 +75,6 @@ function exportDatabaseToJSON() {
       };
     });
 
-    // Add export metadata
     const output = {
       metadata: {
         export_date: new Date().toISOString(),
@@ -91,14 +87,12 @@ function exportDatabaseToJSON() {
     };
 
     console.log('💾 Writing to file...');
-    
-    // Ensure data directory exists
+
     const dataDir = path.dirname(OUTPUT_PATH);
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
 
-    // Write JSON file
     fs.writeFileSync(OUTPUT_PATH, JSON.stringify(output, null, 2));
 
     const stats = fs.statSync(OUTPUT_PATH);
@@ -118,18 +112,17 @@ function exportDatabaseToJSON() {
     console.log('  - Import into external tools for analysis');
     console.log('  - Compare with original unified_colleges.json to see changes');
     console.log('  - This file contains all scraped and updated data\n');
-
-    db.close();
   } catch (error) {
     console.error('\n❌ Error exporting database:', error.message);
     console.error('\nMake sure:');
-    console.error('  1. Database exists: backend/database/college_app.db');
+    console.error('  1. DATABASE_URL is set in backend/.env');
     console.error('  2. Migrations have been run: npm run migrate');
     console.error('  3. Database has been seeded: npm run seed');
     console.error('  4. You have write permissions in backend/data/\n');
     process.exit(1);
+  } finally {
+    await dbManager.close();
   }
 }
 
-// Run
 exportDatabaseToJSON();

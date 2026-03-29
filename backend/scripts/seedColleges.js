@@ -2,24 +2,7 @@
 // Simple seed script that matches the actual database schema
 // This is the RECOMMENDED seed script to use
 
-const Database = require('better-sqlite3');
 const path = require('path');
-
-const DB_PATH = path.join(__dirname, '..', 'database', 'college_app.db');
-
-console.log('📂 Database path:', DB_PATH);
-
-let db;
-try {
-  db = new Database(DB_PATH);
-  // Disable foreign key checks for seeding
-  db.pragma('foreign_keys = OFF');
-  console.log('✅ Connected to SQLite database');
-} catch (err) {
-  console.error('❌ Error connecting to database:', err.message);
-  console.error('💡 Tip: Run migrations first: node scripts/runMigrations.js');
-  process.exit(1);
-}
 
 // Sample colleges data matching the actual schema
 const colleges = [
@@ -795,150 +778,91 @@ const colleges = [
   }
 ];
 
-function seedDatabase() {
+async function seedDatabase(pool, force = false) {
   console.log('\n🌱 Starting database seeding...\n');
-  
-  // Check if colleges table exists
-  try {
-    db.prepare('SELECT COUNT(*) as count FROM colleges').get();
-  } catch (err) {
-    console.error('❌ Colleges table does not exist. Run migrations first:');
-    console.error('   node scripts/runMigrations.js');
-    process.exit(1);
-  }
-  
-  // Get current count
-  const before = db.prepare('SELECT COUNT(*) as count FROM colleges').get();
-  console.log(`📊 Current college count: ${before.count}`);
-  
-  // Clear existing data if requested
-  if (process.argv.includes('--force') || process.argv.includes('-f')) {
+
+  const { rows: beforeRows } = await pool.query('SELECT COUNT(*) as count FROM colleges');
+  console.log(`📊 Current college count: ${parseInt(beforeRows[0].count)}`);
+
+  if (force) {
     console.log('🗑️  Clearing existing college data (--force flag)...');
-    db.exec('DELETE FROM colleges');
+    await pool.query('DELETE FROM colleges');
   }
-  
-  // Prepare insert statement matching the actual schema
-  const insertStmt = db.prepare(`
-    INSERT INTO colleges (
-      name, country, location, type, official_website, admissions_url,
-      programs_url, application_portal_url, application_portal, acceptance_rate,
-      tuition_cost, major_categories, academic_strengths, description,
-      common_app_id, ucas_code, studielink_required, trust_tier, is_verified
-    ) VALUES (
-      @name, @country, @location, @type, @official_website, @admissions_url,
-      @programs_url, @application_portal_url, @application_portal, @acceptance_rate,
-      @tuition_cost, @major_categories, @academic_strengths, @description,
-      @common_app_id, @ucas_code, @studielink_required, @trust_tier, @is_verified
-    )
-  `);
-  
+
   let inserted = 0;
   let skipped = 0;
-  
-  const insertMany = db.transaction((colleges) => {
-    for (const college of colleges) {
-      try {
-        // Check if college already exists
-        const existing = db.prepare('SELECT id FROM colleges WHERE name = ?').get(college.name);
-        if (existing) {
-          skipped++;
-          continue;
-        }
-        
-        insertStmt.run({
-          name: college.name,
-          country: college.country,
-          location: college.location || null,
-          type: college.type || null,
-          official_website: college.official_website,
-          admissions_url: college.admissions_url || null,
-          programs_url: college.programs_url || null,
-          application_portal_url: college.application_portal_url || null,
-          application_portal: college.application_portal || null,
-          acceptance_rate: college.acceptance_rate || null,
-          tuition_cost: college.tuition_cost || null,
-          major_categories: college.major_categories || null,
-          academic_strengths: college.academic_strengths || null,
-          description: college.description || null,
-          common_app_id: college.common_app_id || null,
-          ucas_code: college.ucas_code || null,
-          studielink_required: college.studielink_required || 0,
-          trust_tier: college.trust_tier || 'official',
-          is_verified: college.is_verified || 0
-        });
-        inserted++;
-      } catch (err) {
-        console.error(`⚠️  Error inserting ${college.name}: ${err.message}`);
-      }
+
+  for (const college of colleges) {
+    try {
+      const result = await pool.query(
+        `INSERT INTO colleges (
+          name, country, location, type, official_website, admissions_url,
+          programs_url, application_portal_url, application_portal, acceptance_rate,
+          tuition_cost, major_categories, academic_strengths, description,
+          common_app_id, ucas_code, studielink_required, trust_tier, is_verified
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+        ON CONFLICT (name) DO NOTHING`,
+        [
+          college.name,
+          college.country || null,
+          college.location || null,
+          college.type || null,
+          college.official_website || null,
+          college.admissions_url || null,
+          college.programs_url || null,
+          college.application_portal_url || null,
+          college.application_portal || null,
+          college.acceptance_rate || null,
+          college.tuition_cost || null,
+          college.major_categories || null,
+          college.academic_strengths || null,
+          college.description || null,
+          college.common_app_id || null,
+          college.ucas_code || null,
+          college.studielink_required || 0,
+          college.trust_tier || 'official',
+          college.is_verified ? true : false
+        ]
+      );
+      if (result.rowCount > 0) inserted++;
+      else skipped++;
+    } catch (err) {
+      console.error(`⚠️  Error inserting ${college.name}: ${err.message}`);
     }
-  });
-  
-  insertMany(colleges);
-  
-  // Get final count
-  const after = db.prepare('SELECT COUNT(*) as count FROM colleges').get();
-  
+  }
+
+  const { rows: afterRows } = await pool.query('SELECT COUNT(*) as count FROM colleges');
+
   console.log('\n' + '━'.repeat(60));
   console.log(`✅ Seeding complete!`);
   console.log(`   Inserted: ${inserted} colleges`);
   console.log(`   Skipped: ${skipped} (already exist)`);
-  console.log(`   Total: ${after.count} colleges in database`);
+  console.log(`   Total: ${parseInt(afterRows[0].count)} colleges in database`);
   console.log('━'.repeat(60) + '\n');
-  
-  // Re-enable foreign keys after seeding
-  db.pragma('foreign_keys = ON');
 }
 
-// Run seeding
-try {
-  seedDatabase();
-} catch (err) {
-  console.error('❌ Seeding failed:', err.message);
-  process.exit(1);
-} finally {
-  if (db) {
-    // Re-enable foreign keys before closing
-    try { db.pragma('foreign_keys = ON'); } catch (e) { /* ignore */ }
-    db.close();
-  }
-}
-
-// ── pg-based seedIfEmpty for use from app.js ─────────────────────────────
 async function seedIfEmpty() {
   const dbManager = require('../src/config/database');
   const pool = dbManager.getDatabase();
   const { rows } = await pool.query('SELECT COUNT(*) as count FROM colleges');
-  const count = parseInt(rows[0].count);
-  if (count > 0) {
-    return;
-  }
+  if (parseInt(rows[0].count) > 0) return;
+  await seedDatabase(pool, false);
+}
 
-  const insertCollege = async (college) => {
-    await pool.query(
-      `INSERT INTO colleges (name, country, location, official_website, admissions_url, programs_url,
-        application_portal_url, acceptance_rate, major_categories, academic_strengths, trust_tier, is_verified)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-       ON CONFLICT DO NOTHING`,
-      [
-        college.name,
-        college.country === 'US' ? 'United States' : college.country,
-        college.location || null,
-        college.official_website || '',
-        college.admissions_url || null,
-        college.programs_url || null,
-        college.application_portal_url || null,
-        college.acceptance_rate || null,
-        college.major_categories || null,
-        college.academic_strengths || null,
-        college.trust_tier || 'official',
-        college.is_verified ? true : false
-      ]
-    );
-  };
-
-  for (const college of colleges) {
-    try { await insertCollege(college); } catch (e) { /* skip duplicate */ }
+if (require.main === module) {
+  async function run() {
+    require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+    const dbManager = require('../src/config/database');
+    dbManager.initialize();
+    const pool = dbManager.getDatabase();
+    const force = process.argv.includes('--force') || process.argv.includes('-f');
+    await seedDatabase(pool, force);
+    await dbManager.close();
   }
+  run().catch(err => {
+    console.error('❌ Seeding failed:', err.message);
+    process.exit(1);
+  });
 }
 
 module.exports = { seedIfEmpty };
