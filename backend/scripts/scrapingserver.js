@@ -128,15 +128,12 @@ function setupSchedules() {
    * Increments data_freshness_days for all tracked fields
    */
   const weeklyFreshness = cron.schedule('0 4 * * 0', async () => {
-    await runJob('update_freshness', () => {
-      const db = orch.db;
-      db.prepare(`
+    await runJob('update_freshness', async () => {
+      const result = await orch.pool.query(`
         UPDATE field_metadata
-        SET data_freshness_days = CAST(
-          (julianday('now') - julianday(last_updated)) AS INTEGER
-        )
-      `).run();
-      return { updated: db.prepare(`SELECT changes() as n`).get().n };
+        SET data_freshness_days = EXTRACT(DAY FROM NOW() - last_updated)::INTEGER
+      `);
+      return { updated: result.rowCount };
     });
   }, { timezone: 'America/New_York' });
   jobs.push({ name: 'weekly_freshness', schedule: '0 4 * * 0', job: weeklyFreshness });
@@ -224,9 +221,9 @@ function setupServer(jobs) {
    * POST /scraper/init
    * Initialize or re-initialize the scrape queue
    */
-  app.post('/scraper/init', requireAuth, (req, res) => {
+  app.post('/scraper/init', requireAuth, async (req, res) => {
     try {
-      const result = orch.initializeQueue();
+      const result = await orch.initializeQueue();
       res.json({ success: true, result });
     } catch (e) {
       res.status(500).json({ error: e.message });
@@ -273,10 +270,11 @@ async function start() {
   console.log('=================================================\n');
 
   // 1. Ensure queue is initialized
-  const queueCount = orch.db.prepare(`SELECT COUNT(*) as n FROM scrape_queue`).get().n;
+  const { rows: queueRows } = await orch.pool.query(`SELECT COUNT(*) as n FROM scrape_queue`);
+  const queueCount = parseInt(queueRows[0].n);
   if (queueCount === 0) {
     console.log('[scraper] Queue empty — initializing...');
-    orch.initializeQueue();
+    await orch.initializeQueue();
   } else {
     console.log(`[scraper] Queue has ${queueCount} entries`);
   }
@@ -290,16 +288,17 @@ async function start() {
   setupServer(jobs);
 
   // 4. On first boot, if Scorecard was never run, kick it off now
-  const scorecardRows = orch.db.prepare(`SELECT COUNT(*) as n FROM college_admissions WHERE acceptance_rate IS NOT NULL`).get().n;
-  if (scorecardRows < 100) {
+  const { rows: scorecardRows } = await orch.pool.query(`SELECT COUNT(*) as n FROM college_admissions WHERE acceptance_rate IS NOT NULL`);
+  if (parseInt(scorecardRows[0].n) < 100) {
     console.log('\n[scraper] Scorecard data is sparse — running initial Scorecard pull...');
     await runJob('boot_scorecard', () => orch.runScorecard());
   }
 
   // 5. Run today's daily batch immediately on boot (in case server was down overnight)
-  const lastDailyRun = orch.db.prepare(`
+  const { rows: lastRunRows } = await orch.pool.query(`
     SELECT MAX(scrape_date) as last FROM scraping_summary
-  `).get()?.last;
+  `);
+  const lastDailyRun = lastRunRows[0]?.last;
   const today = new Date().toISOString().split('T')[0];
   if (lastDailyRun !== today) {
     console.log('[scraper] Daily batch not yet run today — starting...');
