@@ -322,13 +322,13 @@ async function scrapeDeadlines(college) {
 
 // ── DB writer ─────────────────────────────────────────────────────────────────
 
-function writeDeadlines(db, college, data) {
+async function writeDeadlines(db, college, data) {
   if (!data) return;
   const { deadlines, sourceUrl } = data;
 
   try {
-    db.prepare(`
-      INSERT INTO application_deadlines
+    await db.query(
+      `INSERT INTO application_deadlines
         (college_id,
          early_decision_1_date, early_decision_1_notification,
          early_decision_2_date, early_decision_2_notification,
@@ -339,42 +339,43 @@ function writeDeadlines(db, college, data) {
          offers_early_decision, offers_early_action, offers_restrictive_ea,
          offers_rolling_admission, application_fee, application_fee_waiver_available,
          source_url, last_verified, confidence_score, verification_status)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?,'scraped')
-      ON CONFLICT(college_id) DO UPDATE SET
-        early_decision_1_date         = COALESCE(excluded.early_decision_1_date,         early_decision_1_date),
-        early_decision_1_notification = COALESCE(excluded.early_decision_1_notification, early_decision_1_notification),
-        early_decision_2_date         = COALESCE(excluded.early_decision_2_date,         early_decision_2_date),
-        early_action_date             = COALESCE(excluded.early_action_date,             early_action_date),
-        early_action_notification     = COALESCE(excluded.early_action_notification,     early_action_notification),
-        restrictive_early_action_date = COALESCE(excluded.restrictive_early_action_date, restrictive_early_action_date),
-        regular_decision_date         = COALESCE(excluded.regular_decision_date,         regular_decision_date),
-        regular_decision_notification = COALESCE(excluded.regular_decision_notification, regular_decision_notification),
-        transfer_fall_date            = COALESCE(excluded.transfer_fall_date,            transfer_fall_date),
-        transfer_spring_date          = COALESCE(excluded.transfer_spring_date,          transfer_spring_date),
-        offers_early_decision         = excluded.offers_early_decision,
-        offers_early_action           = excluded.offers_early_action,
-        offers_rolling_admission      = excluded.offers_rolling_admission,
-        application_fee               = COALESCE(excluded.application_fee,               application_fee),
-        application_fee_waiver_available = COALESCE(excluded.application_fee_waiver_available, application_fee_waiver_available),
-        source_url                    = excluded.source_url,
-        last_verified                 = CURRENT_TIMESTAMP,
-        confidence_score              = excluded.confidence_score,
-        verification_status           = 'scraped'
-    `).run(
-      college.id,
-      deadlines.ed1, deadlines.ed1_notification,
-      deadlines.ed2, deadlines.ed2_notification,
-      deadlines.ea,  deadlines.ea_notification,
-      deadlines.rea, deadlines.rea_notification,
-      deadlines.rd,  deadlines.rd_notification,
-      deadlines.transfer_fall, deadlines.transfer_spring, deadlines.international,
-      deadlines.offers_ed  ? 1 : 0,
-      deadlines.offers_ea  ? 1 : 0,
-      deadlines.offers_rea ? 1 : 0,
-      deadlines.rolling    ? 1 : 0,
-      deadlines.app_fee,
-      deadlines.fee_waiver ? 1 : 0,
-      sourceUrl, 0.80
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,CURRENT_TIMESTAMP,$22,'scraped')
+       ON CONFLICT(college_id) DO UPDATE SET
+         early_decision_1_date         = COALESCE(EXCLUDED.early_decision_1_date,         application_deadlines.early_decision_1_date),
+         early_decision_1_notification = COALESCE(EXCLUDED.early_decision_1_notification, application_deadlines.early_decision_1_notification),
+         early_decision_2_date         = COALESCE(EXCLUDED.early_decision_2_date,         application_deadlines.early_decision_2_date),
+         early_action_date             = COALESCE(EXCLUDED.early_action_date,             application_deadlines.early_action_date),
+         early_action_notification     = COALESCE(EXCLUDED.early_action_notification,     application_deadlines.early_action_notification),
+         restrictive_early_action_date = COALESCE(EXCLUDED.restrictive_early_action_date, application_deadlines.restrictive_early_action_date),
+         regular_decision_date         = COALESCE(EXCLUDED.regular_decision_date,         application_deadlines.regular_decision_date),
+         regular_decision_notification = COALESCE(EXCLUDED.regular_decision_notification, application_deadlines.regular_decision_notification),
+         transfer_fall_date            = COALESCE(EXCLUDED.transfer_fall_date,            application_deadlines.transfer_fall_date),
+         transfer_spring_date          = COALESCE(EXCLUDED.transfer_spring_date,          application_deadlines.transfer_spring_date),
+         offers_early_decision         = EXCLUDED.offers_early_decision,
+         offers_early_action           = EXCLUDED.offers_early_action,
+         offers_rolling_admission      = EXCLUDED.offers_rolling_admission,
+         application_fee               = COALESCE(EXCLUDED.application_fee,               application_deadlines.application_fee),
+         application_fee_waiver_available = COALESCE(EXCLUDED.application_fee_waiver_available, application_deadlines.application_fee_waiver_available),
+         source_url                    = EXCLUDED.source_url,
+         last_verified                 = CURRENT_TIMESTAMP,
+         confidence_score              = EXCLUDED.confidence_score,
+         verification_status           = 'scraped'`,
+      [
+        college.id,
+        deadlines.ed1, deadlines.ed1_notification,
+        deadlines.ed2, deadlines.ed2_notification,
+        deadlines.ea,  deadlines.ea_notification,
+        deadlines.rea, deadlines.rea_notification,
+        deadlines.rd,  deadlines.rd_notification,
+        deadlines.transfer_fall, deadlines.transfer_spring, deadlines.international,
+        deadlines.offers_ed  ? 1 : 0,
+        deadlines.offers_ea  ? 1 : 0,
+        deadlines.offers_rea ? 1 : 0,
+        deadlines.rolling    ? 1 : 0,
+        deadlines.app_fee,
+        deadlines.fee_waiver ? 1 : 0,
+        sourceUrl, 0.80,
+      ]
     );
   } catch (e) {
     console.warn(`[deadlines] DB write failed for ${college.name}:`, e.message);
@@ -382,11 +383,12 @@ function writeDeadlines(db, college, data) {
 
   // Also update colleges table
   try {
-    db.prepare(`
-      UPDATE colleges SET admissions_url = COALESCE(?, admissions_url),
+    await db.query(
+      `UPDATE colleges SET admissions_url = COALESCE($1, admissions_url),
         last_scraped_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(sourceUrl, college.id);
+       WHERE id = $2`,
+      [sourceUrl, college.id]
+    );
   } catch {}
 }
 
@@ -397,7 +399,7 @@ function writeDeadlines(db, college, data) {
  * This happens when MM-DD-YYYY was parsed as YYYY-DD-MM.
  * This function identifies and clears them.
  */
-function fixCorruptDates(db) {
+async function fixCorruptDates(db) {
   const dateColumns = [
     'early_decision_1_date', 'early_decision_1_notification',
     'early_decision_2_date', 'early_decision_2_notification',
@@ -411,17 +413,16 @@ function fixCorruptDates(db) {
   let fixed = 0;
   for (const col of dateColumns) {
     try {
-      // Null out dates with year > 2030 or month > 12 (impossible dates)
-      const r = db.prepare(`
-        UPDATE application_deadlines SET ${col} = NULL
-        WHERE ${col} IS NOT NULL
-          AND (
-            CAST(substr(${col}, 1, 4) AS INTEGER) > 2030 OR
-            CAST(substr(${col}, 1, 4) AS INTEGER) < 2024 OR
-            CAST(substr(${col}, 6, 2) AS INTEGER) > 12
-          )
-      `).run();
-      fixed += r.changes;
+      const r = await db.query(
+        `UPDATE application_deadlines SET ${col} = NULL
+         WHERE ${col} IS NOT NULL
+           AND (
+             CAST(EXTRACT(YEAR FROM ${col}::date) AS INTEGER) > 2030 OR
+             CAST(EXTRACT(YEAR FROM ${col}::date) AS INTEGER) < 2024 OR
+             CAST(EXTRACT(MONTH FROM ${col}::date) AS INTEGER) > 12
+           )`
+      );
+      fixed += r.rowCount;
     } catch {}
   }
 
