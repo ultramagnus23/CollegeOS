@@ -4,7 +4,7 @@
 
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
+const dbManager = require('../config/database');
 const config = require('../config/env');
 const logger = require('../utils/logger');
 const { authenticate, optionalAuth } = require('../middleware/auth');
@@ -467,69 +467,67 @@ async function callAI(prompt, maxTokens = 1500) {
 }
 
 async function intelligentCollegeMatching(profile) {
-  return new Promise((resolve, reject) => {
-    let query = 'SELECT * FROM colleges WHERE 1=1';
-    const params = [];
+  const pool = dbManager.getDatabase();
+  let query = 'SELECT * FROM colleges WHERE 1=1';
+  const params = [];
+  let paramIdx = 1;
 
-    // Filter by countries
-    if (profile.preferredCountries && profile.preferredCountries.length > 0) {
-      query += ` AND country IN (${profile.preferredCountries.map(() => '?').join(',')})`;
-      params.push(...profile.preferredCountries);
+  // Filter by countries
+  if (profile.preferredCountries && profile.preferredCountries.length > 0) {
+    query += ` AND country IN (${profile.preferredCountries.map(() => `$${paramIdx++}`).join(',')})`;
+    params.push(...profile.preferredCountries);
+  }
+
+  // Filter by programs
+  if (profile.potentialMajors && profile.potentialMajors.length > 0) {
+    const programConditions = profile.potentialMajors.map(() => `LOWER(programs) LIKE LOWER($${paramIdx++})`).join(' OR ');
+    query += ` AND (${programConditions})`;
+    profile.potentialMajors.forEach(major => params.push(`%${major}%`));
+  }
+
+  const colleges = (await pool.query(query, params)).rows;
+
+  // Calculate match scores
+  const scoredColleges = colleges.map(college => {
+    let score = 50; // Base score
+    const researchData = JSON.parse(college.research_data);
+    const requirements = JSON.parse(college.requirements);
+
+    // GPA match
+    if (profile.currentGPA) {
+      const gpa = parseFloat(profile.currentGPA);
+      if (gpa >= requirements.min_percentage) score += 15;
+      if (gpa >= requirements.min_percentage + 10) score += 10;
     }
 
-    // Filter by programs
-    if (profile.potentialMajors && profile.potentialMajors.length > 0) {
-      const programConditions = profile.potentialMajors.map(() => 'LOWER(programs) LIKE LOWER(?)').join(' OR ');
-      query += ` AND (${programConditions})`;
-      profile.potentialMajors.forEach(major => params.push(`%${major}%`));
+    // Acceptance rate (target vs reach vs safety)
+    if (college.acceptance_rate > 0.3) score += 20; // Safety
+    else if (college.acceptance_rate > 0.15) score += 15; // Target
+    else score += 5; // Reach
+
+    // Budget match
+    if (profile.budgetRange && researchData.avg_cost) {
+      const budgetNum = parseInt(profile.budgetRange.match(/\d+/)?.[0] || '999999');
+      if (researchData.avg_cost <= budgetNum * 1000) score += 15;
     }
 
-    db.all(query, params, (err, colleges) => {
-      if (err) return reject(err);
+    // Financial aid availability
+    if (researchData.aid_available && profile.budgetRange?.includes('Aid')) {
+      score += 10;
+    }
 
-      // Calculate match scores
-      const scoredColleges = colleges.map(college => {
-        let score = 50; // Base score
-        const researchData = JSON.parse(college.research_data);
-        const requirements = JSON.parse(college.requirements);
-
-        // GPA match
-        if (profile.currentGPA) {
-          const gpa = parseFloat(profile.currentGPA);
-          if (gpa >= requirements.min_percentage) score += 15;
-          if (gpa >= requirements.min_percentage + 10) score += 10;
-        }
-
-        // Acceptance rate (target vs reach vs safety)
-        if (college.acceptance_rate > 0.3) score += 20; // Safety
-        else if (college.acceptance_rate > 0.15) score += 15; // Target
-        else score += 5; // Reach
-
-        // Budget match
-        if (profile.budgetRange && researchData.avg_cost) {
-          const budgetNum = parseInt(profile.budgetRange.match(/\d+/)?.[0] || '999999');
-          if (researchData.avg_cost <= budgetNum * 1000) score += 15;
-        }
-
-        // Financial aid availability
-        if (researchData.aid_available && profile.budgetRange?.includes('Aid')) {
-          score += 10;
-        }
-
-        return {
-          ...college,
-          matchScore: Math.min(score, 100),
-          requirements: requirements,
-          research_data: researchData,
-          programs: JSON.parse(college.programs)
-        };
-      });
-
-      // Sort by match score
-      scoredColleges.sort((a, b) => b.matchScore - a.matchScore);
-      resolve(scoredColleges);
-    });
+    return {
+      ...college,
+      matchScore: Math.min(score, 100),
+      requirements: requirements,
+      research_data: researchData,
+      programs: JSON.parse(college.programs)
+    };
   });
+
+  // Sort by match score
+  scoredColleges.sort((a, b) => b.matchScore - a.matchScore);
+  return scoredColleges;
 }
 
 async function searchWithCriteria(criteria, profile) {
@@ -660,21 +658,17 @@ Start today - every action counts!`;
 }
 
 async function basicSearch(query) {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      SELECT * FROM colleges
-      WHERE LOWER(name) LIKE LOWER(?) 
-         OR LOWER(location) LIKE LOWER(?)
-         OR LOWER(programs) LIKE LOWER(?)
-      LIMIT 20
-    `;
-    
-    const searchTerm = `%${query}%`;
-    db.all(sql, [searchTerm, searchTerm, searchTerm], (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows);
-    });
-  });
+  const pool = dbManager.getDatabase();
+  const sql = `
+    SELECT * FROM colleges
+    WHERE LOWER(name) LIKE LOWER($1) 
+       OR LOWER(location) LIKE LOWER($2)
+       OR LOWER(programs) LIKE LOWER($3)
+    LIMIT 20
+  `;
+  
+  const searchTerm = `%${query}%`;
+  return (await pool.query(sql, [searchTerm, searchTerm, searchTerm])).rows;
 }
 
 module.exports = router;
