@@ -93,7 +93,7 @@ async function getToken() {
  * @returns {Promise<object>}
  */
 async function redditGet(url, params = {}) {
-  const token = await getToken();
+  let token = await getToken();
   let attempt = 0;
   const maxAttempts = 5;
 
@@ -115,8 +115,9 @@ async function redditGet(url, params = {}) {
         await sleep(retryAfter * 1000);
         attempt++;
       } else if (status === 401) {
-        // Token expired mid-flight — refresh once and retry
+        // Token expired mid-flight — refresh and update local variable for retry
         await refreshAccessToken();
+        token = await getToken();
         attempt++;
       } else {
         throw err;

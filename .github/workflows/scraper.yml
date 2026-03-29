@@ -16,6 +16,9 @@ on:
           - incremental
           - seed
 
+permissions:
+  contents: read
+
 jobs:
   scrape:
     name: Scrape & Calibrate

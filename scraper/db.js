@@ -339,6 +339,8 @@ function close() {
     _db.close();
     _db = null;
     _stmts = null;
+    _getPublishedRate = null;
+    _getPublishedRateByNorm = null;
   }
 }
 
