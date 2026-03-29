@@ -89,10 +89,10 @@ class MLRetrainingJob {
         return;
       }
 
-      const db = dbManager.getDatabase();
+      const pool = dbManager.getDatabase();
 
       // Get colleges with sufficient data
-      const collegesWithData = db.prepare(`
+      const collegesWithData = (await pool.query(`
         SELECT 
           college_id,
           COUNT(*) as total_samples,
@@ -102,12 +102,12 @@ class MLRetrainingJob {
         FROM ml_training_data
         WHERE decision IN ('accepted', 'rejected')
         GROUP BY college_id
-        HAVING total_samples >= 30
-          AND accepted_count >= 10
-          AND rejected_count >= 10
-        ORDER BY total_samples DESC
+        HAVING COUNT(*) >= 30
+          AND SUM(CASE WHEN decision = 'accepted' THEN 1 ELSE 0 END) >= 10
+          AND SUM(CASE WHEN decision = 'rejected' THEN 1 ELSE 0 END) >= 10
+        ORDER BY COUNT(*) DESC
         LIMIT 50
-      `).all();
+      `)).rows;
 
       stats.collegesChecked = collegesWithData.length;
 
@@ -137,12 +137,12 @@ class MLRetrainingJob {
 
           if (needsRetraining) {
             // Get training data
-            const trainingData = db.prepare(`
+            const trainingData = (await pool.query(`
               SELECT * FROM ml_training_data
-              WHERE college_id = ?
+              WHERE college_id = $1
                 AND decision IN ('accepted', 'rejected')
                 AND (confidence_score >= 0.5 OR confidence_score IS NULL)
-            `).all(college.college_id);
+            `, [college.college_id])).rows;
 
             // Request training from ML service
             const result = await mlPredictionService.trainModel(
@@ -155,16 +155,16 @@ class MLRetrainingJob {
               stats.collegesRetrained++;
               
               // Log to training history
-              db.prepare(`
+              await pool.query(`
                 INSERT INTO model_training_history 
                 (college_id, model_version, trigger_type, samples_used, accuracy_after, success)
-                VALUES (?, ?, 'scheduled', ?, ?, 1)
-              `).run(
+                VALUES ($1, $2, 'scheduled', $3, $4, true)
+              `, [
                 college.college_id,
                 result.version || '1.0',
                 college.total_samples,
                 result.metrics?.accuracy || null
-              );
+              ]);
             } else {
               stats.collegesFailed++;
             }
@@ -225,37 +225,37 @@ class MLRetrainingJob {
    */
   async checkDataQuality() {
     try {
-      const db = dbManager.getDatabase();
+      const pool = dbManager.getDatabase();
 
       // Flag records with suspicious data patterns
       const suspiciousUpdates = [];
 
       // Flag very low GPAs with very high test scores
-      const suspicious1 = db.prepare(`
+      const suspicious1 = await pool.query(`
         UPDATE ml_training_data
         SET confidence_score = confidence_score * 0.5
         WHERE gpa < 2.0 AND sat_total > 1500
           AND confidence_score > 0.5
-      `).run();
-      suspiciousUpdates.push({ check: 'low_gpa_high_sat', affected: suspicious1.changes });
+      `);
+      suspiciousUpdates.push({ check: 'low_gpa_high_sat', affected: suspicious1.rowCount });
 
       // Flag impossible SAT scores
-      const suspicious2 = db.prepare(`
+      const suspicious2 = await pool.query(`
         UPDATE ml_training_data
         SET confidence_score = 0.1
         WHERE (sat_total < 400 OR sat_total > 1600)
           AND sat_total IS NOT NULL
-      `).run();
-      suspiciousUpdates.push({ check: 'invalid_sat', affected: suspicious2.changes });
+      `);
+      suspiciousUpdates.push({ check: 'invalid_sat', affected: suspicious2.rowCount });
 
       // Flag impossible ACT scores
-      const suspicious3 = db.prepare(`
+      const suspicious3 = await pool.query(`
         UPDATE ml_training_data
         SET confidence_score = 0.1
         WHERE (act_composite < 1 OR act_composite > 36)
           AND act_composite IS NOT NULL
-      `).run();
-      suspiciousUpdates.push({ check: 'invalid_act', affected: suspicious3.changes });
+      `);
+      suspiciousUpdates.push({ check: 'invalid_act', affected: suspicious3.rowCount });
 
       logger.info('Data quality check complete:', suspiciousUpdates);
 
@@ -274,10 +274,10 @@ class MLRetrainingJob {
         return;
       }
 
-      const db = dbManager.getDatabase();
+      const pool = dbManager.getDatabase();
 
       // Find colleges with enough data but no model yet
-      const readyColleges = db.prepare(`
+      const readyColleges = (await pool.query(`
         SELECT 
           t.college_id,
           c.name as college_name,
@@ -287,13 +287,13 @@ class MLRetrainingJob {
         FROM ml_training_data t
         LEFT JOIN colleges c ON t.college_id = c.id
         WHERE t.decision IN ('accepted', 'rejected')
-        GROUP BY t.college_id
-        HAVING total_samples >= 30
-          AND accepted_count >= 10
-          AND rejected_count >= 10
-        ORDER BY total_samples DESC
+        GROUP BY t.college_id, c.name
+        HAVING COUNT(*) >= 30
+          AND SUM(CASE WHEN t.decision = 'accepted' THEN 1 ELSE 0 END) >= 10
+          AND SUM(CASE WHEN t.decision = 'rejected' THEN 1 ELSE 0 END) >= 10
+        ORDER BY COUNT(*) DESC
         LIMIT 10
-      `).all();
+      `)).rows;
 
       let newModelsCreated = 0;
 
@@ -303,11 +303,11 @@ class MLRetrainingJob {
         
         if (!exists) {
           // Get training data
-          const trainingData = db.prepare(`
+          const trainingData = (await pool.query(`
             SELECT * FROM ml_training_data
-            WHERE college_id = ?
+            WHERE college_id = $1
               AND decision IN ('accepted', 'rejected')
-          `).all(college.college_id);
+          `, [college.college_id])).rows;
 
           // Train new model
           const result = await mlPredictionService.trainModel(
@@ -321,16 +321,16 @@ class MLRetrainingJob {
             logger.info(`New ML model created for college ${college.college_id} (${college.college_name})`);
 
             // Log to training history
-            db.prepare(`
+            await pool.query(`
               INSERT INTO model_training_history 
               (college_id, model_version, trigger_type, samples_used, accuracy_after, success)
-              VALUES (?, ?, 'initial', ?, ?, 1)
-            `).run(
+              VALUES ($1, $2, 'initial', $3, $4, true)
+            `, [
               college.college_id,
               result.version || '1.0',
               college.total_samples,
               result.metrics?.accuracy || null
-            );
+            ]);
           }
         }
       }
@@ -356,30 +356,30 @@ class MLRetrainingJob {
    */
   async getSystemStatus() {
     try {
-      const db = dbManager.getDatabase();
+      const pool = dbManager.getDatabase();
 
       // Get data statistics
-      const dataStats = db.prepare(`
+      const dataStats = (await pool.query(`
         SELECT 
           COUNT(*) as total_records,
           COUNT(DISTINCT college_id) as unique_colleges,
           SUM(CASE WHEN decision = 'accepted' THEN 1 ELSE 0 END) as accepted_count,
           SUM(CASE WHEN decision = 'rejected' THEN 1 ELSE 0 END) as rejected_count,
-          SUM(CASE WHEN is_verified = 1 THEN 1 ELSE 0 END) as verified_count,
+          SUM(CASE WHEN is_verified = true THEN 1 ELSE 0 END) as verified_count,
           AVG(confidence_score) as avg_confidence
         FROM ml_training_data
-      `).get();
+      `)).rows[0];
 
       // Get model statistics
       const mlStats = await mlPredictionService.getStats();
 
       // Get recent training history
-      const recentTraining = db.prepare(`
+      const recentTraining = (await pool.query(`
         SELECT college_id, model_version, trigger_type, samples_used, accuracy_after, trained_at
         FROM model_training_history
         ORDER BY trained_at DESC
         LIMIT 10
-      `).all();
+      `)).rows;
 
       return {
         dataStatistics: dataStats,
