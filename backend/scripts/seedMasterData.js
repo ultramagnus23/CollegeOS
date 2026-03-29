@@ -10,13 +10,6 @@ const dbManager = require('../src/config/database');
 
 console.log('🌱 CollegeOS Master Data Seeding Script\n');
 
-// Initialize database and run migrations
-dbManager.initialize();
-dbManager.runMigrations();
-const db = dbManager.getDatabase();
-
-console.log('✅ Database initialized\n');
-
 // Helper function to safely stringify JSON
 function safeJSON(data) {
   return JSON.stringify(data);
@@ -222,225 +215,174 @@ const australianColleges = [
 // Main seeding function
 async function seedDatabase() {
   console.log('🌱 Starting comprehensive college seeding...\n');
-  
+
+  dbManager.initialize();
+  await dbManager.runMigrations();
+  const pool = dbManager.getDatabase();
+
+  const INSERT_SQL = `
+    INSERT INTO colleges (
+      name, country, location, official_website, admissions_url,
+      programs_url, application_portal_url, academic_strengths, major_categories,
+      trust_tier, is_verified, created_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+    ON CONFLICT (name) DO NOTHING
+  `;
+
   try {
     // Check existing count
-    const countStmt = db.prepare('SELECT COUNT(*) as count FROM colleges');
-    const { count } = countStmt.get();
-    
+    const { rows: countRows } = await pool.query('SELECT COUNT(*) AS count FROM colleges');
+    const count = parseInt(countRows[0].count);
+
     if (count > 0) {
       console.log(`⚠️  Found ${count} existing colleges`);
       if (!process.argv.includes('--force')) {
         console.log('❌ Run with --force to clear and reseed\n');
-        dbManager.close();
+        await dbManager.close();
         process.exit(0);
       }
       console.log('🗑️  Clearing existing data...\n');
-      db.prepare('DELETE FROM colleges').run();
+      await pool.query('DELETE FROM colleges');
     }
-    
-    // Prepare insert statement for the existing schema
-    const insertStmt = db.prepare(`
-      INSERT INTO colleges (
-        name, country, location, official_website, admissions_url,
-        programs_url, application_portal_url, academic_strengths, major_categories,
-        trust_tier, is_verified, created_at
-      ) VALUES (
-        @name, @country, @location, @official_website, @admissions_url,
-        @programs_url, @application_portal_url, @academic_strengths, @major_categories,
-        @trust_tier, @is_verified, datetime('now')
-      )
-    `);
-    
+
     let insertedCount = 0;
-    
+
     // Insert top US colleges (verified)
     console.log('📍 Inserting top US universities...');
     for (const college of topUSColleges) {
-      insertStmt.run({
-        name: college.name,
-        country: 'US',
-        location: college.location,
-        official_website: college.website,
-        admissions_url: college.admissions,
-        programs_url: `${college.website}/academics`,
-        application_portal_url: 'https://commonapp.org',
-        academic_strengths: safeJSON(['Research', 'Innovation', 'Liberal Arts']),
-        major_categories: safeJSON(['STEM', 'Business', 'Liberal Arts', 'Health Sciences']),
-        trust_tier: 'official',
-        is_verified: 1
-      });
+      await pool.query(INSERT_SQL, [
+        college.name, 'US', college.location, college.website, college.admissions,
+        `${college.website}/academics`, 'https://commonapp.org',
+        safeJSON(['Research', 'Innovation', 'Liberal Arts']),
+        safeJSON(['STEM', 'Business', 'Liberal Arts', 'Health Sciences']),
+        'official', 1
+      ]);
       insertedCount++;
     }
-    
+
     // Insert more US colleges
     console.log('📍 Inserting additional US universities...');
     for (const name of moreUSColleges) {
       const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      insertStmt.run({
-        name: name,
-        country: 'US',
-        location: 'Various, US',
-        official_website: `https://www.${slug.substring(0, 20)}.edu`,
-        admissions_url: `https://www.${slug.substring(0, 20)}.edu/admissions`,
-        programs_url: `https://www.${slug.substring(0, 20)}.edu/academics`,
-        application_portal_url: 'https://commonapp.org',
-        academic_strengths: safeJSON(['Research', 'Innovation']),
-        major_categories: safeJSON(['STEM', 'Business', 'Liberal Arts']),
-        trust_tier: 'generated',
-        is_verified: 0
-      });
+      await pool.query(INSERT_SQL, [
+        name, 'US', 'Various, US',
+        `https://www.${slug.substring(0, 20)}.edu`,
+        `https://www.${slug.substring(0, 20)}.edu/admissions`,
+        `https://www.${slug.substring(0, 20)}.edu/academics`,
+        'https://commonapp.org',
+        safeJSON(['Research', 'Innovation']),
+        safeJSON(['STEM', 'Business', 'Liberal Arts']),
+        'generated', 0
+      ]);
       insertedCount++;
     }
-    
+
     // Insert UK colleges
     console.log('📍 Inserting UK universities...');
     for (const college of ukColleges) {
-      insertStmt.run({
-        name: college.name,
-        country: 'UK',
-        location: college.location,
-        official_website: college.website,
-        admissions_url: college.admissions,
-        programs_url: `${college.website}/study`,
-        application_portal_url: 'https://ucas.com',
-        academic_strengths: safeJSON(['Research', 'Innovation', 'Global Reputation']),
-        major_categories: safeJSON(['STEM', 'Business', 'Liberal Arts', 'Medicine']),
-        trust_tier: 'official',
-        is_verified: 1
-      });
+      await pool.query(INSERT_SQL, [
+        college.name, 'UK', college.location, college.website, college.admissions,
+        `${college.website}/study`, 'https://ucas.com',
+        safeJSON(['Research', 'Innovation', 'Global Reputation']),
+        safeJSON(['STEM', 'Business', 'Liberal Arts', 'Medicine']),
+        'official', 1
+      ]);
       insertedCount++;
     }
-    
+
     // Insert more UK colleges
     for (const name of moreUKColleges) {
       const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      insertStmt.run({
-        name: name,
-        country: 'UK',
-        location: 'UK',
-        official_website: `https://www.${slug.substring(0, 15)}.ac.uk`,
-        admissions_url: `https://www.${slug.substring(0, 15)}.ac.uk/study`,
-        programs_url: `https://www.${slug.substring(0, 15)}.ac.uk/courses`,
-        application_portal_url: 'https://ucas.com',
-        academic_strengths: safeJSON(['Research', 'Innovation']),
-        major_categories: safeJSON(['STEM', 'Business', 'Liberal Arts']),
-        trust_tier: 'generated',
-        is_verified: 0
-      });
+      await pool.query(INSERT_SQL, [
+        name, 'UK', 'UK',
+        `https://www.${slug.substring(0, 15)}.ac.uk`,
+        `https://www.${slug.substring(0, 15)}.ac.uk/study`,
+        `https://www.${slug.substring(0, 15)}.ac.uk/courses`,
+        'https://ucas.com',
+        safeJSON(['Research', 'Innovation']),
+        safeJSON(['STEM', 'Business', 'Liberal Arts']),
+        'generated', 0
+      ]);
       insertedCount++;
     }
-    
+
     // Insert Canadian colleges
     console.log('📍 Inserting Canadian universities...');
     for (const college of canadianColleges) {
-      insertStmt.run({
-        name: college.name,
-        country: 'Canada',
-        location: college.location,
-        official_website: college.website,
-        admissions_url: college.admissions,
-        programs_url: `${college.website}/academics`,
-        application_portal_url: null,
-        academic_strengths: safeJSON(['Research', 'Innovation', 'Co-op Programs']),
-        major_categories: safeJSON(['STEM', 'Business', 'Liberal Arts', 'Health Sciences']),
-        trust_tier: 'official',
-        is_verified: 1
-      });
+      await pool.query(INSERT_SQL, [
+        college.name, 'Canada', college.location, college.website, college.admissions,
+        `${college.website}/academics`, null,
+        safeJSON(['Research', 'Innovation', 'Co-op Programs']),
+        safeJSON(['STEM', 'Business', 'Liberal Arts', 'Health Sciences']),
+        'official', 1
+      ]);
       insertedCount++;
     }
-    
+
     // Insert German colleges
     console.log('📍 Inserting German universities...');
     for (const college of germanColleges) {
-      insertStmt.run({
-        name: college.name,
-        country: 'Germany',
-        location: college.location,
-        official_website: college.website,
-        admissions_url: college.admissions,
-        programs_url: `${college.website}/study`,
-        application_portal_url: 'https://uni-assist.de',
-        academic_strengths: safeJSON(['Research', 'Engineering', 'Technology']),
-        major_categories: safeJSON(['STEM', 'Engineering', 'Business']),
-        trust_tier: 'official',
-        is_verified: 1
-      });
+      await pool.query(INSERT_SQL, [
+        college.name, 'Germany', college.location, college.website, college.admissions,
+        `${college.website}/study`, 'https://uni-assist.de',
+        safeJSON(['Research', 'Engineering', 'Technology']),
+        safeJSON(['STEM', 'Engineering', 'Business']),
+        'official', 1
+      ]);
       insertedCount++;
     }
-    
+
     for (const name of moreGermanColleges) {
       const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      insertStmt.run({
-        name: name,
-        country: 'Germany',
-        location: 'Germany',
-        official_website: `https://www.${slug.substring(0, 10)}.de`,
-        admissions_url: `https://www.${slug.substring(0, 10)}.de/study`,
-        programs_url: `https://www.${slug.substring(0, 10)}.de/programs`,
-        application_portal_url: 'https://uni-assist.de',
-        academic_strengths: safeJSON(['Research', 'Engineering']),
-        major_categories: safeJSON(['STEM', 'Engineering']),
-        trust_tier: 'generated',
-        is_verified: 0
-      });
+      await pool.query(INSERT_SQL, [
+        name, 'Germany', 'Germany',
+        `https://www.${slug.substring(0, 10)}.de`,
+        `https://www.${slug.substring(0, 10)}.de/study`,
+        `https://www.${slug.substring(0, 10)}.de/programs`,
+        'https://uni-assist.de',
+        safeJSON(['Research', 'Engineering']),
+        safeJSON(['STEM', 'Engineering']),
+        'generated', 0
+      ]);
       insertedCount++;
     }
-    
+
     // Insert Netherlands colleges
     console.log('📍 Inserting Netherlands universities...');
     for (const college of netherlandsColleges) {
-      insertStmt.run({
-        name: college.name,
-        country: 'Netherlands',
-        location: college.location,
-        official_website: college.website,
-        admissions_url: college.admissions,
-        programs_url: `${college.website}/education`,
-        application_portal_url: 'https://studielink.nl',
-        academic_strengths: safeJSON(['Research', 'Innovation', 'International']),
-        major_categories: safeJSON(['STEM', 'Business', 'Liberal Arts']),
-        trust_tier: 'official',
-        is_verified: 1
-      });
+      await pool.query(INSERT_SQL, [
+        college.name, 'Netherlands', college.location, college.website, college.admissions,
+        `${college.website}/education`, 'https://studielink.nl',
+        safeJSON(['Research', 'Innovation', 'International']),
+        safeJSON(['STEM', 'Business', 'Liberal Arts']),
+        'official', 1
+      ]);
       insertedCount++;
     }
-    
+
     // Insert Indian colleges
     console.log('📍 Inserting Indian universities...');
     for (const college of indianColleges) {
-      insertStmt.run({
-        name: college.name,
-        country: 'India',
-        location: college.location,
-        official_website: college.website,
-        admissions_url: college.admissions,
-        programs_url: `${college.website}/programs`,
-        application_portal_url: null,
-        academic_strengths: safeJSON(['Research', 'Innovation', 'Engineering']),
-        major_categories: safeJSON(['STEM', 'Engineering', 'Business', 'Science']),
-        trust_tier: 'official',
-        is_verified: 1
-      });
+      await pool.query(INSERT_SQL, [
+        college.name, 'India', college.location, college.website, college.admissions,
+        `${college.website}/programs`, null,
+        safeJSON(['Research', 'Innovation', 'Engineering']),
+        safeJSON(['STEM', 'Engineering', 'Business', 'Science']),
+        'official', 1
+      ]);
       insertedCount++;
     }
-    
+
     // Insert Australian colleges
     console.log('📍 Inserting Australian universities...');
     for (const college of australianColleges) {
-      insertStmt.run({
-        name: college.name,
-        country: 'Australia',
-        location: college.location,
-        official_website: college.website,
-        admissions_url: college.admissions,
-        programs_url: `${college.website}/study`,
-        application_portal_url: null,
-        academic_strengths: safeJSON(['Research', 'Innovation', 'Global']),
-        major_categories: safeJSON(['STEM', 'Business', 'Liberal Arts', 'Medicine']),
-        trust_tier: 'official',
-        is_verified: 1
-      });
+      await pool.query(INSERT_SQL, [
+        college.name, 'Australia', college.location, college.website, college.admissions,
+        `${college.website}/study`, null,
+        safeJSON(['Research', 'Innovation', 'Global']),
+        safeJSON(['STEM', 'Business', 'Liberal Arts', 'Medicine']),
+        'official', 1
+      ]);
       insertedCount++;
     }
     
@@ -470,19 +412,16 @@ async function seedDatabase() {
     
     for (const name of additionalUSColleges) {
       const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      insertStmt.run({
-        name: name,
-        country: 'US',
-        location: 'Various, US',
-        official_website: `https://www.${slug.substring(0, 20)}.edu`,
-        admissions_url: `https://www.${slug.substring(0, 20)}.edu/admissions`,
-        programs_url: `https://www.${slug.substring(0, 20)}.edu/academics`,
-        application_portal_url: 'https://commonapp.org',
-        academic_strengths: safeJSON(['Research', 'Innovation']),
-        major_categories: safeJSON(['STEM', 'Business', 'Liberal Arts']),
-        trust_tier: 'generated',
-        is_verified: 0
-      });
+      await pool.query(INSERT_SQL, [
+        name, 'US', 'Various, US',
+        `https://www.${slug.substring(0, 20)}.edu`,
+        `https://www.${slug.substring(0, 20)}.edu/admissions`,
+        `https://www.${slug.substring(0, 20)}.edu/academics`,
+        'https://commonapp.org',
+        safeJSON(['Research', 'Innovation']),
+        safeJSON(['STEM', 'Business', 'Liberal Arts']),
+        'generated', 0
+      ]);
       insertedCount++;
     }
     
@@ -499,19 +438,16 @@ async function seedDatabase() {
     
     for (const name of additionalIndianColleges) {
       const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      insertStmt.run({
-        name: name,
-        country: 'India',
-        location: 'Various, India',
-        official_website: `https://www.${slug.substring(0, 15)}.ac.in`,
-        admissions_url: `https://www.${slug.substring(0, 15)}.ac.in/admissions`,
-        programs_url: `https://www.${slug.substring(0, 15)}.ac.in/programs`,
-        application_portal_url: null,
-        academic_strengths: safeJSON(['Engineering', 'Technology']),
-        major_categories: safeJSON(['STEM', 'Engineering']),
-        trust_tier: 'generated',
-        is_verified: 0
-      });
+      await pool.query(INSERT_SQL, [
+        name, 'India', 'Various, India',
+        `https://www.${slug.substring(0, 15)}.ac.in`,
+        `https://www.${slug.substring(0, 15)}.ac.in/admissions`,
+        `https://www.${slug.substring(0, 15)}.ac.in/programs`,
+        null,
+        safeJSON(['Engineering', 'Technology']),
+        safeJSON(['STEM', 'Engineering']),
+        'generated', 0
+      ]);
       insertedCount++;
     }
     
@@ -593,30 +529,28 @@ async function seedDatabase() {
     
     for (const name of moreUSColleges2) {
       const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      insertStmt.run({
-        name: name,
-        country: 'US',
-        location: 'Various, US',
-        official_website: `https://www.${slug.substring(0, 20)}.edu`,
-        admissions_url: `https://www.${slug.substring(0, 20)}.edu/admissions`,
-        programs_url: `https://www.${slug.substring(0, 20)}.edu/academics`,
-        application_portal_url: 'https://commonapp.org',
-        academic_strengths: safeJSON(['Research', 'Innovation']),
-        major_categories: safeJSON(['STEM', 'Business', 'Liberal Arts']),
-        trust_tier: 'generated',
-        is_verified: 0
-      });
+      await pool.query(INSERT_SQL, [
+        name, 'US', 'Various, US',
+        `https://www.${slug.substring(0, 20)}.edu`,
+        `https://www.${slug.substring(0, 20)}.edu/admissions`,
+        `https://www.${slug.substring(0, 20)}.edu/academics`,
+        'https://commonapp.org',
+        safeJSON(['Research', 'Innovation']),
+        safeJSON(['STEM', 'Business', 'Liberal Arts']),
+        'generated', 0
+      ]);
       insertedCount++;
     }
-    
+
     // Final count
-    const finalCount = countStmt.get();
+    const { rows: finalCountRows } = await pool.query('SELECT COUNT(*) AS count FROM colleges');
+    const finalCount = parseInt(finalCountRows[0].count);
     
     console.log('\n' + '='.repeat(70));
     console.log('✨ SUCCESS! Database seeded with colleges');
     console.log('='.repeat(70));
     console.log(`Total colleges inserted: ${insertedCount}`);
-    console.log(`Total colleges in database: ${finalCount.count}`);
+    console.log(`Total colleges in database: ${finalCount}`);
     console.log('='.repeat(70) + '\n');
     
   } catch (error) {
@@ -624,10 +558,15 @@ async function seedDatabase() {
     console.error(error.stack);
     process.exit(1);
   } finally {
-    dbManager.close();
+    await dbManager.close();
     console.log('✅ Database connection closed\n');
   }
 }
 
-// Run seeding
-seedDatabase();
+if (require.main === module) {
+  seedDatabase().catch(err => {
+    console.error('\n❌ SEEDING FAILED:', err.message);
+    console.error(err.stack);
+    process.exit(1);
+  });
+}
