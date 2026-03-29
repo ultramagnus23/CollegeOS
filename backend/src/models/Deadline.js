@@ -53,7 +53,7 @@ class Deadline {
     if (data.description !== undefined) { updates.push(`description = $${idx++}`); params.push(data.description); }
     if (data.isCompleted !== undefined) {
       updates.push(`is_completed = $${idx++}`);
-      params.push(data.isCompleted ? true : false);
+      params.push(data.isCompleted ? 1 : 0);
       if (data.isCompleted) updates.push(`completed_at = NOW()`);
     }
 
