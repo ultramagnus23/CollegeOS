@@ -77,10 +77,10 @@ class RequirementService {
    * @returns {Promise<Task[]>}
    */
   static async decomposeApplication(collegeId) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Get college info to determine application system
-    const college = db.prepare('SELECT * FROM colleges WHERE id = ?').get(collegeId);
+    const college = (await pool.query('SELECT * FROM colleges WHERE id = $1', [collegeId])).rows[0];
     if (!college) {
       throw new Error('College not found');
     }
@@ -88,9 +88,9 @@ class RequirementService {
     // Try to get application system
     let system = 'Direct'; // Default
     try {
-      const appSystem = db.prepare(`
-        SELECT system_type FROM application_systems WHERE college_id = ?
-      `).get(collegeId);
+      const appSystem = (await pool.query(`
+        SELECT system_type FROM application_systems WHERE college_id = $1
+      `, [collegeId])).rows[0];
       if (appSystem) {
         system = appSystem.system_type;
       } else {
@@ -108,9 +108,9 @@ class RequirementService {
     const tasks = [...templateTasks];
     
     try {
-      const essays = db.prepare(`
-        SELECT * FROM essay_prompts WHERE college_id = ? ORDER BY prompt_order
-      `).all(collegeId);
+      const essays = (await pool.query(`
+        SELECT * FROM essay_prompts WHERE college_id = $1 ORDER BY prompt_order
+      `, [collegeId])).rows;
       
       essays.forEach((essay, index) => {
         tasks.push({
@@ -119,7 +119,7 @@ class RequirementService {
           estimatedHours: Math.max(3, Math.round((essay.word_limit || 250) / 50)),
           priority: 2,
           wordLimit: essay.word_limit,
-          isRequired: essay.is_required === 1
+          isRequired: essay.is_required === true
         });
       });
     } catch (error) {
@@ -189,7 +189,7 @@ class RequirementService {
    * @returns {Promise<Task[]>}
    */
   static async createApplicationTasks(userId, collegeId, applicationId = null) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Get decomposed tasks
     const taskTemplates = await this.decomposeApplication(collegeId);
@@ -198,12 +198,13 @@ class RequirementService {
     
     for (const template of taskTemplates) {
       try {
-        const result = db.prepare(`
+        const result = await pool.query(`
           INSERT INTO tasks (
             user_id, college_id, application_id, task_type, title, description,
             status, deadline, estimated_hours, priority
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          RETURNING id
+        `, [
           userId,
           collegeId,
           applicationId,
@@ -214,10 +215,10 @@ class RequirementService {
           template.deadline || null,
           template.estimatedHours || 1,
           template.priority || 3
-        );
+        ]);
         
         createdTasks.push({
-          id: result.lastInsertRowid,
+          id: result.rows[0].id,
           ...template,
           status: 'not_started'
         });
@@ -239,7 +240,7 @@ class RequirementService {
    * @param {Task[]} tasks - Array of tasks
    */
   static async createDefaultDependencies(tasks) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Find form/profile tasks (usually need to complete first)
     const formTasks = tasks.filter(t => t.type === 'form' && t.title.toLowerCase().includes('profile'));
@@ -250,10 +251,11 @@ class RequirementService {
     for (const formTask of formTasks) {
       for (const essayTask of essayTasks) {
         try {
-          db.prepare(`
-            INSERT OR IGNORE INTO task_dependencies (task_id, depends_on_task_id, dependency_type)
-            VALUES (?, ?, 'should_complete_first')
-          `).run(essayTask.id, formTask.id);
+          await pool.query(`
+            INSERT INTO task_dependencies (task_id, depends_on_task_id, dependency_type)
+            VALUES ($1, $2, 'should_complete_first')
+            ON CONFLICT DO NOTHING
+          `, [essayTask.id, formTask.id]);
         } catch (error) {
           logger.debug('Could not create dependency:', error.message);
         }
@@ -265,10 +267,11 @@ class RequirementService {
     for (const submitTask of submitTasks) {
       for (const otherTask of nonSubmitTasks) {
         try {
-          db.prepare(`
-            INSERT OR IGNORE INTO task_dependencies (task_id, depends_on_task_id, dependency_type)
-            VALUES (?, ?, 'blocks')
-          `).run(submitTask.id, otherTask.id);
+          await pool.query(`
+            INSERT INTO task_dependencies (task_id, depends_on_task_id, dependency_type)
+            VALUES ($1, $2, 'blocks')
+            ON CONFLICT DO NOTHING
+          `, [submitTask.id, otherTask.id]);
         } catch (error) {
           logger.debug('Could not create dependency:', error.message);
         }
@@ -283,17 +286,17 @@ class RequirementService {
    * @returns {Promise<Object>} Dependency graph
    */
   static async buildDependencyGraph(userId, collegeId = null) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
-    let query = 'SELECT * FROM tasks WHERE user_id = ?';
+    let query = 'SELECT * FROM tasks WHERE user_id = $1';
     const params = [userId];
     
     if (collegeId) {
-      query += ' AND college_id = ?';
+      query += ' AND college_id = $2';
       params.push(collegeId);
     }
     
-    const tasks = db.prepare(query).all(...params);
+    const tasks = (await pool.query(query, params)).rows;
     
     // Build adjacency list
     const graph = {};
@@ -311,10 +314,12 @@ class RequirementService {
     
     // Get dependencies
     try {
-      const deps = db.prepare(`
-        SELECT * FROM task_dependencies 
-        WHERE task_id IN (${tasks.map(() => '?').join(',')})
-      `).all(...tasks.map(t => t.id));
+      const deps = tasks.length > 0
+        ? (await pool.query(`
+            SELECT * FROM task_dependencies 
+            WHERE task_id IN (${tasks.map((_, i) => `$${i + 1}`).join(',')})
+          `, tasks.map(t => t.id))).rows
+        : [];
       
       for (const dep of deps) {
         if (graph[dep.task_id] && graph[dep.depends_on_task_id]) {
@@ -347,25 +352,25 @@ class RequirementService {
    * @returns {Promise<Task[]>}
    */
   static async detectBlockedTasks(userId, collegeId) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
-    const blockedTasks = db.prepare(`
+    const blockedTasks = (await pool.query(`
       SELECT t.*, 
-             GROUP_CONCAT(dt.title, ', ') as blocking_task_titles
+             STRING_AGG(dt.title, ', ') as blocking_task_titles
       FROM tasks t
       JOIN task_dependencies td ON td.task_id = t.id AND td.dependency_type = 'blocks'
       JOIN tasks dt ON dt.id = td.depends_on_task_id AND dt.status != 'complete'
-      WHERE t.user_id = ? AND t.college_id = ? AND t.status != 'complete'
+      WHERE t.user_id = $1 AND t.college_id = $2 AND t.status != 'complete'
       GROUP BY t.id
-    `).all(userId, collegeId);
+    `, [userId, collegeId])).rows;
     
     // Update blocked status
     for (const task of blockedTasks) {
       if (task.status !== 'blocked') {
-        db.prepare(`
-          UPDATE tasks SET status = 'blocked', blocking_reason = ?, updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `).run(`Blocked by: ${task.blocking_task_titles}`, task.id);
+        await pool.query(`
+          UPDATE tasks SET status = 'blocked', blocking_reason = $1, updated_at = NOW()
+          WHERE id = $2
+        `, [`Blocked by: ${task.blocking_task_titles}`, task.id]);
       }
     }
     
@@ -379,19 +384,19 @@ class RequirementService {
    * @returns {Promise<number>} Completion percentage 0-100
    */
   static async getTaskCompletion(userId, collegeId) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
-    const stats = db.prepare(`
+    const stats = (await pool.query(`
       SELECT 
         COUNT(*) as total,
         SUM(CASE WHEN status = 'complete' THEN 1 ELSE 0 END) as completed
       FROM tasks
-      WHERE user_id = ? AND college_id = ?
-    `).get(userId, collegeId);
+      WHERE user_id = $1 AND college_id = $2
+    `, [userId, collegeId])).rows[0];
     
-    if (!stats || stats.total === 0) return 0;
+    if (!stats || parseInt(stats.total) === 0) return 0;
     
-    return Math.round((stats.completed / stats.total) * 100);
+    return Math.round((parseInt(stats.completed) / parseInt(stats.total)) * 100);
   }
 
   /**
@@ -401,19 +406,19 @@ class RequirementService {
    * @returns {Promise<Task[]>}
    */
   static async getCriticalPath(userId, collegeId) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Get all incomplete tasks with deadlines, ordered by urgency
-    const tasks = db.prepare(`
+    const tasks = (await pool.query(`
       SELECT t.*, 
-             (julianday(t.deadline) - julianday('now')) * 24 as hours_until_deadline,
+             EXTRACT(EPOCH FROM (t.deadline::timestamptz - NOW())) / 3600 as hours_until_deadline,
              t.estimated_hours
       FROM tasks t
-      WHERE t.user_id = ? AND t.college_id = ? 
+      WHERE t.user_id = $1 AND t.college_id = $2 
         AND t.status NOT IN ('complete', 'skipped')
         AND t.deadline IS NOT NULL
       ORDER BY t.deadline ASC, t.priority ASC
-    `).all(userId, collegeId);
+    `, [userId, collegeId])).rows;
     
     // Calculate critical path - tasks where hours_until_deadline < estimated_hours remaining
     const criticalTasks = [];
@@ -443,13 +448,13 @@ class RequirementService {
    * @returns {Promise<Task[]>}
    */
   static async getTasks(userId, collegeId) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
-    const tasks = db.prepare(`
+    const tasks = (await pool.query(`
       SELECT * FROM tasks
-      WHERE user_id = ? AND college_id = ?
+      WHERE user_id = $1 AND college_id = $2
       ORDER BY priority ASC, deadline ASC
-    `).all(userId, collegeId);
+    `, [userId, collegeId])).rows;
     
     return tasks;
   }
@@ -462,9 +467,9 @@ class RequirementService {
    * @returns {Promise<Object>}
    */
   static async updateTaskStatus(taskId, newStatus, reason = null) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
-    const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId);
+    const task = (await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId])).rows[0];
     if (!task) {
       throw new Error('Task not found');
     }
@@ -472,20 +477,20 @@ class RequirementService {
     const oldStatus = task.status;
     
     // Update task
-    db.prepare(`
+    await pool.query(`
       UPDATE tasks SET 
-        status = ?,
-        updated_at = CURRENT_TIMESTAMP,
-        completed_at = CASE WHEN ? = 'complete' THEN CURRENT_TIMESTAMP ELSE completed_at END
-      WHERE id = ?
-    `).run(newStatus, newStatus, taskId);
+        status = $1,
+        updated_at = NOW(),
+        completed_at = CASE WHEN $2 = 'complete' THEN NOW() ELSE completed_at END
+      WHERE id = $3
+    `, [newStatus, newStatus, taskId]);
     
     // Log status change
     try {
-      db.prepare(`
+      await pool.query(`
         INSERT INTO task_status_history (task_id, old_status, new_status, change_reason)
-        VALUES (?, ?, ?, ?)
-      `).run(taskId, oldStatus, newStatus, reason);
+        VALUES ($1, $2, $3, $4)
+      `, [taskId, oldStatus, newStatus, reason]);
     } catch (error) {
       logger.debug('Could not log status change:', error.message);
     }
@@ -495,7 +500,7 @@ class RequirementService {
       await this.checkUnblockedTasks(taskId);
     }
     
-    return db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId);
+    return (await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId])).rows[0];
   }
 
   /**
@@ -503,29 +508,29 @@ class RequirementService {
    * @param {number} completedTaskId - The task that was just completed
    */
   static async checkUnblockedTasks(completedTaskId) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     try {
       // Find tasks that were blocked by this task
-      const blockedTasks = db.prepare(`
+      const blockedTasks = (await pool.query(`
         SELECT t.* FROM tasks t
         JOIN task_dependencies td ON td.task_id = t.id
-        WHERE td.depends_on_task_id = ? AND t.status = 'blocked'
-      `).all(completedTaskId);
+        WHERE td.depends_on_task_id = $1 AND t.status = 'blocked'
+      `, [completedTaskId])).rows;
       
       for (const task of blockedTasks) {
         // Check if all blockers are now complete
-        const remainingBlockers = db.prepare(`
+        const remainingBlockers = (await pool.query(`
           SELECT COUNT(*) as count FROM task_dependencies td
           JOIN tasks bt ON bt.id = td.depends_on_task_id
-          WHERE td.task_id = ? AND td.dependency_type = 'blocks' AND bt.status != 'complete'
-        `).get(task.id);
+          WHERE td.task_id = $1 AND td.dependency_type = 'blocks' AND bt.status != 'complete'
+        `, [task.id])).rows[0];
         
-        if (remainingBlockers.count === 0) {
-          db.prepare(`
-            UPDATE tasks SET status = 'not_started', blocking_reason = NULL, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-          `).run(task.id);
+        if (parseInt(remainingBlockers.count) === 0) {
+          await pool.query(`
+            UPDATE tasks SET status = 'not_started', blocking_reason = NULL, updated_at = NOW()
+            WHERE id = $1
+          `, [task.id]);
           
           logger.debug(`Task ${task.id} unblocked after completion of task ${completedTaskId}`);
         }
@@ -541,15 +546,15 @@ class RequirementService {
    * @returns {Promise<Object>}
    */
   static async getReusableContent(userId) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Find essays that can be reused
-    const reusableEssays = db.prepare(`
+    const reusableEssays = (await pool.query(`
       SELECT t.*, c.name as college_name
       FROM tasks t
       JOIN colleges c ON c.id = t.college_id
-      WHERE t.user_id = ? AND t.is_reusable = 1 AND t.status = 'complete' AND t.task_type = 'essay'
-    `).all(userId);
+      WHERE t.user_id = $1 AND t.is_reusable = true AND t.status = 'complete' AND t.task_type = 'essay'
+    `, [userId])).rows;
     
     // Group by similarity
     const essayGroups = {};
