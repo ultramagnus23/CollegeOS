@@ -27,6 +27,7 @@ jobs:
 
     env:
       DATABASE_PATH: ${{ github.workspace }}/backend/database/college_app.db
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
       REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
       REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
       REDDIT_REFRESH_TOKEN: ${{ secrets.REDDIT_REFRESH_TOKEN }}
@@ -52,7 +53,9 @@ jobs:
 
       # Restore the SQLite database from the previous run so we don't
       # lose scraped data between scheduled executions.
+      # Skipped when DATABASE_URL is set (PostgreSQL mode — data lives in the DB).
       - name: Restore database cache
+        if: ${{ secrets.DATABASE_URL == '' }}
         id: restore-db
         uses: actions/cache/restore@v4
         with:
@@ -77,8 +80,9 @@ jobs:
         run: node index.js ${{ steps.mode.outputs.mode }}
 
       # Save the updated database so the next run picks up where we left off.
+      # Skipped when DATABASE_URL is set (PostgreSQL mode — data is persisted externally).
       - name: Save database cache
-        if: always()
+        if: ${{ secrets.DATABASE_URL == '' && always() }}
         uses: actions/cache/save@v4
         with:
           path: backend/database/college_app.db

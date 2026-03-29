@@ -26,10 +26,10 @@ const MIN_SAMPLE_SIZE = 30;
 /**
  * Run calibration for all schools with sufficient data.
  * Logs per-school results and a summary at the end.
- * @returns {{schools_calibrated: number, schools_skipped: number}}
+ * @returns {Promise<{schools_calibrated: number, schools_skipped: number}>}
  */
-function calibrate() {
-  const schoolStats = db.getSchoolStats();
+async function calibrate() {
+  const schoolStats = await db.getSchoolStats();
   let schoolsCalibrated = 0;
   let schoolsSkipped = 0;
 
@@ -39,7 +39,7 @@ function calibrate() {
       continue;
     }
 
-    const predictedRate = db.getPublishedRate(school);
+    const predictedRate = await db.getPublishedRate(school);
     if (predictedRate === null) {
       logger.info({
         msg: 'Calibration: no published rate found, skipping',
@@ -51,15 +51,15 @@ function calibrate() {
     }
 
     // Fetch individual outcomes for this school
-    const outcomes = db.getResultsForSchool(school);
+    const outcomes = await db.getResultsForSchool(school);
     const brierScore = computeBrierScore(outcomes, predictedRate);
     const actualRate = outcomes.filter((r) => r.outcome === 'accepted').length / outcomes.length;
 
     // Delta vs previous run
-    const previousBrierScore = db.getLastBrierScore(school);
+    const previousBrierScore = await db.getLastBrierScore(school);
     const delta = previousBrierScore !== null ? brierScore - previousBrierScore : null;
 
-    db.insertCalibrationRun({
+    await db.insertCalibrationRun({
       school_name: school,
       predicted_rate: predictedRate,
       actual_rate: actualRate,
