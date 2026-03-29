@@ -12,7 +12,7 @@
  * - Google-friendly bot configuration
  */
 
-const sqlite3 = require('better-sqlite3');
+const dbManager = require('../src/config/database');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer-extra');
@@ -362,17 +362,15 @@ function getAxiosConfig(country, url) {
 
 let db;
 
-function initDatabase() {
-  db = sqlite3(CONFIG.DB_PATH);
-  db.pragma('foreign_keys = ON');
-  db.pragma('journal_mode = WAL'); // Better concurrency
-  
-  // Create scrape_history table
-  db.exec(`
+async function initDatabase() {
+  db = dbManager.getDatabase();
+
+  // Create scrape_history table if it doesn't exist
+  await db.query(`
     CREATE TABLE IF NOT EXISTS scrape_history (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       college_id INTEGER NOT NULL,
-      scraped_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      scraped_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
       sources_tried TEXT,
       success INTEGER DEFAULT 0,
       data TEXT,
@@ -380,20 +378,21 @@ function initDatabase() {
       ipeds_available INTEGER DEFAULT 0,
       website_available INTEGER DEFAULT 0,
       FOREIGN KEY (college_id) REFERENCES colleges_comprehensive(id) ON DELETE CASCADE
-    );
-    CREATE INDEX IF NOT EXISTS idx_scrape_history_college ON scrape_history(college_id);
-    CREATE INDEX IF NOT EXISTS idx_scrape_history_date ON scrape_history(scraped_at);
-  `);
-  
+    )
+  `).catch(() => {});
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_scrape_history_college ON scrape_history(college_id)`).catch(() => {});
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_scrape_history_date ON scrape_history(scraped_at)`).catch(() => {});
+
   return db;
 }
 
-function getAllColleges() {
-  let colleges = db.prepare(`
+async function getAllColleges() {
+  let result = await db.query(`
     SELECT id, name, country, state_region, city, website_url
     FROM colleges_comprehensive
     ORDER BY id
-  `).all();
+  `);
+  let colleges = result.rows;
 
   // Load from unified_colleges.json if needed
   if (colleges.length < 100) {
@@ -402,33 +401,17 @@ function getAllColleges() {
     if (fsSync.existsSync(unifiedPath)) {
       const data = JSON.parse(fsSync.readFileSync(unifiedPath, 'utf-8'));
       if (data.colleges && data.colleges.length > 0) {
-        const insertStmt = db.prepare(`
-          INSERT OR IGNORE INTO colleges_comprehensive 
-          (name, country, state_region, city, website_url, total_enrollment)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `);
-        
-        const insertTx = db.transaction((collegeList) => {
-          for (const college of collegeList) {
-            insertStmt.run(
-              college.name,
-              college.country,
-              college.state_region,
-              college.city,
-              college.website_url,
-              college.total_enrollment
-            );
-          }
-        });
-        
-        insertTx(data.colleges);
+        for (const college of data.colleges) {
+          await db.query(
+            `INSERT INTO colleges_comprehensive (name, country, state_region, city, website_url, total_enrollment)
+             VALUES ($1,$2,$3,$4,$5,$6)
+             ON CONFLICT DO NOTHING`,
+            [college.name, college.country, college.state_region, college.city, college.website_url, college.total_enrollment]
+          ).catch(() => {});
+        }
         logger.info(`Inserted ${data.colleges.length} colleges from unified_colleges.json`);
-        
-        colleges = db.prepare(`
-          SELECT id, name, country, state_region, city, website_url
-          FROM colleges_comprehensive
-          ORDER BY id
-        `).all();
+        const r2 = await db.query(`SELECT id, name, country, state_region, city, website_url FROM colleges_comprehensive ORDER BY id`);
+        colleges = r2.rows;
       }
     }
   }
@@ -904,30 +887,32 @@ async function scrapeCollege(college) {
 // SAVE TO DATABASE
 // ============================================================================
 
-function saveScrapedData(college, results) {
-  const updateStmt = db.prepare(`
-    UPDATE colleges_comprehensive 
-    SET last_updated = ?
-    WHERE id = ?
-  `);
-  updateStmt.run(new Date().toISOString(), college.id);
+async function saveScrapedData(college, results) {
+  try {
+    await db.query(
+      `UPDATE colleges_comprehensive SET last_updated = $1 WHERE id = $2`,
+      [new Date().toISOString(), college.id]
+    );
+  } catch {}
 
-  const insertScrape = db.prepare(`
-    INSERT OR REPLACE INTO scrape_history 
-    (college_id, scraped_at, sources_tried, success, data, cds_available, ipeds_available, website_available)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  
-  insertScrape.run(
-    college.id,
-    results.scraped_at,
-    JSON.stringify(results.sources_tried),
-    results.success ? 1 : 0,
-    JSON.stringify(results.data),
-    results.data.cds?.data_available ? 1 : 0,
-    results.data.ipeds?.data_available ? 1 : 0,
-    results.data.website?.data_available ? 1 : 0
-  );
+  try {
+    await db.query(
+      `INSERT INTO scrape_history
+         (college_id, scraped_at, sources_tried, success, data, cds_available, ipeds_available, website_available)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       ON CONFLICT DO NOTHING`,
+      [
+        college.id,
+        results.scraped_at,
+        JSON.stringify(results.sources_tried),
+        results.success ? 1 : 0,
+        JSON.stringify(results.data),
+        results.data.cds?.data_available ? 1 : 0,
+        results.data.ipeds?.data_available ? 1 : 0,
+        results.data.website?.data_available ? 1 : 0,
+      ]
+    );
+  } catch {}
 }
 
 // ============================================================================
@@ -959,7 +944,7 @@ async function processBatch(colleges, batchNum, totalBatches) {
       if (results.success) {
         stats.succeeded++;
         stats.succeededColleges.push({ id: college.id, name: college.name });
-        saveScrapedData(college, results);
+        await saveScrapedData(college, results);
         logger.success(`✅ ${college.name}`, { sources: results.sources_tried });
       } else {
         stats.failed++;
@@ -1035,9 +1020,9 @@ async function main() {
   }
 
   stats.startTime = new Date();
-  initDatabase();
+  await initDatabase();
 
-  const colleges = getAllColleges();
+  const colleges = await getAllColleges();
   stats.total = colleges.length;
 
   console.log(`📚 Found ${stats.total} colleges`);
@@ -1056,7 +1041,7 @@ async function main() {
   printSummary();
 
   if (browser) await browser.close();
-  db.close();
+  await dbManager.close().catch(() => {});
 }
 
 // Graceful shutdown
@@ -1065,7 +1050,7 @@ process.on('SIGINT', async () => {
   await progressManager.save();
   await logger.save();
   if (browser) await browser.close();
-  if (db) db.close();
+  await dbManager.close().catch(() => {});
   process.exit(0);
 });
 
@@ -1074,6 +1059,6 @@ main().catch(async (error) => {
   logger.error('Fatal error', { error: error.message, stack: error.stack });
   await logger.save();
   if (browser) await browser.close();
-  if (db) db.close();
+  await dbManager.close().catch(() => {});
   process.exit(1);
 });
