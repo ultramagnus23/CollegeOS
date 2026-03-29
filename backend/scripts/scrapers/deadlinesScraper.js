@@ -484,7 +484,7 @@ if (require.main === module) {
     const args = process.argv.slice(2);
 
     if (args.includes('--reset-corrupt')) {
-      const n = fixCorruptDates(db);
+      const n = await fixCorruptDates(db);
       console.log(`Fixed ${n} corrupt date values`);
       process.exit(0);
     }
@@ -494,9 +494,9 @@ if (require.main === module) {
 
     let colleges;
     if (collegeIdArg) {
-      colleges = db.prepare(`SELECT id, name, official_website, admissions_url FROM colleges WHERE id = ?`).all(parseInt(collegeIdArg));
+      colleges = (await db.query(`SELECT id, name, official_website, admissions_url FROM colleges WHERE id = $1`, [parseInt(collegeIdArg)])).rows;
     } else {
-      colleges = db.prepare(`SELECT id, name, official_website, admissions_url FROM colleges WHERE official_website IS NOT NULL ORDER BY id`).all();
+      colleges = (await db.query(`SELECT id, name, official_website, admissions_url FROM colleges WHERE official_website IS NOT NULL ORDER BY id`)).rows;
     }
 
     await runDeadlinesScraper(db, colleges);

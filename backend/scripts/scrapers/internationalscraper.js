@@ -114,32 +114,27 @@ async function scrapeТHERankings() {
   return results;
 }
 
-function writeRankings(db, rankingsData, rankingBody) {
+async function writeRankings(db, rankingsData, rankingBody) {
   const year = new Date().getFullYear();
-  const findCollege = db.prepare(`SELECT id FROM colleges WHERE name = ? LIMIT 1`);
-  const findByAlias = db.prepare(`SELECT c.id FROM colleges c JOIN college_aliases ca ON ca.college_id = c.id WHERE ca.alias = ? LIMIT 1`);
-
-  const upsert = db.prepare(`
-    INSERT INTO college_rankings
-      (college_id, year, ranking_body, national_rank, global_rank, prestige_index)
-    VALUES (?,?,?,?,?,?)
-    ON CONFLICT(college_id, year, ranking_body) DO UPDATE SET
-      global_rank = excluded.global_rank,
-      national_rank = excluded.national_rank,
-      prestige_index = excluded.prestige_index
-  `);
-
   let count = 0;
   for (const item of rankingsData) {
-    let c = findCollege.get(item.name);
-    if (!c) c = findByAlias.get(item.name);
-    if (!c) continue;
-
+    let row = (await db.query(`SELECT id FROM colleges WHERE name = $1 LIMIT 1`, [item.name])).rows[0];
+    if (!row) row = (await db.query(`SELECT c.id FROM colleges c JOIN college_aliases ca ON ca.college_id = c.id WHERE ca.alias = $1 LIMIT 1`, [item.name])).rows[0];
+    if (!row) continue;
     const globalRank = item.qs_rank || item.the_rank;
     const score = item.qs_score || item.the_score;
-
-    upsert.run(c.id, year, rankingBody, null, globalRank, score);
-    count++;
+    try {
+      await db.query(
+        `INSERT INTO college_rankings (college_id, year, ranking_body, national_rank, global_rank, prestige_index)
+         VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT(college_id, year, ranking_body) DO UPDATE SET
+           global_rank = EXCLUDED.global_rank,
+           national_rank = EXCLUDED.national_rank,
+           prestige_index = EXCLUDED.prestige_index`,
+        [row.id, year, rankingBody, null, globalRank, score]
+      );
+      count++;
+    } catch {}
   }
   return count;
 }
@@ -176,16 +171,19 @@ async function scrapeUKUniversity(college) {
   return result;
 }
 
-function writeUKData(db, college, data) {
+async function writeUKData(db, college, data) {
   if (!data) return;
-  db.prepare(`
-    INSERT INTO uk_requirements (college_id, interview_required, admissions_test_required, oxbridge_deadline)
-    VALUES (?,?,?,?)
-    ON CONFLICT(college_id) DO UPDATE SET
-      interview_required = excluded.interview_required,
-      admissions_test_required = excluded.admissions_test_required,
-      oxbridge_deadline = COALESCE(excluded.oxbridge_deadline, oxbridge_deadline)
-  `).run(college.id, data.interview_required, data.admissions_test_required, data.oxbridge_deadline);
+  try {
+    await db.query(
+      `INSERT INTO uk_requirements (college_id, interview_required, admissions_test_required, oxbridge_deadline)
+       VALUES ($1,$2,$3,$4)
+       ON CONFLICT(college_id) DO UPDATE SET
+         interview_required = EXCLUDED.interview_required,
+         admissions_test_required = EXCLUDED.admissions_test_required,
+         oxbridge_deadline = COALESCE(EXCLUDED.oxbridge_deadline, uk_requirements.oxbridge_deadline)`,
+      [college.id, data.interview_required, data.admissions_test_required, data.oxbridge_deadline]
+    );
+  } catch {}
 }
 
 // ── JoSAA / India ──────────────────────────────────────────────────────────
@@ -220,23 +218,7 @@ async function scrapeJoSAAData() {
   return results;
 }
 
-function writeJoSAAData(db, rows) {
-  const findCollege = db.prepare(`
-    SELECT id FROM colleges WHERE name LIKE ? AND country = 'India' LIMIT 1
-  `);
-
-  const upsert = db.prepare(`
-    INSERT INTO indian_entrance_exams
-      (college_id, exam_type, cutoff_general_opening, cutoff_general_closing,
-       cutoff_obc_opening, cutoff_obc_closing, cutoff_sc_opening, cutoff_sc_closing)
-    VALUES (?,?,?,?,?,?,?,?)
-    ON CONFLICT(college_id, exam_type) DO UPDATE SET
-      cutoff_general_opening = COALESCE(excluded.cutoff_general_opening, cutoff_general_opening),
-      cutoff_general_closing = COALESCE(excluded.cutoff_general_closing, cutoff_general_closing),
-      cutoff_obc_opening = COALESCE(excluded.cutoff_obc_opening, cutoff_obc_opening),
-      cutoff_obc_closing = COALESCE(excluded.cutoff_obc_closing, cutoff_obc_closing)
-  `);
-
+async function writeJoSAAData(db, rows) {
   // Aggregate by institute (take min opening, max closing per category)
   const byInstitute = {};
   for (const row of rows) {
@@ -257,15 +239,26 @@ function writeJoSAAData(db, rows) {
 
   let count = 0;
   for (const [name, data] of Object.entries(byInstitute)) {
-    const c = findCollege.get(`%${name.substring(0, 20)}%`);
+    const c = (await db.query(`SELECT id FROM colleges WHERE name LIKE $1 AND country = 'India' LIMIT 1`, [`%${name.substring(0, 20)}%`])).rows[0];
     if (!c) continue;
-    upsert.run(
-      c.id, 'JEE_Advanced',
-      data.general.opening, data.general.closing,
-      data.obc.opening, data.obc.closing,
-      data.sc.opening, data.sc.closing
-    );
-    count++;
+    try {
+      await db.query(
+        `INSERT INTO indian_entrance_exams
+           (college_id, exam_type, cutoff_general_opening, cutoff_general_closing,
+            cutoff_obc_opening, cutoff_obc_closing, cutoff_sc_opening, cutoff_sc_closing)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+         ON CONFLICT(college_id, exam_type) DO UPDATE SET
+           cutoff_general_opening = COALESCE(EXCLUDED.cutoff_general_opening, indian_entrance_exams.cutoff_general_opening),
+           cutoff_general_closing = COALESCE(EXCLUDED.cutoff_general_closing, indian_entrance_exams.cutoff_general_closing),
+           cutoff_obc_opening = COALESCE(EXCLUDED.cutoff_obc_opening, indian_entrance_exams.cutoff_obc_opening),
+           cutoff_obc_closing = COALESCE(EXCLUDED.cutoff_obc_closing, indian_entrance_exams.cutoff_obc_closing)`,
+        [c.id, 'JEE_Advanced',
+         data.general.opening, data.general.closing,
+         data.obc.opening, data.obc.closing,
+         data.sc.opening, data.sc.closing]
+      );
+      count++;
+    } catch {}
   }
   return count;
 }
@@ -296,24 +289,23 @@ async function scrapeNIRFRankings() {
   return results;
 }
 
-function writeNIRFData(db, rankings) {
+async function writeNIRFData(db, rankings) {
   const year = new Date().getFullYear();
-  const findCollege = db.prepare(`SELECT id FROM colleges WHERE name LIKE ? AND country = 'India' LIMIT 1`);
-
-  const upsert = db.prepare(`
-    INSERT INTO college_rankings (college_id, year, ranking_body, national_rank, prestige_index)
-    VALUES (?,?,?,?,?)
-    ON CONFLICT(college_id, year, ranking_body) DO UPDATE SET
-      national_rank = excluded.national_rank,
-      prestige_index = excluded.prestige_index
-  `);
-
   let count = 0;
   for (const item of rankings) {
-    const c = findCollege.get(`%${item.name.substring(0, 15)}%`);
+    const c = (await db.query(`SELECT id FROM colleges WHERE name LIKE $1 AND country = 'India' LIMIT 1`, [`%${item.name.substring(0, 15)}%`])).rows[0];
     if (!c) continue;
-    upsert.run(c.id, year, 'NIRF', item.rank, item.score);
-    count++;
+    try {
+      await db.query(
+        `INSERT INTO college_rankings (college_id, year, ranking_body, national_rank, prestige_index)
+         VALUES ($1,$2,$3,$4,$5)
+         ON CONFLICT(college_id, year, ranking_body) DO UPDATE SET
+           national_rank = EXCLUDED.national_rank,
+           prestige_index = EXCLUDED.prestige_index`,
+        [c.id, year, 'NIRF', item.rank, item.score]
+      );
+      count++;
+    } catch {}
   }
   return count;
 }
@@ -339,19 +331,22 @@ async function scrapeGermanUniversity(college) {
   };
 }
 
-function writeGermanData(db, college, data) {
+async function writeGermanData(db, college, data) {
   if (!data) return;
-  db.prepare(`
-    INSERT INTO german_requirements
-      (college_id, german_language_requirement, english_language_requirement,
-       programs_in_english, numerus_clausus_programs)
-    VALUES (?,?,?,?,?)
-    ON CONFLICT(college_id) DO UPDATE SET
-      german_language_requirement = COALESCE(excluded.german_language_requirement, german_language_requirement),
-      english_language_requirement = COALESCE(excluded.english_language_requirement, english_language_requirement),
-      programs_in_english = excluded.programs_in_english,
-      numerus_clausus_programs = excluded.numerus_clausus_programs
-  `).run(college.id, data.german_language_requirement, data.english_language_requirement, data.programs_in_english, data.numerus_clausus_programs);
+  try {
+    await db.query(
+      `INSERT INTO german_requirements
+         (college_id, german_language_requirement, english_language_requirement,
+          programs_in_english, numerus_clausus_programs)
+       VALUES ($1,$2,$3,$4,$5)
+       ON CONFLICT(college_id) DO UPDATE SET
+         german_language_requirement = COALESCE(EXCLUDED.german_language_requirement, german_requirements.german_language_requirement),
+         english_language_requirement = COALESCE(EXCLUDED.english_language_requirement, german_requirements.english_language_requirement),
+         programs_in_english = EXCLUDED.programs_in_english,
+         numerus_clausus_programs = EXCLUDED.numerus_clausus_programs`,
+      [college.id, data.german_language_requirement, data.english_language_requirement, data.programs_in_english, data.numerus_clausus_programs]
+    );
+  } catch {}
 }
 
 // ── Master runner ───────────────────────────────────────────────────────────
@@ -363,7 +358,7 @@ async function runInternationalScraper(db, colleges) {
   console.log('\nScraping QS Rankings...');
   try {
     const qsData = await scrapeQSRankings();
-    results.qs = writeRankings(db, qsData, 'QS_World');
+    results.qs = await writeRankings(db, qsData, 'QS_World');
     console.log(`  ✓ QS: ${results.qs} colleges ranked`);
   } catch (e) { console.error('  ✗ QS failed:', e.message); }
 
@@ -371,7 +366,7 @@ async function runInternationalScraper(db, colleges) {
   console.log('Scraping THE Rankings...');
   try {
     const theData = await scrapeТHERankings();
-    results.the = writeRankings(db, theData, 'THE_World');
+    results.the = await writeRankings(db, theData, 'THE_World');
     console.log(`  ✓ THE: ${results.the} colleges ranked`);
   } catch (e) { console.error('  ✗ THE failed:', e.message); }
 
@@ -379,7 +374,7 @@ async function runInternationalScraper(db, colleges) {
   console.log('Scraping NIRF Rankings...');
   try {
     const nirfData = await scrapeNIRFRankings();
-    results.nirf = writeNIRFData(db, nirfData);
+    results.nirf = await writeNIRFData(db, nirfData);
     console.log(`  ✓ NIRF: ${results.nirf} colleges ranked`);
   } catch (e) { console.error('  ✗ NIRF failed:', e.message); }
 
@@ -387,7 +382,7 @@ async function runInternationalScraper(db, colleges) {
   console.log('Scraping JoSAA cutoffs...');
   try {
     const josaaData = await scrapeJoSAAData();
-    results.josaa = writeJoSAAData(db, josaaData);
+    results.josaa = await writeJoSAAData(db, josaaData);
     console.log(`  ✓ JoSAA: ${results.josaa} institutes with cutoffs`);
   } catch (e) { console.error('  ✗ JoSAA failed:', e.message); }
 
@@ -397,7 +392,7 @@ async function runInternationalScraper(db, colleges) {
   for (const c of ukColleges) {
     try {
       const data = await scrapeUKUniversity(c);
-      writeUKData(db, c, data);
+      await writeUKData(db, c, data);
       results.uk++;
       await new Promise(r => setTimeout(r, 800));
     } catch (e) { /* skip */ }
@@ -409,7 +404,7 @@ async function runInternationalScraper(db, colleges) {
   for (const c of germanColleges) {
     try {
       const data = await scrapeGermanUniversity(c);
-      writeGermanData(db, c, data);
+      await writeGermanData(db, c, data);
       results.germany++;
       await new Promise(r => setTimeout(r, 800));
     } catch (e) { /* skip */ }
