@@ -26,7 +26,7 @@ class EssayAutoLoadingService {
 
     try {
       // Get college data including application platform
-      const college = this._getCollegeData(collegeId);
+      const college = await this._getCollegeData(collegeId);
       
       if (!college) {
         result.message = 'College not found';
@@ -59,14 +59,13 @@ class EssayAutoLoadingService {
    * Get college data from database
    * @private
    */
-  static _getCollegeData(collegeId) {
-    const db = dbManager.getDatabase();
-    const stmt = db.prepare(`
+  static async _getCollegeData(collegeId) {
+    const pool = dbManager.getDatabase();
+    return (await pool.query(`
       SELECT id, name, country, application_platforms
       FROM colleges 
-      WHERE id = ?
-    `);
-    return stmt.get(collegeId);
+      WHERE id = $1
+    `, [collegeId])).rows[0];
   }
 
   /**
@@ -97,31 +96,23 @@ class EssayAutoLoadingService {
    * @private
    */
   static async _loadPlatformMainEssay(userId, platform, result) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     const currentYear = new Date().getFullYear();
 
     if (platform === 'common_app') {
       // Check if Common App main essay already exists
-      const exists = db.prepare(`
-        SELECT id FROM essays WHERE user_id = ? AND essay_type = 'common_app_main'
-      `).get(userId);
+      const exists = (await pool.query(`
+        SELECT id FROM essays WHERE user_id = $1 AND essay_type = 'common_app_main'
+      `, [userId])).rows[0];
 
       if (!exists) {
-        const stmt = db.prepare(`
+        const commonAppPrompts = this._getCommonAppPrompts(currentYear);
+        await pool.query(`
           INSERT INTO essays (
             application_id, user_id, essay_type, prompt, word_limit,
             is_required, shared_across_colleges, status, platform
-          ) VALUES (NULL, ?, ?, ?, ?, 1, 1, 'not_started', ?)
-        `);
-
-        const commonAppPrompts = this._getCommonAppPrompts(currentYear);
-        stmt.run(
-          userId,
-          'common_app_main',
-          commonAppPrompts,
-          650,
-          'Common Application'
-        );
+          ) VALUES (NULL, $1, $2, $3, $4, true, true, 'not_started', $5)
+        `, [userId, 'common_app_main', commonAppPrompts, 650, 'Common Application']);
 
         result.essaysAdded.push({
           type: 'common_app_main',
@@ -130,26 +121,18 @@ class EssayAutoLoadingService {
         });
       }
     } else if (platform === 'coalition') {
-      const exists = db.prepare(`
-        SELECT id FROM essays WHERE user_id = ? AND essay_type = 'coalition_main'
-      `).get(userId);
+      const exists = (await pool.query(`
+        SELECT id FROM essays WHERE user_id = $1 AND essay_type = 'coalition_main'
+      `, [userId])).rows[0];
 
       if (!exists) {
-        const stmt = db.prepare(`
+        const coalitionPrompts = this._getCoalitionPrompts(currentYear);
+        await pool.query(`
           INSERT INTO essays (
             application_id, user_id, essay_type, prompt, word_limit,
             is_required, shared_across_colleges, status, platform
-          ) VALUES (NULL, ?, ?, ?, ?, 1, 1, 'not_started', ?)
-        `);
-
-        const coalitionPrompts = this._getCoalitionPrompts(currentYear);
-        stmt.run(
-          userId,
-          'coalition_main',
-          coalitionPrompts,
-          650,
-          'Coalition Application'
-        );
+          ) VALUES (NULL, $1, $2, $3, $4, true, true, 'not_started', $5)
+        `, [userId, 'coalition_main', coalitionPrompts, 650, 'Coalition Application']);
 
         result.essaysAdded.push({
           type: 'coalition_main',
@@ -159,35 +142,27 @@ class EssayAutoLoadingService {
       }
     } else if (platform === 'uc') {
       // UC PIQs - 8 prompts, choose 4
-      const exists = db.prepare(`
-        SELECT id FROM essays WHERE user_id = ? AND essay_type LIKE 'uc_piq_%'
-      `).get(userId);
+      const exists = (await pool.query(`
+        SELECT id FROM essays WHERE user_id = $1 AND essay_type LIKE 'uc_piq_%'
+      `, [userId])).rows[0];
 
       if (!exists) {
         const ucPrompts = this._getUCPrompts(currentYear);
-        const stmt = db.prepare(`
-          INSERT INTO essays (
-            application_id, user_id, essay_type, prompt, word_limit,
-            is_required, shared_across_colleges, status, platform, essay_number
-          ) VALUES (NULL, ?, ?, ?, ?, 0, 1, 'not_started', ?, ?)
-        `);
 
-        ucPrompts.forEach((prompt, index) => {
-          stmt.run(
-            userId,
-            `uc_piq_${index + 1}`,
-            prompt,
-            350,
-            'UC Application',
-            index + 1
-          );
+        for (const [index, prompt] of ucPrompts.entries()) {
+          await pool.query(`
+            INSERT INTO essays (
+              application_id, user_id, essay_type, prompt, word_limit,
+              is_required, shared_across_colleges, status, platform, essay_number
+            ) VALUES (NULL, $1, $2, $3, $4, false, true, 'not_started', $5, $6)
+          `, [userId, `uc_piq_${index + 1}`, prompt, 350, 'UC Application', index + 1]);
 
           result.essaysAdded.push({
             type: `uc_piq_${index + 1}`,
             prompt: `UC PIQ ${index + 1}`,
             wordLimit: 350
           });
-        });
+        }
       }
     }
   }
@@ -197,14 +172,14 @@ class EssayAutoLoadingService {
    * @private
    */
   static async _loadCollegeSupplements(userId, applicationId, collegeId, platform, currentYear, result) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Query essay_prompts table for college supplements
-    let supplements = db.prepare(`
+    let supplements = (await pool.query(`
       SELECT * FROM essay_prompts 
-      WHERE college_id = ? 
+      WHERE college_id = $1 
       ORDER BY prompt_order ASC
-    `).all(collegeId);
+    `, [collegeId])).rows;
 
     let usedHistorical = false;
 
@@ -219,25 +194,23 @@ class EssayAutoLoadingService {
     }
 
     // Insert supplements
-    const stmt = db.prepare(`
-      INSERT INTO essays (
-        application_id, user_id, college_id, essay_type, prompt, 
-        word_limit, is_required, status, essay_number, historical_data
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'not_started', ?, ?)
-    `);
-
-    supplements.forEach((supplement, index) => {
-      stmt.run(
+    for (const [index, supplement] of supplements.entries()) {
+      await pool.query(`
+        INSERT INTO essays (
+          application_id, user_id, college_id, essay_type, prompt, 
+          word_limit, is_required, status, essay_number, historical_data
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'not_started', $8, $9)
+      `, [
         applicationId,
         userId,
         collegeId,
         'supplemental',
         supplement.prompt_text,
         supplement.word_limit,
-        supplement.is_required || 1,
+        supplement.is_required != null ? !!supplement.is_required : true,
         supplement.prompt_order || index + 1,
-        usedHistorical ? 1 : 0
-      );
+        usedHistorical
+      ]);
 
       result.essaysAdded.push({
         type: 'supplemental',
@@ -245,7 +218,7 @@ class EssayAutoLoadingService {
         wordLimit: supplement.word_limit,
         historical: usedHistorical
       });
-    });
+    }
   }
 
   /**
