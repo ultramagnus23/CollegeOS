@@ -47,7 +47,7 @@ class WarningSystemService {
    * @returns {Object} Warnings summary with urgency levels
    */
   static async getWarnings(userId) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     const now = new Date();
     
     const warnings = {
@@ -66,13 +66,13 @@ class WarningSystemService {
     
     try {
       // Get all active deadlines for the user
-      const deadlines = db.prepare(`
+      const deadlines = (await pool.query(`
         SELECT ud.*, c.name as college_name
         FROM user_deadlines ud
         LEFT JOIN colleges c ON c.id = ud.college_id
-        WHERE ud.user_id = ? AND ud.is_active = 1 AND ud.is_completed = 0
+        WHERE ud.user_id = $1 AND ud.is_active = true AND ud.is_completed = false
         ORDER BY ud.deadline_date ASC
-      `).all(userId);
+      `, [userId])).rows;
       
       for (const deadline of deadlines) {
         const deadlineDate = new Date(deadline.deadline_date);
@@ -128,17 +128,17 @@ class WarningSystemService {
    * @returns {Object[]} Task warnings
    */
   static async getTaskWarnings(userId) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     const now = new Date();
     
     try {
-      const tasks = db.prepare(`
+      const tasks = (await pool.query(`
         SELECT t.*, c.name as college_name
         FROM tasks t
         LEFT JOIN colleges c ON c.id = t.college_id
-        WHERE t.user_id = ? AND t.status NOT IN ('complete', 'skipped') AND t.deadline IS NOT NULL
+        WHERE t.user_id = $1 AND t.status NOT IN ('complete', 'skipped') AND t.deadline IS NOT NULL
         ORDER BY t.deadline ASC
-      `).all(userId);
+      `, [userId])).rows;
       
       return tasks.map(task => {
         const deadline = new Date(task.deadline);
@@ -279,19 +279,19 @@ class WarningSystemService {
    * @returns {Object} Task load analysis
    */
   static async calculateTaskLoad(userId, days = 7) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     const now = new Date();
     const endDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
     
     try {
-      const tasks = db.prepare(`
+      const tasks = (await pool.query(`
         SELECT * FROM tasks
-        WHERE user_id = ? 
+        WHERE user_id = $1 
           AND status NOT IN ('complete', 'skipped')
           AND deadline IS NOT NULL
-          AND deadline <= ?
+          AND deadline <= $2
         ORDER BY deadline ASC, priority ASC
-      `).all(userId, endDate.toISOString());
+      `, [userId, endDate.toISOString()])).rows;
       
       const totalHours = tasks.reduce((sum, t) => sum + (t.estimated_hours || 1), 0);
       const availableHours = days * 8; // 8 productive hours per day
