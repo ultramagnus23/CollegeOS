@@ -47,26 +47,26 @@ class ProfileService {
    * @param {number} userId - User ID
    * @returns {Object} Complete profile with all data
    */
-  static getCompleteProfile(userId) {
-    const db = dbManager.getDatabase();
+  static async getCompleteProfile(userId) {
+    const pool = dbManager.getDatabase();
     
     // Get basic user info
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    const user = (await pool.query('SELECT * FROM users WHERE id = $1', [userId])).rows[0];
     if (!user) {
       throw new Error('User not found');
     }
     
     // Get student profile
-    const profile = db.prepare('SELECT * FROM student_profiles WHERE user_id = ?').get(userId);
+    const profile = (await pool.query('SELECT * FROM student_profiles WHERE user_id = $1', [userId])).rows[0];
     
     // Get activities
     let activities = [];
     if (profile) {
-      activities = db.prepare(`
+      activities = (await pool.query(`
         SELECT * FROM student_activities 
-        WHERE student_id = ? 
+        WHERE student_id = $1 
         ORDER BY display_order ASC
-      `).all(profile.id);
+      `, [profile.id])).rows;
     }
     
     // Parse JSON fields
@@ -107,17 +107,17 @@ class ProfileService {
    * @param {Object} data - Basic info data
    * @returns {Object} Updated profile
    */
-  static updateBasicInfo(userId, data) {
-    const db = dbManager.getDatabase();
+  static async updateBasicInfo(userId, data) {
+    const pool = dbManager.getDatabase();
     
     // Check user exists
-    const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+    const user = (await pool.query('SELECT id FROM users WHERE id = $1', [userId])).rows[0];
     if (!user) {
       throw new Error('User not found');
     }
     
     // Ensure profile exists
-    this.ensureProfileExists(userId);
+    await this.ensureProfileExists(userId);
     
     // Build update query for student_profiles
     const fields = [];
@@ -141,48 +141,44 @@ class ProfileService {
     
     for (const [inputKey, dbKey] of Object.entries(fieldMap)) {
       if (data[inputKey] !== undefined) {
-        fields.push(`${dbKey} = ?`);
         values.push(data[inputKey]);
+        fields.push(`${dbKey} = $${values.length}`);
       }
     }
     
     if (fields.length > 0) {
-      fields.push('updated_at = CURRENT_TIMESTAMP');
+      fields.push('updated_at = NOW()');
       values.push(userId);
       
-      const stmt = db.prepare(`
+      await pool.query(`
         UPDATE student_profiles 
         SET ${fields.join(', ')}
-        WHERE user_id = ?
-      `);
-      stmt.run(...values);
+        WHERE user_id = $${values.length}
+      `, values);
     }
     
     // Update user table fields (full_name, country, phone)
     if (data.first_name || data.firstName || data.last_name || data.lastName) {
-      const profile = db.prepare('SELECT first_name, last_name FROM student_profiles WHERE user_id = ?').get(userId);
+      const profile = (await pool.query('SELECT first_name, last_name FROM student_profiles WHERE user_id = $1', [userId])).rows[0];
       const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
       if (fullName) {
-        db.prepare('UPDATE users SET full_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-          .run(fullName, userId);
+        await pool.query('UPDATE users SET full_name = $1, updated_at = NOW() WHERE id = $2', [fullName, userId]);
       }
     }
     
     if (data.country) {
-      db.prepare('UPDATE users SET country = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-        .run(data.country, userId);
+      await pool.query('UPDATE users SET country = $1, updated_at = NOW() WHERE id = $2', [data.country, userId]);
     }
     
     // Sync phone to users table as well (for easier access)
     if (data.phone !== undefined) {
-      db.prepare('UPDATE users SET phone = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-        .run(data.phone, userId);
+      await pool.query('UPDATE users SET phone = $1, updated_at = NOW() WHERE id = $2', [data.phone, userId]);
     }
     
     // Recalculate completion percentage
-    this.updateCompletionPercentage(userId);
+    await this.updateCompletionPercentage(userId);
     
-    return this.getCompleteProfile(userId);
+    return await this.getCompleteProfile(userId);
   }
   
   /**
@@ -191,20 +187,20 @@ class ProfileService {
    * @param {Object} data - Academic info data
    * @returns {Object} Updated profile with curriculum_changed flag
    */
-  static updateAcademicInfo(userId, data) {
-    const db = dbManager.getDatabase();
+  static async updateAcademicInfo(userId, data) {
+    const pool = dbManager.getDatabase();
     
     // Check user exists
-    const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+    const user = (await pool.query('SELECT id FROM users WHERE id = $1', [userId])).rows[0];
     if (!user) {
       throw new Error('User not found');
     }
     
     // Ensure profile exists
-    this.ensureProfileExists(userId);
+    await this.ensureProfileExists(userId);
     
     // Check if curriculum type is changing
-    const existingProfile = db.prepare('SELECT curriculum_type, subjects FROM student_profiles WHERE user_id = ?').get(userId);
+    const existingProfile = (await pool.query('SELECT curriculum_type, subjects FROM student_profiles WHERE user_id = $1', [userId])).rows[0];
     const newCurriculumType = data.curriculum_type || data.curriculumType;
     const curriculumChanged = newCurriculumType && 
                               existingProfile && 
@@ -216,11 +212,11 @@ class ProfileService {
     if (curriculumChanged) {
       const existingSubjects = this.safeParseJSON(existingProfile.subjects, []);
       if (existingSubjects.length > 0) {
-        db.prepare(`
+        await pool.query(`
           UPDATE student_profiles 
           SET subjects = '[]', ib_subjects = '[]', a_level_subjects = '[]', cbse_subjects = '[]'
-          WHERE user_id = ?
-        `).run(userId);
+          WHERE user_id = $1
+        `, [userId]);
         subjectsCleared = true;
         logger.info(`Cleared subjects for user ${userId} due to curriculum change from ${existingProfile.curriculum_type} to ${sanitizeForLog(newCurriculumType)}`);
       }
@@ -257,30 +253,29 @@ class ProfileService {
     
     for (const [inputKey, dbKey] of Object.entries(fieldMap)) {
       if (data[inputKey] !== undefined) {
-        fields.push(`${dbKey} = ?`);
         values.push(data[inputKey]);
+        fields.push(`${dbKey} = $${values.length}`);
       }
     }
     
     if (fields.length > 0) {
-      fields.push('updated_at = CURRENT_TIMESTAMP');
+      fields.push('updated_at = NOW()');
       values.push(userId);
       
-      const stmt = db.prepare(`
+      await pool.query(`
         UPDATE student_profiles 
         SET ${fields.join(', ')}
-        WHERE user_id = ?
-      `);
-      stmt.run(...values);
+        WHERE user_id = $${values.length}
+      `, values);
     }
     
     // Trigger eligibility recalculation
-    this.triggerEligibilityRecalculation(userId);
+    await this.triggerEligibilityRecalculation(userId);
     
     // Recalculate completion percentage
-    this.updateCompletionPercentage(userId);
+    await this.updateCompletionPercentage(userId);
     
-    const result = this.getCompleteProfile(userId);
+    const result = await this.getCompleteProfile(userId);
     result.curriculum_changed = curriculumChanged;
     result.subjects_cleared = subjectsCleared;
     
@@ -293,17 +288,17 @@ class ProfileService {
    * @param {Object} data - Subjects data
    * @returns {Object} Updated profile
    */
-  static updateSubjects(userId, data) {
-    const db = dbManager.getDatabase();
+  static async updateSubjects(userId, data) {
+    const pool = dbManager.getDatabase();
     
     // Check user exists
-    const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+    const user = (await pool.query('SELECT id FROM users WHERE id = $1', [userId])).rows[0];
     if (!user) {
       throw new Error('User not found');
     }
     
     // Ensure profile exists
-    this.ensureProfileExists(userId);
+    await this.ensureProfileExists(userId);
     
     const subjects = data.subjects || [];
     const curriculumType = data.curriculum_type || data.curriculumType;
@@ -319,29 +314,29 @@ class ProfileService {
     }
     
     // Update subjects
-    db.prepare(`
+    await pool.query(`
       UPDATE student_profiles 
-      SET ${subjectsColumn} = ?, subjects = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = ?
-    `).run(JSON.stringify(subjects), JSON.stringify(subjects), userId);
+      SET ${subjectsColumn} = $1, subjects = $2, updated_at = NOW()
+      WHERE user_id = $3
+    `, [JSON.stringify(subjects), JSON.stringify(subjects), userId]);
     
     // If IB, also calculate predicted total
     if (curriculumType === 'IB' && subjects.length === 6) {
       const subjectTotal = subjects.reduce((sum, s) => sum + (s.predicted_grade || s.predictedGrade || 0), 0);
-      db.prepare(`
+      await pool.query(`
         UPDATE student_profiles 
-        SET ib_predicted_score = ?
-        WHERE user_id = ?
-      `).run(subjectTotal, userId);
+        SET ib_predicted_score = $1
+        WHERE user_id = $2
+      `, [subjectTotal, userId]);
     }
     
     // Trigger eligibility recalculation
-    this.triggerEligibilityRecalculation(userId);
+    await this.triggerEligibilityRecalculation(userId);
     
     // Recalculate completion percentage
-    this.updateCompletionPercentage(userId);
+    await this.updateCompletionPercentage(userId);
     
-    return this.getCompleteProfile(userId);
+    return await this.getCompleteProfile(userId);
   }
   
   /**
@@ -350,17 +345,17 @@ class ProfileService {
    * @param {Object} data - Test scores data
    * @returns {Object} Updated profile
    */
-  static updateTestScores(userId, data) {
-    const db = dbManager.getDatabase();
+  static async updateTestScores(userId, data) {
+    const pool = dbManager.getDatabase();
     
     // Check user exists
-    const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+    const user = (await pool.query('SELECT id FROM users WHERE id = $1', [userId])).rows[0];
     if (!user) {
       throw new Error('User not found');
     }
     
     // Ensure profile exists
-    this.ensureProfileExists(userId);
+    await this.ensureProfileExists(userId);
     
     // Build update query
     const fields = [];
@@ -399,27 +394,26 @@ class ProfileService {
     
     for (const [inputKey, dbKey] of Object.entries(fieldMap)) {
       if (data[inputKey] !== undefined) {
-        fields.push(`${dbKey} = ?`);
         values.push(data[inputKey]);
+        fields.push(`${dbKey} = $${values.length}`);
       }
     }
     
     // Handle breakdowns as JSON
     if (data.ielts_breakdown || data.ieltsBreakdown) {
-      fields.push('ielts_breakdown = ?');
       values.push(JSON.stringify(data.ielts_breakdown || data.ieltsBreakdown));
+      fields.push(`ielts_breakdown = $${values.length}`);
     }
     
     if (fields.length > 0) {
-      fields.push('updated_at = CURRENT_TIMESTAMP');
+      fields.push('updated_at = NOW()');
       values.push(userId);
       
-      const stmt = db.prepare(`
+      await pool.query(`
         UPDATE student_profiles 
         SET ${fields.join(', ')}
-        WHERE user_id = ?
-      `);
-      stmt.run(...values);
+        WHERE user_id = $${values.length}
+      `, values);
     }
     
     // Also update user's test_status
@@ -439,21 +433,21 @@ class ProfileService {
     
     if (Object.keys(testStatus).length > 0) {
       // Merge with existing test status
-      const existingUser = db.prepare('SELECT test_status FROM users WHERE id = ?').get(userId);
+      const existingUser = (await pool.query('SELECT test_status FROM users WHERE id = $1', [userId])).rows[0];
       const existingTestStatus = this.safeParseJSON(existingUser?.test_status, {});
       const mergedTestStatus = { ...existingTestStatus, ...testStatus };
       
-      db.prepare('UPDATE users SET test_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-        .run(JSON.stringify(mergedTestStatus), userId);
+      await pool.query('UPDATE users SET test_status = $1, updated_at = NOW() WHERE id = $2',
+        [JSON.stringify(mergedTestStatus), userId]);
     }
     
     // Trigger eligibility recalculation
-    this.triggerEligibilityRecalculation(userId);
+    await this.triggerEligibilityRecalculation(userId);
     
     // Recalculate completion percentage
-    this.updateCompletionPercentage(userId);
+    await this.updateCompletionPercentage(userId);
     
-    return this.getCompleteProfile(userId);
+    return await this.getCompleteProfile(userId);
   }
   
   /**
@@ -462,62 +456,60 @@ class ProfileService {
    * @param {Object} data - Activities data
    * @returns {Object} Updated profile
    */
-  static updateActivities(userId, data) {
-    const db = dbManager.getDatabase();
+  static async updateActivities(userId, data) {
+    const pool = dbManager.getDatabase();
     
     // Check user exists
-    const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+    const user = (await pool.query('SELECT id FROM users WHERE id = $1', [userId])).rows[0];
     if (!user) {
       throw new Error('User not found');
     }
     
     // Ensure profile exists
-    const profile = this.ensureProfileExists(userId);
+    const profile = await this.ensureProfileExists(userId);
     
     const activities = data.activities || [];
     
     // Delete existing activities for this profile
-    db.prepare('DELETE FROM student_activities WHERE student_id = ?').run(profile.id);
+    await pool.query('DELETE FROM student_activities WHERE student_id = $1', [profile.id]);
     
     // Insert new activities
-    const insertStmt = db.prepare(`
-      INSERT INTO student_activities (
-        student_id, activity_name, activity_type, position_title, organization_name,
-        description, grade_9, grade_10, grade_11, grade_12,
-        hours_per_week, weeks_per_year, total_hours, tier_rating,
-        awards_recognition, display_order
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    activities.forEach((activity, index) => {
+    for (const [index, activity] of activities.entries()) {
       const hoursPerWeek = activity.hours_per_week || activity.hoursPerWeek || 0;
       const weeksPerYear = activity.weeks_per_year || activity.weeksPerYear || 0;
       const totalHours = hoursPerWeek * weeksPerYear;
       
-      insertStmt.run(
+      await pool.query(`
+        INSERT INTO student_activities (
+          student_id, activity_name, activity_type, position_title, organization_name,
+          description, grade_9, grade_10, grade_11, grade_12,
+          hours_per_week, weeks_per_year, total_hours, tier_rating,
+          awards_recognition, display_order
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      `, [
         profile.id,
         activity.activity_name || activity.activityName || activity.name,
         activity.activity_type || activity.activityType || activity.type,
         activity.position_title || activity.positionTitle || null,
         activity.organization_name || activity.organizationName || null,
         activity.description || null,
-        activity.grade_9 ? 1 : 0,
-        activity.grade_10 ? 1 : 0,
-        activity.grade_11 ? 1 : 0,
-        activity.grade_12 ? 1 : 0,
+        activity.grade_9 ? true : false,
+        activity.grade_10 ? true : false,
+        activity.grade_11 ? true : false,
+        activity.grade_12 ? true : false,
         hoursPerWeek,
         weeksPerYear,
         totalHours,
         activity.tier_rating || activity.tierRating || 4,
         activity.awards_recognition || activity.awardsRecognition || null,
         index + 1
-      );
-    });
+      ]);
+    }
     
     // Recalculate completion percentage
-    this.updateCompletionPercentage(userId);
+    await this.updateCompletionPercentage(userId);
     
-    return this.getCompleteProfile(userId);
+    return await this.getCompleteProfile(userId);
   }
   
   /**
@@ -526,29 +518,29 @@ class ProfileService {
    * @param {number} activityId - Activity ID
    * @returns {Object} Updated profile
    */
-  static deleteActivity(userId, activityId) {
-    const db = dbManager.getDatabase();
+  static async deleteActivity(userId, activityId) {
+    const pool = dbManager.getDatabase();
     
     // Get profile
-    const profile = db.prepare('SELECT id FROM student_profiles WHERE user_id = ?').get(userId);
+    const profile = (await pool.query('SELECT id FROM student_profiles WHERE user_id = $1', [userId])).rows[0];
     if (!profile) {
       throw new Error('Profile not found');
     }
     
     // Check activity exists and belongs to user
-    const activity = db.prepare('SELECT id FROM student_activities WHERE id = ? AND student_id = ?')
-      .get(activityId, profile.id);
+    const activity = (await pool.query('SELECT id FROM student_activities WHERE id = $1 AND student_id = $2',
+      [activityId, profile.id])).rows[0];
     if (!activity) {
       throw new Error('Activity not found');
     }
     
     // Delete activity
-    db.prepare('DELETE FROM student_activities WHERE id = ?').run(activityId);
+    await pool.query('DELETE FROM student_activities WHERE id = $1', [activityId]);
     
     // Recalculate completion percentage
-    this.updateCompletionPercentage(userId);
+    await this.updateCompletionPercentage(userId);
     
-    return this.getCompleteProfile(userId);
+    return await this.getCompleteProfile(userId);
   }
   
   /**
@@ -557,17 +549,17 @@ class ProfileService {
    * @param {Object} data - Preferences data
    * @returns {Object} Updated profile
    */
-  static updatePreferences(userId, data) {
-    const db = dbManager.getDatabase();
+  static async updatePreferences(userId, data) {
+    const pool = dbManager.getDatabase();
     
     // Check user exists
-    const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+    const user = (await pool.query('SELECT id FROM users WHERE id = $1', [userId])).rows[0];
     if (!user) {
       throw new Error('User not found');
     }
     
     // Ensure profile exists
-    this.ensureProfileExists(userId);
+    await this.ensureProfileExists(userId);
     
     // Build update query for student_profiles
     const fields = [];
@@ -589,8 +581,8 @@ class ProfileService {
     
     for (const [inputKey, dbKey] of Object.entries(arrayFields)) {
       if (data[inputKey] !== undefined) {
-        fields.push(`${dbKey} = ?`);
         values.push(JSON.stringify(data[inputKey]));
+        fields.push(`${dbKey} = $${values.length}`);
       }
     }
     
@@ -612,40 +604,39 @@ class ProfileService {
     
     for (const [inputKey, dbKey] of Object.entries(scalarFields)) {
       if (data[inputKey] !== undefined) {
-        fields.push(`${dbKey} = ?`);
         values.push(data[inputKey]);
+        fields.push(`${dbKey} = $${values.length}`);
       }
     }
     
     if (fields.length > 0) {
-      fields.push('updated_at = CURRENT_TIMESTAMP');
+      fields.push('updated_at = NOW()');
       values.push(userId);
       
-      const stmt = db.prepare(`
+      await pool.query(`
         UPDATE student_profiles 
         SET ${fields.join(', ')}
-        WHERE user_id = ?
-      `);
-      stmt.run(...values);
+        WHERE user_id = $${values.length}
+      `, values);
     }
     
     // Also update users table
     if (data.intended_majors || data.intendedMajors || data.preferred_majors || data.preferredMajors) {
       const majors = data.intended_majors || data.intendedMajors || data.preferred_majors || data.preferredMajors;
-      db.prepare('UPDATE users SET intended_majors = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-        .run(JSON.stringify(majors), userId);
+      await pool.query('UPDATE users SET intended_majors = $1, updated_at = NOW() WHERE id = $2',
+        [JSON.stringify(majors), userId]);
     }
     
     if (data.preferred_countries || data.preferredCountries) {
       const countries = data.preferred_countries || data.preferredCountries;
-      db.prepare('UPDATE users SET target_countries = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-        .run(JSON.stringify(countries), userId);
+      await pool.query('UPDATE users SET target_countries = $1, updated_at = NOW() WHERE id = $2',
+        [JSON.stringify(countries), userId]);
     }
     
     // Recalculate completion percentage
-    this.updateCompletionPercentage(userId);
+    await this.updateCompletionPercentage(userId);
     
-    return this.getCompleteProfile(userId);
+    return await this.getCompleteProfile(userId);
   }
   
   /**
@@ -653,11 +644,11 @@ class ProfileService {
    * @param {number} userId - User ID
    * @returns {Object} Completion status with percentage and missing fields
    */
-  static getCompletionStatus(userId) {
-    const db = dbManager.getDatabase();
+  static async getCompletionStatus(userId) {
+    const pool = dbManager.getDatabase();
     
     // Get profile
-    const profile = db.prepare('SELECT * FROM student_profiles WHERE user_id = ?').get(userId);
+    const profile = (await pool.query('SELECT * FROM student_profiles WHERE user_id = $1', [userId])).rows[0];
     if (!profile) {
       return {
         percentage: 0,
@@ -704,9 +695,9 @@ class ProfileService {
     }
     
     // Check activities (counts as optional)
-    const activities = db.prepare('SELECT COUNT(*) as count FROM student_activities WHERE student_id = ?')
-      .get(profile.id);
-    const hasActivities = activities.count > 0;
+    const activities = (await pool.query('SELECT COUNT(*) as count FROM student_activities WHERE student_id = $1',
+      [profile.id])).rows[0];
+    const hasActivities = parseInt(activities.count) > 0;
     if (hasActivities) {
       filledOptional++;
     } else {
@@ -739,17 +730,17 @@ class ProfileService {
    * @param {Object} data - Draft data
    * @returns {Object} Success status
    */
-  static saveOnboardingDraft(userId, data) {
-    const db = dbManager.getDatabase();
+  static async saveOnboardingDraft(userId, data) {
+    const pool = dbManager.getDatabase();
     
     // Ensure profile exists
-    this.ensureProfileExists(userId);
+    await this.ensureProfileExists(userId);
     
-    db.prepare(`
+    await pool.query(`
       UPDATE student_profiles 
-      SET onboarding_draft = ?, onboarding_step = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = ?
-    `).run(JSON.stringify(data.draft), data.step || 0, userId);
+      SET onboarding_draft = $1, onboarding_step = $2, updated_at = NOW()
+      WHERE user_id = $3
+    `, [JSON.stringify(data.draft), data.step || 0, userId]);
     
     return { success: true };
   }
@@ -759,11 +750,11 @@ class ProfileService {
    * @param {number} userId - User ID
    * @returns {Object} Draft data
    */
-  static getOnboardingDraft(userId) {
-    const db = dbManager.getDatabase();
+  static async getOnboardingDraft(userId) {
+    const pool = dbManager.getDatabase();
     
-    const profile = db.prepare('SELECT onboarding_draft, onboarding_step FROM student_profiles WHERE user_id = ?')
-      .get(userId);
+    const profile = (await pool.query('SELECT onboarding_draft, onboarding_step FROM student_profiles WHERE user_id = $1',
+      [userId])).rows[0];
     
     if (!profile) {
       return { draft: null, step: 0 };
@@ -784,25 +775,25 @@ class ProfileService {
    * @param {number} userId - User ID
    * @returns {Object} Profile
    */
-  static ensureProfileExists(userId) {
-    const db = dbManager.getDatabase();
+  static async ensureProfileExists(userId) {
+    const pool = dbManager.getDatabase();
     
-    let profile = db.prepare('SELECT * FROM student_profiles WHERE user_id = ?').get(userId);
+    let profile = (await pool.query('SELECT * FROM student_profiles WHERE user_id = $1', [userId])).rows[0];
     
     if (!profile) {
       // Create new profile
-      const user = db.prepare('SELECT email, full_name, country FROM users WHERE id = ?').get(userId);
+      const user = (await pool.query('SELECT email, full_name, country FROM users WHERE id = $1', [userId])).rows[0];
       
       const nameParts = (user?.full_name || '').split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
-      db.prepare(`
+      await pool.query(`
         INSERT INTO student_profiles (user_id, first_name, last_name, email, country)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(userId, firstName, lastName, user?.email, user?.country);
+        VALUES ($1, $2, $3, $4, $5)
+      `, [userId, firstName, lastName, user?.email, user?.country]);
       
-      profile = db.prepare('SELECT * FROM student_profiles WHERE user_id = ?').get(userId);
+      profile = (await pool.query('SELECT * FROM student_profiles WHERE user_id = $1', [userId])).rows[0];
     }
     
     return profile;
@@ -812,9 +803,9 @@ class ProfileService {
    * Trigger eligibility recalculation
    * @param {number} userId - User ID
    */
-  static triggerEligibilityRecalculation(userId) {
+  static async triggerEligibilityRecalculation(userId) {
     try {
-      const profile = this.getCompleteProfile(userId);
+      const profile = await this.getCompleteProfile(userId);
       if (profile && profile.profile) {
         const eligibility = EligibilityAutoFulfillService.checkAutoFulfillments(profile.profile);
         logger.debug(`Eligibility recalculated for user ${userId}:`, eligibility);
@@ -828,15 +819,15 @@ class ProfileService {
    * Update profile completion percentage
    * @param {number} userId - User ID
    */
-  static updateCompletionPercentage(userId) {
-    const db = dbManager.getDatabase();
-    const status = this.getCompletionStatus(userId);
+  static async updateCompletionPercentage(userId) {
+    const pool = dbManager.getDatabase();
+    const status = await this.getCompletionStatus(userId);
     
-    db.prepare(`
+    await pool.query(`
       UPDATE student_profiles 
-      SET profile_completion_percentage = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = ?
-    `).run(status.percentage, userId);
+      SET profile_completion_percentage = $1, updated_at = NOW()
+      WHERE user_id = $2
+    `, [status.percentage, userId]);
   }
   
   /**
