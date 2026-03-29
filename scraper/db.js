@@ -2,51 +2,49 @@
 
 /**
  * Database access layer for the scraper pipeline.
- * Uses better-sqlite3 (synchronous) and the existing CollegeOS SQLite database.
  *
- * The DB path is resolved from DATABASE_PATH env var, falling back to the
- * backend's default location relative to this file.
+ * Supports two backends selected at start-up:
+ *   • SQLite  (default) — uses better-sqlite3 and DATABASE_PATH env var.
+ *   • PostgreSQL        — activated by setting DATABASE_URL env var.
+ *
+ * All exported functions are async so that callers are database-agnostic.
  */
 
 const path = require('path');
 const fs = require('fs');
-const Database = require('better-sqlite3');
 const { normalize } = require('./normalizer');
 const logger = require('./logger');
+
+const USE_POSTGRES = !!process.env.DATABASE_URL;
+
+// ── SQLite ────────────────────────────────────────────────────────────────────
 
 const DEFAULT_DB_PATH = path.resolve(__dirname, '../backend/database/college_app.db');
 const DB_PATH = process.env.DATABASE_PATH || DEFAULT_DB_PATH;
 
-let _db = null;
+let _sqlite = null;
+let _stmts = null;
+let _getPublishedRate = null;
+let _getPublishedRateByNorm = null;
 
-/**
- * Open (or return cached) the SQLite database connection.
- * @returns {import('better-sqlite3').Database}
- */
-function getDb() {
-  if (_db) return _db;
+function getSqlite() {
+  if (_sqlite) return _sqlite;
+  const Database = require('better-sqlite3');
 
   const dbDir = path.dirname(DB_PATH);
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
   }
 
-  _db = new Database(DB_PATH);
-  _db.pragma('foreign_keys = ON');
-  _db.pragma('journal_mode = WAL');
-
-  ensureSchema(_db);
-
+  _sqlite = new Database(DB_PATH);
+  _sqlite.pragma('foreign_keys = ON');
+  _sqlite.pragma('journal_mode = WAL');
+  ensureSqliteSchema(_sqlite);
   logger.info({ msg: 'SQLite database opened', path: DB_PATH });
-  return _db;
+  return _sqlite;
 }
 
-/**
- * Create the scraper tables if they do not yet exist.
- * This mirrors migration 038_scraper_pipeline.sql and allows the scraper
- * to run even before the migration runner has been executed.
- */
-function ensureSchema(db) {
+function ensureSqliteSchema(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS scraped_applicants (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -116,12 +114,9 @@ function ensureSchema(db) {
   `);
 }
 
-// ── Prepared statement cache ─────────────────────────────────────────────────
-
-let _stmts = null;
-function stmts() {
+function sqliteStmts() {
   if (_stmts) return _stmts;
-  const db = getDb();
+  const db = getSqlite();
   _stmts = {
     postExists: db.prepare('SELECT 1 FROM scraped_applicants WHERE reddit_post_id = ?'),
     insertApplicant: db.prepare(`
@@ -177,174 +172,391 @@ function stmts() {
   return _stmts;
 }
 
-// Colleges-table statements are prepared lazily because the colleges table
-// may not exist in all environments (e.g., standalone test DB).
-let _getPublishedRate = null;
-let _getPublishedRateByNorm = null;
-function getPublishedRateStmt() {
+function sqlitePublishedRateStmt() {
   if (_getPublishedRate) return _getPublishedRate;
-  const db = getDb();
-  _getPublishedRate = db.prepare(
+  _getPublishedRate = getSqlite().prepare(
     'SELECT acceptance_rate FROM colleges WHERE LOWER(name) = LOWER(?) LIMIT 1'
   );
   return _getPublishedRate;
 }
-function getPublishedRateByNormStmt() {
+
+function sqlitePublishedRateByNormStmt() {
   if (_getPublishedRateByNorm) return _getPublishedRateByNorm;
-  const db = getDb();
-  _getPublishedRateByNorm = db.prepare(
+  _getPublishedRateByNorm = getSqlite().prepare(
     "SELECT acceptance_rate FROM colleges WHERE LOWER(name) LIKE '%' || LOWER(?) || '%' LIMIT 1"
   );
   return _getPublishedRateByNorm;
 }
 
-// ── Public API ────────────────────────────────────────────────────────────────
+// SQLite adapter — wraps synchronous calls in resolved Promises
+const sqliteAdapter = {
+  async postExists(postId) {
+    return !!sqliteStmts().postExists.get(postId);
+  },
 
-/**
- * Check whether a Reddit post has already been stored.
- * @param {string} postId
- * @returns {boolean}
- */
-function postExists(postId) {
-  return !!stmts().postExists.get(postId);
-}
-
-/**
- * Store a parsed post (applicant + results) in a single transaction.
- * @param {string} postId
- * @param {object} applicant  - from claudeParser
- * @param {object[]} results  - from claudeParser
- * @param {string} rawText    - concatenated post title + body
- * @returns {number} applicant row id
- */
-function storePost(postId, applicant, results, rawText) {
-  const db = getDb();
-  const insert = db.transaction(() => {
-    const info = stmts().insertApplicant.run({
-      reddit_post_id: postId,
-      gpa: applicant.gpa ?? null,
-      sat_score: applicant.sat_score ?? null,
-      act_score: applicant.act_score ?? null,
-      num_ap_courses: applicant.num_ap_courses ?? null,
-      nationality: applicant.nationality ?? null,
-      intended_major: applicant.intended_major ?? null,
-      first_gen: applicant.first_gen === null ? null : (applicant.first_gen ? 1 : 0),
-      income_bracket: applicant.income_bracket ?? null,
-      raw_text: rawText ? rawText.slice(0, 5000) : null,
-    });
-
-    const applicantId = info.lastInsertRowid;
-
-    for (const r of results) {
-      stmts().insertResult.run({
-        applicant_id: applicantId,
-        school_name_raw: r.school_name_raw,
-        school_name_normalized: normalize(r.school_name_raw),
-        outcome: r.outcome,
-        round: r.round ?? null,
+  async storePost(postId, applicant, results, rawText) {
+    const db = getSqlite();
+    const insert = db.transaction(() => {
+      const info = sqliteStmts().insertApplicant.run({
+        reddit_post_id: postId,
+        gpa: applicant.gpa ?? null,
+        sat_score: applicant.sat_score ?? null,
+        act_score: applicant.act_score ?? null,
+        num_ap_courses: applicant.num_ap_courses ?? null,
+        nationality: applicant.nationality ?? null,
+        intended_major: applicant.intended_major ?? null,
+        first_gen: applicant.first_gen === null ? null : (applicant.first_gen ? 1 : 0),
+        income_bracket: applicant.income_bracket ?? null,
+        raw_text: rawText ? rawText.slice(0, 5000) : null,
       });
-    }
 
-    return applicantId;
+      const applicantId = info.lastInsertRowid;
+
+      for (const r of results) {
+        sqliteStmts().insertResult.run({
+          applicant_id: applicantId,
+          school_name_raw: r.school_name_raw,
+          school_name_normalized: normalize(r.school_name_raw),
+          outcome: r.outcome,
+          round: r.round ?? null,
+        });
+      }
+
+      return applicantId;
+    });
+    return insert();
+  },
+
+  async recordScrapeRun(stats) {
+    sqliteStmts().insertScrapeRun.run({
+      mode: stats.mode,
+      posts_fetched: stats.posts_fetched,
+      posts_parsed: stats.posts_parsed,
+      posts_stored: stats.posts_stored,
+      posts_skipped: stats.posts_skipped,
+      error_message: stats.error_message ?? null,
+    });
+  },
+
+  async getSchoolStats() {
+    return sqliteStmts().getSchoolStats.all();
+  },
+
+  async getPublishedRate(normalizedName) {
+    try {
+      let row = sqlitePublishedRateStmt().get(normalizedName);
+      if (!row) row = sqlitePublishedRateByNormStmt().get(normalizedName);
+      if (!row || row.acceptance_rate == null) return null;
+      return parseFloat(row.acceptance_rate);
+    } catch (err) {
+      if (err.message && err.message.includes('no such table')) return null;
+      throw err;
+    }
+  },
+
+  async getLastBrierScore(schoolName) {
+    const row = sqliteStmts().getLastBrierScore.get(schoolName);
+    return row ? row.brier_score : null;
+  },
+
+  async getResultsForSchool(normalizedName) {
+    return sqliteStmts().getResultsForSchool.all(normalizedName);
+  },
+
+  async insertCalibrationRun(row) {
+    sqliteStmts().insertCalibrationRun.run(row);
+  },
+
+  async close() {
+    if (_sqlite) {
+      _sqlite.close();
+      _sqlite = null;
+      _stmts = null;
+      _getPublishedRate = null;
+      _getPublishedRateByNorm = null;
+    }
+  },
+};
+
+// ── PostgreSQL ────────────────────────────────────────────────────────────────
+
+let _pgPool = null;
+
+function getPgPool() {
+  if (_pgPool) return _pgPool;
+  const { Pool } = require('pg');
+  _pgPool = new Pool({ connectionString: process.env.DATABASE_URL });
+  _pgPool.on('error', (err) => {
+    logger.error({ msg: 'Idle PostgreSQL client error', error: err.message });
   });
-
-  return insert();
+  return _pgPool;
 }
 
-/**
- * Record a completed scrape run.
- * @param {object} stats
- * @param {string} stats.mode
- * @param {number} stats.posts_fetched
- * @param {number} stats.posts_parsed
- * @param {number} stats.posts_stored
- * @param {number} stats.posts_skipped
- * @param {string|null} stats.error_message
- */
-function recordScrapeRun(stats) {
-  stmts().insertScrapeRun.run({
-    mode: stats.mode,
-    posts_fetched: stats.posts_fetched,
-    posts_parsed: stats.posts_parsed,
-    posts_stored: stats.posts_stored,
-    posts_skipped: stats.posts_skipped,
-    error_message: stats.error_message ?? null,
-  });
+async function ensurePostgresSchema() {
+  const pool = getPgPool();
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS scraped_applicants (
+      id BIGSERIAL PRIMARY KEY,
+      reddit_post_id TEXT NOT NULL UNIQUE,
+      gpa DOUBLE PRECISION,
+      sat_score INTEGER,
+      act_score INTEGER,
+      num_ap_courses INTEGER,
+      nationality TEXT,
+      intended_major TEXT,
+      first_gen SMALLINT,
+      income_bracket TEXT,
+      raw_text TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_scraped_applicants_post_id
+      ON scraped_applicants(reddit_post_id);
+
+    CREATE TABLE IF NOT EXISTS scraped_results (
+      id BIGSERIAL PRIMARY KEY,
+      applicant_id BIGINT NOT NULL
+        REFERENCES scraped_applicants(id) ON DELETE CASCADE,
+      school_name_raw TEXT NOT NULL,
+      school_name_normalized TEXT NOT NULL,
+      outcome TEXT NOT NULL
+        CHECK(outcome IN ('accepted','rejected','waitlisted','deferred')),
+      round TEXT
+        CHECK(round IN ('ED','EA','RD','REA','SCEA') OR round IS NULL),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_scraped_results_applicant
+      ON scraped_results(applicant_id);
+    CREATE INDEX IF NOT EXISTS idx_scraped_results_school
+      ON scraped_results(school_name_normalized);
+    CREATE INDEX IF NOT EXISTS idx_scraped_results_outcome
+      ON scraped_results(outcome);
+
+    CREATE TABLE IF NOT EXISTS calibration_runs (
+      id BIGSERIAL PRIMARY KEY,
+      run_at TIMESTAMPTZ DEFAULT NOW(),
+      school_name TEXT NOT NULL,
+      predicted_rate DOUBLE PRECISION NOT NULL,
+      actual_rate DOUBLE PRECISION NOT NULL,
+      brier_score DOUBLE PRECISION NOT NULL,
+      previous_brier_score DOUBLE PRECISION,
+      delta DOUBLE PRECISION,
+      sample_size INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_calibration_runs_school
+      ON calibration_runs(school_name);
+    CREATE INDEX IF NOT EXISTS idx_calibration_runs_at
+      ON calibration_runs(run_at);
+
+    CREATE TABLE IF NOT EXISTS scrape_runs (
+      id BIGSERIAL PRIMARY KEY,
+      run_at TIMESTAMPTZ DEFAULT NOW(),
+      mode TEXT NOT NULL CHECK(mode IN ('seed','incremental')),
+      posts_fetched INTEGER NOT NULL DEFAULT 0,
+      posts_parsed INTEGER NOT NULL DEFAULT 0,
+      posts_stored INTEGER NOT NULL DEFAULT 0,
+      posts_skipped INTEGER NOT NULL DEFAULT 0,
+      error_message TEXT
+    );
+  `);
 }
 
-/**
- * Return schools with ≥30 data points plus their acceptance rate from scraped_results.
- * @returns {Array<{school: string, total: number, accepted_count: number}>}
- */
-function getSchoolStats() {
-  return stmts().getSchoolStats.all();
-}
+// PostgreSQL adapter — uses pg Pool with parameterised queries ($1, $2, ...)
+const pgAdapter = {
+  async postExists(postId) {
+    const pool = getPgPool();
+    const { rows } = await pool.query(
+      'SELECT 1 FROM scraped_applicants WHERE reddit_post_id = $1',
+      [postId]
+    );
+    return rows.length > 0;
+  },
 
-/**
- * Look up the published acceptance rate for a school from the colleges table.
- * Returns null if not found or if the colleges table does not exist.
- * @param {string} normalizedName
- * @returns {number|null}
- */
-function getPublishedRate(normalizedName) {
-  try {
-    // Try exact match first
-    let row = getPublishedRateStmt().get(normalizedName);
-    if (!row) {
-      row = getPublishedRateByNormStmt().get(normalizedName);
+  async storePost(postId, applicant, results, rawText) {
+    const pool = getPgPool();
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const { rows } = await client.query(
+        `INSERT INTO scraped_applicants
+           (reddit_post_id, gpa, sat_score, act_score, num_ap_courses,
+            nationality, intended_major, first_gen, income_bracket, raw_text)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         RETURNING id`,
+        [
+          postId,
+          applicant.gpa ?? null,
+          applicant.sat_score ?? null,
+          applicant.act_score ?? null,
+          applicant.num_ap_courses ?? null,
+          applicant.nationality ?? null,
+          applicant.intended_major ?? null,
+          applicant.first_gen === null ? null : (applicant.first_gen ? 1 : 0),
+          applicant.income_bracket ?? null,
+          rawText ? rawText.slice(0, 5000) : null,
+        ]
+      );
+
+      const applicantId = rows[0].id;
+
+      for (const r of results) {
+        await client.query(
+          `INSERT INTO scraped_results
+             (applicant_id, school_name_raw, school_name_normalized, outcome, round)
+           VALUES ($1,$2,$3,$4,$5)`,
+          [applicantId, r.school_name_raw, normalize(r.school_name_raw), r.outcome, r.round ?? null]
+        );
+      }
+
+      await client.query('COMMIT');
+      return applicantId;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
     }
-    if (!row || row.acceptance_rate == null) return null;
-    return parseFloat(row.acceptance_rate);
-  } catch (err) {
-    // colleges table may not exist in this environment
-    if (err.message && err.message.includes('no such table')) {
-      return null;
+  },
+
+  async recordScrapeRun(stats) {
+    const pool = getPgPool();
+    await pool.query(
+      `INSERT INTO scrape_runs
+         (mode, posts_fetched, posts_parsed, posts_stored, posts_skipped, error_message)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [
+        stats.mode,
+        stats.posts_fetched,
+        stats.posts_parsed,
+        stats.posts_stored,
+        stats.posts_skipped,
+        stats.error_message ?? null,
+      ]
+    );
+  },
+
+  async getSchoolStats() {
+    const pool = getPgPool();
+    const { rows } = await pool.query(`
+      SELECT
+        school_name_normalized AS school,
+        COUNT(*)::int AS total,
+        SUM(CASE WHEN outcome = 'accepted' THEN 1 ELSE 0 END)::int AS accepted_count
+      FROM scraped_results
+      GROUP BY school_name_normalized
+      HAVING COUNT(*) >= 30
+    `);
+    return rows;
+  },
+
+  async getPublishedRate(normalizedName) {
+    const pool = getPgPool();
+    try {
+      let res = await pool.query(
+        'SELECT acceptance_rate FROM colleges WHERE LOWER(name) = LOWER($1) LIMIT 1',
+        [normalizedName]
+      );
+      if (!res.rows.length) {
+        res = await pool.query(
+          "SELECT acceptance_rate FROM colleges WHERE LOWER(name) LIKE '%' || LOWER($1) || '%' LIMIT 1",
+          [normalizedName]
+        );
+      }
+      if (!res.rows.length || res.rows[0].acceptance_rate == null) return null;
+      return parseFloat(res.rows[0].acceptance_rate);
+    } catch (err) {
+      if (err.code === '42P01') return null; // table does not exist
+      throw err;
     }
-    throw err;
+  },
+
+  async getLastBrierScore(schoolName) {
+    const pool = getPgPool();
+    const { rows } = await pool.query(
+      'SELECT brier_score FROM calibration_runs WHERE school_name = $1 ORDER BY run_at DESC LIMIT 1',
+      [schoolName]
+    );
+    return rows.length ? parseFloat(rows[0].brier_score) : null;
+  },
+
+  async getResultsForSchool(normalizedName) {
+    const pool = getPgPool();
+    const { rows } = await pool.query(
+      'SELECT outcome FROM scraped_results WHERE school_name_normalized = $1',
+      [normalizedName]
+    );
+    return rows;
+  },
+
+  async insertCalibrationRun(row) {
+    const pool = getPgPool();
+    await pool.query(
+      `INSERT INTO calibration_runs
+         (school_name, predicted_rate, actual_rate, brier_score,
+          previous_brier_score, delta, sample_size)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [
+        row.school_name,
+        row.predicted_rate,
+        row.actual_rate,
+        row.brier_score,
+        row.previous_brier_score,
+        row.delta,
+        row.sample_size,
+      ]
+    );
+  },
+
+  async close() {
+    if (_pgPool) {
+      await _pgPool.end();
+      _pgPool = null;
+    }
+  },
+};
+
+// ── Adapter selection ─────────────────────────────────────────────────────────
+
+let _adapter = null;
+
+/**
+ * Initialise the database adapter.  Must be called once before any other
+ * function is used (called automatically on first use if not called explicitly).
+ */
+async function init() {
+  if (_adapter) return;
+  if (USE_POSTGRES) {
+    await ensurePostgresSchema();
+    logger.info({ msg: 'PostgreSQL database connected', url: (process.env.DATABASE_URL || '').replace(/:\/\/[^@]*@/, '://***@') });
+    _adapter = pgAdapter;
+  } else {
+    getSqlite(); // opens connection + creates schema
+    _adapter = sqliteAdapter;
   }
 }
 
-/**
- * Get the most recent Brier Score for a school (for delta calculation).
- * @param {string} schoolName
- * @returns {number|null}
- */
-function getLastBrierScore(schoolName) {
-  const row = stmts().getLastBrierScore.get(schoolName);
-  return row ? row.brier_score : null;
+function adapter() {
+  if (!_adapter) throw new Error('db.init() has not been called');
+  return _adapter;
 }
 
-/**
- * Get all scraped outcomes for a specific school (for per-record Brier Score).
- * @param {string} normalizedName
- * @returns {Array<{outcome: string}>}
- */
-function getResultsForSchool(normalizedName) {
-  return stmts().getResultsForSchool.all(normalizedName);
-}
+// ── Public API (all async) ────────────────────────────────────────────────────
 
-/**
- * Insert a calibration run row.
- * @param {object} row
- */
-function insertCalibrationRun(row) {
-  stmts().insertCalibrationRun.run(row);
-}
-
-/**
- * Close the database connection gracefully.
- */
-function close() {
-  if (_db) {
-    _db.close();
-    _db = null;
-    _stmts = null;
-    _getPublishedRate = null;
-    _getPublishedRateByNorm = null;
-  }
-}
+async function postExists(postId) { return adapter().postExists(postId); }
+async function storePost(postId, applicant, results, rawText) { return adapter().storePost(postId, applicant, results, rawText); }
+async function recordScrapeRun(stats) { return adapter().recordScrapeRun(stats); }
+async function getSchoolStats() { return adapter().getSchoolStats(); }
+async function getPublishedRate(normalizedName) { return adapter().getPublishedRate(normalizedName); }
+async function getLastBrierScore(schoolName) { return adapter().getLastBrierScore(schoolName); }
+async function getResultsForSchool(normalizedName) { return adapter().getResultsForSchool(normalizedName); }
+async function insertCalibrationRun(row) { return adapter().insertCalibrationRun(row); }
+async function close() { if (_adapter) { await _adapter.close(); _adapter = null; } }
 
 module.exports = {
+  init,
   postExists,
   storePost,
   recordScrapeRun,
@@ -355,3 +567,4 @@ module.exports = {
   insertCalibrationRun,
   close,
 };
+

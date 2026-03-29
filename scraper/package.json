@@ -11,6 +11,7 @@
     "@anthropic-ai/sdk": "^0.80.0",
     "axios": "^1.13.5",
     "better-sqlite3": "^12.8.0",
+    "pg": "^8.20.0",
     "winston": "^3.11.0"
   }
 }

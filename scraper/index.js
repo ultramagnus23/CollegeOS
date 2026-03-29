@@ -65,7 +65,7 @@ async function processBatch(posts, stats) {
     stats.fetched++;
 
     // Duplicate guard — Reddit post ID is the unique key
-    if (db.postExists(post.id)) {
+    if (await db.postExists(post.id)) {
       stats.skipped++;
       logger.debug({ msg: 'Skipping duplicate post', postId: post.id });
       continue;
@@ -98,7 +98,7 @@ async function processBatch(posts, stats) {
     stats.parsed++;
 
     try {
-      db.storePost(post.id, parsed.applicant, parsed.results, rawText);
+      await db.storePost(post.id, parsed.applicant, parsed.results, rawText);
       stats.stored++;
       logger.debug({
         msg: 'Stored post',
@@ -106,8 +106,9 @@ async function processBatch(posts, stats) {
         schools: parsed.results.length,
       });
     } catch (err) {
-      // UNIQUE constraint on reddit_post_id — race condition between check and insert
-      if (err.message && err.message.includes('UNIQUE constraint')) {
+      // UNIQUE constraint on reddit_post_id — race condition between check and insert.
+      // SQLite raises "UNIQUE constraint failed"; PostgreSQL uses error code 23505.
+      if ((err.message && err.message.includes('UNIQUE constraint')) || err.code === '23505') {
         stats.skipped++;
         logger.debug({ msg: 'Race-condition duplicate, skipping', postId: post.id });
       } else {
@@ -139,7 +140,7 @@ async function runSeed() {
     logger.error({ msg: 'Seed run error', error: err.message });
   }
 
-  db.recordScrapeRun({
+  await db.recordScrapeRun({
     mode: 'seed',
     posts_fetched: stats.fetched,
     posts_parsed: stats.parsed,
@@ -181,7 +182,7 @@ async function runIncremental() {
     logger.error({ msg: 'Incremental run error', error: err.message });
   }
 
-  db.recordScrapeRun({
+  await db.recordScrapeRun({
     mode: 'incremental',
     posts_fetched: stats.fetched,
     posts_parsed: stats.parsed,
@@ -213,6 +214,8 @@ async function main() {
   }
 
   try {
+    await db.init();
+
     if (mode === 'seed') {
       await runSeed();
     } else {
@@ -221,12 +224,12 @@ async function main() {
 
     // Run calibration after every scrape
     logger.info({ msg: 'Running calibration' });
-    calibrate();
+    await calibrate();
   } catch (err) {
     logger.error({ msg: 'Fatal error', error: err.message, stack: err.stack });
     process.exitCode = 1;
   } finally {
-    db.close();
+    await db.close();
   }
 }
 
