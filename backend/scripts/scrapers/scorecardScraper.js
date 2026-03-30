@@ -195,251 +195,224 @@ async function fetchAllScorecardData(apiKey, onProgress) {
 // Convert 0-1 fraction → percentage with 1 decimal
 const pct = (v) => v != null ? Math.round(v * 1000) / 10 : null;
 
-function writeScorecardData(db, colleges) {
+async function writeScorecardData(db, colleges) {
   let written = 0, skipped = 0;
 
   // One-time: add scorecard_unit_id to both tables for fast future lookups
   for (const tbl of ['colleges', 'colleges_comprehensive']) {
-    try { db.prepare(`ALTER TABLE ${tbl} ADD COLUMN scorecard_unit_id INTEGER`).run(); }
+    try { await db.query(`ALTER TABLE ${tbl} ADD COLUMN IF NOT EXISTS scorecard_unit_id INTEGER`); }
     catch { /* already exists */ }
   }
 
-  // ── THE KEY FIX ──────────────────────────────────────────────────────────────
-  // colleges_comprehensive.id ≠ colleges.id (only 3/6417 match!)
-  // ALL enrichment FKs point to colleges_comprehensive.id
-  // ALWAYS look up by name, never reuse colleges.id for enrichment tables
+  for (const c of colleges) {
+    if (!c.name || !c.scorecard_id) continue;
 
-  const findCompByUnit = db.prepare(`SELECT id FROM colleges_comprehensive WHERE scorecard_unit_id = ? LIMIT 1`);
-  const findCompByName = db.prepare(`SELECT id FROM colleges_comprehensive WHERE name = ? LIMIT 1`);
-  const findColByUnit  = db.prepare(`SELECT id FROM colleges WHERE scorecard_unit_id = ? LIMIT 1`);
-  const findColByName  = db.prepare(`SELECT id FROM colleges WHERE name = ? LIMIT 1`);
-  const stampComp = db.prepare(`UPDATE colleges_comprehensive SET scorecard_unit_id = ? WHERE id = ? AND scorecard_unit_id IS NULL`);
-  const stampCol  = db.prepare(`UPDATE colleges SET scorecard_unit_id = ? WHERE id = ? AND scorecard_unit_id IS NULL`);
+    // Resolve colleges_comprehensive.id — REQUIRED for all enrichment FK
+    let compId = (await db.query(`SELECT id FROM colleges_comprehensive WHERE scorecard_unit_id = $1 LIMIT 1`, [c.scorecard_id])).rows[0]?.id
+              || (await db.query(`SELECT id FROM colleges_comprehensive WHERE name = $1 LIMIT 1`, [c.name])).rows[0]?.id;
 
-  const upsertComp = db.prepare(`
-    INSERT INTO colleges_comprehensive (name, country, state_region, city, institution_type,
-      undergraduate_enrollment, graduate_enrollment, total_enrollment, website_url, last_updated)
-    VALUES (?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
-    ON CONFLICT(name, country) DO UPDATE SET
-      state_region             = COALESCE(excluded.state_region,             state_region),
-      city                     = COALESCE(excluded.city,                     city),
-      institution_type         = COALESCE(excluded.institution_type,         institution_type),
-      undergraduate_enrollment = COALESCE(excluded.undergraduate_enrollment, undergraduate_enrollment),
-      graduate_enrollment      = COALESCE(excluded.graduate_enrollment,      graduate_enrollment),
-      total_enrollment         = COALESCE(excluded.total_enrollment,         total_enrollment),
-      website_url              = COALESCE(excluded.website_url,              website_url),
-      last_updated             = CURRENT_TIMESTAMP
-  `);
-
-  const upsertAdmissions = db.prepare(`
-    INSERT INTO college_admissions (college_id, year, acceptance_rate, test_optional_flag, source, confidence_score)
-    VALUES (?,?,?,?,?,?)
-    ON CONFLICT(college_id, year) DO UPDATE SET
-      acceptance_rate    = COALESCE(excluded.acceptance_rate, acceptance_rate),
-      test_optional_flag = excluded.test_optional_flag,
-      source = excluded.source, confidence_score = excluded.confidence_score
-  `);
-
-  const upsertTestScores = db.prepare(`
-    INSERT INTO test_scores (college_id, sat_ebrw_25th, sat_ebrw_75th, sat_math_25th, sat_math_75th,
-      sat_total_25th, sat_total_75th, act_composite_25th, act_composite_75th)
-    VALUES (?,?,?,?,?,?,?,?,?)
-    ON CONFLICT(college_id) DO UPDATE SET
-      sat_ebrw_25th      = COALESCE(excluded.sat_ebrw_25th,      sat_ebrw_25th),
-      sat_ebrw_75th      = COALESCE(excluded.sat_ebrw_75th,      sat_ebrw_75th),
-      sat_math_25th      = COALESCE(excluded.sat_math_25th,      sat_math_25th),
-      sat_math_75th      = COALESCE(excluded.sat_math_75th,      sat_math_75th),
-      sat_total_25th     = COALESCE(excluded.sat_total_25th,     sat_total_25th),
-      sat_total_75th     = COALESCE(excluded.sat_total_75th,     sat_total_75th),
-      act_composite_25th = COALESCE(excluded.act_composite_25th, act_composite_25th),
-      act_composite_75th = COALESCE(excluded.act_composite_75th, act_composite_75th)
-  `);
-
-  const upsertAdmittedStats = db.prepare(`
-    INSERT INTO admitted_student_stats (college_id, year,
-      sat_25, sat_50, sat_75, act_25, act_50, act_75, gpa_50, source, confidence_score)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?)
-    ON CONFLICT(college_id, year) DO UPDATE SET
-      sat_25 = COALESCE(excluded.sat_25, sat_25), sat_50 = COALESCE(excluded.sat_50, sat_50),
-      sat_75 = COALESCE(excluded.sat_75, sat_75), act_25 = COALESCE(excluded.act_25, act_25),
-      act_50 = COALESCE(excluded.act_50, act_50), act_75 = COALESCE(excluded.act_75, act_75),
-      gpa_50 = COALESCE(excluded.gpa_50, gpa_50),
-      source = excluded.source, confidence_score = excluded.confidence_score
-  `);
-
-  const upsertFinancial = db.prepare(`
-    INSERT INTO college_financial_data (college_id, year,
-      tuition_in_state, tuition_out_state, cost_of_attendance,
-      avg_financial_aid, avg_debt,
-      net_price_low_income, net_price_mid_income, net_price_high_income,
-      percent_receiving_aid, loan_default_rate, fafsa_required, source, confidence_score)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-    ON CONFLICT(college_id, year) DO UPDATE SET
-      tuition_in_state      = COALESCE(excluded.tuition_in_state,      tuition_in_state),
-      tuition_out_state     = COALESCE(excluded.tuition_out_state,     tuition_out_state),
-      cost_of_attendance    = COALESCE(excluded.cost_of_attendance,    cost_of_attendance),
-      avg_financial_aid     = COALESCE(excluded.avg_financial_aid,     avg_financial_aid),
-      avg_debt              = COALESCE(excluded.avg_debt,              avg_debt),
-      net_price_low_income  = COALESCE(excluded.net_price_low_income,  net_price_low_income),
-      net_price_mid_income  = COALESCE(excluded.net_price_mid_income,  net_price_mid_income),
-      net_price_high_income = COALESCE(excluded.net_price_high_income, net_price_high_income),
-      percent_receiving_aid = COALESCE(excluded.percent_receiving_aid, percent_receiving_aid),
-      loan_default_rate     = COALESCE(excluded.loan_default_rate,     loan_default_rate),
-      source = excluded.source, confidence_score = excluded.confidence_score
-  `);
-
-  const upsertNetPrice = db.prepare(`
-    INSERT INTO net_price_data (college_id, academic_year,
-      net_price_0_30k, net_price_30_48k, net_price_48_75k, net_price_75_110k, net_price_110k_plus,
-      avg_grant_aid, avg_federal_loan, pct_receiving_any_aid, pct_receiving_pell, source)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-    ON CONFLICT(college_id, academic_year) DO UPDATE SET
-      net_price_0_30k     = COALESCE(excluded.net_price_0_30k,     net_price_0_30k),
-      net_price_30_48k    = COALESCE(excluded.net_price_30_48k,    net_price_30_48k),
-      net_price_48_75k    = COALESCE(excluded.net_price_48_75k,    net_price_48_75k),
-      net_price_75_110k   = COALESCE(excluded.net_price_75_110k,   net_price_75_110k),
-      net_price_110k_plus = COALESCE(excluded.net_price_110k_plus, net_price_110k_plus),
-      avg_grant_aid       = COALESCE(excluded.avg_grant_aid,       avg_grant_aid),
-      pct_receiving_pell  = COALESCE(excluded.pct_receiving_pell,  pct_receiving_pell)
-  `);
-
-  const upsertDemographics = db.prepare(`
-    INSERT INTO student_demographics (college_id, year,
-      percent_international, percent_first_gen,
-      percent_black, percent_hispanic, percent_asian, percent_white,
-      percent_native_american, percent_pacific_islander, percent_multiracial,
-      percent_unknown_race, percent_male, percent_female,
-      percent_pell_recipients, average_age, source)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-    ON CONFLICT(college_id, year) DO UPDATE SET
-      percent_international    = COALESCE(excluded.percent_international,    percent_international),
-      percent_first_gen        = COALESCE(excluded.percent_first_gen,        percent_first_gen),
-      percent_black            = COALESCE(excluded.percent_black,            percent_black),
-      percent_hispanic         = COALESCE(excluded.percent_hispanic,         percent_hispanic),
-      percent_asian            = COALESCE(excluded.percent_asian,            percent_asian),
-      percent_white            = COALESCE(excluded.percent_white,            percent_white),
-      percent_native_american  = COALESCE(excluded.percent_native_american,  percent_native_american),
-      percent_pacific_islander = COALESCE(excluded.percent_pacific_islander, percent_pacific_islander),
-      percent_multiracial      = COALESCE(excluded.percent_multiracial,      percent_multiracial),
-      percent_unknown_race     = COALESCE(excluded.percent_unknown_race,     percent_unknown_race),
-      percent_male             = COALESCE(excluded.percent_male,             percent_male),
-      percent_female           = COALESCE(excluded.percent_female,           percent_female),
-      percent_pell_recipients  = COALESCE(excluded.percent_pell_recipients,  percent_pell_recipients),
-      average_age              = COALESCE(excluded.average_age,              average_age),
-      source = excluded.source
-  `);
-
-  const upsertOutcomes = db.prepare(`
-    INSERT INTO academic_outcomes (college_id, year,
-      graduation_rate_4yr, graduation_rate_6yr, retention_rate, median_start_salary,
-      source, confidence_score)
-    VALUES (?,?,?,?,?,?,?,?)
-    ON CONFLICT(college_id, year) DO UPDATE SET
-      graduation_rate_4yr = COALESCE(excluded.graduation_rate_4yr, graduation_rate_4yr),
-      graduation_rate_6yr = COALESCE(excluded.graduation_rate_6yr, graduation_rate_6yr),
-      retention_rate      = COALESCE(excluded.retention_rate,      retention_rate),
-      median_start_salary = COALESCE(excluded.median_start_salary, median_start_salary),
-      confidence_score    = excluded.confidence_score
-  `);
-
-  // colleges table has tuition_cost and acceptance_rate as denormalized summary columns
-  const updateCollegesSummary = db.prepare(`
-    UPDATE colleges SET
-      acceptance_rate = COALESCE(?, acceptance_rate),
-      tuition_cost    = COALESCE(?, tuition_cost),
-      last_scraped_at = CURRENT_TIMESTAMP,
-      updated_at      = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `);
-
-  const runAll = db.transaction((rows) => {
-    for (const c of rows) {
-      if (!c.name || !c.scorecard_id) continue;
-
-      // Resolve colleges_comprehensive.id — REQUIRED for all enrichment FK
-      let compId = findCompByUnit.get(c.scorecard_id)?.id
-                || findCompByName.get(c.name)?.id;
-
-      if (!compId) {
-        // Create the row if it doesn't exist
-        const instType = c.ownership === 1 ? 'Public'
-          : c.ownership === 2 ? 'Private' : c.ownership === 3 ? 'For-Profit' : null;
-        try {
-          upsertComp.run(c.name, 'United States', c.state, c.city, instType,
-            c.undergrad_enrollment, c.grad_enrollment,
-            (c.undergrad_enrollment || 0) + (c.grad_enrollment || 0), c.website_url);
-          compId = findCompByName.get(c.name)?.id;
-        } catch {}
-      }
-      if (!compId) { skipped++; continue; }
-
-      // Resolve colleges.id — only needed for summary update
-      const colId = findColByUnit.get(c.scorecard_id)?.id
-                 || findColByName.get(c.name)?.id;
-
-      // Stamp unit IDs for fast future lookups
-      try { stampComp.run(c.scorecard_id, compId); } catch {}
-      if (colId) { try { stampCol.run(c.scorecard_id, colId); } catch {} }
-
-      // Derived SAT totals
-      const sat25 = (c.sat_ebrw_25 && c.sat_math_25) ? c.sat_ebrw_25 + c.sat_math_25 : null;
-      const sat75 = (c.sat_ebrw_75 && c.sat_math_75) ? c.sat_ebrw_75 + c.sat_math_75 : null;
-      const sat50 = (c.sat_ebrw_mid && c.sat_math_mid) ? c.sat_ebrw_mid + c.sat_math_mid : null;
-
-      // GPA estimate from acceptance rate (Scorecard doesn't publish GPA directly)
-      let gpa50 = null;
-      if (c.acceptance_rate != null) {
-        if      (c.acceptance_rate < 0.10) gpa50 = 3.90;
-        else if (c.acceptance_rate < 0.20) gpa50 = 3.75;
-        else if (c.acceptance_rate < 0.40) gpa50 = 3.60;
-        else if (c.acceptance_rate < 0.60) gpa50 = 3.40;
-        else if (c.acceptance_rate < 0.80) gpa50 = 3.10;
-        else                               gpa50 = 2.80;
-      }
-
-      // Write all enrichment tables — each in its own try/catch
-      try { upsertAdmissions.run(compId, YEAR, c.acceptance_rate, c.open_admissions ? 1 : 0, 'College_Scorecard', 0.95); } catch {}
-      try { if (c.sat_ebrw_25 || c.act_25) upsertTestScores.run(compId, c.sat_ebrw_25, c.sat_ebrw_75, c.sat_math_25, c.sat_math_75, sat25, sat75, c.act_25, c.act_75); } catch {}
-      try { upsertAdmittedStats.run(compId, YEAR, sat25, sat50, sat75, c.act_25, c.act_mid, c.act_75, gpa50, 'College_Scorecard', 0.90); } catch {}
+    if (!compId) {
+      const instType = c.ownership === 1 ? 'Public'
+        : c.ownership === 2 ? 'Private' : c.ownership === 3 ? 'For-Profit' : null;
       try {
-        upsertFinancial.run(compId, YEAR,
-          c.tuition_in_state, c.tuition_out_state, c.cost_of_attendance,
-          c.avg_net_price, c.avg_debt,
-          c.net_price_0_30k, c.net_price_48_75k, c.net_price_110k_plus,
-          c.pell_grant_rate != null ? pct(c.pell_grant_rate) : null,
-          c.default_rate_3yr, 1, 'College_Scorecard', 0.95);
+        await db.query(
+          `INSERT INTO colleges_comprehensive (name, country, state_region, city, institution_type,
+            undergraduate_enrollment, graduate_enrollment, total_enrollment, website_url, last_updated)
+           VALUES ($1,'United States',$2,$3,$4,$5,$6,$7,$8,CURRENT_TIMESTAMP)
+           ON CONFLICT(name, country) DO UPDATE SET
+             state_region             = COALESCE(EXCLUDED.state_region,             colleges_comprehensive.state_region),
+             city                     = COALESCE(EXCLUDED.city,                     colleges_comprehensive.city),
+             institution_type         = COALESCE(EXCLUDED.institution_type,         colleges_comprehensive.institution_type),
+             undergraduate_enrollment = COALESCE(EXCLUDED.undergraduate_enrollment, colleges_comprehensive.undergraduate_enrollment),
+             graduate_enrollment      = COALESCE(EXCLUDED.graduate_enrollment,      colleges_comprehensive.graduate_enrollment),
+             total_enrollment         = COALESCE(EXCLUDED.total_enrollment,         colleges_comprehensive.total_enrollment),
+             website_url              = COALESCE(EXCLUDED.website_url,              colleges_comprehensive.website_url),
+             last_updated             = CURRENT_TIMESTAMP`,
+          [c.name, c.state, c.city, instType,
+           c.undergrad_enrollment, c.grad_enrollment,
+           (c.undergrad_enrollment || 0) + (c.grad_enrollment || 0), c.website_url]
+        );
+        compId = (await db.query(`SELECT id FROM colleges_comprehensive WHERE name = $1 LIMIT 1`, [c.name])).rows[0]?.id;
       } catch {}
-      try {
-        upsertNetPrice.run(compId, ACADEMIC_YEAR,
-          c.net_price_0_30k, c.net_price_30_48k, c.net_price_48_75k,
-          c.net_price_75_110k, c.net_price_110k_plus,
-          c.avg_net_price, c.avg_loan_amount,
-          c.pct_with_loans != null ? pct(c.pct_with_loans) : null,
-          c.pct_pell != null ? pct(c.pct_pell) : null,
-          'College_Scorecard');
-      } catch {}
-      try {
-        upsertDemographics.run(compId, YEAR,
-          pct(c.pct_international), pct(c.pct_first_gen),
-          pct(c.pct_black), pct(c.pct_hispanic), pct(c.pct_asian), pct(c.pct_white),
-          pct(c.pct_native_american), pct(c.pct_pacific_islander), pct(c.pct_multiracial),
-          pct(c.pct_unknown_race), pct(c.pct_men), pct(c.pct_women),
-          pct(c.pct_pell), c.avg_age_entry, 'College_Scorecard');
-      } catch {}
-      try {
-        upsertOutcomes.run(compId, YEAR,
-          c.grad_rate_4yr, c.grad_rate_6yr, c.retention_rate, c.median_earnings_6yr,
-          'College_Scorecard', 0.90);
-      } catch {}
-
-      // Update summary columns on colleges table (uses colId)
-      if (colId) { try { updateCollegesSummary.run(c.acceptance_rate, c.tuition_out_state, colId); } catch {} }
-
-      written++;
     }
-  });
+    if (!compId) { skipped++; continue; }
 
-  runAll(colleges);
+    // Resolve colleges.id — only needed for summary update
+    const colId = (await db.query(`SELECT id FROM colleges WHERE scorecard_unit_id = $1 LIMIT 1`, [c.scorecard_id])).rows[0]?.id
+               || (await db.query(`SELECT id FROM colleges WHERE name = $1 LIMIT 1`, [c.name])).rows[0]?.id;
+
+    // Stamp unit IDs for fast future lookups
+    try { await db.query(`UPDATE colleges_comprehensive SET scorecard_unit_id = $1 WHERE id = $2 AND scorecard_unit_id IS NULL`, [c.scorecard_id, compId]); } catch {}
+    if (colId) { try { await db.query(`UPDATE colleges SET scorecard_unit_id = $1 WHERE id = $2 AND scorecard_unit_id IS NULL`, [c.scorecard_id, colId]); } catch {} }
+
+    // Derived SAT totals
+    const sat25 = (c.sat_ebrw_25 && c.sat_math_25) ? c.sat_ebrw_25 + c.sat_math_25 : null;
+    const sat75 = (c.sat_ebrw_75 && c.sat_math_75) ? c.sat_ebrw_75 + c.sat_math_75 : null;
+    const sat50 = (c.sat_ebrw_mid && c.sat_math_mid) ? c.sat_ebrw_mid + c.sat_math_mid : null;
+
+    let gpa50 = null;
+    if (c.acceptance_rate != null) {
+      if      (c.acceptance_rate < 0.10) gpa50 = 3.90;
+      else if (c.acceptance_rate < 0.20) gpa50 = 3.75;
+      else if (c.acceptance_rate < 0.40) gpa50 = 3.60;
+      else if (c.acceptance_rate < 0.60) gpa50 = 3.40;
+      else if (c.acceptance_rate < 0.80) gpa50 = 3.10;
+      else                               gpa50 = 2.80;
+    }
+
+    try { await db.query(
+      `INSERT INTO college_admissions (college_id, year, acceptance_rate, test_optional_flag, source, confidence_score)
+       VALUES ($1,$2,$3,$4,$5,$6)
+       ON CONFLICT(college_id, year) DO UPDATE SET
+         acceptance_rate    = COALESCE(EXCLUDED.acceptance_rate, college_admissions.acceptance_rate),
+         test_optional_flag = EXCLUDED.test_optional_flag,
+         source = EXCLUDED.source, confidence_score = EXCLUDED.confidence_score`,
+      [compId, YEAR, c.acceptance_rate, c.open_admissions ? 1 : 0, 'College_Scorecard', 0.95]
+    ); } catch {}
+
+    try { if (c.sat_ebrw_25 || c.act_25) await db.query(
+      `INSERT INTO test_scores (college_id, sat_ebrw_25th, sat_ebrw_75th, sat_math_25th, sat_math_75th,
+        sat_total_25th, sat_total_75th, act_composite_25th, act_composite_75th)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       ON CONFLICT(college_id) DO UPDATE SET
+         sat_ebrw_25th      = COALESCE(EXCLUDED.sat_ebrw_25th,      test_scores.sat_ebrw_25th),
+         sat_ebrw_75th      = COALESCE(EXCLUDED.sat_ebrw_75th,      test_scores.sat_ebrw_75th),
+         sat_math_25th      = COALESCE(EXCLUDED.sat_math_25th,      test_scores.sat_math_25th),
+         sat_math_75th      = COALESCE(EXCLUDED.sat_math_75th,      test_scores.sat_math_75th),
+         sat_total_25th     = COALESCE(EXCLUDED.sat_total_25th,     test_scores.sat_total_25th),
+         sat_total_75th     = COALESCE(EXCLUDED.sat_total_75th,     test_scores.sat_total_75th),
+         act_composite_25th = COALESCE(EXCLUDED.act_composite_25th, test_scores.act_composite_25th),
+         act_composite_75th = COALESCE(EXCLUDED.act_composite_75th, test_scores.act_composite_75th)`,
+      [compId, c.sat_ebrw_25, c.sat_ebrw_75, c.sat_math_25, c.sat_math_75, sat25, sat75, c.act_25, c.act_75]
+    ); } catch {}
+
+    try { await db.query(
+      `INSERT INTO admitted_student_stats (college_id, year,
+        sat_25, sat_50, sat_75, act_25, act_50, act_75, gpa_50, source, confidence_score)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       ON CONFLICT(college_id, year) DO UPDATE SET
+         sat_25 = COALESCE(EXCLUDED.sat_25, admitted_student_stats.sat_25),
+         sat_50 = COALESCE(EXCLUDED.sat_50, admitted_student_stats.sat_50),
+         sat_75 = COALESCE(EXCLUDED.sat_75, admitted_student_stats.sat_75),
+         act_25 = COALESCE(EXCLUDED.act_25, admitted_student_stats.act_25),
+         act_50 = COALESCE(EXCLUDED.act_50, admitted_student_stats.act_50),
+         act_75 = COALESCE(EXCLUDED.act_75, admitted_student_stats.act_75),
+         gpa_50 = COALESCE(EXCLUDED.gpa_50, admitted_student_stats.gpa_50),
+         source = EXCLUDED.source, confidence_score = EXCLUDED.confidence_score`,
+      [compId, YEAR, sat25, sat50, sat75, c.act_25, c.act_mid, c.act_75, gpa50, 'College_Scorecard', 0.90]
+    ); } catch {}
+
+    try { await db.query(
+      `INSERT INTO college_financial_data (college_id, year,
+        tuition_in_state, tuition_out_state, cost_of_attendance,
+        avg_financial_aid, avg_debt,
+        net_price_low_income, net_price_mid_income, net_price_high_income,
+        percent_receiving_aid, loan_default_rate, fafsa_required, source, confidence_score)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+       ON CONFLICT(college_id, year) DO UPDATE SET
+         tuition_in_state      = COALESCE(EXCLUDED.tuition_in_state,      college_financial_data.tuition_in_state),
+         tuition_out_state     = COALESCE(EXCLUDED.tuition_out_state,     college_financial_data.tuition_out_state),
+         cost_of_attendance    = COALESCE(EXCLUDED.cost_of_attendance,    college_financial_data.cost_of_attendance),
+         avg_financial_aid     = COALESCE(EXCLUDED.avg_financial_aid,     college_financial_data.avg_financial_aid),
+         avg_debt              = COALESCE(EXCLUDED.avg_debt,              college_financial_data.avg_debt),
+         net_price_low_income  = COALESCE(EXCLUDED.net_price_low_income,  college_financial_data.net_price_low_income),
+         net_price_mid_income  = COALESCE(EXCLUDED.net_price_mid_income,  college_financial_data.net_price_mid_income),
+         net_price_high_income = COALESCE(EXCLUDED.net_price_high_income, college_financial_data.net_price_high_income),
+         percent_receiving_aid = COALESCE(EXCLUDED.percent_receiving_aid, college_financial_data.percent_receiving_aid),
+         loan_default_rate     = COALESCE(EXCLUDED.loan_default_rate,     college_financial_data.loan_default_rate),
+         source = EXCLUDED.source, confidence_score = EXCLUDED.confidence_score`,
+      [compId, YEAR,
+       c.tuition_in_state, c.tuition_out_state, c.cost_of_attendance,
+       c.avg_net_price, c.avg_debt,
+       c.net_price_0_30k, c.net_price_48_75k, c.net_price_110k_plus,
+       c.pell_grant_rate != null ? pct(c.pell_grant_rate) : null,
+       c.default_rate_3yr, 1, 'College_Scorecard', 0.95]
+    ); } catch {}
+
+    try { await db.query(
+      `INSERT INTO net_price_data (college_id, academic_year,
+        net_price_0_30k, net_price_30_48k, net_price_48_75k, net_price_75_110k, net_price_110k_plus,
+        avg_grant_aid, avg_federal_loan, pct_receiving_any_aid, pct_receiving_pell, source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       ON CONFLICT(college_id, academic_year) DO UPDATE SET
+         net_price_0_30k     = COALESCE(EXCLUDED.net_price_0_30k,     net_price_data.net_price_0_30k),
+         net_price_30_48k    = COALESCE(EXCLUDED.net_price_30_48k,    net_price_data.net_price_30_48k),
+         net_price_48_75k    = COALESCE(EXCLUDED.net_price_48_75k,    net_price_data.net_price_48_75k),
+         net_price_75_110k   = COALESCE(EXCLUDED.net_price_75_110k,   net_price_data.net_price_75_110k),
+         net_price_110k_plus = COALESCE(EXCLUDED.net_price_110k_plus, net_price_data.net_price_110k_plus),
+         avg_grant_aid       = COALESCE(EXCLUDED.avg_grant_aid,       net_price_data.avg_grant_aid),
+         pct_receiving_pell  = COALESCE(EXCLUDED.pct_receiving_pell,  net_price_data.pct_receiving_pell)`,
+      [compId, ACADEMIC_YEAR,
+       c.net_price_0_30k, c.net_price_30_48k, c.net_price_48_75k,
+       c.net_price_75_110k, c.net_price_110k_plus,
+       c.avg_net_price, c.avg_loan_amount,
+       c.pct_with_loans != null ? pct(c.pct_with_loans) : null,
+       c.pct_pell != null ? pct(c.pct_pell) : null,
+       'College_Scorecard']
+    ); } catch {}
+
+    try { await db.query(
+      `INSERT INTO student_demographics (college_id, year,
+        percent_international, percent_first_gen,
+        percent_black, percent_hispanic, percent_asian, percent_white,
+        percent_native_american, percent_pacific_islander, percent_multiracial,
+        percent_unknown_race, percent_male, percent_female,
+        percent_pell_recipients, average_age, source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+       ON CONFLICT(college_id, year) DO UPDATE SET
+         percent_international    = COALESCE(EXCLUDED.percent_international,    student_demographics.percent_international),
+         percent_first_gen        = COALESCE(EXCLUDED.percent_first_gen,        student_demographics.percent_first_gen),
+         percent_black            = COALESCE(EXCLUDED.percent_black,            student_demographics.percent_black),
+         percent_hispanic         = COALESCE(EXCLUDED.percent_hispanic,         student_demographics.percent_hispanic),
+         percent_asian            = COALESCE(EXCLUDED.percent_asian,            student_demographics.percent_asian),
+         percent_white            = COALESCE(EXCLUDED.percent_white,            student_demographics.percent_white),
+         percent_native_american  = COALESCE(EXCLUDED.percent_native_american,  student_demographics.percent_native_american),
+         percent_pacific_islander = COALESCE(EXCLUDED.percent_pacific_islander, student_demographics.percent_pacific_islander),
+         percent_multiracial      = COALESCE(EXCLUDED.percent_multiracial,      student_demographics.percent_multiracial),
+         percent_unknown_race     = COALESCE(EXCLUDED.percent_unknown_race,     student_demographics.percent_unknown_race),
+         percent_male             = COALESCE(EXCLUDED.percent_male,             student_demographics.percent_male),
+         percent_female           = COALESCE(EXCLUDED.percent_female,           student_demographics.percent_female),
+         percent_pell_recipients  = COALESCE(EXCLUDED.percent_pell_recipients,  student_demographics.percent_pell_recipients),
+         average_age              = COALESCE(EXCLUDED.average_age,              student_demographics.average_age),
+         source = EXCLUDED.source`,
+      [compId, YEAR,
+       pct(c.pct_international), pct(c.pct_first_gen),
+       pct(c.pct_black), pct(c.pct_hispanic), pct(c.pct_asian), pct(c.pct_white),
+       pct(c.pct_native_american), pct(c.pct_pacific_islander), pct(c.pct_multiracial),
+       pct(c.pct_unknown_race), pct(c.pct_men), pct(c.pct_women),
+       pct(c.pct_pell), c.avg_age_entry, 'College_Scorecard']
+    ); } catch {}
+
+    try { await db.query(
+      `INSERT INTO academic_outcomes (college_id, year,
+        graduation_rate_4yr, graduation_rate_6yr, retention_rate, median_start_salary,
+        source, confidence_score)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       ON CONFLICT(college_id, year) DO UPDATE SET
+         graduation_rate_4yr = COALESCE(EXCLUDED.graduation_rate_4yr, academic_outcomes.graduation_rate_4yr),
+         graduation_rate_6yr = COALESCE(EXCLUDED.graduation_rate_6yr, academic_outcomes.graduation_rate_6yr),
+         retention_rate      = COALESCE(EXCLUDED.retention_rate,      academic_outcomes.retention_rate),
+         median_start_salary = COALESCE(EXCLUDED.median_start_salary, academic_outcomes.median_start_salary),
+         confidence_score    = EXCLUDED.confidence_score`,
+      [compId, YEAR,
+       c.grad_rate_4yr, c.grad_rate_6yr, c.retention_rate, c.median_earnings_6yr,
+       'College_Scorecard', 0.90]
+    ); } catch {}
+
+    // Update summary columns on colleges table
+    if (colId) { try { await db.query(
+      `UPDATE colleges SET
+        acceptance_rate = COALESCE($1, acceptance_rate),
+        tuition_cost    = COALESCE($2, tuition_cost),
+        last_scraped_at = CURRENT_TIMESTAMP,
+        updated_at      = CURRENT_TIMESTAMP
+       WHERE id = $3`,
+      [c.acceptance_rate, c.tuition_out_state, colId]
+    ); } catch {} }
+
+    written++;
+  }
+
   console.log(`[scorecard] Written: ${written}, Skipped (no match): ${skipped}`);
   return written;
 }

@@ -410,14 +410,14 @@ async function scrapeAdmissionsPage(college) {
 
 // ── DB writers ────────────────────────────────────────────────────────────────
 
-function writeAdmissionsData(db, college, data) {
+async function writeAdmissionsData(db, college, data) {
   if (!data) return;
   const { deadlines, requirements, essayPrompts } = data;
 
   // application_deadlines
   try {
-    db.prepare(`
-      INSERT INTO application_deadlines
+    await db.query(
+      `INSERT INTO application_deadlines
         (college_id,
          early_decision_1_date, early_decision_1_notification,
          early_decision_2_date, early_decision_2_notification,
@@ -428,43 +428,44 @@ function writeAdmissionsData(db, college, data) {
          offers_early_decision, offers_early_action, offers_restrictive_ea,
          offers_rolling_admission, application_fee, application_fee_waiver_available,
          source_url, last_verified, confidence_score, verification_status)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?,'scraped')
-      ON CONFLICT(college_id) DO UPDATE SET
-        early_decision_1_date    = COALESCE(excluded.early_decision_1_date,    early_decision_1_date),
-        early_decision_2_date    = COALESCE(excluded.early_decision_2_date,    early_decision_2_date),
-        early_action_date        = COALESCE(excluded.early_action_date,        early_action_date),
-        regular_decision_date    = COALESCE(excluded.regular_decision_date,    regular_decision_date),
-        transfer_fall_date       = COALESCE(excluded.transfer_fall_date,       transfer_fall_date),
-        offers_early_decision    = excluded.offers_early_decision,
-        offers_early_action      = excluded.offers_early_action,
-        offers_rolling_admission = excluded.offers_rolling_admission,
-        application_fee          = COALESCE(excluded.application_fee,          application_fee),
-        source_url               = excluded.source_url,
-        last_verified            = CURRENT_TIMESTAMP,
-        confidence_score         = excluded.confidence_score,
-        verification_status      = 'scraped'
-    `).run(
-      college.id,
-      deadlines.ed1, deadlines.ed1_notification,
-      deadlines.ed2, deadlines.ed2_notification,
-      deadlines.ea,  deadlines.ea_notification,
-      deadlines.rea,
-      deadlines.rd,  deadlines.rd_notification,
-      deadlines.transfer_fall, deadlines.transfer_spring, deadlines.international,
-      deadlines.offers_ed  ? 1 : 0,
-      deadlines.offers_ea  ? 1 : 0,
-      deadlines.offers_rea ? 1 : 0,
-      deadlines.rolling    ? 1 : 0,
-      deadlines.app_fee, deadlines.fee_waiver ? 1 : 0,
-      data.sourceUrl, 0.75
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,CURRENT_TIMESTAMP,$21,'scraped')
+       ON CONFLICT(college_id) DO UPDATE SET
+         early_decision_1_date    = COALESCE(EXCLUDED.early_decision_1_date,    application_deadlines.early_decision_1_date),
+         early_decision_2_date    = COALESCE(EXCLUDED.early_decision_2_date,    application_deadlines.early_decision_2_date),
+         early_action_date        = COALESCE(EXCLUDED.early_action_date,        application_deadlines.early_action_date),
+         regular_decision_date    = COALESCE(EXCLUDED.regular_decision_date,    application_deadlines.regular_decision_date),
+         transfer_fall_date       = COALESCE(EXCLUDED.transfer_fall_date,       application_deadlines.transfer_fall_date),
+         offers_early_decision    = EXCLUDED.offers_early_decision,
+         offers_early_action      = EXCLUDED.offers_early_action,
+         offers_rolling_admission = EXCLUDED.offers_rolling_admission,
+         application_fee          = COALESCE(EXCLUDED.application_fee,          application_deadlines.application_fee),
+         source_url               = EXCLUDED.source_url,
+         last_verified            = CURRENT_TIMESTAMP,
+         confidence_score         = EXCLUDED.confidence_score,
+         verification_status      = 'scraped'`,
+      [
+        college.id,
+        deadlines.ed1, deadlines.ed1_notification,
+        deadlines.ed2, deadlines.ed2_notification,
+        deadlines.ea,  deadlines.ea_notification,
+        deadlines.rea,
+        deadlines.rd,  deadlines.rd_notification,
+        deadlines.transfer_fall, deadlines.transfer_spring, deadlines.international,
+        deadlines.offers_ed  ? 1 : 0,
+        deadlines.offers_ea  ? 1 : 0,
+        deadlines.offers_rea ? 1 : 0,
+        deadlines.rolling    ? 1 : 0,
+        deadlines.app_fee, deadlines.fee_waiver ? 1 : 0,
+        data.sourceUrl, 0.75,
+      ]
     );
   } catch (e) { console.warn(`[admissions] deadline write failed for ${college.name}:`, e.message); }
 
   // college_requirements
   // test_policy CHECK: 'required' | 'optional' | 'test-blind' | 'flexible'
   try {
-    db.prepare(`
-      INSERT INTO college_requirements
+    await db.query(
+      `INSERT INTO college_requirements
         (college_id, test_policy, sat_required, act_required,
          common_app_essay_required, supplemental_essays_count,
          teacher_recommendations_required, counselor_recommendation_required,
@@ -473,63 +474,65 @@ function writeAdmissionsData(db, college, data) {
          toefl_required_international, toefl_minimum_score,
          ielts_required_international, ielts_minimum_score,
          source_url, last_verified, confidence_score)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)
-      ON CONFLICT(college_id) DO UPDATE SET
-        test_policy                   = COALESCE(excluded.test_policy,                   test_policy),
-        sat_required                  = excluded.sat_required,
-        act_required                  = excluded.act_required,
-        supplemental_essays_count     = COALESCE(excluded.supplemental_essays_count,     supplemental_essays_count),
-        interview_offered             = excluded.interview_offered,
-        interview_required            = excluded.interview_required,
-        toefl_minimum_score           = COALESCE(excluded.toefl_minimum_score,           toefl_minimum_score),
-        ielts_minimum_score           = COALESCE(excluded.ielts_minimum_score,           ielts_minimum_score),
-        last_verified                 = CURRENT_TIMESTAMP,
-        confidence_score              = excluded.confidence_score
-    `).run(
-      college.id,
-      requirements.test_policy,                    // 'optional' | 'required' | 'test-blind' | 'flexible'
-      requirements.sat_required    ? 1 : 0,
-      requirements.act_required    ? 1 : 0,
-      1,                                            // common_app_essay_required default
-      requirements.supplemental_essays_count,
-      requirements.teacher_recs_required,
-      requirements.counselor_rec_required  ? 1 : 0,
-      requirements.peer_rec_required       ? 1 : 0,
-      requirements.interview_offered       ? 1 : 0,
-      requirements.interview_required      ? 1 : 0,
-      requirements.portfolio_required      ? 1 : 0,
-      requirements.demonstrated_interest   ? 1 : 0,
-      requirements.toefl_minimum           ? 1 : 0,
-      requirements.toefl_minimum,
-      requirements.ielts_minimum           ? 1 : 0,
-      requirements.ielts_minimum,
-      data.sourceUrl, 0.70
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,CURRENT_TIMESTAMP,$19)
+       ON CONFLICT(college_id) DO UPDATE SET
+         test_policy                   = COALESCE(EXCLUDED.test_policy,                   college_requirements.test_policy),
+         sat_required                  = EXCLUDED.sat_required,
+         act_required                  = EXCLUDED.act_required,
+         supplemental_essays_count     = COALESCE(EXCLUDED.supplemental_essays_count,     college_requirements.supplemental_essays_count),
+         interview_offered             = EXCLUDED.interview_offered,
+         interview_required            = EXCLUDED.interview_required,
+         toefl_minimum_score           = COALESCE(EXCLUDED.toefl_minimum_score,           college_requirements.toefl_minimum_score),
+         ielts_minimum_score           = COALESCE(EXCLUDED.ielts_minimum_score,           college_requirements.ielts_minimum_score),
+         last_verified                 = CURRENT_TIMESTAMP,
+         confidence_score              = EXCLUDED.confidence_score`,
+      [
+        college.id,
+        requirements.test_policy,
+        requirements.sat_required    ? 1 : 0,
+        requirements.act_required    ? 1 : 0,
+        1,
+        requirements.supplemental_essays_count,
+        requirements.teacher_recs_required,
+        requirements.counselor_rec_required  ? 1 : 0,
+        requirements.peer_rec_required       ? 1 : 0,
+        requirements.interview_offered       ? 1 : 0,
+        requirements.interview_required      ? 1 : 0,
+        requirements.portfolio_required      ? 1 : 0,
+        requirements.demonstrated_interest   ? 1 : 0,
+        requirements.toefl_minimum           ? 1 : 0,
+        requirements.toefl_minimum,
+        requirements.ielts_minimum           ? 1 : 0,
+        requirements.ielts_minimum,
+        data.sourceUrl, 0.70,
+      ]
     );
   } catch (e) { console.warn(`[admissions] requirements write failed for ${college.name}:`, e.message); }
 
   // course_requirements
   try {
-    db.prepare(`
-      INSERT INTO course_requirements
+    await db.query(
+      `INSERT INTO course_requirements
         (college_id, english_years_required, math_years_required,
          science_years_required, lab_science_years_required,
          social_studies_years_required, foreign_language_years_required,
          calculus_required)
-      VALUES (?,?,?,?,?,?,?,?)
-      ON CONFLICT(college_id) DO UPDATE SET
-        english_years_required          = COALESCE(excluded.english_years_required,          english_years_required),
-        math_years_required             = COALESCE(excluded.math_years_required,             math_years_required),
-        science_years_required          = COALESCE(excluded.science_years_required,          science_years_required),
-        lab_science_years_required      = COALESCE(excluded.lab_science_years_required,      lab_science_years_required),
-        social_studies_years_required   = COALESCE(excluded.social_studies_years_required,   social_studies_years_required),
-        foreign_language_years_required = COALESCE(excluded.foreign_language_years_required, foreign_language_years_required),
-        calculus_required               = excluded.calculus_required
-    `).run(
-      college.id,
-      requirements.english_years, requirements.math_years,
-      requirements.science_years, requirements.lab_science_years,
-      requirements.social_studies_years, requirements.foreign_language_years,
-      requirements.calculus_required ? 1 : 0
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       ON CONFLICT(college_id) DO UPDATE SET
+         english_years_required          = COALESCE(EXCLUDED.english_years_required,          course_requirements.english_years_required),
+         math_years_required             = COALESCE(EXCLUDED.math_years_required,             course_requirements.math_years_required),
+         science_years_required          = COALESCE(EXCLUDED.science_years_required,          course_requirements.science_years_required),
+         lab_science_years_required      = COALESCE(EXCLUDED.lab_science_years_required,      course_requirements.lab_science_years_required),
+         social_studies_years_required   = COALESCE(EXCLUDED.social_studies_years_required,   course_requirements.social_studies_years_required),
+         foreign_language_years_required = COALESCE(EXCLUDED.foreign_language_years_required, course_requirements.foreign_language_years_required),
+         calculus_required               = EXCLUDED.calculus_required`,
+      [
+        college.id,
+        requirements.english_years, requirements.math_years,
+        requirements.science_years, requirements.lab_science_years,
+        requirements.social_studies_years, requirements.foreign_language_years,
+        requirements.calculus_required ? 1 : 0,
+      ]
     );
   } catch (e) { console.warn(`[admissions] course_requirements write failed for ${college.name}:`, e.message); }
 
@@ -540,8 +543,8 @@ function writeAdmissionsData(db, college, data) {
       : requirements.interview_offered ? 'optional'
       : 'not_offered';
 
-    db.prepare(`
-      INSERT INTO application_requirements
+    await db.query(
+      `INSERT INTO application_requirements
         (college_id, common_app_accepted, coalition_app_accepted, questbridge_accepted,
          supplemental_essays_required, supplemental_essay_count,
          interview_policy,
@@ -550,58 +553,59 @@ function writeAdmissionsData(db, college, data) {
          application_fee, fee_waiver_available,
          css_profile_required,
          source, confidence_score)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-      ON CONFLICT(college_id) DO UPDATE SET
-        common_app_accepted      = excluded.common_app_accepted,
-        coalition_app_accepted   = excluded.coalition_app_accepted,
-        questbridge_accepted     = excluded.questbridge_accepted,
-        supplemental_essay_count = COALESCE(excluded.supplemental_essay_count, supplemental_essay_count),
-        interview_policy         = excluded.interview_policy,
-        toefl_minimum            = COALESCE(excluded.toefl_minimum,            toefl_minimum),
-        ielts_minimum            = COALESCE(excluded.ielts_minimum,            ielts_minimum),
-        application_fee          = COALESCE(excluded.application_fee,          application_fee),
-        source                   = excluded.source,
-        confidence_score         = excluded.confidence_score
-    `).run(
-      college.id,
-      requirements.common_app    ? 1 : 0,
-      requirements.coalition_app ? 1 : 0,
-      requirements.questbridge   ? 1 : 0,
-      requirements.supplemental_essays_count ? 1 : 0,
-      requirements.supplemental_essays_count,
-      interviewPolicy,
-      requirements.toefl_minimum, requirements.ielts_minimum, requirements.duolingo_minimum,
-      requirements.demonstrated_interest ? 1 : 0,
-      deadlines.app_fee, deadlines.fee_waiver ? 1 : 0,
-      requirements.css_profile ? 1 : 0,
-      data.sourceUrl, 0.70
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+       ON CONFLICT(college_id) DO UPDATE SET
+         common_app_accepted      = EXCLUDED.common_app_accepted,
+         coalition_app_accepted   = EXCLUDED.coalition_app_accepted,
+         questbridge_accepted     = EXCLUDED.questbridge_accepted,
+         supplemental_essay_count = COALESCE(EXCLUDED.supplemental_essay_count, application_requirements.supplemental_essay_count),
+         interview_policy         = EXCLUDED.interview_policy,
+         toefl_minimum            = COALESCE(EXCLUDED.toefl_minimum,            application_requirements.toefl_minimum),
+         ielts_minimum            = COALESCE(EXCLUDED.ielts_minimum,            application_requirements.ielts_minimum),
+         application_fee          = COALESCE(EXCLUDED.application_fee,          application_requirements.application_fee),
+         source                   = EXCLUDED.source,
+         confidence_score         = EXCLUDED.confidence_score`,
+      [
+        college.id,
+        requirements.common_app    ? 1 : 0,
+        requirements.coalition_app ? 1 : 0,
+        requirements.questbridge   ? 1 : 0,
+        requirements.supplemental_essays_count ? 1 : 0,
+        requirements.supplemental_essays_count,
+        interviewPolicy,
+        requirements.toefl_minimum, requirements.ielts_minimum, requirements.duolingo_minimum,
+        requirements.demonstrated_interest ? 1 : 0,
+        deadlines.app_fee, deadlines.fee_waiver ? 1 : 0,
+        requirements.css_profile ? 1 : 0,
+        data.sourceUrl, 0.70,
+      ]
     );
   } catch (e) { console.warn(`[admissions] application_requirements write failed for ${college.name}:`, e.message); }
 
   // essay_prompts
   if (essayPrompts.length > 0) {
     try {
-      db.prepare(`DELETE FROM essay_prompts WHERE college_id = ?`).run(college.id);
-      const ins = db.prepare(`
-        INSERT INTO essay_prompts (college_id, prompt_text, word_limit, is_required, prompt_order)
-        VALUES (?,?,?,?,?)
-        ON CONFLICT DO NOTHING
-      `);
+      await db.query(`DELETE FROM essay_prompts WHERE college_id = $1`, [college.id]);
       for (const p of essayPrompts) {
-        ins.run(p.college_id, p.prompt_text, p.word_limit, p.is_required ? 1 : 0, p.prompt_order);
+        await db.query(
+          `INSERT INTO essay_prompts (college_id, prompt_text, word_limit, is_required, prompt_order)
+           VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,
+          [p.college_id, p.prompt_text, p.word_limit, p.is_required ? 1 : 0, p.prompt_order]
+        );
       }
     } catch (e) { console.warn(`[admissions] essay_prompts write failed for ${college.name}:`, e.message); }
   }
 
   // Update main colleges table
   try {
-    db.prepare(`
-      UPDATE colleges SET
-        admissions_url  = COALESCE(?, admissions_url),
+    await db.query(
+      `UPDATE colleges SET
+        admissions_url  = COALESCE($1, admissions_url),
         last_scraped_at = CURRENT_TIMESTAMP,
         updated_at      = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(data.sourceUrl, college.id);
+       WHERE id = $2`,
+      [data.sourceUrl, college.id]
+    );
   } catch { /* non-critical */ }
 }
 
@@ -611,35 +615,34 @@ function writeAdmissionsData(db, college, data) {
  * Fix broken URLs and reset failed queue entries caused by CHECK constraint errors.
  * Safe to call every startup — no-op if already clean.
  */
-function runStartupFixes(db) {
+async function runStartupFixes(db) {
   // Fix missing https:// prefix on all URL columns
-  const urlFix = db.prepare(`
-    UPDATE colleges
-    SET official_website = 'https://' || official_website
-    WHERE official_website IS NOT NULL
-      AND official_website != ''
-      AND official_website NOT LIKE 'http%'
-  `).run();
-  if (urlFix.changes > 0) console.log(`[admissions] Fixed ${urlFix.changes} broken URLs`);
+  const urlFix = await db.query(
+    `UPDATE colleges
+     SET official_website = 'https://' || official_website
+     WHERE official_website IS NOT NULL
+       AND official_website != ''
+       AND official_website NOT LIKE 'http%'`
+  );
+  if (urlFix.rowCount > 0) console.log(`[admissions] Fixed ${urlFix.rowCount} broken URLs`);
 
   // Reset queue entries that failed only due to CHECK constraint (not genuinely dead)
-  const queueFix = db.prepare(`
-    UPDATE scrape_queue
-    SET status = 'pending', attempts = 0, last_error = NULL
-    WHERE status = 'failed'
-      AND last_error LIKE '%CHECK constraint%'
-  `).run();
-  if (queueFix.changes > 0) console.log(`[admissions] Reset ${queueFix.changes} CHECK-failed queue entries for retry`);
+  const queueFix = await db.query(
+    `UPDATE scrape_queue
+     SET status = 'pending', attempts = 0, last_error = NULL
+     WHERE status = 'failed'
+       AND last_error LIKE '%CHECK constraint%'`
+  );
+  if (queueFix.rowCount > 0) console.log(`[admissions] Reset ${queueFix.rowCount} CHECK-failed queue entries for retry`);
 
   // Null out tuition_international where it equals tuition_out_state
-  // (was wrongly copied — international tuition is always different)
-  const tuitFix = db.prepare(`
-    UPDATE college_financial_data
-    SET tuition_international = NULL
-    WHERE tuition_international = tuition_out_state
-      AND tuition_international IS NOT NULL
-  `).run();
-  if (tuitFix.changes > 0) console.log(`[admissions] Cleared ${tuitFix.changes} wrongly-copied tuition_international values`);
+  const tuitFix = await db.query(
+    `UPDATE college_financial_data
+     SET tuition_international = NULL
+     WHERE tuition_international = tuition_out_state
+       AND tuition_international IS NOT NULL`
+  );
+  if (tuitFix.rowCount > 0) console.log(`[admissions] Cleared ${tuitFix.rowCount} wrongly-copied tuition_international values`);
 }
 
 async function closeBrowser() {

@@ -174,18 +174,18 @@ router.post('/:collegeId/override', authenticate, async (req, res) => {
     }
 
     const dbManager = require('../config/database');
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
 
     await consolidatedChancingService.classifyFit(userId, collegeId);
 
-    db.prepare(`
+    await pool.query(`
       UPDATE college_fits 
-      SET fit_category = ?, 
-          is_manual_override = 1, 
-          override_reason = ?, 
-          calculated_at = CURRENT_TIMESTAMP
-      WHERE user_id = ? AND college_id = ?
-    `).run(fitCategory, reason || null, userId, collegeId);
+      SET fit_category = $1, 
+          is_manual_override = true, 
+          override_reason = $2, 
+          calculated_at = NOW()
+      WHERE user_id = $3 AND college_id = $4
+    `, [fitCategory, reason || null, userId, collegeId]);
 
     res.json({
       success: true,
@@ -229,18 +229,24 @@ router.put('/weights', authenticate, async (req, res) => {
     }
 
     const dbManager = require('../config/database');
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
 
-    db.prepare(`
-      INSERT OR REPLACE INTO user_custom_weights (
+    await pool.query(`
+      INSERT INTO user_custom_weights (
         user_id, 
         weight_academic, 
         weight_profile, 
         weight_financial, 
         weight_timeline, 
         updated_at
-      ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `).run(userId, academic, profile, financial, timeline);
+      ) VALUES ($1, $2, $3, $4, $5, NOW())
+      ON CONFLICT (user_id) DO UPDATE SET
+        weight_academic = EXCLUDED.weight_academic,
+        weight_profile = EXCLUDED.weight_profile,
+        weight_financial = EXCLUDED.weight_financial,
+        weight_timeline = EXCLUDED.weight_timeline,
+        updated_at = EXCLUDED.updated_at
+    `, [userId, academic, profile, financial, timeline]);
 
     res.json({
       success: true,

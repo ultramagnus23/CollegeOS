@@ -1,7 +1,7 @@
 // backend/services/timelineService.js
 // Generates personalized monthly action items based on user's applications and timeline
 
-const db = require('../config/database');
+const dbManager = require('../config/database');
 
 /**
  * Generate timeline actions for a user based on their applications
@@ -336,70 +336,53 @@ function getGeneralActionsForMonth(month, year, applications) {
 
 // Helper functions
 async function getUserApplications(userId) {
-  return new Promise((resolve, reject) => {
-    db.all(`
+  const pool = dbManager.getDatabase();
+  const rows = (await pool.query(`
       SELECT a.*, c.name, c.country, c.deadline_templates
       FROM applications a
       JOIN colleges c ON a.college_id = c.id
-      WHERE a.user_id = ?
-    `, [userId], (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows.map(row => ({
-        ...row,
-        deadline_templates: JSON.parse(row.deadline_templates || '{}')
-      })));
-    });
-  });
+      WHERE a.user_id = $1
+    `, [userId])).rows;
+  return rows.map(row => ({
+    ...row,
+    deadline_templates: JSON.parse(row.deadline_templates || '{}')
+  }));
 }
 
 async function getUserProfile(userId) {
-  return new Promise((resolve, reject) => {
-    db.get(`
+  const pool = dbManager.getDatabase();
+  const row = (await pool.query(`
       SELECT academic_board, subjects, exams_taken, medium_of_instruction
-      FROM users WHERE id = ?
-    `, [userId], (err, row) => {
-      if (err) reject(err);
-      else resolve({
-        ...row,
-        subjects: JSON.parse(row.subjects || '[]'),
-        exams_taken: JSON.parse(row.exams_taken || '{}')
-      });
-    });
-  });
+      FROM users WHERE id = $1
+    `, [userId])).rows[0];
+  return {
+    ...row,
+    subjects: JSON.parse(row.subjects || '[]'),
+    exams_taken: JSON.parse(row.exams_taken || '{}')
+  };
 }
 
 async function deleteOldTimelineActions(userId) {
-  return new Promise((resolve, reject) => {
-    db.run(`
+  const pool = dbManager.getDatabase();
+  await pool.query(`
       DELETE FROM timeline_actions
-      WHERE user_id = ? AND is_system_generated = 1
-    `, [userId], (err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
+      WHERE user_id = $1 AND is_system_generated = true
+    `, [userId]);
 }
 
 async function insertTimelineActions(userId, actions) {
-  const promises = actions.map(action => {
-    return new Promise((resolve, reject) => {
-      db.run(`
-        INSERT INTO timeline_actions (
-          user_id, title, description, category,
-          target_month, target_year, priority,
-          related_country, is_system_generated
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
-      `, [
-        userId, action.title, action.description, action.category,
-        action.target_month, action.target_year, action.priority,
-        action.related_country
-      ], (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-  });
-  
+  const pool = dbManager.getDatabase();
+  const promises = actions.map(action => pool.query(`
+      INSERT INTO timeline_actions (
+        user_id, title, description, category,
+        target_month, target_year, priority,
+        related_country, is_system_generated
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+    `, [
+    userId, action.title, action.description, action.category,
+    action.target_month, action.target_year, action.priority,
+    action.related_country
+  ]));
   return Promise.all(promises);
 }
 
@@ -407,10 +390,10 @@ async function insertTimelineActions(userId, actions) {
  * Get timeline actions for a specific month
  */
 async function getMonthlyActions(userId, month, year) {
-  return new Promise((resolve, reject) => {
-    db.all(`
+  const pool = dbManager.getDatabase();
+  return (await pool.query(`
       SELECT * FROM timeline_actions
-      WHERE user_id = ? AND target_month = ? AND target_year = ?
+      WHERE user_id = $1 AND target_month = $2 AND target_year = $3
       ORDER BY 
         CASE priority
           WHEN 'critical' THEN 1
@@ -419,11 +402,7 @@ async function getMonthlyActions(userId, month, year) {
           WHEN 'low' THEN 4
         END,
         completed ASC
-    `, [userId, month, year], (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows);
-    });
-  });
+    `, [userId, month, year])).rows;
 }
 
 module.exports = {

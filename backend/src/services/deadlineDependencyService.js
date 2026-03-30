@@ -49,7 +49,7 @@ class DeadlineDependencyService {
    * @returns {Object} Created dependency
    */
   static async createDependency(taskId, dependsOnTaskId, dependencyType = 'blocks') {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     try {
       // Check for circular dependencies
@@ -58,15 +58,17 @@ class DeadlineDependencyService {
         throw new Error('Creating this dependency would cause a circular dependency');
       }
       
-      const result = db.prepare(`
-        INSERT OR IGNORE INTO task_dependencies (task_id, depends_on_task_id, dependency_type)
-        VALUES (?, ?, ?)
-      `).run(taskId, dependsOnTaskId, dependencyType);
+      const result = await pool.query(`
+        INSERT INTO task_dependencies (task_id, depends_on_task_id, dependency_type)
+        VALUES ($1, $2, $3)
+        ON CONFLICT DO NOTHING
+        RETURNING id
+      `, [taskId, dependsOnTaskId, dependencyType]);
       
       logger.debug(`Created dependency: Task ${taskId} depends on Task ${dependsOnTaskId}`);
       
       return {
-        id: result.lastInsertRowid,
+        id: result.rows[0]?.id,
         taskId,
         dependsOnTaskId,
         dependencyType
@@ -86,7 +88,7 @@ class DeadlineDependencyService {
   static async checkCircularDependency(taskId, dependsOnTaskId) {
     if (taskId === dependsOnTaskId) return true;
     
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Get all tasks that depend on taskId (directly or indirectly)
     const visited = new Set();
@@ -97,9 +99,9 @@ class DeadlineDependencyService {
       if (visited.has(current)) continue;
       visited.add(current);
       
-      const dependents = db.prepare(`
-        SELECT task_id FROM task_dependencies WHERE depends_on_task_id = ?
-      `).all(current);
+      const dependents = (await pool.query(`
+        SELECT task_id FROM task_dependencies WHERE depends_on_task_id = $1
+      `, [current])).rows;
       
       for (const dep of dependents) {
         if (dep.task_id === dependsOnTaskId) return true;
@@ -116,24 +118,24 @@ class DeadlineDependencyService {
    * @returns {Object} Dependencies (what this task depends on, what depends on this task)
    */
   static async getTaskDependencies(taskId) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     try {
       // What this task depends on
-      const dependsOn = db.prepare(`
+      const dependsOn = (await pool.query(`
         SELECT td.*, t.title, t.status, t.deadline
         FROM task_dependencies td
         JOIN tasks t ON t.id = td.depends_on_task_id
-        WHERE td.task_id = ?
-      `).all(taskId);
+        WHERE td.task_id = $1
+      `, [taskId])).rows;
       
       // What depends on this task
-      const blockedBy = db.prepare(`
+      const blockedBy = (await pool.query(`
         SELECT td.*, t.title, t.status, t.deadline
         FROM task_dependencies td
         JOIN tasks t ON t.id = td.task_id
-        WHERE td.depends_on_task_id = ?
-      `).all(taskId);
+        WHERE td.depends_on_task_id = $1
+      `, [taskId])).rows;
       
       // Check if task is blocked
       const isBlocked = dependsOn.some(d => d.status !== 'complete' && d.dependency_type === 'blocks');
@@ -158,23 +160,23 @@ class DeadlineDependencyService {
    * @returns {Object} Full dependency graph
    */
   static async buildDependencyGraph(userId, collegeId = null) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     try {
       let query = `
         SELECT t.*, c.name as college_name
         FROM tasks t
         LEFT JOIN colleges c ON c.id = t.college_id
-        WHERE t.user_id = ?
+        WHERE t.user_id = $1
       `;
       const params = [userId];
       
       if (collegeId) {
-        query += ' AND t.college_id = ?';
+        query += ' AND t.college_id = $2';
         params.push(collegeId);
       }
       
-      const tasks = db.prepare(query).all(...params);
+      const tasks = (await pool.query(query, params)).rows;
       
       // Build graph structure
       const graph = {
@@ -341,13 +343,13 @@ class DeadlineDependencyService {
    * @returns {Object} Created dependencies summary
    */
   static async autoCreateDependencies(userId, collegeId) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     const created = [];
     
     try {
-      const tasks = db.prepare(`
-        SELECT * FROM tasks WHERE user_id = ? AND college_id = ?
-      `).all(userId, collegeId);
+      const tasks = (await pool.query(`
+        SELECT * FROM tasks WHERE user_id = $1 AND college_id = $2
+      `, [userId, collegeId])).rows;
       
       const taskByType = {};
       for (const task of tasks) {
@@ -409,27 +411,27 @@ class DeadlineDependencyService {
    * @returns {Object} Impact analysis
    */
   static async getCompletionImpact(taskId) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     try {
       // Find tasks that would be unblocked
-      const potentiallyUnblocked = db.prepare(`
+      const potentiallyUnblocked = (await pool.query(`
         SELECT t.*, td.dependency_type
         FROM tasks t
         JOIN task_dependencies td ON td.task_id = t.id
-        WHERE td.depends_on_task_id = ? AND t.status = 'blocked'
-      `).all(taskId);
+        WHERE td.depends_on_task_id = $1 AND t.status = 'blocked'
+      `, [taskId])).rows;
       
       // Check if completing this task would actually unblock each one
       const willUnblock = [];
       
       for (const task of potentiallyUnblocked) {
         // Get other blockers
-        const otherBlockers = db.prepare(`
+        const otherBlockers = (await pool.query(`
           SELECT t.id FROM tasks t
           JOIN task_dependencies td ON td.depends_on_task_id = t.id
-          WHERE td.task_id = ? AND t.id != ? AND t.status != 'complete' AND td.dependency_type = 'blocks'
-        `).all(task.id, taskId);
+          WHERE td.task_id = $1 AND t.id != $2 AND t.status != 'complete' AND td.dependency_type = 'blocks'
+        `, [task.id, taskId])).rows;
         
         if (otherBlockers.length === 0) {
           willUnblock.push(task);

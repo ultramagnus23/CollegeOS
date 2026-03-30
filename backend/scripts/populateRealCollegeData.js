@@ -7,7 +7,7 @@
  * Data sources: Official college websites, Common App, verified for accuracy
  */
 
-const db = require('../src/config/database');
+const dbManager = require('../src/config/database');
 const logger = require('../src/utils/logger');
 
 // Real college deadline data for 2025-2026 cycle
@@ -436,72 +436,57 @@ const COLLEGE_SUPPLEMENTS = [
  */
 async function populateRealCollegeData() {
   console.log('Starting real college data population...\n');
-  
+
+  const pool = dbManager.getDatabase();
   let deadlinesAdded = 0;
   let essaysAdded = 0;
-  
+
   try {
     // 1. Populate deadline data
     console.log('📅 Populating deadline data for top colleges...');
-    
+
     for (const college of REAL_DEADLINE_DATA) {
       try {
         // Get college ID from database
-        const collegeStmt = db.prepare('SELECT id FROM colleges WHERE name = ?');
-        const collegeRow = collegeStmt.get(college.collegeName);
-        
+        const collegeRow = (await pool.query('SELECT id FROM colleges WHERE name = $1', [college.collegeName])).rows[0];
+
         if (!collegeRow) {
           console.log(`  ⚠️  College not found: ${college.collegeName} - skipping`);
           continue;
         }
-        
+
         const collegeId = collegeRow.id;
-        
+
         // Insert deadline records for each type
         for (const [type, dates] of Object.entries(college.deadlines)) {
-          const insertStmt = db.prepare(`
-            INSERT OR REPLACE INTO application_deadlines (
-              college_id,
-              application_year,
-              deadline_type,
-              application_date,
-              notification_date,
-              offers_early_decision,
-              offers_early_action,
-              offers_restrictive_early_action,
-              offers_regular_decision,
-              offers_rolling,
-              source_url,
-              confidence_score,
-              verification_status,
-              last_updated
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-          `);
-          
           // Set offered flags
           const offersED = type === 'ED' || type === 'ED1' || type === 'ED2' ? 1 : 0;
           const offersEA = type === 'EA' ? 1 : 0;
           const offersREA = type === 'REA' ? 1 : 0;
           const offersRD = type === 'RD' ? 1 : 0;
           const offersRolling = type === 'Rolling' ? 1 : 0;
-          
-          insertStmt.run(
-            collegeId,
-            college.applicationYear,
-            type,
-            dates.date,
-            dates.notification || null,
-            offersED,
-            offersEA,
-            offersREA,
-            offersRD,
-            offersRolling,
-            college.sourceUrl,
-            college.confidenceScore,
-            'verified',
-            
+
+          await pool.query(
+            `INSERT INTO application_deadlines (
+              college_id, application_year, deadline_type, application_date,
+              notification_date, offers_early_decision, offers_early_action,
+              offers_restrictive_early_action, offers_regular_decision, offers_rolling,
+              source_url, confidence_score, verification_status, last_updated
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW())
+            ON CONFLICT (college_id, application_year, deadline_type) DO UPDATE SET
+              application_date = EXCLUDED.application_date,
+              notification_date = EXCLUDED.notification_date,
+              source_url = EXCLUDED.source_url,
+              confidence_score = EXCLUDED.confidence_score,
+              verification_status = EXCLUDED.verification_status,
+              last_updated = NOW()`,
+            [
+              collegeId, college.applicationYear, type, dates.date, dates.notification || null,
+              offersED, offersEA, offersREA, offersRD, offersRolling,
+              college.sourceUrl, college.confidenceScore, 'verified',
+            ]
           );
-          
+
           deadlinesAdded++;
           console.log(`  ✓ Added ${type} deadline for ${college.collegeName}: ${dates.date} → ${dates.notification || 'TBD'}`);
         }
@@ -509,83 +494,61 @@ async function populateRealCollegeData() {
         console.error(`  ✗ Error processing ${college.collegeName}:`, error.message);
       }
     }
-    
+
     console.log(`\n✅ Added ${deadlinesAdded} deadline records\n`);
-    
+
     // 2. Populate Common App essay prompts
     console.log('📝 Populating Common App essay prompts...');
-    
+
     for (const essay of COMMON_APP_ESSAYS) {
       try {
-        const insertStmt = db.prepare(`
-          INSERT OR REPLACE INTO essay_prompts (
-            college_id,
-            platform,
-            prompt_text,
-            word_limit,
-            is_required,
-            essay_number,
-            application_year,
-            last_updated
-          ) VALUES (NULL, ?, ?, ?, ?, ?, ?, datetime('now'))
-        `);
-        
-        insertStmt.run(
-          essay.platform,
-          essay.promptText,
-          essay.wordLimit,
-          essay.required ? 1 : 0,
-          essay.promptNumber,
-          essay.year
+        await pool.query(
+          `INSERT INTO essay_prompts (
+            college_id, platform, prompt_text, word_limit, is_required,
+            essay_number, application_year, last_updated
+          ) VALUES (NULL,$1,$2,$3,$4,$5,$6,NOW())
+          ON CONFLICT (college_id, platform, essay_number, application_year) DO UPDATE SET
+            prompt_text = EXCLUDED.prompt_text,
+            word_limit = EXCLUDED.word_limit,
+            last_updated = NOW()`,
+          [essay.platform, essay.promptText, essay.wordLimit, essay.required ? 1 : 0, essay.promptNumber, essay.year]
         );
-        
+
         essaysAdded++;
         console.log(`  ✓ Added Common App prompt ${essay.promptNumber}`);
       } catch (error) {
         console.error(`  ✗ Error adding Common App prompt:`, error.message);
       }
     }
-    
+
     // 3. Populate college-specific supplements
     console.log('\n📝 Populating college supplement essays...');
-    
+
     for (const supplement of COLLEGE_SUPPLEMENTS) {
       try {
         // Get college ID
-        const collegeStmt = db.prepare('SELECT id FROM colleges WHERE name = ?');
-        const collegeRow = collegeStmt.get(supplement.collegeName);
-        
+        const collegeRow = (await pool.query('SELECT id FROM colleges WHERE name = $1', [supplement.collegeName])).rows[0];
+
         if (!collegeRow) {
           console.log(`  ⚠️  College not found: ${supplement.collegeName} - skipping`);
           continue;
         }
-        
+
         const collegeId = collegeRow.id;
-        
+
         for (const essay of supplement.essays) {
-          const insertStmt = db.prepare(`
-            INSERT OR REPLACE INTO essay_prompts (
-              college_id,
-              platform,
-              prompt_text,
-              word_limit,
-              is_required,
-              essay_number,
-              application_year,
-              last_updated
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
-          `);
-          
-          insertStmt.run(
-            collegeId,
-            'Common Application',
-            essay.prompt,
-            essay.wordLimit,
-            essay.required ? 1 : 0,
-            essay.essayNumber,
-            2026
+          await pool.query(
+            `INSERT INTO essay_prompts (
+              college_id, platform, prompt_text, word_limit, is_required,
+              essay_number, application_year, last_updated
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
+            ON CONFLICT (college_id, platform, essay_number, application_year) DO UPDATE SET
+              prompt_text = EXCLUDED.prompt_text,
+              word_limit = EXCLUDED.word_limit,
+              last_updated = NOW()`,
+            [collegeId, 'Common Application', essay.prompt, essay.wordLimit, essay.required ? 1 : 0, essay.essayNumber, 2026]
           );
-          
+
           essaysAdded++;
           console.log(`  ✓ Added supplement ${essay.essayNumber} for ${supplement.collegeName}`);
         }
@@ -593,21 +556,21 @@ async function populateRealCollegeData() {
         console.error(`  ✗ Error processing supplements for ${supplement.collegeName}:`, error.message);
       }
     }
-    
+
     console.log(`\n✅ Added ${essaysAdded} essay prompt records\n`);
-    
+
     // Summary
-    console.log('=' .repeat(60));
+    console.log('='.repeat(60));
     console.log('📊 POPULATION SUMMARY');
-    console.log('=' .repeat(60));
+    console.log('='.repeat(60));
     console.log(`Colleges with deadlines: ${REAL_DEADLINE_DATA.length}`);
     console.log(`Total deadline records: ${deadlinesAdded}`);
     console.log(`Common App prompts: ${COMMON_APP_ESSAYS.length}`);
     console.log(`College supplements: ${essaysAdded - COMMON_APP_ESSAYS.length}`);
     console.log(`Total essay records: ${essaysAdded}`);
-    console.log('=' .repeat(60));
+    console.log('='.repeat(60));
     console.log('\n✅ Real college data population complete!\n');
-    
+
   } catch (error) {
     console.error('\n❌ Error during population:', error);
     throw error;

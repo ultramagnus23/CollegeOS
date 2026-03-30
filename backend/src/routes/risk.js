@@ -88,12 +88,12 @@ router.get('/college/:collegeId', authenticate, async (req, res) => {
     
     // Get tasks for this college
     const dbManager = require('../config/database');
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
-    const tasks = db.prepare(`
+    const tasks = (await pool.query(`
       SELECT * FROM tasks
-      WHERE user_id = ? AND college_id = ? AND status NOT IN ('complete', 'skipped')
-    `).all(userId, collegeId);
+      WHERE user_id = $1 AND college_id = $2 AND status NOT IN ('complete', 'skipped')
+    `, [userId, collegeId])).rows;
     
     const risk = DeadlineRiskService.calculateTimeRisk(deadline.deadline_date, tasks);
     
