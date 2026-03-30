@@ -14,17 +14,30 @@ class DatabaseManager {
     if (this.initialized) return this.pool;
 
     try {
-      // Enable SSL for production or when connecting to a remote Postgres host
-      // (Supabase, Render, Railway, Neon, etc. all require SSL)
+      // Enable SSL for production or when connecting to a known remote Postgres host.
+      // (Supabase, Render, Railway, Neon, AWS RDS, etc. all require SSL.)
+      // Use proper hostname parsing instead of substring matching to avoid
+      // matching attacker-controlled strings like "evil-supabase.co.example.com".
       const dbUrl = config.database.url || '';
-      const isRemoteDb =
-        config.isProduction ||
-        dbUrl.includes('supabase.co') ||
-        dbUrl.includes('supabase.com') ||
-        dbUrl.includes('render.com') ||
-        dbUrl.includes('railway.app') ||
-        dbUrl.includes('neon.tech') ||
-        dbUrl.includes('amazonaws.com');
+      let isRemoteDb = config.isProduction;
+      if (!isRemoteDb && dbUrl) {
+        try {
+          const { hostname } = new URL(dbUrl);
+          const remoteHostSuffixes = [
+            '.supabase.co',
+            '.supabase.com',
+            '.render.com',
+            '.railway.app',
+            '.neon.tech',
+            '.amazonaws.com',
+          ];
+          isRemoteDb = remoteHostSuffixes.some(
+            suffix => hostname === suffix.slice(1) || hostname.endsWith(suffix)
+          );
+        } catch {
+          // Unparseable URL — leave isRemoteDb as false
+        }
+      }
 
       this.pool = new Pool({
         connectionString: dbUrl,
