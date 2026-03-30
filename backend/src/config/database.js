@@ -14,9 +14,21 @@ class DatabaseManager {
     if (this.initialized) return this.pool;
 
     try {
+      // Enable SSL for production or when connecting to a remote Postgres host
+      // (Supabase, Render, Railway, Neon, etc. all require SSL)
+      const dbUrl = config.database.url || '';
+      const isRemoteDb =
+        config.isProduction ||
+        dbUrl.includes('supabase.co') ||
+        dbUrl.includes('supabase.com') ||
+        dbUrl.includes('render.com') ||
+        dbUrl.includes('railway.app') ||
+        dbUrl.includes('neon.tech') ||
+        dbUrl.includes('amazonaws.com');
+
       this.pool = new Pool({
-        connectionString: config.database.url,
-        ssl: config.isProduction ? { rejectUnauthorized: false } : false,
+        connectionString: dbUrl,
+        ssl: isRemoteDb ? { rejectUnauthorized: false } : false,
         max: 20,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 5000,
