@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const dbManager = require('../config/database');
 const orchestrator = require('../services/deadlineScrapingOrchestrator');
 const logger = require('../utils/logger');
 
@@ -34,15 +34,16 @@ class DeadlineScrapingScheduler {
       orchestrator.resetStats();
       
       // Get Tier 1 colleges and colleges with approaching deadlines
-      const colleges = db.prepare(`
+      const pool = dbManager.getDatabase();
+      const colleges = (await pool.query(`
         SELECT c.* FROM colleges c
         LEFT JOIN application_deadlines ad ON c.id = ad.college_id
         WHERE c.priority_tier = 1
-          OR (ad.early_decision_1_date >= date('now') AND ad.early_decision_1_date <= date('now', '+90 days'))
-          OR (ad.early_action_date >= date('now') AND ad.early_action_date <= date('now', '+90 days'))
-          OR (ad.regular_decision_date >= date('now') AND ad.regular_decision_date <= date('now', '+90 days'))
+          OR (ad.early_decision_1_date >= NOW() AND ad.early_decision_1_date <= NOW() + INTERVAL '90 days')
+          OR (ad.early_action_date >= NOW() AND ad.early_action_date <= NOW() + INTERVAL '90 days')
+          OR (ad.regular_decision_date >= NOW() AND ad.regular_decision_date <= NOW() + INTERVAL '90 days')
         ORDER BY c.priority_tier ASC, c.ranking ASC
-      `).all();
+      `)).rows;
       
       logger.info(`Found ${colleges.length} colleges to scrape (Tier 1 + approaching deadlines)`);
       
@@ -101,16 +102,17 @@ class DeadlineScrapingScheduler {
       orchestrator.resetStats();
       
       // Get Tier 2 colleges that haven't been scraped recently
-      const colleges = db.prepare(`
+      const pool = dbManager.getDatabase();
+      const colleges = (await pool.query(`
         SELECT * FROM colleges
         WHERE priority_tier = 2
           AND (
             last_scraped_deadlines IS NULL 
-            OR last_scraped_deadlines < datetime('now', '-30 days')
+            OR last_scraped_deadlines < NOW() - INTERVAL '30 days'
           )
         ORDER BY ranking ASC NULLS LAST
         LIMIT 1500
-      `).all();
+      `)).rows;
       
       logger.info(`Found ${colleges.length} Tier 2 colleges to scrape`);
       
@@ -157,41 +159,43 @@ class DeadlineScrapingScheduler {
     try {
       logger.info('Recalculating college priority tiers...');
       
+      const pool = dbManager.getDatabase();
+
       // Set Tier 1 for top 100 ranked colleges
-      db.prepare(`
+      await pool.query(`
         UPDATE colleges 
         SET priority_tier = 1 
         WHERE ranking <= 100 AND ranking IS NOT NULL
-      `).run();
+      `);
       
       // Set Tier 1 for colleges with high user engagement (>10 applications)
-      const highEngagement = db.prepare(`
+      const highEngagement = (await pool.query(`
         SELECT college_id, COUNT(*) as app_count
         FROM applications
         GROUP BY college_id
         HAVING COUNT(*) > 10
-      `).all();
+      `)).rows;
       
       for (const { college_id } of highEngagement) {
-        db.prepare('UPDATE colleges SET priority_tier = 1 WHERE id = ?').run(college_id);
+        await pool.query('UPDATE colleges SET priority_tier = 1 WHERE id = $1', [college_id]);
       }
       
       // Set Tier 1 for colleges that frequently change deadlines
-      db.prepare(`
+      await pool.query(`
         UPDATE colleges 
         SET priority_tier = 1 
-        WHERE deadline_frequently_changes = 1
-      `).run();
+        WHERE deadline_frequently_changes = true
+      `);
       
       // Set Tier 2 for remaining colleges
-      db.prepare(`
+      await pool.query(`
         UPDATE colleges 
         SET priority_tier = 2 
         WHERE priority_tier IS NULL OR priority_tier NOT IN (1, 2)
-      `).run();
+      `);
       
-      const tier1Count = db.prepare('SELECT COUNT(*) as count FROM colleges WHERE priority_tier = 1').get().count;
-      const tier2Count = db.prepare('SELECT COUNT(*) as count FROM colleges WHERE priority_tier = 2').get().count;
+      const tier1Count = parseInt((await pool.query('SELECT COUNT(*) as count FROM colleges WHERE priority_tier = $1', [1])).rows[0].count);
+      const tier2Count = parseInt((await pool.query('SELECT COUNT(*) as count FROM colleges WHERE priority_tier = $1', [2])).rows[0].count);
       
       logger.info(`Priority recalculation complete: Tier 1: ${tier1Count}, Tier 2: ${tier2Count}`);
       
@@ -211,20 +215,21 @@ class DeadlineScrapingScheduler {
       const tier1Count = jobType === 'weekly' ? stats.scraped : 0;
       const tier2Count = jobType === 'monthly' ? stats.scraped : 0;
       
-      db.prepare(`
+      const pool = dbManager.getDatabase();
+      await pool.query(`
         INSERT INTO scraping_summary (
           summary_date, tier1_colleges_scraped, tier2_colleges_scraped,
           total_successful, total_failed, changes_detected,
           notifications_sent, avg_duration_ms
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(summary_date) DO UPDATE SET
-          tier1_colleges_scraped = tier1_colleges_scraped + excluded.tier1_colleges_scraped,
-          tier2_colleges_scraped = tier2_colleges_scraped + excluded.tier2_colleges_scraped,
-          total_successful = total_successful + excluded.total_successful,
-          total_failed = total_failed + excluded.total_failed,
-          changes_detected = changes_detected + excluded.changes_detected,
-          notifications_sent = notifications_sent + excluded.notifications_sent
-      `).run(
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (summary_date) DO UPDATE SET
+          tier1_colleges_scraped = tier1_colleges_scraped + EXCLUDED.tier1_colleges_scraped,
+          tier2_colleges_scraped = tier2_colleges_scraped + EXCLUDED.tier2_colleges_scraped,
+          total_successful = total_successful + EXCLUDED.total_successful,
+          total_failed = total_failed + EXCLUDED.total_failed,
+          changes_detected = changes_detected + EXCLUDED.changes_detected,
+          notifications_sent = notifications_sent + EXCLUDED.notifications_sent
+      `, [
         new Date().toISOString().split('T')[0],
         tier1Count,
         tier2Count,
@@ -233,7 +238,7 @@ class DeadlineScrapingScheduler {
         stats.changes,
         stats.notifications,
         Math.round(duration * 60 * 1000 / stats.scraped) // avg per college in ms
-      );
+      ]);
       
       logger.info('Scraping summary saved to database');
       

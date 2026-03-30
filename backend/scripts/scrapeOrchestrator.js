@@ -30,7 +30,7 @@ const CONFIG = {
 
 class ScrapingOrchestrator {
   constructor() {
-    this.db = dbManager.getDatabase();
+    this.pool = dbManager.getDatabase();
     this.stats = {
       queued: 0,
       processed: 0,
@@ -42,15 +42,15 @@ class ScrapingOrchestrator {
   /**
    * Check if required tables exist
    */
-  checkRequiredTables() {
+  async checkRequiredTables() {
     const requiredTables = ['scrape_queue', 'scrape_audit_log', 'field_metadata', 'scrape_statistics'];
     const missingTables = [];
 
     for (const table of requiredTables) {
       try {
-        this.db.prepare(`SELECT 1 FROM ${table} LIMIT 1`).get();
+        await this.pool.query(`SELECT 1 FROM ${table} LIMIT 1`);
       } catch (error) {
-        if (error.message.includes('no such table')) {
+        if (error.message.includes('does not exist') || error.message.includes('relation')) {
           missingTables.push(table);
         }
       }
@@ -73,43 +73,34 @@ class ScrapingOrchestrator {
   /**
    * Initialize scraping queue with priorities
    */
-  initializeQueue() {
-    // Check if tables exist first
-    this.checkRequiredTables();
-    
+  async initializeQueue() {
+    await this.checkRequiredTables();
+
     logger.info('Initializing scraping queue...');
-    
-    // Get all colleges
-    // Note: Ordering by ID since colleges are typically seeded with more important ones first
-    // First 1000 colleges by ID will be Tier 1 (top priority), rest will be Tier 2
-    const colleges = this.db.prepare(`
-      SELECT id, name, 
+
+    const { rows: colleges } = await this.pool.query(`
+      SELECT id, name,
              (SELECT COUNT(*) FROM scrape_queue WHERE college_id = colleges.id) as queued
       FROM colleges
       WHERE id IS NOT NULL
       ORDER BY id ASC
-    `).all();
+    `);
 
     let tier1Count = 0;
     let tier2Count = 0;
 
     for (const college of colleges) {
-      // Skip if already queued
-      if (college.queued > 0) continue;
+      if (parseInt(college.queued) > 0) continue;
 
-      // Determine priority tier
       const priority = (tier1Count < CONFIG.TIER1_THRESHOLD) ? 1 : 2;
-      
-      // Calculate next scrape date based on tier
-      const lastScraped = this.getLastScrapedDate(college.id);
+      const lastScraped = await this.getLastScrapedDate(college.id);
       const cycleDays = priority === 1 ? CONFIG.TIER1_CYCLE_DAYS : CONFIG.TIER2_CYCLE_DAYS;
       const scheduledFor = this.calculateNextScrapeDate(lastScraped, cycleDays);
 
-      // Insert into queue
-      this.db.prepare(`
+      await this.pool.query(`
         INSERT INTO scrape_queue (college_id, priority, scheduled_for, status)
-        VALUES (?, ?, ?, 'pending')
-      `).run(college.id, priority, scheduledFor);
+        VALUES ($1, $2, $3, 'pending')
+      `, [college.id, priority, scheduledFor]);
 
       if (priority === 1) tier1Count++;
       else tier2Count++;
@@ -122,20 +113,19 @@ class ScrapingOrchestrator {
   /**
    * Get today's batch of colleges to scrape
    */
-  getTodaysBatch() {
+  async getTodaysBatch() {
     const today = new Date().toISOString().split('T')[0];
-    
-    // Get pending colleges scheduled for today or earlier
-    const batch = this.db.prepare(`
-      SELECT sq.id as queue_id, sq.college_id, sq.priority, sq.attempts, 
+
+    const { rows: batch } = await this.pool.query(`
+      SELECT sq.id as queue_id, sq.college_id, sq.priority, sq.attempts,
              c.name, c.official_website
       FROM scrape_queue sq
       JOIN colleges c ON c.id = sq.college_id
-      WHERE sq.status = 'pending' 
-        AND DATE(sq.scheduled_for) <= ?
+      WHERE sq.status = 'pending'
+        AND sq.scheduled_for::date <= $1
       ORDER BY sq.priority ASC, sq.scheduled_for ASC
-      LIMIT ?
-    `).all(today, CONFIG.TIER1_BATCH_SIZE);
+      LIMIT $2
+    `, [today, CONFIG.TIER1_BATCH_SIZE]);
 
     logger.info(`Today's batch: ${batch.length} colleges`);
     return batch;
@@ -146,10 +136,8 @@ class ScrapingOrchestrator {
    * Formula: (freshness × 0.3) + (authority × 0.4) + (certainty × 0.3)
    */
   calculateConfidence(source, method, daysOld = 0) {
-    // Data freshness score (1.0 at 0 days, 0.5 at 365 days)
     const freshness = Math.max(0.5, 1.0 - (daysOld / 365) * 0.5);
-    
-    // Source authority score
+
     const authorityScores = {
       'official_website': 1.0,
       'common_data_set': 0.95,
@@ -159,8 +147,7 @@ class ScrapingOrchestrator {
       'manual': 0.80
     };
     const authority = authorityScores[source] || 0.70;
-    
-    // Extraction method certainty
+
     const certaintyScores = {
       'json_ld': 1.0,
       'meta_tags': 0.95,
@@ -169,7 +156,7 @@ class ScrapingOrchestrator {
       'table': 0.70
     };
     const certainty = certaintyScores[method] || 0.70;
-    
+
     return (freshness * 0.3) + (authority * 0.4) + (certainty * 0.3);
   }
 
@@ -184,76 +171,78 @@ class ScrapingOrchestrator {
   /**
    * Update queue status
    */
-  updateQueueStatus(queueId, status, error = null) {
-    this.db.prepare(`
-      UPDATE scrape_queue 
-      SET status = ?, 
+  async updateQueueStatus(queueId, status, error = null) {
+    await this.pool.query(`
+      UPDATE scrape_queue
+      SET status = $1,
           attempts = attempts + 1,
-          last_error = ?,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(status, error, queueId);
+          last_error = $2,
+          updated_at = NOW()
+      WHERE id = $3
+    `, [status, error, queueId]);
   }
 
   /**
    * Log field change to audit table
    */
-  logFieldChange(collegeId, fieldName, oldValue, newValue, confidence, source, method) {
-    this.db.prepare(`
-      INSERT INTO scrape_audit_log 
+  async logFieldChange(collegeId, fieldName, oldValue, newValue, confidence, source, method) {
+    await this.pool.query(`
+      INSERT INTO scrape_audit_log
         (college_id, field_name, old_value, new_value, confidence_score, source, extraction_method)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(collegeId, fieldName, oldValue, newValue, confidence, source, method);
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, [collegeId, fieldName, oldValue, newValue, confidence, source, method]);
   }
 
   /**
    * Update field metadata
    */
-  updateFieldMetadata(collegeId, fieldName, confidence, source, method) {
-    this.db.prepare(`
-      INSERT INTO field_metadata 
+  async updateFieldMetadata(collegeId, fieldName, confidence, source, method) {
+    await this.pool.query(`
+      INSERT INTO field_metadata
         (college_id, field_name, confidence_score, source, extraction_method, last_updated, data_freshness_days)
-      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 0)
-      ON CONFLICT(college_id, field_name) DO UPDATE SET
-        confidence_score = excluded.confidence_score,
-        source = excluded.source,
-        extraction_method = excluded.extraction_method,
-        last_updated = CURRENT_TIMESTAMP,
+      VALUES ($1, $2, $3, $4, $5, NOW(), 0)
+      ON CONFLICT (college_id, field_name) DO UPDATE SET
+        confidence_score = EXCLUDED.confidence_score,
+        source = EXCLUDED.source,
+        extraction_method = EXCLUDED.extraction_method,
+        last_updated = NOW(),
         data_freshness_days = 0
-    `).run(collegeId, fieldName, confidence, source, method);
+    `, [collegeId, fieldName, confidence, source, method]);
   }
 
   /**
    * Record daily statistics
    */
-  recordDailyStats() {
+  async recordDailyStats() {
     const today = new Date().toISOString().split('T')[0];
-    
-    const stats = this.db.prepare(`
-      SELECT 
+
+    const { rows: statsRows } = await this.pool.query(`
+      SELECT
         COUNT(*) as total_scraped,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as succeeded,
         SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed
       FROM scrape_queue
-      WHERE DATE(updated_at) = ?
-    `).get(today);
+      WHERE updated_at::date = $1
+    `, [today]);
+    const stats = statsRows[0];
 
-    const avgConfidence = this.db.prepare(`
+    const { rows: confRows } = await this.pool.query(`
       SELECT AVG(confidence_score) as avg_conf
       FROM field_metadata
-      WHERE DATE(last_updated) = ?
-    `).get(today);
+      WHERE last_updated::date = $1
+    `, [today]);
+    const avgConfidence = confRows[0];
 
-    this.db.prepare(`
-      INSERT INTO scrape_statistics 
+    await this.pool.query(`
+      INSERT INTO scrape_statistics
         (scrape_date, colleges_scraped, colleges_succeeded, colleges_failed, avg_confidence_score)
-      VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(scrape_date) DO UPDATE SET
-        colleges_scraped = excluded.colleges_scraped,
-        colleges_succeeded = excluded.colleges_succeeded,
-        colleges_failed = excluded.colleges_failed,
-        avg_confidence_score = excluded.avg_confidence_score
-    `).run(today, stats.total_scraped || 0, stats.succeeded || 0, stats.failed || 0, avgConfidence.avg_conf || 0);
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (scrape_date) DO UPDATE SET
+        colleges_scraped = EXCLUDED.colleges_scraped,
+        colleges_succeeded = EXCLUDED.colleges_succeeded,
+        colleges_failed = EXCLUDED.colleges_failed,
+        avg_confidence_score = EXCLUDED.avg_confidence_score
+    `, [today, stats.total_scraped || 0, stats.succeeded || 0, stats.failed || 0, avgConfidence.avg_conf || 0]);
 
     return stats;
   }
@@ -261,27 +250,28 @@ class ScrapingOrchestrator {
   /**
    * Get monitoring metrics
    */
-  getMetrics() {
-    const queueStats = this.db.prepare(`
+  async getMetrics() {
+    const { rows: queueStats } = await this.pool.query(`
       SELECT status, COUNT(*) as count
       FROM scrape_queue
       GROUP BY status
-    `).all();
+    `);
 
-    const freshnessStats = this.db.prepare(`
-      SELECT 
+    const { rows: freshnessRows } = await this.pool.query(`
+      SELECT
         AVG(data_freshness_days) as avg_freshness,
         MAX(data_freshness_days) as max_freshness,
         AVG(confidence_score) as avg_confidence
       FROM field_metadata
-    `).get();
+    `);
+    const freshnessStats = freshnessRows[0];
 
-    const recentStats = this.db.prepare(`
+    const { rows: recentStats } = await this.pool.query(`
       SELECT *
       FROM scrape_statistics
       ORDER BY scrape_date DESC
       LIMIT 7
-    `).all();
+    `);
 
     return {
       queue: queueStats,
@@ -293,14 +283,13 @@ class ScrapingOrchestrator {
   /**
    * Helper: Get last scraped date for a college
    */
-  getLastScrapedDate(collegeId) {
-    const result = this.db.prepare(`
+  async getLastScrapedDate(collegeId) {
+    const { rows } = await this.pool.query(`
       SELECT MAX(last_updated) as last_scraped
       FROM field_metadata
-      WHERE college_id = ?
-    `).get(collegeId);
-    
-    return result?.last_scraped || null;
+      WHERE college_id = $1
+    `, [collegeId]);
+    return rows[0]?.last_scraped || null;
   }
 
   /**
@@ -310,7 +299,6 @@ class ScrapingOrchestrator {
     if (!lastScraped) {
       return new Date().toISOString();
     }
-    
     const last = new Date(lastScraped);
     const next = new Date(last.getTime() + cycleDays * 24 * 60 * 60 * 1000);
     return next.toISOString();
@@ -322,36 +310,45 @@ module.exports = ScrapingOrchestrator;
 
 // CLI usage
 if (require.main === module) {
-  try {
+  async function run() {
+    require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+    dbManager.initialize();
     const orchestrator = new ScrapingOrchestrator();
-    
     const command = process.argv[2] || 'status';
-    
-    switch(command) {
-      case 'init':
-        orchestrator.initializeQueue();
-        break;
-      case 'batch':
-        const batch = orchestrator.getTodaysBatch();
-        console.log(JSON.stringify(batch, null, 2));
-        break;
-      case 'stats':
-        const stats = orchestrator.recordDailyStats();
-        console.log('Daily stats:', stats);
-        break;
-      case 'metrics':
-        const metrics = orchestrator.getMetrics();
-        console.log(JSON.stringify(metrics, null, 2));
-        break;
-      default:
-        console.log('Usage: node scrapeOrchestrator.js [init|batch|stats|metrics]');
-    }
-  } catch (error) {
-    if (!error.message.includes('no such table')) {
-      // Only log if it's not a table error (those are already handled)
+
+    try {
+      switch (command) {
+        case 'init':
+          await orchestrator.initializeQueue();
+          break;
+        case 'batch': {
+          const batch = await orchestrator.getTodaysBatch();
+          console.log(JSON.stringify(batch, null, 2));
+          break;
+        }
+        case 'stats': {
+          const stats = await orchestrator.recordDailyStats();
+          console.log('Daily stats:', stats);
+          break;
+        }
+        case 'metrics': {
+          const metrics = await orchestrator.getMetrics();
+          console.log(JSON.stringify(metrics, null, 2));
+          break;
+        }
+        default:
+          console.log('Usage: node scrapeOrchestrator.js [init|batch|stats|metrics]');
+      }
+    } catch (error) {
       logger.error('Scraping orchestrator error:', error);
       console.error('\n❌ ERROR:', error.message);
       process.exit(1);
+    } finally {
+      await dbManager.close();
     }
   }
+  run().catch(e => {
+    console.error('[orchestrator] Fatal error:', e);
+    process.exit(1);
+  });
 }

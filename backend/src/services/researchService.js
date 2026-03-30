@@ -19,7 +19,7 @@ class ResearchService {
       
       // Check cache first (unless force refresh)
       if (!options.forceRefresh) {
-        const cached = this._getCachedResearch(queryHash);
+        const cached = await this._getCachedResearch(queryHash);
         if (cached) {
           logger.info(`Cache hit for research: ${college.name} - ${researchType}`);
           return cached;
@@ -48,7 +48,7 @@ class ResearchService {
       }
       
       // Store in cache with TTL
-      this._cacheResearch(queryHash, collegeId, researchType, result);
+      await this._cacheResearch(queryHash, collegeId, researchType, result);
       
       return result;
     } catch (error) {
@@ -207,16 +207,16 @@ class ResearchService {
   }
   
   // Get cached research
-  _getCachedResearch(queryHash) {
-    const db = dbManager.getDatabase();
-    const stmt = db.prepare(`
+  async _getCachedResearch(queryHash) {
+    const pool = dbManager.getDatabase();
+
+    const cached = (await pool.query(`
       SELECT * FROM research_cache
-      WHERE query_hash = ? AND expires_at > datetime('now')
-    `);
-    
-    const cached = stmt.get(queryHash);
+      WHERE query_hash = $1 AND expires_at > NOW()
+    `, [queryHash])).rows[0];
+
     if (!cached) return null;
-    
+
     return {
       data: JSON.parse(cached.data_content),
       sources: JSON.parse(cached.source_urls || '[]'),
@@ -225,22 +225,27 @@ class ResearchService {
       expiresAt: cached.expires_at
     };
   }
-  
+
   // Store research in cache
-  _cacheResearch(queryHash, collegeId, researchType, result) {
-    const db = dbManager.getDatabase();
-    
+  async _cacheResearch(queryHash, collegeId, researchType, result) {
+    const pool = dbManager.getDatabase();
+
     // Calculate expiry (24 hours from now)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + config.scraping.cacheTtlHours);
-    
-    const stmt = db.prepare(`
-      INSERT OR REPLACE INTO research_cache 
+
+    await pool.query(`
+      INSERT INTO research_cache
       (query_hash, college_id, research_type, data_content, source_urls, trust_tier, expires_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    stmt.run(
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (query_hash) DO UPDATE SET
+        college_id = EXCLUDED.college_id,
+        research_type = EXCLUDED.research_type,
+        data_content = EXCLUDED.data_content,
+        source_urls = EXCLUDED.source_urls,
+        trust_tier = EXCLUDED.trust_tier,
+        expires_at = EXCLUDED.expires_at
+    `, [
       queryHash,
       collegeId,
       researchType,
@@ -248,8 +253,8 @@ class ResearchService {
       JSON.stringify(result.sources),
       result.trustTier,
       expiresAt.toISOString()
-    );
-    
+    ]);
+
     logger.info(`Cached research: ${queryHash}`);
   }
 }

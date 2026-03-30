@@ -7,11 +7,11 @@ const dbManager = require('./config/database');
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
-const { 
-  requestIdMiddleware, 
-  securityValidation, 
+const {
+  requestIdMiddleware,
+  securityValidation,
   securityLogger,
-  validateContentType 
+  validateContentType
 } = require('./middleware/security');
 
 // Import routes
@@ -47,13 +47,10 @@ const app = express();
 
 // Job instances for graceful shutdown
 let deadlineSchedulerInstance = null;
+let server = null;
 
 // Trust proxy for proper IP detection behind reverse proxies
 app.set('trust proxy', 1);
-
-// Initialize database
-dbManager.initialize();
-dbManager.runMigrations();
 
 // ===== SECURITY MIDDLEWARE (Order matters!) =====
 
@@ -61,10 +58,9 @@ dbManager.runMigrations();
 app.use(requestIdMiddleware);
 
 // Security headers with enhanced Helmet configuration
-// Note: CSP is enabled in all environments for better security
 app.use(helmet({
   contentSecurityPolicy: securityConfig.helmet.contentSecurityPolicy,
-  crossOriginEmbedderPolicy: false, // Needed for some integrations
+  crossOriginEmbedderPolicy: false,
   hsts: securityConfig.helmet.hsts,
   noSniff: true,
   referrerPolicy: securityConfig.helmet.referrerPolicy,
@@ -137,99 +133,89 @@ app.use((req, res) => {
 // Global error handler
 app.use(errorHandler);
 
-// Start server
-const PORT = config.port;
-const server = app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT} in ${config.nodeEnv} mode`);
-  logger.info(`Database: ${config.database.path}`);
-  
-  // Start ML retraining jobs (only in production or if explicitly enabled)
-  if (config.nodeEnv === 'production' || process.env.ENABLE_ML_JOBS === 'true') {
-    try {
-      const mlRetrainingJob = require('./jobs/mlRetraining');
-      mlRetrainingJob.start();
-      logger.info('ML retraining jobs started');
-    } catch (error) {
-      logger.warn('ML retraining jobs failed to start:', error.message);
-    }
-  }
-  
-  // Start data refresh cron jobs (scraping auto-refresh)
-  if (config.nodeEnv === 'production' || process.env.ENABLE_SCRAPING_JOBS === 'true') {
-    try {
-      const dataRefreshJob = require('./jobs/dataRefresh');
-      dataRefreshJob.start();
-      logger.info('Data refresh cron jobs started');
-    } catch (error) {
-      logger.warn('Data refresh jobs failed to start:', error.message);
-    }
+// Graceful shutdown helper
+function gracefulShutdown(signal) {
+  logger.info(`${signal} received: closing HTTP server`);
 
-    try {
-      const DeadlineScrapingScheduler = require('./jobs/deadlineScrapingScheduler');
-      deadlineSchedulerInstance = new DeadlineScrapingScheduler();
-      deadlineSchedulerInstance.setupCronJobs();
-      logger.info('Deadline scraping scheduler started');
-    } catch (error) {
-      logger.warn('Deadline scraping scheduler failed to start:', error.message);
-    }
-  }
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM signal received: closing HTTP server');
-  
-  // Stop ML jobs
-  try {
-    const mlRetrainingJob = require('./jobs/mlRetraining');
-    mlRetrainingJob.stop();
-  } catch (e) { /* ignore */ }
-  
-  // Stop scraping jobs
-  try {
-    const dataRefreshJob = require('./jobs/dataRefresh');
-    dataRefreshJob.stop();
-  } catch (e) { /* ignore */ }
-  
+  try { require('./jobs/mlRetraining').stop(); } catch (e) { /* ignore */ }
+  try { require('./jobs/dataRefresh').stop(); } catch (e) { /* ignore */ }
   if (deadlineSchedulerInstance) {
-    try {
-      deadlineSchedulerInstance.stop();
-    } catch (e) { /* ignore */ }
+    try { deadlineSchedulerInstance.stop(); } catch (e) { /* ignore */ }
   }
-  
-  server.close(() => {
-    logger.info('HTTP server closed');
-    dbManager.close();
-    process.exit(0);
-  });
-});
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT signal received: closing HTTP server');
-  
-  // Stop ML jobs
-  try {
-    const mlRetrainingJob = require('./jobs/mlRetraining');
-    mlRetrainingJob.stop();
-  } catch (e) { /* ignore */ }
-  
-  // Stop scraping jobs
-  try {
-    const dataRefreshJob = require('./jobs/dataRefresh');
-    dataRefreshJob.stop();
-  } catch (e) { /* ignore */ }
-  
-  if (deadlineSchedulerInstance) {
-    try {
-      deadlineSchedulerInstance.stop();
-    } catch (e) { /* ignore */ }
-  }
-  
-  server.close(() => {
-    logger.info('HTTP server closed');
-    dbManager.close();
+  if (server) {
+    server.close(async () => {
+      logger.info('HTTP server closed');
+      await dbManager.close();
+      process.exit(0);
+    });
+  } else {
     process.exit(0);
-  });
-});
+  }
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Start server (async to allow awaiting migrations + seeding)
+async function startServer() {
+  try {
+    // Initialize pg pool
+    dbManager.initialize();
+
+    // Run migrations
+    await dbManager.runMigrations();
+
+    // Seed colleges if the table is empty
+    try {
+      const { seedIfEmpty } = require('../../scripts/seedColleges');
+      await seedIfEmpty();
+    } catch (seedErr) {
+      logger.warn('College seeding skipped or failed:', { error: seedErr.message });
+    }
+
+    const PORT = config.port;
+    server = app.listen(PORT, () => {
+      logger.info(`Server running on port ${PORT} in ${config.nodeEnv} mode`);
+      logger.info('Database: PostgreSQL via DATABASE_URL');
+
+      // Start ML retraining jobs
+      if (config.nodeEnv === 'production' || process.env.ENABLE_ML_JOBS === 'true') {
+        try {
+          const mlRetrainingJob = require('./jobs/mlRetraining');
+          mlRetrainingJob.start();
+          logger.info('ML retraining jobs started');
+        } catch (error) {
+          logger.warn('ML retraining jobs failed to start:', { error: error.message });
+        }
+      }
+
+      // Start data refresh cron jobs
+      if (config.nodeEnv === 'production' || process.env.ENABLE_SCRAPING_JOBS === 'true') {
+        try {
+          const dataRefreshJob = require('./jobs/dataRefresh');
+          dataRefreshJob.start();
+          logger.info('Data refresh cron jobs started');
+        } catch (error) {
+          logger.warn('Data refresh jobs failed to start:', { error: error.message });
+        }
+
+        try {
+          const DeadlineScrapingScheduler = require('./jobs/deadlineScrapingScheduler');
+          deadlineSchedulerInstance = new DeadlineScrapingScheduler();
+          deadlineSchedulerInstance.setupCronJobs();
+          logger.info('Deadline scraping scheduler started');
+        } catch (error) {
+          logger.warn('Deadline scraping scheduler failed to start:', { error: error.message });
+        }
+      }
+    });
+  } catch (err) {
+    logger.error('Failed to start server:', { error: err.message });
+    process.exit(1);
+  }
+}
+
+startServer();
 
 module.exports = app;

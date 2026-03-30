@@ -37,7 +37,7 @@ class ApplicationController {
       }
       
       logger.debug(`[${requestId}] Calling Application.findByUser(${userId})`);
-      const applications = Application.findByUser(userId, { status, priority });
+      const applications = await Application.findByUser(userId, { status, priority });
       
       const duration = Date.now() - startTime;
       logger.info(`[${requestId}] Found ${applications?.length || 0} applications in ${duration}ms`);
@@ -90,7 +90,7 @@ class ApplicationController {
       }
       
       logger.debug(`[${requestId}] Creating application for college: ${sanitizeForLog(data.collegeId)}`);
-      const application = Application.create(userId, data);
+      const application = await Application.create(userId, data);
       
       if (!application) {
         logger.error(`[${requestId}] Application.create returned null/undefined`);
@@ -155,7 +155,7 @@ class ApplicationController {
       logger.debug(`[${requestId}] Update data keys: ${Object.keys(data || {}).join(', ')}`);
       
       // Get old application to check ownership and status change
-      const oldApplication = Application.findById(parseInt(id));
+      const oldApplication = await Application.findById(parseInt(id));
       
       if (!oldApplication) {
         logger.warn(`[${requestId}] Application ${sanitizeForLog(id)} not found`);
@@ -176,7 +176,7 @@ class ApplicationController {
         });
       }
       
-      const application = Application.update(parseInt(id), data);
+      const application = await Application.update(parseInt(id), data);
       
       logger.info(`[${requestId}] Application ${sanitizeForLog(id)} updated successfully`);
       
@@ -186,18 +186,18 @@ class ApplicationController {
           oldApplication.status !== data.status) {
         try {
           const dbManager = require('../config/database');
-          const db = dbManager.getDatabase();
+          const pool = dbManager.getDatabase();
           
           // Check if user has ML consent
-          const user = db.prepare('SELECT ml_consent FROM users WHERE id = ?').get(userId);
+          const user = (await pool.query('SELECT ml_consent FROM users WHERE id = $1', [userId])).rows[0];
           
-          if (user && user.ml_consent === 1) {
+          if (user && user.ml_consent === true) {
             // Get student profile data
             const StudentProfile = require('../models/StudentProfile');
             const College = require('../models/College');
             
-            const profile = StudentProfile.getCompleteProfile(userId);
-            const college = College.findById(application.college_id);
+            const profile = await StudentProfile.getCompleteProfile(userId);
+            const college = await College.findById(application.college_id);
             
             if (profile && college) {
               const activities = profile.activities || [];
@@ -205,15 +205,15 @@ class ApplicationController {
               const tier2Count = activities.filter(a => a.tier_rating === 2).length;
               const apCourses = (profile.coursework || []).filter(c => c.course_level === 'AP' || c.course_level === 'IB').length;
               
-              db.prepare(`
+              await pool.query(`
                 INSERT INTO ml_training_data (
                   student_id, college_id, gpa, sat_total, act_composite,
                   class_rank_percentile, num_ap_courses, activity_tier_1_count,
                   activity_tier_2_count, is_first_gen, is_legacy, state,
                   college_acceptance_rate, college_sat_median, college_type,
                   decision, enrolled, application_year
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-              `).run(
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+              `, [
                 userId,
                 application.college_id,
                 profile.gpa_unweighted || profile.gpa_weighted || null,
@@ -223,16 +223,16 @@ class ApplicationController {
                 apCourses,
                 tier1Count,
                 tier2Count,
-                profile.is_first_generation ? 1 : 0,
-                profile.is_legacy ? 1 : 0,
+                profile.is_first_generation ? true : false,
+                profile.is_legacy ? true : false,
                 profile.state_province || null,
                 college.acceptance_rate || null,
                 college.sat_total_median || null,
                 college.type || null,
                 data.status,
-                0, // enrolled - will be updated later
+                false, // enrolled - will be updated later
                 new Date().getFullYear()
-              );
+              ]);
               
               logger.info(`[${requestId}] ML training data auto-collected for application ${sanitizeForLog(id)}`);
             }
@@ -265,7 +265,7 @@ class ApplicationController {
       logger.info(`[${requestId}] DELETE /applications/${sanitizeForLog(id)}`);
       
       // SECURITY: Verify user owns this application
-      const application = Application.findById(parseInt(id));
+      const application = await Application.findById(parseInt(id));
       
       if (!application) {
         logger.warn(`[${requestId}] Application ${sanitizeForLog(id)} not found`);
@@ -278,6 +278,7 @@ class ApplicationController {
       
       if (application.user_id !== userId) {
         logger.warn(`[${requestId}] User ${userId} attempted to delete application ${sanitizeForLog(id)} owned by user ${application.user_id}`);
+
         return res.status(403).json({
           success: false,
           message: 'Access denied',
@@ -285,7 +286,7 @@ class ApplicationController {
         });
       }
       
-      Application.delete(parseInt(id));
+      await Application.delete(parseInt(id));
       
       logger.info(`[${requestId}] Application ${sanitizeForLog(id)} deleted successfully`);
       
@@ -310,7 +311,7 @@ class ApplicationController {
       logger.info(`[${requestId}] GET /applications/${sanitizeForLog(id)}/timeline`);
       
       // SECURITY: Verify user owns this application
-      const application = Application.findById(parseInt(id));
+      const application = await Application.findById(parseInt(id));
       
       if (!application) {
         logger.warn(`[${requestId}] Application ${sanitizeForLog(id)} not found`);
@@ -330,7 +331,7 @@ class ApplicationController {
         });
       }
       
-      const timeline = Application.getTimeline(parseInt(id));
+      const timeline = await Application.getTimeline(parseInt(id));
       
       logger.debug(`[${requestId}] Timeline entries: ${timeline?.length || 0}`);
       

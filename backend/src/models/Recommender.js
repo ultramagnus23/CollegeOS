@@ -1,441 +1,144 @@
-/**
- * Recommender Model
- * Manage teacher/counselor recommendations for applications
- */
 const dbManager = require('../config/database');
 
 class Recommender {
-  // Recommender types
-  static TYPES = {
-    TEACHER: 'teacher',
-    COUNSELOR: 'counselor',
-    MENTOR: 'mentor',
-    EMPLOYER: 'employer',
-    OTHER: 'other'
-  };
+  static TYPES = { TEACHER:'teacher', COUNSELOR:'counselor', MENTOR:'mentor', EMPLOYER:'employer', OTHER:'other' };
+  static STATUS = { NOT_REQUESTED:'not_requested', REQUESTED:'requested', IN_PROGRESS:'in_progress', SUBMITTED:'submitted', DECLINED:'declined' };
 
-  // Request status
-  static STATUS = {
-    NOT_REQUESTED: 'not_requested',
-    REQUESTED: 'requested',
-    IN_PROGRESS: 'in_progress',
-    SUBMITTED: 'submitted',
-    DECLINED: 'declined'
-  };
-
-  /**
-   * Create recommenders table if not exists
-   */
-  static ensureTable() {
-    const db = dbManager.getDatabase();
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS recommenders (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        name TEXT NOT NULL,
-        email TEXT,
-        phone TEXT,
-        type TEXT NOT NULL,
-        relationship TEXT,
-        subject TEXT,
-        institution TEXT,
-        years_known INTEGER,
-        notes TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      );
-      
-      CREATE INDEX IF NOT EXISTS idx_recommenders_user ON recommenders(user_id);
-      CREATE INDEX IF NOT EXISTS idx_recommenders_type ON recommenders(type);
-    `);
-    
-    // Recommendation requests table (links recommenders to colleges)
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS recommendation_requests (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        recommender_id INTEGER NOT NULL,
-        college_id INTEGER,
-        college_name TEXT,
-        application_system TEXT,
-        status TEXT DEFAULT 'not_requested',
-        request_date DATE,
-        deadline DATE,
-        submitted_date DATE,
-        reminder_sent INTEGER DEFAULT 0,
-        last_reminder_date DATE,
-        thank_you_sent INTEGER DEFAULT 0,
-        notes TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (recommender_id) REFERENCES recommenders(id) ON DELETE CASCADE
-      );
-      
-      CREATE INDEX IF NOT EXISTS idx_rec_requests_user ON recommendation_requests(user_id);
-      CREATE INDEX IF NOT EXISTS idx_rec_requests_status ON recommendation_requests(status);
-      CREATE INDEX IF NOT EXISTS idx_rec_requests_deadline ON recommendation_requests(deadline);
-    `);
+  static async getByUserId(userId) {
+    const pool = dbManager.getDatabase();
+    const { rows } = await pool.query(
+      `SELECT r.*,
+        (SELECT COUNT(*) FROM recommendation_requests rr WHERE rr.recommender_id=r.id AND rr.status='submitted') as letters_submitted,
+        (SELECT COUNT(*) FROM recommendation_requests rr WHERE rr.recommender_id=r.id) as total_requests
+       FROM recommenders r WHERE r.user_id=$1 ORDER BY r.created_at DESC`,
+      [userId]
+    );
+    return rows;
   }
 
-  /**
-   * Get all recommenders for a user
-   */
-  static getByUserId(userId) {
-    this.ensureTable();
-    const db = dbManager.getDatabase();
-    
-    const stmt = db.prepare(`
-      SELECT r.*, 
-        (SELECT COUNT(*) FROM recommendation_requests rr WHERE rr.recommender_id = r.id AND rr.status = 'submitted') as letters_submitted,
-        (SELECT COUNT(*) FROM recommendation_requests rr WHERE rr.recommender_id = r.id) as total_requests
-      FROM recommenders r
-      WHERE r.user_id = ?
-      ORDER BY r.created_at DESC
-    `);
-    
-    return stmt.all(userId);
+  static async getById(id, userId) {
+    const pool = dbManager.getDatabase();
+    const { rows } = await pool.query('SELECT * FROM recommenders WHERE id=$1 AND user_id=$2', [id, userId]);
+    return rows[0] || null;
   }
 
-  /**
-   * Get recommender by ID
-   */
-  static getById(id, userId) {
-    this.ensureTable();
-    const db = dbManager.getDatabase();
-    const stmt = db.prepare('SELECT * FROM recommenders WHERE id = ? AND user_id = ?');
-    return stmt.get(id, userId);
+  static async create(userId, data) {
+    const pool = dbManager.getDatabase();
+    const { name, email, phone, type, relationship, subject, institution, yearsKnown, notes } = data;
+    const { rows } = await pool.query(
+      `INSERT INTO recommenders (user_id,name,email,phone,type,relationship,subject,institution,years_known,notes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+      [userId, name, email||null, phone||null, type, relationship||null, subject||null, institution||null, yearsKnown||null, notes||null]
+    );
+    return this.getById(rows[0].id, userId);
   }
 
-  /**
-   * Create a new recommender
-   */
-  static create(userId, data) {
-    this.ensureTable();
-    const db = dbManager.getDatabase();
-    
-    const {
-      name,
-      email,
-      phone,
-      type,
-      relationship,
-      subject,
-      institution,
-      yearsKnown,
-      notes
-    } = data;
-    
-    const stmt = db.prepare(`
-      INSERT INTO recommenders (
-        user_id, name, email, phone, type, relationship, subject, institution, years_known, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    const result = stmt.run(userId, name, email, phone, type, relationship, subject, institution, yearsKnown, notes);
-    return this.getById(result.lastInsertRowid, userId);
-  }
-
-  /**
-   * Update recommender
-   */
-  static update(id, userId, updates) {
-    this.ensureTable();
-    const db = dbManager.getDatabase();
-    
-    const allowedFields = [
-      'name', 'email', 'phone', 'type', 'relationship', 'subject', 'institution', 'years_known', 'notes'
-    ];
-    
-    const setClause = [];
+  static async update(id, userId, updates) {
+    const pool = dbManager.getDatabase();
+    const allowed = ['name','email','phone','type','relationship','subject','institution','years_known','notes'];
+    const setClauses = [];
     const params = [];
-    
+    let idx = 1;
     for (const [key, value] of Object.entries(updates)) {
       const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      if (allowedFields.includes(snakeKey)) {
-        setClause.push(`${snakeKey} = ?`);
-        params.push(value);
-      }
+      if (allowed.includes(snakeKey)) { setClauses.push(`${snakeKey}=$${idx++}`); params.push(value); }
     }
-    
-    if (setClause.length === 0) return null;
-    
-    setClause.push('updated_at = CURRENT_TIMESTAMP');
+    if (setClauses.length === 0) return null;
+    setClauses.push('updated_at=NOW()');
     params.push(id, userId);
-    
-    const stmt = db.prepare(`
-      UPDATE recommenders SET ${setClause.join(', ')} WHERE id = ? AND user_id = ?
-    `);
-    
-    stmt.run(...params);
+    await pool.query(`UPDATE recommenders SET ${setClauses.join(',')} WHERE id=$${idx++} AND user_id=$${idx}`, params);
     return this.getById(id, userId);
   }
 
-  /**
-   * Delete recommender
-   */
-  static delete(id, userId) {
-    this.ensureTable();
-    const db = dbManager.getDatabase();
-    const stmt = db.prepare('DELETE FROM recommenders WHERE id = ? AND user_id = ?');
-    const result = stmt.run(id, userId);
-    return result.changes > 0;
+  static async delete(id, userId) {
+    const pool = dbManager.getDatabase();
+    const { rowCount } = await pool.query('DELETE FROM recommenders WHERE id=$1 AND user_id=$2', [id, userId]);
+    return rowCount > 0;
   }
 
-  // ==========================================
-  // RECOMMENDATION REQUESTS
-  // ==========================================
-
-  /**
-   * Get all recommendation requests for a user
-   */
-  static getRequests(userId, filters = {}) {
-    this.ensureTable();
-    const db = dbManager.getDatabase();
-    
-    let query = `
-      SELECT rr.*, r.name as recommender_name, r.email as recommender_email, r.type as recommender_type
-      FROM recommendation_requests rr
-      JOIN recommenders r ON rr.recommender_id = r.id
-      WHERE rr.user_id = ?
-    `;
+  static async getRequests(userId, filters = {}) {
+    const pool = dbManager.getDatabase();
+    let query = `SELECT rr.*, r.name as recommender_name, r.email as recommender_email, r.type as recommender_type
+                 FROM recommendation_requests rr JOIN recommenders r ON rr.recommender_id=r.id WHERE rr.user_id=$1`;
     const params = [userId];
-    
-    if (filters.status) {
-      query += ' AND rr.status = ?';
-      params.push(filters.status);
-    }
-    
-    if (filters.recommenderId) {
-      query += ' AND rr.recommender_id = ?';
-      params.push(filters.recommenderId);
-    }
-    
-    if (filters.collegeId) {
-      query += ' AND rr.college_id = ?';
-      params.push(filters.collegeId);
-    }
-    
+    let idx = 2;
+    if (filters.status) { query += ` AND rr.status=$${idx++}`; params.push(filters.status); }
+    if (filters.recommenderId) { query += ` AND rr.recommender_id=$${idx++}`; params.push(filters.recommenderId); }
+    if (filters.collegeId) { query += ` AND rr.college_id=$${idx++}`; params.push(filters.collegeId); }
     query += ' ORDER BY CASE WHEN rr.deadline IS NULL THEN 1 ELSE 0 END, rr.deadline ASC, rr.created_at DESC';
-    
-    const stmt = db.prepare(query);
-    return stmt.all(...params);
+    const { rows } = await pool.query(query, params);
+    return rows;
   }
 
-  /**
-   * Get request by ID
-   */
-  static getRequestById(id, userId) {
-    this.ensureTable();
-    const db = dbManager.getDatabase();
-    
-    const stmt = db.prepare(`
-      SELECT rr.*, r.name as recommender_name, r.email as recommender_email
-      FROM recommendation_requests rr
-      JOIN recommenders r ON rr.recommender_id = r.id
-      WHERE rr.id = ? AND rr.user_id = ?
-    `);
-    
-    return stmt.get(id, userId);
-  }
-
-  /**
-   * Create recommendation request
-   */
-  static createRequest(userId, data) {
-    this.ensureTable();
-    const db = dbManager.getDatabase();
-    
-    const {
-      recommenderId,
-      collegeId,
-      collegeName,
-      applicationSystem,
-      status = 'not_requested',
-      requestDate,
-      deadline,
-      notes
-    } = data;
-    
-    const stmt = db.prepare(`
-      INSERT INTO recommendation_requests (
-        user_id, recommender_id, college_id, college_name, application_system,
-        status, request_date, deadline, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    const result = stmt.run(
-      userId, recommenderId, collegeId, collegeName, applicationSystem,
-      status, requestDate, deadline, notes
+  static async getRequestById(id, userId) {
+    const pool = dbManager.getDatabase();
+    const { rows } = await pool.query(
+      `SELECT rr.*, r.name as recommender_name, r.email as recommender_email
+       FROM recommendation_requests rr JOIN recommenders r ON rr.recommender_id=r.id
+       WHERE rr.id=$1 AND rr.user_id=$2`,
+      [id, userId]
     );
-    
-    return this.getRequestById(result.lastInsertRowid, userId);
+    return rows[0] || null;
   }
 
-  /**
-   * Update recommendation request
-   */
-  static updateRequest(id, userId, updates) {
-    this.ensureTable();
-    const db = dbManager.getDatabase();
-    
-    const allowedFields = [
-      'status', 'request_date', 'deadline', 'submitted_date', 
-      'reminder_sent', 'last_reminder_date', 'thank_you_sent', 'notes'
-    ];
-    
-    const setClause = [];
+  static async createRequest(userId, data) {
+    const pool = dbManager.getDatabase();
+    const { recommenderId, collegeId, collegeName, applicationSystem, status='not_requested', requestDate, deadline, notes } = data;
+    const { rows } = await pool.query(
+      `INSERT INTO recommendation_requests (user_id,recommender_id,college_id,college_name,application_system,status,request_date,deadline,notes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+      [userId, recommenderId, collegeId||null, collegeName||null, applicationSystem||null, status, requestDate||null, deadline||null, notes||null]
+    );
+    return this.getRequestById(rows[0].id, userId);
+  }
+
+  static async updateRequest(id, userId, updates) {
+    const pool = dbManager.getDatabase();
+    const allowed = ['status','request_date','deadline','submitted_date','reminder_sent','last_reminder_date','thank_you_sent','notes'];
+    const setClauses = [];
     const params = [];
-    
+    let idx = 1;
     for (const [key, value] of Object.entries(updates)) {
       const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      if (allowedFields.includes(snakeKey)) {
-        setClause.push(`${snakeKey} = ?`);
-        params.push(value);
-      }
+      if (allowed.includes(snakeKey)) { setClauses.push(`${snakeKey}=$${idx++}`); params.push(value); }
     }
-    
-    if (setClause.length === 0) return null;
-    
-    setClause.push('updated_at = CURRENT_TIMESTAMP');
+    if (setClauses.length === 0) return null;
+    setClauses.push('updated_at=NOW()');
     params.push(id, userId);
-    
-    const stmt = db.prepare(`
-      UPDATE recommendation_requests SET ${setClause.join(', ')} WHERE id = ? AND user_id = ?
-    `);
-    
-    stmt.run(...params);
+    await pool.query(`UPDATE recommendation_requests SET ${setClauses.join(',')} WHERE id=$${idx++} AND user_id=$${idx}`, params);
     return this.getRequestById(id, userId);
   }
 
-  /**
-   * Delete recommendation request
-   */
-  static deleteRequest(id, userId) {
-    this.ensureTable();
-    const db = dbManager.getDatabase();
-    const stmt = db.prepare('DELETE FROM recommendation_requests WHERE id = ? AND user_id = ?');
-    const result = stmt.run(id, userId);
-    return result.changes > 0;
+  static async deleteRequest(id, userId) {
+    const pool = dbManager.getDatabase();
+    const { rowCount } = await pool.query('DELETE FROM recommendation_requests WHERE id=$1 AND user_id=$2', [id, userId]);
+    return rowCount > 0;
   }
 
-  /**
-   * Get pending reminders (requests that need follow-up)
-   */
-  static getPendingReminders(userId, daysSinceRequest = 7) {
-    this.ensureTable();
-    const db = dbManager.getDatabase();
-    
-    const stmt = db.prepare(`
-      SELECT rr.*, r.name as recommender_name, r.email as recommender_email
-      FROM recommendation_requests rr
-      JOIN recommenders r ON rr.recommender_id = r.id
-      WHERE rr.user_id = ?
-        AND rr.status IN ('requested', 'in_progress')
-        AND (
-          rr.last_reminder_date IS NULL 
-          OR date(rr.last_reminder_date, '+' || ? || ' days') <= date('now')
-        )
-      ORDER BY rr.deadline ASC
-    `);
-    
-    return stmt.all(userId, daysSinceRequest);
+  static async getSummary(userId) {
+    const pool = dbManager.getDatabase();
+    const { rows } = await pool.query(
+      `SELECT COUNT(*) as total_requests,
+        SUM(CASE WHEN status='not_requested' THEN 1 ELSE 0 END) as not_requested,
+        SUM(CASE WHEN status='requested' THEN 1 ELSE 0 END) as requested,
+        SUM(CASE WHEN status='in_progress' THEN 1 ELSE 0 END) as in_progress,
+        SUM(CASE WHEN status='submitted' THEN 1 ELSE 0 END) as submitted,
+        SUM(CASE WHEN status='declined' THEN 1 ELSE 0 END) as declined,
+        SUM(CASE WHEN deadline < CURRENT_DATE AND status NOT IN ('submitted','declined') THEN 1 ELSE 0 END) as overdue,
+        SUM(CASE WHEN thank_you_sent=FALSE AND status='submitted' THEN 1 ELSE 0 END) as needs_thank_you
+       FROM recommendation_requests WHERE user_id=$1`,
+      [userId]
+    );
+    return rows[0];
   }
 
-  /**
-   * Get overdue requests
-   */
-  static getOverdueRequests(userId) {
-    this.ensureTable();
-    const db = dbManager.getDatabase();
-    
-    const stmt = db.prepare(`
-      SELECT rr.*, r.name as recommender_name, r.email as recommender_email
-      FROM recommendation_requests rr
-      JOIN recommenders r ON rr.recommender_id = r.id
-      WHERE rr.user_id = ?
-        AND rr.deadline < date('now')
-        AND rr.status NOT IN ('submitted', 'declined')
-      ORDER BY rr.deadline ASC
-    `);
-    
-    return stmt.all(userId);
-  }
-
-  /**
-   * Get summary statistics
-   */
-  static getSummary(userId) {
-    this.ensureTable();
-    const db = dbManager.getDatabase();
-    
-    const stmt = db.prepare(`
-      SELECT 
-        COUNT(*) as total_requests,
-        SUM(CASE WHEN status = 'not_requested' THEN 1 ELSE 0 END) as not_requested,
-        SUM(CASE WHEN status = 'requested' THEN 1 ELSE 0 END) as requested,
-        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
-        SUM(CASE WHEN status = 'submitted' THEN 1 ELSE 0 END) as submitted,
-        SUM(CASE WHEN status = 'declined' THEN 1 ELSE 0 END) as declined,
-        SUM(CASE WHEN deadline < date('now') AND status NOT IN ('submitted', 'declined') THEN 1 ELSE 0 END) as overdue,
-        SUM(CASE WHEN thank_you_sent = 0 AND status = 'submitted' THEN 1 ELSE 0 END) as needs_thank_you
-      FROM recommendation_requests
-      WHERE user_id = ?
-    `);
-    
-    return stmt.get(userId);
-  }
-
-  /**
-   * Generate email template
-   */
   static generateEmailTemplate(type, data) {
     const templates = {
-      request: `
-Dear ${data.recommenderName},
-
-I hope this email finds you well. I am writing to kindly request a letter of recommendation for my college application to ${data.collegeName || 'several universities'}.
-
-I have greatly valued your guidance in ${data.subject || 'your class'}, and I believe your perspective on my academic abilities and personal growth would be invaluable to my application.
-
-The deadline for submission is ${data.deadline || 'approaching soon'}. I would be happy to provide any additional information you might need.
-
-Thank you for considering this request.
-
-Best regards,
-${data.studentName}
-      `.trim(),
-      
-      reminder: `
-Dear ${data.recommenderName},
-
-I hope you are doing well. I wanted to follow up on my previous request for a letter of recommendation for ${data.collegeName || 'my college applications'}.
-
-The deadline is ${data.deadline || 'approaching soon'}, and I wanted to ensure you have everything you need. Please let me know if I can provide any additional information.
-
-Thank you so much for your support.
-
-Best regards,
-${data.studentName}
-      `.trim(),
-      
-      thank_you: `
-Dear ${data.recommenderName},
-
-I wanted to express my sincere gratitude for taking the time to write a letter of recommendation for my college application to ${data.collegeName || 'my selected universities'}.
-
-Your support means a great deal to me, and I truly appreciate your kind words and the time you invested in helping me pursue my goals.
-
-I will keep you updated on my application results.
-
-With gratitude,
-${data.studentName}
-      `.trim()
+      request: `Dear ${data.recommenderName},\n\nI am writing to kindly request a letter of recommendation for my college application to ${data.collegeName||'several universities'}.\n\nThe deadline for submission is ${data.deadline||'approaching soon'}.\n\nThank you,\n${data.studentName}`,
+      reminder: `Dear ${data.recommenderName},\n\nI wanted to follow up on my previous request for a letter of recommendation. The deadline is ${data.deadline||'approaching soon'}.\n\nThank you,\n${data.studentName}`,
+      thank_you: `Dear ${data.recommenderName},\n\nI wanted to sincerely thank you for your letter of recommendation for ${data.collegeName||'my applications'}.\n\nWith gratitude,\n${data.studentName}`
     };
-    
     return templates[type] || '';
   }
 }
-
 module.exports = Recommender;

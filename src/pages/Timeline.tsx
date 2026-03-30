@@ -53,7 +53,7 @@ export function Timeline() {
     const key = `deadline-${id}`;
     setToggling(key);
     try {
-      await api.deadlines.update(id, { is_completed: isCompleted === 1 ? 0 : 1 });
+      await api.deadlines.update(id, { isCompleted: isCompleted === 1 ? 0 : 1 });
       await loadData();
     } catch {
       toast.error('Failed to update deadline');

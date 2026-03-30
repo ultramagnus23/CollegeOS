@@ -12,11 +12,10 @@ const { sanitizeForLog } = require('../utils/security');
 /**
  * Check if user has given ML consent
  */
-function hasMLConsent(userId) {
-  const db = dbManager.getDatabase();
-  const stmt = db.prepare('SELECT ml_consent FROM users WHERE id = ?');
-  const user = stmt.get(userId);
-  return user && user.ml_consent === 1;
+async function hasMLConsent(userId) {
+  const pool = dbManager.getDatabase();
+  const user = (await pool.query('SELECT ml_consent FROM users WHERE id = $1', [userId])).rows[0];
+  return user && user.ml_consent === true;
 }
 
 /**
@@ -28,7 +27,7 @@ router.post('/student-outcome', authenticate, async (req, res, next) => {
     const userId = req.user.userId;
     
     // Check consent
-    if (!hasMLConsent(userId)) {
+    if (!(await hasMLConsent(userId))) {
       return res.status(403).json({
         success: false,
         message: 'ML data collection requires user consent. Enable "Contribute to ML improvement" in settings.',
@@ -71,37 +70,37 @@ router.post('/student-outcome', authenticate, async (req, res, next) => {
       });
     }
     
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
-    const stmt = db.prepare(`
-      INSERT INTO ml_training_data (
+    const result = await pool.query(
+      `INSERT INTO ml_training_data (
         student_id, college_id, gpa, sat_total, act_composite,
         class_rank_percentile, num_ap_courses, activity_tier_1_count,
         activity_tier_2_count, is_first_gen, is_legacy, state,
         college_acceptance_rate, college_sat_median, college_type,
         decision, enrolled, application_year
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    const result = stmt.run(
-      userId,
-      collegeId,
-      gpa || null,
-      satTotal || null,
-      actComposite || null,
-      classRankPercentile || null,
-      numApCourses || null,
-      activityTier1Count || null,
-      activityTier2Count || null,
-      isFirstGen ? 1 : 0,
-      isLegacy ? 1 : 0,
-      state || null,
-      collegeAcceptanceRate || null,
-      collegeSatMedian || null,
-      collegeType || null,
-      decision,
-      enrolled ? 1 : 0,
-      applicationYear || new Date().getFullYear()
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      RETURNING id`,
+      [
+        userId,
+        collegeId,
+        gpa || null,
+        satTotal || null,
+        actComposite || null,
+        classRankPercentile || null,
+        numApCourses || null,
+        activityTier1Count || null,
+        activityTier2Count || null,
+        !!isFirstGen,
+        !!isLegacy,
+        state || null,
+        collegeAcceptanceRate || null,
+        collegeSatMedian || null,
+        collegeType || null,
+        decision,
+        !!enrolled,
+        applicationYear || new Date().getFullYear()
+      ]
     );
     
     logger.info(`ML training data recorded for user ${userId}, college ${sanitizeForLog(collegeId)}, decision: ${sanitizeForLog(decision)}`);
@@ -109,7 +108,7 @@ router.post('/student-outcome', authenticate, async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: 'Outcome recorded successfully',
-      data: { id: result.lastInsertRowid }
+      data: { id: result.rows[0].id }
     });
   } catch (error) {
     logger.error('ML student-outcome failed:', error);
@@ -126,7 +125,7 @@ router.post('/track-interaction', authenticate, async (req, res, next) => {
     const userId = req.user.userId;
     
     // Check consent
-    if (!hasMLConsent(userId)) {
+    if (!(await hasMLConsent(userId))) {
       return res.status(403).json({
         success: false,
         message: 'ML data collection requires user consent',
@@ -151,20 +150,20 @@ router.post('/track-interaction', authenticate, async (req, res, next) => {
       });
     }
     
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
-    const stmt = db.prepare(`
-      INSERT INTO ml_user_interactions (
+    const result = await pool.query(
+      `INSERT INTO ml_user_interactions (
         student_id, college_id, interaction_type, session_id, timestamp
-      ) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `);
-    
-    const result = stmt.run(userId, collegeId, interactionType, sessionId || null);
+      ) VALUES ($1, $2, $3, $4, NOW())
+      RETURNING id`,
+      [userId, collegeId, interactionType, sessionId || null]
+    );
     
     res.status(201).json({
       success: true,
       message: 'Interaction tracked',
-      data: { id: result.lastInsertRowid }
+      data: { id: result.rows[0].id }
     });
   } catch (error) {
     logger.error('ML track-interaction failed:', error);
@@ -181,7 +180,7 @@ router.post('/essay-submission', authenticate, async (req, res, next) => {
     const userId = req.user.userId;
     
     // Check consent
-    if (!hasMLConsent(userId)) {
+    if (!(await hasMLConsent(userId))) {
       return res.status(403).json({
         success: false,
         message: 'ML data collection requires user consent',
@@ -217,22 +216,15 @@ router.post('/essay-submission', authenticate, async (req, res, next) => {
     const normalizedText = essayText.replace(/\s+/g, ' ').trim();
     const wordCount = normalizedText.split(' ').filter(w => w.length > 0).length;
     
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
-    const stmt = db.prepare(`
-      INSERT INTO ml_essays (
+    const result = await pool.query(
+      `INSERT INTO ml_essays (
         student_id, college_id, essay_prompt_type, essay_text,
         word_count, quality_score
-      ) VALUES (?, ?, ?, ?, ?, ?)
-    `);
-    
-    const result = stmt.run(
-      userId,
-      collegeId || null,
-      essayPromptType || null,
-      essayText,
-      wordCount,
-      qualityScore || null
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id`,
+      [userId, collegeId || null, essayPromptType || null, essayText, wordCount, qualityScore || null]
     );
     
     logger.info(`ML essay submission recorded for user ${userId}, ${sanitizeForLog(wordCount)} words`);
@@ -241,7 +233,7 @@ router.post('/essay-submission', authenticate, async (req, res, next) => {
       success: true,
       message: 'Essay submitted for ML training',
       data: {
-        id: result.lastInsertRowid,
+        id: result.rows[0].id,
         wordCount: wordCount
       }
     });
@@ -269,10 +261,10 @@ router.patch('/essay/:id/outcome', authenticate, async (req, res, next) => {
       });
     }
     
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Verify ownership
-    const essay = db.prepare('SELECT * FROM ml_essays WHERE id = ? AND student_id = ?').get(essayId, userId);
+    const essay = (await pool.query('SELECT * FROM ml_essays WHERE id = $1 AND student_id = $2', [essayId, userId])).rows[0];
     if (!essay) {
       return res.status(404).json({
         success: false,
@@ -280,11 +272,12 @@ router.patch('/essay/:id/outcome', authenticate, async (req, res, next) => {
       });
     }
     
-    db.prepare(`
-      UPDATE ml_essays 
-      SET acceptance_outcome = ?, updated_at = CURRENT_TIMESTAMP 
-      WHERE id = ?
-    `).run(acceptanceOutcome, essayId);
+    await pool.query(
+      `UPDATE ml_essays 
+       SET acceptance_outcome = $1, updated_at = NOW() 
+       WHERE id = $2`,
+      [acceptanceOutcome, essayId]
+    );
     
     res.json({
       success: true,
@@ -304,7 +297,7 @@ router.patch('/essay/:id/outcome', authenticate, async (req, res, next) => {
 router.get('/export-training-data', authenticate, async (req, res, next) => {
   try {
     const userId = req.user.userId;
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     const { type = 'all', anonymize = 'true' } = req.query;
     
     const shouldAnonymize = anonymize === 'true';
@@ -323,9 +316,10 @@ router.get('/export-training-data', authenticate, async (req, res, next) => {
     
     // Export training data - ONLY user's own data for non-admin
     if (type === 'all' || type === 'training') {
-      const trainingData = db.prepare(`
-        SELECT * FROM ml_training_data WHERE student_id = ? ORDER BY created_at DESC
-      `).all(userId);
+      const trainingData = (await pool.query(
+        `SELECT * FROM ml_training_data WHERE student_id = $1 ORDER BY created_at DESC`,
+        [userId]
+      )).rows;
       
       exportData.trainingData = trainingData.map(row => ({
         ...row,
@@ -335,9 +329,10 @@ router.get('/export-training-data', authenticate, async (req, res, next) => {
     
     // Export user interactions - ONLY user's own data
     if (type === 'all' || type === 'interactions') {
-      const interactions = db.prepare(`
-        SELECT * FROM ml_user_interactions WHERE student_id = ? ORDER BY timestamp DESC
-      `).all(userId);
+      const interactions = (await pool.query(
+        `SELECT * FROM ml_user_interactions WHERE student_id = $1 ORDER BY timestamp DESC`,
+        [userId]
+      )).rows;
       
       exportData.interactions = interactions.map(row => ({
         ...row,
@@ -348,11 +343,12 @@ router.get('/export-training-data', authenticate, async (req, res, next) => {
     
     // Export essays - ONLY user's own data (without text for privacy)
     if (type === 'all' || type === 'essays') {
-      const essays = db.prepare(`
-        SELECT id, student_id, college_id, essay_prompt_type, 
-               word_count, quality_score, acceptance_outcome, created_at
-        FROM ml_essays WHERE student_id = ? ORDER BY created_at DESC
-      `).all(userId);
+      const essays = (await pool.query(
+        `SELECT id, student_id, college_id, essay_prompt_type, 
+                word_count, quality_score, acceptance_outcome, created_at
+         FROM ml_essays WHERE student_id = $1 ORDER BY created_at DESC`,
+        [userId]
+      )).rows;
       
       exportData.essays = essays.map(row => ({
         ...row,
@@ -362,9 +358,9 @@ router.get('/export-training-data', authenticate, async (req, res, next) => {
     
     // Export model versions (this is public info about deployed models)
     if (type === 'all' || type === 'models') {
-      exportData.modelVersions = db.prepare(`
-        SELECT * FROM ml_model_versions ORDER BY created_at DESC
-      `).all();
+      exportData.modelVersions = (await pool.query(
+        `SELECT * FROM ml_model_versions ORDER BY created_at DESC`
+      )).rows;
     }
     
     // Add metadata
@@ -395,7 +391,7 @@ router.get('/export-training-data', authenticate, async (req, res, next) => {
  */
 router.get('/consent', authenticate, async (req, res, next) => {
   try {
-    const hasConsent = hasMLConsent(req.user.userId);
+    const hasConsent = await hasMLConsent(req.user.userId);
     
     res.json({
       success: true,
@@ -423,8 +419,8 @@ router.put('/consent', authenticate, async (req, res, next) => {
       });
     }
     
-    const db = dbManager.getDatabase();
-    db.prepare('UPDATE users SET ml_consent = ? WHERE id = ?').run(consent ? 1 : 0, req.user.userId);
+    const pool = dbManager.getDatabase();
+    await pool.query('UPDATE users SET ml_consent = $1 WHERE id = $2', [consent, req.user.userId]);
     
     logger.info(`User ${req.user.userId} updated ML consent to: ${sanitizeForLog(consent)}`);
     
@@ -444,23 +440,23 @@ router.put('/consent', authenticate, async (req, res, next) => {
  */
 router.get('/stats', authenticate, async (req, res, next) => {
   try {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     const stats = {
-      trainingDataCount: db.prepare('SELECT COUNT(*) as count FROM ml_training_data').get().count,
-      interactionsCount: db.prepare('SELECT COUNT(*) as count FROM ml_user_interactions').get().count,
-      essaysCount: db.prepare('SELECT COUNT(*) as count FROM ml_essays').get().count,
-      usersWithConsent: db.prepare('SELECT COUNT(*) as count FROM users WHERE ml_consent = 1').get().count,
-      decisionBreakdown: db.prepare(`
+      trainingDataCount: parseInt((await pool.query('SELECT COUNT(*) as count FROM ml_training_data')).rows[0].count),
+      interactionsCount: parseInt((await pool.query('SELECT COUNT(*) as count FROM ml_user_interactions')).rows[0].count),
+      essaysCount: parseInt((await pool.query('SELECT COUNT(*) as count FROM ml_essays')).rows[0].count),
+      usersWithConsent: parseInt((await pool.query('SELECT COUNT(*) as count FROM users WHERE ml_consent = true')).rows[0].count),
+      decisionBreakdown: (await pool.query(`
         SELECT decision, COUNT(*) as count 
         FROM ml_training_data 
         GROUP BY decision
-      `).all(),
-      interactionBreakdown: db.prepare(`
+      `)).rows,
+      interactionBreakdown: (await pool.query(`
         SELECT interaction_type, COUNT(*) as count 
         FROM ml_user_interactions 
         GROUP BY interaction_type
-      `).all()
+      `)).rows
     };
     
     res.json({

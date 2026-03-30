@@ -27,20 +27,22 @@ router.get('/colleges', async (req, res) => {
       limit = 50
     } = req.query;
 
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     const conditions = [];
     const params = [];
+    let paramIndex = 1;
 
     // Full-text search on name, location, major_categories
     if (q) {
       conditions.push(`(
-        LOWER(name) LIKE LOWER(?) OR 
-        LOWER(location) LIKE LOWER(?) OR 
-        LOWER(country) LIKE LOWER(?) OR
-        LOWER(major_categories) LIKE LOWER(?)
+        LOWER(name) LIKE LOWER($${paramIndex}) OR 
+        LOWER(location) LIKE LOWER($${paramIndex + 1}) OR 
+        LOWER(country) LIKE LOWER($${paramIndex + 2}) OR
+        LOWER(major_categories) LIKE LOWER($${paramIndex + 3})
       )`);
       const searchTerm = `%${q}%`;
       params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+      paramIndex += 4;
     }
 
     // Country filter - support region grouping
@@ -53,35 +55,44 @@ router.get('/colleges', async (req, res) => {
       } else if (countryLower === 'united kingdom' || countryLower === 'uk') {
         conditions.push(`(country = 'United Kingdom' OR country = 'UK')`);
       } else {
-        conditions.push('country = ?');
+        conditions.push(`country = $${paramIndex}`);
         params.push(country);
+        paramIndex++;
       }
     }
 
     // Acceptance rate range
     if (min_rate) {
-      conditions.push('acceptance_rate >= ?');
+      conditions.push(`acceptance_rate >= $${paramIndex}`);
       params.push(parseFloat(min_rate));
+      paramIndex++;
     }
     if (max_rate) {
-      conditions.push('acceptance_rate <= ?');
+      conditions.push(`acceptance_rate <= $${paramIndex}`);
       params.push(parseFloat(max_rate));
+      paramIndex++;
     }
 
     // Cost range
     if (min_cost) {
-      conditions.push(`tuition_international >= ?`);
+      conditions.push(`tuition_international >= $${paramIndex}`);
       params.push(parseInt(min_cost));
+      paramIndex++;
     }
     if (max_cost) {
-      conditions.push(`tuition_international <= ?`);
+      conditions.push(`tuition_international <= $${paramIndex}`);
       params.push(parseInt(max_cost));
+      paramIndex++;
     }
 
     // Programs filter
     if (programs) {
       const programList = programs.split(',');
-      const programConditions = programList.map(() => 'LOWER(major_categories) LIKE LOWER(?)').join(' OR ');
+      const programConditions = programList.map(() => {
+        const cond = `LOWER(major_categories) LIKE LOWER($${paramIndex})`;
+        paramIndex++;
+        return cond;
+      }).join(' OR ');
       conditions.push(`(${programConditions})`);
       programList.forEach(p => params.push(`%${p.trim()}%`));
     }
@@ -107,17 +118,18 @@ router.get('/colleges', async (req, res) => {
 
     // Get total count
     const countQuery = `SELECT COUNT(*) as total FROM colleges ${whereClause}`;
-    const countResult = db.prepare(countQuery).get(...params);
+    const countResult = (await pool.query(countQuery, params)).rows[0];
 
     // Get results
+    const queryParams = [...params, limitNum, offset];
     const query = `
       SELECT * FROM colleges 
       ${whereClause}
       ORDER BY ${sortField} ${sortOrder}
-      LIMIT ? OFFSET ?
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
 
-    const results = db.prepare(query).all(...params, limitNum, offset);
+    const results = (await pool.query(query, queryParams)).rows;
 
     // Format results
     const formattedResults = results.map(college => {
@@ -152,8 +164,8 @@ router.get('/colleges', async (req, res) => {
       pagination: {
         page: pageNum,
         limit: limitNum,
-        total: countResult.total,
-        totalPages: Math.ceil(countResult.total / limitNum)
+        total: parseInt(countResult.total),
+        totalPages: Math.ceil(parseInt(countResult.total) / limitNum)
       }
     });
 
@@ -172,7 +184,7 @@ router.get('/colleges', async (req, res) => {
  */
 router.get('/filters', async (req, res) => {
   try {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Get simplified country filters (4 regions)
     const countryFilters = [
@@ -183,25 +195,25 @@ router.get('/filters', async (req, res) => {
     ];
     
     // Add counts using safe queries
-    countryFilters.forEach(filter => {
+    for (const filter of countryFilters) {
       let result;
       if (filter.value === 'Europe') {
-        result = db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`).get();
+        result = (await pool.query(`SELECT COUNT(*) as count FROM colleges WHERE country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`)).rows[0];
       } else if (filter.value === 'United States') {
-        result = db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country IN ('United States', 'USA')`).get();
+        result = (await pool.query(`SELECT COUNT(*) as count FROM colleges WHERE country IN ('United States', 'USA')`)).rows[0];
       } else if (filter.value === 'United Kingdom') {
-        result = db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country IN ('United Kingdom', 'UK')`).get();
+        result = (await pool.query(`SELECT COUNT(*) as count FROM colleges WHERE country IN ('United Kingdom', 'UK')`)).rows[0];
       } else if (filter.value === 'India') {
-        result = db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country = 'India'`).get();
+        result = (await pool.query(`SELECT COUNT(*) as count FROM colleges WHERE country = 'India'`)).rows[0];
       } else {
         // Use parameterized query for any other value
-        result = db.prepare(`SELECT COUNT(*) as count FROM colleges WHERE country = ?`).get(filter.value);
+        result = (await pool.query(`SELECT COUNT(*) as count FROM colleges WHERE country = $1`, [filter.value])).rows[0];
       }
-      filter.count = result.count;
-    });
+      filter.count = parseInt(result.count);
+    }
 
     // Get all unique programs/majors
-    const programRows = db.prepare('SELECT major_categories FROM colleges').all();
+    const programRows = (await pool.query('SELECT major_categories FROM colleges')).rows;
     const allPrograms = new Set();
     programRows.forEach(row => {
       try {
@@ -211,14 +223,14 @@ router.get('/filters', async (req, res) => {
     });
 
     // Get acceptance rate and cost ranges
-    const ranges = db.prepare(`
+    const ranges = (await pool.query(`
       SELECT 
         MIN(acceptance_rate) as min_rate,
         MAX(acceptance_rate) as max_rate,
         MIN(tuition_international) as min_cost,
         MAX(tuition_international) as max_cost
       FROM colleges
-    `).get();
+    `)).rows[0];
 
     res.json({
       success: true,
@@ -261,12 +273,12 @@ router.post('/log', authenticate, async (req, res, next) => {
       });
     }
     
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
-    db.prepare(`
+    await pool.query(`
       INSERT INTO search_history (user_id, search_query, result_count)
-      VALUES (?, ?, ?)
-    `).run(userId, query.trim(), resultCount || 0);
+      VALUES ($1, $2, $3)
+    `, [userId, query.trim(), resultCount || 0]);
     
     res.json({
       success: true,
@@ -288,16 +300,16 @@ router.get('/recent', authenticate, async (req, res, next) => {
     const parsedLimit = parseInt(req.query.limit);
     const limit = Math.min(isNaN(parsedLimit) ? 10 : parsedLimit, 20);
     
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
-    const searches = db.prepare(`
+    const searches = (await pool.query(`
       SELECT DISTINCT search_query, MAX(searched_at) as last_searched, MAX(result_count) as result_count
       FROM search_history
-      WHERE user_id = ?
+      WHERE user_id = $1
       GROUP BY search_query
       ORDER BY last_searched DESC
-      LIMIT ?
-    `).all(userId, limit);
+      LIMIT $2
+    `, [userId, limit])).rows;
     
     res.json({
       success: true,
@@ -321,16 +333,16 @@ router.delete('/history', authenticate, async (req, res, next) => {
   try {
     const userId = req.user.userId;
     
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
-    const result = db.prepare(`
-      DELETE FROM search_history WHERE user_id = ?
-    `).run(userId);
+    const result = await pool.query(`
+      DELETE FROM search_history WHERE user_id = $1
+    `, [userId]);
     
     res.json({
       success: true,
       message: 'Search history cleared',
-      deletedCount: result.changes
+      deletedCount: result.rowCount
     });
   } catch (error) {
     logger.error('Failed to clear search history:', error);
@@ -361,23 +373,23 @@ router.get('/suggestions', async (req, res, next) => {
       });
     }
     
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Get college name suggestions
-    const colleges = db.prepare(`
+    const colleges = (await pool.query(`
       SELECT DISTINCT name, country
       FROM colleges
-      WHERE name LIKE ?
+      WHERE name LIKE $1
       ORDER BY name ASC
       LIMIT 10
-    `).all(`%${q}%`);
+    `, [`%${q}%`])).rows;
     
     // Get major suggestions
-    const majorsResult = db.prepare(`
+    const majorsResult = (await pool.query(`
       SELECT major_categories FROM colleges
-      WHERE major_categories LIKE ?
+      WHERE major_categories LIKE $1
       LIMIT 50
-    `).all(`%${q}%`);
+    `, [`%${q}%`])).rows;
     
     const majorsSet = new Set();
     majorsResult.forEach(row => {

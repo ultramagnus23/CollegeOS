@@ -5,7 +5,7 @@
  * Usage: node backend/scripts/testDeadlineScraper.js [college_name]
  */
 
-const db = require('../src/config/database');
+const dbManager = require('../src/config/database');
 const orchestrator = require('../src/services/deadlineScrapingOrchestrator');
 const logger = require('../src/utils/logger');
 
@@ -22,9 +22,11 @@ async function testSingleCollege(collegeName) {
   console.log(`\n========================================`);
   console.log(`Testing: ${collegeName}`);
   console.log(`========================================\n`);
-  
+
+  const pool = dbManager.getDatabase();
+
   // Find college in database
-  const college = db.prepare('SELECT * FROM colleges WHERE name = ?').get(collegeName);
+  const college = (await pool.query('SELECT * FROM colleges WHERE name = $1', [collegeName])).rows[0];
   
   if (!college) {
     console.error(`❌ College not found: ${collegeName}`);
@@ -52,7 +54,7 @@ async function testSingleCollege(collegeName) {
   console.log('');
   
   // Show extracted deadlines
-  const deadlines = db.prepare('SELECT * FROM application_deadlines WHERE college_id = ?').get(college.id);
+  const deadlines = (await pool.query('SELECT * FROM application_deadlines WHERE college_id = $1', [college.id])).rows[0];
   
   if (deadlines) {
     console.log('--- Extracted Deadlines ---');

@@ -15,7 +15,7 @@ class DeadlineAutoPopulationService {
    * @returns {object} Result with populated deadlines and status
    */
   static async populateDeadlinesForApplication(userId, applicationId, collegeId) {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     const currentYear = new Date().getFullYear();
     const result = {
       success: false,
@@ -26,14 +26,14 @@ class DeadlineAutoPopulationService {
 
     try {
       // Query college deadlines for current year
-      let collegeDeadlines = this._getCollegeDeadlines(collegeId, currentYear);
+      let collegeDeadlines = await this._getCollegeDeadlines(collegeId, currentYear);
       
       // Check if data exists with confidence_score >= 0.7
       if (!collegeDeadlines || (collegeDeadlines.confidence_score && collegeDeadlines.confidence_score < 0.7)) {
         logger.info(`No reliable current year data for college ${sanitizeForLog(collegeId)}, trying previous year`);
         
         // Try previous year as fallback
-        collegeDeadlines = this._getCollegeDeadlines(collegeId, currentYear - 1);
+        collegeDeadlines = await this._getCollegeDeadlines(collegeId, currentYear - 1);
         
         if (!collegeDeadlines) {
           result.message = 'No deadline data available for this college';
@@ -44,7 +44,7 @@ class DeadlineAutoPopulationService {
       }
 
       // Get college name for messages
-      const college = db.prepare('SELECT name FROM colleges WHERE id = ?').get(collegeId);
+      const college = (await pool.query('SELECT name FROM colleges WHERE id = $1', [collegeId])).rows[0];
       const collegeName = college ? college.name : 'College';
 
       // Insert deadlines only for types that are offered (offered = true)
@@ -55,33 +55,26 @@ class DeadlineAutoPopulationService {
         return result;
       }
 
-      // Begin transaction
-      const insertStmt = db.prepare(`
-        INSERT INTO deadlines (
-          application_id, 
-          deadline_type, 
-          deadline_date, 
-          description,
-          source_url,
-          status
-        ) VALUES (?, ?, ?, ?, ?, ?)
-      `);
-
-      const insertMany = db.transaction((deadlines) => {
-        for (const deadline of deadlines) {
-          insertStmt.run(
-            applicationId,
-            deadline.type,
-            deadline.date,
-            deadline.description,
-            collegeDeadlines.source_url || null,
-            'not_started'
-          );
-          result.deadlinesAdded.push(deadline);
-        }
-      });
-
-      insertMany(deadlinesToCreate);
+      for (const deadline of deadlinesToCreate) {
+        await pool.query(`
+          INSERT INTO deadlines (
+            application_id, 
+            deadline_type, 
+            deadline_date, 
+            description,
+            source_url,
+            status
+          ) VALUES ($1, $2, $3, $4, $5, $6)
+        `, [
+          applicationId,
+          deadline.type,
+          deadline.date,
+          deadline.description,
+          collegeDeadlines.source_url || null,
+          'not_started'
+        ]);
+        result.deadlinesAdded.push(deadline);
+      }
       
       result.success = true;
       
@@ -106,16 +99,14 @@ class DeadlineAutoPopulationService {
    * Get college deadlines from database
    * @private
    */
-  static _getCollegeDeadlines(collegeId, year) {
-    const db = dbManager.getDatabase();
+  static async _getCollegeDeadlines(collegeId, year) {
+    const pool = dbManager.getDatabase();
     
     // Query application_deadlines table
-    const stmt = db.prepare(`
+    return (await pool.query(`
       SELECT * FROM application_deadlines 
-      WHERE college_id = ? AND application_year = ?
-    `);
-    
-    return stmt.get(collegeId, year);
+      WHERE college_id = $1 AND application_year = $2
+    `, [collegeId, year])).rows[0];
   }
 
   /**
@@ -200,10 +191,10 @@ class DeadlineAutoPopulationService {
    * @param {number} collegeId - College ID
    * @returns {boolean} True if deadlines exist
    */
-  static hasDeadlineData(collegeId) {
+  static async hasDeadlineData(collegeId) {
     const currentYear = new Date().getFullYear();
-    const current = this._getCollegeDeadlines(collegeId, currentYear);
-    const previous = this._getCollegeDeadlines(collegeId, currentYear - 1);
+    const current = await this._getCollegeDeadlines(collegeId, currentYear);
+    const previous = await this._getCollegeDeadlines(collegeId, currentYear - 1);
     
     return !!(current || previous);
   }

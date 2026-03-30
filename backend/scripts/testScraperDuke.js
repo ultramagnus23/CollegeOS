@@ -22,7 +22,7 @@ const DUKE_CONFIG = {
 
 class DukeScraperTest {
   constructor() {
-    this.db = dbManager.getDatabase();
+    this.pool = dbManager.getDatabase();
     this.dukeId = null;
     this.beforeData = null;
     this.afterData = null;
@@ -31,25 +31,25 @@ class DukeScraperTest {
   /**
    * Find Duke University in the database
    */
-  findDuke() {
+  async findDuke() {
     logger.info('🔍 Searching for Duke University in database...');
-    
+
     // Try to find Duke by name
-    const duke = this.db.prepare(`
-      SELECT id, name, country, website_url 
-      FROM colleges 
-      WHERE name LIKE '%Duke%' 
+    const duke = (await this.pool.query(`
+      SELECT id, name, country, website_url
+      FROM colleges
+      WHERE name LIKE '%Duke%'
       LIMIT 1
-    `).get();
-    
+    `)).rows[0];
+
     if (!duke) {
       // Try comprehensive table
-      const dukeComp = this.db.prepare(`
-        SELECT id, name, country, website_url 
-        FROM colleges_comprehensive 
-        WHERE name LIKE '%Duke%' 
+      const dukeComp = (await this.pool.query(`
+        SELECT id, name, country, website_url
+        FROM colleges_comprehensive
+        WHERE name LIKE '%Duke%'
         LIMIT 1
-      `).get();
+      `)).rows[0];
       
       if (dukeComp) {
         this.dukeId = dukeComp.id;
@@ -68,18 +68,18 @@ class DukeScraperTest {
   /**
    * Get current Duke data (BEFORE scrape)
    */
-  getBeforeData() {
+  async getBeforeData() {
     logger.info('\n📊 BEFORE SCRAPE - Current Duke Data:');
     logger.info('='.repeat(60));
-    
+
     const data = {};
-    
+
     // Try to get from multiple tables
     try {
       // Basic college info
-      const college = this.db.prepare(`
-        SELECT * FROM colleges WHERE id = ?
-      `).get(this.dukeId);
+      const college = (await this.pool.query(`
+        SELECT * FROM colleges WHERE id = $1
+      `, [this.dukeId])).rows[0];
       
       if (college) {
         data.basic = {
@@ -96,9 +96,9 @@ class DukeScraperTest {
     
     try {
       // Comprehensive data
-      const comp = this.db.prepare(`
-        SELECT * FROM colleges_comprehensive WHERE id = ?
-      `).get(this.dukeId);
+      const comp = (await this.pool.query(`
+        SELECT * FROM colleges_comprehensive WHERE id = $1
+      `, [this.dukeId])).rows[0];
       
       if (comp) {
         data.comprehensive = {
@@ -115,9 +115,9 @@ class DukeScraperTest {
     
     try {
       // Admissions data
-      const admissions = this.db.prepare(`
-        SELECT * FROM college_admissions WHERE college_id = ? ORDER BY year DESC LIMIT 1
-      `).get(this.dukeId);
+      const admissions = (await this.pool.query(`
+        SELECT * FROM college_admissions WHERE college_id = $1 ORDER BY year DESC LIMIT 1
+      `, [this.dukeId])).rows[0];
       
       if (admissions) {
         data.admissions = {
@@ -132,9 +132,9 @@ class DukeScraperTest {
     
     try {
       // Financial data
-      const financial = this.db.prepare(`
-        SELECT * FROM college_financial_data WHERE college_id = ? ORDER BY year DESC LIMIT 1
-      `).get(this.dukeId);
+      const financial = (await this.pool.query(`
+        SELECT * FROM college_financial_data WHERE college_id = $1 ORDER BY year DESC LIMIT 1
+      `, [this.dukeId])).rows[0];
       
       if (financial) {
         data.financial = {
@@ -150,9 +150,9 @@ class DukeScraperTest {
     
     try {
       // Student demographics
-      const demographics = this.db.prepare(`
-        SELECT * FROM student_demographics WHERE college_id = ? LIMIT 1
-      `).get(this.dukeId);
+      const demographics = (await this.pool.query(`
+        SELECT * FROM student_demographics WHERE college_id = $1 LIMIT 1
+      `, [this.dukeId])).rows[0];
       
       if (demographics) {
         data.demographics = {
@@ -300,17 +300,17 @@ class DukeScraperTest {
   /**
    * Check audit log
    */
-  checkAuditLog() {
+  async checkAuditLog() {
     logger.info('\n📝 AUDIT LOG:');
     logger.info('='.repeat(60));
-    
+
     try {
-      const auditEntries = this.db.prepare(`
-        SELECT * FROM scrape_audit_log 
-        WHERE college_id = ? 
-        ORDER BY scraped_at DESC 
+      const auditEntries = (await this.pool.query(`
+        SELECT * FROM scrape_audit_log
+        WHERE college_id = $1
+        ORDER BY scraped_at DESC
         LIMIT 10
-      `).all(this.dukeId);
+      `, [this.dukeId])).rows;
       
       if (auditEntries.length === 0) {
         logger.info('  No audit entries found (scraper not yet run)');
@@ -382,23 +382,23 @@ class DukeScraperTest {
       logger.info('╚════════════════════════════════════════════════════════╝\n');
       
       // Step 1: Find Duke
-      this.findDuke();
-      
+      await this.findDuke();
+
       // Step 2: Get before data
-      this.getBeforeData();
-      
+      await this.getBeforeData();
+
       // Step 3: Run scraper
       await this.runScraper();
-      
+
       // Step 4: Get after data
       this.getAfterData();
-      
+
       // Step 5: Show comparison
       this.showComparison();
-      
+
       // Step 6: Check audit log
-      this.checkAuditLog();
-      
+      await this.checkAuditLog();
+
       // Step 7: Calculate improvement
       this.calculateImprovement();
       

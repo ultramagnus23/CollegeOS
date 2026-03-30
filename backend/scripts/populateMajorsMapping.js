@@ -113,68 +113,60 @@ async function populateMajorsMapping() {
   try {
     console.log('🚀 Starting college_majors_offered population...\n');
     
-    const db = dbManager.getDatabase();
-    
+    const pool = dbManager.getDatabase();
+
     // Get all master majors
-    const masterMajors = db.prepare('SELECT id, major_name FROM master_majors').all();
+    const masterMajors = (await pool.query('SELECT id, major_name FROM master_majors')).rows;
     console.log(`📚 Found ${masterMajors.length} master majors`);
-    
+
     // Create a map for quick lookup
     const majorNameToId = {};
     masterMajors.forEach(major => {
       majorNameToId[major.major_name] = major.id;
     });
-    
+
     // Get all college programs (only for colleges that exist)
-    const programs = db.prepare(`
-      SELECT DISTINCT cp.college_id, cp.program_name 
+    const programs = (await pool.query(`
+      SELECT DISTINCT cp.college_id, cp.program_name
       FROM college_programs cp
       INNER JOIN colleges c ON cp.college_id = c.id
       WHERE cp.program_name IS NOT NULL AND cp.program_name != ''
-    `).all();
+    `)).rows;
     console.log(`🏫 Found ${programs.length} college program entries\n`);
-    
+
     // Statistics
     let mappedCount = 0;
     let unmappedCount = 0;
     const unmappedPrograms = new Set();
-    
-    // Insert statement
-    const insertStmt = db.prepare(`
-      INSERT OR IGNORE INTO college_majors_offered 
-      (college_id, major_id, program_name, is_offered)
-      VALUES (?, ?, ?, 1)
-    `);
-    
-    // Begin transaction for better performance
-    const insertMany = db.transaction((programs) => {
-      for (const program of programs) {
-        const mappedMajor = PROGRAM_TO_MAJOR_MAP[program.program_name];
-        
-        if (mappedMajor && majorNameToId[mappedMajor]) {
-          const majorId = majorNameToId[mappedMajor];
-          insertStmt.run(program.college_id, majorId, program.program_name);
-          mappedCount++;
-        } else {
-          unmappedCount++;
-          unmappedPrograms.add(program.program_name);
-        }
-      }
-    });
-    
-    // Execute the transaction
+
+    // Insert mappings
     console.log('⚡ Inserting mappings...');
-    insertMany(programs);
-    
+    for (const program of programs) {
+      const mappedMajor = PROGRAM_TO_MAJOR_MAP[program.program_name];
+
+      if (mappedMajor && majorNameToId[mappedMajor]) {
+        const majorId = majorNameToId[mappedMajor];
+        await pool.query(
+          `INSERT INTO college_majors_offered (college_id, major_id, program_name, is_offered)
+           VALUES ($1, $2, $3, 1) ON CONFLICT DO NOTHING`,
+          [program.college_id, majorId, program.program_name]
+        );
+        mappedCount++;
+      } else {
+        unmappedCount++;
+        unmappedPrograms.add(program.program_name);
+      }
+    }
+
     // Get final count
-    const finalCount = db.prepare('SELECT COUNT(*) as count FROM college_majors_offered').get();
+    const finalCount = parseInt((await pool.query('SELECT COUNT(*) as count FROM college_majors_offered')).rows[0].count);
     
     console.log('\n' + '='.repeat(60));
     console.log('📊 POPULATION SUMMARY');
     console.log('='.repeat(60));
     console.log(`✅ Successfully mapped: ${mappedCount} program entries`);
     console.log(`❌ Unmapped programs: ${unmappedCount}`);
-    console.log(`📈 Total unique college-major pairs: ${finalCount.count}`);
+    console.log(`📈 Total unique college-major pairs: ${finalCount}`);
     
     if (unmappedPrograms.size > 0 && unmappedPrograms.size < 50) {
       console.log('\n⚠️  Unmapped program names:');
@@ -187,14 +179,14 @@ async function populateMajorsMapping() {
     
     // Show some examples
     console.log('\n📋 Sample mappings for Duke University (ID 1686):');
-    const dukeMajors = db.prepare(`
+    const dukeMajors = (await pool.query(`
       SELECT m.major_name, m.major_category, cmo.program_name
       FROM college_majors_offered cmo
       JOIN master_majors m ON cmo.major_id = m.id
       WHERE cmo.college_id = 1686
       ORDER BY m.major_category, m.major_name
       LIMIT 10
-    `).all();
+    `)).rows;
     
     if (dukeMajors.length > 0) {
       dukeMajors.forEach(major => {

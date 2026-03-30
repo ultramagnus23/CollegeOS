@@ -49,18 +49,16 @@ class DataRefreshJob {
    */
   async refreshDeadlines() {
     try {
-      const db = dbManager.getDatabase();
+      const pool = dbManager.getDatabase();
       
-      const stmt = db.prepare(`
+      const colleges = (await pool.query(`
         SELECT DISTINCT c.id, c.admissions_url
         FROM colleges c
         JOIN applications a ON c.id = a.college_id
         WHERE a.status IN ('researching', 'preparing')
           AND c.admissions_url IS NOT NULL
         LIMIT 200
-      `);
-      
-      const colleges = stmt.all();
+      `)).rows;
       
       logger.info(`Refreshing deadlines for ${colleges.length} colleges`);
       
@@ -89,18 +87,16 @@ class DataRefreshJob {
    */
   async refreshCollegeData() {
     try {
-      const db = dbManager.getDatabase();
+      const pool = dbManager.getDatabase();
       
-      const stmt = db.prepare(`
+      const colleges = (await pool.query(`
         SELECT id, admissions_url, programs_url
         FROM colleges
         WHERE (admissions_url IS NOT NULL OR programs_url IS NOT NULL)
-          AND (last_scraped_at IS NULL OR last_scraped_at < date('now', '-2 months'))
+          AND (last_scraped_at IS NULL OR last_scraped_at < NOW() - INTERVAL '2 months')
         ORDER BY RANDOM()
         LIMIT 500
-      `);
-      
-      const colleges = stmt.all();
+      `)).rows;
       
       logger.info(`Refreshing data for ${colleges.length} colleges`);
       
@@ -112,12 +108,11 @@ class DataRefreshJob {
           
           await dataAggregator.aggregateCollegeData(college.id, sources);
           
-          const updateStmt = db.prepare(`
+          await pool.query(`
             UPDATE colleges 
-            SET last_scraped_at = datetime('now')
-            WHERE id = ?
-          `);
-          updateStmt.run(college.id);
+            SET last_scraped_at = NOW()
+            WHERE id = $1
+          `, [college.id]);
           
           await new Promise(resolve => setTimeout(resolve, 5000));
           

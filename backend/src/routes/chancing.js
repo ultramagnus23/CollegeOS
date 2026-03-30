@@ -130,18 +130,19 @@ router.post('/calculate', authenticate, async (req, res, next) => {
     
     // Log prediction for analytics
     try {
-      const db = dbManager.getDatabase();
-      db.prepare(`
-        INSERT INTO prediction_audit_log (user_id, college_id, prediction_type, probability, category, confidence, factors_json)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        req.user.userId,
-        collegeId,
-        predictionType,
-        (chancing.percentage ?? chancing.chance ?? 50) / 100,
-        chancing.category,
-        chancing.confidence || null,
-        JSON.stringify(chancing.factors || [])
+      const pool = dbManager.getDatabase();
+      await pool.query(
+        `INSERT INTO prediction_audit_log (user_id, college_id, prediction_type, probability, category, confidence, factors_json)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          req.user.userId,
+          collegeId,
+          predictionType,
+          (chancing.percentage ?? chancing.chance ?? 50) / 100,
+          chancing.category,
+          chancing.confidence || null,
+          JSON.stringify(chancing.factors || [])
+        ]
       );
     } catch (auditError) {
       // Non-critical - don't fail if audit logging fails
@@ -635,8 +636,7 @@ router.post('/save-history', authenticate, async (req, res, next) => {
     
     const profile = StudentProfile.getCompleteProfile(req.user.userId);
     
-    const dbManager = require('../config/database');
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Create profile snapshot
     const profileSnapshot = profile ? {
@@ -647,25 +647,24 @@ router.post('/save-history', authenticate, async (req, res, next) => {
       tier1Count: (profile.activities || []).filter(a => a.tier_rating === 1).length
     } : {};
     
-    const stmt = db.prepare(`
-      INSERT INTO chancing_history (
+    const result = await pool.query(
+      `INSERT INTO chancing_history (
         user_id, college_id, chance_percentage, category, profile_snapshot, factors
-      ) VALUES (?, ?, ?, ?, ?, ?)
-    `);
-    
-    const result = stmt.run(
-      req.user.userId,
-      collegeId,
-      chance,
-      category,
-      JSON.stringify(profileSnapshot),
-      JSON.stringify(factors || [])
+      ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [
+        req.user.userId,
+        collegeId,
+        chance,
+        category,
+        JSON.stringify(profileSnapshot),
+        JSON.stringify(factors || [])
+      ]
     );
     
     res.status(201).json({
       success: true,
       message: 'Chancing history saved',
-      data: { id: result.lastInsertRowid }
+      data: { id: result.rows[0].id }
     });
   } catch (error) {
     logger.error('Save history failed:', error);
@@ -684,26 +683,26 @@ router.get('/history', authenticate, async (req, res, next) => {
     // Validate and bound limit
     const boundedLimit = Math.min(Math.max(1, parseInt(limit) || 50), 1000);
     
-    const dbManager = require('../config/database');
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
+    let paramIndex = 1;
     let query = `
       SELECT ch.*, c.name as college_name
       FROM chancing_history ch
       JOIN colleges c ON ch.college_id = c.id
-      WHERE ch.user_id = ?
+      WHERE ch.user_id = $${paramIndex++}
     `;
     const params = [req.user.userId];
     
     if (collegeId) {
-      query += ' AND ch.college_id = ?';
+      query += ` AND ch.college_id = $${paramIndex++}`;
       params.push(parseInt(collegeId));
     }
     
-    query += ' ORDER BY ch.calculated_at DESC LIMIT ?';
+    query += ` ORDER BY ch.calculated_at DESC LIMIT $${paramIndex++}`;
     params.push(boundedLimit);
     
-    const history = db.prepare(query).all(...params);
+    const history = (await pool.query(query, params)).rows;
     
     // Parse JSON fields with error handling
     const parsedHistory = history.map(h => {
@@ -774,15 +773,19 @@ router.post('/compare', authenticate, async (req, res, next) => {
     }
     
     // Get previous history entries for comparison
-    const dbManager = require('../config/database');
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
+    const historyRows = (await pool.query(
+      `SELECT DISTINCT ON (college_id) *
+      FROM chancing_history
+      WHERE user_id = $1 AND college_id = ANY($2::int[])
+      ORDER BY college_id, calculated_at DESC`,
+      [req.user.userId, collegeIds]
+    )).rows;
+    const historyByCollege = Object.fromEntries(historyRows.map(h => [h.college_id, h]));
+
     const comparison = results.results.map(r => {
-      const lastHistory = db.prepare(`
-        SELECT * FROM chancing_history 
-        WHERE user_id = ? AND college_id = ?
-        ORDER BY calculated_at DESC LIMIT 1
-      `).get(req.user.userId, r.college.id);
+      const lastHistory = historyByCollege[r.college.id];
       
       const oldChance = lastHistory?.chance_percentage || null;
       const newChance = r.chancing.chance;
@@ -830,7 +833,6 @@ router.post('/compare', authenticate, async (req, res, next) => {
 router.get('/:collegeId/cds', authenticate, async (req, res, next) => {
   try {
     const { collegeId } = req.params;
-    const dbManager = require('../config/database');
     
     // Get student profile
     const profile = StudentProfile.getCompleteProfile(req.user.userId);
@@ -854,18 +856,20 @@ router.get('/:collegeId/cds', authenticate, async (req, res, next) => {
     }
     
     // Get CDS data for this college
-    const db = dbManager.getDatabase();
-    const cdsData = db.prepare(`
-      SELECT * FROM college_cds_data WHERE college_id = ?
-    `).get(collegeId);
+    const pool = dbManager.getDatabase();
+    const cdsData = (await pool.query(
+      `SELECT * FROM college_cds_data WHERE college_id = $1`,
+      [collegeId]
+    )).rows[0];
     
     // Get admitted student samples
-    const samples = db.prepare(`
-      SELECT * FROM admitted_student_samples 
-      WHERE college_id = ? 
+    const samples = (await pool.query(
+      `SELECT * FROM admitted_student_samples 
+      WHERE college_id = $1 
       ORDER BY admission_year DESC 
-      LIMIT 5
-    `).all(collegeId);
+      LIMIT 5`,
+      [collegeId]
+    )).rows;
     
     // Calculate CDS-based chance using consolidated service
     const chancing = await consolidatedChancingService.calculateChance(profile, college, { preferCDS: true });
@@ -915,17 +919,17 @@ router.get('/:collegeId/cds', authenticate, async (req, res, next) => {
 router.get('/:collegeId/admitted-samples', authenticate, async (req, res, next) => {
   try {
     const { collegeId } = req.params;
-    const dbManager = require('../config/database');
     
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Get admitted student samples
-    const samples = db.prepare(`
-      SELECT * FROM admitted_student_samples 
-      WHERE college_id = ? 
+    const samples = (await pool.query(
+      `SELECT * FROM admitted_student_samples 
+      WHERE college_id = $1 
       ORDER BY admission_year DESC 
-      LIMIT 10
-    `).all(collegeId);
+      LIMIT 10`,
+      [collegeId]
+    )).rows;
     
     // Get college info
     const college = College.findById(collegeId);
@@ -1222,7 +1226,7 @@ router.post('/outcome', authenticate, async (req, res, next) => {
       });
     }
     
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
     // Count activity tiers
     const activities = profile.activities || [];
@@ -1231,59 +1235,61 @@ router.post('/outcome', authenticate, async (req, res, next) => {
     const tier3Count = activities.filter(a => a.tier_rating === 3 || a.tier_rating === 4).length;
     
     // Insert training data with high confidence (user-verified)
-    const stmt = db.prepare(`
-      INSERT INTO ml_training_data (
+    const result = await pool.query(
+      `INSERT INTO ml_training_data (
         student_id, college_id, gpa, sat_total, act_composite,
         class_rank_percentile, num_ap_courses, activity_tier_1_count,
         activity_tier_2_count, activity_tier_3_count, is_first_gen, is_legacy,
         state, college_acceptance_rate, decision, application_year,
         source, is_verified, confidence_score, major_applied
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    const result = stmt.run(
-      userId,
-      collegeId,
-      profile.gpa_unweighted || profile.gpa_weighted || null,
-      profile.sat_total || null,
-      profile.act_composite || null,
-      profile.class_rank_percentile || null,
-      profile.num_ap_courses || 0,
-      tier1Count,
-      tier2Count,
-      tier3Count,
-      profile.is_first_generation ? 1 : 0,
-      profile.is_legacy ? 1 : 0,
-      profile.state_province || null,
-      college.acceptance_rate || null,
-      decision,
-      applicationYear || new Date().getFullYear(),
-      'user_verified',
-      1,  // is_verified = true
-      0.95,  // High confidence for user-submitted
-      major || null
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      RETURNING id`,
+      [
+        userId,
+        collegeId,
+        profile.gpa_unweighted || profile.gpa_weighted || null,
+        profile.sat_total || null,
+        profile.act_composite || null,
+        profile.class_rank_percentile || null,
+        profile.num_ap_courses || 0,
+        tier1Count,
+        tier2Count,
+        tier3Count,
+        !!profile.is_first_generation,
+        !!profile.is_legacy,
+        profile.state_province || null,
+        college.acceptance_rate || null,
+        decision,
+        applicationYear || new Date().getFullYear(),
+        'user_verified',
+        true,
+        0.95,
+        major || null
+      ]
     );
     
-    const trainingDataId = result.lastInsertRowid;
+    const trainingDataId = result.rows[0].id;
     
     // Track contribution for gamification
     try {
-      db.prepare(`
-        INSERT INTO user_outcome_contributions (user_id, training_data_id, college_id, decision, points_awarded)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(userId, trainingDataId, collegeId, decision, OUTCOME_CONTRIBUTION_POINTS);
+      await pool.query(
+        `INSERT INTO user_outcome_contributions (user_id, training_data_id, college_id, decision, points_awarded)
+        VALUES ($1, $2, $3, $4, $5)`,
+        [userId, trainingDataId, collegeId, decision, OUTCOME_CONTRIBUTION_POINTS]
+      );
       
       // Update or insert user stats
-      db.prepare(`
-        INSERT INTO user_ml_stats (user_id, total_contributions, verified_contributions, total_points, last_contribution_at)
-        VALUES (?, 1, 1, ?, CURRENT_TIMESTAMP)
+      await pool.query(
+        `INSERT INTO user_ml_stats (user_id, total_contributions, verified_contributions, total_points, last_contribution_at)
+        VALUES ($1, 1, 1, $2, NOW())
         ON CONFLICT(user_id) DO UPDATE SET
-          total_contributions = total_contributions + 1,
-          verified_contributions = verified_contributions + 1,
-          total_points = total_points + ?,
-          last_contribution_at = CURRENT_TIMESTAMP,
-          updated_at = CURRENT_TIMESTAMP
-      `).run(userId, OUTCOME_CONTRIBUTION_POINTS, OUTCOME_CONTRIBUTION_POINTS);
+          total_contributions = user_ml_stats.total_contributions + 1,
+          verified_contributions = user_ml_stats.verified_contributions + 1,
+          total_points = user_ml_stats.total_points + $3,
+          last_contribution_at = NOW(),
+          updated_at = NOW()`,
+        [userId, OUTCOME_CONTRIBUTION_POINTS, OUTCOME_CONTRIBUTION_POINTS]
+      );
     } catch (statsError) {
       // Non-critical - contribution tracking is optional
       logger.debug('Stats tracking failed:', statsError.message);
@@ -1312,10 +1318,10 @@ router.post('/outcome', authenticate, async (req, res, next) => {
  */
 router.get('/contribution-stats', authenticate, async (req, res, next) => {
   try {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     
-    const stats = db.prepare(`
-      SELECT 
+    const stats = (await pool.query(
+      `SELECT 
         total_contributions,
         verified_contributions,
         total_points,
@@ -1323,8 +1329,9 @@ router.get('/contribution-stats', authenticate, async (req, res, next) => {
         models_improved,
         last_contribution_at
       FROM user_ml_stats
-      WHERE user_id = ?
-    `).get(req.user.userId);
+      WHERE user_id = $1`,
+      [req.user.userId]
+    )).rows[0];
     
     if (!stats) {
       return res.json({
@@ -1388,26 +1395,27 @@ router.get('/contribution-stats', authenticate, async (req, res, next) => {
  */
 router.get('/ml/data-needs', authenticate, async (req, res, next) => {
   try {
-    const db = dbManager.getDatabase();
+    const pool = dbManager.getDatabase();
     const minSamples = 30;  // Minimum samples needed for training
     
     // Get colleges with some data but not enough for training
-    const collegesNeedingData = db.prepare(`
-      SELECT 
+    const collegesNeedingData = (await pool.query(
+      `SELECT 
         t.college_id,
         c.name as college_name,
-        COUNT(*) as current_samples,
-        SUM(CASE WHEN t.decision = 'accepted' THEN 1 ELSE 0 END) as accepted_count,
-        SUM(CASE WHEN t.decision = 'rejected' THEN 1 ELSE 0 END) as rejected_count,
-        ? - COUNT(*) as samples_needed
+        COUNT(*)::int as current_samples,
+        SUM(CASE WHEN t.decision = 'accepted' THEN 1 ELSE 0 END)::int as accepted_count,
+        SUM(CASE WHEN t.decision = 'rejected' THEN 1 ELSE 0 END)::int as rejected_count,
+        ($1 - COUNT(*))::int as samples_needed
       FROM ml_training_data t
       LEFT JOIN colleges c ON t.college_id = c.id
       WHERE t.decision IN ('accepted', 'rejected')
-      GROUP BY t.college_id
-      HAVING current_samples < ?
+      GROUP BY t.college_id, c.name
+      HAVING COUNT(*) < $2
       ORDER BY current_samples DESC
-      LIMIT 20
-    `).all(minSamples, minSamples);
+      LIMIT 20`,
+      [minSamples, minSamples]
+    )).rows;
     
     res.json({
       success: true,

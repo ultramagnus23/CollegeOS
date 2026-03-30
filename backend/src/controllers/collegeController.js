@@ -299,11 +299,11 @@ class CollegeController {
       const College = require('../models/College');
       
       // Get total count for pagination
-      const totalCount = College.getCount({ country, type });
+      const totalCount = await College.getCount({ country, type });
       const totalPages = Math.ceil(totalCount / limitNum);
       
       // Get colleges with pagination
-      const colleges = College.findAll({
+      const colleges = await College.findAll({
         country,
         type,
         limit: limitNum,
@@ -353,7 +353,7 @@ class CollegeController {
       
       const College = require('../models/College');
       
-      const colleges = College.findByMajor(sanitizedMajor, {
+      const colleges = await College.findByMajor(sanitizedMajor, {
         country,
         limit: limitNum,
         offset
@@ -380,7 +380,7 @@ class CollegeController {
   static async getMajors(req, res, next) {
     try {
       const College = require('../models/College');
-      const majors = College.getMajorsWithCounts();
+      const majors = await College.getMajorsWithCounts();
       
       res.json({
         success: true,
@@ -516,10 +516,10 @@ class CollegeController {
       const collegeId = parseInt(id);
       
       const dbManager = require('../config/database');
-      const db = dbManager.getDatabase();
+      const pool = dbManager.getDatabase();
       
       // Get college name for context
-      const college = db.prepare('SELECT name FROM colleges WHERE id = ?').get(collegeId);
+      const college = (await pool.query('SELECT name FROM colleges WHERE id = $1', [collegeId])).rows[0];
       if (!college) {
         return res.status(404).json({
           success: false,
@@ -528,7 +528,7 @@ class CollegeController {
       }
       
       // Get all majors offered by this college
-      const majors = db.prepare(`
+      const majors = (await pool.query(`
         SELECT 
           m.id,
           m.major_name,
@@ -542,9 +542,9 @@ class CollegeController {
           cmo.ranking_in_major
         FROM college_majors_offered cmo
         JOIN master_majors m ON cmo.major_id = m.id
-        WHERE cmo.college_id = ? AND cmo.is_offered = 1
+        WHERE cmo.college_id = $1 AND cmo.is_offered = true
         ORDER BY m.major_category, m.major_name
-      `).all(collegeId);
+      `, [collegeId])).rows;
       
       // Group by category
       const byCategory = {};
@@ -572,7 +572,7 @@ class CollegeController {
           description: major.description,
           degreeTypes,
           department: major.department,
-          isPopular: major.is_popular === 1,
+          isPopular: major.is_popular === true,
           ranking: major.ranking_in_major
         });
       });
@@ -602,7 +602,7 @@ class CollegeController {
             description: m.description,
             degreeTypes,
             department: m.department,
-            isPopular: m.is_popular === 1,
+            isPopular: m.is_popular === true,
             ranking: m.ranking_in_major
           };
         }),
