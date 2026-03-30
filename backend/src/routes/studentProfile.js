@@ -363,7 +363,7 @@ router.get('/activities/summary', authenticate, async (req, res) => {
 // Get user profile (basic + extended)
 router.get('/full', authenticate, async (req, res, next) => {
   try {
-    const user = User.findById(req.user.userId);
+    const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -404,7 +404,7 @@ router.patch('/academic', authenticate, async (req, res, next) => {
       JSON.stringify(updates.language_preferences || updates.languagePreferences || []),
       userId
     ]);
-    const user = User.findById(userId);
+    const user = await User.findById(userId);
     res.json({ success: true, message: 'Profile updated successfully', data: user });
   } catch (error) {
     logger.error('Update academic profile failed:', error);

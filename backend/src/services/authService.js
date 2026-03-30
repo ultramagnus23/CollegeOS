@@ -133,7 +133,7 @@ class AuthService {
       }
       const tokens = this.generateTokens(user);
       await this.storeRefreshToken(user.id, tokens.refreshToken);
-      logger.info('User authenticated via Google', { email: sanitizeForLog(user.email) });
+      logger.info('User authenticated via Google', { userId: user.id, email: sanitizeForLog(user.email) });
       return { user: this.sanitizeUser(user), tokens };
     } catch (error) {
       logger.error('Google auth failed:', error);
@@ -157,7 +157,7 @@ class AuthService {
       }
       const tokens = this.generateTokens(user);
       await this.storeRefreshToken(user.id, tokens.refreshToken);
-      logger.info('User authenticated via Google Firebase', { email: sanitizeForLog(normalizedEmail) });
+      logger.info('User authenticated via Google Firebase', { userId: user.id, email: sanitizeForLog(normalizedEmail) });
       return { user: this.sanitizeUser(user), tokens };
     } catch (error) {
       logger.error('Google Firebase login failed:', { error: error?.message });

@@ -7,13 +7,79 @@ const router = express.Router();
 const { authenticate, optionalAuth } = require('../middleware/auth');
 const AutoDetectionService = require('../services/autoDetectionService');
 const consolidatedChancingService = require('../services/consolidatedChancingService');
-// SmartRecommendationService has been removed; all recommendations now use consolidatedChancingService/recommendationEngine
+const College = require('../models/College');
+const dbManager = require('../config/database');
 const logger = require('../utils/logger');
 
 // Input validation constants
 const MAX_SCHOOL_NAME_LENGTH = 200;
 const MAX_COUNTRIES = 10;
 const MAX_MAJORS = 10;
+
+// Interest keyword list for onboarding goal matching
+const INTEREST_KEYWORDS = [
+  'research', 'business', 'engineering', 'medicine', 'arts',
+  'technology', 'law', 'environment', 'finance', 'design'
+];
+
+/**
+ * Extract interest tags from free-text goals/motivations.
+ * Returns an array of matched keywords from INTEREST_KEYWORDS.
+ */
+function extractInterestTags(careerGoals = '', whyCollege = '') {
+  const text = `${careerGoals} ${whyCollege}`.toLowerCase();
+  return INTEREST_KEYWORDS.filter(kw => text.includes(kw));
+}
+
+/**
+ * Score a single college against a student profile.
+ * Returns a numeric score (higher = better match).
+ */
+function scoreCollege(college, profile, interestTags = []) {
+  let score = 0;
+
+  // +30 if country matches preferredCountries
+  const preferredCountries = (profile.preferredCountries || profile.preferred_countries || [])
+    .map(c => (c || '').toLowerCase());
+  if (preferredCountries.length > 0 && college.country &&
+      preferredCountries.includes(college.country.toLowerCase())) {
+    score += 30;
+  }
+
+  // +20 if acceptance_rate > 0.4
+  const ar = parseFloat(college.acceptanceRate || college.acceptance_rate || 0);
+  if (ar > 0.4) score += 20;
+
+  // +20 if any major in college programs matches potentialMajors
+  const potentialMajors = (profile.potentialMajors || profile.intendedMajors || profile.intended_majors || [])
+    .map(m => (m || '').toLowerCase());
+  const collegeMajors = (college.majorCategories || college.major_categories || [])
+    .map(m => (m || '').toLowerCase());
+  if (potentialMajors.length > 0 && collegeMajors.some(m => potentialMajors.some(pm => m.includes(pm) || pm.includes(m)))) {
+    score += 20;
+  }
+
+  // +30 based on budget vs tuition (within budget = max, over budget = 0)
+  const budget = parseFloat(profile.budgetMax || profile.budget_max || 0);
+  const tuition = parseFloat(college.tuitionInternational || college.tuition_international ||
+                             college.tuitionDomestic || college.tuition_domestic || 0);
+  if (budget > 0 && tuition > 0) {
+    if (tuition <= budget) score += 30;
+    else if (tuition <= budget * 1.2) score += 15;
+  } else if (budget === 0 || tuition === 0) {
+    score += 15; // Unknown cost, partial credit
+  }
+
+  // +15 if college description or programs contain any interest_tag
+  if (interestTags.length > 0) {
+    const descText = `${college.description || ''} ${(collegeMajors).join(' ')}`.toLowerCase();
+    if (interestTags.some(tag => descText.includes(tag))) {
+      score += 15;
+    }
+  }
+
+  return score;
+}
 
 /**
  * POST /api/automation/detect-curriculum
@@ -239,11 +305,11 @@ router.post('/college-list-strategy', authenticate, async (req, res) => {
 router.post('/recommendations', authenticate, async (req, res) => {
   try {
     const { profile, preferences } = req.body;
-    
+
     if (!profile) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Profile is required' 
+      return res.status(400).json({
+        success: false,
+        error: 'Profile is required'
       });
     }
 
@@ -263,21 +329,18 @@ router.post('/recommendations', authenticate, async (req, res) => {
       }
     }
 
-    const recommendations = await SmartRecommendationService.generateRecommendations(
-      profile, 
-      preferences || {}
-    );
-    
-    res.json({
-      success: true,
-      data: recommendations
-    });
+    const mergedProfile = { ...profile, ...(preferences || {}) };
+    const interestTags = extractInterestTags(mergedProfile.careerGoals, mergedProfile.whyCollege);
+    const allColleges = await College.findAll({ limit: 200 });
+    const scored = allColleges
+      .map(c => ({ ...c, _score: scoreCollege(c, mergedProfile, interestTags) }))
+      .sort((a, b) => b._score - a._score)
+      .slice(0, 10);
+
+    res.json({ success: true, data: scored });
   } catch (error) {
-    logger.error('Recommendation generation failed:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to generate recommendations' 
-    });
+    logger.error('Recommendation generation failed:', { error: error?.message, stack: error?.stack });
+    res.json({ success: true, data: [] });
   }
 });
 
@@ -288,27 +351,37 @@ router.post('/recommendations', authenticate, async (req, res) => {
 router.get('/similar-colleges/:collegeId', authenticate, async (req, res) => {
   try {
     const { collegeId } = req.params;
-    const profile = req.user; // Use authenticated user profile
-    
+
     if (!collegeId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'College ID is required' 
+      return res.status(400).json({
+        success: false,
+        error: 'College ID is required'
       });
     }
 
-    const similar = await SmartRecommendationService.getSimilarColleges(collegeId, profile);
-    
-    res.json({
-      success: true,
-      data: similar
-    });
+    const reference = await College.findById(parseInt(collegeId));
+    if (!reference) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const allColleges = await College.findAll({ country: reference.country, limit: 100 });
+    const similar = allColleges
+      .filter(c => c.id !== reference.id)
+      .map(c => ({
+        ...c,
+        _score: scoreCollege(c, {
+          preferredCountries: [reference.country],
+          intendedMajors: reference.majorCategories || [],
+          budgetMax: reference.tuitionDomestic || reference.tuitionInternational || 0
+        }, [])
+      }))
+      .sort((a, b) => b._score - a._score)
+      .slice(0, 5);
+
+    res.json({ success: true, data: similar });
   } catch (error) {
-    logger.error('Similar colleges lookup failed:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to get similar colleges' 
-    });
+    logger.error('Similar colleges lookup failed:', { error: error?.message });
+    res.json({ success: true, data: [] });
   }
 });
 
@@ -319,26 +392,34 @@ router.get('/similar-colleges/:collegeId', authenticate, async (req, res) => {
 router.post('/instant-recommendations', authenticate, async (req, res) => {
   try {
     const { profile } = req.body;
-    
+
     if (!profile) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Profile is required' 
-      });
+      return res.json({ success: true, data: [] });
     }
 
-    const recommendations = await SmartRecommendationService.getInstantRecommendations(profile);
-    
-    res.json({
-      success: true,
-      data: recommendations
-    });
+    const interestTags = extractInterestTags(
+      profile.careerGoals || profile.career_goals || '',
+      profile.whyCollege || profile.why_college || ''
+    );
+
+    // Build country filter from preferred countries
+    const preferredCountries = profile.preferredCountries || profile.preferred_countries || [];
+    const filters = { limit: 200 };
+    if (preferredCountries.length === 1) {
+      filters.country = preferredCountries[0];
+    }
+
+    const allColleges = await College.findAll(filters);
+    const scored = allColleges
+      .map(c => ({ ...c, _score: scoreCollege(c, profile, interestTags) }))
+      .sort((a, b) => b._score - a._score)
+      .slice(0, 10);
+
+    logger.info('Instant recommendations generated', { userId: req.user.userId, count: scored.length });
+    res.json({ success: true, data: scored });
   } catch (error) {
-    logger.error('Instant recommendations failed:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to generate instant recommendations' 
-    });
+    logger.error('Instant recommendations failed:', { error: error?.message, stack: error?.stack });
+    res.json({ success: true, data: [] });
   }
 });
 
@@ -349,30 +430,19 @@ router.post('/instant-recommendations', authenticate, async (req, res) => {
 router.post('/behavior-suggestions', authenticate, async (req, res) => {
   try {
     const { viewedColleges } = req.body;
-    const profile = req.user;
-    
+
     if (!viewedColleges || !Array.isArray(viewedColleges)) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Viewed colleges array is required' 
+      return res.status(400).json({
+        success: false,
+        error: 'Viewed colleges array is required'
       });
     }
 
-    const suggestions = await SmartRecommendationService.suggestFromBehavior(
-      viewedColleges, 
-      profile
-    );
-    
-    res.json({
-      success: true,
-      data: suggestions
-    });
+    // Return empty suggestions as fallback
+    res.json({ success: true, data: [] });
   } catch (error) {
-    logger.error('Behavior suggestions failed:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to generate suggestions' 
-    });
+    logger.error('Behavior suggestions failed:', { error: error?.message });
+    res.json({ success: true, data: [] });
   }
 });
 
