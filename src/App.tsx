@@ -21,7 +21,6 @@ import OnboardingPage from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Colleges from "./pages/Colleges";
 import CollegeDetails from "./pages/CollegeDetails";
-import Research from "./pages/Research";
 import Applications from "./pages/Applications";
 import Requirements from "./pages/Requirements";
 import Deadlines from "./pages/Deadlines";
@@ -34,7 +33,6 @@ import { Timeline } from "./pages/Timeline";
 import NotificationsPage from "./pages/Notifications";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
-import Discover from "./pages/Discover";
 
 import { StudentProfile } from "./types/index";
 
@@ -143,7 +141,6 @@ const AppContent = () => {
             <Route index element={<Dashboard />} />
             <Route path="colleges" element={<Colleges />} />
             <Route path="colleges/:id" element={<CollegeDetails />} />
-            <Route path="research" element={<Research />} />
             <Route path="applications" element={<Applications />} />
             <Route path="requirements" element={<Requirements />} />
             <Route path="deadlines" element={<Deadlines />} />
@@ -154,7 +151,6 @@ const AppContent = () => {
             <Route path="timeline" element={<Timeline />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="discover" element={<Discover />} />
           </Route>
 
           {/* ✅ wildcard route OUTSIDE */}
