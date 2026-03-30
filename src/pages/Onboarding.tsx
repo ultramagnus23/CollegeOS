@@ -1188,6 +1188,8 @@ await completeOnboarding({
               potentialMajors: studentData.potentialMajors,
               budgetRange: studentData.budgetRange,
               activities: studentData.activities,
+              careerGoals: studentData.careerGoals,
+              whyCollege: studentData.whyCollege,
             });
             localStorage.setItem('instant_recommendations', JSON.stringify(recRes?.data || recRes || []));
           } catch { /* non-critical */ }
