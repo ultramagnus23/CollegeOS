@@ -75,8 +75,8 @@ const Discover: React.FC = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
           {colleges.map((college: any) => (
             <Link
-              key={college.id}
-              to={`/colleges/${college.id}`}
+              key={college?.id}
+              to={`/colleges/${college?.id}`}
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
               <div style={{
@@ -85,18 +85,18 @@ const Discover: React.FC = () => {
                 boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
               }}>
                 <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>
-                  {college.name}
+                  {college?.name ?? 'Unknown College'}
                 </div>
                 <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 10 }}>
-                  {college.location || college.country}
+                  {college?.location ?? college?.country ?? 'Location unknown'}
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {college.acceptanceRate != null && (
+                  {college?.acceptanceRate != null && (
                     <span style={{ fontSize: 12, background: '#f3f4f6', padding: '3px 10px', borderRadius: 20 }}>
-                      {Math.round(college.acceptanceRate * 100)}% acceptance
+                      {Math.round((college.acceptanceRate ?? 0) * 100)}% acceptance
                     </span>
                   )}
-                  {(college.majorCategories || []).slice(0, 2).map((m: string) => (
+                  {(college?.majorCategories ?? []).slice(0, 2).map((m: string) => (
                     <span key={m} style={{ fontSize: 12, background: '#ede9fe', color: '#6C63FF', padding: '3px 10px', borderRadius: 20 }}>
                       {m}
                     </span>

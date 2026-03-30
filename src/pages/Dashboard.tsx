@@ -95,8 +95,8 @@ const DeadlineRow: React.FC<{ deadline: any; getDaysUntil: (d: string) => string
       borderRadius: 10, marginBottom: 8,
     }}>
       <div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', fontFamily: S.font, marginBottom: 2 }}>{deadline.college_name}</div>
-        <div style={{ fontSize: 12, color: S.muted, fontFamily: S.font }}>{deadline.deadline_type}</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', fontFamily: S.font, marginBottom: 2 }}>{deadline?.college_name ?? 'Unknown College'}</div>
+        <div style={{ fontSize: 12, color: S.muted, fontFamily: S.font }}>{deadline?.deadline_type ?? 'Deadline'}</div>
       </div>
       <div style={{ padding:'4px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700, background: isUrgent ? h2r(urgentColor, 0.15) : 'rgba(255,255,255,0.07)', color: isUrgent ? urgentColor : S.dim, fontFamily: S.font }}>
         {label}
@@ -444,10 +444,10 @@ const Dashboard = () => {
                   onClick={()=>navigate('/applications')}
                 >
                   <div>
-                    <div style={{ fontSize:14, fontWeight:700, color:'#fff', fontFamily:S.font, marginBottom:2 }}>{app.college_name}</div>
-                    <div style={{ fontSize:11, color:S.dim }}>{app.country}</div>
+                    <div style={{ fontSize:14, fontWeight:700, color:'#fff', fontFamily:S.font, marginBottom:2 }}>{app?.college_name ?? 'Unknown College'}</div>
+                    <div style={{ fontSize:11, color:S.dim }}>{app?.country ?? ''}</div>
                   </div>
-                  <StatusBadge status={app.status} />
+                  <StatusBadge status={app?.status ?? 'unknown'} />
                 </div>
               ))}
             </Card>
@@ -463,7 +463,7 @@ const Dashboard = () => {
                   const color = statusColor[essay.status] || 'rgba(255,255,255,0.25)';
                   return (
                     <div key={essay.id} style={{ padding:'14px 16px', background:S.surface2, border:`1px solid ${h2r(color,0.25)}`, borderTop:`2px solid ${color}`, borderRadius:12 }}>
-                      <div style={{ fontSize:14, fontWeight:700, color:'#fff', marginBottom:4, fontFamily:S.font }}>{essay.college_name}</div>
+                      <div style={{ fontSize:14, fontWeight:700, color:'#fff', marginBottom:4, fontFamily:S.font }}>{essay?.college_name ?? 'Unknown'}</div>
                       <div style={{ fontSize:12, color:S.dim, marginBottom:10 }}>{essay.essay_type?.replace(/_/g,' ')}</div>
                       <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                         <div style={{ width:8, height:8, borderRadius:'50%', background:color }} />
