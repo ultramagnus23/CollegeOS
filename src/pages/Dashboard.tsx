@@ -324,7 +324,7 @@ const Dashboard = () => {
 
           {/* ── College list overview ── */}
           <div style={{ marginBottom:24 }}>
-            <CollegeListOverview colleges={collegeList} onCollegeClick={(id)=>navigate(`/colleges/${id}`)} onAddCollege={()=>navigate('/discover')} />
+            <CollegeListOverview colleges={collegeList} onCollegeClick={(id)=>navigate(`/colleges/${id}`)} onAddCollege={()=>navigate('/colleges')} />
           </div>
 
           {/* ── Progress + Profile + Decisions ── */}
@@ -431,7 +431,7 @@ const Dashboard = () => {
                 <div style={{ textAlign:'center', padding:'32px 0' }}>
                   <div style={{ fontSize:36, marginBottom:10 }}>🏫</div>
                   <div style={{ color:S.dim, fontSize:13 }}>No applications yet</div>
-                  <Link to="/discover"><button style={{ marginTop:12, padding:'8px 18px', background:S.accent, border:'none', borderRadius:10, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:S.font }}>Browse Colleges</button></Link>
+                  <Link to="/colleges"><button style={{ marginTop:12, padding:'8px 18px', background:S.accent, border:'none', borderRadius:10, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:S.font }}>Browse Colleges</button></Link>
                 </div>
               ) : recentApplications.map((app:any)=>(
                 <div key={app.id} style={{

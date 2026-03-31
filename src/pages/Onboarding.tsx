@@ -1195,7 +1195,7 @@ await completeOnboarding({
           } catch { /* non-critical */ }
 
           await onComplete(studentData);
-          navigate('/research');
+          navigate('/colleges');
         } catch (err) {
           console.error('Failed to save profile:', err);
           toast.error('Failed to save profile. Please try again.');
