@@ -317,7 +317,7 @@ const Dashboard = () => {
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
             <TodaysTasks tasks={todaysTasks} onTaskClick={()=>navigate('/deadlines')} onTaskComplete={async (id)=>{ try { await api.tasks.update(id,{status:'completed'}); setTodaysTasks(prev=>prev.filter(t=>t.id!==id)); } catch { toast.error('Failed to complete task'); } }} />
             <RecommendedActions actions={recommendedActions} profileStrength={profileStrength} onActionClick={(a)=>{
-              const routes: Record<string,string> = { profile:'/settings', testing:'/settings', essays:'/essays', applications:'/discover', recommendations:'/recommendations', deadlines:'/deadlines' };
+              const routes: Record<string,string> = { profile:'/settings', testing:'/settings', essays:'/essays', applications:'/applications', recommendations:'/recommendations', deadlines:'/deadlines' };
               navigate(routes[a.category]||'/');
             }} />
           </div>
@@ -478,7 +478,7 @@ const Dashboard = () => {
 
           {/* ── Quick action nav cards ── */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
-            <QuickAction emoji="🔭" title="Discover Colleges"  desc="Browse universities worldwide"  href="/discover"      accent="#6C63FF" />
+            <QuickAction emoji="🔭" title="Discover Colleges"  desc="Browse universities worldwide"  href="/colleges"      accent="#6C63FF" />
             <QuickAction emoji="📋" title="My Applications"    desc="Track your progress"            href="/applications"  accent="#10B981" />
             <QuickAction emoji="📅" title="Deadlines"          desc="Never miss a date"              href="/deadlines"     accent="#F97316" />
             <QuickAction emoji="✍️"  title="Essays"            desc="Write and track your essays"    href="/essays"        accent="#A855F7" />

@@ -8,6 +8,7 @@ const { authenticate, optionalAuth } = require('../middleware/auth');
 const AutoDetectionService = require('../services/autoDetectionService');
 const consolidatedChancingService = require('../services/consolidatedChancingService');
 const College = require('../models/College');
+const StudentProfile = require('../models/StudentProfile');
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
 
@@ -414,6 +415,17 @@ router.post('/instant-recommendations', authenticate, async (req, res) => {
       .map(c => ({ ...c, _score: scoreCollege(c, profile, interestTags) }))
       .sort((a, b) => b._score - a._score)
       .slice(0, 10);
+
+    // Persist interest_tags, career_goals, why_college back to student profile (best-effort)
+    try {
+      await StudentProfile.upsert(req.user.userId, {
+        interestTags,
+        careerGoals: profile.careerGoals || profile.career_goals || null,
+        whyCollege: profile.whyCollege || profile.why_college || null,
+      });
+    } catch (saveErr) {
+      logger.warn('Could not persist interest_tags to profile:', { error: saveErr?.message });
+    }
 
     logger.info('Instant recommendations generated', { userId: req.user.userId, count: scored.length });
     res.json({ success: true, data: scored });
