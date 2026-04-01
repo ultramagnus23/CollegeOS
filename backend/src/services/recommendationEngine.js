@@ -65,7 +65,10 @@ async function generateRecommendations(studentProfile, allColleges) {
 /**
  * Compute multiple recommendation scores
  */
-async function computeRecommendationScores(student, college, eligibility, usdToInr = 83) {
+async function computeRecommendationScores(student, college, eligibility, usdToInr = null) {
+  if (!usdToInr || usdToInr <= 0) {
+    throw new Error('usdToInr must be a positive live exchange rate; never use a hardcoded default');
+  }
   return {
     eligibility_score: computeEligibilityScore(eligibility),
     academic_fit: await computeAcademicFit(student, college),
@@ -188,7 +191,10 @@ function computeProgramStrength(college, intendedMajor) {
  * Cost affordability based on student's budget.
  * usdToInr is the live exchange rate passed in from generateRecommendations.
  */
-function computeCostAffordability(student, college, usdToInr = 83) {
+function computeCostAffordability(student, college, usdToInr = null) {
+  if (!usdToInr || usdToInr <= 0) {
+    throw new Error('usdToInr must be a positive live exchange rate; never use a hardcoded default');
+  }
   const budget = student.financial?.max_budget_per_year || Infinity;
   const needsAid = student.financial?.need_financial_aid || false;
   
@@ -316,7 +322,10 @@ function classifyCollege(scores, student, college) {
  * Compute financial fit details.
  * usdToInr is passed from generateRecommendations (live rate with 24h cache).
  */
-function computeFinancialFit(student, college, usdToInr = 83) {
+function computeFinancialFit(student, college, usdToInr = null) {
+  if (!usdToInr || usdToInr <= 0) {
+    throw new Error('usdToInr must be a positive live exchange rate; never use a hardcoded default');
+  }
   const budget = student.financial?.max_budget_per_year || Infinity;
   const canLoan = student.financial?.can_take_loan || false;
   const needsAid = student.financial?.need_financial_aid || false;

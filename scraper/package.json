@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "seed": "node index.js seed",
-    "incremental": "node index.js incremental"
+    "incremental": "node index.js incremental",
+    "scholarship": "node index.js scholarship"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
