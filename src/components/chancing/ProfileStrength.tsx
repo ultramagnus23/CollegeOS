@@ -17,7 +17,7 @@ interface Section {
 interface ProfileStrengthData {
   overallStrength: number;
   sections: Section[];
-  recommendations: string[];
+  recommendations: (string | { category?: string; priority?: string; action?: string; impact?: string; details?: string })[];
   profile: {
     gpa?: number;
     sat?: number;
@@ -186,7 +186,7 @@ export default function ProfileStrength() {
               {data.recommendations.map((rec, index) => (
                 <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
                   <span className="text-yellow-500">•</span>
-                  {rec}
+                  {typeof rec === 'string' ? rec : (rec as any).action || (rec as any).details || ''}
                 </li>
               ))}
             </ul>
