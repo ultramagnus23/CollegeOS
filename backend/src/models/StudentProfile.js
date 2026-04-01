@@ -120,7 +120,10 @@ class StudentProfile {
       preferredCollegeSize: 'preferred_college_size', preferredSetting: 'preferred_setting',
       budgetMax: 'budget_max', minAcceptanceRate: 'min_acceptance_rate',
       maxAcceptanceRate: 'max_acceptance_rate', specialCircumstances: 'special_circumstances',
-      hooks: 'hooks'
+      hooks: 'hooks',
+      careerGoals: 'career_goals',
+      whyCollege: 'why_college',
+      interestTags: 'interest_tags'
     };
 
     for (const [camelKey, snakeKey] of Object.entries(fieldMap)) {
@@ -155,6 +158,7 @@ class StudentProfile {
       profile.preferredStates = this._parseJson(profile.preferred_states, []);
       profile.preferredCountries = this._parseJson(profile.preferred_countries, []);
       profile.hooks = this._parseJson(profile.hooks, []);
+      profile.interestTags = this._parseJson(profile.interest_tags, []);
     }
     return profile || null;
   }
@@ -169,6 +173,7 @@ class StudentProfile {
       profile.preferredStates = this._parseJson(profile.preferred_states, []);
       profile.preferredCountries = this._parseJson(profile.preferred_countries, []);
       profile.hooks = this._parseJson(profile.hooks, []);
+      profile.interestTags = this._parseJson(profile.interest_tags, []);
     }
     return profile || null;
   }

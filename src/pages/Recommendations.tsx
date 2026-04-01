@@ -293,7 +293,7 @@ const Recommendations = () => {
               <div>
                 <div style={{ fontSize:12, color:h2r(ACCENT,0.8), textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:10, fontWeight:600 }}>Letters of Rec</div>
                 <h1 style={{ fontSize:40, fontWeight:900, letterSpacing:'-0.02em', marginBottom:6 }}>
-                  Recom<span style={{ color:ACCENT }}>mendations.</span>
+                  <span style={{ color:ACCENT }}>Recommendations</span>
                 </h1>
                 <p style={{ color:S.muted, fontSize:14 }}>
                   {recommenders.length} recommenders · {summary?.submitted||0} submitted · {summary?.overdue||0} overdue
