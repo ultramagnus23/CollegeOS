@@ -217,7 +217,7 @@ const Essays = () => {
               <div>
                 <div style={{ fontSize:12, color:h2r(ACCENT,0.8), textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:10, fontWeight:600 }}>Writing Center</div>
                 <h1 style={{ fontSize:40, fontWeight:900, letterSpacing:'-0.02em', marginBottom:6 }}>
-                  Es<span style={{ color:ACCENT }}>says.</span>
+                  <span style={{ color:ACCENT }}>Essays</span>
                 </h1>
                 <p style={{ color:S.muted, fontSize:14 }}>
                   {essays.length} essays · {statusCounts.final || 0} finalized · {statusCounts.in_progress || 0} in progress

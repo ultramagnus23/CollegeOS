@@ -82,7 +82,7 @@ class AuthController {
   // Get current user
   static async getCurrentUser(req, res, next) {
     try {
-      const user = User.findById(req.user.userId);
+      const user = await User.findById(req.user.userId);
       
       if (!user) {
         return res.status(404).json({

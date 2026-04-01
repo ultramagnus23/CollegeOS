@@ -1188,12 +1188,14 @@ await completeOnboarding({
               potentialMajors: studentData.potentialMajors,
               budgetRange: studentData.budgetRange,
               activities: studentData.activities,
+              careerGoals: studentData.careerGoals,
+              whyCollege: studentData.whyCollege,
             });
             localStorage.setItem('instant_recommendations', JSON.stringify(recRes?.data || recRes || []));
           } catch { /* non-critical */ }
 
           await onComplete(studentData);
-          navigate('/research');
+          navigate('/colleges');
         } catch (err) {
           console.error('Failed to save profile:', err);
           toast.error('Failed to save profile. Please try again.');

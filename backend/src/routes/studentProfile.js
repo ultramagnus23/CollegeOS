@@ -24,7 +24,7 @@ const {
  */
 router.get('/', authenticate, async (req, res) => {
   try {
-    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    const profile = await StudentProfile.getCompleteProfile(req.user.userId);
     
     if (!profile) {
       // Return empty profile structure if none exists
@@ -55,7 +55,7 @@ router.get('/', authenticate, async (req, res) => {
  */
 router.post('/', authenticate, async (req, res) => {
   try {
-    const profile = StudentProfile.upsert(req.user.userId, req.body);
+    const profile = await StudentProfile.upsert(req.user.userId, req.body);
     
     res.json({
       success: true,
@@ -78,7 +78,7 @@ router.post('/', authenticate, async (req, res) => {
  */
 router.put('/', authenticate, async (req, res) => {
   try {
-    const profile = StudentProfile.upsert(req.user.userId, req.body);
+    const profile = await StudentProfile.upsert(req.user.userId, req.body);
     
     res.json({
       success: true,
@@ -101,7 +101,7 @@ router.put('/', authenticate, async (req, res) => {
  */
 router.delete('/', authenticate, async (req, res) => {
   try {
-    const deleted = StudentProfile.delete(req.user.userId);
+    const deleted = await StudentProfile.delete(req.user.userId);
     
     if (!deleted) {
       return res.status(404).json({
@@ -134,7 +134,7 @@ router.delete('/', authenticate, async (req, res) => {
  */
 router.get('/activities', authenticate, async (req, res) => {
   try {
-    const profile = StudentProfile.findByUserId(req.user.userId);
+    const profile = await StudentProfile.findByUserId(req.user.userId);
     
     if (!profile) {
       return res.json({
@@ -144,8 +144,8 @@ router.get('/activities', authenticate, async (req, res) => {
       });
     }
     
-    const activities = StudentActivity.findByStudentId(profile.id);
-    const summary = StudentActivity.getTierSummary(profile.id);
+    const activities = await StudentActivity.findByStudentId(profile.id);
+    const summary = await StudentActivity.getTierSummary(profile.id);
     
     res.json({
       success: true,
@@ -171,14 +171,14 @@ router.get('/activities', authenticate, async (req, res) => {
 router.post('/activities', authenticate, async (req, res) => {
   try {
     // Ensure profile exists
-    let profile = StudentProfile.findByUserId(req.user.userId);
+    let profile = await StudentProfile.findByUserId(req.user.userId);
     
     if (!profile) {
       // Create minimal profile if it doesn't exist
-      profile = StudentProfile.create(req.user.userId, {});
+      profile = await StudentProfile.create(req.user.userId, {});
     }
     
-    const activity = StudentActivity.create(profile.id, req.body);
+    const activity = await StudentActivity.create(profile.id, req.body);
     
     res.status(201).json({
       success: true,
@@ -204,7 +204,7 @@ router.put('/activities/:id', authenticate, async (req, res) => {
     const activityId = parseInt(req.params.id);
     
     // Verify ownership
-    const profile = StudentProfile.findByUserId(req.user.userId);
+    const profile = await StudentProfile.findByUserId(req.user.userId);
     if (!profile) {
       return res.status(404).json({
         success: false,
@@ -212,7 +212,7 @@ router.put('/activities/:id', authenticate, async (req, res) => {
       });
     }
     
-    const existing = StudentActivity.findById(activityId);
+    const existing = await StudentActivity.findById(activityId);
     if (!existing || existing.student_id !== profile.id) {
       return res.status(404).json({
         success: false,
@@ -220,7 +220,7 @@ router.put('/activities/:id', authenticate, async (req, res) => {
       });
     }
     
-    const activity = StudentActivity.update(activityId, req.body);
+    const activity = await StudentActivity.update(activityId, req.body);
     
     res.json({
       success: true,
@@ -246,7 +246,7 @@ router.delete('/activities/:id', authenticate, async (req, res) => {
     const activityId = parseInt(req.params.id);
     
     // Verify ownership
-    const profile = StudentProfile.findByUserId(req.user.userId);
+    const profile = await StudentProfile.findByUserId(req.user.userId);
     if (!profile) {
       return res.status(404).json({
         success: false,
@@ -254,7 +254,7 @@ router.delete('/activities/:id', authenticate, async (req, res) => {
       });
     }
     
-    const existing = StudentActivity.findById(activityId);
+    const existing = await StudentActivity.findById(activityId);
     if (!existing || existing.student_id !== profile.id) {
       return res.status(404).json({
         success: false,
@@ -262,7 +262,7 @@ router.delete('/activities/:id', authenticate, async (req, res) => {
       });
     }
     
-    StudentActivity.delete(activityId);
+    await StudentActivity.delete(activityId);
     
     res.json({
       success: true,
@@ -293,7 +293,7 @@ router.post('/activities/reorder', authenticate, async (req, res) => {
       });
     }
     
-    const profile = StudentProfile.findByUserId(req.user.userId);
+    const profile = await StudentProfile.findByUserId(req.user.userId);
     if (!profile) {
       return res.status(404).json({
         success: false,
@@ -301,7 +301,7 @@ router.post('/activities/reorder', authenticate, async (req, res) => {
       });
     }
     
-    const activities = StudentActivity.reorder(profile.id, activityIds);
+    const activities = await StudentActivity.reorder(profile.id, activityIds);
     
     res.json({
       success: true,
@@ -324,7 +324,7 @@ router.post('/activities/reorder', authenticate, async (req, res) => {
  */
 router.get('/activities/summary', authenticate, async (req, res) => {
   try {
-    const profile = StudentProfile.findByUserId(req.user.userId);
+    const profile = await StudentProfile.findByUserId(req.user.userId);
     
     if (!profile) {
       return res.json({
@@ -340,7 +340,7 @@ router.get('/activities/summary', authenticate, async (req, res) => {
       });
     }
     
-    const summary = StudentActivity.getTierSummary(profile.id);
+    const summary = await StudentActivity.getTierSummary(profile.id);
     
     res.json({
       success: true,
@@ -363,7 +363,7 @@ router.get('/activities/summary', authenticate, async (req, res) => {
 // Get user profile (basic + extended)
 router.get('/full', authenticate, async (req, res, next) => {
   try {
-    const user = User.findById(req.user.userId);
+    const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -374,7 +374,7 @@ router.get('/full', authenticate, async (req, res, next) => {
       testStatus: user.test_status ? JSON.parse(user.test_status) : {},
       languagePreferences: user.language_preferences ? JSON.parse(user.language_preferences) : []
     };
-    const extendedProfile = StudentProfile.getCompleteProfile(req.user.userId);
+    const extendedProfile = await StudentProfile.getCompleteProfile(req.user.userId);
     res.json({ success: true, data: { ...basicProfile, studentProfile: extendedProfile } });
   } catch (error) {
     logger.error('Get full profile failed:', error);
@@ -404,7 +404,7 @@ router.patch('/academic', authenticate, async (req, res, next) => {
       JSON.stringify(updates.language_preferences || updates.languagePreferences || []),
       userId
     ]);
-    const user = User.findById(userId);
+    const user = await User.findById(userId);
     res.json({ success: true, message: 'Profile updated successfully', data: user });
   } catch (error) {
     logger.error('Update academic profile failed:', error);
@@ -415,7 +415,7 @@ router.patch('/academic', authenticate, async (req, res, next) => {
 // Create or update extended student profile
 router.post('/extended', authenticate, async (req, res, next) => {
   try {
-    const profile = StudentProfile.upsert(req.user.userId, req.body);
+    const profile = await StudentProfile.upsert(req.user.userId, req.body);
     res.json({ success: true, data: profile, message: 'Extended profile saved successfully' });
   } catch (error) {
     logger.error('Save extended profile failed:', error);
@@ -426,7 +426,7 @@ router.post('/extended', authenticate, async (req, res, next) => {
 // Get extended student profile
 router.get('/extended', authenticate, async (req, res, next) => {
   try {
-    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    const profile = await StudentProfile.getCompleteProfile(req.user.userId);
     res.json({ success: true, data: profile });
   } catch (error) {
     logger.error('Get extended profile failed:', error);
@@ -439,7 +439,7 @@ router.put('/full', authenticate, async (req, res, next) => {
   try {
     const userId = req.user.userId;
     const data = req.body;
-    const profile = StudentProfile.upsert(userId, data);
+    const profile = await StudentProfile.upsert(userId, data);
     const dbManager = require('../config/database');
     const pool = dbManager.getDatabase();
     if (data.targetCountries || data.target_countries ||
@@ -459,7 +459,7 @@ router.put('/full', authenticate, async (req, res, next) => {
         userId
       ]);
     }
-    const completeProfile = StudentProfile.getCompleteProfile(userId);
+    const completeProfile = await StudentProfile.getCompleteProfile(userId);
     res.json({ success: true, message: 'Profile updated successfully', data: completeProfile });
   } catch (error) {
     logger.error('Full profile update failed:', error);
@@ -470,7 +470,7 @@ router.put('/full', authenticate, async (req, res, next) => {
 // Get current profile snapshot
 router.get('/snapshot', authenticate, async (req, res, next) => {
   try {
-    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    const profile = await StudentProfile.getCompleteProfile(req.user.userId);
     if (!profile) {
       return res.json({ success: true, data: null, message: 'No profile found' });
     }

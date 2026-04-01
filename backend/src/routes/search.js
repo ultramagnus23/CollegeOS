@@ -32,17 +32,20 @@ router.get('/colleges', async (req, res) => {
     const params = [];
     let paramIndex = 1;
 
-    // Full-text search on name, location, major_categories
+    // Full-text search using PostgreSQL tsvector (GIN index on idx_colleges_fts)
     if (q) {
-      conditions.push(`(
-        LOWER(name) LIKE LOWER($${paramIndex}) OR 
-        LOWER(location) LIKE LOWER($${paramIndex + 1}) OR 
-        LOWER(country) LIKE LOWER($${paramIndex + 2}) OR
-        LOWER(major_categories) LIKE LOWER($${paramIndex + 3})
-      )`);
-      const searchTerm = `%${q}%`;
-      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-      paramIndex += 4;
+      conditions.push(
+        `to_tsvector('english',
+          coalesce(name,'') || ' ' ||
+          coalesce(location,'') || ' ' ||
+          coalesce(country,'') || ' ' ||
+          coalesce(description,'') || ' ' ||
+          coalesce(major_categories,'') || ' ' ||
+          coalesce(academic_strengths,'')
+        ) @@ websearch_to_tsquery('english', $${paramIndex})`
+      );
+      params.push(q);
+      paramIndex += 1;
     }
 
     // Country filter - support region grouping
@@ -375,21 +378,21 @@ router.get('/suggestions', async (req, res, next) => {
     
     const pool = dbManager.getDatabase();
     
-    // Get college name suggestions
+    // Get college name suggestions using FTS
     const colleges = (await pool.query(`
       SELECT DISTINCT name, country
       FROM colleges
-      WHERE name LIKE $1
+      WHERE to_tsvector('english', coalesce(name,'')) @@ websearch_to_tsquery('english', $1)
       ORDER BY name ASC
       LIMIT 10
-    `, [`%${q}%`])).rows;
+    `, [q])).rows;
     
-    // Get major suggestions
+    // Get major suggestions using FTS
     const majorsResult = (await pool.query(`
       SELECT major_categories FROM colleges
-      WHERE major_categories LIKE $1
+      WHERE to_tsvector('english', coalesce(major_categories,'')) @@ websearch_to_tsquery('english', $1)
       LIMIT 50
-    `, [`%${q}%`])).rows;
+    `, [q])).rows;
     
     const majorsSet = new Set();
     majorsResult.forEach(row => {
