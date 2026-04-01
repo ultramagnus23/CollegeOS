@@ -23,7 +23,7 @@ router.get('/', authenticate, async (req, res, next) => {
     // Get user's academic profile
     const userProfile = await User.getAcademicProfile(req.user.userId);
     
-    if (!userProfile || !userProfile.academic_board) {
+    if (!userProfile) {
       return res.status(400).json({
         success: false,
         message: 'Please complete your academic profile first',
@@ -37,7 +37,7 @@ router.get('/', authenticate, async (req, res, next) => {
     
     // Use recommendation engine service
     const { generateRecommendations } = require('../services/recommendationEngine');
-    const recommendations = generateRecommendations(userProfile, allColleges);
+    const recommendations = await generateRecommendations(userProfile, allColleges);
 
     res.json({
       success: true,
@@ -64,7 +64,7 @@ router.post('/generate', authenticate, async (req, res, next) => {
 
     const userProfile = await User.getAcademicProfile(req.user.userId);
     
-    if (!userProfile || !userProfile.academic_board) {
+    if (!userProfile) {
       return res.status(400).json({
         success: false,
         message: 'Please complete your academic profile first'
@@ -75,7 +75,7 @@ router.post('/generate', authenticate, async (req, res, next) => {
     const allColleges = await College.findAll({ limit: 1000 });
     
     const { generateRecommendations } = require('../services/recommendationEngine');
-    const recommendations = generateRecommendations(userProfile, allColleges);
+    const recommendations = await generateRecommendations(userProfile, allColleges);
 
     res.json({
       success: true,
