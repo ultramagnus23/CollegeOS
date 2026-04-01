@@ -41,6 +41,9 @@ const recommendersRoutes = require('./routes/recommenders');
 const analyticsRoutes = require('./routes/analytics');
 const eligibilityRoutes = require('./routes/eligibility');
 const notificationRoutes = require('./routes/notifications');
+const financingRoutes = require('./routes/financing');
+const insightsRoutes = require('./routes/insights');
+const currencyRatesRoutes = require('./routes/currencyRates');
 
 // Create Express app
 const app = express();
@@ -121,6 +124,9 @@ app.use('/api/recommenders', recommendersRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/eligibility', eligibilityRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/financing', financingRoutes);
+app.use('/api/insights', insightsRoutes);
+app.use('/api/currency-rates', currencyRatesRoutes);
 
 // 404 handler
 app.use((req, res) => {
