@@ -2,22 +2,28 @@
 'use strict';
 
 /**
- * CollegeOS Reddit Admissions Scraper
+ * CollegeOS Scraper Pipeline
  *
  * Usage:
- *   node index.js seed         # First run: fetch as much historical data as possible
- *   node index.js incremental  # Scheduled run: fetch only posts since last run
+ *   node index.js seed         # First run: fetch as much historical Reddit data as possible
+ *   node index.js incremental  # Scheduled: fetch only Reddit posts since last run
+ *   node index.js scholarship  # Fetch & upsert scholarships (DAAD, Inlaks, NSF, etc.)
  *
- * Required environment variables:
+ * Required environment variables (Reddit / admissions modes):
  *   REDDIT_CLIENT_ID
  *   REDDIT_CLIENT_SECRET
  *   REDDIT_REFRESH_TOKEN
  *   ANTHROPIC_API_KEY
  *
+ * Required environment variables (scholarship mode):
+ *   DATABASE_URL                   – PostgreSQL connection string
+ *
  * Optional:
- *   DATABASE_PATH   - path to SQLite DB (defaults to ../backend/database/college_app.db)
- *   SEED_MAX_PAGES  - max pages per subreddit in seed mode (default: 0 = unlimited)
- *   LOG_LEVEL       - winston log level (default: info)
+ *   EXCHANGE_RATE_API_URL  – override the exchange-rate endpoint
+ *                            (default: https://api.exchangerate-api.com/v4/latest/USD)
+ *   DATABASE_PATH          – path to SQLite DB (defaults to ../backend/database/college_app.db)
+ *   SEED_MAX_PAGES         – max pages per subreddit in seed mode (default: 0 = unlimited)
+ *   LOG_LEVEL              – winston log level (default: info)
  */
 
 const logger = require('./logger');
@@ -25,6 +31,7 @@ const redditClient = require('./redditClient');
 const claudeParser = require('./claudeParser');
 const db = require('./db');
 const { calibrate } = require('./calibrate');
+const { runScholarshipScraper, close: closeScholarshipDb } = require('./scholarshipScraper');
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -208,10 +215,27 @@ async function runIncremental() {
 async function main() {
   const mode = process.argv[2];
 
-  if (!['seed', 'incremental'].includes(mode)) {
-    console.error('Usage: node index.js <seed|incremental>');
+  if (!['seed', 'incremental', 'scholarship'].includes(mode)) {
+    console.error('Usage: node index.js <seed|incremental|scholarship>');
     process.exit(1);
   }
+
+  // ── Scholarship mode — no Reddit/Claude dependencies needed ──────────────
+
+  if (mode === 'scholarship') {
+    try {
+      const result = await runScholarshipScraper();
+      logger.info({ msg: 'Scholarship scrape finished', ...result });
+    } catch (err) {
+      logger.error({ msg: 'Scholarship scraper fatal error', error: err.message, stack: err.stack });
+      process.exitCode = 1;
+    } finally {
+      await closeScholarshipDb();
+    }
+    return;
+  }
+
+  // ── Reddit admissions modes ───────────────────────────────────────────────
 
   try {
     await db.init();
@@ -222,7 +246,7 @@ async function main() {
       await runIncremental();
     }
 
-    // Run calibration after every scrape
+    // Run calibration after every admissions scrape
     logger.info({ msg: 'Running calibration' });
     await calibrate();
   } catch (err) {
