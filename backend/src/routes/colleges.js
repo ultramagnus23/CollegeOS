@@ -29,6 +29,30 @@ router.post('/', authenticate, CollegeController.createCollege); // Add college 
 router.get('/:id/data', authenticate, CollegeController.getCollegeData);
 router.get('/:id/eligibility', authenticate, CollegeController.checkEligibility);
 
+// Cost-of-Attendance breakdown (real components, source-backed, never fabricated)
+router.get('/:id/cost-breakdown', async (req, res, next) => {
+  try {
+    const { computeCostOfAttendance } = require('../services/financialComputationEngine');
+    const College = require('../models/College');
+
+    const college = await College.findById(req.params.id);
+    if (!college) {
+      return res.status(404).json({ success: false, message: 'College not found' });
+    }
+
+    const breakdown = await computeCostOfAttendance({
+      collegeId: college.id,
+      collegeCountry: college.country,
+      isInternational: req.query.international !== 'false',
+      displayCurrency: req.query.currency === 'INR' ? 'INR' : 'USD',
+    });
+
+    res.json({ success: true, data: breakdown });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // College request routes - for users to request colleges not in database
 router.post('/requests', CollegeController.requestCollege);
 router.get('/requests/popular', CollegeController.getPopularRequests);
