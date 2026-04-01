@@ -40,6 +40,7 @@ const notificationRoutes = require('./routes/notifications');
 const financingRoutes = require('./routes/financing');
 const insightsRoutes = require('./routes/insights');
 const currencyRatesRoutes = require('./routes/currencyRates');
+const studentProfileRoutes = require('./routes/studentProfile');
 
 // Create Express app
 const app = express();
