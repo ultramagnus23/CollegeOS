@@ -104,5 +104,19 @@ class Scholarship {
     const { rows } = await pool.query(`SELECT DISTINCT country FROM scholarships WHERE status='active' ORDER BY country`);
     return rows.map(r => r.country);
   }
+
+  /**
+   * Fetch all scholarship rows for the matching engine.
+   * Returns every status so discontinued scholarships can be placed in the
+   * `excluded` array rather than silently dropped.
+   */
+  static async findAllForMatching(limit = 500) {
+    const pool = dbManager.getDatabase();
+    const { rows } = await pool.query(
+      `SELECT * FROM scholarships ORDER BY last_verified_at DESC NULLS LAST LIMIT $1`,
+      [limit]
+    );
+    return rows.map(this._parse.bind(this));
+  }
 }
 module.exports = Scholarship;

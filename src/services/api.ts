@@ -960,6 +960,22 @@ class ApiService {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
+
+    /**
+     * Run the full scholarship matching engine for the current user.
+     * Returns ranked results with eligibility, net cost in INR, and match reasons.
+     */
+    match: () =>
+      this.request('/scholarships/match', { method: 'POST', body: JSON.stringify({}) }),
+
+    /**
+     * Explain why the current user matches (or doesn't match) a specific scholarship.
+     */
+    explain: (scholarshipId: number) =>
+      this.request('/scholarships/explain', {
+        method: 'POST',
+        body: JSON.stringify({ scholarshipId }),
+      }),
   };
 
   // ==================== RECOMMENDERS ENDPOINTS ====================
