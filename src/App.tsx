@@ -30,6 +30,7 @@ import Documents from "./pages/Documents";
 import Scholarships from "./pages/Scholarships";
 import Recommendations from "./pages/Recommendations";
 import { Timeline } from "./pages/Timeline";
+import Discover from "./pages/Discover";
 import NotificationsPage from "./pages/Notifications";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
@@ -133,7 +134,7 @@ const AppContent = () => {
           <Route
             path="/"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireOnboarding={false}>
                 <DashboardLayout />
               </ProtectedRoute>
             }
@@ -149,6 +150,7 @@ const AppContent = () => {
             <Route path="scholarships" element={<Scholarships />} />
             <Route path="recommendations" element={<Recommendations />} />
             <Route path="timeline" element={<Timeline />} />
+            <Route path="discover" element={<Discover />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="settings" element={<Settings />} />
           </Route>

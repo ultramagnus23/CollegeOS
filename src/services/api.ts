@@ -976,6 +976,10 @@ class ApiService {
         method: 'POST',
         body: JSON.stringify({ scholarshipId }),
       }),
+
+    getGrants: () => this.request('/grants'),
+    getGovernmentLoans: () => this.request('/loans/government'),
+    getPrivateLoans: () => this.request('/loans/private'),
   };
 
   // ==================== RECOMMENDERS ENDPOINTS ====================
