@@ -541,17 +541,17 @@ const SCROLL_DELAY_MS = 100;
                   <div className="flex flex-col gap-1">
                     {missing.map(f => (
                       <button key={f.key} onClick={() => navigate(`/settings${f.section}`)}
-                        className="flex items-center gap-2 p-2 text-sm text-left rounded-lg hover:bg-orange-50 transition-colors group">
+                        className="flex items-center gap-2 p-2 text-sm text-left rounded-lg hover:bg-muted transition-colors group">
                         <AlertCircle size={13} className="text-orange-500 shrink-0" />
                         <span className="text-foreground">{f.label}</span>
-                        <ChevronRight size={13} className="ml-auto text-muted-foreground group-hover:text-orange-500" />
+                        <ChevronRight size={13} className="ml-auto text-muted-foreground group-hover:text-foreground" />
                       </button>
                     ))}
                   </div>
                 </div>
               )}
               {pct >= 100 && (
-                <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg text-green-700 mt-2">
+                <div className="flex items-center gap-2 p-3 bg-emerald-500/10 rounded-lg text-emerald-600 mt-2">
                   <CheckCircle size={16} /> <span className="text-sm font-medium">Profile complete!</span>
                 </div>
               )}
