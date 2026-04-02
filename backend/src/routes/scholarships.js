@@ -6,6 +6,110 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const Scholarship = require('../models/Scholarship');
+const User = require('../models/User');
+const { getUSDtoINR } = require('../services/exchangeRateService');
+const { matchScholarships, explainMatch } = require('../services/scholarshipMatchingService');
+const logger = require('../utils/logger');
+
+// Maximum allowed difference between the rate fetched from the API and the rate
+// the matching engine reports it used.  ±0.5 allows for sub-cent rounding while
+// catching any case where the engine uses a hardcoded or stale rate.
+const EXCHANGE_RATE_TOLERANCE = 0.5;
+
+/**
+ * POST /api/scholarships/match
+ * Run the full scholarship matching engine for the authenticated student.
+ * Returns ranked results with net-cost calculations in INR at today's rate.
+ */
+router.post('/match', authenticate, async (req, res, next) => {
+  try {
+    const liveRate = await getUSDtoINR();
+
+    const rawProfile = await User.getAcademicProfile(req.user.userId);
+    if (!rawProfile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Complete your academic profile before running scholarship matching.',
+        redirect: '/onboarding',
+      });
+    }
+
+    const studentProfile = {
+      ...rawProfile,
+      today_date:      new Date().toISOString().split('T')[0],
+      live_usd_to_inr: liveRate,
+    };
+
+    const scholarships = await Scholarship.findAllForMatching(500);
+    const matchResult  = matchScholarships(studentProfile, scholarships);
+
+    // Sanity check: engine must have used today's live rate (tolerance ±0.5)
+    if (Math.abs(matchResult.exchange_rate_used - liveRate) > EXCHANGE_RATE_TOLERANCE) {
+      logger.error('Scholarship matching used wrong exchange rate', {
+        used: matchResult.exchange_rate_used, expected: liveRate
+      });
+      return res.status(500).json({ success: false, message: 'Internal error: exchange rate mismatch.' });
+    }
+
+    logger.info('Scholarship match completed', {
+      userId: req.user.userId,
+      totalMatched: matchResult.summary.total_matched,
+      totalEligible: matchResult.summary.total_eligible,
+    });
+
+    res.json({ success: true, data: matchResult });
+  } catch (err) {
+    if (err.code === 'EXCHANGE_RATE_MISSING') {
+      return res.status(503).json({ success: false, message: 'Exchange rate unavailable — try again shortly.' });
+    }
+    logger.error('Scholarship match failed', { error: err?.message, stack: err?.stack });
+    next(err);
+  }
+});
+
+/**
+ * POST /api/scholarships/explain
+ * Explain why a student matches (or doesn't match) a specific scholarship.
+ * Body: { scholarshipId: number }
+ */
+router.post('/explain', authenticate, async (req, res, next) => {
+  try {
+    const { scholarshipId } = req.body;
+    if (!scholarshipId) {
+      return res.status(400).json({ success: false, message: 'scholarshipId is required.' });
+    }
+
+    const scholarship = await Scholarship.getById(scholarshipId);
+    if (!scholarship) {
+      return res.status(404).json({ success: false, message: 'Scholarship not found.' });
+    }
+
+    const liveRate = await getUSDtoINR();
+    const rawProfile = await User.getAcademicProfile(req.user.userId);
+    if (!rawProfile) {
+      return res.status(400).json({
+        success: false,
+        message: 'Complete your academic profile first.',
+        redirect: '/onboarding',
+      });
+    }
+
+    const studentProfile = {
+      ...rawProfile,
+      today_date:      new Date().toISOString().split('T')[0],
+      live_usd_to_inr: liveRate,
+    };
+
+    const result = explainMatch(scholarship, studentProfile);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    if (err.code === 'EXCHANGE_RATE_MISSING') {
+      return res.status(503).json({ success: false, message: 'Exchange rate unavailable — try again shortly.' });
+    }
+    logger.error('Scholarship explain failed', { error: err?.message, stack: err?.stack });
+    next(err);
+  }
+});
 
 /**
  * GET /api/scholarships

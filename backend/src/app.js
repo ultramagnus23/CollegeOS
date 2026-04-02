@@ -38,8 +38,10 @@ const analyticsRoutes = require('./routes/analytics');
 const eligibilityRoutes = require('./routes/eligibility');
 const notificationRoutes = require('./routes/notifications');
 const financingRoutes = require('./routes/financing');
+const financialRoutes = require('./routes/financial');
 const insightsRoutes = require('./routes/insights');
 const currencyRatesRoutes = require('./routes/currencyRates');
+const studentProfileRoutes = require('./routes/studentProfile');
 
 // Create Express app
 const app = express();
@@ -118,6 +120,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/eligibility', eligibilityRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/financing', financingRoutes);
+app.use('/api/financial', financialRoutes);
 app.use('/api/insights', insightsRoutes);
 app.use('/api/currency-rates', currencyRatesRoutes);
 
@@ -162,6 +165,10 @@ async function startServer() {
     // Initialize pg pool
     dbManager.initialize();
 
+    // Verify the connection before doing anything else
+    const { testConnection, startKeepAlive } = require('./config/database');
+    await testConnection();
+
     // Run migrations
     await dbManager.runMigrations();
 
@@ -177,6 +184,14 @@ async function startServer() {
     server = app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT} in ${config.nodeEnv} mode`);
       logger.info('Database: PostgreSQL via DATABASE_URL');
+
+      // Start keep-alive pings to prevent Render free-tier connection reaping
+      startKeepAlive();
+
+      // Warm up exchange rates on boot and refresh every 6 hours
+      const { refreshExchangeRates } = require('./services/financialCostService');
+      refreshExchangeRates().catch(() => {});
+      setInterval(refreshExchangeRates, 6 * 60 * 60 * 1000);
 
       // Start ML retraining jobs
       if (config.nodeEnv === 'production' || process.env.ENABLE_ML_JOBS === 'true') {

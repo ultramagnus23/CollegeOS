@@ -193,4 +193,38 @@ function convertSqliteToPostgres(sql) {
 // Singleton instance
 const dbManager = new DatabaseManager();
 
+/**
+ * Test the database connection by running a trivial query.
+ * Logs success with the database name and timestamp, or calls process.exit(1) on failure.
+ */
+async function testConnection() {
+  try {
+    const pool = dbManager.getDatabase();
+    const { rows } = await pool.query('SELECT NOW() AS now, current_database() AS db');
+    const { now, db } = rows[0];
+    logger.info(`Database connection OK — db: ${db}, server time: ${now}`);
+  } catch (err) {
+    logger.error('Database connection test FAILED:', { error: err.message });
+    process.exit(1);
+  }
+}
+
+/**
+ * Run a keep-alive ping every 4 minutes to prevent the connection pool from
+ * being reaped by Render's free tier idle timeout.
+ * Failures only log a warning — they do not crash the server.
+ */
+function startKeepAlive() {
+  setInterval(async () => {
+    try {
+      const pool = dbManager.getDatabase();
+      await pool.query('SELECT 1');
+    } catch (err) {
+      logger.warn('Keep-alive ping failed (non-fatal):', { error: err.message });
+    }
+  }, 4 * 60 * 1000); // 4 minutes
+}
+
 module.exports = dbManager;
+module.exports.testConnection = testConnection;
+module.exports.startKeepAlive = startKeepAlive;
