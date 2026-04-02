@@ -9,7 +9,7 @@
     "scholarship": "node index.js scholarship"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.80.0",
+    "@anthropic-ai/sdk": "^0.81.0",
     "axios": "^1.13.5",
     "better-sqlite3": "^12.8.0",
     "pg": "^8.20.0",
