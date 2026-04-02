@@ -25,16 +25,15 @@ const {
 router.get('/', authenticate, async (req, res) => {
   try {
     const profile = await StudentProfile.getCompleteProfile(req.user.userId);
-    
+
     if (!profile) {
-      // Return empty profile structure if none exists
       return res.json({
         success: true,
         data: null,
         message: 'No profile found. Please complete onboarding.'
       });
     }
-    
+
     res.json({
       success: true,
       data: profile
@@ -74,17 +73,88 @@ router.post('/', authenticate, async (req, res) => {
 
 /**
  * PUT /api/profile
- * Update student profile (alias for POST)
+ * Update student profile (alias for POST) — COALESCE-safe, null fields do not
+ * overwrite existing data.  If why_college_matters or life_goals_raw are
+ * present, re-computes the values_vector via the Anthropic values engine.
  */
 router.put('/', authenticate, async (req, res) => {
   try {
-    const profile = await StudentProfile.upsert(req.user.userId, req.body);
-    
-    res.json({
-      success: true,
-      data: profile,
-      message: 'Profile updated successfully'
-    });
+    const userId = req.user.userId;
+    const body = req.body;
+
+    // COALESCE-safe direct UPDATE for the fields specified in the task
+    const dbManager = require('../config/database');
+    const pool = dbManager.getDatabase();
+
+    await pool.query(
+      `UPDATE student_profiles SET
+        gpa_weighted               = COALESCE($1,  gpa_weighted),
+        board_exam_percentage      = COALESCE($2,  board_exam_percentage),
+        curriculum_type            = COALESCE($3,  curriculum_type),
+        sat_total                  = COALESCE($4,  sat_total),
+        ielts_score                = COALESCE($5,  ielts_score),
+        intended_majors            = COALESCE($6,  intended_majors),
+        degree_level               = COALESCE($7,  degree_level),
+        annual_family_income_inr   = COALESCE($8,  annual_family_income_inr),
+        budget_max                 = COALESCE($9,  budget_max),
+        preferred_countries        = COALESCE($10, preferred_countries),
+        why_college_matters        = COALESCE($11, why_college_matters),
+        life_goals_raw             = COALESCE($12, life_goals_raw),
+        updated_at                 = NOW()
+      WHERE user_id = $13`,
+      [
+        body.gpa_4_scale            != null ? body.gpa_4_scale            : null,
+        body.class_12_percentage    != null ? body.class_12_percentage    : null,
+        body.curriculum             != null ? body.curriculum             : null,
+        body.sat_total              != null ? body.sat_total              : null,
+        body.ielts_overall          != null ? body.ielts_overall          : null,
+        body.intended_major         != null ? JSON.stringify([body.intended_major]) : null,
+        body.degree_level           != null ? body.degree_level           : null,
+        body.annual_family_income_inr != null ? body.annual_family_income_inr : null,
+        body.max_budget_per_year_inr  != null ? body.max_budget_per_year_inr  : null,
+        body.preferred_countries    != null ? JSON.stringify(
+          Array.isArray(body.preferred_countries)
+            ? body.preferred_countries
+            : body.preferred_countries.split(',').map((s) => s.trim()).filter(Boolean)
+        ) : null,
+        body.why_college_matters    != null ? body.why_college_matters    : null,
+        body.life_goals_raw         != null ? body.life_goals_raw         : null,
+        userId,
+      ]
+    );
+
+    // Trigger values re-computation if text fields changed
+    const whyText   = (body.why_college_matters || '').trim();
+    const goalsText = (body.life_goals_raw       || '').trim();
+    if (whyText || goalsText) {
+      // Fire-and-forget — response returns immediately
+      setImmediate(async () => {
+        try {
+          const { computeValuesVector } = require('../services/valuesEngine');
+          // Use the most current text: re-fetch row to get whichever is newer
+          const { rows } = await pool.query(
+            'SELECT why_college_matters, life_goals_raw FROM student_profiles WHERE user_id = $1',
+            [userId]
+          );
+          const row = rows[0] || {};
+          const vector = await computeValuesVector(
+            row.why_college_matters || whyText,
+            row.life_goals_raw      || goalsText
+          );
+          if (vector) {
+            await pool.query(
+              `UPDATE student_profiles SET values_vector = $1, values_computed_at = NOW() WHERE user_id = $2`,
+              [JSON.stringify(vector), userId]
+            );
+            logger.info('Values vector recomputed after profile PUT', { userId });
+          }
+        } catch (veErr) {
+          logger.error('Values vector recomputation failed (non-fatal)', { error: veErr?.message });
+        }
+      });
+    }
+
+    res.json({ success: true });
   } catch (error) {
     logger.error('Error updating profile:', error);
     res.status(500).json({

@@ -165,6 +165,10 @@ async function startServer() {
     // Initialize pg pool
     dbManager.initialize();
 
+    // Verify the connection before doing anything else
+    const { testConnection, startKeepAlive } = require('./config/database');
+    await testConnection();
+
     // Run migrations
     await dbManager.runMigrations();
 
@@ -180,6 +184,9 @@ async function startServer() {
     server = app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT} in ${config.nodeEnv} mode`);
       logger.info('Database: PostgreSQL via DATABASE_URL');
+
+      // Start keep-alive pings to prevent Render free-tier connection reaping
+      startKeepAlive();
 
       // Warm up exchange rates on boot and refresh every 6 hours
       const { refreshExchangeRates } = require('./services/financialCostService');
