@@ -43,15 +43,19 @@ async function generateRecommendations(studentProfile, allColleges) {
     // Generate why recommended and concerns
     const reasoning = generateReasoning(studentProfile, college, eligibility, scores, financialFit);
     
+    // Compute values resonance (new — 30% of overall fit)
+    const valuesResult = computeValuesResonance(studentProfile, college);
+
     recommendations.push({
       college,
       eligibility,
       scores,
       classification,
       financial_fit: financialFit,
-      overall_fit_score: computeOverallFit(scores, financialFit),
+      overall_fit_score: computeOverallFit(scores, financialFit, valuesResult.score),
       why_recommended: reasoning.why,
       concerns: reasoning.concerns,
+      why_values: valuesResult.whyValues,
       application_effort: estimateApplicationEffort(college)
     });
   }
@@ -361,18 +365,22 @@ function computeFinancialFit(student, college, usdToInr = null) {
 }
 
 /**
- * Compute overall fit score (0-100)
+ * Compute overall fit score (0-100).
+ * Weights: eligibility 17.5%, academic_fit 14%, program_strength 14%,
+ *          cost_affordability 14%, outcome_quality 7%, application_feasibility 3.5%,
+ *          values_resonance 30%  (new)
  */
-function computeOverallFit(scores, financialFit) {
+function computeOverallFit(scores, financialFit, valuesScore = 0) {
   const weightedScore = (
-    scores.eligibility_score * 25 +
-    scores.academic_fit * 20 +
-    scores.program_strength * 20 +
-    scores.cost_affordability * 20 +
-    scores.outcome_quality * 10 +
-    scores.application_feasibility * 5
+    scores.eligibility_score    * 17.5 +
+    scores.academic_fit         * 14   +
+    scores.program_strength     * 14   +
+    scores.cost_affordability   * 14   +
+    scores.outcome_quality      *  7   +
+    scores.application_feasibility * 3.5 +
+    valuesScore                 * 30
   );
-  
+
   return Math.round(weightedScore);
 }
 
@@ -463,8 +471,143 @@ function estimateApplicationEffort(college) {
 }
 
 /**
- * Filter and sort recommendations based on preferences
+ * Compute values resonance score (0–1) based on how well the college matches
+ * the student's dominant_values from their values_vector.
+ *
+ * Returns an object: { score: 0-1, whyValues: string[] }
  */
+function computeValuesResonance(student, college) {
+  const valuesVector = student.values_vector;
+  if (!valuesVector || !Array.isArray(valuesVector.dominant_values) || valuesVector.dominant_values.length === 0) {
+    return { score: 0, whyValues: [] };
+  }
+
+  const dominant = valuesVector.dominant_values;
+  const dimensions = valuesVector.dimensions || {};
+  const name = college.name || '';
+  const country = (college.country || '').toUpperCase();
+  const acceptanceRate = college.acceptance_rate || 0.5;
+  const description = (college.description || '').toLowerCase();
+  const whyValues = [];
+  let matchCount = 0;
+
+  for (const value of dominant) {
+    const evidence = dimensions[value]?.evidence || null;
+    let matched = false;
+
+    switch (value) {
+      case 'entrepreneurship':
+        if (
+          /silicon valley|startup|entrepreneurship|innovation|venture|builder/i.test(description) ||
+          (country === 'USA' && acceptanceRate > 0.20)
+        ) {
+          whyValues.push(
+            `${name}'s innovation culture aligns with your goal to ${evidence ? `"${evidence}"` : 'build and create'}.`
+          );
+          matched = true;
+        }
+        break;
+
+      case 'research':
+        if (
+          /r1|research university|phd|doctoral|laboratory|lab|research-intensive/i.test(description) ||
+          (college.research_output_score && college.research_output_score > 70)
+        ) {
+          whyValues.push(
+            `${name} is a leading research university — ideal since you want to ${evidence ? `"${evidence}"` : 'push knowledge forward'}.`
+          );
+          matched = true;
+        }
+        break;
+
+      case 'social_impact':
+        if (/liberal arts|public policy|social policy|development|community|civic|impact/i.test(description)) {
+          whyValues.push(
+            `${name}'s focus on policy and community engagement fits your goal to ${evidence ? `"${evidence}"` : 'create social change'}.`
+          );
+          matched = true;
+        }
+        break;
+
+      case 'prestige_career':
+        if (acceptanceRate < 0.15) {
+          whyValues.push(
+            `${name}'s selective admissions (${(acceptanceRate * 100).toFixed(1)}% acceptance) signals the top-tier career outcomes you value${evidence ? ` — "${evidence}"` : ''}.`
+          );
+          matched = true;
+        }
+        break;
+
+      case 'creative_expression':
+        if (/arts|design|music|film|creative|media|humanities/i.test(description)) {
+          whyValues.push(
+            `${name}'s arts and creative programs resonate with your interest in ${evidence ? `"${evidence}"` : 'creative work'}.`
+          );
+          matched = true;
+        }
+        break;
+
+      case 'community_belonging':
+        if (/community|campus life|tradition|spirit|athletics|greek/i.test(description)) {
+          whyValues.push(
+            `${name}'s vibrant campus community fits what you described: ${evidence ? `"${evidence}"` : 'belonging and friendship'}.`
+          );
+          matched = true;
+        }
+        break;
+
+      case 'global_exposure':
+        if (
+          country !== 'IN' && country !== 'IND' && country !== 'INDIA' ||
+          /international|global|diverse|multicultural/i.test(description)
+        ) {
+          whyValues.push(
+            `${name}'s international student body and global network match your goal of ${evidence ? `"${evidence}"` : 'building a global perspective'}.`
+          );
+          matched = true;
+        }
+        break;
+
+      case 'academic_freedom':
+        if (/open curriculum|design your own|no core|flexible|interdisciplinary|brown/i.test(`${description} ${name}`)) {
+          whyValues.push(
+            `${name}'s open or flexible curriculum lets you ${evidence ? `"${evidence}"` : 'explore broadly without being locked in'}.`
+          );
+          matched = true;
+        }
+        break;
+
+      case 'financial_pragmatism': {
+        // Meets full need, or Germany (typically no tuition)
+        const fundingRows = Array.isArray(college.funding) ? college.funding : [];
+        const meetsNeed = fundingRows.some(f => f.meets_full_demonstrated_need && f.international_students_eligible);
+        if (meetsNeed || /germany|deutschland/i.test(country)) {
+          whyValues.push(
+            `${name} ${meetsNeed ? 'meets 100% of demonstrated financial need' : 'charges no tuition fees'} — directly supporting your priority of ${evidence ? `"${evidence}"` : 'value for money'}.`
+          );
+          matched = true;
+        }
+        break;
+      }
+
+      case 'personal_growth':
+        if (/wellness|counseling|support|mental health|liberal arts|holistic|self|community/i.test(description)) {
+          whyValues.push(
+            `${name}'s emphasis on holistic student development aligns with your focus on ${evidence ? `"${evidence}"` : 'personal growth'}.`
+          );
+          matched = true;
+        }
+        break;
+    }
+
+    if (matched) matchCount++;
+  }
+
+  const score = dominant.length > 0 ? matchCount / dominant.length : 0;
+  return { score, whyValues };
+}
+
+
 function filterRecommendations(recommendations, filters) {
   let filtered = [...recommendations];
   

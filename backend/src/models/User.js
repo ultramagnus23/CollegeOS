@@ -139,6 +139,10 @@ class User {
         need_financial_aid:  !!(sp.budget_max && sp.budget_max < 50000),
         can_take_loan:       false,
       },
+      // Values vector — used by recommendationEngine for values resonance scoring
+      values_vector: sp.values_vector
+        ? (typeof sp.values_vector === 'string' ? JSON.parse(sp.values_vector) : sp.values_vector)
+        : null,
     };
   }
 

@@ -23,6 +23,7 @@ const SECTIONS = [
   { id: 'test-scores', label: 'Test Scores', icon: TestTube },
   { id: 'preferences', label: 'Preferences', icon: Target },
   { id: 'activities', label: 'Activities', icon: Trophy },
+  { id: 'goals', label: 'Goals & Values', icon: Heart },
 ] as const;
 
 type SectionId = typeof SECTIONS[number]['id'];
@@ -70,7 +71,8 @@ const Settings = () => {
     academic: null,
     'test-scores': null,
     preferences: null,
-    activities: null
+    activities: null,
+    goals: null,
   });
   
   // Edit modes for each section
@@ -78,6 +80,10 @@ const Settings = () => {
     basic: false,
     academic: false,
     subjects: false,
+    'test-scores': false,
+    preferences: false,
+    activities: false,
+    goals: false,
     testScores: false,
     preferences: false,
     activities: false
@@ -219,6 +225,9 @@ const SCROLL_DELAY_MS = 100;
       budget_max: budgetMax,
       preferred_college_size: p?.campusSize || p?.preferred_college_size || '',
       preferred_setting: p?.locationPreference || p?.preferred_setting || '',
+      // Goals & Values fields
+      why_college_matters: p?.why_college_matters || '',
+      life_goals_raw:      p?.life_goals_raw      || '',
     });
   };
 
@@ -1298,6 +1307,131 @@ const SCROLL_DELAY_MS = 100;
               </div>
             </div>
           </div>
+
+          {/* ──────────────── GOALS & VALUES SECTION ──────────────── */}
+          <div
+            ref={(el) => { (sectionRefs.current as any)['goals'] = el; }}
+            id="goals"
+            className="bg-card rounded-xl border border-border p-6"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Heart className="text-primary" size={24} />
+                <h2 className="text-xl font-bold text-foreground">Goals &amp; Values</h2>
+              </div>
+              <Button
+                variant={editMode.goals ? 'ghost' : 'outline'}
+                size="sm"
+                onClick={() => toggleEditMode('goals')}
+              >
+                {editMode.goals ? <X size={16} /> : <Edit2 size={16} />}
+                <span className="ml-2">{editMode.goals ? 'Cancel' : 'Edit'}</span>
+              </Button>
+            </div>
+
+            {editMode.goals ? (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="why_college_matters">Why does college matter to you?</Label>
+                  <textarea
+                    id="why_college_matters"
+                    rows={4}
+                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    placeholder="Describe why college matters to you and what you hope to achieve..."
+                    value={formData.why_college_matters || ''}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, why_college_matters: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="life_goals_raw">Life goals</Label>
+                  <textarea
+                    id="life_goals_raw"
+                    rows={4}
+                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    placeholder="What do you want to do with your life? What kind of impact do you want to have?"
+                    value={formData.life_goals_raw || ''}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, life_goals_raw: e.target.value }))}
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                    onClick={async () => {
+                      setSaving(true);
+                      try {
+                        await api.updateProfile(user!.id, {
+                          why_college_matters: formData.why_college_matters || null,
+                          life_goals_raw: formData.life_goals_raw || null,
+                        });
+                        toggleEditMode('goals');
+                        showMessage('success', 'Goals saved');
+                        await loadProfile();
+                      } catch {
+                        showMessage('error', 'Failed to save goals');
+                      }
+                      setSaving(false);
+                    }}
+                    disabled={saving}
+                  >
+                    {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    <Save size={16} className="mr-2" />
+                    Save Goals
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-muted-foreground text-xs uppercase tracking-wide">Why college matters</Label>
+                  <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">
+                    {formData.why_college_matters || <span className="text-muted-foreground italic">Not set — click Edit to add</span>}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs uppercase tracking-wide">Life goals</Label>
+                  <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">
+                    {formData.life_goals_raw || <span className="text-muted-foreground italic">Not set — click Edit to add</span>}
+                  </p>
+                </div>
+
+                {/* Values profile — shown if values_vector is present */}
+                {profileData && (profileData as any).profile?.values_vector && (() => {
+                  const vv = (profileData as any).profile.values_vector;
+                  const dims: Record<string, { score: number; evidence: string | null }> = vv.dimensions || {};
+                  const sorted = Object.entries(dims)
+                    .sort((a, b) => b[1].score - a[1].score)
+                    .slice(0, 5);
+                  return (
+                    <div className="mt-4 p-4 rounded-lg bg-muted/50 border border-border">
+                      <h3 className="text-sm font-semibold text-foreground mb-3">Your Values Profile</h3>
+                      <div className="space-y-2">
+                        {sorted.map(([dim, data]) => (
+                          <div key={dim} className="flex items-center gap-3">
+                            <span className="w-40 text-xs text-muted-foreground capitalize shrink-0">
+                              {dim.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                            </span>
+                            <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-primary transition-all"
+                                style={{ width: `${data.score * 10}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-muted-foreground w-6 text-right shrink-0">{data.score}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {vv.summary && (
+                        <p className="mt-3 text-xs text-muted-foreground italic">
+                          <span className="font-medium not-italic text-foreground">AI insight: </span>
+                          {vv.summary} <span className="opacity-60">— Edit your text above and save to update this.</span>
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+
         </div>
         </div> {/* End of Main Content flex-1 */}
       </div> {/* End of Navigation + Content flex container */}
