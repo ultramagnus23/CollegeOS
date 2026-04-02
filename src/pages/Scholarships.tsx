@@ -343,7 +343,8 @@ const Scholarships: React.FC = () => {
                       {l.max_amount && <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700 }}>Max: ${l.max_amount.toLocaleString()}</span>}
                       {(l.interest_rate_min || l.interest_rate_max) && (
                         <span style={{ fontSize: 13, color: S.muted }}>
-                          Rate: {l.interest_rate_min ?? '?'}%–{l.interest_rate_max ?? '?'}%
+                          Rate: {l.interest_rate_min != null ? `${l.interest_rate_min}%` : 'Contact lender'}
+                          {l.interest_rate_max != null && l.interest_rate_min != null ? `–${l.interest_rate_max}%` : ''}
                         </span>
                       )}
                     </div>
