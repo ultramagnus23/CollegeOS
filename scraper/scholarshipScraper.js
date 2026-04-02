@@ -118,7 +118,11 @@ async function upsertScholarship(rec) {
       description, eligibility_summary, application_url, source_url,
       nationality_requirements, academic_requirements,
       major_requirements, demographic_requirements, documentation_required,
-      status, scraped_at, last_verified_at
+      status, scraped_at, last_verified_at,
+      eligible_nationalities, degree_levels, eligible_majors, eligible_genders,
+      min_gpa_4_scale, min_percentage, min_sat, min_ielts,
+      max_family_income_usd, award_usd_per_year, award_covers,
+      scholarship_type, renewal_conditions, portal_url, university_name
     ) VALUES (
       $1, $2, $3, $4,
       $5, $6, $7,
@@ -127,7 +131,11 @@ async function upsertScholarship(rec) {
       $13, $14, $15, $16,
       $17, $18,
       $19, $20, $21,
-      $22, $23, $24
+      $22, $23, $24,
+      $25, $26, $27, $28,
+      $29, $30, $31, $32,
+      $33, $34, $35,
+      $36, $37, $38, $39
     )
     ON CONFLICT (name, provider) DO UPDATE SET
       country               = EXCLUDED.country,
@@ -149,6 +157,21 @@ async function upsertScholarship(rec) {
       status                = EXCLUDED.status,
       scraped_at            = EXCLUDED.scraped_at,
       last_verified_at      = EXCLUDED.last_verified_at,
+      eligible_nationalities = EXCLUDED.eligible_nationalities,
+      degree_levels         = EXCLUDED.degree_levels,
+      eligible_majors       = EXCLUDED.eligible_majors,
+      eligible_genders      = EXCLUDED.eligible_genders,
+      min_gpa_4_scale       = EXCLUDED.min_gpa_4_scale,
+      min_percentage        = EXCLUDED.min_percentage,
+      min_sat               = EXCLUDED.min_sat,
+      min_ielts             = EXCLUDED.min_ielts,
+      max_family_income_usd = EXCLUDED.max_family_income_usd,
+      award_usd_per_year    = EXCLUDED.award_usd_per_year,
+      award_covers          = EXCLUDED.award_covers,
+      scholarship_type      = EXCLUDED.scholarship_type,
+      renewal_conditions    = EXCLUDED.renewal_conditions,
+      portal_url            = EXCLUDED.portal_url,
+      university_name       = EXCLUDED.university_name,
       updated_at            = NOW()
     RETURNING id
   `;
@@ -168,13 +191,38 @@ async function upsertScholarship(rec) {
     JSON.stringify(rec.documentation_required ?? []),
     rec.status ?? 'active',
     now, now,
+    // New matching-engine columns (default to open/all if not provided)
+    JSON.stringify(rec.eligible_nationalities ?? ['All']),
+    JSON.stringify(rec.degree_levels ?? ['undergraduate', 'postgraduate']),
+    JSON.stringify(rec.eligible_majors ?? ['All']),
+    JSON.stringify(rec.eligible_genders ?? ['All']),
+    rec.min_gpa_4_scale ?? null,
+    rec.min_percentage ?? null,
+    rec.min_sat ?? null,
+    rec.min_ielts ?? null,
+    rec.max_family_income_usd ?? null,
+    rec.award_usd_per_year ?? rec.amount ?? null,
+    JSON.stringify(rec.award_covers ?? ['tuition']),
+    rec.scholarship_type ?? deriveScholarshipType(rec),
+    rec.renewal_conditions ?? null,
+    rec.portal_url ?? rec.application_url ?? null,
+    rec.university_name ?? null,
   ];
 
   const { rows } = await pool.query(sql, values);
   return rows[0].id;
 }
 
-// ── Per-source scrapers (reference data; live-verified on each run) ───────────
+/** Derive scholarship_type from need_based / merit_based flags when not explicitly set. */
+function deriveScholarshipType(rec) {
+  if (rec.scholarship_type) return rec.scholarship_type;
+  if (rec.need_based && rec.merit_based) return 'merit-need';
+  if (rec.need_based) return 'need-based';
+  if (rec.merit_based) return 'merit';
+  return 'external';
+}
+
+
 
 /**
  * Build scholarship records for all supported sources.

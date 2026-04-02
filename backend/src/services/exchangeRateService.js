@@ -11,7 +11,7 @@ const logger = require('../utils/logger');
 
 const EXCHANGE_API_URL = 'https://api.exchangerate-api.com/v4/latest/USD';
 const SOURCE_API = 'exchangerate-api.com';
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours — spec requirement for scholarship matching accuracy
 
 let cachedRate = null;
 let cacheTimestamp = 0;
