@@ -105,14 +105,43 @@ class AuthController {
     try {
       const userId = req.user.userId;
       const data = req.validatedData;
-      
-      const user = User.updateOnboarding(userId, data);
 
-      // Also persist extended profile fields if present
-      if (data.gpa || data.subjects || data.activities || data.gpaWeighted || data.satScore) {
-        try { StudentProfile.upsert(userId, data); } catch (profileErr) {
-          logger.error('Failed to upsert student profile during onboarding', { userId, error: profileErr?.message });
-        }
+      const user = await User.updateOnboarding(userId, data);
+
+      // Persist extended profile fields (always — students need not fill every field)
+      try {
+        await StudentProfile.upsert(userId, {
+          ...data,
+          why_college_matters: data.why_college_matters || null,
+          life_goals_raw:      data.life_goals_raw      || null,
+        });
+      } catch (profileErr) {
+        logger.error('Failed to upsert student profile during onboarding', { userId, error: profileErr?.message });
+      }
+
+      // Compute values vector asynchronously (non-blocking — does not affect response)
+      const whyText  = (data.why_college_matters || '').trim();
+      const goalsText = (data.life_goals_raw      || '').trim();
+      if (whyText || goalsText) {
+        setImmediate(async () => {
+          try {
+            const { computeValuesVector } = require('../services/valuesEngine');
+            const dbManager = require('../config/database');
+            const vector = await computeValuesVector(whyText, goalsText);
+            if (vector) {
+              const pool = dbManager.getDatabase();
+              await pool.query(
+                `UPDATE student_profiles
+                    SET values_vector = $1, values_computed_at = NOW()
+                  WHERE user_id = $2`,
+                [JSON.stringify(vector), userId]
+              );
+              logger.info('Values vector computed and saved during onboarding', { userId });
+            }
+          } catch (veErr) {
+            logger.error('Values vector computation failed (non-fatal)', { userId, error: veErr?.message });
+          }
+        });
       }
 
       res.json({

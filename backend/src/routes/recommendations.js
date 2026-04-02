@@ -23,7 +23,7 @@ router.get('/', authenticate, async (req, res, next) => {
     // Get user's academic profile
     const userProfile = await User.getAcademicProfile(req.user.userId);
     
-    if (!userProfile || !userProfile.academic_board) {
+    if (!userProfile) {
       return res.status(400).json({
         success: false,
         message: 'Please complete your academic profile first',
@@ -34,15 +34,48 @@ router.get('/', authenticate, async (req, res, next) => {
     // Get all colleges
     const College = require('../models/College');
     const allColleges = await College.findAll({ limit: 1000 }); // Get all for recommendations
-    
+
+    // Attach institutional funding to each college so the engine can use it
+    const dbManager = require('../config/database');
+    const pool = dbManager.getDatabase();
+    try {
+      const { rows: fundingRows } = await pool.query(
+        `SELECT * FROM college_funding
+          WHERE international_students_eligible = TRUE`
+      );
+      // Build a map by college_id
+      const fundingMap = {};
+      for (const row of fundingRows) {
+        const cid = row.college_id;
+        if (!fundingMap[cid]) fundingMap[cid] = [];
+        fundingMap[cid].push(row);
+      }
+      for (const college of allColleges) {
+        college.funding = fundingMap[college.id] || [];
+      }
+    } catch (_fundingErr) {
+      // college_funding table may not exist in all environments — non-fatal
+      for (const college of allColleges) {
+        college.funding = college.funding || [];
+      }
+    }
+
     // Use recommendation engine service
     const { generateRecommendations } = require('../services/recommendationEngine');
-    const recommendations = generateRecommendations(userProfile, allColleges);
+    const result = await generateRecommendations(userProfile, allColleges);
+
+    if (result && result.error === 'exchange_rate_missing') {
+      return res.status(503).json({
+        success: false,
+        message: 'Exchange rate service unavailable — please try again in a few minutes',
+        error: 'exchange_rate_missing',
+      });
+    }
 
     res.json({
       success: true,
-      count: recommendations.length,
-      data: recommendations
+      count: (result.recommendations || []).length,
+      ...result,
     });
   } catch (error) {
     logger.error('Get recommendations failed:', error);
@@ -64,7 +97,7 @@ router.post('/generate', authenticate, async (req, res, next) => {
 
     const userProfile = await User.getAcademicProfile(req.user.userId);
     
-    if (!userProfile || !userProfile.academic_board) {
+    if (!userProfile) {
       return res.status(400).json({
         success: false,
         message: 'Please complete your academic profile first'
@@ -73,15 +106,45 @@ router.post('/generate', authenticate, async (req, res, next) => {
 
     const College = require('../models/College');
     const allColleges = await College.findAll({ limit: 1000 });
-    
+
+    // Attach institutional funding
+    const dbManager = require('../config/database');
+    const pool = dbManager.getDatabase();
+    try {
+      const { rows: fundingRows } = await pool.query(
+        `SELECT * FROM college_funding WHERE international_students_eligible = TRUE`
+      );
+      const fundingMap = {};
+      for (const row of fundingRows) {
+        const cid = row.college_id;
+        if (!fundingMap[cid]) fundingMap[cid] = [];
+        fundingMap[cid].push(row);
+      }
+      for (const college of allColleges) {
+        college.funding = fundingMap[college.id] || [];
+      }
+    } catch (_fundingErr) {
+      for (const college of allColleges) {
+        college.funding = college.funding || [];
+      }
+    }
+
     const { generateRecommendations } = require('../services/recommendationEngine');
-    const recommendations = generateRecommendations(userProfile, allColleges);
+    const result = await generateRecommendations(userProfile, allColleges);
+
+    if (result && result.error === 'exchange_rate_missing') {
+      return res.status(503).json({
+        success: false,
+        message: 'Exchange rate service unavailable — please try again in a few minutes',
+        error: 'exchange_rate_missing',
+      });
+    }
 
     res.json({
       success: true,
-      message: `Generated ${recommendations.length} personalized recommendations`,
-      count: recommendations.length,
-      data: recommendations
+      message: `Generated ${(result.recommendations || []).length} personalized recommendations`,
+      count: (result.recommendations || []).length,
+      ...result,
     });
   } catch (error) {
     logger.error('Generate recommendations failed:', error);
