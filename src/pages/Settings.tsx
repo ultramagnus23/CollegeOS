@@ -80,7 +80,7 @@ function computeCompletion(profile: any): { pct: number; missing: typeof COMPLET
     max_budget_per_year_inr: !!profile.max_budget_per_year_inr,
     preferred_countries: Array.isArray(profile.preferred_countries) && profile.preferred_countries.length > 0,
     why_college_matters: typeof profile.why_college_matters === 'string' && profile.why_college_matters.length >= 50,
-    values_vector: profile.values_vector != null,
+    values_vector: profile.values_vector !== null && profile.values_vector !== undefined,
   };
   const completed = Object.values(checks).filter(Boolean).length;
   const missing = COMPLETION_FIELDS.filter(f => !checks[f.key]);
@@ -541,6 +541,7 @@ const SCROLL_DELAY_MS = 100;
                   <div className="flex flex-col gap-1">
                     {missing.map(f => (
                       <button key={f.key} onClick={() => navigate(`/settings${f.section}`)}
+                        aria-label={`Complete ${f.label}`}
                         className="flex items-center gap-2 p-2 text-sm text-left rounded-lg hover:bg-muted transition-colors group">
                         <AlertCircle size={13} className="text-orange-500 shrink-0" />
                         <span className="text-foreground">{f.label}</span>
