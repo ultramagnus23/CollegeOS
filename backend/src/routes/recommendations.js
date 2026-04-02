@@ -62,12 +62,20 @@ router.get('/', authenticate, async (req, res, next) => {
 
     // Use recommendation engine service
     const { generateRecommendations } = require('../services/recommendationEngine');
-    const recommendations = await generateRecommendations(userProfile, allColleges);
+    const result = await generateRecommendations(userProfile, allColleges);
+
+    if (result && result.error === 'exchange_rate_missing') {
+      return res.status(503).json({
+        success: false,
+        message: 'Exchange rate service unavailable — please try again in a few minutes',
+        error: 'exchange_rate_missing',
+      });
+    }
 
     res.json({
       success: true,
-      count: recommendations.length,
-      data: recommendations
+      count: (result.recommendations || []).length,
+      ...result,
     });
   } catch (error) {
     logger.error('Get recommendations failed:', error);
@@ -122,13 +130,21 @@ router.post('/generate', authenticate, async (req, res, next) => {
     }
 
     const { generateRecommendations } = require('../services/recommendationEngine');
-    const recommendations = await generateRecommendations(userProfile, allColleges);
+    const result = await generateRecommendations(userProfile, allColleges);
+
+    if (result && result.error === 'exchange_rate_missing') {
+      return res.status(503).json({
+        success: false,
+        message: 'Exchange rate service unavailable — please try again in a few minutes',
+        error: 'exchange_rate_missing',
+      });
+    }
 
     res.json({
       success: true,
-      message: `Generated ${recommendations.length} personalized recommendations`,
-      count: recommendations.length,
-      data: recommendations
+      message: `Generated ${(result.recommendations || []).length} personalized recommendations`,
+      count: (result.recommendations || []).length,
+      ...result,
     });
   } catch (error) {
     logger.error('Generate recommendations failed:', error);
