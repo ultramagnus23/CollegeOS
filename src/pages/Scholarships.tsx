@@ -93,19 +93,19 @@ const Scholarships: React.FC = () => {
 
   const loadGrants = async () => {
     try {
-      const res = await (api.scholarships as any).getGrants() as any;
+      const res = await api.scholarships.getGrants() as any;
       setGrants(res.data || []);
     } catch { setGrants([]); }
   };
   const loadGovLoans = async () => {
     try {
-      const res = await (api.scholarships as any).getGovernmentLoans() as any;
+      const res = await api.scholarships.getGovernmentLoans() as any;
       setGovLoans(res.data || []);
     } catch { setGovLoans([]); }
   };
   const loadPrivLoans = async () => {
     try {
-      const res = await (api.scholarships as any).getPrivateLoans() as any;
+      const res = await api.scholarships.getPrivateLoans() as any;
       setPrivLoans(res.data || []);
     } catch { setPrivLoans([]); }
   };
