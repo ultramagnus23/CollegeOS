@@ -54,6 +54,8 @@ function requireClient() {
 export interface CollegeFilters {
   /** Full-text search on college name (case-insensitive). */
   query?: string;
+  /** Country name as stored in colleges_comprehensive.country. */
+  country?: string;
   /** Two-letter US state abbreviation or full state name. */
   state?: string;
   /** 'public' | 'private' | 'for-profit' */
@@ -66,6 +68,8 @@ export interface CollegeFilters {
   maxAcceptance?: number;
   /** Maximum out-of-state tuition in USD. */
   maxTuition?: number;
+  /** Sort field: 'name' | 'acceptance_rate' | 'tuition' | 'ranking' */
+  sortBy?: string;
   /** 1-based page number (20 results per page). */
   page?: number;
 }
@@ -83,7 +87,16 @@ export interface SearchResult {
 
 /**
  * Search and filter colleges from `colleges_comprehensive`.
- * Accepts all `CollegeFilters` fields.  Returns a paginated result.
+ *
+ * Delegates to the `search_colleges_filtered` Postgres function (migration 047)
+ * which joins college_admissions and college_financial_data **before** applying
+ * LIMIT/OFFSET.  This means acceptance_rate and tuition filters always operate on
+ * the full dataset and the returned `count`/`totalPages` are always accurate,
+ * regardless of which page the caller requests.
+ *
+ * Two network calls are made:
+ *   1. RPC → receives { total, ids[] } for the requested page.
+ *   2. SELECT … WHERE id IN (ids) → fetches the full LIST_SELECT payload.
  */
 export async function searchColleges(
   filters: CollegeFilters = {}
@@ -92,62 +105,67 @@ export async function searchColleges(
 
   const {
     query,
+    country,
     state,
     type,
     setting,
     minAcceptance,
     maxAcceptance,
     maxTuition,
+    sortBy = 'name',
     page = 1,
   } = filters;
 
-  const from = (page - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
+  // ── Phase 1: get total count + ordered IDs via server-side RPC ────────────
+  const { data: rpcData, error: rpcError } = await client.rpc(
+    'search_colleges_filtered',
+    {
+      p_query:          query          ?? null,
+      p_country:        country        ?? null,
+      p_state:          state          ?? null,
+      p_type:           type           ?? null,
+      p_setting:        setting        ?? null,
+      p_min_acceptance: minAcceptance  ?? null,
+      p_max_acceptance: maxAcceptance  ?? null,
+      p_max_tuition:    maxTuition     ?? null,
+      p_sort_by:        sortBy,
+      p_page:           page,
+      p_page_size:      PAGE_SIZE,
+    }
+  );
+  if (rpcError) throw rpcError;
 
-  let q = client
+  const { total, ids } = rpcData as { total: number; ids: number[] | null };
+  const safeIds: number[] = ids ?? [];
+
+  if (safeIds.length === 0) {
+    return {
+      data: [],
+      count: total,
+      page,
+      pageSize: PAGE_SIZE,
+      totalPages: Math.ceil(total / PAGE_SIZE),
+    };
+  }
+
+  // ── Phase 2: fetch full rows for this page's IDs ──────────────────────────
+  const { data, error } = await client
     .from('colleges_comprehensive')
-    .select(LIST_SELECT, { count: 'exact' });
+    .select(LIST_SELECT)
+    .in('id', safeIds);
 
-  if (query) q = q.ilike('name', `%${query}%`);
-  if (state) q = q.eq('state', state);
-  if (type) q = q.eq('type', type);
-  if (setting) q = q.eq('setting', setting);
-
-  // acceptance_rate and tuition live in child tables; Supabase does not support
-  // filtering on embedded rows directly, so those are applied post-fetch below.
-  q = q.range(from, to).order('name', { ascending: true });
-
-  const { data, error, count } = await q;
   if (error) throw error;
 
-  let results = (data as CollegeWithRelations[]) ?? [];
-
-  // Post-fetch filter on acceptance_rate (from college_admissions[0])
-  if (minAcceptance !== undefined || maxAcceptance !== undefined) {
-    results = results.filter((c) => {
-      const rate = c.college_admissions?.[0]?.acceptance_rate;
-      if (rate === null || rate === undefined) return false;
-      if (minAcceptance !== undefined && rate < minAcceptance) return false;
-      if (maxAcceptance !== undefined && rate > maxAcceptance) return false;
-      return true;
-    });
-  }
-
-  // Post-fetch filter on tuition (from college_financial_data[0])
-  if (maxTuition !== undefined) {
-    results = results.filter((c) => {
-      const tuition =
-        c.college_financial_data?.[0]?.tuition_out_state ??
-        c.college_financial_data?.[0]?.tuition_international;
-      if (tuition === null || tuition === undefined) return true; // keep unknowns
-      return tuition <= maxTuition;
-    });
-  }
-
-  const total = count ?? 0;
+  // Re-order to match the sorted IDs from the RPC (the IN query has no ordering)
+  const byId = new Map(
+    ((data as CollegeWithRelations[]) ?? []).map((c) => [c.id, c])
+  );
+  const ordered = safeIds
+    .map((id) => byId.get(id))
+    .filter((c): c is CollegeWithRelations => c !== undefined);
 
   return {
-    data: results,
+    data: ordered,
     count: total,
     page,
     pageSize: PAGE_SIZE,
@@ -274,27 +292,36 @@ export async function getCollegePrograms(
 
 /**
  * Return the distinct list of US states present in `colleges_comprehensive`.
+ *
+ * Uses the `get_distinct_states` RPC (migration 047) which performs a
+ * `SELECT DISTINCT` server-side, avoiding the 1,000-row PostgREST cap that
+ * would silently truncate results from a plain `.select('state')` call against
+ * a 6,000-row table.
  */
 export async function getDistinctStates(): Promise<string[]> {
   const client = requireClient();
 
-  const { data, error } = await client
-    .from('colleges_comprehensive')
-    .select('state')
-    .not('state', 'is', null)
-    .order('state', { ascending: true });
-
+  const { data, error } = await client.rpc('get_distinct_states');
   if (error) throw error;
 
-  const seen = new Set<string>();
-  const states: string[] = [];
-  for (const row of data ?? []) {
-    if (row.state && !seen.has(row.state)) {
-      seen.add(row.state);
-      states.push(row.state);
-    }
-  }
-  return states;
+  return (data ?? []).map((row: { state: string }) => row.state).filter(Boolean);
+}
+
+// ─── Countries list (for filter dropdowns) ────────────────────────────────────
+
+/**
+ * Return the distinct list of countries present in `colleges_comprehensive`.
+ *
+ * Uses the `get_distinct_countries` RPC (migration 047) for the same reason as
+ * `getDistinctStates` — avoids the 1,000-row PostgREST cap.
+ */
+export async function getDistinctCountries(): Promise<string[]> {
+  const client = requireClient();
+
+  const { data, error } = await client.rpc('get_distinct_countries');
+  if (error) throw error;
+
+  return (data ?? []).map((row: { country: string }) => row.country).filter(Boolean);
 }
 
 // ─── Re-export config flag for convenience ────────────────────────────────────
@@ -339,4 +366,207 @@ export function formatUSD(amount: number | null | undefined): string {
   if (amount >= 1_000_000) return `$${(amount / 1_000_000).toFixed(1)}M`;
   if (amount >= 1_000) return `$${Math.round(amount / 1_000)}K`;
   return `$${amount.toLocaleString()}`;
+}
+
+// ─── Normalizers: CollegeWithRelations → page-compatible shapes ───────────────
+
+/** Parse a "low-high" SAT/ACT range string into a percentile object. */
+function parseRangeString(
+  s: string | null | undefined
+): { percentile25: number; percentile75: number } | null {
+  if (!s) return null;
+  const parts = s.split('-');
+  if (parts.length !== 2) return null;
+  const lo = parseInt(parts[0].trim(), 10);
+  const hi = parseInt(parts[1].trim(), 10);
+  return !isNaN(lo) && !isNaN(hi) ? { percentile25: lo, percentile75: hi } : null;
+}
+
+/**
+ * Convert a `CollegeWithRelations` row into the flat shape expected by the
+ * `Colleges.tsx` card list.  Returns a plain object typed as `any` because the
+ * page's own `College` import is a loose legacy interface.
+ */
+export function normalizeToCard(c: CollegeWithRelations): any {
+  const admissions = c.college_admissions?.[0] ?? null;
+  const financial  = c.college_financial_data?.[0] ?? null;
+  const academics  = c.academic_details?.[0] ?? null;
+  const rankings   = c.college_rankings ?? [];
+  const programs   = c.college_programs ?? [];
+
+  // Best available numeric rank (smallest number wins)
+  const bestRank = rankings
+    .map((r) => (r.ranking_value ? parseInt(r.ranking_value, 10) : NaN))
+    .filter((n) => !isNaN(n) && n > 0)
+    .sort((a, b) => a - b)[0] ?? null;
+
+  const programNames = programs.map((p) => p.program_name).filter(Boolean);
+
+  return {
+    id:                 c.id,
+    name:               c.name,
+    location:           [c.city, c.state].filter(Boolean).join(', ') || c.country || '',
+    country:            c.country ?? '',
+    type:               c.type ?? 'Unknown',
+    ranking:            bestRank,
+    acceptance_rate:    admissions?.acceptance_rate ?? null,
+    acceptanceRate:     admissions?.acceptance_rate ?? null,
+    tuition_cost:       financial?.tuition_out_state ?? financial?.tuition_international ?? null,
+    averageGPA:         admissions?.gpa_50 ?? null,
+    enrollment:         c.total_enrollment ?? null,
+    description:        c.description ?? null,
+    programs:           programNames,
+    majorCategories:    programNames.slice(0, 6),
+    academicStrengths:  [],
+    testScores: admissions
+      ? {
+          satRange: parseRangeString(admissions.sat_range) ?? undefined,
+          actRange: parseRangeString(admissions.act_range) ?? undefined,
+          averageGPA: admissions.gpa_50 ?? undefined,
+        }
+      : null,
+    graduationRates: academics
+      ? { fourYear: academics.graduation_rate_4yr ?? null }
+      : null,
+    studentFacultyRatio: null,
+  };
+}
+
+/**
+ * Convert a `CollegeWithRelations` row into the rich shape expected by
+ * `CollegeDetails.tsx`.  All resolver chains in that page already have
+ * fallback paths for the flat top-level fields populated here.
+ */
+export function normalizeToDetail(c: CollegeWithRelations): any {
+  const admissions   = c.college_admissions?.[0]    ?? null;
+  const financial    = c.college_financial_data?.[0] ?? null;
+  const academics    = c.academic_details?.[0]       ?? null;
+  const demographics = c.student_demographics?.[0]   ?? null;
+  const campusLife   = c.campus_life?.[0]            ?? null;
+  const contact      = c.college_contact?.[0]        ?? null;
+  const programs     = c.college_programs            ?? [];
+  const rankings     = c.college_rankings            ?? [];
+
+  const bestRank = rankings
+    .map((r) => (r.ranking_value ? parseInt(r.ranking_value, 10) : NaN))
+    .filter((n) => !isNaN(n) && n > 0)
+    .sort((a, b) => a - b)[0] ?? null;
+
+  const satRange = parseRangeString(admissions?.sat_range);
+  const actRange = parseRangeString(admissions?.act_range);
+
+  const programNames = programs.map((p) => p.program_name).filter(Boolean);
+  const degreeTypes  = [...new Set(programs.map((p) => p.degree_type ?? '').filter(Boolean))];
+
+  return {
+    id:                    c.id,
+    name:                  c.name,
+    country:               c.country ?? '',
+    location:              [c.city, c.state].filter(Boolean).join(', '),
+    official_website:      c.website ?? '',
+    admissions_url:        contact?.admissions_url ?? undefined,
+    type:                  c.type ?? null,
+    description:           c.description ?? null,
+    ranking:               bestRank,
+    enrollment:            c.total_enrollment ?? null,
+    religious_affiliation: c.religious_affiliation ?? null,
+    // Flat acceptance fields (checked by resolver chains in CollegeDetails)
+    acceptance_rate:       admissions?.acceptance_rate ?? null,
+    acceptanceRate:        admissions?.acceptance_rate ?? null,
+    tuition_cost:          financial?.tuition_out_state ?? financial?.tuition_international ?? null,
+    // Flat financial fields
+    avg_net_price:         financial?.avg_net_price ?? null,
+    // Flat academics fields
+    median_debt:           academics?.median_debt        ?? null,
+    median_salary_6yr:     academics?.median_salary_6yr  ?? null,
+    median_salary_10yr:    academics?.median_salary_10yr ?? null,
+    // Flat demographics fields
+    percent_male:          demographics?.percent_male          ?? null,
+    percent_female:        demographics?.percent_female        ?? null,
+    percent_white:         demographics?.percent_white         ?? null,
+    percent_black:         demographics?.percent_black         ?? null,
+    percent_hispanic:      demographics?.percent_hispanic      ?? null,
+    percent_asian:         demographics?.percent_asian         ?? null,
+    percent_international: demographics?.percent_international ?? null,
+    // Programs
+    programs:         programNames,
+    major_categories: degreeTypes,
+    majorCategories:  programNames.slice(0, 6),
+    academic_strengths: [],
+    // Nested shapes (matching the resolver chain expectations in CollegeDetails)
+    testScores: admissions
+      ? {
+          satRange: satRange
+            ? { percentile25: satRange.percentile25, percentile75: satRange.percentile75 }
+            : undefined,
+          actRange: actRange
+            ? { percentile25: actRange.percentile25, percentile75: actRange.percentile75 }
+            : undefined,
+          averageGPA: admissions.gpa_50 ?? undefined,
+        }
+      : null,
+    studentStats: admissions
+      ? {
+          gpa50:     admissions.gpa_50   ?? null,
+          sat_range: admissions.sat_range ?? null,
+          act_range: admissions.act_range ?? null,
+        }
+      : undefined,
+    financialData: financial
+      ? {
+          tuitionInState:        financial.tuition_in_state        ?? null,
+          tuitionOutState:       financial.tuition_out_state       ?? null,
+          tuitionInternational:  financial.tuition_international   ?? null,
+          avgNetPrice:           financial.avg_net_price           ?? null,
+        }
+      : undefined,
+    academicOutcomes: academics
+      ? {
+          graduationRate4yr:    academics.graduation_rate_4yr  ?? null,
+          retentionRate:        academics.retention_rate       ?? null,
+          medianSalary6yr:      academics.median_salary_6yr   ?? null,
+          medianStartSalary:    academics.median_salary_6yr   ?? null,
+          medianSalary10yr:     academics.median_salary_10yr  ?? null,
+          medianMidCareerSalary: academics.median_salary_10yr ?? null,
+        }
+      : undefined,
+    demographics: demographics
+      ? {
+          percentMale:          demographics.percent_male          ?? null,
+          percentFemale:        demographics.percent_female        ?? null,
+          percentWhite:         demographics.percent_white         ?? null,
+          percentBlack:         demographics.percent_black         ?? null,
+          percentHispanic:      demographics.percent_hispanic      ?? null,
+          percentAsian:         demographics.percent_asian         ?? null,
+          percentInternational: demographics.percent_international ?? null,
+        }
+      : undefined,
+    comprehensiveData: {
+      totalEnrollment:      c.total_enrollment    ?? null,
+      city:                 c.city                ?? null,
+      stateRegion:          c.state               ?? null,
+      institutionType:      c.type                ?? null,
+      religiousAffiliation: c.religious_affiliation ?? null,
+      foundingYear:         c.founded_year         ?? null,
+      websiteUrl:           c.website              ?? null,
+    },
+    campusLife: campusLife
+      ? {
+          housingGuarantee:
+            campusLife.housing_guarantee !== null
+              ? (campusLife.housing_guarantee ? 'Guaranteed' : 'Not guaranteed')
+              : null,
+        }
+      : undefined,
+    rankings: rankings.map((r) => ({
+      year:        r.ranking_year ?? new Date().getFullYear(),
+      rankingBody: r.ranking_source,
+      nationalRank: r.ranking_value ? parseInt(r.ranking_value, 10) : null,
+      globalRank:  null,
+    })),
+    graduationRates: academics
+      ? { fourYear: academics.graduation_rate_4yr ?? null }
+      : null,
+    studentFacultyRatio: null,
+  };
 }
