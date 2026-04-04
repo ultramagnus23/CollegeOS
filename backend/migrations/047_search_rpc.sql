@@ -30,62 +30,75 @@ CREATE OR REPLACE FUNCTION search_colleges_filtered(
   p_page_size      int     DEFAULT 20
 )
 RETURNS json
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-WITH filtered AS (
-  SELECT
-    c.id,
-    c.name,
-    ca.acceptance_rate,
-    COALESCE(cf.tuition_out_state, cf.tuition_international) AS tuition
-  FROM   colleges_comprehensive c
-  -- Pull the most recent admissions row for this college (LATERAL ensures 1 row max)
-  LEFT JOIN LATERAL (
-    SELECT acceptance_rate
-    FROM   college_admissions
-    WHERE  college_id = c.id
-    ORDER  BY id
-    LIMIT  1
-  ) ca ON TRUE
-  -- Pull the most recent financial row for this college
-  LEFT JOIN LATERAL (
-    SELECT tuition_out_state, tuition_international
-    FROM   college_financial_data
-    WHERE  college_id = c.id
-    ORDER  BY id
-    LIMIT  1
-  ) cf ON TRUE
-  WHERE
-    (p_query          IS NULL OR c.name     ILIKE '%' || p_query || '%')
-    AND (p_country    IS NULL OR c.country  =     p_country)
-    AND (p_state      IS NULL OR c.state    =     p_state)
-    AND (p_type       IS NULL OR c.type     =     p_type)
-    AND (p_setting    IS NULL OR c.setting  =     p_setting)
-    AND (p_min_acceptance IS NULL OR ca.acceptance_rate >= p_min_acceptance)
-    AND (p_max_acceptance IS NULL OR ca.acceptance_rate <= p_max_acceptance)
-    AND (
-      p_max_tuition IS NULL
-      OR COALESCE(cf.tuition_out_state, cf.tuition_international) <= p_max_tuition
+DECLARE
+  v_sort_by text;
+BEGIN
+  -- Validate p_sort_by against allowed values only
+  IF p_sort_by NOT IN ('name', 'acceptance_rate', 'tuition') THEN
+    v_sort_by := 'name';
+  ELSE
+    v_sort_by := p_sort_by;
+  END IF;
+
+  RETURN (
+    WITH filtered AS (
+      SELECT
+        c.id,
+        c.name,
+        ca.acceptance_rate,
+        COALESCE(cf.tuition_out_state, cf.tuition_international) AS tuition
+      FROM   colleges_comprehensive c
+      -- Pull the most recent admissions row for this college (LATERAL ensures 1 row max)
+      LEFT JOIN LATERAL (
+        SELECT acceptance_rate
+        FROM   college_admissions
+        WHERE  college_id = c.id
+        ORDER  BY id
+        LIMIT  1
+      ) ca ON TRUE
+      -- Pull the most recent financial row for this college
+      LEFT JOIN LATERAL (
+        SELECT tuition_out_state, tuition_international
+        FROM   college_financial_data
+        WHERE  college_id = c.id
+        ORDER  BY id
+        LIMIT  1
+      ) cf ON TRUE
+      WHERE
+        (p_query          IS NULL OR c.name     ILIKE '%' || p_query || '%')
+        AND (p_country    IS NULL OR c.country  =     p_country)
+        AND (p_state      IS NULL OR c.state    =     p_state)
+        AND (p_type       IS NULL OR c.type     =     p_type)
+        AND (p_setting    IS NULL OR c.setting  =     p_setting)
+        AND (p_min_acceptance IS NULL OR ca.acceptance_rate >= p_min_acceptance)
+        AND (p_max_acceptance IS NULL OR ca.acceptance_rate <= p_max_acceptance)
+        AND (
+          p_max_tuition IS NULL
+          OR COALESCE(cf.tuition_out_state, cf.tuition_international) <= p_max_tuition
+        )
+    ),
+    counted  AS (SELECT COUNT(*)::int AS total FROM filtered),
+    paginated AS (
+      SELECT id
+      FROM   filtered
+      ORDER BY
+        CASE WHEN v_sort_by = 'acceptance_rate' THEN acceptance_rate END ASC NULLS LAST,
+        CASE WHEN v_sort_by = 'tuition'         THEN tuition         END ASC NULLS LAST,
+        name ASC
+      LIMIT  p_page_size
+      OFFSET (p_page - 1) * p_page_size
     )
-),
-counted  AS (SELECT COUNT(*)::int AS total FROM filtered),
-paginated AS (
-  SELECT id
-  FROM   filtered
-  ORDER BY
-    CASE WHEN p_sort_by = 'acceptance_rate' THEN acceptance_rate END ASC NULLS LAST,
-    CASE WHEN p_sort_by = 'tuition'         THEN tuition         END ASC NULLS LAST,
-    name ASC
-  LIMIT  p_page_size
-  OFFSET (p_page - 1) * p_page_size
-)
-SELECT json_build_object(
-  'total', c.total,
-  'ids',   COALESCE((SELECT json_agg(id) FROM paginated), '[]'::json)
-)
-FROM counted c;
+    SELECT json_build_object(
+      'total', c.total,
+      'ids',   COALESCE((SELECT json_agg(id) FROM paginated), '[]'::json)
+    )
+    FROM counted c
+  );
+END;
 $$;
 
 -- ─── 2. get_distinct_states ───────────────────────────────────────────────────
