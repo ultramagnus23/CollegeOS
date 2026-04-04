@@ -37,7 +37,7 @@ const GLOBAL = `
   @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
-  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--color-border-strong);border-radius:4px;}
 `;
 
 /* ─── Mini components ─────────────────────────────────────────────────── */
@@ -45,7 +45,7 @@ const GLOBAL = `
 // Stat pill in hero
 const HeroStat: React.FC<{ icon: string; label: string; value: number; accent: string }> = ({ icon, label, value, accent }) => (
   <div style={{
-    background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)',
+    background: 'var(--color-surface-subtle)', backdropFilter: 'blur(8px)',
     border: `1px solid ${h2r(accent, 0.3)}`, borderRadius: 16, padding: '16px 20px',
     animation: 'fadeUp 0.5s ease both',
   }}>
@@ -81,7 +81,7 @@ const Card: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }>
 
 // Progress bar
 const ProgressBar: React.FC<{ value: number; accent: string; height?: number }> = ({ value, accent, height = 6 }) => (
-  <div style={{ height, background: 'rgba(255,255,255,0.07)', borderRadius: height, overflow: 'hidden' }}>
+  <div style={{ height, background: 'var(--color-surface-subtle)', borderRadius: height, overflow: 'hidden' }}>
     <div style={{ width: `${Math.min(value, 100)}%`, height: '100%', background: accent, borderRadius: height, transition: 'width 0.8s ease' }} />
   </div>
 );
@@ -103,7 +103,7 @@ const DeadlineRow: React.FC<{ deadline: any; getDaysUntil: (d: string) => string
         <div style={{ fontSize: 14, fontWeight: 700, color: S.text, fontFamily: S.font, marginBottom: 2 }}>{deadline?.college_name ?? 'Unknown College'}</div>
         <div style={{ fontSize: 12, color: S.muted, fontFamily: S.font }}>{deadline?.deadline_type ?? 'Deadline'}</div>
       </div>
-      <div style={{ padding:'4px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700, background: isUrgent ? h2r(urgentColor, 0.15) : 'rgba(255,255,255,0.07)', color: isUrgent ? urgentColor : S.dim, fontFamily: S.font }}>
+      <div style={{ padding:'4px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700, background: isUrgent ? h2r(urgentColor, 0.15) : 'var(--color-surface-subtle)', color: isUrgent ? urgentColor : S.dim, fontFamily: S.font }}>
         {label}
       </div>
     </div>
@@ -118,7 +118,7 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     preparing:  { bg:'rgba(251,191,36,0.15)',  color:'#FBBF24' },
     researching:{ bg:'rgba(168,85,247,0.15)',  color:'#A855F7' },
   };
-  const s = cfg[status] || { bg:'rgba(255,255,255,0.07)', color:S.muted };
+  const s = cfg[status] || { bg:'var(--color-surface-subtle)', color:S.muted };
   return (
     <span style={{ padding:'3px 10px', borderRadius:100, fontSize:11, fontWeight:600, background:s.bg, color:s.color, fontFamily:S.font, textTransform:'capitalize' }}>{status}</span>
   );
@@ -257,7 +257,7 @@ const Dashboard = () => {
       <style>{GLOBAL}</style>
       <div style={{ minHeight:'100vh', background:S.bg, display:'flex', alignItems:'center', justifyContent:'center' }}>
         <div style={{ textAlign:'center' }}>
-          <div style={{ width:48, height:48, borderRadius:'50%', border:'3px solid rgba(255,255,255,0.08)', borderTopColor:S.accent, animation:'spin 0.8s linear infinite', margin:'0 auto 16px' }} />
+          <div style={{ width:48, height:48, borderRadius:'50%', border:`3px solid var(--color-border)`, borderTopColor:S.accent, animation:'spin 0.8s linear infinite', margin:'0 auto 16px' }} />
           <div style={{ fontSize:14, color:S.muted, fontFamily:S.font }}>Loading your dashboard…</div>
         </div>
       </div>
@@ -267,7 +267,7 @@ const Dashboard = () => {
   return (
     <>
       <style>{GLOBAL}</style>
-      <div style={{ minHeight:'100vh', background:S.bg, color:S.text, fontFamily:S.font }}>
+      <div data-tutorial="dashboard" style={{ minHeight:'100vh', background:S.bg, color:S.text, fontFamily:S.font }}>
 
         {/* ── HERO ── */}
         <div style={{
@@ -290,7 +290,7 @@ const Dashboard = () => {
               </div>
               <div style={{
                 display:'flex', alignItems:'center', gap:8, padding:'8px 16px',
-                background:'rgba(255,255,255,0.07)', border:`1px solid ${h2r(S.accent,0.3)}`,
+                background:'var(--color-surface-subtle)', border:`1px solid ${h2r(S.accent,0.3)}`,
                 borderRadius:100, fontSize:13, fontWeight:600, color:h2r(S.accent,0.9),
                 animation:'pulse 2s ease infinite',
               }}>
@@ -404,7 +404,7 @@ const Dashboard = () => {
                       onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor=S.border;(e.currentTarget as HTMLElement).style.background=S.surface2;}}
                     >
                       <span style={{ fontSize:18 }}>{a.emoji}</span>
-                      <span style={{ fontSize:13, color:'rgba(255,255,255,0.75)', fontWeight:500, fontFamily:S.font }}>{a.label}</span>
+                      <span style={{ fontSize:13, color:'var(--color-text-primary)', fontWeight:500, fontFamily:S.font }}>{a.label}</span>
                     </div>
                   </Link>
                 ))}
@@ -465,7 +465,7 @@ const Dashboard = () => {
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:14 }}>
                 {essayProgress.map((essay:any)=>{
                   const statusColor: Record<string,string> = { final:'#10B981', draft_complete:'#3B9EFF', in_progress:'#FBBF24' };
-                  const color = statusColor[essay.status] || 'rgba(255,255,255,0.25)';
+                  const color = statusColor[essay.status] || 'var(--color-border-strong)';
                   return (
                     <div key={essay.id} style={{ padding:'14px 16px', background:S.surface2, border:`1px solid ${h2r(color,0.25)}`, borderTop:`2px solid ${color}`, borderRadius:12 }}>
                       <div style={{ fontSize:14, fontWeight:700, color:S.text, marginBottom:4, fontFamily:S.font }}>{essay?.college_name ?? 'Unknown'}</div>

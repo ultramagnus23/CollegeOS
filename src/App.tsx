@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
 import { profileService } from "./services/profileService";
 import { api } from "./services/api";
+import { TutorialProvider, TutorialOverlay } from "./components/tutorial/TutorialOverlay";
 
 // Pages
 import AuthPage from "./pages/Auth";
@@ -169,7 +170,10 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <AuthProvider>
-            <AppContent />
+            <TutorialProvider>
+              <AppContent />
+              <TutorialOverlay />
+            </TutorialProvider>
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>

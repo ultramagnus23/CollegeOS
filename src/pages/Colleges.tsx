@@ -342,7 +342,7 @@ const Colleges: React.FC = () => {
 
         {/* ── SEARCH + FILTERS ── */}
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 48px' }}>
-          <div style={{ background: S.surface, border: `1px solid ${S.border}`, borderRadius: 18, padding: '20px 24px', marginBottom: 28 }}>
+          <div data-tutorial="college-search" style={{ background: S.surface, border: `1px solid ${S.border}`, borderRadius: 18, padding: '20px 24px', marginBottom: 28 }}>
             {/* Search row */}
             <div style={{ position: 'relative', marginBottom: showFilters ? 16 : 0 }}>
               <Search style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, color: S.muted, pointerEvents: 'none' }} />

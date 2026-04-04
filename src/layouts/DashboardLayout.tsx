@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import NotificationBadge from '../components/NotificationBadge';
 import AIChatbot from '../components/AIChatbot';
 import ThemeToggle from '../components/ui/ThemeToggle';
+import { TutorialTrigger } from '../components/tutorial/TutorialOverlay';
 import { 
   Home, 
   School, 
@@ -106,6 +107,15 @@ const DashboardLayout = () => {
                 to={item.href}
                 end={item.href === '/'}
                 onClick={() => setSidebarOpen(false)}
+                data-tutorial={
+                  item.href === '/' ? 'dashboard' :
+                  item.href === '/colleges' ? 'college-search' :
+                  item.href === '/applications' ? 'applications' :
+                  item.href === '/essays' ? 'essays' :
+                  item.href === '/deadlines' ? 'deadlines' :
+                  item.href === '/settings' ? 'profile-nav' :
+                  undefined
+                }
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium ${
                     isActive ? 'nav-active' : 'nav-inactive'
@@ -122,10 +132,11 @@ const DashboardLayout = () => {
             ))}
           </nav>
 
-          {/* Bottom bar: theme toggle + logout */}
+          {/* Bottom bar: theme toggle + tour + logout */}
           <div className="p-4" style={{ borderTop: '1px solid var(--color-border)' }}>
             <div className="flex items-center justify-between mb-3">
               <ThemeToggle />
+              <TutorialTrigger />
             </div>
             <button
               onClick={handleLogout}
