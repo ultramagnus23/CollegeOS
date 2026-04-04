@@ -60,7 +60,7 @@ const GLOBAL = `
   input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.7);}
   input::placeholder,textarea::placeholder{color:var(--color-text-disabled)!important;}
   select option,option{background:var(--color-bg-surface);color:var(--color-text-primary);}
-  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--color-border-strong);border-radius:4px;}
 `;
 
 /* ─── Urgency helpers ─────────────────────────────────────────────────── */
