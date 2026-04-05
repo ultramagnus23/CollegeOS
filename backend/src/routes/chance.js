@@ -23,13 +23,13 @@ const ML_TIMEOUT = parseInt(process.env.ML_SERVICE_TIMEOUT || '8000', 10);
 // the latest ml_metadata row so we can return version/trained_on without
 // querying Postgres on every request.
 
-let _metaCache = null;
-let _metaCacheAt = 0;
+let metaCache = null;
+let metaCachedAt = 0;
 const META_CACHE_TTL_MS = 60 * 1000; // 1 minute
 
 async function getLatestMeta(pool) {
-  if (_metaCache && Date.now() - _metaCacheAt < META_CACHE_TTL_MS) {
-    return _metaCache;
+  if (metaCache && Date.now() - metaCachedAt < META_CACHE_TTL_MS) {
+    return metaCache;
   }
   try {
     const { rows } = await pool.query(
@@ -37,9 +37,9 @@ async function getLatestMeta(pool) {
        FROM ml_metadata ORDER BY last_trained DESC LIMIT 1`
     );
     if (rows.length) {
-      _metaCache = rows[0];
-      _metaCacheAt = Date.now();
-      return _metaCache;
+      metaCache = rows[0];
+      metaCachedAt = Date.now();
+      return metaCache;
     }
   } catch (_) {
     // ml_metadata table may not exist yet
@@ -144,7 +144,7 @@ router.post('/', authenticate, async (req, res, next) => {
       });
     }
 
-    const acceptanceChance = Math.round(probability) / 100; // normalise to 0–1
+    const acceptanceChance = Math.round(probability) / 100; // normalize to 0–1
     const tier = tierFromProbability(Math.round(probability));
     const confidence = confidenceLevelFromMeta(meta);
 
