@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
   User as UserIcon, Globe, BookOpen, TestTube, Trophy, Target, Heart, 
-  Edit2, Save, X, Plus, Trash2, CheckCircle, AlertCircle, Loader2
+  Edit2, Save, X, Plus, Trash2, CheckCircle, AlertCircle, Loader2, ChevronRight
 } from 'lucide-react';
 import ProfileCompletionWidget from '@/components/common/ProfileCompletionWidget';
 import HelpTooltip, { FIELD_HELP_TEXT } from '@/components/common/HelpTooltip';
@@ -52,6 +52,39 @@ interface ProfileData {
   user: any;
   profile: any;
   activities: any[];
+}
+
+/* ─── Local Profile Completion Calculation ───────────────────────────── */
+const COMPLETION_FIELDS = [
+  { key: 'gpa_4_scale_or_pct', label: 'GPA / Class 12 %', section: '#academic' },
+  { key: 'curriculum', label: 'Curriculum', section: '#academic' },
+  { key: 'intended_major', label: 'Intended Major', section: '#preferences' },
+  { key: 'degree_level', label: 'Degree Level', section: '#preferences' },
+  { key: 'test_score', label: 'SAT / IELTS Score', section: '#test-scores' },
+  { key: 'annual_family_income_inr', label: 'Annual Family Income', section: '#preferences' },
+  { key: 'max_budget_per_year_inr', label: 'Max Budget / Year', section: '#preferences' },
+  { key: 'preferred_countries', label: 'Preferred Countries', section: '#preferences' },
+  { key: 'why_college_matters', label: 'Why College Matters (50+ chars)', section: '#goals' },
+  { key: 'values_vector', label: 'Values & Goals', section: '#goals' },
+];
+
+function computeCompletion(profile: any): { pct: number; missing: typeof COMPLETION_FIELDS } {
+  if (!profile) return { pct: 0, missing: COMPLETION_FIELDS };
+  const checks: Record<string, boolean> = {
+    gpa_4_scale_or_pct: !!(profile.gpa_4_scale || profile.class_12_percentage),
+    curriculum: !!profile.curriculum,
+    intended_major: !!profile.intended_major,
+    degree_level: !!profile.degree_level,
+    test_score: !!(profile.sat_total || profile.ielts_overall),
+    annual_family_income_inr: !!profile.annual_family_income_inr,
+    max_budget_per_year_inr: !!profile.max_budget_per_year_inr,
+    preferred_countries: Array.isArray(profile.preferred_countries) && profile.preferred_countries.length > 0,
+    why_college_matters: typeof profile.why_college_matters === 'string' && profile.why_college_matters.length >= 50,
+    values_vector: profile.values_vector !== null && profile.values_vector !== undefined,
+  };
+  const completed = Object.values(checks).filter(Boolean).length;
+  const missing = COMPLETION_FIELDS.filter(f => !checks[f.key]);
+  return { pct: Math.round((completed / 10) * 100), missing };
 }
 
 const Settings = () => {
@@ -488,7 +521,44 @@ const SCROLL_DELAY_MS = 100;
 
       {/* Profile Completion Widget */}
       <div className="mb-6">
-        <ProfileCompletionWidget variant="full" showMissingFields={true} />
+        {(() => {
+          const profile = profileData?.profile || profileData?.user;
+          const { pct, missing } = computeCompletion(profile);
+          const color = pct >= 80 ? '#10B981' : pct >= 50 ? '#FBBF24' : '#FB923C';
+          return (
+            <div className="bg-card rounded-xl border border-border p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-foreground">Profile Completion</h3>
+                <span style={{ fontSize: 22, fontWeight: 800, color }}>{pct}%</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-3 overflow-hidden mb-2">
+                <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 9999, transition: 'width 0.6s ease' }} />
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">Your profile is {pct}% complete</p>
+              {missing.length > 0 && (
+                <div className="border-t border-border pt-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Missing fields</p>
+                  <div className="flex flex-col gap-1">
+                    {missing.map(f => (
+                      <button key={f.key} onClick={() => navigate(`/settings${f.section}`)}
+                        aria-label={`Complete ${f.label}`}
+                        className="flex items-center gap-2 p-2 text-sm text-left rounded-lg hover:bg-muted transition-colors group">
+                        <AlertCircle size={13} className="text-orange-500 shrink-0" />
+                        <span className="text-foreground">{f.label}</span>
+                        <ChevronRight size={13} className="ml-auto text-muted-foreground group-hover:text-foreground" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {pct >= 100 && (
+                <div className="flex items-center gap-2 p-3 bg-emerald-500/10 rounded-lg text-emerald-600 mt-2">
+                  <CheckCircle size={16} /> <span className="text-sm font-medium">Profile complete!</span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Navigation Sidebar + Content */}

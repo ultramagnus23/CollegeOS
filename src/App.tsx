@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
 import { profileService } from "./services/profileService";
 import { api } from "./services/api";
+import { TutorialProvider, TutorialOverlay } from "./components/tutorial/TutorialOverlay";
 
 // Pages
 import AuthPage from "./pages/Auth";
@@ -30,6 +31,7 @@ import Documents from "./pages/Documents";
 import Scholarships from "./pages/Scholarships";
 import Recommendations from "./pages/Recommendations";
 import { Timeline } from "./pages/Timeline";
+import Discover from "./pages/Discover";
 import NotificationsPage from "./pages/Notifications";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
@@ -133,7 +135,7 @@ const AppContent = () => {
           <Route
             path="/"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireOnboarding={false}>
                 <DashboardLayout />
               </ProtectedRoute>
             }
@@ -149,6 +151,7 @@ const AppContent = () => {
             <Route path="scholarships" element={<Scholarships />} />
             <Route path="recommendations" element={<Recommendations />} />
             <Route path="timeline" element={<Timeline />} />
+            <Route path="discover" element={<Discover />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="settings" element={<Settings />} />
           </Route>
@@ -167,7 +170,10 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <AuthProvider>
-            <AppContent />
+            <TutorialProvider>
+              <AppContent />
+              <TutorialOverlay />
+            </TutorialProvider>
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>

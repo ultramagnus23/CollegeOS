@@ -1,0 +1,163 @@
+/**
+ * src/lib/supabase.ts
+ *
+ * Typed Supabase browser client.
+ *
+ * Environment variables required (Vite VITE_ prefix):
+ *   VITE_SUPABASE_URL      — Project URL from Supabase Dashboard → Settings → API
+ *   VITE_SUPABASE_ANON_KEY — Anon/public key (read-only, safe in browser)
+ *
+ * The client is exported as `supabase`. If the env vars are missing the module
+ * exports `null` so callers can check `isSupabaseConfigured` instead of crashing.
+ */
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+if (import.meta.env.DEV && !isSupabaseConfigured) {
+  const missing: string[] = [];
+  if (!supabaseUrl) missing.push('VITE_SUPABASE_URL');
+  if (!supabaseAnonKey) missing.push('VITE_SUPABASE_ANON_KEY');
+  console.warn('[Supabase] Missing env vars:', missing.join(', '));
+}
+
+export const supabase: SupabaseClient | null = isSupabaseConfigured
+  ? createClient(supabaseUrl!, supabaseAnonKey!)
+  : null;
+
+// ─── Schema Types ─────────────────────────────────────────────────────────────
+// These match the Supabase column names exactly.
+
+export interface CollegeRow {
+  id: number;
+  name: string;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  type: string | null;           // 'public' | 'private' | 'for-profit'
+  control: string | null;
+  size_category: string | null;
+  total_enrollment: number | null;
+  website: string | null;
+  logo_url: string | null;
+  description: string | null;
+  religious_affiliation: string | null;
+  setting: string | null;        // 'urban' | 'suburban' | 'rural'
+  founded_year: number | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface CollegeAdmissions {
+  id: number;
+  college_id: number;
+  acceptance_rate: number | null;
+  test_optional: boolean | null;
+  sat_avg: number | null;
+  sat_range: string | null;
+  act_range: string | null;
+  gpa_50: number | null;
+  data_year: number | null;
+  confidence_score: number | null;
+}
+
+export interface CollegeFinancialData {
+  id: number;
+  college_id: number;
+  tuition_in_state: number | null;
+  tuition_out_state: number | null;
+  tuition_international: number | null;
+  avg_net_price: number | null;
+  data_year: number | null;
+  confidence_score: number | null;
+}
+
+export interface AcademicDetails {
+  id: number;
+  college_id: number;
+  graduation_rate_4yr: number | null;
+  retention_rate: number | null;
+  median_salary_6yr: number | null;
+  median_salary_10yr: number | null;
+  median_debt: number | null;
+  data_year: number | null;
+  confidence_score: number | null;
+}
+
+export interface CollegeProgram {
+  id: number;
+  college_id: number;
+  program_name: string;
+  degree_type: string | null;
+}
+
+export interface StudentDemographics {
+  id: number;
+  college_id: number;
+  percent_male: number | null;
+  percent_female: number | null;
+  percent_white: number | null;
+  percent_black: number | null;
+  percent_hispanic: number | null;
+  percent_asian: number | null;
+  percent_international: number | null;
+  data_year: number | null;
+}
+
+export interface CampusLife {
+  id: number;
+  college_id: number;
+  housing_guarantee: boolean | null;
+  distance_only: boolean | null;
+}
+
+export interface CollegeRanking {
+  id: number;
+  college_id: number;
+  ranking_source: string;
+  ranking_value: string | null;
+  ranking_year: number | null;
+}
+
+export interface CollegeDeadline {
+  id: number;
+  college_id: number;
+  deadline_type: string | null;  // 'Early Decision' | 'Early Action' | 'Regular Decision'
+  deadline_date: string | null;  // ISO date string
+  notification_date: string | null;
+  is_binding: boolean | null;
+  data_year: number | null;
+}
+
+export interface CollegeContact {
+  id: number;
+  college_id: number;
+  admissions_email: string | null;
+  admissions_phone: string | null;
+  admissions_url: string | null;
+  financial_aid_url: string | null;
+  common_app: boolean | null;
+  coalition_app: boolean | null;
+  application_fee: number | null;
+}
+
+/** A college row joined with all related child-table arrays. */
+export interface CollegeWithRelations extends CollegeRow {
+  college_admissions: CollegeAdmissions[];
+  college_financial_data: CollegeFinancialData[];
+  academic_details: AcademicDetails[];
+  college_programs: CollegeProgram[];
+  student_demographics: StudentDemographics[];
+  campus_life: CampusLife[];
+  college_rankings: CollegeRanking[];
+  college_deadlines?: CollegeDeadline[];
+  college_contact?: CollegeContact[];
+}
+
+/** Convenience helper: get the first item of a child-table array or null. */
+export function firstChild<T>(arr: T[] | undefined): T | null {
+  return arr && arr.length > 0 ? arr[0] : null;
+}

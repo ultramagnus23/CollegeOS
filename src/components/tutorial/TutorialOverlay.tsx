@@ -47,51 +47,58 @@ const DEFAULT_STEPS: TutorialStep[] = [
     placement: 'bottom',
   },
   {
+    id: 'dashboard',
+    title: 'Dashboard',
+    body: 'Your command centre. See all your applications, upcoming deadlines, and recommended actions at a glance.',
+    target: '[data-tutorial="dashboard"]',
+    placement: 'bottom',
+  },
+  {
     id: 'college-search',
-    title: 'Search Colleges',
-    body: 'Use the search bar to find colleges by name, location, or major. Results update instantly.',
+    title: 'College Search',
+    body: 'Browse and filter 1,000+ colleges. Add any college to your list with one click.',
     target: '[data-tutorial="college-search"]',
     placement: 'bottom',
   },
   {
-    id: 'fit-badge',
-    title: 'Fit Classification',
-    body: 'Each college card shows whether it is a Reach, Target, or Safety school based on your profile.',
-    target: '[data-tutorial="fit-badge"]',
+    id: 'applications',
+    title: 'Applications',
+    body: "Track every application's status, round type, and progress in one place.",
+    target: '[data-tutorial="applications"]',
     placement: 'right',
   },
   {
-    id: 'coa-card',
-    title: 'Cost of Attendance',
-    body: 'Click the $ icon on any college card to view the full cost breakdown with USD/INR toggle.',
-    target: '[data-tutorial="coa-card"]',
-    placement: 'left',
-  },
-  {
-    id: 'financing',
-    title: 'Financing Options',
-    body: 'Compare loans, grants, and scholarships — each scored for your specific situation with EMI calculations.',
-    target: '[data-tutorial="financing-table"]',
-    placement: 'top',
-  },
-  {
-    id: 'timeline',
-    title: 'Application Timeline',
-    body: 'Track deadlines and to-dos for every school in your list.  Deadlines are auto-populated from official sources.',
-    target: '[data-tutorial="timeline"]',
+    id: 'chancing',
+    title: 'Chancing Calculator',
+    body: 'Enter your academic stats and get an AI-powered admission probability for each college.',
+    target: '[data-tutorial="chancing"]',
     placement: 'bottom',
+  },
+  {
+    id: 'essays',
+    title: 'Essays',
+    body: 'Manage all your supplemental and personal statement essays. Track word count and drafts per college.',
+    target: '[data-tutorial="essays"]',
+    placement: 'right',
+  },
+  {
+    id: 'deadlines',
+    title: 'Deadlines',
+    body: 'Never miss a date. All your application deadlines in one calendar view with smart reminders.',
+    target: '[data-tutorial="deadlines"]',
+    placement: 'right',
   },
   {
     id: 'profile',
     title: 'Your Profile',
-    body: 'Keep your academic profile up to date for the most accurate chancing and recommendations.',
+    body: 'Build your student profile — activities, coursework, awards — used by the chancing engine.',
     target: '[data-tutorial="profile-nav"]',
     placement: 'bottom',
   },
   {
     id: 'done',
     title: 'You\'re all set! 🎉',
-    body: 'You can restart this tour anytime from the Help menu.  Good luck with your applications!',
+    body: 'You can restart this tour anytime from the "Tour" button in the sidebar. Good luck with your applications!',
     placement: 'bottom',
   },
 ];
@@ -170,7 +177,7 @@ export function useTutorial(): TutorialContextValue {
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = 'collegeos_tutorial_done';
+const STORAGE_KEY = 'collegeos_tour_complete';
 
 export function TutorialProvider({ children }: { children: React.ReactNode }) {
   const [isActive, setIsActive] = useState(false);
@@ -331,14 +338,14 @@ export function TutorialOverlay() {
 
       {/* Tooltip card */}
       <div ref={tooltipRef} style={tooltipStyle} className="w-80 shadow-2xl" role="dialog" aria-modal aria-label={step.title}>
-        <Card className="border-blue-200">
+        <Card className="border-blue-200 dark:border-blue-800 dark:bg-gray-900">
           <CardContent className="pt-4 pb-3 px-4">
             {/* Header */}
             <div className="flex items-start justify-between mb-2">
-              <p className="font-semibold text-sm text-gray-900 leading-snug pr-6">{step.title}</p>
+              <p className="font-semibold text-sm text-gray-900 dark:text-white leading-snug pr-6">{step.title}</p>
               <button
                 onClick={stop}
-                className="text-gray-400 hover:text-gray-600 shrink-0 -mt-0.5"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0 -mt-0.5"
                 aria-label="Close tutorial"
               >
                 <X className="h-4 w-4" />
@@ -346,21 +353,24 @@ export function TutorialOverlay() {
             </div>
 
             {/* Body */}
-            <p className="text-sm text-gray-600 leading-relaxed mb-4">{step.body}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-4">{step.body}</p>
+
+            {/* Step counter */}
+            <p className="text-center text-xs text-gray-400 dark:text-gray-500 mb-2">{currentStep + 1} of {steps.length}</p>
 
             {/* Progress dots */}
             <div className="flex items-center justify-center gap-1 mb-3">
               {steps.map((_, i) => (
                 <div
                   key={i}
-                  className={`h-1.5 rounded-full transition-all ${i === currentStep ? 'w-4 bg-blue-500' : 'w-1.5 bg-gray-200'}`}
+                  className={`h-1.5 rounded-full transition-all ${i === currentStep ? 'w-4 bg-blue-500' : 'w-1.5 bg-gray-200 dark:bg-gray-700'}`}
                 />
               ))}
             </div>
 
             {/* Navigation */}
             <div className="flex items-center justify-between">
-              <Button variant="ghost" size="sm" onClick={stop} className="text-xs text-gray-400 h-7">
+              <Button variant="ghost" size="sm" onClick={stop} className="text-xs text-gray-400 dark:text-gray-500 h-7">
                 Skip tour
               </Button>
               <div className="flex gap-2">
@@ -412,20 +422,20 @@ export function ContextualHelp({ topic, className = '' }: ContextualHelpProps) {
           {/* Click-away */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
 
-          <Card className="absolute right-0 top-7 w-72 z-50 shadow-xl border-blue-100">
+          <Card className="absolute right-0 top-7 w-72 z-50 shadow-xl border-blue-100 dark:border-blue-900 dark:bg-gray-900">
             <CardContent className="pt-3 pb-3 px-4">
               <div className="flex items-center justify-between mb-2">
-                <p className="font-semibold text-sm text-gray-900 flex items-center gap-1">
+                <p className="font-semibold text-sm text-gray-900 dark:text-white flex items-center gap-1">
                   <BookOpen className="h-3.5 w-3.5 text-blue-500" />
                   {helpContent.title}
                 </p>
                 <button onClick={() => setOpen(false)} aria-label="Close help">
-                  <X className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+                  <X className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" />
                 </button>
               </div>
               <ul className="space-y-2">
                 {helpContent.tips.map((tip, i) => (
-                  <li key={i} className="flex items-start gap-1.5 text-xs text-gray-600">
+                  <li key={i} className="flex items-start gap-1.5 text-xs text-gray-600 dark:text-gray-300">
                     <Lightbulb className="h-3 w-3 text-amber-400 mt-0.5 shrink-0" />
                     {tip}
                   </li>
@@ -443,14 +453,21 @@ export function ContextualHelp({ topic, className = '' }: ContextualHelpProps) {
 
 export function TutorialTrigger({ className = '' }: { className?: string }) {
   const { start } = useTutorial();
+  const handleStart = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    start();
+  };
   return (
     <button
-      onClick={() => start()}
-      className={`flex items-center gap-1.5 text-sm text-gray-600 hover:text-blue-600 transition-colors ${className}`}
-      aria-label="Start tour"
+      onClick={handleStart}
+      className={`flex items-center gap-1.5 text-sm transition-colors ${className}`}
+      style={{ color: 'var(--color-text-secondary)' }}
+      onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--color-accent-primary)')}
+      onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--color-text-secondary)')}
+      aria-label="Start product tour"
     >
       <HelpCircle className="h-4 w-4" />
-      <span>Tour</span>
+      <span>Take Tour</span>
     </button>
   );
 }
