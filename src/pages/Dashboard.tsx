@@ -19,20 +19,25 @@ const h2r = (hex: string, a: number) => {
   return `rgba(${r},${g},${b},${a})`;
 };
 const S = {
-  bg:'#080810', surface:'#0F0F1C', surface2:'rgba(255,255,255,0.04)',
-  border:'rgba(255,255,255,0.08)', border2:'rgba(255,255,255,0.13)',
+  bg: 'var(--color-bg-primary)',
+  surface: 'var(--color-bg-surface)',
+  surface2: 'var(--color-surface-subtle)',
+  border: 'var(--color-border)',
+  border2: 'var(--color-border-strong)',
   accent:'#6C63FF', accent2:'#3B9EFF', gold:'#F59E0B',
-  text:'#fff', muted:'rgba(255,255,255,0.45)', dim:'rgba(255,255,255,0.22)',
+  text: 'var(--color-text-primary)',
+  muted: 'var(--color-text-secondary)',
+  dim: 'var(--color-text-disabled)',
   font:"'DM Sans',sans-serif",
 };
 
 const GLOBAL = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0;}body{background:#080810;}
+  *{box-sizing:border-box;margin:0;padding:0;}body{background:var(--color-bg-primary);}
   @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
-  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--color-border-strong);border-radius:4px;}
 `;
 
 /* ─── Mini components ─────────────────────────────────────────────────── */
@@ -40,7 +45,7 @@ const GLOBAL = `
 // Stat pill in hero
 const HeroStat: React.FC<{ icon: string; label: string; value: number; accent: string }> = ({ icon, label, value, accent }) => (
   <div style={{
-    background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(8px)',
+    background: 'var(--color-surface-subtle)', backdropFilter: 'blur(8px)',
     border: `1px solid ${h2r(accent, 0.3)}`, borderRadius: 16, padding: '16px 20px',
     animation: 'fadeUp 0.5s ease both',
   }}>
@@ -48,7 +53,7 @@ const HeroStat: React.FC<{ icon: string; label: string; value: number; accent: s
       <span style={{ fontSize: 18 }}>{icon}</span>
       <span style={{ fontSize: 12, color: h2r(accent, 0.8), fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', fontFamily: S.font }}>{label}</span>
     </div>
-    <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', fontFamily: S.font, lineHeight: 1 }}>{value}</div>
+    <div style={{ fontSize: 32, fontWeight: 900, color: S.text, fontFamily: S.font, lineHeight: 1 }}>{value}</div>
   </div>
 );
 
@@ -57,7 +62,7 @@ const SectionHead: React.FC<{ emoji: string; title: string; href?: string; linkL
   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 16 }}>
     <div style={{ display:'flex', alignItems:'center', gap: 10 }}>
       <span style={{ fontSize: 20 }}>{emoji}</span>
-      <h2 style={{ fontSize: 17, fontWeight: 800, color: '#fff', fontFamily: S.font }}>{title}</h2>
+      <h2 style={{ fontSize: 17, fontWeight: 800, color: S.text, fontFamily: S.font }}>{title}</h2>
     </div>
     {href && linkLabel && (
       <Link to={href} style={{ fontSize: 12, color: h2r(S.accent, 0.8), fontFamily: S.font, textDecoration: 'none', fontWeight: 600, display:'flex', alignItems:'center', gap:4 }}>
@@ -76,7 +81,7 @@ const Card: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }>
 
 // Progress bar
 const ProgressBar: React.FC<{ value: number; accent: string; height?: number }> = ({ value, accent, height = 6 }) => (
-  <div style={{ height, background: 'rgba(255,255,255,0.07)', borderRadius: height, overflow: 'hidden' }}>
+  <div style={{ height, background: 'var(--color-surface-subtle)', borderRadius: height, overflow: 'hidden' }}>
     <div style={{ width: `${Math.min(value, 100)}%`, height: '100%', background: accent, borderRadius: height, transition: 'width 0.8s ease' }} />
   </div>
 );
@@ -95,10 +100,10 @@ const DeadlineRow: React.FC<{ deadline: any; getDaysUntil: (d: string) => string
       borderRadius: 10, marginBottom: 8,
     }}>
       <div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', fontFamily: S.font, marginBottom: 2 }}>{deadline?.college_name ?? 'Unknown College'}</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: S.text, fontFamily: S.font, marginBottom: 2 }}>{deadline?.college_name ?? 'Unknown College'}</div>
         <div style={{ fontSize: 12, color: S.muted, fontFamily: S.font }}>{deadline?.deadline_type ?? 'Deadline'}</div>
       </div>
-      <div style={{ padding:'4px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700, background: isUrgent ? h2r(urgentColor, 0.15) : 'rgba(255,255,255,0.07)', color: isUrgent ? urgentColor : S.dim, fontFamily: S.font }}>
+      <div style={{ padding:'4px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700, background: isUrgent ? h2r(urgentColor, 0.15) : 'var(--color-surface-subtle)', color: isUrgent ? urgentColor : S.dim, fontFamily: S.font }}>
         {label}
       </div>
     </div>
@@ -113,7 +118,7 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     preparing:  { bg:'rgba(251,191,36,0.15)',  color:'#FBBF24' },
     researching:{ bg:'rgba(168,85,247,0.15)',  color:'#A855F7' },
   };
-  const s = cfg[status] || { bg:'rgba(255,255,255,0.07)', color:S.muted };
+  const s = cfg[status] || { bg:'var(--color-surface-subtle)', color:S.muted };
   return (
     <span style={{ padding:'3px 10px', borderRadius:100, fontSize:11, fontWeight:600, background:s.bg, color:s.color, fontFamily:S.font, textTransform:'capitalize' }}>{status}</span>
   );
@@ -132,7 +137,7 @@ const QuickAction: React.FC<{ emoji: string; title: string; desc: string; href: 
       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'none'; }}
     >
       <div style={{ fontSize: 28, marginBottom: 10 }}>{emoji}</div>
-      <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 4, fontFamily: S.font }}>{title}</div>
+      <div style={{ fontSize: 14, fontWeight: 800, color: S.text, marginBottom: 4, fontFamily: S.font }}>{title}</div>
       <div style={{ fontSize: 12, color: S.muted, fontFamily: S.font }}>{desc}</div>
     </div>
   </Link>
@@ -252,7 +257,7 @@ const Dashboard = () => {
       <style>{GLOBAL}</style>
       <div style={{ minHeight:'100vh', background:S.bg, display:'flex', alignItems:'center', justifyContent:'center' }}>
         <div style={{ textAlign:'center' }}>
-          <div style={{ width:48, height:48, borderRadius:'50%', border:'3px solid rgba(255,255,255,0.08)', borderTopColor:S.accent, animation:'spin 0.8s linear infinite', margin:'0 auto 16px' }} />
+          <div style={{ width:48, height:48, borderRadius:'50%', border:`3px solid var(--color-border)`, borderTopColor:S.accent, animation:'spin 0.8s linear infinite', margin:'0 auto 16px' }} />
           <div style={{ fontSize:14, color:S.muted, fontFamily:S.font }}>Loading your dashboard…</div>
         </div>
       </div>
@@ -262,7 +267,7 @@ const Dashboard = () => {
   return (
     <>
       <style>{GLOBAL}</style>
-      <div style={{ minHeight:'100vh', background:S.bg, color:'#fff', fontFamily:S.font }}>
+      <div data-tutorial="dashboard" style={{ minHeight:'100vh', background:S.bg, color:S.text, fontFamily:S.font }}>
 
         {/* ── HERO ── */}
         <div style={{
@@ -285,7 +290,7 @@ const Dashboard = () => {
               </div>
               <div style={{
                 display:'flex', alignItems:'center', gap:8, padding:'8px 16px',
-                background:'rgba(255,255,255,0.07)', border:`1px solid ${h2r(S.accent,0.3)}`,
+                background:'var(--color-surface-subtle)', border:`1px solid ${h2r(S.accent,0.3)}`,
                 borderRadius:100, fontSize:13, fontWeight:600, color:h2r(S.accent,0.9),
                 animation:'pulse 2s ease infinite',
               }}>
@@ -356,7 +361,7 @@ const Dashboard = () => {
               <SectionHead emoji="🌍" title="Target Countries" />
               {targetCountries.length > 0 ? targetCountries.map((c:string, i:number) => (
                 <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 12px', background:h2r(S.accent2,0.08), border:`1px solid ${h2r(S.accent2,0.2)}`, borderRadius:8, marginBottom:8 }}>
-                  <span style={{ fontSize:14, color:'#fff', fontFamily:S.font }}>{c}</span>
+                  <span style={{ fontSize:14, color:S.text, fontFamily:S.font }}>{c}</span>
                   <span style={{ fontSize:11, color:S.accent2, fontWeight:600, fontFamily:S.font }}>Active</span>
                 </div>
               )) : <p style={{ color:S.dim, fontSize:13 }}>No target countries set</p>}
@@ -370,7 +375,7 @@ const Dashboard = () => {
                 <SectionHead emoji="📚" title="Intended Majors" />
                 {intendedMajors.length > 0 ? intendedMajors.map((m:string, i:number) => (
                   <div key={i} style={{ padding:'8px 12px', background:h2r('#A855F7',0.1), border:`1px solid ${h2r('#A855F7',0.2)}`, borderRadius:8, marginBottom:8 }}>
-                    <span style={{ fontSize:14, color:'#fff', fontFamily:S.font }}>{m}</span>
+                    <span style={{ fontSize:14, color:S.text, fontFamily:S.font }}>{m}</span>
                   </div>
                 )) : <p style={{ color:S.dim, fontSize:13 }}>No majors selected</p>}
               </Card>
@@ -399,7 +404,7 @@ const Dashboard = () => {
                       onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor=S.border;(e.currentTarget as HTMLElement).style.background=S.surface2;}}
                     >
                       <span style={{ fontSize:18 }}>{a.emoji}</span>
-                      <span style={{ fontSize:13, color:'rgba(255,255,255,0.75)', fontWeight:500, fontFamily:S.font }}>{a.label}</span>
+                      <span style={{ fontSize:13, color:'var(--color-text-primary)', fontWeight:500, fontFamily:S.font }}>{a.label}</span>
                     </div>
                   </Link>
                 ))}
@@ -420,7 +425,7 @@ const Dashboard = () => {
                 <div style={{ textAlign:'center', padding:'32px 0' }}>
                   <div style={{ fontSize:36, marginBottom:10 }}>📅</div>
                   <div style={{ color:S.dim, fontSize:13 }}>No upcoming deadlines</div>
-                  <Link to="/deadlines"><button style={{ marginTop:12, padding:'8px 18px', background:S.accent, border:'none', borderRadius:10, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:S.font }}>Add Deadline</button></Link>
+                  <Link to="/deadlines"><button style={{ marginTop:12, padding:'8px 18px', background:S.accent, border:'none', borderRadius:10, color:S.text, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:S.font }}>Add Deadline</button></Link>
                 </div>
               ) : upcomingDeadlines.map((d:any) => <DeadlineRow key={d.id} deadline={d} getDaysUntil={getDaysUntil} />)}
             </Card>
@@ -431,7 +436,7 @@ const Dashboard = () => {
                 <div style={{ textAlign:'center', padding:'32px 0' }}>
                   <div style={{ fontSize:36, marginBottom:10 }}>🏫</div>
                   <div style={{ color:S.dim, fontSize:13 }}>No applications yet</div>
-                  <Link to="/colleges"><button style={{ marginTop:12, padding:'8px 18px', background:S.accent, border:'none', borderRadius:10, color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:S.font }}>Browse Colleges</button></Link>
+                  <Link to="/colleges"><button style={{ marginTop:12, padding:'8px 18px', background:S.accent, border:'none', borderRadius:10, color:S.text, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:S.font }}>Browse Colleges</button></Link>
                 </div>
               ) : recentApplications.map((app:any)=>(
                 <div key={app.id} style={{
@@ -444,7 +449,7 @@ const Dashboard = () => {
                   onClick={()=>navigate('/applications')}
                 >
                   <div>
-                    <div style={{ fontSize:14, fontWeight:700, color:'#fff', fontFamily:S.font, marginBottom:2 }}>{app?.college_name ?? 'Unknown College'}</div>
+                    <div style={{ fontSize:14, fontWeight:700, color:S.text, fontFamily:S.font, marginBottom:2 }}>{app?.college_name ?? 'Unknown College'}</div>
                     <div style={{ fontSize:11, color:S.dim }}>{app?.country ?? ''}</div>
                   </div>
                   <StatusBadge status={app?.status ?? 'unknown'} />
@@ -460,10 +465,10 @@ const Dashboard = () => {
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:14 }}>
                 {essayProgress.map((essay:any)=>{
                   const statusColor: Record<string,string> = { final:'#10B981', draft_complete:'#3B9EFF', in_progress:'#FBBF24' };
-                  const color = statusColor[essay.status] || 'rgba(255,255,255,0.25)';
+                  const color = statusColor[essay.status] || 'var(--color-border-strong)';
                   return (
                     <div key={essay.id} style={{ padding:'14px 16px', background:S.surface2, border:`1px solid ${h2r(color,0.25)}`, borderTop:`2px solid ${color}`, borderRadius:12 }}>
-                      <div style={{ fontSize:14, fontWeight:700, color:'#fff', marginBottom:4, fontFamily:S.font }}>{essay?.college_name ?? 'Unknown'}</div>
+                      <div style={{ fontSize:14, fontWeight:700, color:S.text, marginBottom:4, fontFamily:S.font }}>{essay?.college_name ?? 'Unknown'}</div>
                       <div style={{ fontSize:12, color:S.dim, marginBottom:10 }}>{essay.essay_type?.replace(/_/g,' ')}</div>
                       <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                         <div style={{ width:8, height:8, borderRadius:'50%', background:color }} />

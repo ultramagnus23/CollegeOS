@@ -1,11 +1,17 @@
 // src/pages/Colleges.tsx — Dark Editorial Redesign
 import React, { useEffect, useState, useRef, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Globe, MapPin, GraduationCap, DollarSign, Users, TrendingUp, ChevronDown, SlidersHorizontal } from 'lucide-react';
+import { Search, Globe, MapPin, GraduationCap, DollarSign, Users, TrendingUp, ChevronDown, SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../services/api';
 import { normalizeCountryData, College, TestScores, GraduationRates } from '../types';
 import FitBadge from '../components/FitBadge';
 import { toast } from 'sonner';
+import {
+  searchColleges,
+  getDistinctCountries,
+  isSupabaseConfigured,
+  normalizeToCard,
+} from '../lib/collegeService';
 
 /* ─── Design tokens ──────────────────────────────────────────────── */
 const h2r = (hex: string, a: number) => {
@@ -65,6 +71,8 @@ const Colleges: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [addingCollegeId, setAddingCollegeId] = useState<number | null>(null);
   const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   // Guard: prevents duplicate or concurrent batch fit calls (React StrictMode double-invoke safe)
   const fitBatchInFlight = useRef(false);
@@ -74,12 +82,16 @@ const Colleges: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
-        const [countriesRes, programsRes] = await Promise.all([
-          api.colleges.getCountries(),
-          api.colleges.getPrograms()
-        ]);
-        // Use shared utility to normalize country data
-        setCountries(normalizeCountryData(countriesRes.data || []));
+        if (isSupabaseConfigured) {
+          // Fetch countries from Supabase (avoids PostgREST 1,000-row cap)
+          const countryList = await getDistinctCountries();
+          setCountries(countryList);
+        } else {
+          // Fallback to backend API when Supabase is not configured
+          const countriesRes = await api.colleges.getCountries();
+          setCountries(normalizeCountryData(countriesRes.data || []));
+        }
+        const programsRes = await api.colleges.getPrograms();
         setPrograms(programsRes.data || []);
       } catch (err) {
         console.error('Failed to load filters', err);
@@ -91,7 +103,7 @@ const Colleges: React.FC = () => {
 
   useEffect(() => {
     loadColleges();
-  }, [searchTerm, selectedCountry, selectedProgram, sortBy]);
+  }, [searchTerm, selectedCountry, selectedProgram, sortBy, currentPage]);
 
   /**
    * Fetch fit classifications for all college IDs using the batch endpoint.
@@ -134,96 +146,115 @@ const Colleges: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const params: any = {};
-      if (selectedCountry) params.country = selectedCountry;
-      
-      // Use search endpoint only if there's a search term, otherwise use get to fetch all
-      let res;
-      if (searchTerm) {
-        // Use search endpoint with 'q' parameter
-        res = await api.colleges.search({ q: searchTerm, country: selectedCountry });
-      } else {
-        // Use get endpoint to fetch all colleges
-        res = await api.colleges.get(params);
-      }
-      
-      // Handle different response structures
-      const raw = res?.data ?? res ?? [];
-      
-      if (!Array.isArray(raw)) {
-        console.error('Expected array but got:', typeof raw, raw);
-        setError('Invalid response format from server');
-        setColleges([]);
-        return;
-      }
+      if (isSupabaseConfigured) {
+        // ── Supabase path: server-side filtering + correct pagination ────────
+        const result = await searchColleges({
+          query:   searchTerm   || undefined,
+          country: selectedCountry || undefined,
+          sortBy:  sortBy !== 'ranking' ? sortBy : 'name', // ranking handled client-side below
+          page:    currentPage,
+        });
 
-      // Normalize backend payload to UI shape
-      const normalized: College[] = raw.map((c: any) => {
-        // Parse JSON fields safely
-        let majorCategories: string[] = [];
-        let programs: string[] = [];
-        let academicStrengths: string[] = [];
-        
-        try {
-          if (Array.isArray(c.majorCategories)) {
-            majorCategories = c.majorCategories;
-          } else if (typeof c.majorCategories === 'string') {
-            majorCategories = JSON.parse(c.majorCategories || '[]');
-          }
-          if (Array.isArray(c.programs)) {
-            programs = c.programs;
-          } else if (typeof c.programs === 'string') {
-            programs = JSON.parse(c.programs || '[]');
-          }
-          if (Array.isArray(c.academicStrengths)) {
-            academicStrengths = c.academicStrengths;
-          }
-        } catch (e) {
-          console.warn('Failed to parse fields for', c.name, e);
+        const normalized: any[] = result.data.map(normalizeToCard);
+
+        // Client-side ranking sort (ranking data is in list payload)
+        const sorted =
+          sortBy === 'ranking'
+            ? [...normalized].sort((a, b) => (a.ranking || 999) - (b.ranking || 999))
+            : normalized;
+
+        setTotalCount(result.count);
+        setTotalPages(result.totalPages);
+        setColleges(sorted);
+        setFitMap({});
+        loadFitData(sorted.map((c: any) => c.id));
+      } else {
+        // ── Legacy backend path (used when VITE_SUPABASE_* vars are absent) ──
+        const params: any = {};
+        if (selectedCountry) params.country = selectedCountry;
+
+        let res;
+        if (searchTerm) {
+          res = await api.colleges.search({ q: searchTerm, country: selectedCountry });
+        } else {
+          res = await api.colleges.get(params);
         }
-        
-        return {
-          id: c.id,
-          name: c.name,
-          location: c.location || '',
-          country: c.country,
-          type: c.type || c.trust_tier || 'Unknown',
-          acceptance_rate: c.acceptanceRate ?? c.acceptance_rate ?? null,
-          acceptanceRate: c.acceptanceRate ?? c.acceptance_rate ?? null,
-          programs,
-          majorCategories,
-          academicStrengths,
-          description: c.description || null,
-          tuition_cost: c.tuition_cost || null,
-          enrollment: c.enrollment || null,
-          ranking: c.ranking || null,
-          averageGPA: c.averageGPA || null,
-          testScores: c.testScores || null,
-          graduationRates: c.graduationRates || null,
-          studentFacultyRatio: c.studentFacultyRatio || null
-        };
-      });
-      
-      // Sort colleges
-      const sorted = [...normalized].sort((a, b) => {
-        switch (sortBy) {
-          case 'ranking':
-            return (a.ranking || 999) - (b.ranking || 999);
-          case 'acceptance_rate':
-            return (a.acceptanceRate || 999) - (b.acceptanceRate || 999);
-          case 'tuition':
-            return (a.tuition_cost || 999999) - (b.tuition_cost || 999999);
-          case 'name':
-          default:
-            return a.name.localeCompare(b.name);
+
+        const raw = res?.data ?? res ?? [];
+
+        if (!Array.isArray(raw)) {
+          console.error('Expected array but got:', typeof raw, raw);
+          setError('Invalid response format from server');
+          setColleges([]);
+          return;
         }
-      });
-      
-      setTotalCount(sorted.length);
-      setColleges(sorted);
-      // Batch-fetch fit data for all loaded colleges (single batch call instead of N individual calls)
-      setFitMap({});
-      loadFitData(sorted.map(c => c.id));
+
+        // Normalize backend payload to UI shape
+        const normalized: College[] = raw.map((c: any) => {
+          let majorCategories: string[] = [];
+          let programs: string[] = [];
+          let academicStrengths: string[] = [];
+
+          try {
+            if (Array.isArray(c.majorCategories)) {
+              majorCategories = c.majorCategories;
+            } else if (typeof c.majorCategories === 'string') {
+              majorCategories = JSON.parse(c.majorCategories || '[]');
+            }
+            if (Array.isArray(c.programs)) {
+              programs = c.programs;
+            } else if (typeof c.programs === 'string') {
+              programs = JSON.parse(c.programs || '[]');
+            }
+            if (Array.isArray(c.academicStrengths)) {
+              academicStrengths = c.academicStrengths;
+            }
+          } catch (e) {
+            console.warn('Failed to parse fields for', c.name, e);
+          }
+
+          return {
+            id: c.id,
+            name: c.name,
+            location: c.location || '',
+            country: c.country,
+            type: c.type || c.trust_tier || 'Unknown',
+            acceptance_rate: c.acceptanceRate ?? c.acceptance_rate ?? null,
+            acceptanceRate: c.acceptanceRate ?? c.acceptance_rate ?? null,
+            programs,
+            majorCategories,
+            academicStrengths,
+            description: c.description || null,
+            tuition_cost: c.tuition_cost || null,
+            enrollment: c.enrollment || null,
+            ranking: c.ranking || null,
+            averageGPA: c.averageGPA || null,
+            testScores: c.testScores || null,
+            graduationRates: c.graduationRates || null,
+            studentFacultyRatio: c.studentFacultyRatio || null
+          };
+        });
+
+        const sorted = [...normalized].sort((a, b) => {
+          switch (sortBy) {
+            case 'ranking':
+              return (a.ranking || 999) - (b.ranking || 999);
+            case 'acceptance_rate':
+              return (a.acceptanceRate || 999) - (b.acceptanceRate || 999);
+            case 'tuition':
+              return (a.tuition_cost || 999999) - (b.tuition_cost || 999999);
+            case 'name':
+            default:
+              return a.name.localeCompare(b.name);
+          }
+        });
+
+        setTotalCount(sorted.length);
+        setTotalPages(1);
+        setColleges(sorted);
+        setFitMap({});
+        loadFitData(sorted.map(c => c.id));
+      }
     } catch (err) {
       setError('Failed to load colleges');
       console.error('Error loading colleges:', err);
@@ -292,7 +323,7 @@ const Colleges: React.FC = () => {
                   <span style={{ color: ACCENT }}>Discover</span> Colleges
                 </h1>
                 <p style={{ color: S.muted, fontSize: 14 }}>
-                  {loading ? 'Loading…' : `${colleges.length.toLocaleString()} colleges available`}
+                  {loading ? 'Loading…' : `${totalCount.toLocaleString()} colleges${totalPages > 1 ? ` (page ${currentPage} of ${totalPages})` : ''}`}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -311,13 +342,13 @@ const Colleges: React.FC = () => {
 
         {/* ── SEARCH + FILTERS ── */}
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 48px' }}>
-          <div style={{ background: S.surface, border: `1px solid ${S.border}`, borderRadius: 18, padding: '20px 24px', marginBottom: 28 }}>
+          <div data-tutorial="college-search" style={{ background: S.surface, border: `1px solid ${S.border}`, borderRadius: 18, padding: '20px 24px', marginBottom: 28 }}>
             {/* Search row */}
             <div style={{ position: 'relative', marginBottom: showFilters ? 16 : 0 }}>
               <Search style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 18, height: 18, color: S.muted, pointerEvents: 'none' }} />
               <input
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 placeholder="Search colleges by name, location or major…"
                 style={{
                   width: '100%', padding: '12px 14px 12px 44px',
@@ -348,21 +379,21 @@ const Colleges: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 14, paddingTop: 16, borderTop: `1px solid ${S.border}` }}>
                 <div>
                   <label style={{ fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font }}>Country</label>
-                  <select value={selectedCountry} onChange={(e) => setSelectedCountry(e.target.value)} style={sel}>
+                  <select value={selectedCountry} onChange={(e) => { setSelectedCountry(e.target.value); setCurrentPage(1); }} style={sel}>
                     <option value="">All Countries</option>
                     {countries.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={{ fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font }}>Program</label>
-                  <select value={selectedProgram} onChange={(e) => setSelectedProgram(e.target.value)} style={sel}>
+                  <select value={selectedProgram} onChange={(e) => { setSelectedProgram(e.target.value); setCurrentPage(1); }} style={sel}>
                     <option value="">All Programs</option>
                     {programs.map(p => <option key={p}>{p}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={{ fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font }}>Sort By</label>
-                  <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={sel}>
+                  <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }} style={sel}>
                     <option value="name">Name (A–Z)</option>
                     <option value="ranking">Ranking (Best First)</option>
                     <option value="acceptance_rate">Acceptance Rate</option>
@@ -371,7 +402,7 @@ const Colleges: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                   <button
-                    onClick={() => { setSearchTerm(''); setSelectedCountry(''); setSelectedProgram(''); setSortBy('name'); }}
+                    onClick={() => { setSearchTerm(''); setSelectedCountry(''); setSelectedProgram(''); setSortBy('name'); setCurrentPage(1); }}
                     style={{ width: '100%', padding: '10px 14px', background: 'transparent', border: `1px solid ${S.border2}`, borderRadius: 10, color: S.muted, fontSize: 13, fontFamily: S.font, cursor: 'pointer' }}
                   >
                     Clear All
@@ -409,6 +440,43 @@ const Colleges: React.FC = () => {
               />
             ))}
           </div>
+
+          {/* ── Pagination ── */}
+          {totalPages > 1 && !loading && !error && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, paddingTop: 32 }}>
+              <button
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 18px', background: S.surface, border: `1px solid ${S.border2}`,
+                  borderRadius: 10, color: currentPage <= 1 ? S.dim : S.muted,
+                  fontSize: 13, fontWeight: 600, fontFamily: S.font,
+                  cursor: currentPage <= 1 ? 'not-allowed' : 'pointer',
+                  opacity: currentPage <= 1 ? 0.4 : 1,
+                }}
+              >
+                <ChevronLeft style={{ width: 16, height: 16 }} /> Prev
+              </button>
+              <span style={{ fontSize: 13, color: S.muted, fontFamily: S.font }}>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 18px', background: S.surface, border: `1px solid ${S.border2}`,
+                  borderRadius: 10, color: currentPage >= totalPages ? S.dim : S.muted,
+                  fontSize: 13, fontWeight: 600, fontFamily: S.font,
+                  cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer',
+                  opacity: currentPage >= totalPages ? 0.4 : 1,
+                }}
+              >
+                Next <ChevronRight style={{ width: 16, height: 16 }} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>

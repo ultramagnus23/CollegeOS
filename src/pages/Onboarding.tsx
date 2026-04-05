@@ -121,19 +121,22 @@ const SegmentedControl: React.FC<{
   options: string[]; value: string; onChange: (v: string) => void; accent: string;
 }> = ({ options, value, onChange, accent }) => (
   <div style={{
-    display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: 12,
-    padding: 4, gap: 4, border: '1px solid rgba(255,255,255,0.1)',
+    display: 'flex', background: 'var(--color-surface-subtle)', borderRadius: 12,
+    padding: 4, gap: 4, border: '1px solid var(--color-border-strong)',
   }}>
-    {options.map(opt => (
-      <button key={opt} onClick={() => onChange(opt)} style={{
-        flex: 1, padding: '10px 16px', borderRadius: 8, border: 'none',
-        background: value === opt ? accent : 'transparent',
-        color: value === opt ? '#000' : 'rgba(255,255,255,0.6)',
-        fontWeight: value === opt ? 700 : 400, fontSize: 13,
-        cursor: 'pointer', transition: 'all 0.15s ease',
-        fontFamily: "'DM Sans', sans-serif",
-      }}>{opt}</button>
-    ))}
+    {options.map(opt => {
+      const isSelected = value.toLowerCase() === opt.toLowerCase();
+      return (
+        <button key={opt} onClick={() => onChange(opt)} style={{
+          flex: 1, padding: '10px 16px', borderRadius: 8, border: isSelected ? `1px solid ${accent}` : '1px solid transparent',
+          background: isSelected ? accent : 'transparent',
+          color: isSelected ? '#000' : 'var(--color-text-secondary)',
+          fontWeight: isSelected ? 700 : 400, fontSize: 13,
+          cursor: 'pointer', transition: 'all 0.15s ease',
+          fontFamily: "'DM Sans', sans-serif",
+        }}>{opt}</button>
+      );
+    })}
   </div>
 );
 
@@ -1114,13 +1117,13 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   };
 
   const labelStyle: React.CSSProperties = {
-    fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.6)',
+    fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)',
     textTransform: 'uppercase', letterSpacing: '0.08em',
     fontFamily: "'DM Sans', sans-serif",
   };
 
   const headlineStyle = (acc: string): React.CSSProperties => ({
-    fontSize: 48, fontWeight: 800, color: '#fff', lineHeight: 1.1, marginBottom: 10,
+    fontSize: 48, fontWeight: 800, color: 'var(--color-text-primary)', lineHeight: 1.1, marginBottom: 10,
     letterSpacing: '-0.02em', fontFamily: "'Clash Display', 'DM Sans', sans-serif",
   });
 
@@ -1130,7 +1133,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
 
   const inputFieldStyle = (acc: string): React.CSSProperties => ({
     width: '100%', padding: '14px 18px', background: surface,
-    border: `1px solid rgba(255,255,255,0.12)`, borderRadius: 12, color: '#fff', fontSize: 15,
+    border: `1px solid var(--color-border-strong)`, borderRadius: 12, color: 'var(--color-text-primary)', fontSize: 15,
     outline: 'none', fontFamily: "'DM Sans', sans-serif", boxSizing: 'border-box',
     transition: 'border-color 0.15s',
   });
@@ -1150,11 +1153,11 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
         @keyframes glow-pulse { 0%,100% { box-shadow: 0 0 20px rgba(255,215,0,0.3); } 50% { box-shadow: 0 0 40px rgba(255,215,0,0.7); } }
         @keyframes slide-in { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes slide-out { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-60px); } }
-        input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.2); }
+        input::placeholder, textarea::placeholder { color: var(--color-text-disabled); }
         input:focus, textarea:focus, select:focus { border-color: ${accent} !important; outline: none; }
-        select option { background: #1a1a2e; color: #fff; }
+        select option { background: var(--color-bg-surface); color: var(--color-text-primary); }
         textarea { font-family: 'DM Sans', sans-serif; }
-        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: var(--color-surface-subtle); } ::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 4px; }
       `}</style>
 
       {showLoading && <LoadingSequence name={studentData.name} onDone={async () => {
@@ -1227,28 +1230,28 @@ await completeOnboarding({
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
           background: hexToRgba(bg, 0.9), backdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
+          borderTop: '1px solid var(--color-border)',
           padding: '20px 48px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
           <button onClick={prevStep} disabled={step === 1} style={{
             padding: '12px 24px', borderRadius: 10,
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-            color: 'rgba(255,255,255,0.5)', cursor: step === 1 ? 'not-allowed' : 'pointer',
+            background: 'var(--color-surface-subtle)', border: '1px solid var(--color-border)',
+            color: 'var(--color-text-secondary)', cursor: step === 1 ? 'not-allowed' : 'pointer',
             fontSize: 14, fontFamily: "'DM Sans', sans-serif",
             opacity: step === 1 ? 0.3 : 1,
           }}>← Back</button>
 
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', fontFamily: "'DM Sans', sans-serif" }}>
+          <span style={{ fontSize: 13, color: 'var(--color-text-disabled)', fontFamily: "'DM Sans', sans-serif" }}>
             Step {step} of 7
           </span>
 
           {step < 7 ? (
             <button onClick={nextStep} disabled={!isStepComplete()} style={{
               padding: '14px 32px', borderRadius: 12,
-              background: isStepComplete() ? accent : 'rgba(255,255,255,0.06)',
+              background: isStepComplete() ? accent : 'var(--color-surface-subtle)',
               border: 'none', cursor: isStepComplete() ? 'pointer' : 'not-allowed',
-              color: isStepComplete() ? '#000' : 'rgba(255,255,255,0.2)',
+              color: isStepComplete() ? '#000' : 'var(--color-text-disabled)',
               fontSize: 15, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
               transition: 'all 0.2s ease',
               boxShadow: isStepComplete() ? `0 0 20px ${hexToRgba(accent, 0.4)}` : 'none',

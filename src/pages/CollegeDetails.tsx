@@ -27,6 +27,7 @@ import {
 import { api } from '../services/api';
 import { toast } from 'sonner';
 import { DataFreshnessIndicator } from '@/components/DataFreshnessIndicator';
+import { getCollegeById, isSupabaseConfigured, normalizeToDetail } from '../lib/collegeService';
 
 /* =========================
    Country-based Gradient Mapping
@@ -319,8 +320,21 @@ const CollegeDetail: React.FC = () => {
   const loadCollegeDetails = async (collegeId: number): Promise<void> => {
     try {
       setLoading(true);
-      const response = await api.colleges.getById(collegeId);
-      setCollege(response.data);
+      let collegeData: College | null = null;
+
+      if (isSupabaseConfigured) {
+        // ── Supabase path: fetch from colleges_comprehensive with all child tables ──
+        const raw = await getCollegeById(collegeId);
+        if (raw) {
+          collegeData = normalizeToDetail(raw) as College;
+        }
+      } else {
+        // ── Legacy backend path ────────────────────────────────────────────────
+        const response = await api.colleges.getById(collegeId);
+        collegeData = response.data;
+      }
+
+      setCollege(collegeData);
       try {
         setChancingLoading(true);
         const chancingResponse = await api.chancing.calculate({ collegeId });

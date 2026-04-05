@@ -1,465 +1,377 @@
-import { useEffect, useState } from 'react';
+// src/pages/Scholarships.tsx — Dark Editorial Redesign with Tabs
+import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  Loader2, 
-  Search, 
-  GraduationCap,
-  DollarSign,
-  Globe,
-  Calendar,
-  ExternalLink,
-  Star,
-  Filter,
-  Bookmark,
-  BookmarkCheck,
-  Award
-} from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
+/* ─── Types ──────────────────────────────────────────────────────────── */
 interface Scholarship {
-  id: number;
-  name: string;
-  provider: string;
-  country: string;
-  amount: string;
-  amount_min?: number;
-  amount_max?: number;
-  currency: string;
-  deadline?: string;
-  eligibility?: string;
-  nationality_requirements: string[];
-  academic_requirements: string[];
-  need_based: number;
-  merit_based: number;
-  description?: string;
-  application_url?: string;
-  is_renewable: number;
-  renewal_criteria?: string;
+  id: number; name: string; provider: string; country: string;
+  amount: string; amount_min?: number; amount_max?: number; currency: string;
+  deadline?: string; eligibility?: string; nationality_requirements: string[];
+  academic_requirements: string[]; need_based: number; merit_based: number;
+  description?: string; application_url?: string; is_renewable: number; renewal_criteria?: string;
 }
-
 interface TrackedScholarship {
-  id: number;
-  scholarship_id: number;
-  status: string;
-  notes?: string;
-  name: string;
-  provider: string;
-  country: string;
-  amount: string;
-  deadline?: string;
+  id: number; scholarship_id: number; status: string; notes?: string;
+  name: string; provider: string; country: string; amount: string; deadline?: string;
 }
+interface Grant { id: number; name: string; provider: string; provider_type?: string; award_amount_inr?: number; deadline?: string; status?: string; }
+interface GovernmentLoan { id: number; bank_name?: string; scheme_name?: string; max_loan_amount_inr?: number; interest_rate?: number; csis_subsidy?: boolean; provider?: string; status?: string; }
+interface PrivateLoan { id: number; lender_name?: string; max_amount?: number; interest_rate_min?: number; interest_rate_max?: number; cosigner_required?: boolean; provider?: string; status?: string; }
 
-const Scholarships = () => {
+type Tab = 'scholarships' | 'grants' | 'government' | 'private' | 'college';
+
+/* ─── Design ─────────────────────────────────────────────────────────── */
+const ACCENT = '#A855F7';
+const h2r = (hex: string, a: number) => {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+};
+const S = {
+  bg: 'var(--color-bg-primary)',
+  surface: 'var(--color-bg-surface)',
+  surface2: 'var(--color-surface-subtle)',
+  border: 'var(--color-border)',
+  border2: 'var(--color-border-strong)',
+  muted: 'var(--color-text-secondary)',
+  dim: 'var(--color-text-disabled)',
+  font: "'DM Sans',sans-serif",
+};
+
+const GLOBAL = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  input::placeholder{color:var(--color-text-disabled)!important;}
+  select option{background:var(--color-bg-surface);color:var(--color-text-primary);}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
+`;
+
+/* ─── Deadline helpers ─────────────────────────────────────────────────── */
+const deadlinePill = (deadline?: string) => {
+  if (!deadline) return { label: 'Unknown', color: 'rgba(255,255,255,0.45)', bg: 'rgba(255,255,255,0.07)', border: 'rgba(255,255,255,0.1)' };
+  const days = Math.ceil((new Date(deadline).getTime() - Date.now()) / 86400000);
+  if (days < 0)  return { label: 'Overdue', color: '#F87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.25)' };
+  if (days < 30) return { label: `${days}d left`, color: '#FB923C', bg: 'rgba(251,146,60,0.1)', border: 'rgba(251,146,60,0.25)' };
+  if (days < 60) return { label: `${days}d left`, color: '#FBBF24', bg: 'rgba(251,191,36,0.1)', border: 'rgba(251,191,36,0.25)' };
+  return             { label: `${days}d left`, color: '#10B981', bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.25)'  };
+};
+
+const Scholarships: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<Tab>('scholarships');
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);
-  const [trackedScholarships, setTrackedScholarships] = useState<TrackedScholarship[]>([]);
-  const [countries, setCountries] = useState<string[]>([]);
+  const [trackedIds, setTrackedIds] = useState<Set<number>>(new Set());
+  const [grants, setGrants] = useState<Grant[]>([]);
+  const [govLoans, setGovLoans] = useState<GovernmentLoan[]>([]);
+  const [privLoans, setPrivLoans] = useState<PrivateLoan[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCountry, setSelectedCountry] = useState('');
-  const [showNeedBased, setShowNeedBased] = useState(false);
-  const [showMeritBased, setShowMeritBased] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'tracked'>('all');
+  const [page, setPage] = useState(1);
+  const [matchScores, setMatchScores] = useState<Record<number, number>>({});
+  const [matchLoading, setMatchLoading] = useState(false);
   const [trackingId, setTrackingId] = useState<number | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, [searchTerm, selectedCountry, showNeedBased, showMeritBased]);
+  useEffect(() => { loadScholarships(); }, [searchTerm]);
+  useEffect(() => { if (activeTab === 'grants') loadGrants(); }, [activeTab]);
+  useEffect(() => { if (activeTab === 'government') loadGovLoans(); }, [activeTab]);
+  useEffect(() => { if (activeTab === 'private') loadPrivLoans(); }, [activeTab]);
 
-  const loadData = async () => {
+  const loadScholarships = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const [scholarshipsRes, countriesRes, trackedRes] = await Promise.all([
-        api.scholarships.search({
-          country: selectedCountry || undefined,
-          needBased: showNeedBased || undefined,
-          meritBased: showMeritBased || undefined,
-          search: searchTerm || undefined,
-        }),
-        api.scholarships.getCountries(),
+      const [schRes, trackedRes] = await Promise.all([
+        api.scholarships.search({ search: searchTerm || undefined }),
         api.scholarships.getUserTracked(),
-      ]) as [any, any, any];
-      
-      setScholarships(scholarshipsRes.data || []);
-      setCountries(countriesRes.data || []);
-      setTrackedScholarships(trackedRes.data || []);
-    } catch (error: any) {
-      console.error('Failed to load scholarships:', error);
-      toast.error('Failed to load scholarships');
-    } finally {
-      setLoading(false);
-    }
+      ]) as [any, any];
+      setScholarships(schRes.data || []);
+      const ids = new Set<number>((trackedRes.data || []).map((t: TrackedScholarship) => t.scholarship_id));
+      setTrackedIds(ids);
+    } catch { toast.error('Failed to load scholarships'); }
+    finally { setLoading(false); }
   };
 
-  const handleTrack = async (scholarshipId: number) => {
-    setTrackingId(scholarshipId);
+  const loadGrants = async () => {
     try {
-      await api.scholarships.track(scholarshipId, 'interested');
-      toast.success('Scholarship added to your list');
-      loadData();
-    } catch (error: any) {
-      toast.error('Failed to track scholarship');
-    } finally {
-      setTrackingId(null);
-    }
+      const res = await api.scholarships.getGrants() as any;
+      setGrants(res.data || []);
+    } catch { setGrants([]); }
   };
-
-  const handleUpdateTracking = async (scholarshipId: number, status: string) => {
+  const loadGovLoans = async () => {
     try {
-      await api.scholarships.updateTracking(scholarshipId, { status });
-      toast.success('Status updated');
-      loadData();
-    } catch (error: any) {
-      toast.error('Failed to update status');
-    }
+      const res = await api.scholarships.getGovernmentLoans() as any;
+      setGovLoans(res.data || []);
+    } catch { setGovLoans([]); }
+  };
+  const loadPrivLoans = async () => {
+    try {
+      const res = await api.scholarships.getPrivateLoans() as any;
+      setPrivLoans(res.data || []);
+    } catch { setPrivLoans([]); }
   };
 
-  const isTracked = (scholarshipId: number) => {
-    return trackedScholarships.some(t => t.scholarship_id === scholarshipId);
+  const handleTrack = async (id: number) => {
+    setTrackingId(id);
+    try {
+      await api.scholarships.track(id, 'interested');
+      setTrackedIds(prev => new Set([...prev, id]));
+      toast.success('Scholarship tracked!');
+    } catch { toast.error('Failed to track scholarship'); }
+    finally { setTrackingId(null); }
   };
 
-  const getDaysUntilDeadline = (dateStr: string) => {
-    const days = Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    if (days < 0) return 'Deadline passed';
-    if (days === 0) return 'Today';
-    if (days === 1) return 'Tomorrow';
-    return `${days} days left`;
+  const handleMatch = async () => {
+    setMatchLoading(true);
+    try {
+      const res = await api.scholarships.match() as any;
+      const scores: Record<number, number> = {};
+      (res.data || []).forEach((m: any) => { scores[m.id] = m.match_score ?? m.score ?? 0; });
+      setMatchScores(scores);
+      toast.success('Match scores updated!');
+    } catch { toast.error('Failed to run matching'); }
+    finally { setMatchLoading(false); }
   };
 
-  const formatAmount = (scholarship: Scholarship) => {
-    if (scholarship.amount) return scholarship.amount;
-    if (scholarship.amount_min && scholarship.amount_max) {
-      return `${scholarship.currency} ${scholarship.amount_min.toLocaleString()} - ${scholarship.amount_max.toLocaleString()}`;
-    }
-    return 'Varies';
-  };
+  const TABS: { id: Tab; label: string }[] = [
+    { id: 'scholarships', label: 'Scholarships' },
+    { id: 'grants', label: 'Grants' },
+    { id: 'government', label: 'Government Loans' },
+    { id: 'private', label: 'Private Loans' },
+    { id: 'college', label: 'College Aid' },
+  ];
 
-  if (loading && scholarships.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="animate-spin text-primary" size={40} />
-      </div>
-    );
-  }
+  const pagedScholarships = scholarships.slice(0, page * 10);
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Scholarship Database</h1>
-        <p className="text-muted-foreground">Find and track scholarships from around the world</p>
-      </div>
+    <div style={{ minHeight: '100vh', background: S.bg, padding: '32px 24px', fontFamily: S.font }}>
+      <style>{GLOBAL}</style>
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 text-white">
-          <div className="flex items-center gap-3">
-            <Award className="opacity-80" size={24} />
-            <div>
-              <p className="text-2xl font-bold">{scholarships.length}</p>
-              <p className="text-sm opacity-90">Available</p>
-            </div>
-          </div>
+        {/* Header */}
+        <div style={{ marginBottom: 28 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 6 }}>Financial Aid</h1>
+          <p style={{ fontSize: 14, color: S.muted }}>
+            Based on your profile, you qualify for <strong style={{ color: 'var(--color-text-primary)' }}>{scholarships.length}</strong> scholarships and funding options.
+          </p>
         </div>
-        
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-4 text-white">
-          <div className="flex items-center gap-3">
-            <Bookmark className="opacity-80" size={24} />
-            <div>
-              <p className="text-2xl font-bold">{trackedScholarships.length}</p>
-              <p className="text-sm opacity-90">Tracked</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-4 text-white">
-          <div className="flex items-center gap-3">
-            <DollarSign className="opacity-80" size={24} />
-            <div>
-              <p className="text-2xl font-bold">
-                {scholarships.filter(s => s.need_based).length}
-              </p>
-              <p className="text-sm opacity-90">Need-Based</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-4 text-white">
-          <div className="flex items-center gap-3">
-            <Star className="opacity-80" size={24} />
-            <div>
-              <p className="text-2xl font-bold">
-                {scholarships.filter(s => s.merit_based).length}
-              </p>
-              <p className="text-sm opacity-90">Merit-Based</p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <Button
-          variant={activeTab === 'all' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('all')}
-        >
-          All Scholarships
-        </Button>
-        <Button
-          variant={activeTab === 'tracked' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('tracked')}
-        >
-          My Tracked ({trackedScholarships.length})
-        </Button>
-      </div>
+        {/* Tab Bar */}
+        <div style={{ display: 'flex', gap: 4, marginBottom: 28, borderBottom: `1px solid ${S.border}`, paddingBottom: 0, overflowX: 'auto' }}>
+          {TABS.map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+              padding: '10px 18px', fontSize: 13, fontWeight: 700, fontFamily: S.font, cursor: 'pointer', border: 'none',
+              borderBottom: activeTab === tab.id ? `2px solid ${ACCENT}` : '2px solid transparent',
+              background: 'transparent', color: activeTab === tab.id ? ACCENT : S.muted,
+              transition: 'all 0.15s', whiteSpace: 'nowrap',
+            }}>{tab.label}</button>
+          ))}
+        </div>
 
-      {/* Filters */}
-      {activeTab === 'all' && (
-        <div className="bg-card rounded-xl border border-border p-4 mb-6">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-                <Input
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search scholarships..."
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            
-            <Select value={selectedCountry || 'all'} onValueChange={(v) => setSelectedCountry(v === 'all' ? '' : v)}>
-              <SelectTrigger className="w-48">
-                <Globe className="mr-2" size={16} />
-                <SelectValue placeholder="All Countries" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Countries</SelectItem>
-                {countries.map((country) => (
-                  <SelectItem key={country} value={country}>{country}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Button
-              variant={showNeedBased ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setShowNeedBased(!showNeedBased)}
-            >
-              <DollarSign size={16} className="mr-1" />
-              Need-Based
-            </Button>
-            
-            <Button
-              variant={showMeritBased ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setShowMeritBased(!showMeritBased)}
-            >
-              <Star size={16} className="mr-1" />
-              Merit-Based
-            </Button>
-            
-            {(selectedCountry || showNeedBased || showMeritBased || searchTerm) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSelectedCountry('');
-                  setShowNeedBased(false);
-                  setShowMeritBased(false);
-                  setSearchTerm('');
+        {/* Scholarships Tab */}
+        {activeTab === 'scholarships' && (
+          <div>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+              <input
+                placeholder="Search scholarships…"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                style={{
+                  flex: 1, minWidth: 200, padding: '10px 14px', background: S.surface2,
+                  border: `1px solid ${S.border2}`, borderRadius: 10,
+                  color: 'var(--color-text-primary)', fontSize: 14, fontFamily: S.font,
                 }}
-              >
-                Clear Filters
-              </Button>
+              />
+              <button onClick={handleMatch} disabled={matchLoading} style={{
+                padding: '10px 18px', background: h2r(ACCENT, 0.15), border: `1px solid ${h2r(ACCENT, 0.3)}`,
+                borderRadius: 10, color: ACCENT, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: S.font,
+              }}>
+                {matchLoading ? '…' : '✦ Run Match'}
+              </button>
+            </div>
+            {loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+                <div style={{ width: 36, height: 36, border: `3px solid ${S.border2}`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              </div>
+            ) : scholarships.length === 0 ? (
+              <EmptyState icon="🎓" title="No scholarships found" desc="Try a different search or broaden your filters." />
+            ) : (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {pagedScholarships.map((s, i) => {
+                    const dp = deadlinePill(s.deadline);
+                    const score = matchScores[s.id];
+                    const tracked = trackedIds.has(s.id);
+                    return (
+                      <div key={s.id} style={{
+                        background: S.surface, border: `1px solid ${S.border}`,
+                        borderLeft: `3px solid ${ACCENT}`, borderRadius: 16, padding: '18px 22px',
+                        animation: 'fadeUp 0.3s ease both', animationDelay: `${i * 0.04}s`,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                              <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font }}>{s.name}</h3>
+                              {score !== undefined && (
+                                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(ACCENT, 0.15), color: ACCENT, fontWeight: 700 }}>
+                                  {Math.round(score * 100)}% match
+                                </span>
+                              )}
+                            </div>
+                            <p style={{ fontSize: 13, color: S.muted, marginBottom: 10 }}>{s.provider} · {s.country}</p>
+                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700 }}>{s.amount} {s.currency}</span>
+                              <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: dp.bg, color: dp.color, border: `1px solid ${dp.border}`, fontWeight: 600 }}>
+                                {dp.label}
+                              </span>
+                              {s.need_based === 1 && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(59,158,255,0.12)', color: '#3B9EFF', fontWeight: 600 }}>Need-based</span>}
+                              {s.merit_based === 1 && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(16,185,129,0.12)', color: '#10B981', fontWeight: 600 }}>Merit-based</span>}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center' }}>
+                            {s.application_url && (
+                              <button onClick={() => window.open(s.application_url, '_blank')} style={{ padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: 'rgba(255,255,255,0.06)', border: `1px solid ${S.border2}`, color: S.muted, fontFamily: S.font }}>
+                                ↗ Apply
+                              </button>
+                            )}
+                            <button onClick={() => !tracked && handleTrack(s.id)} disabled={tracked || trackingId === s.id} style={{
+                              padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: tracked ? 'default' : 'pointer',
+                              background: tracked ? 'rgba(16,185,129,0.12)' : h2r(ACCENT, 0.15),
+                              border: `1px solid ${tracked ? 'rgba(16,185,129,0.3)' : h2r(ACCENT, 0.3)}`,
+                              color: tracked ? '#10B981' : ACCENT, fontFamily: S.font,
+                            }}>
+                              {tracked ? '✓ Tracked' : trackingId === s.id ? '…' : '+ Track'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {pagedScholarships.length < scholarships.length && (
+                  <button onClick={() => setPage(p => p + 1)} style={{
+                    marginTop: 20, width: '100%', padding: '12px', background: S.surface2,
+                    border: `1px solid ${S.border2}`, borderRadius: 12, color: S.muted,
+                    fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: S.font,
+                  }}>
+                    Load More ({scholarships.length - pagedScholarships.length} remaining)
+                  </button>
+                )}
+              </>
             )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Scholarship List */}
-      {activeTab === 'all' ? (
-        <div className="space-y-4">
-          {scholarships.length === 0 ? (
-            <div className="bg-card rounded-xl border border-border p-12 text-center">
-              <GraduationCap className="mx-auto text-muted-foreground/50 mb-4" size={48} />
-              <p className="text-muted-foreground">No scholarships found matching your criteria</p>
-            </div>
-          ) : (
-            scholarships.map((scholarship) => (
-              <div
-                key={scholarship.id}
-                className="bg-card rounded-xl border border-border p-6 hover:border-primary/40 transition"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-bold text-foreground">{scholarship.name}</h3>
-                      <div className="flex gap-2">
-                        {scholarship.need_based === 1 && (
-                          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full">
-                            Need-Based
-                          </span>
-                        )}
-                        {scholarship.merit_based === 1 && (
-                          <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded-full">
-                            Merit-Based
-                          </span>
-                        )}
-                        {scholarship.is_renewable === 1 && (
-                          <span className="px-2 py-0.5 bg-success/10 text-success text-xs rounded-full">
-                            Renewable
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground mb-3">{scholarship.provider}</p>
-                    
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
-                      <div className="flex items-center gap-1">
-                        <Globe size={16} className="text-muted-foreground" />
-                        {scholarship.country}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <DollarSign size={16} className="text-muted-foreground" />
-                        {formatAmount(scholarship)}
-                      </div>
-                      {scholarship.deadline && (
-                        <div className="flex items-center gap-1">
-                          <Calendar size={16} className="text-muted-foreground" />
-                          <span className={
-                            new Date(scholarship.deadline) < new Date() 
-                              ? 'text-red-600' 
-                              : ''
-                          }>
-                            {getDaysUntilDeadline(scholarship.deadline)}
-                          </span>
-                        </div>
+        {/* Grants Tab */}
+        {activeTab === 'grants' && (
+          <div>
+            {grants.length === 0 ? (
+              <EmptyState icon="💰" title="No grants available" desc="Grant data will appear here once available." />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {grants.map((g, i) => (
+                  <div key={g.id} style={{
+                    background: S.surface, border: `1px solid ${S.border}`, borderLeft: '3px solid #3B9EFF',
+                    borderRadius: 16, padding: '18px 22px', animation: 'fadeUp 0.3s ease both', animationDelay: `${i * 0.04}s`,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                      <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font }}>{g.name}</h3>
+                      {g.provider_type && (
+                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(59,158,255,0.12)', color: '#3B9EFF', fontWeight: 600 }}>{g.provider_type}</span>
                       )}
                     </div>
-                    
-                    {scholarship.description && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {scholarship.description}
-                      </p>
-                    )}
-                    
-                    {scholarship.eligibility && (
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Eligibility:</strong> {scholarship.eligibility}
-                      </p>
-                    )}
+                    <p style={{ fontSize: 13, color: S.muted, marginBottom: 10 }}>{g.provider}</p>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      {g.award_amount_inr && <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700 }}>₹{g.award_amount_inr.toLocaleString('en-IN')} / year</span>}
+                      {g.deadline && <span style={{ fontSize: 12, color: S.dim }}>Deadline: {new Date(g.deadline).toLocaleDateString()}</span>}
+                    </div>
                   </div>
-                  
-                  <div className="flex flex-col gap-2 ml-4">
-                    {isTracked(scholarship.id) ? (
-                      <Button variant="outline" size="sm" disabled>
-                        <BookmarkCheck size={16} className="mr-1 text-success" />
-                        Tracked
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        onClick={() => handleTrack(scholarship.id)}
-                        disabled={trackingId === scholarship.id}
-                      >
-                        {trackingId === scholarship.id ? (
-                          <Loader2 size={16} className="animate-spin mr-1" />
-                        ) : (
-                          <Bookmark size={16} className="mr-1" />
-                        )}
-                        Track
-                      </Button>
-                    )}
-                    
-                    {scholarship.application_url && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(scholarship.application_url, '_blank')}
-                      >
-                        <ExternalLink size={16} className="mr-1" />
-                        Apply
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                ))}
               </div>
-            ))
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {trackedScholarships.length === 0 ? (
-            <div className="bg-card rounded-xl border border-border p-12 text-center">
-              <Bookmark className="mx-auto text-muted-foreground/50 mb-4" size={48} />
-              <p className="text-muted-foreground/70 mb-4">You haven't tracked any scholarships yet</p>
-              <Button onClick={() => setActiveTab('all')}>
-                Browse Scholarships
-              </Button>
-            </div>
-          ) : (
-            trackedScholarships.map((tracked) => (
-              <div
-                key={tracked.id}
-                className="bg-card rounded-xl border border-border p-6"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground mb-1">{tracked.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">{tracked.provider}</p>
-                    
-                    <div className="flex gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Globe size={16} className="text-muted-foreground" />
-                        {tracked.country}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <DollarSign size={16} className="text-muted-foreground" />
-                        {tracked.amount}
-                      </div>
-                      {tracked.deadline && (
-                        <div className="flex items-center gap-1">
-                          <Calendar size={16} className="text-muted-foreground" />
-                          {getDaysUntilDeadline(tracked.deadline)}
-                        </div>
+            )}
+          </div>
+        )}
+
+        {/* Government Loans Tab */}
+        {activeTab === 'government' && (
+          <div>
+            {govLoans.length === 0 ? (
+              <EmptyState icon="🏛️" title="No government loans available" desc="Government loan data will appear here once available." />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {govLoans.map((l, i) => (
+                  <div key={l.id} style={{
+                    background: S.surface, border: `1px solid ${S.border}`, borderLeft: '3px solid #10B981',
+                    borderRadius: 16, padding: '18px 22px', animation: 'fadeUp 0.3s ease both', animationDelay: `${i * 0.04}s`,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                      <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font }}>{l.bank_name || l.provider || 'Bank'}</h3>
+                      {l.csis_subsidy && (
+                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(16,185,129,0.12)', color: '#10B981', fontWeight: 600 }}>CSIS Subsidy</span>
+                      )}
+                    </div>
+                    {l.scheme_name && <p style={{ fontSize: 13, color: S.muted, marginBottom: 10 }}>{l.scheme_name}</p>}
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                      {l.max_loan_amount_inr && <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700 }}>Max: ₹{l.max_loan_amount_inr.toLocaleString('en-IN')}</span>}
+                      {l.interest_rate && <span style={{ fontSize: 13, color: S.muted }}>Rate: {l.interest_rate}%</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Private Loans Tab */}
+        {activeTab === 'private' && (
+          <div>
+            {privLoans.length === 0 ? (
+              <EmptyState icon="🏦" title="No private loans available" desc="Private loan data will appear here once available." />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {privLoans.map((l, i) => (
+                  <div key={l.id} style={{
+                    background: S.surface, border: `1px solid ${S.border}`, borderLeft: '3px solid #FBBF24',
+                    borderRadius: 16, padding: '18px 22px', animation: 'fadeUp 0.3s ease both', animationDelay: `${i * 0.04}s`,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                      <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font }}>{l.lender_name || l.provider || 'Lender'}</h3>
+                      {l.cosigner_required && (
+                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(251,191,36,0.12)', color: '#FBBF24', fontWeight: 600 }}>Co-signer Required</span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                      {l.max_amount && <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700 }}>Max: ${l.max_amount.toLocaleString()}</span>}
+                      {(l.interest_rate_min || l.interest_rate_max) && (
+                        <span style={{ fontSize: 13, color: S.muted }}>
+                          Rate: {l.interest_rate_min != null ? `${l.interest_rate_min}%` : 'Contact lender'}
+                          {l.interest_rate_max != null && l.interest_rate_min != null ? `–${l.interest_rate_max}%` : ''}
+                        </span>
                       )}
                     </div>
                   </div>
-                  
-                  <Select
-                    value={tracked.status}
-                    onValueChange={(v) => handleUpdateTracking(tracked.scholarship_id, v)}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="interested">Interested</SelectItem>
-                      <SelectItem value="applying">Applying</SelectItem>
-                      <SelectItem value="applied">Applied</SelectItem>
-                      <SelectItem value="received">Received</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                      <SelectItem value="withdrawn">Withdrawn</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                ))}
               </div>
-            ))
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+
+        {/* College Aid Tab */}
+        {activeTab === 'college' && (
+          <EmptyState icon="🏫" title="College Aid" desc="Select a college to view its institutional aid options. This feature is coming soon." />
+        )}
+
+      </div>
     </div>
   );
 };
+
+/* ─── Shared empty state ──────────────────────────────────────────────── */
+const EmptyState: React.FC<{ icon: string; title: string; desc: string }> = ({ icon, title, desc }) => (
+  <div style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 20, padding: '64px 24px', textAlign: 'center', animation: 'fadeUp 0.3s ease both' }}>
+    <div style={{ fontSize: 48, marginBottom: 16 }}>{icon}</div>
+    <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-text-primary)', marginBottom: 8 }}>{title}</h3>
+    <p style={{ fontSize: 14, color: 'var(--color-text-secondary)' }}>{desc}</p>
+  </div>
+);
 
 export default Scholarships;

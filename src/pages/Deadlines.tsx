@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react';
+// src/pages/Deadlines.tsx — Dark Editorial Redesign
+import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Plus, Trash2, CheckCircle, Circle, Calendar, Loader2, List, CalendarDays } from 'lucide-react';
+import { Plus, CheckCircle, Circle, Calendar, List, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 import { DeadlineCalendar } from '@/components/DeadlineCalendar';
 import ConfirmModal from '@/components/common/ConfirmModal';
 
-// Define types for API responses
+/* ─── Types ──────────────────────────────────────────────────────────── */
 interface Application {
   id: number;
   college_name: string;
@@ -32,7 +30,58 @@ interface DeadlineFormData {
   description: string;
 }
 
-const Deadlines = () => {
+/* ─── Design ─────────────────────────────────────────────────────────── */
+const ACCENT = '#6C63FF';
+const S = {
+  bg: 'var(--color-bg-primary)',
+  surface: 'var(--color-bg-surface)',
+  surface2: 'var(--color-surface-subtle)',
+  border: 'var(--color-border)',
+  border2: 'var(--color-border-strong)',
+  muted: 'var(--color-text-secondary)',
+  dim: 'var(--color-text-disabled)',
+  font: "'DM Sans',sans-serif",
+};
+const inp: React.CSSProperties = {
+  width: '100%', padding: '10px 14px', background: S.surface2,
+  border: `1px solid ${S.border2}`, borderRadius: 10,
+  color: 'var(--color-text-primary)', fontSize: 14, fontFamily: S.font,
+};
+const lbl: React.CSSProperties = {
+  fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em',
+  marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font,
+};
+
+const GLOBAL = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.7);}
+  input::placeholder,textarea::placeholder{color:var(--color-text-disabled)!important;}
+  select option,option{background:var(--color-bg-surface);color:var(--color-text-primary);}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--color-border-strong);border-radius:4px;}
+`;
+
+/* ─── Urgency helpers ─────────────────────────────────────────────────── */
+const getDaysUntil = (dateStr: string) => {
+  const days = Math.ceil((new Date(dateStr + 'T00:00:00').getTime() - new Date().getTime()) / 86400000);
+  if (days < 0) return 'Overdue';
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Tomorrow';
+  return `${days} days`;
+};
+
+const getUrgencyStyle = (dateStr: string): React.CSSProperties => {
+  const days = Math.ceil((new Date(dateStr + 'T00:00:00').getTime() - new Date().getTime()) / 86400000);
+  if (days < 0)  return { color: '#F87171', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.25)', padding: '2px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700 };
+  if (days <= 7) return { color: '#FB923C', background: 'rgba(251,146,60,0.1)',  border: '1px solid rgba(251,146,60,0.25)',  padding: '2px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700 };
+  if (days <= 30)return { color: '#FBBF24', background: 'rgba(251,191,36,0.1)',  border: '1px solid rgba(251,191,36,0.25)',  padding: '2px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700 };
+  return           { color: '#10B981', background: 'rgba(16,185,129,0.1)',  border: '1px solid rgba(16,185,129,0.25)',  padding: '2px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700 };
+};
+
+/* ─── Component ──────────────────────────────────────────────────────── */
+const Deadlines: React.FC = () => {
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,22 +92,20 @@ const Deadlines = () => {
     applicationId: '',
     deadlineType: 'application',
     deadlineDate: '',
-    description: ''
+    description: '',
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
       const [deadlinesRes, appsRes] = await Promise.all([
         api.getDeadlines(365),
-        api.getApplications()
+        api.getApplications(),
       ]);
       setDeadlines(deadlinesRes.data || []);
       setApplications(appsRes.data || []);
-    } catch (error: any) {
+    } catch {
       toast.error('Failed to load deadlines');
     } finally {
       setLoading(false);
@@ -70,17 +117,13 @@ const Deadlines = () => {
       toast.error('Please fill required fields');
       return;
     }
-
     try {
-      await api.createDeadline({
-        ...formData,
-        applicationId: Number(formData.applicationId)
-      });
+      await api.createDeadline({ ...formData, applicationId: Number(formData.applicationId) });
       toast.success('Deadline added');
       setShowAddForm(false);
       setFormData({ applicationId: '', deadlineType: 'application', deadlineDate: '', description: '' });
       loadData();
-    } catch (error: any) {
+    } catch {
       toast.error('Failed to add deadline');
     }
   };
@@ -89,13 +132,9 @@ const Deadlines = () => {
     try {
       await api.updateDeadline(id, { isCompleted: isCompleted === 1 ? 0 : 1 });
       loadData();
-    } catch (error: any) {
+    } catch {
       toast.error('Failed to update deadline');
     }
-  };
-
-  const handleDelete = async (id: number) => {
-    setConfirmDeleteId(id);
   };
 
   const doDelete = async (id: number) => {
@@ -103,37 +142,23 @@ const Deadlines = () => {
       await api.deleteDeadline(id);
       toast.success('Deadline deleted');
       loadData();
-    } catch (error: any) {
+    } catch {
       toast.error('Failed to delete deadline');
     }
   };
 
-  const getDaysUntil = (dateStr: string) => {
-    const days = Math.ceil((new Date(dateStr+'T00:00:00').getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    if (days < 0) return 'Overdue';
-    if (days === 0) return 'Today';
-    if (days === 1) return 'Tomorrow';
-    return `${days} days`;
-  };
-
-  const getUrgencyColor = (dateStr: string) => {
-    const days = Math.ceil((new Date(dateStr+'T00:00:00').getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    if (days < 0) return 'text-red-600';
-    if (days <= 7) return 'text-orange-600';
-    if (days <= 30) return 'text-yellow-600';
-    return 'text-emerald-500';
-  };
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="animate-spin text-primary" size={40} />
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: S.bg }}>
+        <style>{GLOBAL}</style>
+        <div style={{ width: 40, height: 40, border: `3px solid ${S.border2}`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       </div>
     );
   }
 
   return (
-    <div className="p-8">
+    <div style={{ minHeight: '100vh', background: S.bg, padding: '32px 24px', fontFamily: S.font }}>
+      <style>{GLOBAL}</style>
       <ConfirmModal
         isOpen={confirmDeleteId !== null}
         title="Delete Deadline"
@@ -142,173 +167,184 @@ const Deadlines = () => {
         onConfirm={() => { const id = confirmDeleteId!; setConfirmDeleteId(null); doDelete(id); }}
         onCancel={() => setConfirmDeleteId(null)}
       />
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Deadlines</h1>
-          <p className="text-muted-foreground">Stay on top of your application timeline</p>
-        </div>
-        <div className="flex gap-3">
-          {/* View Toggle */}
-          <div className="flex border border-border rounded-lg overflow-hidden">
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-4 py-2 flex items-center gap-2 ${
-                viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground hover:bg-muted'
-              }`}
-            >
-              <List size={18} />
-              List
-            </button>
-            <button
-              onClick={() => setViewMode('calendar')}
-              className={`px-4 py-2 flex items-center gap-2 border-l ${
-                viewMode === 'calendar' ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground hover:bg-muted'
-              }`}
-            >
-              <CalendarDays size={18} />
-              Calendar
-            </button>
-          </div>
-          <Button onClick={() => setShowAddForm(!showAddForm)}>
-            <Plus className="mr-2" size={20} />
-            Add Deadline
-          </Button>
-        </div>
-      </div>
 
-      {/* Add Form */}
-      {showAddForm && (
-        <div className="bg-card rounded-xl border border-border p-6 mb-6">
-          <h3 className="text-lg font-bold mb-4">Add New Deadline</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Application *</Label>
-              <select
-                value={formData.applicationId}
-                onChange={(e) => setFormData({ ...formData, applicationId: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg mt-1"
+      {/* Header */}
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 6 }}>Deadlines</h1>
+            <p style={{ fontSize: 14, color: S.muted, fontFamily: S.font }}>Stay on top of your application timeline</p>
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {/* View toggle */}
+            <div style={{ display: 'flex', border: `1px solid ${S.border2}`, borderRadius: 10, overflow: 'hidden' }}>
+              <button
+                onClick={() => setViewMode('list')}
+                style={{
+                  padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600,
+                  background: viewMode === 'list' ? ACCENT : 'transparent',
+                  color: viewMode === 'list' ? '#fff' : S.muted,
+                  border: 'none', cursor: 'pointer', fontFamily: S.font, transition: 'all 0.15s',
+                }}
               >
-                <option value="">Select application</option>
-                {applications.map(app => (
-                  <option key={app.id} value={app.id}>{app.college_name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <Label>Type</Label>
-              <select
-                value={formData.deadlineType}
-                onChange={(e) => setFormData({ ...formData, deadlineType: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg mt-1"
+                <List size={15} /> List
+              </button>
+              <button
+                onClick={() => setViewMode('calendar')}
+                style={{
+                  padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600,
+                  background: viewMode === 'calendar' ? ACCENT : 'transparent',
+                  color: viewMode === 'calendar' ? '#fff' : S.muted,
+                  border: 'none', borderLeft: `1px solid ${S.border2}`, cursor: 'pointer', fontFamily: S.font, transition: 'all 0.15s',
+                }}
               >
-                <option value="application">Application</option>
-                <option value="essay">Essay</option>
-                <option value="recommendation">Recommendation</option>
-                <option value="transcript">Transcript</option>
-                <option value="test_scores">Test Scores</option>
-              </select>
+                <CalendarDays size={15} /> Calendar
+              </button>
             </div>
-
-            <div>
-              <Label>Date *</Label>
-              <Input
-                type="date"
-                value={formData.deadlineDate}
-                onChange={(e) => setFormData({ ...formData, deadlineDate: e.target.value })}
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label>Description</Label>
-              <Input
-                placeholder="Optional notes"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-3 mt-4">
-            <Button onClick={handleAdd}>Add Deadline</Button>
-            <Button onClick={() => setShowAddForm(false)} variant="outline">Cancel</Button>
-          </div>
-        </div>
-      )}
-
-      {/* Deadlines Display */}
-      {deadlines.length === 0 ? (
-        <div className="bg-card rounded-xl border border-border p-12 text-center">
-          <p className="text-muted-foreground">No deadlines yet. Add one to get started!</p>
-        </div>
-      ) : viewMode === 'calendar' ? (
-        <DeadlineCalendar deadlines={deadlines} />
-      ) : (
-        <div className="space-y-4">
-          {deadlines.map((deadline) => (
-            <div 
-              key={deadline.id} 
-              className={`rounded-xl border p-6 ${
-                deadline.is_completed === 1 ? 'border-success/30 bg-success/5' : 'bg-card border-border'
-              }`}
+            <button
+              onClick={() => setShowAddForm(f => !f)}
+              style={{
+                padding: '9px 18px', background: ACCENT, border: 'none', borderRadius: 10,
+                color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: S.font,
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4 flex-1">
-                  <button
-                    onClick={() => handleToggleComplete(deadline.id, deadline.is_completed)}
-                    className="mt-1"
-                  >
-                    {deadline.is_completed === 1 ? (
-                      <CheckCircle className="text-emerald-500" size={24} />
-                    ) : (
-                      <Circle className="text-muted-foreground" size={24} />
-                    )}
-                  </button>
+              <Plus size={16} /> Add Deadline
+            </button>
+          </div>
+        </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className={`text-lg font-bold ${deadline.is_completed === 1 ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
-                        {deadline.college_name}
-                      </h3>
-                      <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium">
-                        {deadline.deadline_type}
-                      </span>
-                    </div>
-
-                    {deadline.description && (
-                      <p className="text-sm text-muted-foreground mb-4">{deadline.description}</p>
-                    )}
-
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Calendar size={16} className="text-muted-foreground" />
-                        <span className="text-muted-foreground">
-                          {new Date(deadline.deadline_date+'T00:00:00').toLocaleDateString()}
-                        </span>
-                      </div>
-                      {deadline.is_completed !== 1 && (
-                        <span className={`font-medium ${getUrgencyColor(deadline.deadline_date)}`}>
-                          {getDaysUntil(deadline.deadline_date)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={() => handleDelete(deadline.id)}
-                  variant="ghost"
-                  size="sm"
-                >
-                  <Trash2 size={16} className="text-red-600" />
-                </Button>
+        {/* Add Form */}
+        {showAddForm && (
+          <div style={{
+            background: S.surface, border: `1px solid ${S.border}`, borderTop: `3px solid ${ACCENT}`,
+            borderRadius: 16, padding: '24px', marginBottom: 24, animation: 'fadeUp 0.25s ease both',
+          }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 20 }}>Add New Deadline</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+              <div>
+                <label style={lbl}>Application *</label>
+                <select value={formData.applicationId} onChange={e => setFormData({ ...formData, applicationId: e.target.value })} style={inp}>
+                  <option value="">Select application</option>
+                  {applications.map(app => (
+                    <option key={app.id} value={app.id}>{app.college_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={lbl}>Type</label>
+                <select value={formData.deadlineType} onChange={e => setFormData({ ...formData, deadlineType: e.target.value })} style={inp}>
+                  <option value="application">Application</option>
+                  <option value="essay">Essay</option>
+                  <option value="recommendation">Recommendation</option>
+                  <option value="transcript">Transcript</option>
+                  <option value="test_scores">Test Scores</option>
+                </select>
+              </div>
+              <div>
+                <label style={lbl}>Date *</label>
+                <input type="date" value={formData.deadlineDate} onChange={e => setFormData({ ...formData, deadlineDate: e.target.value })} style={inp} />
+              </div>
+              <div>
+                <label style={lbl}>Description</label>
+                <input placeholder="Optional notes" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} style={inp} />
               </div>
             </div>
-          ))}
-        </div>
-      )}
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button onClick={handleAdd} style={{ padding: '9px 20px', background: ACCENT, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: S.font }}>
+                Add Deadline
+              </button>
+              <button onClick={() => setShowAddForm(false)} style={{ padding: '9px 20px', background: S.surface2, border: `1px solid ${S.border2}`, borderRadius: 10, color: S.muted, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: S.font }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Deadlines Display */}
+        {deadlines.length === 0 ? (
+          <div style={{ background: S.surface, border: `1px solid ${S.border}`, borderRadius: 20, padding: '64px 24px', textAlign: 'center', animation: 'fadeUp 0.3s ease both' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📅</div>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 8 }}>No deadlines yet</h3>
+            <p style={{ fontSize: 14, color: S.muted, fontFamily: S.font }}>Add a deadline to start tracking your application timeline.</p>
+          </div>
+        ) : viewMode === 'calendar' ? (
+          <DeadlineCalendar deadlines={deadlines} />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {deadlines.map((deadline, index) => (
+              <div key={deadline.id} style={{
+                background: deadline.is_completed === 1 ? 'rgba(16,185,129,0.04)' : S.surface,
+                border: `1px solid ${deadline.is_completed === 1 ? 'rgba(16,185,129,0.25)' : S.border}`,
+                borderLeft: `3px solid ${deadline.is_completed === 1 ? '#10B981' : ACCENT}`,
+                borderRadius: 16, padding: '18px 22px',
+                animation: 'fadeUp 0.3s ease both', animationDelay: `${index * 0.05}s`,
+                transition: 'border-color 0.2s',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1 }}>
+                    {/* Complete toggle */}
+                    <button
+                      onClick={() => handleToggleComplete(deadline.id, deadline.is_completed)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 2, flexShrink: 0 }}
+                    >
+                      {deadline.is_completed === 1
+                        ? <CheckCircle size={22} color="#10B981" />
+                        : <Circle size={22} color={S.muted} />
+                      }
+                    </button>
+
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+                        <h3 style={{
+                          fontSize: 16, fontWeight: 800, fontFamily: S.font,
+                          color: deadline.is_completed === 1 ? S.muted : 'var(--color-text-primary)',
+                          textDecoration: deadline.is_completed === 1 ? 'line-through' : 'none',
+                        }}>
+                          {deadline.college_name}
+                        </h3>
+                        <span style={{
+                          fontSize: 11, padding: '2px 8px', borderRadius: 100,
+                          background: 'rgba(108,99,255,0.15)', color: ACCENT, fontWeight: 600, fontFamily: S.font,
+                        }}>
+                          {deadline.deadline_type.replace(/_/g, ' ')}
+                        </span>
+                      </div>
+
+                      {deadline.description && (
+                        <p style={{ fontSize: 13, color: S.muted, fontFamily: S.font, marginBottom: 8 }}>{deadline.description}</p>
+                      )}
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 13, color: S.dim, fontFamily: S.font, display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <Calendar size={13} /> {new Date(deadline.deadline_date + 'T00:00:00').toLocaleDateString()}
+                        </span>
+                        {deadline.is_completed !== 1 && (
+                          <span style={getUrgencyStyle(deadline.deadline_date)}>
+                            {getDaysUntil(deadline.deadline_date)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Delete */}
+                  <button
+                    onClick={() => setConfirmDeleteId(deadline.id)}
+                    style={{
+                      width: 32, height: 32, borderRadius: 8, cursor: 'pointer', flexShrink: 0,
+                      background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)',
+                      color: '#F87171', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(248,113,113,0.2)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(248,113,113,0.1)')}
+                  >🗑</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
