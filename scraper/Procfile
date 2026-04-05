@@ -1,0 +1,3 @@
+# CollegeOS Auto-generated scraper/Procfile — do not edit manually
+# Used by the separate Railway/Render Python worker service.
+worker: python scraper/orchestrator_worker.py
