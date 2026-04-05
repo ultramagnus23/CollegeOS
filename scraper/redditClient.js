@@ -19,7 +19,7 @@ const API_BASE = 'https://oauth.reddit.com';
 const USER_AGENT = 'CollegeOS-Scraper/1.0 (+https://github.com/ultramagnus23/CollegeOS)';
 
 // Subreddits to scrape
-const SUBREDDITS = ['collegeresults', 'chanceme'];
+const SUBREDDITS = ['collegeresults', 'chanceme', 'ApplyingToCollege'];
 
 // Milliseconds to wait between paginated requests to stay under Reddit's
 // rate limit (60 requests/minute for OAuth apps).
