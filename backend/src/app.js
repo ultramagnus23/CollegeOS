@@ -44,6 +44,7 @@ const currencyRatesRoutes = require('./routes/currencyRates');
 const studentProfileRoutes = require('./routes/studentProfile');
 const grantsRoutes = require('./routes/grants');
 const loansRoutes = require('./routes/loans');
+const chanceRoutes = require('./routes/chance');
 
 // Create Express app
 const app = express();
@@ -127,6 +128,7 @@ app.use('/api/insights', insightsRoutes);
 app.use('/api/currency-rates', currencyRatesRoutes);
 app.use('/api/grants', grantsRoutes);
 app.use('/api/loans', loansRoutes);
+app.use('/api/chance', chanceRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -145,6 +147,7 @@ function gracefulShutdown(signal) {
 
   try { require('./jobs/mlRetraining').stop(); } catch (e) { /* ignore */ }
   try { require('./jobs/dataRefresh').stop(); } catch (e) { /* ignore */ }
+  try { require('./jobs/scraperScheduler').stop(); } catch (e) { /* ignore */ }
   if (deadlineSchedulerInstance) {
     try { deadlineSchedulerInstance.stop(); } catch (e) { /* ignore */ }
   }
@@ -225,6 +228,15 @@ async function startServer() {
           logger.info('Deadline scraping scheduler started');
         } catch (error) {
           logger.warn('Deadline scraping scheduler failed to start:', { error: error.message });
+        }
+
+        // Start Reddit / scholarship / admissions scraper scheduler
+        try {
+          const scraperScheduler = require('./jobs/scraperScheduler');
+          scraperScheduler.start();
+          logger.info('Scraper scheduler started');
+        } catch (error) {
+          logger.warn('Scraper scheduler failed to start:', { error: error.message });
         }
       }
     });
