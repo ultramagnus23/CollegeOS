@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: collegeos-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node src/app.js
+    envVars:
+      - key: ENABLE_SCRAPING_JOBS
+        value: false
+      - key: NODE_ENV
+        value: production

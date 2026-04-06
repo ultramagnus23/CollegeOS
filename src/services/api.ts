@@ -1272,6 +1272,12 @@ class ApiService {
         body: JSON.stringify(data),
       }),
   };
+
+  // ==================== ADMIN ENDPOINTS ====================
+
+  async adminHealth() {
+    return this.request('/admin/health');
+  }
 }
 
 // Export singleton instance

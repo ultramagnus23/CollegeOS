@@ -35,6 +35,7 @@ import Discover from "./pages/Discover";
 import NotificationsPage from "./pages/Notifications";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/AdminDashboard";
 
 import { StudentProfile } from "./types/index";
 
@@ -154,6 +155,7 @@ const AppContent = () => {
             <Route path="discover" element={<Discover />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="admin" element={<AdminDashboard />} />
           </Route>
 
           {/* ✅ wildcard route OUTSIDE */}

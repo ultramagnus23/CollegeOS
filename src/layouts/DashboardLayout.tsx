@@ -19,7 +19,8 @@ import {
   Award,
   Users,
   Clock,
-  Compass
+  Compass,
+  Shield
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -38,6 +39,7 @@ const DashboardLayout = () => {
     { name: 'Recommendations', href: '/recommendations', icon: Users },
     { name: 'Timeline', href: '/timeline', icon: Clock },
     { name: 'Discover', href: '/discover', icon: Compass },
+    { name: 'Admin', href: '/admin', icon: Shield },
     { name: 'Settings', href: '/settings', icon: SettingsIcon },
   ];
 

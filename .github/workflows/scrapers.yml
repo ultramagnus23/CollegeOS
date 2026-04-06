@@ -1,0 +1,111 @@
+name: CollegeOS Python Scrapers
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # reddit-scraper: every 6 hours
+    - cron: '0 2 * * *'     # admissions-scraper: daily 02:00 UTC
+    - cron: '0 3 * * *'     # financial-scraper: daily 03:00 UTC
+    - cron: '0 4 * * 0'     # college-profile-scraper: every Sunday 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reddit-scraper:
+    name: Reddit Scraper (every 6 hours)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 */6 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: scraper/requirements.txt
+      - name: Install dependencies
+        run: pip install -r scraper/requirements.txt
+      - name: Run reddit scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+          REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
+          REDDIT_USERNAME: ${{ secrets.REDDIT_USERNAME }}
+          REDDIT_PASSWORD: ${{ secrets.REDDIT_PASSWORD }}
+        run: python scraper/reddit_scraper.py
+
+  admissions-scraper:
+    name: Admissions Scraper (daily 02:00 UTC)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 2 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: scraper/requirements.txt
+      - name: Install dependencies
+        run: pip install -r scraper/requirements.txt
+      - name: Run admissions scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATA_GOV_API_KEY: ${{ secrets.DATA_GOV_API_KEY }}
+        run: python scraper/admissions_scraper.py
+
+  financial-scraper:
+    name: Financial Scraper (daily 03:00 UTC)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: scraper/requirements.txt
+      - name: Install dependencies
+        run: pip install -r scraper/requirements.txt
+      - name: Run financial scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATA_GOV_API_KEY: ${{ secrets.DATA_GOV_API_KEY }}
+        run: python scraper/financial_scraper.py
+
+  college-profile-scraper:
+    name: College Profile Scraper (every Sunday 04:00 UTC)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 4 * * 0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: scraper/requirements.txt
+      - name: Install dependencies
+        run: pip install -r scraper/requirements.txt
+      - name: Run college profile scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATA_GOV_API_KEY: ${{ secrets.DATA_GOV_API_KEY }}
+        run: python scraper/college_profile_scraper.py
+
+  ml-retrain:
+    name: ML Retrain (manual only)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: scraper/requirements.txt
+      - name: Install dependencies
+        run: pip install -r scraper/requirements.txt
+      - name: Run ML training pipeline
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python scraper/training_pipeline.py
