@@ -87,3 +87,37 @@ The new tables are created by migration `049_automation_schema.sql`, which runs 
 - `college_admissions_stats` — per-college per-year admissions stats
 - `college_financial_aid` — per-college per-year financial aid data
 - `scraper_run_logs` — one row per scraper job run (used by health endpoint)
+
+---
+
+## Scraper Setup
+
+The Python scrapers run automatically via GitHub Actions (`.github/workflows/scrapers.yml`). No always-on server is required.
+
+### Schedule
+
+| Job | Trigger |
+|---|---|
+| `reddit-scraper` | Every 6 hours |
+| `admissions-scraper` | Daily at 02:00 UTC |
+| `financial-scraper` | Daily at 03:00 UTC |
+| `college-profile-scraper` | Every Sunday at 04:00 UTC |
+| `ml-retrain` | Manual only (`workflow_dispatch`) |
+
+Any job can also be triggered manually from the GitHub UI: **Actions → CollegeOS Python Scrapers → Run workflow**.
+
+### Required GitHub Secrets
+
+Add these in your repository under **Settings → Secrets and variables → Actions → New repository secret**:
+
+| Secret | Required by | Description |
+|---|---|---|
+| `DATABASE_URL` | All jobs | PostgreSQL connection string (from Supabase or Render) |
+| `REDDIT_CLIENT_ID` | `reddit-scraper` | Reddit app client ID |
+| `REDDIT_CLIENT_SECRET` | `reddit-scraper` | Reddit app client secret |
+| `REDDIT_USER_AGENT` | `reddit-scraper` | e.g. `CollegeOS/1.0 by YourUsername` |
+| `REDDIT_USERNAME` | `reddit-scraper` | Reddit account username |
+| `REDDIT_PASSWORD` | `reddit-scraper` | Reddit account password |
+| `DATA_GOV_API_KEY` | `admissions-scraper`, `financial-scraper`, `college-profile-scraper` | Free key from [api.data.gov/signup](https://api.data.gov/signup/) |
+
+Get a Reddit app at [reddit.com/prefs/apps](https://www.reddit.com/prefs/apps) → **create app** → type **script**.

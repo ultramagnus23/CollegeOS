@@ -21,7 +21,7 @@ interface StructuredActivity {
 }
 
 interface StudentOnboardingProps {
-  onComplete: (profile: StudentProfile) => void;
+  onComplete: (profile: StudentProfile) => void | Promise<void>;
 }
 
 // ── Color System ───────────────────────────────────────────────────────────
@@ -644,7 +644,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     return {
       name: '', grade: '', currentBoard: '', country: '', dreamSchool: '',
       currentGPA: '', satScore: '', actScore: '', ibPredicted: '', subjects: [],
-      careerInterests: [], majorCertain: null, potentialMajors: [], skillsStrengths: [],
+      careerInterests: [], majorCertain: false, potentialMajors: [], skillsStrengths: [],
       preferredCountries: [], budgetRange: '', campusSize: '', locationPreference: '',
       activities: [], leadership: [], awards: [],
       careerGoals: '', whyCollege: '',
@@ -733,6 +733,38 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       case 7: return true;
       default: return false;
     }
+  };
+
+  const getStepValidationMessage = (): string => {
+    switch(step) {
+      case 1: {
+        if (!studentData.name && !studentData.country) return 'Please enter your name and select your country to continue.';
+        if (!studentData.name) return 'Please enter your name to continue.';
+        return 'Please select your country to continue.';
+      }
+      case 2: {
+        if (!studentData.currentGPA && studentData.subjects.length === 0) return 'Please enter your GPA and select at least one subject.';
+        if (!studentData.currentGPA) return 'Please enter your GPA to continue.';
+        return 'Please select at least one subject to continue.';
+      }
+      case 3: return 'Please select at least one major or area of interest to continue.';
+      case 4: {
+        if (studentData.preferredCountries.length === 0 && !studentData.budgetRange) return 'Please select a preferred country and a budget range to continue.';
+        if (studentData.preferredCountries.length === 0) return 'Please select at least one preferred country to continue.';
+        return 'Please select a budget range to continue.';
+      }
+      case 5: return 'Please add at least 2 activities to continue. Use the "+ Add Activity" button.';
+      case 6: return 'Please describe your career goals to continue.';
+      default: return 'Please complete this step to continue.';
+    }
+  };
+
+  const handleNextClick = () => {
+    if (!isStepComplete()) {
+      toast.error(getStepValidationMessage());
+      return;
+    }
+    nextStep();
   };
 
   const calcProfileScore = (): number => {
@@ -1247,10 +1279,10 @@ await completeOnboarding({
           </span>
 
           {step < 7 ? (
-            <button onClick={nextStep} disabled={!isStepComplete()} style={{
+            <button onClick={handleNextClick} style={{
               padding: '14px 32px', borderRadius: 12,
               background: isStepComplete() ? accent : 'var(--color-surface-subtle)',
-              border: 'none', cursor: isStepComplete() ? 'pointer' : 'not-allowed',
+              border: 'none', cursor: 'pointer',
               color: isStepComplete() ? '#000' : 'var(--color-text-disabled)',
               fontSize: 15, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
               transition: 'all 0.2s ease',
