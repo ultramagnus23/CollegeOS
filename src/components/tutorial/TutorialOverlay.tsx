@@ -25,7 +25,8 @@ import React, {
 import { X, ChevronLeft, ChevronRight, HelpCircle, BookOpen, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/services/api';
 
 // ── Tour step definitions ─────────────────────────────────────────────────────
 
@@ -70,7 +71,7 @@ const DEFAULT_STEPS: TutorialStep[] = [
   {
     id: 'chancing',
     title: 'Chancing Calculator',
-    body: 'Enter your academic stats and get an AI-powered admission probability for each college.',
+    body: 'Enter your academic stats and get an AI-powered Reach/Match/Safety tier for each college.',
     target: '[data-tutorial="chancing"]',
     placement: 'bottom',
   },
@@ -119,8 +120,8 @@ const HELP_TOPICS: Record<string, { title: string; tips: string[] }> = {
   chancing: {
     title: 'Chancing Tips',
     tips: [
-      'Chancing percentages are estimates based on historical admission data.',
-      'Reach: < 30% chance. Target: 30–70%. Safety: > 70%.',
+      'Chancing tiers are estimates based on historical admission data.',
+      'Reach = stretch schools, Match = realistic fits, Safety = strong odds.',
       'Update your GPA and test scores in your profile to improve accuracy.',
       'Your extracurriculars and essays can significantly shift your chances.',
     ],
@@ -177,12 +178,11 @@ export function useTutorial(): TutorialContextValue {
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = 'collegeos_tour_complete';
-
 export function TutorialProvider({ children }: { children: React.ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, setSteps] = useState<TutorialStep[]>(DEFAULT_STEPS);
+  const { user, refreshUser } = useAuth();
 
   const start = useCallback((customSteps?: TutorialStep[]) => {
     setSteps(customSteps ?? DEFAULT_STEPS);
@@ -192,8 +192,12 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
 
   const stop = useCallback(() => {
     setIsActive(false);
-    localStorage.setItem(STORAGE_KEY, 'true');
-  }, []);
+    if (user && user.has_completed_tour !== true) {
+      api.completeTour()
+        .then(() => refreshUser())
+        .catch(() => {});
+    }
+  }, [refreshUser, user]);
 
   const next = useCallback(() => {
     setCurrentStep(i => {
@@ -209,14 +213,6 @@ export function TutorialProvider({ children }: { children: React.ReactNode }) {
   const goTo = useCallback((index: number) => {
     setCurrentStep(Math.max(0, Math.min(index, steps.length - 1)));
   }, [steps.length]);
-
-  // Auto-start for first-time visitors
-  useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      const timer = setTimeout(() => start(), 800);
-      return () => clearTimeout(timer);
-    }
-  }, [start]);
 
   return (
     <TutorialContext.Provider value={{ isActive, currentStep, steps, start, stop, next, prev, goTo }}>
@@ -454,7 +450,6 @@ export function ContextualHelp({ topic, className = '' }: ContextualHelpProps) {
 export function TutorialTrigger({ className = '' }: { className?: string }) {
   const { start } = useTutorial();
   const handleStart = () => {
-    localStorage.removeItem(STORAGE_KEY);
     start();
   };
   return (

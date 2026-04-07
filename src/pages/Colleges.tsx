@@ -6,6 +6,7 @@ import { api } from '../services/api';
 import { normalizeCountryData, College, TestScores, GraduationRates } from '../types';
 import FitBadge from '../components/FitBadge';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
 import {
   searchColleges,
   getDistinctCountries,
@@ -54,6 +55,7 @@ interface CollegeCardProps {
 
 const Colleges: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [colleges, setColleges] = useState<College[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
@@ -103,7 +105,7 @@ const Colleges: React.FC = () => {
 
   useEffect(() => {
     loadColleges();
-  }, [searchTerm, selectedCountry, selectedProgram, sortBy, currentPage]);
+  }, [searchTerm, selectedCountry, selectedProgram, sortBy, currentPage, user]);
 
   /**
    * Fetch fit classifications for all college IDs using the batch endpoint.
@@ -112,6 +114,7 @@ const Colleges: React.FC = () => {
    * and from rapid filter changes that each call loadColleges in quick succession.
    */
   const loadFitData = async (collegeIds: number[]) => {
+    if (!user) return;
     if (collegeIds.length === 0) return;
     // JS is single-threaded: the check and set below execute atomically (no await
     // between them), so two concurrent calls cannot both pass this guard.
@@ -266,6 +269,11 @@ const Colleges: React.FC = () => {
   /* ==================== ACTIONS ==================== */
 
   const handleAddCollege = async (collegeId: number) => {
+    if (!user) {
+      toast.info('Create a free account to save colleges.');
+      navigate('/auth');
+      return;
+    }
     try {
       setAddingCollegeId(collegeId);
 
@@ -308,6 +316,21 @@ const Colleges: React.FC = () => {
     <>
       <style>{GLOBAL_COLLEGES}</style>
       <div style={{ minHeight: '100vh', background: S.bg, color: 'var(--color-text-primary)', fontFamily: S.font }}>
+        {!user && (
+          <div style={{ background: h2r(ACCENT, 0.12), borderBottom: `1px solid ${h2r(ACCENT, 0.25)}`, position: 'sticky', top: 0, zIndex: 40 }}>
+            <div style={{ maxWidth: 1280, margin: '0 auto', padding: '12px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 13, color: 'var(--color-text-primary)' }}>
+                💡 You&apos;re browsing as a guest. Create a free account to save colleges, see your chances, and track applications.
+              </span>
+              <button
+                onClick={() => navigate('/auth')}
+                style={{ padding: '6px 14px', borderRadius: 999, background: ACCENT, color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Sign Up →
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── HERO ── */}
         <div style={{

@@ -92,11 +92,7 @@ app.use('/api/', apiLimiter);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'College App Backend is running',
-    timestamp: new Date().toISOString()
-  });
+  res.json({ status: 'ok', ts: Date.now() });
 });
 
 // API routes

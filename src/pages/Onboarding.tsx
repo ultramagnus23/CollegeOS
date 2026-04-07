@@ -625,7 +625,7 @@ const Insight: React.FC<{ message: string; onDone: () => void }> = ({ message, o
 // ── Main Component ─────────────────────────────────────────────────────────
 const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => {
   const navigate = useNavigate();
-  const { user, completeOnboarding } = useAuth();
+  const { user, completeOnboarding, refreshUser } = useAuth();
   const [step, setStep] = useState(1);
   const [showInsight, setShowInsight] = useState(false);
   const [insightMsg, setInsightMsg] = useState('');
@@ -1198,9 +1198,9 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           await api.saveExtendedProfile({ ...studentData });
 
           // 2. Mark onboarding complete in users table
-await completeOnboarding({
-  target_countries: studentData.preferredCountries,
-  intended_majors: studentData.potentialMajors,
+          await completeOnboarding({
+            target_countries: studentData.preferredCountries,
+            intended_majors: studentData.potentialMajors,
   test_status: {
     sat_score: studentData.satScore 
       ? Number(studentData.satScore) : null,
@@ -1211,8 +1211,8 @@ await completeOnboarding({
   },
   gpa: parseFloat(String(studentData.currentGPA).replace(/[^0-9.]/g, '')) || null,
   subjects: studentData.subjects || [],
-  activities: (studentData.activities || []).filter((a: any) => a?.name?.trim()),
-});
+            activities: (studentData.activities || []).filter((a: any) => a?.name?.trim()),
+          });
 
           // 3. Pre-compute instant recommendations and store in localStorage
           try {
@@ -1229,8 +1229,15 @@ await completeOnboarding({
             localStorage.setItem('instant_recommendations', JSON.stringify(recRes?.data || recRes || []));
           } catch { /* non-critical */ }
 
+          try {
+            await api.completeTour();
+            await refreshUser();
+          } catch {
+            // non-blocking
+          }
+
           await onComplete(studentData);
-          navigate('/recommendations?onboarding=complete');
+          navigate('/dashboard');
         } catch (err) {
           console.error('Failed to save profile:', err);
           toast.error('Failed to save profile. Please try again.');

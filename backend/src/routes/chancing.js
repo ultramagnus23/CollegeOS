@@ -11,14 +11,17 @@ const consolidatedChancingService = require('../services/consolidatedChancingSer
 
 const StudentProfile = require('../models/StudentProfile');
 const College = require('../models/College');
-const mlPredictionService = require('../services/mlPredictionService');
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
 const { sanitizeForLog, sanitizeObject } = require('../utils/security');
 
-// ML Configuration Constants
-const ML_CONTRIBUTION_SCALE_FACTOR = 10; // Factor to convert LDA coefficients to percentage impacts
-const OUTCOME_CONTRIBUTION_POINTS = 10;  // Points awarded for submitting an admission outcome
+const TIER_RANK = {
+  'Safety': 3,
+  'Match': 2,
+  'Reach': 1,
+  'Long Shot': 0,
+  'Unknown': -1,
+};
 
 /**
  * Local helper: replicate getChancingForStudent using consolidatedChancingService
@@ -42,10 +45,10 @@ async function getChancingResults(userId, colleges) {
       chancing
     });
   }
-  results.sort((a, b) => (b.chancing.chance || 0) - (a.chancing.chance || 0));
-  const safety = results.filter(r => r.chancing.category === 'Safety');
-  const target = results.filter(r => r.chancing.category === 'Target');
-  const reach = results.filter(r => r.chancing.category === 'Reach');
+  results.sort((a, b) => (TIER_RANK[b.chancing.tier] || -1) - (TIER_RANK[a.chancing.tier] || -1));
+  const safety = results.filter(r => r.chancing.tier === 'Safety');
+  const target = results.filter(r => r.chancing.tier === 'Match');
+  const reach = results.filter(r => r.chancing.tier === 'Reach' || r.chancing.tier === 'Long Shot');
   return {
     results,
     grouped: { safety, target, reach },
@@ -60,7 +63,7 @@ async function getChancingResults(userId, colleges) {
  */
 router.post('/calculate', authenticate, async (req, res, next) => {
   try {
-    const { collegeId, useML = true } = req.body;
+    const { collegeId } = req.body;
     
     if (!collegeId) {
       return res.status(400).json({
@@ -91,42 +94,8 @@ router.post('/calculate', authenticate, async (req, res, next) => {
     }
     
     const country = college.location_country || college.country || 'USA';
-    let chancing;
-    let predictionType = 'rule_based';
-    
-    // Try ML prediction first if enabled
-    if (useML) {
-      const mlResult = await mlPredictionService.predict(
-        profile, 
-        profile.activities || [], 
-        college
-      );
-      
-      if (mlResult.success && mlResult.prediction_type === 'ml_lda') {
-        // Use ML prediction
-        chancing = {
-          percentage: mlResult.percentage,
-          category: mlResult.category,
-          confidence: mlResult.confidence,
-          confidenceLevel: mlResult.confidence_level,
-          factors: mlResult.factors.map(f => ({
-            name: f.factor,
-            impact: f.impact === 'positive' ? `+${Math.abs(f.contribution * ML_CONTRIBUTION_SCALE_FACTOR).toFixed(0)}%` : 
-                   f.impact === 'negative' ? `-${Math.abs(f.contribution * ML_CONTRIBUTION_SCALE_FACTOR).toFixed(0)}%` : '0%',
-            details: f.impact_level,
-            positive: f.impact === 'positive'
-          })),
-          modelInfo: mlResult.model_info
-        };
-        predictionType = 'ml_lda';
-      }
-    }
-    
-    // Fall back to consolidated service if ML not available/successful
-        if (!chancing) {
-      chancing = await consolidatedChancingService.calculateChance(profile, college);
-      predictionType = chancing.method || 'consolidated';
-    }
+    const chancing = await consolidatedChancingService.calculateChance(profile, college);
+    const predictionType = 'ml_lda';
     
     // Log prediction for analytics
     try {
@@ -137,13 +106,13 @@ router.post('/calculate', authenticate, async (req, res, next) => {
         [
           req.user.userId,
           collegeId,
-          predictionType,
-          (chancing.percentage ?? chancing.chance ?? 50) / 100,
-          chancing.category,
-          chancing.confidence || null,
-          JSON.stringify(chancing.factors || [])
-        ]
-      );
+            predictionType,
+            null,
+            chancing.category,
+            null,
+            JSON.stringify([])
+          ]
+        );
     } catch (auditError) {
       // Non-critical - don't fail if audit logging fails
       logger.debug('Prediction audit log failed:', auditError.message);
@@ -328,9 +297,9 @@ router.get('/recommendations', authenticate, async (req, res, next) => {
     
     // Recalculate grouped
     results.grouped = {
-      safety: results.results.filter(r => r.chancing.category === 'Safety'),
-      target: results.results.filter(r => r.chancing.category === 'Target'),
-      reach: results.results.filter(r => r.chancing.category === 'Reach')
+      safety: results.results.filter(r => r.chancing.tier === 'Safety'),
+      target: results.results.filter(r => r.chancing.tier === 'Match'),
+      reach: results.results.filter(r => r.chancing.tier === 'Reach' || r.chancing.tier === 'Long Shot')
     };
     
     res.json({
@@ -571,20 +540,20 @@ router.post('/scenario', authenticate, async (req, res, next) => {
     
     // Calculate comparison
     const comparison = colleges.map((college, idx) => {
-      const oldChance = currentResults[idx].chancing.chance;
-      const newChance = scenarioResults[idx].chancing.chance;
-      const change = newChance - oldChance;
+      const oldTier = currentResults[idx].chancing.tier;
+      const newTier = scenarioResults[idx].chancing.tier;
+      const change = (TIER_RANK[newTier] || -1) - (TIER_RANK[oldTier] || -1);
       const oldCategory = currentResults[idx].chancing.category;
       const newCategory = scenarioResults[idx].chancing.category;
       
       return {
         college: { id: college.id, name: college.name },
-        oldChance,
-        newChance,
+        oldTier,
+        newTier,
         change,
         oldCategory,
         newCategory,
-        categoryChanged: oldCategory !== newCategory,
+        categoryChanged: oldTier !== newTier,
         improved: change > 0
       };
     });
@@ -602,13 +571,13 @@ router.post('/scenario', authenticate, async (req, res, next) => {
           improved,
           decreased,
           stayed,
-          avgChange: comparison.length > 0 
+          avgChange: comparison.length > 0
             ? Math.round(comparison.reduce((sum, c) => sum + c.change, 0) / comparison.length)
             : 0,
           categoryChanges: comparison.filter(c => c.categoryChanged).map(c => ({
             college: c.college.name,
-            from: c.oldCategory,
-            to: c.newCategory
+            from: c.oldTier,
+            to: c.newTier
           }))
         }
       }
@@ -625,12 +594,12 @@ router.post('/scenario', authenticate, async (req, res, next) => {
  */
 router.post('/save-history', authenticate, async (req, res, next) => {
   try {
-    const { collegeId, chance, category, factors } = req.body;
+    const { collegeId, chance, category, tier, factors } = req.body;
     
-    if (!collegeId || chance === undefined || !category) {
+    if (!collegeId || (!category && !tier)) {
       return res.status(400).json({
         success: false,
-        message: 'collegeId, chance, and category are required'
+        message: 'collegeId and tier/category are required'
       });
     }
     
@@ -647,6 +616,9 @@ router.post('/save-history', authenticate, async (req, res, next) => {
       tier1Count: (profile.activities || []).filter(a => a.tier_rating === 1).length
     } : {};
     
+    const resolvedCategory = category
+      || (tier === 'Safety' ? 'safety' : tier === 'Match' ? 'target' : 'reach');
+
     const result = await pool.query(
       `INSERT INTO chancing_history (
         user_id, college_id, chance_percentage, category, profile_snapshot, factors
@@ -654,8 +626,8 @@ router.post('/save-history', authenticate, async (req, res, next) => {
       [
         req.user.userId,
         collegeId,
-        chance,
-        category,
+        typeof chance === 'number' ? chance : null,
+        resolvedCategory,
         JSON.stringify(profileSnapshot),
         JSON.stringify(factors || [])
       ]
@@ -786,15 +758,17 @@ router.post('/compare', authenticate, async (req, res, next) => {
 
     const comparison = results.results.map(r => {
       const lastHistory = historyByCollege[r.college.id];
-      
-      const oldChance = lastHistory?.chance_percentage || null;
-      const newChance = r.chancing.chance;
-      const change = oldChance !== null ? newChance - oldChance : null;
+      const oldTier = lastHistory?.category === 'safety' ? 'Safety'
+        : lastHistory?.category === 'target' ? 'Match'
+        : lastHistory?.category === 'reach' ? 'Reach'
+        : null;
+      const newTier = r.chancing.tier;
+      const change = oldTier ? (TIER_RANK[newTier] || -1) - (TIER_RANK[oldTier] || -1) : null;
       
       return {
         college: r.college,
-        oldChance,
-        newChance,
+        oldTier,
+        newTier,
         change,
         oldCategory: lastHistory?.category || null,
         newCategory: r.chancing.category,
@@ -802,7 +776,7 @@ router.post('/compare', authenticate, async (req, res, next) => {
       };
     });
     
-    const withHistory = comparison.filter(c => c.oldChance !== null);
+    const withHistory = comparison.filter(c => c.oldTier !== null);
     
     res.json({
       success: true,
@@ -814,8 +788,8 @@ router.post('/compare', authenticate, async (req, res, next) => {
           improved: withHistory.filter(c => c.improved).length,
           decreased: withHistory.filter(c => c.change < 0).length,
           stayed: withHistory.filter(c => c.change === 0).length,
-          avgChange: withHistory.length > 0 
-            ? Math.round(withHistory.reduce((sum, c) => sum + c.change, 0) / withHistory.length)
+          avgChange: withHistory.length > 0
+            ? Math.round(withHistory.reduce((sum, c) => sum + (c.change || 0), 0) / withHistory.length)
             : null
         }
       }

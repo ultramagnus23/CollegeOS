@@ -10,8 +10,9 @@ import TodaysTasks from '../components/dashboard/TodaysTasks';
 import UrgentAlerts from '../components/dashboard/UrgentAlerts';
 import RecommendedActions from '../components/dashboard/RecommendedActions';
 import CollegeListOverview from '../components/dashboard/CollegeListOverview';
-import ProfileCompletionWidget from '../components/common/ProfileCompletionWidget';
+import ProfileCompleteness from '../components/ProfileCompleteness';
 import { CompactDecisionCountdown } from '@/components/DecisionCountdown';
+import { useTutorial } from '../components/tutorial/TutorialOverlay';
 
 /* ─── Design tokens ──────────────────────────────────────────────────── */
 const h2r = (hex: string, a: number) => {
@@ -147,6 +148,7 @@ const QuickAction: React.FC<{ emoji: string; title: string; desc: string; href: 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { start } = useTutorial();
 
   const [stats, setStats] = useState({ applications:0, deadlines:0, essays:0, colleges:0, completed:0, inProgress:0 });
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<any[]>([]);
@@ -165,6 +167,14 @@ const Dashboard = () => {
   const intendedMajors = safe(user?.intended_majors, []);
 
   useEffect(() => { loadDashboardData(); }, []);
+
+  useEffect(() => {
+    if (user && user.has_completed_tour !== true) {
+      const timer = setTimeout(() => start(), 800);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [start, user]);
 
   const loadDashboardData = async () => {
     try {
@@ -193,7 +203,7 @@ const Dashboard = () => {
         notificationDate:a.notification_date, applicationDate:a.application_date||a.created_at, collegeId:a.college_id,
       }));
       setDecisionDates(decisions);
-      setCollegeList(applications.map((a:any)=>({ id:a.id, name:a.college_name, category:a.category||'target', chance:a.chance||50, country:a.country||'United States', deadline:a.deadline, status:a.status })));
+      setCollegeList(applications.map((a:any)=>({ id:a.id, name:a.college_name, category:a.category||'target', country:a.country||'United States', deadline:a.deadline, status:a.status })));
 
       const calcDays = (d:string)=>Math.ceil((new Date(d+'T00:00:00').getTime()-Date.now())/86400000);
 
@@ -389,10 +399,10 @@ const Dashboard = () => {
               <SectionHead emoji="⚡" title="Quick Actions" />
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                 {[
-                  { emoji:'🎯', label:'Manage Activities', href:'/activities', color:'#6C63FF' },
-                  { emoji:'🏫', label:'Explore Colleges',  href:'/colleges',   color:'#3B9EFF' },
-                  { emoji:'✍️', label:'Work on Essays',    href:'/essays',     color:'#A855F7' },
-                  { emoji:'📅', label:'Check Deadlines',   href:'/deadlines',  color:'#F97316' },
+                  { emoji:'📝', label:'Update Profile',   href:'/settings',  color:'#6C63FF' },
+                  { emoji:'🏫', label:'Explore Colleges', href:'/colleges',  color:'#3B9EFF' },
+                  { emoji:'🎯', label:'View Chancing',    href:'/chancing',  color:'#A855F7' },
+                  { emoji:'📅', label:'Check Deadlines',  href:'/deadlines', color:'#F97316' },
                 ].map(a=>(
                   <Link key={a.href} to={a.href} style={{ textDecoration:'none' }}>
                     <div style={{
@@ -412,9 +422,9 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          {/* ── Profile completion ── */}
+          {/* ── Profile completeness ── */}
           <div style={{ marginBottom:24 }}>
-            <ProfileCompletionWidget variant="full" showMissingFields={true} />
+            <ProfileCompleteness />
           </div>
 
           {/* ── Deadlines + Applications ── */}

@@ -33,7 +33,7 @@ export const FitBadge: React.FC<FitBadgeProps> = ({ fitData, className = '' }) =
       borderColor: 'border-red-200'
     },
     target: {
-      label: 'Target',
+      label: 'Match',
       icon: Target,
       bgColor: 'bg-yellow-100',
       textColor: 'text-yellow-700',
