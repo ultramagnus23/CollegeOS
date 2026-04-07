@@ -2,7 +2,9 @@
 // FILE: src/services/api.ts - COMPLETE VERSION WITH ALL ROUTES AND NAMESPACES
 // ============================================
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+import { apiFetch } from '../utils/apiClient';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 // ==================== DEBUG LOGGING UTILITIES ====================
 // Debug mode is enabled in development, disabled in production
@@ -16,9 +18,9 @@ function logDebug(requestId: string, stage: string, message: string, data?: any)
   if (!DEBUG_MODE) return;
   const prefix = `[API ${requestId}] [${stage}]`;
   if (data !== undefined) {
-    console.log(`${prefix} ${message}`, data);
+    console.debug(`${prefix} ${message}`, data);
   } else {
-    console.log(`${prefix} ${message}`);
+    console.debug(`${prefix} ${message}`);
   }
 }
 
@@ -91,7 +93,7 @@ class ApiService {
     
     let response: Response;
     try {
-      response = await fetch(`${this.baseUrl}${endpoint}`, {
+      response = await apiFetch(`${this.baseUrl}${endpoint}`, {
         ...options,
         headers: this.getHeaders(),
       });
@@ -131,7 +133,7 @@ class ApiService {
         try {
           this.refreshing = true;
           // Attempt to refresh the access token
-          const refreshResponse = await fetch(`${this.baseUrl}/auth/refresh`, {
+          const refreshResponse = await apiFetch(`${this.baseUrl}/auth/refresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refreshToken }),
@@ -257,6 +259,12 @@ class ApiService {
     return this.request('/auth/onboarding', {
       method: 'PUT',
       body: JSON.stringify(data),
+    });
+  }
+
+  async completeTour() {
+    return this.request('/auth/tour-complete', {
+      method: 'PATCH',
     });
   }
 
@@ -1092,7 +1100,7 @@ class ApiService {
       }),
     
     getForStudent: () =>
-      this.request('/chancing/student'),
+      this.request('/chancing/my-list'),
     
     batchCalculate: (collegeIds: number[]) =>
       this.request('/chancing/batch', {

@@ -20,7 +20,8 @@ import {
   Users,
   Clock,
   Compass,
-  Shield
+  Shield,
+  Target
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -29,14 +30,15 @@ const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Colleges', href: '/colleges', icon: School },
+    { name: 'Chancing', href: '/chancing', icon: Target },
     { name: 'Applications', href: '/applications', icon: FileText },
     { name: 'Deadlines', href: '/deadlines', icon: Calendar },
-    { name: 'Essays', href: '/essays', icon: PenTool },
+    { name: 'Essays', href: '/essays', icon: PenTool, disabled: true, badge: 'Coming Soon' },
     { name: 'Documents', href: '/documents', icon: FolderOpen },
     { name: 'Scholarships', href: '/scholarships', icon: Award },
-    { name: 'Recommendations', href: '/recommendations', icon: Users },
+    { name: 'Recommendations', href: '/recommendations', icon: Users, disabled: true, badge: 'Coming Soon' },
     { name: 'Timeline', href: '/timeline', icon: Clock },
     { name: 'Discover', href: '/discover', icon: Compass },
     { name: 'Admin', href: '/admin', icon: Shield },
@@ -44,7 +46,7 @@ const DashboardLayout = () => {
   ];
 
   // Mobile bottom navigation (only show main items)
-  const mobileNav = navigation.slice(0, 5);
+  const mobileNav = navigation.filter(item => !item.disabled).slice(0, 5);
 
   const handleLogout = async () => {
     await logout();
@@ -107,11 +109,12 @@ const DashboardLayout = () => {
               <NavLink
                 key={item.name}
                 to={item.href}
-                end={item.href === '/'}
+                end={item.href === '/dashboard'}
                 onClick={() => setSidebarOpen(false)}
                 data-tutorial={
-                  item.href === '/' ? 'dashboard' :
+                  item.href === '/dashboard' ? 'dashboard' :
                   item.href === '/colleges' ? 'college-search' :
+                  item.href === '/chancing' ? 'chancing' :
                   item.href === '/applications' ? 'applications' :
                   item.href === '/essays' ? 'essays' :
                   item.href === '/deadlines' ? 'deadlines' :
@@ -121,7 +124,7 @@ const DashboardLayout = () => {
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium ${
                     isActive ? 'nav-active' : 'nav-inactive'
-                  }`
+                  } ${item.disabled ? 'pointer-events-none opacity-50' : ''}`
                 }
                 style={({ isActive }) => ({
                   background: isActive ? 'var(--color-accent-subtle)' : 'transparent',
@@ -130,6 +133,11 @@ const DashboardLayout = () => {
               >
                 <item.icon size={18} aria-hidden="true" />
                 <span>{item.name}</span>
+                {item.badge && (
+                  <span className="ml-auto text-[10px] uppercase tracking-wide bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+                    {item.badge}
+                  </span>
+                )}
               </NavLink>
             ))}
           </nav>
@@ -191,7 +199,7 @@ const DashboardLayout = () => {
             <NavLink
               key={item.name}
               to={item.href}
-              end={item.href === '/'}
+              end={item.href === '/dashboard'}
               className="flex flex-col items-center justify-center py-2 px-3 min-w-[64px] transition-all duration-150"
               style={({ isActive }) => ({
                 color: isActive ? 'var(--color-accent-primary)' : 'var(--color-text-secondary)',

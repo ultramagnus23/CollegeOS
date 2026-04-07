@@ -5,65 +5,89 @@ const axios = require('axios');
 const logger = require('../utils/logger');
 const { sanitizeForLog } = require('../utils/security');
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://127.0.0.1:5050';
-const ML_TIMEOUT = parseInt(process.env.ML_SERVICE_TIMEOUT || '8000', 10);
+const CHANCING_SERVICE_URL = process.env.CHANCING_SERVICE_URL || 'http://127.0.0.1:8001';
+const CHANCING_TIMEOUT = parseInt(process.env.CHANCING_SERVICE_TIMEOUT || '8000', 10);
 
-/**
- * Classify an admission probability percentage into a fit category.
- */
-function classifyChance(probability) {
-  if (probability >= 65) return 'safety';
-  if (probability >= 30) return 'target';
-  return 'reach';
+function normalizeTier(tier) {
+  if (!tier) return 'Unknown';
+  const normalized = String(tier).trim().toLowerCase();
+  if (normalized === 'safety') return 'Safety';
+  if (normalized === 'match' || normalized === 'target') return 'Match';
+  if (normalized === 'reach') return 'Reach';
+  if (normalized === 'long shot' || normalized === 'longshot') return 'Long Shot';
+  return 'Unknown';
+}
+
+function tierBucket(tier) {
+  const normalized = normalizeTier(tier);
+  if (normalized === 'Safety') return 'safety';
+  if (normalized === 'Match') return 'target';
+  if (normalized === 'Reach') return 'reach';
+  if (normalized === 'Long Shot') return 'reach';
+  return 'unknown';
+}
+
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function callChancingService(payload, attempt = 1) {
+  try {
+    const response = await axios.post(
+      `${CHANCING_SERVICE_URL}/chance`,
+      payload,
+      { timeout: CHANCING_TIMEOUT }
+    );
+    return response?.data;
+  } catch (error) {
+    if (attempt < 2) {
+      await wait(3000);
+      return callChancingService(payload, attempt + 1);
+    }
+    throw error;
+  }
 }
 
 /**
- * Call the synthetic LDA /predict endpoint.
- * Returns a normalised result object regardless of whether the call succeeds.
+ * Call the Python chancing service.
  *
  * @param {Object} studentProfile - Student data (sat_total, gpa_unweighted, etc.)
- * @param {Object} college - College data (name, sat_total_25th/75th, etc.)
- * @returns {Promise<Object>} { chance, category, probability, distance, method, factors }
+ * @param {Object} college - College data (acceptance_rate, sat_avg, etc.)
+ * @returns {Promise<Object>} { tier, confidence, explanation }
  */
 async function calculateChance(studentProfile, college) {
   try {
-    const response = await axios.post(
-      `${ML_SERVICE_URL}/predict`,
-      { student: studentProfile, college, cds_data: {} },
-      { timeout: ML_TIMEOUT }
-    );
+    const payload = {
+      gpa: studentProfile?.gpa_unweighted ?? studentProfile?.gpa_weighted ?? studentProfile?.gpa ?? null,
+      sat_score: studentProfile?.sat_total ?? studentProfile?.sat_score ?? null,
+      act_score: studentProfile?.act_composite ?? studentProfile?.act_score ?? null,
+      ap_courses: studentProfile?.num_ap_courses ?? studentProfile?.ap_courses ?? 0,
+      extracurriculars: Array.isArray(studentProfile?.activities) ? studentProfile.activities.length : 0,
+      college_acceptance_rate: college?.acceptance_rate ?? 0.5,
+      college_median_gpa: college?.gpa_50 ?? college?.median_gpa ?? null,
+      college_median_sat: college?.sat_avg ?? college?.sat_total_50 ?? college?.median_sat ?? null,
+      is_international: true,
+      intended_major: studentProfile?.intended_major ?? studentProfile?.preferences?.intended_major ?? null,
+    };
 
-    const data = response?.data;
-    if (data?.success && typeof data.probability === 'number') {
-      const probability = Math.round(data.probability);
-      return {
-        chance: probability,
-        category: classifyChance(probability),
-        probability,
-        distance: data.distance ?? null,
-        method: data.method || 'synthetic_lda',
-        features_used: data.features_used || [],
-        factors: []
-      };
-    }
+    const data = await callChancingService(payload);
+    const tier = normalizeTier(data?.tier);
+    return {
+      tier,
+      category: tierBucket(tier),
+      confidence: data?.confidence ?? 'Medium',
+      explanation: data?.explanation ?? 'Based on your academic profile compared with reported college medians.',
+    };
   } catch (error) {
-    logger.warn('ML /predict call failed; using acceptance-rate fallback', {
+    logger.warn('Chancing service call failed', {
       college: sanitizeForLog(college?.name),
-      error: sanitizeForLog(error?.message)
+      error: sanitizeForLog(error?.message),
     });
   }
 
-  // Acceptance-rate fallback when ML service is unavailable
-  const acceptanceRate = college.acceptance_rate ?? 0.5;
-  const probability = Math.round(acceptanceRate * 100);
   return {
-    chance: probability,
-    category: classifyChance(probability),
-    probability,
-    distance: null,
-    method: 'acceptance_rate_fallback',
-    features_used: [],
-    factors: [{ name: 'Acceptance Rate', impact: `${probability}%`, details: `Based on ${(acceptanceRate * 100).toFixed(1)}% institutional acceptance rate`, positive: true }]
+    tier: 'Unknown',
+    category: tierBucket('Unknown'),
+    confidence: 'Low',
+    explanation: 'Chancing service is warming up — please try again in 30 seconds.',
   };
 }
 
@@ -87,21 +111,27 @@ async function classifyFit(userId, collegeId) {
     return {
       category: result.category,
       fit: result.category,
-      academicFit: result.chance,
-      culturalFit: 50,
-      financialFit: 50,
-      overall: result.chance,
-      reasoning: [`Admission probability: ${result.chance}% (${result.method})`]
+      tier: result.tier,
+      confidence: result.confidence,
+      explanation: result.explanation,
+      academicFit: null,
+      culturalFit: null,
+      financialFit: null,
+      overall: null,
+      reasoning: [`Chancing tier: ${result.tier}`],
     };
   } catch (error) {
     logger.error('Error in fit classification:', { error: sanitizeForLog(error?.message) });
     return {
       category: 'target',
       fit: 'target',
-      academicFit: 50,
-      culturalFit: 50,
-      financialFit: 50,
-      overall: 50,
+      tier: 'Unknown',
+      confidence: 'Low',
+      explanation: 'Fit classification unavailable',
+      academicFit: null,
+      culturalFit: null,
+      financialFit: null,
+      overall: null,
       reasoning: ['Fit classification unavailable']
     };
   }
@@ -204,7 +234,15 @@ async function batchCalculate(studentProfile, colleges) {
       results.push({ collegeId: college.id, collegeName: college.name, ...result });
     } catch (error) {
       logger.error('Error calculating chance', { college: sanitizeForLog(college?.name), error: sanitizeForLog(error?.message) });
-      results.push({ collegeId: college.id, collegeName: college.name, error: 'An internal error occurred', chance: null });
+      results.push({
+        collegeId: college.id,
+        collegeName: college.name,
+        error: 'An internal error occurred',
+        tier: 'Unknown',
+        category: 'unknown',
+        confidence: 'Low',
+        explanation: 'Chancing unavailable at the moment.',
+      });
     }
   }
   return results;

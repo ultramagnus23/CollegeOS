@@ -9,6 +9,7 @@ export interface User {
   full_name: string;
   country: string;
   onboarding_complete: boolean;
+  has_completed_tour?: boolean;
   target_countries?: string; // JSON string
   intended_majors?: string;  // JSON string
   test_status?: string;      // JSON string
@@ -141,8 +142,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (user) {
       // Create a new user object with only valid User interface fields
       const validUpdates: Partial<User> = {};
-      const validKeys: (keyof User)[] = ['id', 'email', 'full_name', 'country', 'onboarding_complete', 
-                                          'target_countries', 'intended_majors', 'test_status', 'language_preferences'];
+      const validKeys: (keyof User)[] = ['id', 'email', 'full_name', 'country', 'onboarding_complete',
+                                          'has_completed_tour', 'target_countries', 'intended_majors', 'test_status', 'language_preferences'];
       
       validKeys.forEach(key => {
         if (key in updates && updates[key] !== undefined) {

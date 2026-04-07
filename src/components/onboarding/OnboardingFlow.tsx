@@ -109,7 +109,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         setCurrentStep(response.data.step || 1);
       }
     } catch (error) {
-      console.log('No draft to load');
+      // No draft to load
     }
   };
 

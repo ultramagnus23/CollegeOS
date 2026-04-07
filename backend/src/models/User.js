@@ -56,6 +56,15 @@ class User {
     return this.findById(userId);
   }
 
+  static async markTourComplete(userId) {
+    const pool = dbManager.getDatabase();
+    await pool.query(
+      `UPDATE users SET has_completed_tour = TRUE, updated_at = NOW() WHERE id = $1`,
+      [userId]
+    );
+    return this.findById(userId);
+  }
+
   /**
    * Return a merged academic profile for use by the recommendation engine and
    * eligibility checker.  Combines the core `users` row (GPA, test scores,

@@ -16,5 +16,6 @@ router.post('/logout', AuthController.logout);
 // Protected routes
 router.get('/me', authenticate, AuthController.getCurrentUser);
 router.put('/onboarding', authenticate, validate(validators.onboarding), AuthController.completeOnboarding);
+router.patch('/tour-complete', authenticate, AuthController.completeTour);
 
 module.exports = router;
