@@ -1,6 +1,6 @@
 // FILE: src/App.tsx
 import React, { useState, useEffect, Component, ReactNode } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { Toaster } from "@/components/ui/toaster";
@@ -81,7 +81,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryStat
 }
 
 const AppContent = () => {
-  const { refreshUser } = useAuth();
+  const { refreshUser, user } = useAuth();
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
 
   useEffect(() => {
@@ -165,7 +165,7 @@ const AppContent = () => {
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/profile" element={<Settings />} />
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin" element={user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/dashboard" replace />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

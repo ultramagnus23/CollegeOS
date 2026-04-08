@@ -43,7 +43,7 @@ class User {
     await pool.query(
       `UPDATE users
        SET target_countries = $1, intended_majors = $2, test_status = $3,
-           language_preferences = $4, onboarding_complete = 1, updated_at = NOW()
+           language_preferences = $4, onboarding_complete = true, updated_at = NOW()
        WHERE id = $5`,
       [
         JSON.stringify(data.target_countries),

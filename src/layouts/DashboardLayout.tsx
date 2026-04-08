@@ -41,7 +41,7 @@ const DashboardLayout = () => {
     { name: 'Scholarships', href: '/scholarships', icon: Award },
     { name: 'Recommenders', href: '/recommenders', icon: Users },
     { name: 'Timeline', href: '/timeline', icon: Clock },
-    { name: 'Admin', href: '/admin', icon: Shield },
+    ...(user?.role === 'admin' ? [{ name: 'Admin', href: '/admin', icon: Shield }] : []),
     { name: 'Settings', href: '/settings', icon: SettingsIcon },
   ];
 

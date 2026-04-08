@@ -132,7 +132,7 @@ router.get('/', async (req, res, next) => {
       needBased: needBased === 'true',
       meritBased: meritBased === 'true',
       minAmount: minAmount ? parseInt(minAmount) : undefined,
-      deadlineAfter,
+      deadline: deadlineAfter,
       search,
       limit: limit ? parseInt(limit) : 50
     });

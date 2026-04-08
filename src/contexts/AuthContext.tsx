@@ -9,6 +9,7 @@ export interface User {
   full_name: string;
   country: string;
   onboarding_complete: boolean;
+  role?: string;
   has_completed_tour?: boolean;
   target_countries?: string; // JSON string
   intended_majors?: string;  // JSON string

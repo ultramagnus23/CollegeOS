@@ -52,6 +52,12 @@ export default function Landing() {
             >
               Get Started Free
             </Link>
+            <Link
+              to="/auth"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-lg text-muted-foreground font-semibold hover:text-foreground transition"
+            >
+              Log in
+            </Link>
           </div>
         </header>
 

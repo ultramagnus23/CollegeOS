@@ -203,7 +203,7 @@ class AuthService {
   }
 
   static generateAccessToken(user) {
-    return jwt.sign({ userId: user.id, email: user.email }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
+    return jwt.sign({ userId: user.id, email: user.email, role: user.role || 'student' }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
   }
 
   static generateRefreshToken(user) {
