@@ -28,7 +28,7 @@ const logger = require('./logger');
 
 const API_BASE = 'https://api.data.gov/ed/collegescorecard/v1/schools.json';
 const PER_PAGE = Math.min(parseInt(process.env.SCORECARD_PER_PAGE || '100', 10), 100);
-const REQUEST_DELAY_MS = 500; // stay well inside the 1 000 req/hr free-tier limit
+const REQUEST_DELAY_MS = 500; // stay well inside the 1,000 req/hr free-tier limit
 
 const FIELDS = [
   'school.name',
