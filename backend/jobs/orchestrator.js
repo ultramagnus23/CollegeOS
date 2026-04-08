@@ -22,7 +22,7 @@
  * ────────────────────────────────
  *   DATABASE_URL
  *   REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET / REDDIT_REFRESH_TOKEN
- *   OPENAI_API_KEY   (used by scraper/claudeParser.js)
+ *   GEMINI_API_KEY   (used by scraper/claudeParser.js and backend/src/services/valuesEngine.js)
  *
  * Optional
  * ────────

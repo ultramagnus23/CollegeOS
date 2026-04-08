@@ -1,12 +1,15 @@
 'use strict';
 
 /**
- * OpenAI-powered parser for Reddit admissions posts.
- * Sends post text to GPT-4o-mini and extracts a structured applicant profile
- * plus a list of school outcomes.
+ * Google Gemini-powered parser for Reddit admissions posts.
+ * Uses Gemini's OpenAI-compatible endpoint so the existing `openai` npm package
+ * works without any new dependencies.
+ *
+ * Model: gemini-1.5-flash (free tier — no credit card required)
+ * Get a free API key at: https://aistudio.google.com/apikey
  *
  * Environment variable required:
- *   OPENAI_API_KEY
+ *   GEMINI_API_KEY
  */
 
 const OpenAI = require('openai');
@@ -16,9 +19,12 @@ let client = null;
 
 function getClient() {
   if (!client) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) throw new Error('OPENAI_API_KEY environment variable is not set');
-    client = new OpenAI({ apiKey });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY environment variable is not set');
+    client = new OpenAI({
+      apiKey,
+      baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+    });
   }
   return client;
 }
@@ -77,7 +83,7 @@ async function parsePost(post) {
   try {
     const openai = getClient();
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gemini-1.5-flash',
       max_tokens: 1024,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -112,9 +118,9 @@ async function parsePost(post) {
     };
   } catch (err) {
     if (err instanceof SyntaxError) {
-      logger.warn({ msg: 'OpenAI returned invalid JSON', postId: post.id, rawLength: raw?.length });
+      logger.warn({ msg: 'Gemini returned invalid JSON', postId: post.id, rawLength: raw?.length });
     } else {
-      logger.error({ msg: 'OpenAI API error', postId: post.id, error: err.message });
+      logger.error({ msg: 'Gemini API error', postId: post.id, error: err.message });
     }
     return null;
   }
