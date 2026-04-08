@@ -1,14 +1,15 @@
 /**
  * Values Engine Service
  *
- * Calls the OpenAI API to produce a structured psychological "values vector"
+ * Calls the Google Gemini API (OpenAI-compatible endpoint) to produce a structured psychological "values vector"
  * from a student's free-text answers about why college matters to them and their
  * life goals.
  *
  * Uses axios (already in backend dependencies) instead of the OpenAI SDK so
  * no new package is required.
  *
- * Model: gpt-4o-mini
+ * Model: gemini-1.5-flash (free tier — no credit card required)
+ * Get a free API key at: https://aistudio.google.com/apikey
  *
  * Returns:
  *   {
@@ -24,8 +25,8 @@
 const axios = require('axios');
 const logger = require('../utils/logger');
 
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const MODEL = 'gpt-4o-mini';
+const OPENAI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+const MODEL = 'gemini-1.5-flash';
 
 const SYSTEM_PROMPT = `You are a psychological profiling engine for a college admissions platform. Read a student's free-text answer about why college matters to them and their life goals, and score them on exactly 10 dimensions. Return ONLY valid JSON. No markdown, no preamble, no text outside the JSON object.
 
@@ -76,9 +77,9 @@ async function computeValuesVector(whyCollegeMatters, lifeGoalsRaw) {
     return null;
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    logger.warn('OPENAI_API_KEY not set — skipping values vector computation');
+    logger.warn('GEMINI_API_KEY not set — skipping values vector computation');
     return null;
   }
 
@@ -112,7 +113,7 @@ async function computeValuesVector(whyCollegeMatters, lifeGoalsRaw) {
 
     const rawText = response.data?.choices?.[0]?.message?.content;
     if (!rawText) {
-      logger.error('valuesEngine: empty response from OpenAI', { response: response.data });
+      logger.error('valuesEngine: empty response from Gemini', { response: response.data });
       return null;
     }
 
@@ -131,7 +132,7 @@ async function computeValuesVector(whyCollegeMatters, lifeGoalsRaw) {
     if (err.name === 'SyntaxError') {
       logger.error('valuesEngine: JSON parse failed', { error: err.message });
     } else {
-      logger.error('valuesEngine: OpenAI API call failed', {
+      logger.error('valuesEngine: Gemini API call failed', {
         error: err?.response?.data || err?.message,
       });
     }
