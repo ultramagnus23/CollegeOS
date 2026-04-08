@@ -196,7 +196,9 @@ async function startServer() {
 
       // Warm up exchange rates on boot and refresh every 6 hours
       const { refreshExchangeRates } = require('./services/financialCostService');
-      refreshExchangeRates().catch(() => {});
+      refreshExchangeRates().catch((err) => {
+        logger.warn('Initial exchange rate fetch failed — falling back to DB seed', { error: err?.message });
+      });
       setInterval(refreshExchangeRates, 6 * 60 * 60 * 1000);
 
       // Start ML retraining jobs
