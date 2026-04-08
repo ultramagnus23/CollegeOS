@@ -1,0 +1,11 @@
+# CollegeOS Auto-generated railway.toml — do not edit manually
+# Railway deployment configuration for the Node.js backend service.
+# The Python worker runs as a separate Railway service using scraper/Procfile.
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "node backend/src/app.js"
+healthcheckPath = "/api/admin/health"
+healthcheckTimeout = 30

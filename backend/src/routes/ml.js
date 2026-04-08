@@ -435,33 +435,157 @@ router.put('/consent', authenticate, async (req, res, next) => {
 });
 
 /**
+ * POST /api/ml/feedback
+ * Record a user's real admission outcome and trigger incremental model update.
+ * Every RETRAIN_THRESHOLD new rows triggers a background retrain.
+ */
+router.post('/feedback', authenticate, async (req, res, next) => {
+  try {
+    const { gpa, sat, act, num_aps, num_ecs, college_name, outcome } = req.body;
+
+    const validOutcomes = ['accepted', 'rejected', 'waitlisted', 'deferred'];
+    if (!college_name || !outcome) {
+      return res.status(400).json({ success: false, message: 'college_name and outcome are required' });
+    }
+    if (!validOutcomes.includes(outcome)) {
+      return res.status(400).json({
+        success: false,
+        message: `outcome must be one of: ${validOutcomes.join(', ')}`
+      });
+    }
+
+    const pool = dbManager.getDatabase();
+
+    // Persist to scraped_applicants + scraped_results so the training
+    // pipeline can pick it up on the next run.
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const { rows } = await client.query(
+        `INSERT INTO scraped_applicants
+           (reddit_post_id, gpa, sat_score, act_score, num_ap_courses, raw_text)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id`,
+        [
+          `feedback_${req.user.userId}_${Date.now()}`,
+          gpa != null ? parseFloat(gpa) : null,
+          sat != null ? parseInt(sat, 10) : null,
+          act != null ? parseInt(act, 10) : null,
+          num_aps != null ? parseInt(num_aps, 10) : null,
+          `User feedback: ${outcome} at ${college_name}`,
+        ]
+      );
+      const applicantId = rows[0].id;
+      const normalizedName = String(college_name).toLowerCase().replace(/\s+/g, ' ').trim();
+      await client.query(
+        `INSERT INTO scraped_results
+           (applicant_id, school_name_raw, school_name_normalized, outcome)
+         VALUES ($1, $2, $3, $4)`,
+        [applicantId, college_name, normalizedName, outcome]
+      );
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+
+    // Check if we've crossed the retrain threshold
+    const RETRAIN_THRESHOLD = parseInt(process.env.FEEDBACK_RETRAIN_THRESHOLD || '100', 10);
+    const { rows: countRows } = await pool.query(
+      `SELECT COUNT(*) AS cnt FROM scraped_applicants
+       WHERE raw_text LIKE 'User feedback:%'`
+    );
+    const feedbackCount = parseInt(countRows[0].cnt, 10);
+
+    if (feedbackCount % RETRAIN_THRESHOLD === 0) {
+      // Trigger background retrain via the scraper scheduler if available
+      try {
+        const scraperScheduler = require('../jobs/scraperScheduler');
+        scraperScheduler.triggerRetrain();
+        logger.info(`Feedback retrain triggered after ${feedbackCount} feedback rows`);
+      } catch (_) {
+        // Scheduler not loaded — log only
+        logger.info(`Feedback milestone ${feedbackCount}: manual retrain recommended`);
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Feedback recorded successfully',
+      data: { feedbackCount }
+    });
+  } catch (error) {
+    logger.error('ML feedback failed:', error);
+    next(error);
+  }
+});
+
+/**
  * GET /api/ml/stats
- * Get ML data collection statistics
+ * Returns model accuracy metrics from ml_metadata (XGBoost global model)
+ * plus data collection statistics.
  */
 router.get('/stats', authenticate, async (req, res, next) => {
   try {
     const pool = dbManager.getDatabase();
-    
-    const stats = {
-      trainingDataCount: parseInt((await pool.query('SELECT COUNT(*) as count FROM ml_training_data')).rows[0].count),
-      interactionsCount: parseInt((await pool.query('SELECT COUNT(*) as count FROM ml_user_interactions')).rows[0].count),
-      essaysCount: parseInt((await pool.query('SELECT COUNT(*) as count FROM ml_essays')).rows[0].count),
-      usersWithConsent: parseInt((await pool.query('SELECT COUNT(*) as count FROM users WHERE ml_consent = true')).rows[0].count),
-      decisionBreakdown: (await pool.query(`
-        SELECT decision, COUNT(*) as count 
-        FROM ml_training_data 
-        GROUP BY decision
-      `)).rows,
-      interactionBreakdown: (await pool.query(`
-        SELECT interaction_type, COUNT(*) as count 
-        FROM ml_user_interactions 
-        GROUP BY interaction_type
-      `)).rows
-    };
-    
+
+    // Latest global model stats from ml_metadata (written by training_pipeline.py)
+    let modelStats = null;
+    try {
+      const { rows } = await pool.query(
+        `SELECT model_version, accuracy, f1_score, precision_val, recall_val,
+                training_samples, last_trained
+         FROM ml_metadata
+         ORDER BY last_trained DESC
+         LIMIT 1`
+      );
+      if (rows.length) {
+        const r = rows[0];
+        modelStats = {
+          accuracy: parseFloat(r.accuracy),
+          f1_score: parseFloat(r.f1_score),
+          precision: r.precision_val != null ? parseFloat(r.precision_val) : null,
+          recall: r.recall_val != null ? parseFloat(r.recall_val) : null,
+          training_samples: parseInt(r.training_samples, 10),
+          last_trained: r.last_trained,
+          model_version: r.model_version,
+        };
+      }
+    } catch (_) {
+      // ml_metadata table may not exist yet — return nulls
+    }
+
+    // Data collection stats
+    const trainingDataCount = parseInt(
+      (await pool.query('SELECT COUNT(*) AS c FROM ml_training_data')).rows[0].c, 10
+    );
+    const interactionsCount = parseInt(
+      (await pool.query('SELECT COUNT(*) AS c FROM ml_user_interactions')).rows[0].c, 10
+    );
+    const essaysCount = parseInt(
+      (await pool.query('SELECT COUNT(*) AS c FROM ml_essays')).rows[0].c, 10
+    );
+    const usersWithConsent = parseInt(
+      (await pool.query('SELECT COUNT(*) AS c FROM users WHERE ml_consent = true')).rows[0].c, 10
+    );
+    const decisionBreakdown = (await pool.query(
+      'SELECT decision, COUNT(*) AS count FROM ml_training_data GROUP BY decision'
+    )).rows;
+
     res.json({
       success: true,
-      data: stats
+      data: {
+        // Global XGBoost model metrics
+        model: modelStats,
+        // Data collection counters
+        trainingDataCount,
+        interactionsCount,
+        essaysCount,
+        usersWithConsent,
+        decisionBreakdown,
+      }
     });
   } catch (error) {
     next(error);

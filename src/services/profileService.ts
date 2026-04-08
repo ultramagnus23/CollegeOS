@@ -27,6 +27,7 @@ export interface UserProfile {
   // Onboarding completion flag
   onboarding_complete: boolean;
   profileCompleted: boolean; // UI-friendly alias
+  has_completed_tour?: boolean;
   
   // Academic information
   grade?: string;
@@ -159,7 +160,7 @@ class ProfileService {
       localStorage.setItem(ProfileService.PROFILE_KEY, JSON.stringify(updatedProfile));
       localStorage.setItem(ProfileService.VERSION_KEY, ProfileService.CURRENT_VERSION);
       
-      console.log('ProfileService: Profile saved successfully', {
+      console.debug('ProfileService: Profile saved successfully', {
         hasId: !!updatedProfile.id,
         onboardingComplete: updatedProfile.onboarding_complete,
         profileCompleted: updatedProfile.profileCompleted,
@@ -248,7 +249,7 @@ class ProfileService {
       localStorage.removeItem(ProfileService.VERSION_KEY);
       // Keep studentProfile for backward compatibility temporarily
       localStorage.removeItem('studentProfile');
-      console.log('ProfileService: Profile cleared');
+      console.debug('ProfileService: Profile cleared');
     } catch (error) {
       console.error('ProfileService: Error clearing profile', error);
     }
@@ -340,7 +341,7 @@ class ProfileService {
       if (oldProfile) {
         const parsed = JSON.parse(oldProfile);
         this.saveProfile(parsed);
-        console.log('ProfileService: Migrated old studentProfile data');
+        console.debug('ProfileService: Migrated old studentProfile data');
       }
     } catch (error) {
       console.error('ProfileService: Error migrating old data', error);

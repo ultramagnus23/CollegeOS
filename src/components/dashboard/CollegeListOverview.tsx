@@ -20,7 +20,6 @@ interface CollegeListItem {
   id: string;
   name: string;
   category: 'reach' | 'target' | 'safety';
-  chance: number; // 0-100
   country: string;
   deadline?: string;
   status: 'researching' | 'preparing' | 'submitted' | 'accepted' | 'rejected';
@@ -53,7 +52,7 @@ const categoryConfig = {
     color: 'text-primary',
     bg: 'bg-primary/15',
     border: 'border-blue-200',
-    label: 'Target',
+    label: 'Match',
     description: 'Good fit'
   },
   safety: {
@@ -222,7 +221,7 @@ const CollegeListOverview: React.FC<CollegeListOverviewProps> = ({
                       {catConfig.label}
                     </span>
                     <span>•</span>
-                    <span>{college.chance}% chance</span>
+                    <span>{categoryConfig[college.category].label}</span>
                   </div>
                 </div>
 

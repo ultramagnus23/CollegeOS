@@ -1,14 +1,14 @@
 /**
  * Values Engine Service
  *
- * Calls the Anthropic API to produce a structured psychological "values vector"
+ * Calls the OpenAI API to produce a structured psychological "values vector"
  * from a student's free-text answers about why college matters to them and their
  * life goals.
  *
- * Uses axios (already in backend dependencies) instead of the Anthropic SDK so
+ * Uses axios (already in backend dependencies) instead of the OpenAI SDK so
  * no new package is required.
  *
- * Model: claude-sonnet-4-20250514
+ * Model: gpt-4o-mini
  *
  * Returns:
  *   {
@@ -24,8 +24,8 @@
 const axios = require('axios');
 const logger = require('../utils/logger');
 
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-sonnet-4-20250514';
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const MODEL = 'gpt-4o-mini';
 
 const SYSTEM_PROMPT = `You are a psychological profiling engine for a college admissions platform. Read a student's free-text answer about why college matters to them and their life goals, and score them on exactly 10 dimensions. Return ONLY valid JSON. No markdown, no preamble, no text outside the JSON object.
 
@@ -76,9 +76,9 @@ async function computeValuesVector(whyCollegeMatters, lifeGoalsRaw) {
     return null;
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    logger.warn('ANTHROPIC_API_KEY not set — skipping values vector computation');
+    logger.warn('OPENAI_API_KEY not set — skipping values vector computation');
     return null;
   }
 
@@ -92,26 +92,27 @@ async function computeValuesVector(whyCollegeMatters, lifeGoalsRaw) {
 
   try {
     const response = await axios.post(
-      ANTHROPIC_API_URL,
+      OPENAI_API_URL,
       {
         model: MODEL,
         max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userMessage }],
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userMessage },
+        ],
       },
       {
         headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
+          Authorization: `Bearer ${apiKey}`,
           'content-type': 'application/json',
         },
         timeout: 30000,
       }
     );
 
-    const rawText = response.data?.content?.[0]?.text;
+    const rawText = response.data?.choices?.[0]?.message?.content;
     if (!rawText) {
-      logger.error('valuesEngine: empty response from Anthropic', { response: response.data });
+      logger.error('valuesEngine: empty response from OpenAI', { response: response.data });
       return null;
     }
 
@@ -130,7 +131,7 @@ async function computeValuesVector(whyCollegeMatters, lifeGoalsRaw) {
     if (err.name === 'SyntaxError') {
       logger.error('valuesEngine: JSON parse failed', { error: err.message });
     } else {
-      logger.error('valuesEngine: Anthropic API call failed', {
+      logger.error('valuesEngine: OpenAI API call failed', {
         error: err?.response?.data || err?.message,
       });
     }

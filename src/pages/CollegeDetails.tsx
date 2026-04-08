@@ -28,6 +28,7 @@ import { api } from '../services/api';
 import { toast } from 'sonner';
 import { DataFreshnessIndicator } from '@/components/DataFreshnessIndicator';
 import { getCollegeById, isSupabaseConfigured, normalizeToDetail } from '../lib/collegeService';
+import { useAuth } from '../contexts/AuthContext';
 
 /* =========================
    Country-based Gradient Mapping
@@ -298,16 +299,17 @@ type TabName = 'overview' | 'admissions' | 'academics' | 'cost' | 'studentLife' 
 const CollegeDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [college, setCollege] = useState<College | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [adding, setAdding] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabName>('overview');
   const [chancingResult, setChancingResult] = useState<{
-    chance: number;
+    tier: string;
     category: string;
-    recommendation: string;
-    factors: { name: string; impact: string; details: string; positive: boolean }[];
+    confidence: string;
+    explanation: string;
   } | null>(null);
   const [chancingLoading, setChancingLoading] = useState(false);
 
@@ -315,7 +317,7 @@ const CollegeDetail: React.FC = () => {
     if (id) {
       loadCollegeDetails(Number(id));
     }
-  }, [id]);
+  }, [id, user]);
 
   const loadCollegeDetails = async (collegeId: number): Promise<void> => {
     try {
@@ -335,13 +337,18 @@ const CollegeDetail: React.FC = () => {
       }
 
       setCollege(collegeData);
-      try {
-        setChancingLoading(true);
-        const chancingResponse = await api.chancing.calculate({ collegeId });
-        setChancingResult(chancingResponse.data);
-      } catch (chancingError) {
-        console.warn('Chancing calculation failed (non-critical):', chancingError);
-      } finally { setChancingLoading(false); }
+      if (user) {
+        try {
+          setChancingLoading(true);
+          const chancingResponse = await api.chancing.calculate({ collegeId });
+          setChancingResult(chancingResponse.data?.chancing ?? chancingResponse.data);
+        } catch (chancingError) {
+          console.warn('Chancing calculation failed (non-critical):', chancingError);
+        } finally { setChancingLoading(false); }
+      } else {
+        setChancingResult(null);
+        setChancingLoading(false);
+      }
     } catch (error) {
       console.error('Failed to load college:', error);
     } finally {
@@ -351,6 +358,11 @@ const CollegeDetail: React.FC = () => {
 
   const handleAddCollege = async (): Promise<void> => {
     if (!college) return;
+    if (!user) {
+      toast.error('Sign in to add colleges to your list.');
+      navigate('/auth');
+      return;
+    }
 
     try {
       setAdding(true);
@@ -683,16 +695,27 @@ const CollegeDetail: React.FC = () => {
               </button>
               
               {/* Chancing Card */}
-              {chancingLoading && <Loader2 className="animate-spin" size={16} />}
-              {chancingResult && (
-                <div className={`px-4 py-2 rounded-lg font-medium ${
-                  chancingResult.category === 'Safety' ? 'bg-green-400 text-green-900' :
-                  chancingResult.category === 'Target' ? 'bg-yellow-400 text-yellow-900' :
-                  'bg-red-400 text-red-900'
-                }`}>
+              {user ? (
+                <>
+                  {chancingLoading && <Loader2 className="animate-spin" size={16} />}
+                  {chancingResult && (
+                    <div className={`px-4 py-2 rounded-lg font-medium ${
+                      chancingResult.tier === 'Safety' ? 'bg-green-400 text-green-900' :
+                      chancingResult.tier === 'Match' ? 'bg-yellow-400 text-yellow-900' :
+                      'bg-red-400 text-red-900'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <Target className="w-4 h-4" />
+                        <span>{chancingResult.tier}</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="px-4 py-2 rounded-lg font-medium bg-white/10 text-white/80 border border-white/20">
                   <div className="flex items-center gap-2">
                     <Target className="w-4 h-4" />
-                    <span>{chancingResult.chance}% - {chancingResult.category}</span>
+                    <span>Sign in to see your chances</span>
                   </div>
                 </div>
               )}
@@ -782,41 +805,54 @@ const CollegeDetail: React.FC = () => {
       {/* Tab Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Chancing Section - Show prominently if available */}
-        {chancingResult && (
-          <div className={`mb-6 p-4 rounded-xl border-2 ${
-            chancingResult.category === 'Safety' ? 'bg-emerald-500/10 border-green-200' :
-            chancingResult.category === 'Target' ? 'bg-yellow-50 border-yellow-200' :
-            'bg-red-50 border-red-200'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className={`text-4xl font-bold ${
-                  chancingResult.category === 'Safety' ? 'text-emerald-500' :
-                  chancingResult.category === 'Target' ? 'text-yellow-600' :
-                  'text-red-600'
-                }`}>
-                  {chancingResult.chance}%
-                </div>
-                <div>
-                  <div className={`text-lg font-semibold ${
-                    chancingResult.category === 'Safety' ? 'text-green-800' :
-                    chancingResult.category === 'Target' ? 'text-yellow-800' :
-                    'text-red-800'
+        {user ? (
+          chancingResult && (
+            <div className={`mb-6 p-4 rounded-xl border-2 ${
+              chancingResult.tier === 'Safety' ? 'bg-emerald-500/10 border-green-200' :
+              chancingResult.tier === 'Match' ? 'bg-yellow-50 border-yellow-200' :
+              'bg-red-50 border-red-200'
+            }`}>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4">
+                  <div className={`text-3xl font-bold ${
+                    chancingResult.tier === 'Safety' ? 'text-emerald-500' :
+                    chancingResult.tier === 'Match' ? 'text-yellow-600' :
+                    'text-red-600'
                   }`}>
-                    {chancingResult.category} School
+                    {chancingResult.tier}
                   </div>
-                  <p className="text-sm text-muted-foreground">{chancingResult.recommendation}</p>
+                  <div>
+                  <div className="text-lg font-semibold text-foreground">
+                    {chancingResult.confidence} confidence
+                  </div>
+                  {chancingResult.tier === 'Unknown' ? (
+                    <p className="text-sm text-muted-foreground">Chancing unavailable right now — check back in a moment.</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{chancingResult.explanation}</p>
+                  )}
+                </div>
+                </div>
+                <div className="text-xs text-muted-foreground max-w-xs">
+                  ⚠️ This is an estimate based on reported median stats for all applicants. International applicant pools are typically more selective.
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {chancingResult.factors.slice(0, 3).map((factor, i) => (
-                  <span key={i} className={`px-2 py-1 rounded text-xs font-medium ${
-                    factor.positive ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {factor.name}: {factor.impact}
-                  </span>
-                ))}
+            </div>
+          )
+        ) : (
+          <div className="mb-6 p-4 rounded-xl border-2 border-dashed border-border bg-muted/40 text-muted-foreground">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <div className="text-lg font-semibold text-foreground/80">
+                  Sign in to see your admission chances for {college?.name || 'this college'}
+                </div>
+                <p className="text-sm">Create a free account to unlock chancing for this college.</p>
               </div>
+              <button
+                onClick={() => navigate('/auth')}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold"
+              >
+                Create Free Account
+              </button>
             </div>
           </div>
         )}

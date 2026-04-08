@@ -153,6 +153,19 @@ class AuthController {
       next(error);
     }
   }
+
+  // Mark tour complete
+  static async completeTour(req, res, next) {
+    try {
+      const user = await User.markTourComplete(req.user.userId);
+      res.json({
+        success: true,
+        data: AuthService.sanitizeUser(user)
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
   // Google login / register via Firebase
   static async googleLogin(req, res, next) {
     try {

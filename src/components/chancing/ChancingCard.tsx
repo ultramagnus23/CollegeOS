@@ -2,10 +2,9 @@
 // Shows admission chance for a single college
 
 import React from 'react';
-import { TrendingUp, TrendingDown, Minus, CheckCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 
 interface ChancingFactor {
   name: string;
@@ -15,10 +14,10 @@ interface ChancingFactor {
 }
 
 interface ChancingData {
-  chance: number;
-  category: 'Safety' | 'Target' | 'Reach';
+  tier: 'Safety' | 'Match' | 'Reach' | 'Long Shot' | 'Unknown';
+  confidence: string;
+  explanation: string;
   factors: ChancingFactor[];
-  recommendation: string;
 }
 
 interface ChancingCardProps {
@@ -30,14 +29,10 @@ interface ChancingCardProps {
 
 const CATEGORY_COLORS = {
   Safety: 'bg-green-100 text-green-800 border-green-200',
-  Target: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  Reach: 'bg-red-100 text-red-800 border-red-200'
-};
-
-const CATEGORY_PROGRESS_COLORS = {
-  Safety: 'bg-green-500',
-  Target: 'bg-yellow-500',
-  Reach: 'bg-red-500'
+  Match: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  Reach: 'bg-red-100 text-red-800 border-red-200',
+  'Long Shot': 'bg-red-100 text-red-800 border-red-200',
+  Unknown: 'bg-gray-100 text-gray-700 border-gray-200',
 };
 
 export default function ChancingCard({ collegeName, collegeLocation, chancing, showDetails = false }: ChancingCardProps) {
@@ -51,22 +46,14 @@ export default function ChancingCard({ collegeName, collegeLocation, chancing, s
               <p className="text-sm text-gray-500">{collegeLocation}</p>
             )}
           </div>
-          <Badge className={CATEGORY_COLORS[chancing.category]}>
-            {chancing.category}
+          <Badge className={CATEGORY_COLORS[chancing.tier]}>
+            {chancing.tier}
           </Badge>
         </div>
         
-        <div className="flex items-center gap-4 mb-3">
-          <div className="text-3xl font-bold">{chancing.chance}%</div>
-          <div className="flex-grow">
-            <Progress 
-              value={chancing.chance} 
-              className={`h-2 ${CATEGORY_PROGRESS_COLORS[chancing.category]}`}
-            />
-          </div>
-        </div>
-        
-        <p className="text-sm text-gray-600 mb-3">{chancing.recommendation}</p>
+        <p className="text-sm text-gray-600 mb-3">
+          {chancing.explanation}
+        </p>
         
         {showDetails && chancing.factors && chancing.factors.length > 0 && (
           <div className="mt-4 pt-4 border-t">

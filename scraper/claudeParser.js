@@ -1,24 +1,24 @@
 'use strict';
 
 /**
- * Claude-powered parser for Reddit admissions posts.
- * Sends post text to Claude and extracts a structured applicant profile
+ * OpenAI-powered parser for Reddit admissions posts.
+ * Sends post text to GPT-4o-mini and extracts a structured applicant profile
  * plus a list of school outcomes.
  *
  * Environment variable required:
- *   ANTHROPIC_API_KEY
+ *   OPENAI_API_KEY
  */
 
-const Anthropic = require('@anthropic-ai/sdk');
+const OpenAI = require('openai');
 const logger = require('./logger');
 
 let client = null;
 
 function getClient() {
   if (!client) {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) throw new Error('ANTHROPIC_API_KEY environment variable is not set');
-    client = new Anthropic({ apiKey });
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error('OPENAI_API_KEY environment variable is not set');
+    client = new OpenAI({ apiKey });
   }
   return client;
 }
@@ -64,7 +64,7 @@ ${postText}
 `.trim();
 
 /**
- * Parse a Reddit post using Claude.
+ * Parse a Reddit post using OpenAI GPT-4o-mini.
  * Returns null if parsing fails or the post contains no usable admissions data.
  * @param {object} post  - raw Reddit post data object (fields: id, title, selftext, url)
  * @returns {Promise<{applicant: object, results: object[]}|null>}
@@ -75,16 +75,20 @@ async function parsePost(post) {
 
   let raw = null;
   try {
-    const anthropic = getClient();
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+    const openai = getClient();
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: USER_PROMPT_TEMPLATE(postText) }],
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: USER_PROMPT_TEMPLATE(postText) },
+      ],
     });
 
-    raw = message?.content?.[0]?.text || '';
-    const parsed = JSON.parse(raw);
+    raw = response?.choices?.[0]?.message?.content || '';
+    // Strip any accidental markdown fences
+    const jsonText = raw.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+    const parsed = JSON.parse(jsonText);
 
     // Basic structural validation
     if (!parsed || typeof parsed !== 'object') return null;
@@ -108,9 +112,9 @@ async function parsePost(post) {
     };
   } catch (err) {
     if (err instanceof SyntaxError) {
-      logger.warn({ msg: 'Claude returned invalid JSON', postId: post.id, rawLength: raw?.length });
+      logger.warn({ msg: 'OpenAI returned invalid JSON', postId: post.id, rawLength: raw?.length });
     } else {
-      logger.error({ msg: 'Claude API error', postId: post.id, error: err.message });
+      logger.error({ msg: 'OpenAI API error', postId: post.id, error: err.message });
     }
     return null;
   }
