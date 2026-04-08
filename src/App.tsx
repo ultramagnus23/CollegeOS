@@ -35,6 +35,9 @@ import Discover from "./pages/Discover";
 import NotificationsPage from "./pages/Notifications";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/AdminDashboard";
+import Landing from "./pages/Landing";
+import Chancing from "./pages/Chancing";
 
 import { StudentProfile } from "./types/index";
 
@@ -92,6 +95,12 @@ const AppContent = () => {
       });
   }, []);
 
+  useEffect(() => {
+    const rawBase = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const healthBase = rawBase.endsWith('/api') ? rawBase.slice(0, -4) : rawBase;
+    fetch(`${healthBase}/health`).catch(() => {});
+  }, []);
+
   const handleOnboardingComplete = async (profile: StudentProfile) => {
     try {
       await refreshUser();
@@ -119,8 +128,11 @@ const AppContent = () => {
 
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/colleges" element={<Colleges />} />
+          <Route path="/colleges/:id" element={<CollegeDetails />} />
 
           <Route
             path="/onboarding"
@@ -131,32 +143,30 @@ const AppContent = () => {
             }
           />
 
-          {/* ✅ FIXED: Properly closed parent route */}
           <Route
-            path="/"
             element={
-              <ProtectedRoute requireOnboarding={false}>
+              <ProtectedRoute>
                 <DashboardLayout />
               </ProtectedRoute>
             }
           >
-            <Route index element={<Dashboard />} />
-            <Route path="colleges" element={<Colleges />} />
-            <Route path="colleges/:id" element={<CollegeDetails />} />
-            <Route path="applications" element={<Applications />} />
-            <Route path="requirements" element={<Requirements />} />
-            <Route path="deadlines" element={<Deadlines />} />
-            <Route path="essays" element={<Essays />} />
-            <Route path="documents" element={<Documents />} />
-            <Route path="scholarships" element={<Scholarships />} />
-            <Route path="recommendations" element={<Recommendations />} />
-            <Route path="timeline" element={<Timeline />} />
-            <Route path="discover" element={<Discover />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="settings" element={<Settings />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/applications" element={<Applications />} />
+            <Route path="/requirements" element={<Requirements />} />
+            <Route path="/deadlines" element={<Deadlines />} />
+            <Route path="/essays" element={<Essays />} />
+            <Route path="/documents" element={<Documents />} />
+            <Route path="/scholarships" element={<Scholarships />} />
+            <Route path="/recommendations" element={<Recommendations />} />
+            <Route path="/chancing" element={<Chancing />} />
+            <Route path="/timeline" element={<Timeline />} />
+            <Route path="/discover" element={<Discover />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/profile" element={<Settings />} />
+            <Route path="/admin" element={<AdminDashboard />} />
           </Route>
 
-          {/* ✅ wildcard route OUTSIDE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
