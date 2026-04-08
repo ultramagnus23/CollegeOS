@@ -55,9 +55,9 @@ const STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
 const GLOBAL = `
   @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
   @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-  input::placeholder{color:rgba(255,255,255,0.2)!important;}
-  select option{background:#0F0F1C;color:#fff;}
-  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
+  input::placeholder{color:var(--color-text-disabled)!important;}
+  select option{background:var(--color-bg-surface);color:var(--color-text-primary);}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--color-border-strong);border-radius:4px;}
 `;
 
 const getDaysUntilExpiry = (dateStr:string) => {

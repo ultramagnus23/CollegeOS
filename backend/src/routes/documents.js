@@ -18,7 +18,7 @@ router.get('/', async (req, res, next) => {
   try {
     const { category, status, collegeId, limit } = req.query;
     
-    const documents = Document.getByUserId(req.user.id, {
+    const documents = await Document.getByUserId(req.user.id, {
       category,
       status,
       collegeId,
@@ -41,15 +41,18 @@ router.get('/', async (req, res, next) => {
  */
 router.get('/summary', async (req, res, next) => {
   try {
-    const summary = Document.getCategorySummary(req.user.id);
-    const expiring = Document.getExpiringDocuments(req.user.id, 30);
+    const summary = await Document.getCategorySummary(req.user.id);
+    const expiring = await Document.getExpiringDocuments(req.user.id, 30);
+    
+    const summaryRows = Array.isArray(summary) ? summary : summary?.rows ?? [];
+    const expiringRows = Array.isArray(expiring) ? expiring : expiring?.rows ?? [];
     
     res.json({
       success: true,
       data: {
-        categories: summary,
-        expiring: expiring,
-        totalDocuments: summary.reduce((sum, cat) => sum + cat.count, 0)
+        categories: summaryRows,
+        expiring: expiringRows,
+        totalDocuments: summaryRows.reduce((sum, cat) => sum + cat.count, 0)
       }
     });
   } catch (error) {
@@ -64,7 +67,7 @@ router.get('/summary', async (req, res, next) => {
 router.get('/expiring', async (req, res, next) => {
   try {
     const { days = 30 } = req.query;
-    const documents = Document.getExpiringDocuments(req.user.id, parseInt(days));
+    const documents = await Document.getExpiringDocuments(req.user.id, parseInt(days));
     
     res.json({
       success: true,
@@ -101,7 +104,7 @@ router.get('/check/:collegeId', async (req, res, next) => {
       ? required.split(',')
       : ['transcript', 'test_score', 'essay'];
     
-    const status = Document.checkRequiredDocuments(
+    const status = await Document.checkRequiredDocuments(
       req.user.id, 
       collegeId, 
       requiredCategories
@@ -131,7 +134,7 @@ router.get('/check/:collegeId', async (req, res, next) => {
  */
 router.get('/:id', async (req, res, next) => {
   try {
-    const document = Document.getById(req.params.id, req.user.id);
+    const document = await Document.getById(req.params.id, req.user.id);
     
     if (!document) {
       return res.status(404).json({
@@ -186,7 +189,7 @@ router.post('/', async (req, res, next) => {
       });
     }
     
-    const document = Document.create(req.user.id, {
+    const document = await Document.create(req.user.id, {
       name,
       category,
       fileType,
@@ -217,7 +220,7 @@ router.post('/', async (req, res, next) => {
  */
 router.put('/:id', async (req, res, next) => {
   try {
-    const existing = Document.getById(req.params.id, req.user.id);
+    const existing = await Document.getById(req.params.id, req.user.id);
     
     if (!existing) {
       return res.status(404).json({
@@ -226,7 +229,7 @@ router.put('/:id', async (req, res, next) => {
       });
     }
     
-    const document = Document.update(req.params.id, req.user.id, req.body);
+    const document = await Document.update(req.params.id, req.user.id, req.body);
     
     res.json({
       success: true,
@@ -253,7 +256,7 @@ router.put('/:id/tag', async (req, res, next) => {
       });
     }
     
-    const document = Document.tagToColleges(req.params.id, req.user.id, collegeIds);
+    const document = await Document.update(req.params.id, req.user.id, { college_ids: JSON.stringify(collegeIds) });
     
     if (!document) {
       return res.status(404).json({
@@ -278,7 +281,7 @@ router.put('/:id/tag', async (req, res, next) => {
  */
 router.delete('/:id', async (req, res, next) => {
   try {
-    const deleted = Document.delete(req.params.id, req.user.id);
+    const deleted = await Document.delete(req.params.id, req.user.id);
     
     if (!deleted) {
       return res.status(404).json({

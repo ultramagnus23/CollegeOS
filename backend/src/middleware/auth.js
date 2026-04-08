@@ -85,4 +85,19 @@ const optionalAuth = (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, optionalAuth };
+/**
+ * Admin-only middleware — returns 403 if the authenticated user is not an admin.
+ * Must be used after `authenticate`.
+ */
+const adminOnly = (req, res, next) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden: admin access required',
+      errorType: 'FORBIDDEN'
+    });
+  }
+  next();
+};
+
+module.exports = { authenticate, optionalAuth, adminOnly };
