@@ -52,14 +52,13 @@ class College {
     const acceptanceRate = normalizeAcceptanceRate(data.acceptanceRate || data.acceptance_rate);
     const { rows } = await pool.query(
       `INSERT INTO colleges (name,country,location,official_website,admissions_url,programs_url,application_portal_url,
-        academic_strengths,major_categories,acceptance_rate,tuition_domestic,tuition_international,student_population,
+        academic_strengths,acceptance_rate,tuition_domestic,tuition_international,student_population,
         average_gpa,sat_range,act_range,graduation_rate,ranking,trust_tier,is_verified)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING id`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING id`,
       [data.name, data.country, data.location||null, data.officialWebsite||data.official_website||'',
        data.admissionsUrl||data.admissions_url||null, data.programsUrl||data.programs_url||null,
        data.applicationPortalUrl||data.application_portal_url||null,
        JSON.stringify(data.academicStrengths||data.academic_strengths||[]),
-       JSON.stringify(data.majorCategories||data.major_categories||[]),
        acceptanceRate, data.tuitionDomestic||data.tuition_domestic||null,
        data.tuitionInternational||data.tuition_international||null,
        data.studentPopulation||data.student_population||null,
@@ -145,7 +144,9 @@ class College {
 
   static formatCollege(college) {
     const academicStrengths = safeJsonParse(college.academic_strengths, []);
-    const majorCategories = safeJsonParse(college.major_categories, []);
+    const majorCategories = Array.isArray(college.program_names)
+      ? college.program_names.filter(Boolean)
+      : safeJsonParse(college.major_categories, []);
     const acceptanceRate = normalizeAcceptanceRate(college.acceptance_rate);
     const requirements = getCountryRequirements(college.country);
     const region = getRegion(college.country);
@@ -172,8 +173,8 @@ class College {
     const tablesExist = await this.checkComprehensiveTables(pool);
 
     let query = tablesExist
-      ? `SELECT c.*,MAX(cc.total_enrollment) as total_enrollment,MAX(cc.undergraduate_enrollment) as undergraduate_enrollment,MAX(cc.graduate_enrollment) as graduate_enrollment,MAX(cf.tuition_in_state) as tuition_in_state,MAX(cf.tuition_out_state) as tuition_out_of_state,MAX(cf.tuition_international) as cf_tuition_international,MAX(ass.gpa_50) as gpa_50,MAX(ass.sat_50) as sat_avg,MAX(ass.act_50) as act_avg,(SELECT COUNT(*) FROM college_programs WHERE college_id=c.id) as program_count FROM colleges c LEFT JOIN colleges_comprehensive cc ON c.id=cc.id LEFT JOIN college_financial_data cf ON c.id=cf.college_id LEFT JOIN admitted_student_stats ass ON c.id=ass.college_id WHERE 1=1`
-      : `SELECT c.*,NULL as total_enrollment,NULL as undergraduate_enrollment,NULL as graduate_enrollment,NULL as tuition_in_state,NULL as tuition_out_of_state,NULL as cf_tuition_international,NULL as gpa_50,NULL as sat_avg,NULL as act_avg,0 as program_count FROM colleges c WHERE 1=1`;
+      ? `SELECT c.*,MAX(cc.total_enrollment) as total_enrollment,MAX(cc.undergraduate_enrollment) as undergraduate_enrollment,MAX(cc.graduate_enrollment) as graduate_enrollment,MAX(cf.tuition_in_state) as tuition_in_state,MAX(cf.tuition_out_state) as tuition_out_of_state,MAX(cf.tuition_international) as cf_tuition_international,MAX(ass.gpa_50) as gpa_50,MAX(ass.sat_50) as sat_avg,MAX(ass.act_50) as act_avg,(SELECT COUNT(*) FROM college_programs WHERE college_id=c.id) as program_count,(SELECT ARRAY_AGG(cp.program_name) FROM college_programs cp WHERE cp.college_id=c.id) as program_names FROM colleges c LEFT JOIN colleges_comprehensive cc ON c.id=cc.id LEFT JOIN college_financial_data cf ON c.id=cf.college_id LEFT JOIN admitted_student_stats ass ON c.id=ass.college_id WHERE 1=1`
+      : `SELECT c.*,NULL as total_enrollment,NULL as undergraduate_enrollment,NULL as graduate_enrollment,NULL as tuition_in_state,NULL as tuition_out_of_state,NULL as cf_tuition_international,NULL as gpa_50,NULL as sat_avg,NULL as act_avg,0 as program_count,(SELECT ARRAY_AGG(cp.program_name) FROM college_programs cp WHERE cp.college_id=c.id) as program_names FROM colleges c WHERE 1=1`;
 
     const params = [];
     let idx = 1;
@@ -188,7 +189,7 @@ class College {
 
     if (filters.search) {
       const p = `%${filters.search}%`;
-      query += ` AND (c.name ILIKE $${idx} OR c.location ILIKE $${idx} OR c.country ILIKE $${idx} OR c.major_categories ILIKE $${idx} OR c.academic_strengths ILIKE $${idx})`;
+      query += ` AND (c.name ILIKE $${idx} OR c.location ILIKE $${idx} OR c.country ILIKE $${idx} OR EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=c.id AND cp.program_name ILIKE $${idx}) OR c.academic_strengths ILIKE $${idx})`;
       params.push(p); idx++;
     }
 
@@ -234,7 +235,7 @@ class College {
     }
     if (filters.search) {
       const p = `%${filters.search}%`;
-      query += ` AND (name ILIKE $${idx} OR location ILIKE $${idx} OR country ILIKE $${idx} OR major_categories ILIKE $${idx} OR academic_strengths ILIKE $${idx})`;
+      query += ` AND (name ILIKE $${idx} OR location ILIKE $${idx} OR country ILIKE $${idx} OR EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=colleges.id AND cp.program_name ILIKE $${idx}) OR academic_strengths ILIKE $${idx})`;
       params.push(p); idx++;
     }
     const { rows } = await pool.query(query, params);
@@ -274,22 +275,20 @@ class College {
 
   static async getAllMajors() {
     const pool = dbManager.getDatabase();
-    const { rows } = await pool.query('SELECT major_categories FROM colleges');
-    const majorsSet = new Set();
-    rows.forEach(r => safeJsonParse(r.major_categories, []).forEach(m => majorsSet.add(m)));
-    return Array.from(majorsSet).sort();
+    const { rows } = await pool.query('SELECT DISTINCT program_name FROM college_programs WHERE program_name IS NOT NULL ORDER BY program_name');
+    return rows.map(r => r.program_name);
   }
 
   static async update(id, data) {
     const pool = dbManager.getDatabase();
-    const fieldMap = { name:'name', country:'country', location:'location', officialWebsite:'official_website', admissionsUrl:'admissions_url', programsUrl:'programs_url', applicationPortalUrl:'application_portal_url', academicStrengths:'academic_strengths', majorCategories:'major_categories', acceptanceRate:'acceptance_rate', tuitionDomestic:'tuition_domestic', tuitionInternational:'tuition_international', studentPopulation:'student_population', averageGpa:'average_gpa', satRange:'sat_range', actRange:'act_range', graduationRate:'graduation_rate', ranking:'ranking', trustTier:'trust_tier', isVerified:'is_verified' };
+    const fieldMap = { name:'name', country:'country', location:'location', officialWebsite:'official_website', admissionsUrl:'admissions_url', programsUrl:'programs_url', applicationPortalUrl:'application_portal_url', academicStrengths:'academic_strengths', acceptanceRate:'acceptance_rate', tuitionDomestic:'tuition_domestic', tuitionInternational:'tuition_international', studentPopulation:'student_population', averageGpa:'average_gpa', satRange:'sat_range', actRange:'act_range', graduationRate:'graduation_rate', ranking:'ranking', trustTier:'trust_tier', isVerified:'is_verified' };
     const updates = [];
     const params = [];
     let idx = 1;
     for (const [key, col] of Object.entries(fieldMap)) {
       if (data[key] !== undefined) {
         let value = data[key];
-        if (key === 'academicStrengths' || key === 'majorCategories') value = JSON.stringify(value);
+        if (key === 'academicStrengths') value = JSON.stringify(value);
         if (key === 'acceptanceRate') value = normalizeAcceptanceRate(value);
         updates.push(`${col}=$${idx++}`);
         params.push(value);
