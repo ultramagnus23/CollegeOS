@@ -79,7 +79,7 @@ const ScoreBar: React.FC<{ label: string; value: number; max: number; color: str
 /* ─── College Card ────────────────────────────────────────────────────────── */
 const CollegeCard: React.FC<{ rec: Recommendation; rank: number }> = ({ rec, rank }) => {
   const [expanded, setExpanded] = useState(false);
-  const cls = CLASS_CFG[rec.classification?.toLowerCase() || 'target'] || CLASS_CFG.target;
+  const cls = CLASS_CFG[rec.classification?.toLowerCase()] || CLASS_CFG.target;
   const sb = rec.score_breakdown;
   const score = Math.round(rec.overall_score);
   const ar = rec.acceptance_rate != null ? `${Math.round(rec.acceptance_rate * 100)}%` : 'N/A';

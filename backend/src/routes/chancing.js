@@ -1192,7 +1192,10 @@ router.post('/outcome', authenticate, async (req, res, next) => {
       await pool.query(
         `INSERT INTO prediction_logs (user_id, college_id, predicted_probability, actual_outcome, engine)
          VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT DO NOTHING`,
+         ON CONFLICT (user_id, college_id) DO UPDATE SET
+           predicted_probability = EXCLUDED.predicted_probability,
+           actual_outcome = EXCLUDED.actual_outcome,
+           updated_at = NOW()`,
         [userId, collegeId, chancing.probability ?? null, actualOutcome, 'deterministic-sigmoid']
       );
     } catch (brierErr) {
