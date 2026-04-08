@@ -256,7 +256,7 @@ router.put('/:id/tag', async (req, res, next) => {
       });
     }
     
-    const document = await Document.update(req.params.id, req.user.id, { college_ids: JSON.stringify(collegeIds) });
+    const document = await Document.update(req.params.id, req.user.id, { college_ids: collegeIds });
     
     if (!document) {
       return res.status(404).json({
