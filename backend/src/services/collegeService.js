@@ -105,19 +105,11 @@ class CollegeService {
     try {
       const dbManager = require('../config/database');
       const pool = dbManager.getDatabase();
-      const rows = (await pool.query('SELECT major_categories FROM colleges WHERE major_categories IS NOT NULL')).rows;
-      const programsSet = new Set();
+      const rows = (await pool.query(
+        'SELECT DISTINCT program_name as category, degree_type FROM college_programs WHERE program_name IS NOT NULL ORDER BY program_name'
+      )).rows;
 
-      rows.forEach(row => {
-        try {
-          const categories = JSON.parse(row.major_categories || '[]');
-          if (Array.isArray(categories)) categories.forEach(cat => programsSet.add(cat));
-        } catch (e) {
-          // Skip invalid JSON
-        }
-      });
-
-      return Array.from(programsSet).sort();
+      return rows;
     } catch (error) {
       logger.error('Failed to get programs:', error);
       throw error;
