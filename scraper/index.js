@@ -10,9 +10,6 @@
  *   node index.js scholarship  # Fetch & upsert scholarships (DAAD, Inlaks, NSF, etc.)
  *
  * Required environment variables (Reddit / admissions modes):
- *   REDDIT_CLIENT_ID
- *   REDDIT_CLIENT_SECRET
- *   REDDIT_REFRESH_TOKEN
  *   ANTHROPIC_API_KEY
  *
  * Required environment variables (scholarship mode):
