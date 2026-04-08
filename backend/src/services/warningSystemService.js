@@ -70,7 +70,7 @@ class WarningSystemService {
         SELECT ud.*, c.name as college_name
         FROM user_deadlines ud
         LEFT JOIN colleges c ON c.id = ud.college_id
-        WHERE ud.user_id = $1 AND ud.is_active = true AND ud.is_completed = false
+        WHERE ud.user_id = $1 AND ud.is_active = 1 AND ud.is_completed = 0
         ORDER BY ud.deadline_date ASC
       `, [userId])).rows;
       

@@ -104,8 +104,8 @@ class DeadlineService {
        FROM user_deadlines ud
        LEFT JOIN colleges c ON c.id = ud.college_id
        WHERE ud.user_id = $1
-         AND ud.is_active = true
-         AND ud.is_completed = false
+         AND ud.is_active = 1
+         AND ud.is_completed = 0
          AND ud.deadline_date <= $2
          AND ud.deadline_date >= NOW()
        ORDER BY ud.deadline_date ASC`,
@@ -140,7 +140,7 @@ class DeadlineService {
 
     const { rows: ud } = await pool.query(
       `SELECT * FROM user_deadlines
-       WHERE user_id = $1 AND college_id = $2 AND is_active = true AND is_completed = false
+       WHERE user_id = $1 AND college_id = $2 AND is_active = 1 AND is_completed = 0
        ORDER BY deadline_date ASC LIMIT 1`,
       [userId, collegeId]
     );
@@ -274,10 +274,10 @@ class DeadlineService {
     let idx = 2;
 
     if (options.activeOnly !== false) {
-      query += ' AND ud.is_active = true';
+      query += ' AND ud.is_active = 1';
     }
     if (options.incompleteOnly) {
-      query += ' AND ud.is_completed = false';
+      query += ' AND ud.is_completed = 0';
     }
     if (options.collegeId) {
       query += ` AND ud.college_id = $${idx++}`;
