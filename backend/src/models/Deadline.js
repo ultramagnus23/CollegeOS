@@ -35,7 +35,7 @@ class Deadline {
        JOIN applications a ON d.application_id = a.id
        JOIN colleges c ON a.college_id = c.id
        WHERE a.user_id = $1
-         AND (d.is_completed IS NULL OR d.is_completed = 0)
+         AND (d.is_completed IS NULL OR d.is_completed = false)
          AND d.deadline_date BETWEEN NOW() AND NOW() + ($2 || ' days')::INTERVAL
        ORDER BY d.deadline_date ASC`,
       [userId, daysAhead]
@@ -53,7 +53,7 @@ class Deadline {
     if (data.description !== undefined) { updates.push(`description = $${idx++}`); params.push(data.description); }
     if (data.isCompleted !== undefined) {
       updates.push(`is_completed = $${idx++}`);
-      params.push(data.isCompleted ? 1 : 0);
+      params.push(!!data.isCompleted);
       if (data.isCompleted) updates.push(`completed_at = NOW()`);
     }
 

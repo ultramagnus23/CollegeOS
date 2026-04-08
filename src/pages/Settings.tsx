@@ -522,8 +522,9 @@ const SCROLL_DELAY_MS = 100;
       {/* Profile Completion Widget */}
       <div className="mb-6">
         {(() => {
-          const profile = profileData?.profile || profileData?.user;
-          const { pct, missing } = computeCompletion(profile);
+          const apiPct = completionStatus?.percentage ?? null;
+          const { pct: localPct, missing } = computeCompletion(profileData?.profile || profileData?.user);
+          const pct = apiPct !== null ? apiPct : localPct;
           const color = pct >= 80 ? '#10B981' : pct >= 50 ? '#FBBF24' : '#FB923C';
           return (
             <div className="bg-card rounded-xl border border-border p-5">
