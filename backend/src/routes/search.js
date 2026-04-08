@@ -40,7 +40,7 @@ router.get('/colleges', async (req, res) => {
           coalesce(location,'') || ' ' ||
           coalesce(country,'') || ' ' ||
           coalesce(description,'') || ' ' ||
-          coalesce(major_categories,'') || ' ' ||
+          coalesce((SELECT string_agg(cp.program_name, ' ') FROM college_programs cp WHERE cp.college_id=colleges.id),'') || ' ' ||
           coalesce(academic_strengths,'')
         ) @@ websearch_to_tsquery('english', $${paramIndex})`
       );
@@ -92,7 +92,7 @@ router.get('/colleges', async (req, res) => {
     if (programs) {
       const programList = programs.split(',');
       const programConditions = programList.map(() => {
-        const cond = `LOWER(major_categories) LIKE LOWER($${paramIndex})`;
+        const cond = `EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=colleges.id AND LOWER(cp.program_name) LIKE LOWER($${paramIndex}))`;
         paramIndex++;
         return cond;
       }).join(' OR ');
@@ -126,7 +126,9 @@ router.get('/colleges', async (req, res) => {
     // Get results
     const queryParams = [...params, limitNum, offset];
     const query = `
-      SELECT * FROM colleges 
+      SELECT colleges.*,
+        (SELECT ARRAY_AGG(cp.program_name) FROM college_programs cp WHERE cp.college_id=colleges.id) as program_names
+      FROM colleges 
       ${whereClause}
       ORDER BY ${sortField} ${sortOrder}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -140,7 +142,7 @@ router.get('/colleges', async (req, res) => {
       let majorCategories = [];
       
       try { academicStrengths = JSON.parse(college.academic_strengths || '[]'); } catch (e) {}
-      try { majorCategories = JSON.parse(college.major_categories || '[]'); } catch (e) {}
+      majorCategories = Array.isArray(college.program_names) ? college.program_names.filter(Boolean) : [];
       
       return {
         id: college.id,
@@ -216,14 +218,8 @@ router.get('/filters', async (req, res) => {
     }
 
     // Get all unique programs/majors
-    const programRows = (await pool.query('SELECT major_categories FROM colleges')).rows;
-    const allPrograms = new Set();
-    programRows.forEach(row => {
-      try {
-        const programs = JSON.parse(row.major_categories || '[]');
-        programs.forEach(p => allPrograms.add(p));
-      } catch (e) {}
-    });
+    const programRows = (await pool.query('SELECT DISTINCT program_name FROM college_programs WHERE program_name IS NOT NULL ORDER BY program_name')).rows;
+    const allPrograms = new Set(programRows.map(r => r.program_name));
 
     // Get acceptance rate and cost ranges
     const ranges = (await pool.query(`
@@ -387,24 +383,15 @@ router.get('/suggestions', async (req, res, next) => {
       LIMIT 10
     `, [q])).rows;
     
-    // Get major suggestions using FTS
+    // Get major suggestions using program names from college_programs
     const majorsResult = (await pool.query(`
-      SELECT major_categories FROM colleges
-      WHERE to_tsvector('english', coalesce(major_categories,'')) @@ websearch_to_tsquery('english', $1)
+      SELECT DISTINCT program_name
+      FROM college_programs
+      WHERE program_name ILIKE $1
       LIMIT 50
-    `, [q])).rows;
+    `, [`%${q}%`])).rows;
     
-    const majorsSet = new Set();
-    majorsResult.forEach(row => {
-      try {
-        const majors = JSON.parse(row.major_categories || '[]');
-        majors.forEach(major => {
-          if (major.toLowerCase().includes(q.toLowerCase())) {
-            majorsSet.add(major);
-          }
-        });
-      } catch (e) {}
-    });
+    const majorsSet = new Set(majorsResult.map(r => r.program_name));
     
     res.json({
       success: true,
