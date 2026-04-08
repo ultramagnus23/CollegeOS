@@ -35,7 +35,7 @@ class Deadline {
        JOIN applications a ON d.application_id = a.id
        JOIN colleges c ON a.college_id = c.id
        WHERE a.user_id = $1
-         AND (d.is_completed IS NULL OR d.is_completed = FALSE OR d.is_completed = 0)
+         AND (d.is_completed IS NULL OR d.is_completed = 0)
          AND d.deadline_date BETWEEN NOW() AND NOW() + ($2 || ' days')::INTERVAL
        ORDER BY d.deadline_date ASC`,
       [userId, daysAhead]
