@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
+# Auth-free — uses Reddit public JSON API, no credentials needed
 # CollegeOS Auto-generated scraper/reddit_scraper.py — do not edit manually
 """
 Reddit Chance-Me Scraper
 ────────────────────────
-Fetches posts from r/chanceme, r/ApplyingToCollege, r/collegeresults using PRAW,
-extracts structured applicant + outcome data, and upserts to chance_me_posts.
+Fetches posts from r/chanceme, r/ApplyingToCollege, r/collegeresults using the
+Reddit public JSON API (no OAuth or credentials required), extracts structured
+applicant + outcome data, and upserts to chance_me_posts.
 
 Required environment variables
 ───────────────────────────────
     DATABASE_URL
-    REDDIT_CLIENT_ID
-    REDDIT_CLIENT_SECRET
-    REDDIT_USER_AGENT      (e.g. "CollegeOS/1.0 by YourUsername")
 
 Optional
 ────────
-    REDDIT_USERNAME        (for script-auth; can be omitted for read-only)
-    REDDIT_PASSWORD
     POSTS_PER_SUBREDDIT    (default 500)
 
 Exit codes: 0 = success, 1 = failure.
@@ -25,11 +22,12 @@ Exit codes: 0 = success, 1 = failure.
 import os
 import re
 import sys
+import time
 import logging
 import datetime
 from typing import Optional
 
-import praw
+import requests
 import psycopg2
 import psycopg2.extras
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -47,12 +45,9 @@ log = logging.getLogger("reddit_scraper")
 # ── Config ────────────────────────────────────────────────────────────────────
 
 DATABASE_URL = os.environ["DATABASE_URL"]
-REDDIT_CLIENT_ID = os.environ["REDDIT_CLIENT_ID"]
-REDDIT_CLIENT_SECRET = os.environ["REDDIT_CLIENT_SECRET"]
-REDDIT_USER_AGENT = os.environ.get("REDDIT_USER_AGENT", "CollegeOS/1.0")
-REDDIT_USERNAME = os.environ.get("REDDIT_USERNAME", "")
-REDDIT_PASSWORD = os.environ.get("REDDIT_PASSWORD", "")
 POSTS_PER_SUBREDDIT = int(os.environ.get("POSTS_PER_SUBREDDIT", "500"))
+
+HEADERS = {"User-Agent": "CollegeOS/1.0"}
 
 SUBREDDITS = ["chanceme", "ApplyingToCollege", "collegeresults"]
 
@@ -269,12 +264,13 @@ def _extract_college_outcomes(text: str) -> list[dict]:
     return results
 
 
-def parse_post(post) -> list[dict]:
+def parse_post(post: dict) -> list[dict]:
     """
-    Parse a PRAW submission into a list of DB row dicts (one per college).
-    Returns empty list if nothing useful is found.
+    Parse a post dict (from Reddit public JSON API) into a list of DB row dicts
+    (one per college). Returns empty list if nothing useful is found.
     """
-    full_text = f"{post.title}\n\n{post.selftext}"
+    data = post["data"]
+    full_text = f"{data['title']}\n\n{data.get('selftext', '')}"
 
     gpa = _parse_gpa(full_text)
     sat = _parse_sat(full_text)
@@ -290,8 +286,8 @@ def parse_post(post) -> list[dict]:
     if not college_outcomes:
         return []
 
-    post_date = datetime.datetime.utcfromtimestamp(post.created_utc)
-    post_url = f"https://reddit.com{post.permalink}"
+    post_date = datetime.datetime.utcfromtimestamp(data["created_utc"])
+    post_url = f"https://reddit.com{data['permalink']}"
 
     rows = []
     for co in college_outcomes:
@@ -303,7 +299,7 @@ def parse_post(post) -> list[dict]:
         if act is not None and not (1 <= act <= 36):
             continue
         rows.append({
-            "reddit_post_id": post.id,
+            "reddit_post_id": data["id"],
             "college_name": co["college_name"],
             "gpa": gpa,
             "sat_score": sat,
@@ -352,29 +348,41 @@ def upsert_rows(conn, rows: list[dict]) -> int:
     return len(rows)
 
 
-# ── Reddit client ─────────────────────────────────────────────────────────────
+# ── Reddit public JSON API ────────────────────────────────────────────────────
 
-def build_reddit() -> praw.Reddit:
-    kwargs = dict(
-        client_id=REDDIT_CLIENT_ID,
-        client_secret=REDDIT_CLIENT_SECRET,
-        user_agent=REDDIT_USER_AGENT,
-    )
-    if REDDIT_USERNAME and REDDIT_PASSWORD:
-        kwargs.update(username=REDDIT_USERNAME, password=REDDIT_PASSWORD)
-    return praw.Reddit(**kwargs)
+def fetch_posts(subreddit: str, query: str, after: Optional[str] = None) -> dict:
+    url = f"https://www.reddit.com/r/{subreddit}/search.json"
+    params = {
+        "q": query,
+        "sort": "relevance",
+        "t": "all",
+        "limit": 100,
+        "restrict_sr": 1,
+    }
+    if after:
+        params["after"] = after
+    response = requests.get(url, headers=HEADERS, params=params)
+    if response.status_code == 429:
+        time.sleep(60)
+        response = requests.get(url, headers=HEADERS, params=params)
+    response.raise_for_status()
+    return response.json()
 
 
-def fetch_posts(reddit: praw.Reddit, subreddit_name: str, limit: int):
-    """Yield up to `limit` posts from the subreddit (new + hot combined, deduped)."""
-    sub = reddit.subreddit(subreddit_name)
-    seen_ids: set[str] = set()
-
-    for listing in [sub.new(limit=limit), sub.hot(limit=limit)]:
-        for post in listing:
-            if post.id not in seen_ids:
-                seen_ids.add(post.id)
-                yield post
+def paginate(subreddit: str, query: str, max_pages: int = 5) -> list:
+    posts = []
+    after = None
+    for _ in range(max_pages):
+        data = fetch_posts(subreddit, query, after)
+        children = data["data"]["children"]
+        if not children:
+            break
+        posts.extend(children)
+        after = data["data"].get("after")
+        if not after:
+            break
+        time.sleep(1)
+    return posts
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -387,8 +395,10 @@ def main() -> int:
     total_skipped_validation = 0
     total_skipped_duplicate = 0
 
+    # Number of paginated pages per subreddit/query (100 posts each)
+    max_pages = max(1, POSTS_PER_SUBREDDIT // 100)
+
     try:
-        reddit = build_reddit()
         conn = get_connection()
 
         for subreddit_name in SUBREDDITS:
@@ -396,14 +406,16 @@ def main() -> int:
             sub_posts = 0
             sub_inserted = 0
 
-            for post in fetch_posts(reddit, subreddit_name, POSTS_PER_SUBREDDIT):
+            posts = paginate(subreddit_name, "chance me OR results", max_pages=max_pages)
+
+            for post in posts:
                 total_posts += 1
                 sub_posts += 1
 
                 try:
                     rows = parse_post(post)
                 except Exception as e:
-                    log.warning(f"Parse error on {post.id}: {e}")
+                    log.warning(f"Parse error on {post['data'].get('id')}: {e}")
                     total_skipped_validation += 1
                     continue
 
@@ -420,7 +432,7 @@ def main() -> int:
                     total_skipped_duplicate += 1
                 except Exception as e:
                     conn.rollback()
-                    log.warning(f"DB error for post {post.id}: {e}")
+                    log.warning(f"DB error for post {post['data'].get('id')}: {e}")
                     total_skipped_validation += 1
 
             log.info(f"r/{subreddit_name}: {sub_posts} posts, {sub_inserted} rows inserted")

@@ -20,7 +20,6 @@ Node health endpoint can read it.
 Required environment variables
 ───────────────────────────────
     DATABASE_URL
-    REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET / REDDIT_USER_AGENT
 
 Optional
 ────────
