@@ -64,14 +64,6 @@ router.get('/', authenticate, async (req, res, next) => {
     const { generateRecommendations } = require('../services/recommendationEngine');
     const result = await generateRecommendations(userProfile, allColleges);
 
-    if (result && result.error === 'exchange_rate_missing') {
-      return res.status(503).json({
-        success: false,
-        message: 'Exchange rate service unavailable — please try again in a few minutes',
-        error: 'exchange_rate_missing',
-      });
-    }
-
     res.json({
       success: true,
       count: (result.recommendations || []).length,
@@ -131,14 +123,6 @@ router.post('/generate', authenticate, async (req, res, next) => {
 
     const { generateRecommendations } = require('../services/recommendationEngine');
     const result = await generateRecommendations(userProfile, allColleges);
-
-    if (result && result.error === 'exchange_rate_missing') {
-      return res.status(503).json({
-        success: false,
-        message: 'Exchange rate service unavailable — please try again in a few minutes',
-        error: 'exchange_rate_missing',
-      });
-    }
 
     res.json({
       success: true,

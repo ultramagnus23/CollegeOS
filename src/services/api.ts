@@ -295,6 +295,13 @@ class ApiService {
     });
   }
 
+  async updateProfile(data: any) {
+    return this.request('/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Extended student profile
   async getExtendedProfile() {
     return this.request('/profile/extended');
