@@ -1,13 +1,15 @@
 // backend/src/services/consolidatedChancingService.js
-// Unified chancing service — delegates to the synthetic LDA /predict endpoint.
+// Unified chancing service — deterministic sigmoid-based model (no external sidecar).
 
-const axios = require('axios');
 const logger = require('../utils/logger');
 const { sanitizeForLog } = require('../utils/security');
 
-const CHANCING_SERVICE_URL = process.env.CHANCING_SERVICE_URL || 'http://127.0.0.1:8001';
-const CHANCING_TIMEOUT = parseInt(process.env.CHANCING_SERVICE_TIMEOUT || '8000', 10);
+// ── Sigmoid helper ────────────────────────────────────────────────────────────
+function sigmoid(z) {
+  return 1 / (1 + Math.exp(-z));
+}
 
+// ── Tier/bucket helpers ───────────────────────────────────────────────────────
 function normalizeTier(tier) {
   if (!tier) return 'Unknown';
   const normalized = String(tier).trim().toLowerCase();
@@ -27,68 +29,86 @@ function tierBucket(tier) {
   return 'unknown';
 }
 
-const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-async function callChancingService(payload, attempt = 1) {
-  try {
-    const response = await axios.post(
-      `${CHANCING_SERVICE_URL}/chance`,
-      payload,
-      { timeout: CHANCING_TIMEOUT }
-    );
-    return response?.data;
-  } catch (error) {
-    if (attempt < 2) {
-      await wait(3000);
-      return callChancingService(payload, attempt + 1);
-    }
-    throw error;
-  }
-}
-
 /**
- * Call the Python chancing service.
+ * Pure-JS deterministic chancing calculation.
  *
- * @param {Object} studentProfile - Student data (sat_total, gpa_unweighted, etc.)
- * @param {Object} college - College data (acceptance_rate, sat_avg, etc.)
- * @returns {Promise<Object>} { tier, confidence, explanation }
+ * Algorithm:
+ *   1. Compute a z-score from SAT and GPA deltas vs college medians.
+ *   2. Pass through sigmoid to get a raw probability (0–1).
+ *   3. International penalty applied (–15 pp) because international pools are smaller.
+ *   4. Map probability to tier: Safety ≥ 0.65, Match 0.35–0.65, Reach 0.15–0.35, Long Shot < 0.15.
+ *
+ * @param {Object} studentProfile
+ * @param {Object} college
+ * @returns {{ tier, category, confidence, explanation, probability }}
  */
 async function calculateChance(studentProfile, college) {
   try {
-    const payload = {
-      gpa: studentProfile?.gpa_unweighted ?? studentProfile?.gpa_weighted ?? studentProfile?.gpa ?? null,
-      sat_score: studentProfile?.sat_total ?? studentProfile?.sat_score ?? null,
-      act_score: studentProfile?.act_composite ?? studentProfile?.act_score ?? null,
-      ap_courses: studentProfile?.num_ap_courses ?? studentProfile?.ap_courses ?? 0,
-      extracurriculars: Array.isArray(studentProfile?.activities) ? studentProfile.activities.length : 0,
-      college_acceptance_rate: college?.acceptance_rate ?? 0.5,
-      college_median_gpa: college?.gpa_50 ?? college?.median_gpa ?? null,
-      college_median_sat: college?.sat_avg ?? college?.sat_total_50 ?? college?.median_sat ?? null,
-      is_international: true,
-      intended_major: studentProfile?.intended_major ?? studentProfile?.preferences?.intended_major ?? null,
-    };
+    const studentSAT = studentProfile?.sat_total ?? studentProfile?.sat_score ?? null;
+    const studentGPA = studentProfile?.gpa_unweighted ?? studentProfile?.gpa_weighted ?? studentProfile?.gpa ?? null;
 
-    const data = await callChancingService(payload);
-    const tier = normalizeTier(data?.tier);
-    return {
-      tier,
-      category: tierBucket(tier),
-      confidence: data?.confidence ?? 'Medium',
-      explanation: data?.explanation ?? 'Based on your academic profile compared with reported college medians.',
-    };
+    const collegeSAT = college?.sat_avg ?? college?.sat_total_50 ?? college?.median_sat ?? null;
+    const collegeGPA = college?.gpa_50 ?? college?.median_gpa ?? null;
+    const acceptanceRate = college?.acceptance_rate ?? 0.5; // fraction (0–1)
+
+    let z = 0;
+    let factorsUsed = 0;
+
+    if (studentSAT !== null && collegeSAT !== null && collegeSAT > 0) {
+      z += (studentSAT - collegeSAT) / 100;
+      factorsUsed++;
+    }
+
+    if (studentGPA !== null && collegeGPA !== null && collegeGPA > 0) {
+      z += (studentGPA - collegeGPA) * 2.5;
+      factorsUsed++;
+    }
+
+    // If no student/college data for comparison, anchor to college acceptance rate
+    let rawProb;
+    if (factorsUsed === 0) {
+      rawProb = Math.min(acceptanceRate * 0.5, 0.80); // international discount on raw rate
+    } else {
+      // Anchor sigmoid around the college's own selectivity
+      const selectivityBias = Math.log(acceptanceRate / (1 - Math.max(acceptanceRate, 0.01)));
+      rawProb = sigmoid(z + selectivityBias);
+    }
+
+    // International applicant penalty (–15 percentage points, clamped)
+    const probability = Math.max(0.01, Math.min(0.95, rawProb - 0.15));
+
+    let tier;
+    if (probability >= 0.65) tier = 'Safety';
+    else if (probability >= 0.35) tier = 'Match';
+    else if (probability >= 0.15) tier = 'Reach';
+    else tier = 'Long Shot';
+
+    const confidence = factorsUsed >= 2 ? 'High' : factorsUsed === 1 ? 'Medium' : 'Low';
+
+    const pct = Math.round(probability * 100);
+    const explanation = `Estimated ${pct}% admission probability as an international student. ` +
+      (studentSAT && collegeSAT
+        ? `Your SAT (${studentSAT}) vs college median (${collegeSAT}). `
+        : '') +
+      (studentGPA && collegeGPA
+        ? `Your GPA (${studentGPA}) vs college median (${collegeGPA}). `
+        : '') +
+      'International pools are more competitive than domestic averages.';
+
+    return { tier, category: tierBucket(tier), confidence, explanation, probability };
   } catch (error) {
-    logger.warn('Chancing service call failed', {
+    logger.warn('Chancing calculation failed', {
       college: sanitizeForLog(college?.name),
       error: sanitizeForLog(error?.message),
     });
+    return {
+      tier: 'Unknown',
+      category: 'unknown',
+      confidence: 'Low',
+      explanation: 'Unable to calculate chancing — please ensure your profile is complete.',
+      probability: null,
+    };
   }
-
-  return {
-    tier: 'Unknown',
-    category: tierBucket('Unknown'),
-    confidence: 'Low',
-    explanation: 'Chancing service is warming up — please try again in 30 seconds.',
-  };
 }
 
 /**
@@ -258,7 +278,7 @@ async function getChancingForStudent(userId) {
     const StudentProfile = require('../models/StudentProfile');
 
     const profile = await StudentProfile.findByUserId(userId);
-    const applications = await Application.findByUserId(userId);
+    const applications = await Application.findByUser(userId);
     const results = [];
 
     for (const app of applications) {

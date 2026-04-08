@@ -524,10 +524,10 @@ function _watchOuts(student, college, financial, academic) {
  * or { error: 'exchange_rate_missing' } if the live rate is unavailable.
  */
 async function generateRecommendations(studentProfile, allColleges) {
-  const usdToInr = await getUSDtoINR().catch(() => null);
-
-  if (!usdToInr || usdToInr <= 0) {
-    return { error: 'exchange_rate_missing' };
+  let usdToInr = await getUSDtoINR().catch(() => null);
+  const rateEstimated = !usdToInr || usdToInr <= 0;
+  if (rateEstimated) {
+    usdToInr = 83; // fallback rate — marked as estimated in response
   }
 
   const now = new Date().toISOString();
@@ -589,6 +589,7 @@ async function generateRecommendations(studentProfile, allColleges) {
   return {
     generated_at:       now,
     exchange_rate_used: usdToInr,
+    exchange_rate_estimated: rateEstimated,
     student_id:         studentProfile.id,
     recommendations:    recs,
     summary: {
@@ -596,7 +597,9 @@ async function generateRecommendations(studentProfile, allColleges) {
       total_affordable:         affordable.length,
       best_values_match:        byValues[0]?.college_name || null,
       most_affordable_match:    byNetCost[0]?.college_name || null,
-      exchange_rate_note:       `All INR figures use live rate of ₹${usdToInr.toFixed(1)} per USD as of today`,
+      exchange_rate_note:       rateEstimated
+        ? `INR figures use estimated rate of ₹${usdToInr} per USD (live rate unavailable)`
+        : `All INR figures use live rate of ₹${usdToInr.toFixed(1)} per USD as of today`,
     },
   };
 }
