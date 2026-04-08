@@ -17,6 +17,9 @@ const USER_AGENT = 'CollegeOS/1.0';
 // Subreddits to scrape
 const SUBREDDITS = ['collegeresults', 'chanceme', 'ApplyingToCollege'];
 
+// Search query used across all subreddits
+const SEARCH_QUERY = 'chance me OR results';
+
 // Milliseconds to wait between paginated requests to stay under Reddit's rate limit.
 const REQUEST_DELAY_MS = 1100;
 
@@ -110,7 +113,7 @@ async function* seedPosts(maxPages = 0) {
       if (maxPages > 0 && page >= maxPages) break;
 
       await sleep(REQUEST_DELAY_MS);
-      const { posts, after: nextAfter } = await fetchPosts(sub, 'chance me OR results', 100, after);
+      const { posts, after: nextAfter } = await fetchPosts(sub, SEARCH_QUERY, 100, after);
 
       if (posts.length === 0) break;
       yield { subreddit: sub, posts };
@@ -139,7 +142,7 @@ async function* incrementalPosts(since) {
 
     while (!done) {
       await sleep(REQUEST_DELAY_MS);
-      const { posts, after: nextAfter } = await fetchPosts(sub, 'chance me OR results', 100, after);
+      const { posts, after: nextAfter } = await fetchPosts(sub, SEARCH_QUERY, 100, after);
 
       if (posts.length === 0) break;
 

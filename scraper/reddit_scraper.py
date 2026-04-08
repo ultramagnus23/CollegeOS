@@ -48,6 +48,10 @@ DATABASE_URL = os.environ["DATABASE_URL"]
 POSTS_PER_SUBREDDIT = int(os.environ.get("POSTS_PER_SUBREDDIT", "500"))
 
 HEADERS = {"User-Agent": "CollegeOS/1.0"}
+REQUEST_TIMEOUT = 30
+
+# Search query used across all subreddits
+SEARCH_QUERY = "chance me OR results"
 
 SUBREDDITS = ["chanceme", "ApplyingToCollege", "collegeresults"]
 
@@ -361,10 +365,11 @@ def fetch_posts(subreddit: str, query: str, after: Optional[str] = None) -> dict
     }
     if after:
         params["after"] = after
-    response = requests.get(url, headers=HEADERS, params=params)
+    response = requests.get(url, headers=HEADERS, params=params, timeout=REQUEST_TIMEOUT)
     if response.status_code == 429:
+        log.warning("Rate limited by Reddit; sleeping 60 s before retry")
         time.sleep(60)
-        response = requests.get(url, headers=HEADERS, params=params)
+        response = requests.get(url, headers=HEADERS, params=params, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
     return response.json()
 
@@ -406,7 +411,7 @@ def main() -> int:
             sub_posts = 0
             sub_inserted = 0
 
-            posts = paginate(subreddit_name, "chance me OR results", max_pages=max_pages)
+            posts = paginate(subreddit_name, SEARCH_QUERY, max_pages=max_pages)
 
             for post in posts:
                 total_posts += 1
