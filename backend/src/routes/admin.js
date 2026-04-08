@@ -16,6 +16,7 @@ const express = require('express');
 const router = express.Router();
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
+const { authenticate, adminOnly } = require('../middleware/auth');
 
 // 60-second in-memory cache
 let _cachedResult = null;
@@ -196,10 +197,9 @@ async function buildHealthPayload() {
 
 /**
  * GET /api/admin/health
- * No authentication required — this endpoint is used by Railway/Render
- * health checks and internal monitoring.
+ * Requires authentication and admin role.
  */
-router.get('/health', async (req, res) => {
+router.get('/health', authenticate, adminOnly, async (req, res) => {
   const now = Date.now();
   if (_cachedResult && now < _cacheExpiresAt) {
     return res.json(_cachedResult);
