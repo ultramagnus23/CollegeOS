@@ -28,7 +28,7 @@ const TIER_RANK = {
  * Returns { results, grouped, summary } or { error, message }
  */
 async function getChancingResults(userId, colleges) {
-  const profile = StudentProfile.getCompleteProfile(userId);
+  const profile = await StudentProfile.getCompleteProfile(userId);
   if (!profile) {
     return { error: 'Profile not found', message: 'Please complete your student profile to get chancing results.' };
   }
@@ -73,7 +73,7 @@ router.post('/calculate', authenticate, async (req, res, next) => {
     }
     
     // Get student profile
-    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    const profile = await StudentProfile.getCompleteProfile(req.user.userId);
     
     if (!profile) {
       return res.status(400).json({
@@ -84,7 +84,7 @@ router.post('/calculate', authenticate, async (req, res, next) => {
     }
     
     // Get college
-    const college = College.findById(collegeId);
+    const college = await College.findById(collegeId);
     
     if (!college) {
       return res.status(404).json({
@@ -95,7 +95,7 @@ router.post('/calculate', authenticate, async (req, res, next) => {
     
     const country = college.location_country || college.country || 'USA';
     const chancing = await consolidatedChancingService.calculateChance(profile, college);
-    const predictionType = 'ml_lda';
+    const predictionType = 'deterministic';
     
     // Log prediction for analytics
     try {
@@ -106,13 +106,13 @@ router.post('/calculate', authenticate, async (req, res, next) => {
         [
           req.user.userId,
           collegeId,
-            predictionType,
-            null,
-            chancing.category,
-            null,
-            JSON.stringify([])
-          ]
-        );
+          predictionType,
+          chancing.probability ?? null,
+          chancing.category,
+          chancing.confidence,
+          JSON.stringify([])
+        ]
+      );
     } catch (auditError) {
       // Non-critical - don't fail if audit logging fails
       logger.debug('Prediction audit log failed:', auditError.message);
@@ -164,7 +164,7 @@ router.post('/batch', authenticate, async (req, res, next) => {
     const limitedIds = collegeIds.slice(0, MAX_BATCH_SIZE);
     
     // Get colleges
-    const colleges = limitedIds.map(id => College.findById(id)).filter(c => c);
+    const colleges = (await Promise.all(limitedIds.map(id => College.findById(id)))).filter(c => c);
     
     // Get chancing results
     const results = await getChancingResults(req.user.userId, colleges);
@@ -202,7 +202,7 @@ router.get('/my-list', authenticate, async (req, res, next) => {
     const Application = require('../models/Application');
     
     // Get user's applications
-    const applications = Application.findByUserId(req.user.userId);
+    const applications = await Application.findByUser(req.user.userId);
     
     if (!applications || applications.length === 0) {
       return res.json({
@@ -222,7 +222,7 @@ router.get('/my-list', authenticate, async (req, res, next) => {
     
     // Get colleges from applications
     const collegeIds = applications.map(a => a.college_id);
-    const colleges = collegeIds.map(id => College.findById(id)).filter(c => c);
+    const colleges = (await Promise.all(collegeIds.map(id => College.findById(id)))).filter(c => c);
     
     // Get chancing results
     const results = await getChancingResults(req.user.userId, colleges);
@@ -254,7 +254,7 @@ router.get('/recommendations', authenticate, async (req, res, next) => {
     const { limit = 20, country } = req.query;
     
     // Get student profile
-    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    const profile = await StudentProfile.getCompleteProfile(req.user.userId);
     
     if (!profile) {
       return res.status(400).json({
@@ -269,20 +269,19 @@ router.get('/recommendations', authenticate, async (req, res, next) => {
     const preferredCountries = profile.preferredCountries || profile.preferred_countries || [];
     
     if (country) {
-      colleges = College.search({ country: country, limit: parseInt(limit) * 3 });
+      colleges = await College.search({ country: country, limit: parseInt(limit) * 3 });
     } else if (preferredCountries.length > 0) {
       // Get colleges from all preferred countries
-      colleges = [];
-      for (const c of preferredCountries) {
-        const countryColleges = College.search({ country: c, limit: parseInt(limit) });
-        colleges = colleges.concat(countryColleges);
-      }
+      const nested = await Promise.all(
+        preferredCountries.map(c => College.search({ country: c, limit: parseInt(limit) }))
+      );
+      colleges = nested.flat();
     } else {
-      colleges = College.search({ limit: parseInt(limit) * 3 });
+      colleges = await College.search({ limit: parseInt(limit) * 3 });
     }
     
     // Get chancing results
-    const results = await getChancingResults(req.user.userId, colleges);
+    const results = await getChancingResults(req.user.userId, colleges || []);
     
     if (results.error) {
       return res.status(400).json({
@@ -318,7 +317,7 @@ router.get('/recommendations', authenticate, async (req, res, next) => {
  */
 router.get('/profile-strength', authenticate, async (req, res, next) => {
   try {
-    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    const profile = await StudentProfile.getCompleteProfile(req.user.userId);
     
     if (!profile) {
       return res.json({
@@ -494,7 +493,7 @@ router.post('/scenario', authenticate, async (req, res, next) => {
     }
     
     // Get current profile
-    const currentProfile = StudentProfile.getCompleteProfile(req.user.userId);
+    const currentProfile = await StudentProfile.getCompleteProfile(req.user.userId);
     
     if (!currentProfile) {
       return res.status(400).json({
@@ -514,7 +513,7 @@ router.post('/scenario', authenticate, async (req, res, next) => {
     }
     
     // Get colleges
-    const colleges = collegeIds.map(id => College.findById(id)).filter(c => c);
+    const colleges = (await Promise.all(collegeIds.map(id => College.findById(id)))).filter(c => c);
     
     // Calculate chances with both profiles
     const currentResults = [];
@@ -603,7 +602,7 @@ router.post('/save-history', authenticate, async (req, res, next) => {
       });
     }
     
-    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    const profile = await StudentProfile.getCompleteProfile(req.user.userId);
     
     const pool = dbManager.getDatabase();
     
@@ -718,7 +717,7 @@ router.post('/compare', authenticate, async (req, res, next) => {
   try {
     // Get current profile and all colleges in list
     const Application = require('../models/Application');
-    const applications = Application.findByUser(req.user.userId);
+    const applications = await Application.findByUser(req.user.userId);
     
     if (!applications || applications.length === 0) {
       return res.json({
@@ -732,8 +731,8 @@ router.post('/compare', authenticate, async (req, res, next) => {
     }
     
     const collegeIds = applications.map(a => a.college_id);
-    const results = await getChancingResults(req.user.userId, 
-      collegeIds.map(id => College.findById(id)).filter(c => c)
+    const results = await getChancingResults(req.user.userId,
+      (await Promise.all(collegeIds.map(id => College.findById(id)))).filter(c => c)
     );
     
     if (results.error) {
@@ -809,7 +808,7 @@ router.get('/:collegeId/cds', authenticate, async (req, res, next) => {
     const { collegeId } = req.params;
     
     // Get student profile
-    const profile = StudentProfile.getCompleteProfile(req.user.userId);
+    const profile = await StudentProfile.getCompleteProfile(req.user.userId);
     
     if (!profile) {
       return res.status(400).json({
@@ -820,7 +819,7 @@ router.get('/:collegeId/cds', authenticate, async (req, res, next) => {
     }
     
     // Get college
-    const college = College.findById(collegeId);
+    const college = await College.findById(collegeId);
     
     if (!college) {
       return res.status(404).json({
@@ -906,7 +905,7 @@ router.get('/:collegeId/admitted-samples', authenticate, async (req, res, next) 
     )).rows;
     
     // Get college info
-    const college = College.findById(collegeId);
+    const college = await College.findById(collegeId);
     
     res.json({
       success: true,
@@ -1022,140 +1021,82 @@ router.get('/region/:region', authenticate, async (req, res, next) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// ML-BASED CHANCING ROUTES
+// CHANCING ENGINE STATUS
 // ═══════════════════════════════════════════════════════════════
 
 /**
  * GET /api/chancing/ml/status
- * Get ML prediction service status and statistics
+ * Returns deterministic engine status (no external ML service).
  */
-router.get('/ml/status', authenticate, async (req, res, next) => {
-  try {
-    const stats = await mlPredictionService.getStats();
-    
-    res.json({
-      success: true,
-      data: {
-        serviceAvailable: stats.available,
-        stats: stats.stats || null,
-        config: stats.config || null
-      }
-    });
-  } catch (error) {
-    logger.error('ML status check failed:', error);
-    next(error);
-  }
+router.get('/ml/status', authenticate, async (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      serviceAvailable: true,
+      engine: 'deterministic-sigmoid',
+      message: 'Chancing uses a deterministic sigmoid model — no external ML service required.',
+    },
+  });
 });
 
 /**
  * GET /api/chancing/ml/models
- * Get list of available ML models
+ * Returns deterministic model description.
  */
-router.get('/ml/models', authenticate, async (req, res, next) => {
-  try {
-    const models = await mlPredictionService.listModels();
-    
-    res.json({
-      success: true,
-      data: {
-        models: models,
-        count: models.length
-      }
-    });
-  } catch (error) {
-    logger.error('ML models list failed:', error);
-    next(error);
-  }
+router.get('/ml/models', authenticate, async (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      models: [{ id: 'sigmoid-v1', type: 'deterministic', description: 'Sigmoid probability model using SAT/GPA delta vs college medians' }],
+      count: 1,
+    },
+  });
 });
 
 /**
  * GET /api/chancing/ml/model/:collegeId
- * Get ML model information for a specific college
+ * Returns per-college model info using the deterministic engine.
  */
-router.get('/ml/model/:collegeId', authenticate, async (req, res, next) => {
-  try {
-    const collegeId = parseInt(req.params.collegeId);
-    const modelInfo = await mlPredictionService.getModelInfo(collegeId);
-    
-    if (!modelInfo) {
-      return res.json({
-        success: true,
-        data: {
-          hasModel: false,
-          message: 'No ML model available for this college. Using rule-based predictions.'
-        }
-      });
-    }
-    
-    res.json({
-      success: true,
-      data: {
-        hasModel: true,
-        model: modelInfo
-      }
-    });
-  } catch (error) {
-    logger.error('ML model info failed:', error);
-    next(error);
-  }
+router.get('/ml/model/:collegeId', authenticate, async (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      hasModel: true,
+      model: { type: 'deterministic', description: 'SAT/GPA sigmoid model' },
+    },
+  });
 });
 
 /**
  * POST /api/chancing/ml/batch
- * Get ML predictions for multiple colleges
+ * Batch chancing using deterministic engine.
  */
 router.post('/ml/batch', authenticate, async (req, res, next) => {
   try {
     const { collegeIds } = req.body;
-    
     if (!Array.isArray(collegeIds) || collegeIds.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'collegeIds must be a non-empty array'
-      });
+      return res.status(400).json({ success: false, message: 'collegeIds must be a non-empty array' });
     }
-    
-    // Get student profile
-    const profile = StudentProfile.getCompleteProfile(req.user.userId);
-    
+    const profile = await StudentProfile.getCompleteProfile(req.user.userId);
     if (!profile) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please complete your student profile first',
-        code: 'PROFILE_REQUIRED'
-      });
+      return res.status(400).json({ success: false, message: 'Please complete your student profile first', code: 'PROFILE_REQUIRED' });
     }
-    
-    // Get colleges
     const MAX_BATCH = 50;
     const limitedIds = collegeIds.slice(0, MAX_BATCH);
-    const colleges = limitedIds.map(id => College.findById(id)).filter(c => c);
-    
-    // Get ML predictions
-    const result = await mlPredictionService.batchPredict(
-      profile,
-      profile.activities || [],
-      colleges
+    const colleges = (await Promise.all(limitedIds.map(id => College.findById(id)))).filter(c => c);
+    const predictions = await Promise.all(
+      colleges.map(async c => ({ collegeId: c.id, collegeName: c.name, ...(await consolidatedChancingService.calculateChance(profile, c)) }))
     );
-    
-    res.json({
-      success: true,
-      data: {
-        predictions: result.predictions || [],
-        predictionType: result.prediction_type || 'ml_lda',
-        count: (result.predictions || []).length
-      }
-    });
+    res.json({ success: true, data: { predictions, predictionType: 'deterministic', count: predictions.length } });
   } catch (error) {
-    logger.error('ML batch prediction failed:', error);
+    logger.error('Batch chancing failed:', error);
     next(error);
   }
 });
 
 /**
  * POST /api/chancing/outcome
- * Submit admission outcome for ML training
- * This is the user feedback loop for continuous model improvement
+ * Submit admission outcome for Brier Score tracking.
  */
 router.post('/outcome', authenticate, async (req, res, next) => {
   try {
@@ -1183,7 +1124,7 @@ router.post('/outcome', authenticate, async (req, res, next) => {
     }
     
     // Get user's profile
-    const profile = StudentProfile.getCompleteProfile(userId);
+    const profile = await StudentProfile.getCompleteProfile(userId);
     if (!profile) {
       return res.status(400).json({
         success: false,
@@ -1192,7 +1133,7 @@ router.post('/outcome', authenticate, async (req, res, next) => {
     }
     
     // Get college
-    const college = College.findById(collegeId);
+    const college = await College.findById(collegeId);
     if (!college) {
       return res.status(404).json({
         success: false,
@@ -1244,6 +1185,23 @@ router.post('/outcome', authenticate, async (req, res, next) => {
     
     const trainingDataId = result.rows[0].id;
     
+    // Write to prediction_logs for Brier Score tracking
+    try {
+      const chancing = await consolidatedChancingService.calculateChance(profile, college);
+      const actualOutcome = decision === 'accepted' ? 1 : 0;
+      await pool.query(
+        `INSERT INTO prediction_logs (user_id, college_id, predicted_probability, actual_outcome, engine)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (user_id, college_id) DO UPDATE SET
+           predicted_probability = EXCLUDED.predicted_probability,
+           actual_outcome = EXCLUDED.actual_outcome,
+           updated_at = NOW()`,
+        [userId, collegeId, chancing.probability ?? null, actualOutcome, 'deterministic-sigmoid']
+      );
+    } catch (brierErr) {
+      logger.debug('Prediction log insert failed (non-critical):', brierErr.message);
+    }
+
     // Track contribution for gamification
     try {
       await pool.query(
@@ -1400,6 +1358,61 @@ router.get('/ml/data-needs', authenticate, async (req, res, next) => {
     });
   } catch (error) {
     logger.error('Get data needs failed:', error);
+    next(error);
+  }
+});
+
+/**
+ * GET /api/chancing/brier-score
+ * Compute Brier Score for this user's predictions (requires outcome submissions).
+ * Brier Score = mean((p_i - o_i)^2) where p_i = predicted probability, o_i = actual outcome (0/1).
+ * Lower is better; 0 = perfect, 0.25 = no-skill.
+ */
+router.get('/brier-score', authenticate, async (req, res, next) => {
+  try {
+    const pool = dbManager.getDatabase();
+
+    // Join prediction_logs with ml_training_data (user outcomes) to get paired predictions
+    const rows = (await pool.query(
+      `SELECT pl.predicted_probability, pl.actual_outcome
+       FROM prediction_logs pl
+       WHERE pl.user_id = $1
+         AND pl.predicted_probability IS NOT NULL
+         AND pl.actual_outcome IS NOT NULL`,
+      [req.user.userId]
+    )).rows;
+
+    if (rows.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          score: null,
+          calibration: 'No outcomes submitted yet',
+          count: 0,
+          message: 'Submit admission outcomes via POST /api/chancing/outcome to track Brier Score.',
+        },
+      });
+    }
+
+    const brierSum = rows.reduce((sum, r) => {
+      const p = parseFloat(r.predicted_probability);
+      const o = parseInt(r.actual_outcome, 10);
+      return sum + Math.pow(p - o, 2);
+    }, 0);
+    const score = Math.round((brierSum / rows.length) * 10000) / 10000;
+
+    let calibration;
+    if (score <= 0.10) calibration = 'excellent';
+    else if (score <= 0.20) calibration = 'good';
+    else if (score <= 0.25) calibration = 'decent';
+    else calibration = 'needs more data';
+
+    res.json({
+      success: true,
+      data: { score, calibration, count: rows.length },
+    });
+  } catch (error) {
+    logger.error('Brier score computation failed:', error);
     next(error);
   }
 });

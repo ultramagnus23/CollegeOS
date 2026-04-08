@@ -9,7 +9,7 @@ class EssayController {
     try {
       const userId = req.user.userId;
       
-      const essays = Essay.findByUser(userId);
+      const essays = await Essay.findByUser(userId);
       
       res.json({
         success: true,

@@ -1214,6 +1214,13 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             activities: (studentData.activities || []).filter((a: any) => a?.name?.trim()),
           });
 
+          // 2b. Send why_college_matters to trigger values_vector computation via valuesEngine.js
+          if (studentData.whyCollege && studentData.whyCollege.trim().length > 0) {
+            try {
+              await api.updateProfile({ why_college_matters: studentData.whyCollege.trim() });
+            } catch { /* non-critical — values_vector will be computed on next profile update */ }
+          }
+
           // 3. Pre-compute instant recommendations and store in localStorage
           try {
             const recRes = await api.automation.getInstantRecommendations({

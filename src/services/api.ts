@@ -295,6 +295,13 @@ class ApiService {
     });
   }
 
+  async updateProfile(data: any) {
+    return this.request('/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Extended student profile
   async getExtendedProfile() {
     return this.request('/profile/extended');
@@ -626,51 +633,6 @@ class ApiService {
     return this.request('/timeline/monthly');
   }
 
-  // ==================== RESEARCH ENDPOINTS ====================
-
-  async conductResearch(collegeId: number, researchType: string, forceRefresh: boolean = false) {
-    return this.request('/research/on-demand', {
-      method: 'POST',
-      body: JSON.stringify({ collegeId, researchType, forceRefresh }),
-    });
-  }
-
-  searchByMajor(major: string, country?: string, limit?: number) {
-    const params = new URLSearchParams();
-    params.append('major', major);
-    if (country) params.append('country', country);
-    if (limit) params.append('limit', String(limit));
-    return this.request(`/research/majors?${params.toString()}`);
-  }
-
-  researchSearch(query: string, country?: string, type?: 'all' | 'major' | 'name') {
-    const params = new URLSearchParams();
-    params.append('q', query);
-    if (country) params.append('country', country);
-    if (type) params.append('type', type);
-    return this.request(`/research/search?${params.toString()}`);
-  }
-
-  async getAvailableMajors() {
-    return this.request('/research/majors/list');
-  }
-
-  // ==================== INTELLIGENT SEARCH ENDPOINTS ====================
-
-  async intelligentSearch(query: string, filters: any = {}) {
-    return this.request('/intelligent-search', {
-      method: 'POST',
-      body: JSON.stringify({ query, filters }),
-    });
-  }
-
-  async classifyQuery(query: string) {
-    return this.request('/intelligent-search/classify', {
-      method: 'POST',
-      body: JSON.stringify({ query }),
-    });
-  }
-
   // ==================== CHATBOT ENDPOINTS ====================
 
   async chatbotChat(message: string, conversationHistory: any[] = []) {
@@ -730,23 +692,6 @@ class ApiService {
 
     checkEligibility: (id: number, program?: string) =>
       this.request(`/colleges/${id}/eligibility${program ? `?program=${encodeURIComponent(program)}` : ''}`),
-  };
-
-  // Research namespace - Major-based search and research
-  research = {
-    searchByMajor: (major: string, country?: string, limit?: number) => 
-      this.searchByMajor(major, country, limit),
-    search: (query: string, country?: string, type?: 'all' | 'major' | 'name') => 
-      this.researchSearch(query, country, type),
-    getAvailableMajors: () => this.getAvailableMajors(),
-    conductResearch: (collegeId: number, researchType: string, forceRefresh?: boolean) =>
-      this.conductResearch(collegeId, researchType, forceRefresh),
-  };
-
-  // Intelligent Search namespace
-  smartSearch = {
-    search: (query: string, filters?: any) => this.intelligentSearch(query, filters),
-    classify: (query: string) => this.classifyQuery(query),
   };
 
   // Chatbot namespace

@@ -19,9 +19,9 @@ import {
   Award,
   Users,
   Clock,
-  Compass,
   Shield,
-  Target
+  Target,
+  Star
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -33,20 +33,20 @@ const DashboardLayout = () => {
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Colleges', href: '/colleges', icon: School },
     { name: 'Chancing', href: '/chancing', icon: Target },
+    { name: 'College Recommendations', href: '/college-recommendations', icon: Star },
     { name: 'Applications', href: '/applications', icon: FileText },
     { name: 'Deadlines', href: '/deadlines', icon: Calendar },
-    { name: 'Essays', href: '/essays', icon: PenTool, disabled: true, badge: 'Coming Soon' },
+    { name: 'Essays', href: '/essays', icon: PenTool },
     { name: 'Documents', href: '/documents', icon: FolderOpen },
     { name: 'Scholarships', href: '/scholarships', icon: Award },
-    { name: 'Recommendations', href: '/recommendations', icon: Users, disabled: true, badge: 'Coming Soon' },
+    { name: 'Recommenders', href: '/recommenders', icon: Users },
     { name: 'Timeline', href: '/timeline', icon: Clock },
-    { name: 'Discover', href: '/discover', icon: Compass },
     { name: 'Admin', href: '/admin', icon: Shield },
     { name: 'Settings', href: '/settings', icon: SettingsIcon },
   ];
 
   // Mobile bottom navigation (only show main items)
-  const mobileNav = navigation.filter(item => !item.disabled).slice(0, 5);
+  const mobileNav = navigation.slice(0, 5);
 
   const handleLogout = async () => {
     await logout();
@@ -124,7 +124,7 @@ const DashboardLayout = () => {
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium ${
                     isActive ? 'nav-active' : 'nav-inactive'
-                  } ${item.disabled ? 'pointer-events-none opacity-50' : ''}`
+                  }`
                 }
                 style={({ isActive }) => ({
                   background: isActive ? 'var(--color-accent-subtle)' : 'transparent',
@@ -133,11 +133,6 @@ const DashboardLayout = () => {
               >
                 <item.icon size={18} aria-hidden="true" />
                 <span>{item.name}</span>
-                {item.badge && (
-                  <span className="ml-auto text-[10px] uppercase tracking-wide bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-                    {item.badge}
-                  </span>
-                )}
               </NavLink>
             ))}
           </nav>

@@ -20,7 +20,7 @@ router.use(authenticate);
  */
 router.get('/', async (req, res, next) => {
   try {
-    const recommenders = await Recommender.getByUserId(req.user.id);
+    const recommenders = await Recommender.getByUserId(req.user.userId);
     
     res.json({
       success: true,
@@ -38,9 +38,9 @@ router.get('/', async (req, res, next) => {
  */
 router.get('/summary', async (req, res, next) => {
   try {
-    const summary = await Recommender.getSummary(req.user.id);
-    const overdue = await Recommender.getOverdueRequests(req.user.id);
-    const pendingReminders = await Recommender.getPendingReminders(req.user.id);
+    const summary = await Recommender.getSummary(req.user.userId);
+    const overdue = await Recommender.getOverdueRequests(req.user.userId);
+    const pendingReminders = await Recommender.getPendingReminders(req.user.userId);
     
     res.json({
       success: true,
@@ -72,7 +72,7 @@ router.get('/types', async (req, res) => {
  */
 router.get('/:id', async (req, res, next) => {
   try {
-    const recommender = await Recommender.getById(req.params.id, req.user.id);
+    const recommender = await Recommender.getById(req.params.id, req.user.userId);
     
     if (!recommender) {
       return res.status(404).json({
@@ -113,7 +113,7 @@ router.post('/', async (req, res, next) => {
       });
     }
     
-    const recommender = await Recommender.create(req.user.id, req.body);
+    const recommender = await Recommender.create(req.user.userId, req.body);
     
     res.status(201).json({
       success: true,
@@ -131,7 +131,7 @@ router.post('/', async (req, res, next) => {
  */
 router.put('/:id', async (req, res, next) => {
   try {
-    const existing = await Recommender.getById(req.params.id, req.user.id);
+    const existing = await Recommender.getById(req.params.id, req.user.userId);
     
     if (!existing) {
       return res.status(404).json({
@@ -140,7 +140,7 @@ router.put('/:id', async (req, res, next) => {
       });
     }
     
-    const recommender = await Recommender.update(req.params.id, req.user.id, req.body);
+    const recommender = await Recommender.update(req.params.id, req.user.userId, req.body);
     
     res.json({
       success: true,
@@ -158,7 +158,7 @@ router.put('/:id', async (req, res, next) => {
  */
 router.delete('/:id', async (req, res, next) => {
   try {
-    const deleted = await Recommender.delete(req.params.id, req.user.id);
+    const deleted = await Recommender.delete(req.params.id, req.user.userId);
     
     if (!deleted) {
       return res.status(404).json({
@@ -188,7 +188,7 @@ router.get('/requests/all', async (req, res, next) => {
   try {
     const { status, recommenderId, collegeId } = req.query;
     
-    const requests = await Recommender.getRequests(req.user.id, {
+    const requests = await Recommender.getRequests(req.user.userId, {
       status,
       recommenderId,
       collegeId
@@ -210,7 +210,7 @@ router.get('/requests/all', async (req, res, next) => {
  */
 router.get('/requests/overdue', async (req, res, next) => {
   try {
-    const overdue = await Recommender.getOverdueRequests(req.user.id);
+    const overdue = await Recommender.getOverdueRequests(req.user.userId);
     
     res.json({
       success: true,
@@ -229,7 +229,7 @@ router.get('/requests/overdue', async (req, res, next) => {
 router.get('/requests/pending-reminders', async (req, res, next) => {
   try {
     const { days = 7 } = req.query;
-    const pending = await Recommender.getPendingReminders(req.user.id, parseInt(days));
+    const pending = await Recommender.getPendingReminders(req.user.userId, parseInt(days));
     
     res.json({
       success: true,
@@ -247,7 +247,7 @@ router.get('/requests/pending-reminders', async (req, res, next) => {
  */
 router.get('/requests/:id', async (req, res, next) => {
   try {
-    const request = await Recommender.getRequestById(req.params.id, req.user.id);
+    const request = await Recommender.getRequestById(req.params.id, req.user.userId);
     
     if (!request) {
       return res.status(404).json({
@@ -271,7 +271,7 @@ router.get('/requests/:id', async (req, res, next) => {
  */
 router.post('/:id/request', async (req, res, next) => {
   try {
-    const recommender = await Recommender.getById(req.params.id, req.user.id);
+    const recommender = await Recommender.getById(req.params.id, req.user.userId);
     
     if (!recommender) {
       return res.status(404).json({
@@ -280,7 +280,7 @@ router.post('/:id/request', async (req, res, next) => {
       });
     }
     
-    const request = await Recommender.createRequest(req.user.id, {
+    const request = await Recommender.createRequest(req.user.userId, {
       recommenderId: req.params.id,
       ...req.body
     });
@@ -301,7 +301,7 @@ router.post('/:id/request', async (req, res, next) => {
  */
 router.put('/requests/:id', async (req, res, next) => {
   try {
-    const existing = await Recommender.getRequestById(req.params.id, req.user.id);
+    const existing = await Recommender.getRequestById(req.params.id, req.user.userId);
     
     if (!existing) {
       return res.status(404).json({
@@ -310,7 +310,7 @@ router.put('/requests/:id', async (req, res, next) => {
       });
     }
     
-    const request = await Recommender.updateRequest(req.params.id, req.user.id, req.body);
+    const request = await Recommender.updateRequest(req.params.id, req.user.userId, req.body);
     
     res.json({
       success: true,
@@ -328,7 +328,7 @@ router.put('/requests/:id', async (req, res, next) => {
  */
 router.delete('/requests/:id', async (req, res, next) => {
   try {
-    const deleted = await Recommender.deleteRequest(req.params.id, req.user.id);
+    const deleted = await Recommender.deleteRequest(req.params.id, req.user.userId);
     
     if (!deleted) {
       return res.status(404).json({

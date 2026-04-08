@@ -186,7 +186,26 @@ async function startServer() {
       logger.warn('College seeding skipped or failed:', { error: seedErr.message });
     }
 
+    // Log college count so Render cold-start logs confirm data is available
+    try {
+      const pool = dbManager.getDatabase();
+      const { rows: colRows } = await pool.query('SELECT COUNT(*) AS count FROM colleges');
+      logger.info(`Colleges table: ${colRows[0].count} rows`);
+    } catch (_) {
+      logger.warn('Could not read college row count');
+    }
+
     const PORT = config.port;
+
+    // Warm up exchange rates before the server starts accepting requests
+    const { refreshExchangeRates } = require('./services/financialCostService');
+    try {
+      await refreshExchangeRates();
+      logger.info('Exchange rates cached successfully');
+    } catch (err) {
+      logger.warn('Initial exchange rate fetch failed — falling back to DB seed', { error: err?.message });
+    }
+
     server = app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT} in ${config.nodeEnv} mode`);
       logger.info('Database: PostgreSQL via DATABASE_URL');
@@ -194,9 +213,7 @@ async function startServer() {
       // Start keep-alive pings to prevent Render free-tier connection reaping
       startKeepAlive();
 
-      // Warm up exchange rates on boot and refresh every 6 hours
-      const { refreshExchangeRates } = require('./services/financialCostService');
-      refreshExchangeRates().catch(() => {});
+      // Refresh exchange rates every 6 hours
       setInterval(refreshExchangeRates, 6 * 60 * 60 * 1000);
 
       // Start ML retraining jobs

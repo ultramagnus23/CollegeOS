@@ -2,9 +2,25 @@ CollegeOS - Comprehensive College Application Management Platform
 
 A full-stack college application tracker helping students discover, organize, and apply to universities worldwide. Features 1000+ colleges (US, India, UK, Germany) with detailed admissions data, personalized chancing calculator, deadline tracking, essay management, and intelligent college recommendations.
 
-Built with React, Node.js, and MySQL. Combines CollegeVine's data-rich interface with Common App's organizational tools, making college applications manageable for students globally.
+Built with React, Node.js, and PostgreSQL (Supabase). Combines data-rich college search with Common App's organizational tools, making college applications manageable for students globally.
 
 Key Features: Smart college search • Admission chance calculator • Application deadline tracker • Financial aid comparison • Essay manager • Personalized recommendations
+
+---
+
+## Chancing Model
+
+Admission probability is calculated entirely in JavaScript by the deterministic sigmoid model in:
+
+```
+backend/src/services/consolidatedChancingService.js  →  calculateChance(studentProfile, college)
+```
+
+This function uses the student's GPA and SAT delta against the college's medians, anchors to the
+college's own selectivity via a log-odds term, applies an international student penalty, and
+returns `{ tier, probability, confidence, explanation }`.
+
+**The former Python Flask service (`backend/ml-service/`) and FastAPI service (`backend/chancing_service/`) have been removed.** They were never running on Render and had no active callers. All chancing routes (`POST /api/chance`, `POST /api/chancing/calculate`, `POST /api/chancing/ml/batch`) use `consolidatedChancingService` exclusively.
 
 ---
 
