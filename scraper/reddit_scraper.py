@@ -3,20 +3,34 @@
 """
 Reddit Chance-Me Scraper
 ────────────────────────
-Fetches posts from r/chanceme, r/ApplyingToCollege, r/collegeresults using PRAW,
-extracts structured applicant + outcome data, and upserts to chance_me_posts.
+Fetches posts from r/chanceme, r/ApplyingToCollege, r/collegeresults.
+Extracts structured applicant + outcome data and upserts to chance_me_posts.
+
+Authentication modes
+────────────────────
+1. OAuth (preferred, 60 req/min):
+     Set REDDIT_CLIENT_ID + REDDIT_CLIENT_SECRET.
+     Register a free app at https://www.reddit.com/prefs/apps (type: script).
+
+2. Public JSON API (no credentials required, ~10 req/min):
+     Leave REDDIT_CLIENT_ID unset. No sign-up needed. The scraper will hit
+     https://www.reddit.com/r/<sub>/top.json directly with a custom User-Agent.
+     Slower but fully functional for data gathering.
 
 Required environment variables
 ───────────────────────────────
     DATABASE_URL
+
+Optional — OAuth path (leave unset to use public API)
+────────────────────────────────────────────────────────
     REDDIT_CLIENT_ID
     REDDIT_CLIENT_SECRET
     REDDIT_USER_AGENT      (e.g. "CollegeOS/1.0 by YourUsername")
-
-Optional
-────────
-    REDDIT_USERNAME        (for script-auth; can be omitted for read-only)
+    REDDIT_USERNAME        (for script-auth)
     REDDIT_PASSWORD
+
+Optional — tuning
+─────────────────
     POSTS_PER_SUBREDDIT    (default 500)
 
 Exit codes: 0 = success, 1 = failure.
@@ -25,13 +39,14 @@ Exit codes: 0 = success, 1 = failure.
 import os
 import re
 import sys
+import time
 import logging
 import datetime
 from typing import Optional
 
-import praw
 import psycopg2
 import psycopg2.extras
+import requests
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -47,12 +62,14 @@ log = logging.getLogger("reddit_scraper")
 # ── Config ────────────────────────────────────────────────────────────────────
 
 DATABASE_URL = os.environ["DATABASE_URL"]
-REDDIT_CLIENT_ID = os.environ["REDDIT_CLIENT_ID"]
-REDDIT_CLIENT_SECRET = os.environ["REDDIT_CLIENT_SECRET"]
-REDDIT_USER_AGENT = os.environ.get("REDDIT_USER_AGENT", "CollegeOS/1.0")
+REDDIT_CLIENT_ID = os.environ.get("REDDIT_CLIENT_ID", "")
+REDDIT_CLIENT_SECRET = os.environ.get("REDDIT_CLIENT_SECRET", "")
+REDDIT_USER_AGENT = os.environ.get("REDDIT_USER_AGENT", "CollegeOS/1.0 (+https://github.com/ultramagnus23/CollegeOS)")
 REDDIT_USERNAME = os.environ.get("REDDIT_USERNAME", "")
 REDDIT_PASSWORD = os.environ.get("REDDIT_PASSWORD", "")
 POSTS_PER_SUBREDDIT = int(os.environ.get("POSTS_PER_SUBREDDIT", "500"))
+
+USE_OAUTH = bool(REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET)
 
 SUBREDDITS = ["chanceme", "ApplyingToCollege", "collegeresults"]
 
@@ -354,7 +371,95 @@ def upsert_rows(conn, rows: list[dict]) -> int:
 
 # ── Reddit client ─────────────────────────────────────────────────────────────
 
-def build_reddit() -> praw.Reddit:
+def _make_session() -> requests.Session:
+    """Return a requests.Session with the correct User-Agent header."""
+    s = requests.Session()
+    s.headers.update({"User-Agent": REDDIT_USER_AGENT})
+    return s
+
+
+def _public_fetch_listing(session: requests.Session, subreddit: str,
+                          sort: str = "top", time_filter: str = "all",
+                          limit: int = 100, after: Optional[str] = None) -> dict:
+    """
+    Fetch one page from Reddit's public .json endpoint (no credentials needed).
+    Retries on 429 with the Retry-After header.
+    """
+    url = f"https://www.reddit.com/r/{subreddit}/{sort}.json"
+    params: dict = {"limit": limit, "raw_json": 1}
+    if sort == "top":
+        params["t"] = time_filter
+    if after:
+        params["after"] = after
+
+    for attempt in range(5):
+        resp = session.get(url, params=params, timeout=30)
+        if resp.status_code == 429:
+            wait = int(resp.headers.get("Retry-After", 120))
+            log.warning(f"Rate limited (public API), waiting {wait}s …")
+            time.sleep(wait)
+            continue
+        resp.raise_for_status()
+        return resp.json()
+    raise RuntimeError(f"Reddit public API failed after 5 attempts for r/{subreddit}/{sort}")
+
+
+def fetch_posts_public(subreddit_name: str, limit: int):
+    """
+    Yield posts using the public JSON API.
+    Fetches top-all-time (up to `limit` posts, paginating as needed) then new.
+    Rate limit: ~10 req/min → 6-second delay between pages.
+    """
+    session = _make_session()
+    seen_ids: set = set()
+    delay = 6.5  # conservative for the ~10 req/min public limit
+
+    for sort, time_filter in [("top", "all"), ("new", None)]:
+        after = None
+        collected = 0
+        while collected < limit:
+            time.sleep(delay)
+            data = _public_fetch_listing(
+                session, subreddit_name, sort=sort,
+                time_filter=time_filter or "all",
+                limit=min(100, limit - collected),
+                after=after,
+            )
+            children = data.get("data", {}).get("children", [])
+            if not children:
+                break
+            for child in children:
+                if child.get("kind") != "t3":
+                    continue
+                post_data = child["data"]
+                if post_data.get("stickied"):
+                    continue
+                post_id = post_data.get("id")
+                if post_id and post_id not in seen_ids:
+                    seen_ids.add(post_id)
+                    yield _PublicPost(post_data)
+                    collected += 1
+            after = data.get("data", {}).get("after")
+            if not after:
+                break
+
+
+class _PublicPost:
+    """Thin wrapper so public-API post dicts look like PRAW Submission objects."""
+
+    def __init__(self, data: dict):
+        self.id = data.get("id", "")
+        self.title = data.get("title", "")
+        self.selftext = data.get("selftext", "")
+        self.permalink = data.get("permalink", "")
+        self.created_utc = data.get("created_utc", 0)
+        self.subreddit = data.get("subreddit", "")
+
+
+def fetch_posts_oauth(subreddit_name: str, limit: int):
+    """Yield posts using PRAW (OAuth).  Requires REDDIT_CLIENT_ID etc."""
+    import praw  # only imported when credentials are present
+
     kwargs = dict(
         client_id=REDDIT_CLIENT_ID,
         client_secret=REDDIT_CLIENT_SECRET,
@@ -362,13 +467,10 @@ def build_reddit() -> praw.Reddit:
     )
     if REDDIT_USERNAME and REDDIT_PASSWORD:
         kwargs.update(username=REDDIT_USERNAME, password=REDDIT_PASSWORD)
-    return praw.Reddit(**kwargs)
+    reddit = praw.Reddit(**kwargs)
 
-
-def fetch_posts(reddit: praw.Reddit, subreddit_name: str, limit: int):
-    """Yield up to `limit` posts from the subreddit (new + hot combined, deduped)."""
     sub = reddit.subreddit(subreddit_name)
-    seen_ids: set[str] = set()
+    seen_ids: set = set()
 
     for listing in [sub.new(limit=limit), sub.hot(limit=limit)]:
         for post in listing:
@@ -377,10 +479,23 @@ def fetch_posts(reddit: praw.Reddit, subreddit_name: str, limit: int):
                 yield post
 
 
+def fetch_posts(subreddit_name: str, limit: int):
+    """Dispatch to OAuth or public path depending on credentials."""
+    if USE_OAUTH:
+        yield from fetch_posts_oauth(subreddit_name, limit)
+    else:
+        yield from fetch_posts_public(subreddit_name, limit)
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> int:
     log.info("Reddit scraper started.")
+    if USE_OAUTH:
+        log.info("Auth mode: OAuth (REDDIT_CLIENT_ID set)")
+    else:
+        log.info("Auth mode: public JSON API (no credentials — slower but no sign-up required)")
+
     conn = None
     total_posts = 0
     total_inserted = 0
@@ -388,7 +503,6 @@ def main() -> int:
     total_skipped_duplicate = 0
 
     try:
-        reddit = build_reddit()
         conn = get_connection()
 
         for subreddit_name in SUBREDDITS:
@@ -396,7 +510,7 @@ def main() -> int:
             sub_posts = 0
             sub_inserted = 0
 
-            for post in fetch_posts(reddit, subreddit_name, POSTS_PER_SUBREDDIT):
+            for post in fetch_posts(subreddit_name, POSTS_PER_SUBREDDIT):
                 total_posts += 1
                 sub_posts += 1
 
