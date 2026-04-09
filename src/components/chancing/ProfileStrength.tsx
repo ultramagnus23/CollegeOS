@@ -144,7 +144,7 @@ export default function ProfileStrength() {
           <div className="grid grid-cols-3 gap-4 text-center pt-4 border-t">
             {data.profile.gpa && (
               <div>
-                <div className="text-2xl font-bold">{data.profile.gpa.toFixed(2)}</div>
+                <div className="text-2xl font-bold">{data.profile.gpa?.toFixed(2) ?? 'N/A'}</div>
                 <div className="text-xs text-muted-foreground">GPA</div>
               </div>
             )}
