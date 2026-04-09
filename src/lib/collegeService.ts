@@ -135,8 +135,13 @@ export async function searchColleges(
   );
   if (rpcError) throw rpcError;
 
-  const { total, ids } = rpcData as { total: number; ids: number[] | null };
-  const safeIds: number[] = ids ?? [];
+  // FIX: Supabase .rpc() returns an array of rows, not a plain object.
+  // The RPC returns one row with { total, ids }, so we take index [0].
+  const rpcRow = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+  const total: number = rpcRow?.total ?? 0;
+  const safeIds: number[] = rpcRow?.ids ?? [];
+
+  console.log('[searchColleges] rpcData:', rpcData, '→ total:', total, 'ids count:', safeIds.length);
 
   if (safeIds.length === 0) {
     return {
@@ -292,11 +297,6 @@ export async function getCollegePrograms(
 
 /**
  * Return the distinct list of US states present in `colleges_comprehensive`.
- *
- * Uses the `get_distinct_states` RPC (migration 047) which performs a
- * `SELECT DISTINCT` server-side, avoiding the 1,000-row PostgREST cap that
- * would silently truncate results from a plain `.select('state')` call against
- * a 6,000-row table.
  */
 export async function getDistinctStates(): Promise<string[]> {
   const client = requireClient();
@@ -311,9 +311,6 @@ export async function getDistinctStates(): Promise<string[]> {
 
 /**
  * Return the distinct list of countries present in `colleges_comprehensive`.
- *
- * Uses the `get_distinct_countries` RPC (migration 047) for the same reason as
- * `getDistinctStates` — avoids the 1,000-row PostgREST cap.
  */
 export async function getDistinctCountries(): Promise<string[]> {
   const client = requireClient();
@@ -350,7 +347,6 @@ export function getDemographics(college: CollegeWithRelations) {
 
 /**
  * Format an acceptance rate (0–1) as a human-readable percentage string.
- * Handles both decimal (0.08) and percentage (8) formats.
  */
 export function formatAcceptanceRate(rate: number | null | undefined): string {
   if (rate === null || rate === undefined) return 'N/A';
@@ -383,9 +379,8 @@ function parseRangeString(
 }
 
 /**
- * Convert a `CollegeWithRelations` row into the flat shape expected by the
- * `Colleges.tsx` card list.  Returns a plain object typed as `any` because the
- * page's own `College` import is a loose legacy interface.
+ * Convert a `CollegeWithRelations` row into the flat shape expected by
+ * the `Colleges.tsx` card list.
  */
 export function normalizeToCard(c: CollegeWithRelations): any {
   const admissions = c.college_admissions?.[0] ?? null;
@@ -394,7 +389,6 @@ export function normalizeToCard(c: CollegeWithRelations): any {
   const rankings   = c.college_rankings ?? [];
   const programs   = c.college_programs ?? [];
 
-  // Best available numeric rank (smallest number wins)
   const bestRank = rankings
     .map((r) => (r.ranking_value ? parseInt(r.ranking_value, 10) : NaN))
     .filter((n) => !isNaN(n) && n > 0)
@@ -434,8 +428,7 @@ export function normalizeToCard(c: CollegeWithRelations): any {
 
 /**
  * Convert a `CollegeWithRelations` row into the rich shape expected by
- * `CollegeDetails.tsx`.  All resolver chains in that page already have
- * fallback paths for the flat top-level fields populated here.
+ * `CollegeDetails.tsx`.
  */
 export function normalizeToDetail(c: CollegeWithRelations): any {
   const admissions   = c.college_admissions?.[0]    ?? null;
@@ -470,17 +463,13 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
     ranking:               bestRank,
     enrollment:            c.total_enrollment ?? null,
     religious_affiliation: c.religious_affiliation ?? null,
-    // Flat acceptance fields (checked by resolver chains in CollegeDetails)
     acceptance_rate:       admissions?.acceptance_rate ?? null,
     acceptanceRate:        admissions?.acceptance_rate ?? null,
     tuition_cost:          financial?.tuition_out_state ?? financial?.tuition_international ?? null,
-    // Flat financial fields
     avg_net_price:         financial?.avg_net_price ?? null,
-    // Flat academics fields
     median_debt:           academics?.median_debt        ?? null,
     median_salary_6yr:     academics?.median_salary_6yr  ?? null,
     median_salary_10yr:    academics?.median_salary_10yr ?? null,
-    // Flat demographics fields
     percent_male:          demographics?.percent_male          ?? null,
     percent_female:        demographics?.percent_female        ?? null,
     percent_white:         demographics?.percent_white         ?? null,
@@ -488,12 +477,10 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
     percent_hispanic:      demographics?.percent_hispanic      ?? null,
     percent_asian:         demographics?.percent_asian         ?? null,
     percent_international: demographics?.percent_international ?? null,
-    // Programs
     programs:         programNames,
     major_categories: degreeTypes,
     majorCategories:  programNames.slice(0, 6),
     academic_strengths: [],
-    // Nested shapes (matching the resolver chain expectations in CollegeDetails)
     testScores: admissions
       ? {
           satRange: satRange
@@ -522,12 +509,12 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
       : undefined,
     academicOutcomes: academics
       ? {
-          graduationRate4yr:    academics.graduation_rate_4yr  ?? null,
-          retentionRate:        academics.retention_rate       ?? null,
-          medianSalary6yr:      academics.median_salary_6yr   ?? null,
-          medianStartSalary:    academics.median_salary_6yr   ?? null,
-          medianSalary10yr:     academics.median_salary_10yr  ?? null,
-          medianMidCareerSalary: academics.median_salary_10yr ?? null,
+          graduationRate4yr:     academics.graduation_rate_4yr  ?? null,
+          retentionRate:         academics.retention_rate       ?? null,
+          medianSalary6yr:       academics.median_salary_6yr   ?? null,
+          medianStartSalary:     academics.median_salary_6yr   ?? null,
+          medianSalary10yr:      academics.median_salary_10yr  ?? null,
+          medianMidCareerSalary: academics.median_salary_10yr  ?? null,
         }
       : undefined,
     demographics: demographics
@@ -559,10 +546,10 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
         }
       : undefined,
     rankings: rankings.map((r) => ({
-      year:        r.ranking_year ?? new Date().getFullYear(),
-      rankingBody: r.ranking_source,
+      year:         r.ranking_year ?? new Date().getFullYear(),
+      rankingBody:  r.ranking_source,
       nationalRank: r.ranking_value ? parseInt(r.ranking_value, 10) : null,
-      globalRank:  null,
+      globalRank:   null,
     })),
     graduationRates: academics
       ? { fourYear: academics.graduation_rate_4yr ?? null }
