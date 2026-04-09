@@ -210,7 +210,7 @@ export default function AdminDashboard() {
           />
           <Stat
             label="Training Samples"
-            value={ml.training_samples != null ? ml.training_samples.toLocaleString() : '—'}
+            value={ml.training_samples != null ? ml.training_samples?.toLocaleString() : '—'}
           />
           <Stat
             label="New Rows Since Retrain"
@@ -248,7 +248,7 @@ export default function AdminDashboard() {
                     <td style={{ ...S.td, fontWeight: 600, color: '#f1f5f9' }}>{name}</td>
                     <td style={S.td}>{fmt(s.last_run)}</td>
                     <td style={S.td}><StatusBadge status={s.status} /></td>
-                    <td style={S.td}>{s.rows_upserted != null ? s.rows_upserted.toLocaleString() : '—'}</td>
+                    <td style={S.td}>{s.rows_upserted != null ? s.rows_upserted?.toLocaleString() : '—'}</td>
                     <td style={S.td}>{fmt(s.next_run)}</td>
                   </tr>
                 ))}
@@ -269,7 +269,7 @@ export default function AdminDashboard() {
               <Stat
                 key={k}
                 label={k.replace(/_/g, ' ')}
-                value={typeof v === 'number' ? v.toLocaleString() : String(v)}
+                value={typeof v === 'number' ? v?.toLocaleString() : String(v)}
               />
             ))}
           </div>
