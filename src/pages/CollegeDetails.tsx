@@ -732,7 +732,7 @@ const CollegeDetail: React.FC = () => {
             {/* Show comprehensive enrollment if available, otherwise fallback */}
             {(() => {
               if (college.comprehensiveData?.totalEnrollment) {
-                return <QuickStat label="Total Enrollment" value={college.comprehensiveData.totalEnrollment.toLocaleString()} />;
+                return <QuickStat label="Total Enrollment" value={college.comprehensiveData.totalEnrollment?.toLocaleString() ?? ''} />;
               }
               const enrollmentStr = formatEnrollment(college.enrollment);
               return enrollmentStr && <QuickStat label="Enrollment" value={enrollmentStr} />;
@@ -740,13 +740,13 @@ const CollegeDetail: React.FC = () => {
             
             {/* Show undergrad enrollment if available */}
             {college.comprehensiveData?.undergraduateEnrollment && (
-              <QuickStat label="Undergrad" value={college.comprehensiveData.undergraduateEnrollment.toLocaleString()} />
+              <QuickStat label="Undergrad" value={college.comprehensiveData.undergraduateEnrollment?.toLocaleString() ?? ''} />
             )}
             
             {/* Show net price prominently if available */}
             {(() => {
               if (resolvedAvgNetPrice) {
-                return <QuickStat label="Avg Net Price" value={`$${resolvedAvgNetPrice.toLocaleString()}`} />;
+                return <QuickStat label="Avg Net Price" value={`$${resolvedAvgNetPrice?.toLocaleString() ?? ''}`} />;
               }
               // Fallback to tuition
               const tuitionStr = formatCurrency(college.tuition_cost, college.country);
@@ -880,7 +880,7 @@ const CollegeDetail: React.FC = () => {
                   {/* Total Enrollment */}
                   {(() => {
                     if (college.comprehensiveData?.totalEnrollment) {
-                      return <StatItem label="Total Enrollment" value={college.comprehensiveData.totalEnrollment.toLocaleString()} icon={<Users />} />;
+                      return <StatItem label="Total Enrollment" value={college.comprehensiveData.totalEnrollment?.toLocaleString() ?? ''} icon={<Users />} />;
                     }
                     const enrollmentStr = formatEnrollment(college.enrollment);
                     return enrollmentStr && <StatItem label="Total Enrollment" value={enrollmentStr} icon={<Users />} />;
@@ -888,12 +888,12 @@ const CollegeDetail: React.FC = () => {
                   
                   {/* Undergraduate Enrollment */}
                   {college.comprehensiveData?.undergraduateEnrollment && (
-                    <StatItem label="Undergraduate" value={college.comprehensiveData.undergraduateEnrollment.toLocaleString()} icon={<Users />} />
+                    <StatItem label="Undergraduate" value={college.comprehensiveData.undergraduateEnrollment?.toLocaleString() ?? ''} icon={<Users />} />
                   )}
                   
                   {/* Graduate Enrollment */}
                   {college.comprehensiveData?.graduateEnrollment && (
-                    <StatItem label="Graduate" value={college.comprehensiveData.graduateEnrollment.toLocaleString()} icon={<GraduationCap />} />
+                    <StatItem label="Graduate" value={college.comprehensiveData.graduateEnrollment?.toLocaleString() ?? ''} icon={<GraduationCap />} />
                   )}
                   
                   {/* Student-Faculty Ratio */}
@@ -947,14 +947,14 @@ const CollegeDetail: React.FC = () => {
                   
                   {/* Average Net Price */}
                   {resolvedAvgNetPrice != null && (
-                    <StatItem label="Avg Net Price" value={`$${resolvedAvgNetPrice.toLocaleString()}`} icon={<DollarSign />} />
+                    <StatItem label="Avg Net Price" value={`$${resolvedAvgNetPrice?.toLocaleString() ?? ''}`} icon={<DollarSign />} />
                   )}
                   
                   {/* Median Starting Salary */}
                   {resolvedSalary6yr != null && (
                     <StatItem 
                       label="Median Salary (6 yrs)" 
-                      value={`$${resolvedSalary6yr.toLocaleString()}`} 
+                      value={`$${resolvedSalary6yr?.toLocaleString() ?? ''}`} 
                       icon={<Briefcase />} 
                     />
                   )}
@@ -1113,7 +1113,7 @@ const CollegeDetail: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {college.studentStats?.gpa25 && (
                         <div className="text-center p-3 bg-muted rounded-lg">
-                          <div className="text-xl font-bold text-foreground/80">{college.studentStats.gpa25.toFixed(2)}</div>
+                          <div className="text-xl font-bold text-foreground/80">{college.studentStats.gpa25?.toFixed(2) ?? 'N/A'}</div>
                           <div className="text-xs text-muted-foreground/70">25th Percentile</div>
                         </div>
                       )}
@@ -1127,7 +1127,7 @@ const CollegeDetail: React.FC = () => {
                       )}
                       {college.studentStats?.gpa75 && (
                         <div className="text-center p-3 bg-muted rounded-lg">
-                          <div className="text-xl font-bold text-foreground/80">{college.studentStats.gpa75.toFixed(2)}</div>
+                          <div className="text-xl font-bold text-foreground/80">{college.studentStats.gpa75?.toFixed(2) ?? 'N/A'}</div>
                           <div className="text-xs text-muted-foreground/70">75th Percentile</div>
                         </div>
                       )}
@@ -1308,19 +1308,19 @@ const CollegeDetail: React.FC = () => {
                     {college.comprehensiveData.undergraduateEnrollment && (
                       <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg">
                         <span className="text-sm text-primary">Undergraduate</span>
-                        <span className="font-bold text-blue-900">{college.comprehensiveData.undergraduateEnrollment.toLocaleString()}</span>
+                        <span className="font-bold text-blue-900">{college.comprehensiveData.undergraduateEnrollment?.toLocaleString() ?? ''}</span>
                       </div>
                     )}
                     {college.comprehensiveData.graduateEnrollment && (
                       <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
                         <span className="text-sm text-purple-600">Graduate</span>
-                        <span className="font-bold text-purple-900">{college.comprehensiveData.graduateEnrollment.toLocaleString()}</span>
+                        <span className="font-bold text-purple-900">{college.comprehensiveData.graduateEnrollment?.toLocaleString() ?? ''}</span>
                       </div>
                     )}
                     {college.comprehensiveData.totalEnrollment && (
                       <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <span className="text-sm text-muted-foreground">Total</span>
-                        <span className="font-bold text-foreground">{college.comprehensiveData.totalEnrollment.toLocaleString()}</span>
+                        <span className="font-bold text-foreground">{college.comprehensiveData.totalEnrollment?.toLocaleString() ?? ''}</span>
                       </div>
                     )}
                   </div>
@@ -1377,7 +1377,7 @@ const CollegeDetail: React.FC = () => {
                           <div className="p-6 bg-muted rounded-xl text-center mb-4">
                             <DollarSign className="w-8 h-8 text-primary mx-auto mb-2" />
                             <div className="text-3xl font-bold text-primary/80">
-                              ${college.financialData.tuitionInState.toLocaleString()}
+                              ${college.financialData.tuitionInState?.toLocaleString() ?? ''}
                             </div>
                             <p className="text-primary mt-2 font-medium">Annual Tuition</p>
                             <p className="text-xs text-blue-500 mt-1">
@@ -1394,7 +1394,7 @@ const CollegeDetail: React.FC = () => {
                             <div className="p-4 bg-primary/5 rounded-xl text-center">
                               <DollarSign className="w-6 h-6 text-primary mx-auto mb-2" />
                               <div className="text-2xl font-bold text-primary">
-                                ${college.financialData.tuitionInState.toLocaleString()}
+                                ${college.financialData.tuitionInState?.toLocaleString() ?? ''}
                               </div>
                               <p className="text-sm text-primary/80 mt-1">In-State Tuition</p>
                             </div>
@@ -1403,7 +1403,7 @@ const CollegeDetail: React.FC = () => {
                             <div className="p-4 bg-purple-50 rounded-xl text-center">
                               <DollarSign className="w-6 h-6 text-purple-600 mx-auto mb-2" />
                               <div className="text-2xl font-bold text-purple-600">
-                                ${college.financialData.tuitionOutState.toLocaleString()}
+                                ${college.financialData.tuitionOutState?.toLocaleString() ?? ''}
                               </div>
                               <p className="text-sm text-purple-700 mt-1">Out-of-State Tuition</p>
                             </div>
@@ -1412,7 +1412,7 @@ const CollegeDetail: React.FC = () => {
                             <div className="p-4 bg-indigo-50 rounded-xl text-center">
                               <DollarSign className="w-6 h-6 text-indigo-600 mx-auto mb-2" />
                               <div className="text-2xl font-bold text-indigo-600">
-                                ${college.financialData.tuitionInternational.toLocaleString()}
+                                ${college.financialData.tuitionInternational?.toLocaleString() ?? ''}
                               </div>
                               <p className="text-sm text-indigo-700 mt-1">International Tuition</p>
                             </div>
@@ -1428,7 +1428,7 @@ const CollegeDetail: React.FC = () => {
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Total Cost of Attendance</span>
                         <span className="text-xl font-bold text-foreground">
-                          ${college.financialData.costOfAttendance.toLocaleString()}
+                          ${college.financialData.costOfAttendance?.toLocaleString() ?? ''}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground/70 mt-1">Includes tuition, room, board, and other fees</p>
@@ -1468,7 +1468,7 @@ const CollegeDetail: React.FC = () => {
                       <div className="p-4 bg-primary/5 rounded-lg">
                         <p className="text-sm text-primary mb-1">Average Net Price</p>
                         <p className="text-2xl font-bold text-primary/80">
-                          ${resolvedAvgNetPrice.toLocaleString()}
+                          ${resolvedAvgNetPrice?.toLocaleString() ?? ''}
                         </p>
                         <p className="text-xs text-blue-500 mt-1">After grants and scholarships</p>
                       </div>
@@ -1486,7 +1486,7 @@ const CollegeDetail: React.FC = () => {
                       <div className="p-4 bg-orange-50 rounded-lg">
                         <p className="text-sm text-orange-600 mb-1">Median Student Debt</p>
                         <p className="text-2xl font-bold text-orange-700">
-                          ${resolvedMedianDebt.toLocaleString()}
+                          ${resolvedMedianDebt?.toLocaleString() ?? ''}
                         </p>
                       </div>
                     )}
@@ -1501,19 +1501,19 @@ const CollegeDetail: React.FC = () => {
                     {college.financialData.netPriceLowIncome && (
                       <div className="flex items-center justify-between p-3 bg-emerald-500/10 rounded-lg">
                         <span className="text-sm text-emerald-500">Low Income ($0-$30k)</span>
-                        <span className="font-bold text-green-700">${college.financialData.netPriceLowIncome.toLocaleString()}</span>
+                        <span className="font-bold text-green-700">${college.financialData.netPriceLowIncome?.toLocaleString() ?? ''}</span>
                       </div>
                     )}
                     {college.financialData.netPriceMidIncome && (
                       <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
                         <span className="text-sm text-yellow-600">Middle Income ($30k-$75k)</span>
-                        <span className="font-bold text-yellow-700">${college.financialData.netPriceMidIncome.toLocaleString()}</span>
+                        <span className="font-bold text-yellow-700">${college.financialData.netPriceMidIncome?.toLocaleString() ?? ''}</span>
                       </div>
                     )}
                     {college.financialData.netPriceHighIncome && (
                       <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg">
                         <span className="text-sm text-primary">High Income ($75k+)</span>
-                        <span className="font-bold text-primary/80">${college.financialData.netPriceHighIncome.toLocaleString()}</span>
+                        <span className="font-bold text-primary/80">${college.financialData.netPriceHighIncome?.toLocaleString() ?? ''}</span>
                       </div>
                     )}
                   </div>
@@ -1919,7 +1919,7 @@ const CollegeDetail: React.FC = () => {
                       <div className="p-6 bg-primary/5 rounded-xl text-center">
                         <DollarSign className="w-8 h-8 text-primary mx-auto mb-2" />
                         <div className="text-3xl font-bold text-primary">
-                          ${resolvedSalary6yr.toLocaleString()}
+                          ${resolvedSalary6yr?.toLocaleString() ?? ''}
                         </div>
                         <p className="text-primary/80 mt-1">Median Salary (6 years out)</p>
                       </div>
@@ -1933,7 +1933,7 @@ const CollegeDetail: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-4 bg-purple-50 rounded-lg text-center">
                           <div className="text-2xl font-bold text-purple-600">
-                            ${resolvedSalary10yr.toLocaleString()}
+                            ${resolvedSalary10yr?.toLocaleString() ?? ''}
                           </div>
                           <p className="text-sm text-purple-700 mt-1">Median Salary (10 years out)</p>
                         </div>
@@ -1968,8 +1968,8 @@ const CollegeDetail: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex justify-between text-xs text-muted-foreground/70 mt-1">
-                            <span>${resolvedSalary6yr.toLocaleString()}</span>
-                            <span>${resolvedSalary10yr.toLocaleString()}</span>
+                            <span>${resolvedSalary6yr?.toLocaleString() ?? ''}</span>
+                            <span>${resolvedSalary10yr?.toLocaleString() ?? ''}</span>
                           </div>
                         </div>
                       )}

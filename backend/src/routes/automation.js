@@ -54,7 +54,7 @@ function scoreCollege(college, profile, interestTags = []) {
   // +20 if any major in college programs matches potentialMajors
   const potentialMajors = (profile.potentialMajors || profile.intendedMajors || profile.intended_majors || [])
     .map(m => (m || '').toLowerCase());
-  const collegeMajors = (college.majorCategories || college.major_categories || [])
+  const collegeMajors = (college.majorCategories || [])
     .map(m => (m || '').toLowerCase());
   if (potentialMajors.length > 0 && collegeMajors.some(m => potentialMajors.some(pm => m.includes(pm) || pm.includes(m)))) {
     score += 20;
