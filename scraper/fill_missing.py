@@ -33,6 +33,7 @@ Options:
 """
 
 import argparse
+import concurrent.futures
 import csv
 import json
 import logging
@@ -533,6 +534,7 @@ def main():
     parser.add_argument("--limit", type=int, default=None, help="Max colleges to process")
     parser.add_argument("--college-id", type=int, default=None, help="Process a single college by ID")
     parser.add_argument("--dry-run", action="store_true", help="Fetch data but do not write to Supabase")
+    parser.add_argument("--workers", type=int, default=5, help="Number of concurrent worker threads (default: 5)")
     args = parser.parse_args()
 
     log.info("=== fill_missing.py started ===")
@@ -540,26 +542,34 @@ def main():
     log.info("Scorecard key: %s", "***" if SCORECARD_KEY != "DEMO_KEY" else "DEMO_KEY (rate-limited)")
     if args.dry_run:
         log.info("DRY RUN mode — no writes to Supabase")
+    log.info("Worker threads: %d", args.workers)
 
     colleges = get_colleges_needing_data(args.limit, args.college_id)
     log.info("Colleges to process: %d", len(colleges))
 
     results: list[dict] = []
-    for i, college in enumerate(colleges, 1):
-        log.info("[%d/%d] Processing %s (id=%d)", i, len(colleges), college["name"], college["id"])
+
+    def _process(college: dict) -> dict:
         try:
-            result = process_college(college, dry_run=args.dry_run)
-            results.append(result)
+            return process_college(college, dry_run=args.dry_run)
         except Exception as exc:
             log.error("Failed to process college %d (%s): %s", college["id"], college["name"], exc)
             log.debug(traceback.format_exc())
-            results.append({
+            return {
                 "college_id": college["id"],
                 "college_name": college["name"],
                 "fields_filled": "error",
                 "fields_failed": str(exc)[:200],
                 "source_used": "none",
-            })
+            }
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
+        futures = {executor.submit(_process, college): college for college in colleges}
+        for i, future in enumerate(concurrent.futures.as_completed(futures), 1):
+            college = futures[future]
+            result = future.result()
+            log.info("[%d/%d] Completed %s (id=%d)", i, len(colleges), college["name"], college["id"])
+            results.append(result)
 
     # ── Write summary CSV ────────────────────────────────────────────────────
     csv_path = OUT_DIR / f"fill_missing_results_{_ts}.csv"
