@@ -64,6 +64,7 @@ const Colleges: React.FC = () => {
   const [fitMap, setFitMap] = useState<Record<number, string | null>>({});
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('');
   const [sortBy, setSortBy] = useState('name');
@@ -101,11 +102,18 @@ const Colleges: React.FC = () => {
     })();
   }, []);
 
+  /* ==================== DEBOUNCE SEARCH ==================== */
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   /* ==================== LOAD COLLEGES ==================== */
 
   useEffect(() => {
     loadColleges();
-  }, [searchTerm, selectedCountry, selectedProgram, sortBy, currentPage, user]);
+  }, [debouncedSearchTerm, selectedCountry, selectedProgram, sortBy, currentPage, user]);
 
   /**
    * Fetch fit classifications for all college IDs using the batch endpoint.
@@ -152,7 +160,7 @@ const Colleges: React.FC = () => {
       if (isSupabaseConfigured) {
         // ── Supabase path: server-side filtering + correct pagination ────────
         const result = await searchColleges({
-          query:   searchTerm   || undefined,
+          query:   debouncedSearchTerm   || undefined,
           country: selectedCountry || undefined,
           sortBy:  sortBy !== 'ranking' ? sortBy : 'name', // ranking handled client-side below
           page:    currentPage,
@@ -177,8 +185,8 @@ const Colleges: React.FC = () => {
         if (selectedCountry) params.country = selectedCountry;
 
         let res;
-        if (searchTerm) {
-          res = await api.colleges.search({ q: searchTerm, country: selectedCountry });
+        if (debouncedSearchTerm) {
+          res = await api.colleges.search({ q: debouncedSearchTerm, country: selectedCountry });
         } else {
           res = await api.colleges.get(params);
         }
