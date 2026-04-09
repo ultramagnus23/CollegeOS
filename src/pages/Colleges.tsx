@@ -354,7 +354,7 @@ const Colleges: React.FC = () => {
                   <span style={{ color: ACCENT }}>Discover</span> Colleges
                 </h1>
                 <p style={{ color: S.muted, fontSize: 14 }}>
-                  {loading ? 'Loading…' : `${totalCount.toLocaleString()} colleges${totalPages > 1 ? ` (page ${currentPage} of ${totalPages})` : ''}`}
+                  {loading ? 'Loading…' : `${totalCount?.toLocaleString() ?? '0'} colleges${totalPages > 1 ? ` (page ${currentPage} of ${totalPages})` : ''}`}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -534,13 +534,13 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
     if (amount === null || amount === undefined) return 'N/A';
     if (country === 'India') return `₹${(amount / 100000).toFixed(1)}L`;
     if (country === 'United Kingdom') return `£${(amount / 1000).toFixed(0)}K`;
-    if (country === 'Germany') return amount === 0 ? 'Free' : `€${amount.toLocaleString()}`;
+    if (country === 'Germany') return amount === 0 ? 'Free' : `€${amount?.toLocaleString() ?? '0'}`;
     return `$${(amount / 1000).toFixed(0)}K`;
   };
 
   const formatEnrollment = (num: number | null | undefined): string => {
     if (!num) return 'N/A';
-    return num >= 1000 ? `${(num / 1000).toFixed(1)}K` : num.toString();
+    return num >= 1000 ? `${(num / 1000).toFixed(1)}K` : num?.toString() ?? '';
   };
 
   const acceptanceRate = college?.acceptanceRate ?? college?.acceptance_rate;
