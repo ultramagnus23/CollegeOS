@@ -440,7 +440,7 @@ const CollegeDetail: React.FC = () => {
 
   const formatEnrollment = (num: number | null | undefined): string | null => {
     if (!num) return null;
-    return num.toLocaleString();
+    return num?.toLocaleString() ?? null;
   };
 
   const acceptanceRate = college.acceptanceRate ?? college.acceptance_rate;
@@ -928,12 +928,12 @@ const CollegeDetail: React.FC = () => {
                   
                   {/* Average SAT */}
                   {college.studentStats?.sat50 && (
-                    <StatItem label="Average SAT" value={college.studentStats.sat50.toString()} icon={<FileText />} />
+                    <StatItem label="Average SAT" value={college.studentStats?.sat50?.toString() ?? ''} icon={<FileText />} />
                   )}
                   
                   {/* Average ACT */}
                   {college.studentStats?.act50 && (
-                    <StatItem label="Average ACT" value={college.studentStats.act50.toString()} icon={<FileText />} />
+                    <StatItem label="Average ACT" value={college.studentStats?.act50?.toString() ?? ''} icon={<FileText />} />
                   )}
                   
                   {/* Average GPA */}

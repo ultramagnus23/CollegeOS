@@ -365,7 +365,7 @@ export function formatUSD(amount: number | null | undefined): string {
   if (amount === null || amount === undefined) return 'N/A';
   if (amount >= 1_000_000) return `$${(amount / 1_000_000).toFixed(1)}M`;
   if (amount >= 1_000) return `$${Math.round(amount / 1_000)}K`;
-  return `$${amount.toLocaleString()}`;
+  return `$${amount?.toLocaleString() ?? '0'}`;
 }
 
 // ─── Normalizers: CollegeWithRelations → page-compatible shapes ───────────────

@@ -127,7 +127,7 @@ const CollegeCard: React.FC<{ rec: Recommendation; rank: number }> = ({ rec, ran
               <>
                 <span style={{ fontSize: 11, color: S.dim }}>·</span>
                 <span style={{ fontSize: 11, color: S.muted }}>
-                  ₹{(rec.net_cost_inr_per_year / 100000).toFixed(1)}L/yr
+                  ₹{((rec.net_cost_inr_per_year ?? 0) / 100000).toFixed(1)}L/yr
                 </span>
               </>
             )}
