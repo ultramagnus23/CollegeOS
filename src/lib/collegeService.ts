@@ -382,44 +382,71 @@ function parseRangeString(
  * Convert a `CollegeWithRelations` row into the flat shape expected by
  * the `Colleges.tsx` card list.
  */
-export function normalizeToCard(c: CollegeWithRelations): any {
+export function normalizeToCard(c: any): any {
+  // The search_colleges_filtered RPC returns flat columns directly on `c`
+  // (e.g. c.acceptance_rate, c.tuition_international, c.ranking_qs).
+  // If the row came from a SELECT with nested child tables instead, fall back
+  // to reading those nested arrays so both code paths work.
   const admissions = c.college_admissions?.[0] ?? null;
   const financial  = c.college_financial_data?.[0] ?? null;
   const academics  = c.academic_details?.[0] ?? null;
-  const rankings   = c.college_rankings ?? [];
-  const programs   = c.college_programs ?? [];
 
-  const bestRank = rankings
-    .map((r) => (r.ranking_value ? parseInt(r.ranking_value, 10) : NaN))
-    .filter((n) => !isNaN(n) && n > 0)
-    .sort((a, b) => a - b)[0] ?? null;
+  // Acceptance rate: flat RPC column first, then nested fallback
+  const acceptanceRate =
+    c.acceptance_rate ??
+    admissions?.acceptance_rate ??
+    null;
 
-  const programNames = programs.map((p) => p.program_name).filter(Boolean);
+  // Tuition: flat RPC columns first, then nested fallback
+  const tuitionCost =
+    c.tuition_international ??
+    c.tuition_domestic ??
+    financial?.tuition_out_state ??
+    financial?.tuition_international ??
+    null;
+
+  // Ranking: flat RPC columns first, then nested fallback
+  const rankings = c.college_rankings ?? [];
+  const nestedRank = rankings
+    .map((r: any) => (r.ranking_value ? parseInt(r.ranking_value, 10) : NaN))
+    .filter((n: number) => !isNaN(n) && n > 0)
+    .sort((a: number, b: number) => a - b)[0] ?? null;
+  const bestRank =
+    c.ranking_qs ??
+    c.ranking_us_news ??
+    nestedRank ??
+    null;
+
+  // Programs: only available from nested SELECT, not from RPC
+  const programs = c.college_programs ?? [];
+  const programNames = programs
+    .filter((p: any) => typeof p === 'object' && typeof p.program_name === 'string')
+    .map((p: any) => p.program_name);
 
   return {
     id:                 c.id,
     name:               c.name,
-    location:           [c.city, c.state].filter(Boolean).join(', ') || c.country || '',
+    location:           c.location || [c.city, c.state].filter(Boolean).join(', ') || c.country || '',
     country:            c.country ?? '',
     type:               c.type ?? 'Unknown',
     ranking:            bestRank,
-    acceptance_rate:    admissions?.acceptance_rate ?? null,
-    acceptanceRate:     admissions?.acceptance_rate ?? null,
-    tuition_cost:       financial?.tuition_out_state ?? financial?.tuition_international ?? null,
+    acceptance_rate:    acceptanceRate,
+    acceptanceRate:     acceptanceRate,
+    tuition_cost:       tuitionCost,
     averageGPA:         admissions?.gpa_50 ?? null,
     enrollment:         c.total_enrollment ?? null,
     description:        c.description ?? null,
     programs:           programNames,
     majorCategories:    programNames.slice(0, 6),
     academicStrengths:  [],
-    testScores: admissions
+    testScores:         admissions
       ? {
-          satRange: parseRangeString(admissions.sat_range) ?? undefined,
-          actRange: parseRangeString(admissions.act_range) ?? undefined,
+          satRange:   parseRangeString(admissions.sat_range) ?? undefined,
+          actRange:   parseRangeString(admissions.act_range) ?? undefined,
           averageGPA: admissions.gpa_50 ?? undefined,
         }
       : null,
-    graduationRates: academics
+    graduationRates:    academics
       ? { fourYear: academics.graduation_rate_4yr ?? null }
       : null,
     studentFacultyRatio: null,
