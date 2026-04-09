@@ -509,6 +509,8 @@ const Colleges: React.FC = () => {
 /* ==================== DARK COLLEGE CARD ==================== */
 
 const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onViewDetails, isAdding, fit }) => {
+  if (!college) return null;
+
   const h2r = (hex: string, a: number) => {
     const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
     return `rgba(${r},${g},${b},${a})`;
@@ -533,7 +535,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
     return num >= 1000 ? `${(num / 1000).toFixed(1)}K` : num.toString();
   };
 
-  const acceptanceRate = college.acceptanceRate ?? college.acceptance_rate;
+  const acceptanceRate = college?.acceptanceRate ?? college?.acceptance_rate;
   const accent = '#3B9EFF';
   const S = {
     surface: 'var(--color-bg-surface)',
@@ -566,18 +568,18 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
             <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 4, lineHeight: 1.3 }}>{college.name}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: S.muted, fontSize: 12, fontFamily: S.font }}>
               <MapPin style={{ width: 12, height: 12, flexShrink: 0 }} />
-              {college.location || college.country}
+              {college?.location || college?.country}
             </div>
           </div>
-          {college.ranking && (
+          {college?.ranking && (
             <div style={{ padding: '3px 10px', background: h2r(accent,0.12), border: `1px solid ${h2r(accent,0.3)}`, borderRadius: 8, fontSize: 12, fontWeight: 700, color: accent, fontFamily: S.font, flexShrink: 0 }}>
               #{college.ranking}
             </div>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(accent,0.12), color: accent, fontWeight: 600, fontFamily: S.font }}>{college.type}</span>
-          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(255,255,255,0.07)', color: S.muted, fontFamily: S.font }}>{college.country}</span>
+          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(accent,0.12), color: accent, fontWeight: 600, fontFamily: S.font }}>{college?.type}</span>
+          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(255,255,255,0.07)', color: S.muted, fontFamily: S.font }}>{college?.country}</span>
           <FitBadge fitData={fit} className="ml-auto" />
         </div>
       </div>
@@ -586,9 +588,9 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: S.border, padding: 0 }}>
         {[
           { icon: '📈', label: 'Acceptance', value: formatAcceptanceRate(acceptanceRate), color: '#10B981' },
-          { icon: '💰', label: 'Tuition', value: formatCurrency(college.tuition_cost, college.country), color: '#3B9EFF' },
-          { icon: '🎓', label: 'Avg GPA', value: college.averageGPA ? college.averageGPA.toFixed(2) : 'N/A', color: '#A855F7' },
-          { icon: '👥', label: 'Students', value: formatEnrollment(college.enrollment), color: '#F59E0B' },
+          { icon: '💰', label: 'Tuition', value: formatCurrency(college?.tuition_cost, college?.country ?? ''), color: '#3B9EFF' },
+          { icon: '🎓', label: 'Avg GPA', value: college?.averageGPA != null ? college.averageGPA.toFixed(2) : 'N/A', color: '#A855F7' },
+          { icon: '👥', label: 'Students', value: formatEnrollment(college?.enrollment), color: '#F59E0B' },
         ].map((stat, i) => (
           <div key={i} style={{ padding: '12px 16px', background: S.surface }}>
             <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font, marginBottom: 3 }}>{stat.label}</div>
