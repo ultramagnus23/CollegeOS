@@ -38,14 +38,21 @@ const validators = {
   
   // Onboarding
   onboarding: Joi.object({
-    target_countries: Joi.array().items(Joi.string().trim().valid(...COUNTRIES)).min(1).required(),
+    target_countries: Joi.array().items(
+      Joi.string().trim().custom((value, helpers) => {
+        const match = COUNTRIES.find(c => c.toLowerCase() === value.toLowerCase());
+        if (!match) return helpers.error('any.only');
+        return match;
+      }).messages({ 'any.only': `"target_countries" must be one of ${COUNTRIES.join(', ')}` })
+    ).min(1).required(),
     intended_majors: Joi.array().items(Joi.string().trim()).min(1).required(),
     test_status: Joi.object({
-      sat_score: Joi.number().options({ convert: true }).optional().allow(null),
-      act_score: Joi.number().options({ convert: true }).optional().allow(null),
-      ib_predicted: Joi.number().options({ convert: true }).optional().allow(null)
+      sat_score: Joi.number().options({ convert: true }).min(400).max(1600).optional().allow(null),
+      act_score: Joi.number().options({ convert: true }).min(1).max(36).optional().allow(null),
+      ib_predicted: Joi.number().options({ convert: true }).min(0).max(45).optional().allow(null)
     }).optional(),
     gpa: Joi.number().options({ convert: true }).min(0).max(100).optional().allow(null),
+    gpa_type: Joi.string().valid('gpa', 'percentage').optional().allow(null),
     subjects: Joi.array().items(Joi.any()).optional(),
     activities: Joi.array().items(Joi.any()).optional(),
     language_preferences: Joi.array().items(Joi.string().trim()).optional()
