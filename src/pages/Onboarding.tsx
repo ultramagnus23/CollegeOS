@@ -875,20 +875,22 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
               <input
                 type="number"
                 value={studentData.currentGPA}
-                onChange={e => {
-                  const raw = e.target.value;
-                  const max = studentData.gpaType === 'percentage' ? 100 : 4.0;
-                  const num = parseFloat(raw);
-                  if (raw === '' || (!isNaN(num) && num >= 0 && num <= max)) {
-                    updateData('currentGPA', raw);
-                  }
-                }}
+                onChange={e => updateData('currentGPA', e.target.value)}
                 min={0}
                 max={studentData.gpaType === 'percentage' ? 100 : 4.0}
                 step={studentData.gpaType === 'percentage' ? 1 : 0.1}
                 placeholder={studentData.gpaType === 'percentage' ? '0–100' : '0.0–4.0'}
                 style={{ background: 'none', border: 'none', outline: 'none', fontSize: 64, fontWeight: 800, color: '#fff', width: '100%', textAlign: 'center', fontFamily: "'Clash Display', 'DM Sans', sans-serif" }}
               />
+              {studentData.currentGPA && (() => {
+                const v = parseFloat(studentData.currentGPA);
+                const max = studentData.gpaType === 'percentage' ? 100 : 4.0;
+                return !isNaN(v) && (v < 0 || v > max) ? (
+                  <div style={{ fontSize: 12, color: '#F87171', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>
+                    {studentData.gpaType === 'percentage' ? 'Percentage must be between 0 and 100' : 'GPA must be between 0.0 and 4.0'}
+                  </div>
+                ) : null;
+              })()}
               {studentData.currentGPA && <GPADisplay value={studentData.currentGPA} accent={accent} gpaType={studentData.gpaType} />}
             </div>
           </div>
@@ -896,11 +898,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             <div>
               <label style={labelStyle}>SAT Score <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>(optional)</span></label>
               <input type="number" value={studentData.satScore}
-                onChange={e => {
-                  const v = e.target.value;
-                  const n = parseInt(v, 10);
-                  if (v === '' || (!isNaN(n) && n >= 400 && n <= 1600)) updateData('satScore', v);
-                }}
+                onChange={e => updateData('satScore', e.target.value)}
                 min={400} max={1600}
                 placeholder="400–1600" style={{ ...inputFieldStyle(accent), marginTop: 6 }} />
               {studentData.satScore && (parseInt(studentData.satScore) < 400 || parseInt(studentData.satScore) > 1600) && (
@@ -911,11 +909,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             <div>
               <label style={labelStyle}>ACT Score <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>(optional)</span></label>
               <input type="number" value={studentData.actScore}
-                onChange={e => {
-                  const v = e.target.value;
-                  const n = parseInt(v, 10);
-                  if (v === '' || (!isNaN(n) && n >= 1 && n <= 36)) updateData('actScore', v);
-                }}
+                onChange={e => updateData('actScore', e.target.value)}
                 min={1} max={36}
                 placeholder="1–36" style={{ ...inputFieldStyle(accent), marginTop: 6 }} />
               {studentData.actScore && (parseInt(studentData.actScore) < 1 || parseInt(studentData.actScore) > 36) && (
