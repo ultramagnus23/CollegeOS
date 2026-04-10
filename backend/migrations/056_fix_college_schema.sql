@@ -123,11 +123,39 @@ BEGIN
   END IF;
 END $$;
 
--- ─── 3. Add indexes for the new filter columns ────────────────────────────────
+-- ─── 3. Add indexes for filter columns AND performance-critical query indexes ──
+--
+-- These are required for search_colleges_filtered to run within Supabase's
+-- default 8-second anon statement_timeout.  Without them the LATERAL JOINs
+-- on 6,200+ rows cause a full sequential scan per college → timeout.
+--
+-- All are CREATE INDEX IF NOT EXISTS so this block is safe to re-run.
+-- (These are also created by migration 053, but that migration may not have
+-- been applied to every Supabase project.  Re-creating here is idempotent.)
 
-CREATE INDEX IF NOT EXISTS idx_colleges_comp_state   ON colleges_comprehensive (state);
-CREATE INDEX IF NOT EXISTS idx_colleges_comp_type    ON colleges_comprehensive (type);
-CREATE INDEX IF NOT EXISTS idx_colleges_comp_setting ON colleges_comprehensive (setting);
+-- pg_trgm enables GIN trigram indexes for fast ILIKE '%query%' searches.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- GIN trigram index on name — search_colleges_filtered ILIKE filter.
+CREATE INDEX IF NOT EXISTS idx_colleges_name_trgm
+  ON colleges_comprehensive
+  USING GIN (name gin_trgm_ops);
+
+-- B-tree indexes on the equality-filter columns.
+CREATE INDEX IF NOT EXISTS idx_colleges_comp_country  ON colleges_comprehensive (country);
+CREATE INDEX IF NOT EXISTS idx_colleges_comp_state    ON colleges_comprehensive (state);
+CREATE INDEX IF NOT EXISTS idx_colleges_comp_type     ON colleges_comprehensive (type);
+CREATE INDEX IF NOT EXISTS idx_colleges_comp_setting  ON colleges_comprehensive (setting);
+
+-- college_id (DESC) on child tables — the LATERAL sub-selects use
+-- `WHERE college_id = c.id ORDER BY id LIMIT 1`.  An index on college_id
+-- lets PostgreSQL satisfy both the WHERE predicate and the ORDER BY in a
+-- single index seek instead of a sort + sequential scan.
+CREATE INDEX IF NOT EXISTS idx_college_admissions_college_id_desc
+  ON college_admissions (college_id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_college_financial_data_college_id_desc
+  ON college_financial_data (college_id DESC);
 
 -- ─── 4. Ensure RLS public-read policies still cover the updated table ─────────
 
@@ -146,12 +174,22 @@ BEGIN
   END IF;
 END $$;
 
--- ─── 5. Recreate search_colleges_filtered with explicit column references ─────
+-- ─── 5. Recreate search_colleges_filtered — optimised, column-safe ────────────
 --
--- The previous version (migrations 047 + 054) was written assuming the table
--- would have state, type, setting columns, which did not yet exist. This
--- recreation is identical in logic but runs AFTER the columns have been added,
--- so PostgreSQL will successfully validate the column references.
+-- Key optimisation vs. migrations 047/054:
+--
+--   Old version: always performs two LATERAL JOINs (college_admissions +
+--   college_financial_data) for EVERY row during the initial scan, even when
+--   the caller has not supplied acceptance_rate or tuition filters.  This
+--   causes a full seq-scan + LATERAL per row → timeout on large tables.
+--
+--   New version: detects at function-entry time whether acceptance/tuition
+--   data is needed (for filtering or sorting).  When it is NOT needed it uses
+--   a fast-path CTE with no LATERAL JOINs at all — just simple equality /
+--   ILIKE filters on the main table.  This reduces the typical no-filter
+--   first-page load from ~6,200 index lookups to a single range scan.
+--
+-- Run this AFTER the indexes above exist so PostgreSQL can use them.
 
 CREATE OR REPLACE FUNCTION search_colleges_filtered(
   p_query          text    DEFAULT NULL,
@@ -172,14 +210,51 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_sort_by text;
+  v_sort_by          text;
+  v_needs_admissions bool;
+  v_needs_financials bool;
 BEGIN
-  IF p_sort_by NOT IN ('name', 'acceptance_rate', 'tuition') THEN
-    v_sort_by := 'name';
-  ELSE
-    v_sort_by := p_sort_by;
+  -- Validate sort field
+  v_sort_by := CASE WHEN p_sort_by IN ('name','acceptance_rate','tuition') THEN p_sort_by ELSE 'name' END;
+
+  -- Determine whether child-table joins are required
+  v_needs_admissions := (p_min_acceptance IS NOT NULL
+                         OR p_max_acceptance IS NOT NULL
+                         OR v_sort_by = 'acceptance_rate');
+  v_needs_financials := (p_max_tuition IS NOT NULL
+                         OR v_sort_by = 'tuition');
+
+  -- ── FAST PATH: no child-table joins needed ──────────────────────────────────
+  -- When neither acceptance_rate nor tuition filtering/sorting is requested, skip
+  -- both LATERAL JOINs entirely.  All 6,200+ rows can then be scanned using
+  -- btree/GIN indexes on the main table alone.
+  IF NOT v_needs_admissions AND NOT v_needs_financials THEN
+    RETURN QUERY
+    WITH filtered AS (
+      SELECT c.id, c.name
+      FROM   colleges_comprehensive c
+      WHERE
+            (p_query   IS NULL OR c.name    ILIKE '%' || p_query   || '%')
+        AND (p_country IS NULL OR c.country =     p_country)
+        AND (p_state   IS NULL OR c.state   =     p_state)
+        AND (p_type    IS NULL OR c.type    =     p_type)
+        AND (p_setting IS NULL OR c.setting =     p_setting)
+    ),
+    counted  AS (SELECT COUNT(*)::int AS total FROM filtered),
+    paginated AS (
+      SELECT id FROM filtered
+      ORDER BY name ASC
+      LIMIT  p_page_size
+      OFFSET (p_page - 1) * p_page_size
+    )
+    SELECT
+      c.total,
+      COALESCE((SELECT json_agg(id) FROM paginated), '[]'::json)
+    FROM counted c;
+    RETURN;
   END IF;
 
+  -- ── FULL PATH: LATERAL JOINs for acceptance_rate / tuition ─────────────────
   RETURN QUERY
   WITH filtered AS (
     SELECT

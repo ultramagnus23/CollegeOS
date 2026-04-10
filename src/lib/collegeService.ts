@@ -98,7 +98,8 @@ async function searchCollegesDirect(
 
   let q = client
     .from('colleges_comprehensive')
-    .select(LIST_SELECT, { count: 'exact' });
+    // 'estimated' uses PostgreSQL's planner stats — fast, no extra COUNT(*) scan.
+    .select(LIST_SELECT, { count: 'estimated' });
 
   if (query) q = q.ilike('name', `%${query}%`);
   if (country) q = q.eq('country', country);
@@ -184,11 +185,23 @@ export async function searchColleges(
   // for state / type / setting until the migration is applied).
   if (rpcError) {
     const pgCode = (rpcError as { code?: string }).code;
-    if (pgCode === '42703' || pgCode === 'PGRST202') {
+    const msg    = (rpcError as { message?: string }).message ?? '';
+    // 42703 = undefined_column (schema not migrated yet)
+    // 57014 = query_canceled / statement_timeout
+    // PGRST202 = function not found (PostgREST)
+    // "upstream timeout" = Supabase edge timeout wrapper
+    const isColumnError  = pgCode === '42703' || pgCode === 'PGRST202';
+    // 57014 = query_canceled (PostgreSQL statement_timeout)
+    // Supabase edge functions wrap timeouts with this exact message prefix.
+    const isTimeoutError = pgCode === '57014'
+      || msg.toLowerCase().startsWith('sql query ran into an upstream timeout');
+    if (isColumnError || isTimeoutError) {
       console.warn(
-        '[searchColleges] RPC failed with column-not-found error (code', pgCode, ').',
-        'Falling back to direct query. Run migration 056_fix_college_schema.sql',
-        'in Supabase SQL Editor to permanently fix this.',
+        '[searchColleges] RPC failed (code', pgCode, ').',
+        isColumnError
+          ? 'Schema not migrated — run migration 056_fix_college_schema.sql in Supabase SQL Editor.'
+          : 'Query timed out — ensure migration 056_fix_college_schema.sql has been run (it adds required indexes).',
+        'Falling back to direct query.',
         rpcError.message
       );
       return searchCollegesDirect(client, filters);
