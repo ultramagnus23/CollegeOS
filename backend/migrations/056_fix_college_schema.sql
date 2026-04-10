@@ -1,5 +1,22 @@
 -- Migration 056: Fix colleges_comprehensive column schema mismatch
 --
+-- ╔══════════════════════════════════════════════════════════════════════════╗
+-- ║  THIS FILE IS THE COMBINED REFERENCE.                                   ║
+-- ║                                                                          ║
+-- ║  If running this as a single block times out in the Supabase SQL Editor, ║
+-- ║  run the individual chunk files instead, in order:                       ║
+-- ║                                                                          ║
+-- ║    056a_add_columns.sql           (instant — schema-only)                ║
+-- ║    056b_backfill_main_columns.sql (fast   — UPDATEs state/type/setting)  ║
+-- ║    056c_backfill_founded_year.sql (fast   — UPDATE founded_year)         ║
+-- ║    056d_btree_indexes.sql         (fast   — B-tree indexes)              ║
+-- ║    056e_gin_index_name.sql        (slow   — GIN trigram; retry if needed)║
+-- ║    056f_child_indexes_rls.sql     (fast   — child-table indexes + RLS)   ║
+-- ║    056g_functions.sql             (instant — CREATE OR REPLACE FUNCTION) ║
+-- ║                                                                          ║
+-- ║  Each file is idempotent (safe to re-run).                               ║
+-- ╚══════════════════════════════════════════════════════════════════════════╝
+--
 -- ROOT CAUSE
 -- ----------
 -- The colleges_comprehensive table was originally created by migration 011
