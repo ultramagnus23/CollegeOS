@@ -1,0 +1,344 @@
+-- Migration 056: Fix colleges_comprehensive column schema mismatch
+--
+-- ╔══════════════════════════════════════════════════════════════════════════╗
+-- ║  THIS FILE IS THE COMBINED REFERENCE.                                   ║
+-- ║                                                                          ║
+-- ║  If running this as a single block times out in the Supabase SQL Editor, ║
+-- ║  run the individual chunk files instead, in order:                       ║
+-- ║                                                                          ║
+-- ║    056a_add_columns.sql           (instant — schema-only)                ║
+-- ║    056b_backfill_main_columns.sql (fast   — UPDATEs state/type/setting)  ║
+-- ║    056c_backfill_founded_year.sql (fast   — UPDATE founded_year)         ║
+-- ║    056d_btree_indexes.sql         (fast   — B-tree indexes)              ║
+-- ║    056e_gin_index_name.sql        (slow   — GIN trigram; retry if needed)║
+-- ║    056f_child_indexes_rls.sql     (fast   — child-table indexes + RLS)   ║
+-- ║    056g_functions.sql             (instant — CREATE OR REPLACE FUNCTION) ║
+-- ║                                                                          ║
+-- ║  Each file is idempotent (safe to re-run).                               ║
+-- ╚══════════════════════════════════════════════════════════════════════════╝
+--
+-- ROOT CAUSE
+-- ----------
+-- The colleges_comprehensive table was originally created by migration 011
+-- with column names: state_region, institution_type, urban_classification,
+-- website_url, founding_year — none of which match the column names expected
+-- by every piece of code that followed:
+--
+--   • search_colleges_filtered RPC (migrations 047 + 054) uses c.state, c.type, c.setting
+--   • get_distinct_states RPC uses state column
+--   • college_profile_scraper.py writes state, type, setting columns
+--   • fill_missing.py reads website, description, founded_year, latitude, longitude
+--   • backend/src/routes/colleges.js queries cc.state, cc.type, cc.setting
+--   • src/lib/supabase.ts CollegeRow interface defines state, type, setting, website, etc.
+--
+-- This mismatch causes error 42703 (undefined_column) whenever
+-- search_colleges_filtered is called, completely preventing college loading.
+--
+-- FIX
+-- ---
+-- 1. Add all expected columns using ADD COLUMN IF NOT EXISTS (safe to re-run).
+-- 2. Copy data from old column names where they exist, so any existing scraped
+--    data is preserved.
+-- 3. Re-grant RLS so anon role can read the updated table.
+--
+-- IMPORTANT: Run this in the Supabase SQL Editor for your project.
+--   Dashboard → SQL Editor → New query → paste → Run
+
+-- ─── 1. Add missing columns ──────────────────────────────────────────────────
+
+ALTER TABLE colleges_comprehensive ADD COLUMN IF NOT EXISTS state           TEXT;
+ALTER TABLE colleges_comprehensive ADD COLUMN IF NOT EXISTS type            TEXT;
+ALTER TABLE colleges_comprehensive ADD COLUMN IF NOT EXISTS setting         TEXT;
+ALTER TABLE colleges_comprehensive ADD COLUMN IF NOT EXISTS control         TEXT;
+ALTER TABLE colleges_comprehensive ADD COLUMN IF NOT EXISTS size_category   TEXT;
+ALTER TABLE colleges_comprehensive ADD COLUMN IF NOT EXISTS logo_url        TEXT;
+ALTER TABLE colleges_comprehensive ADD COLUMN IF NOT EXISTS description     TEXT;
+ALTER TABLE colleges_comprehensive ADD COLUMN IF NOT EXISTS website         TEXT;
+ALTER TABLE colleges_comprehensive ADD COLUMN IF NOT EXISTS founded_year    INTEGER;
+ALTER TABLE colleges_comprehensive ADD COLUMN IF NOT EXISTS latitude        DOUBLE PRECISION;
+ALTER TABLE colleges_comprehensive ADD COLUMN IF NOT EXISTS longitude       DOUBLE PRECISION;
+
+-- ─── 2. Back-fill from old column names (when they exist) ─────────────────
+
+DO $$
+BEGIN
+  -- state_region → state
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'colleges_comprehensive'
+      AND column_name  = 'state_region'
+  ) THEN
+    EXECUTE '
+      UPDATE colleges_comprehensive
+      SET    state = state_region
+      WHERE  state IS NULL
+        AND  state_region IS NOT NULL
+    ';
+  END IF;
+
+  -- institution_type → type
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'colleges_comprehensive'
+      AND column_name  = 'institution_type'
+  ) THEN
+    EXECUTE '
+      UPDATE colleges_comprehensive
+      SET    type = institution_type
+      WHERE  type IS NULL
+        AND  institution_type IS NOT NULL
+    ';
+  END IF;
+
+  -- urban_classification → setting
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'colleges_comprehensive'
+      AND column_name  = 'urban_classification'
+  ) THEN
+    EXECUTE '
+      UPDATE colleges_comprehensive
+      SET    setting = urban_classification
+      WHERE  setting IS NULL
+        AND  urban_classification IS NOT NULL
+    ';
+  END IF;
+
+  -- website_url → website
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'colleges_comprehensive'
+      AND column_name  = 'website_url'
+  ) THEN
+    EXECUTE '
+      UPDATE colleges_comprehensive
+      SET    website = website_url
+      WHERE  website IS NULL
+        AND  website_url IS NOT NULL
+    ';
+  END IF;
+
+  -- founding_year (migration 011 original name) → founded_year (new expected name)
+  -- Note: these are two *different* column names: "founding_year" vs "founded_year"
+  -- The EXECUTE block copies the old "founding_year" value into the new "founded_year"
+  -- column added by ALTER TABLE above.
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'colleges_comprehensive'
+      AND column_name  = 'founding_year'
+  ) THEN
+    EXECUTE '
+      UPDATE colleges_comprehensive
+      SET    founded_year = founding_year
+      WHERE  founded_year IS NULL
+    ';
+  END IF;
+END $$;
+
+-- ─── 3. Add indexes for filter columns AND performance-critical query indexes ──
+--
+-- These are required for search_colleges_filtered to run within Supabase's
+-- default 8-second anon statement_timeout.  Without them the LATERAL JOINs
+-- on 6,200+ rows cause a full sequential scan per college → timeout.
+--
+-- All are CREATE INDEX IF NOT EXISTS so this block is safe to re-run.
+-- (These are also created by migration 053, but that migration may not have
+-- been applied to every Supabase project.  Re-creating here is idempotent.)
+
+-- pg_trgm enables GIN trigram indexes for fast ILIKE '%query%' searches.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- GIN trigram index on name — search_colleges_filtered ILIKE filter.
+CREATE INDEX IF NOT EXISTS idx_colleges_name_trgm
+  ON colleges_comprehensive
+  USING GIN (name gin_trgm_ops);
+
+-- B-tree indexes on the equality-filter columns.
+CREATE INDEX IF NOT EXISTS idx_colleges_comp_country  ON colleges_comprehensive (country);
+CREATE INDEX IF NOT EXISTS idx_colleges_comp_state    ON colleges_comprehensive (state);
+CREATE INDEX IF NOT EXISTS idx_colleges_comp_type     ON colleges_comprehensive (type);
+CREATE INDEX IF NOT EXISTS idx_colleges_comp_setting  ON colleges_comprehensive (setting);
+
+-- college_id (DESC) on child tables — the LATERAL sub-selects use
+-- `WHERE college_id = c.id ORDER BY id LIMIT 1`.  An index on college_id
+-- lets PostgreSQL satisfy both the WHERE predicate and the ORDER BY in a
+-- single index seek instead of a sort + sequential scan.
+CREATE INDEX IF NOT EXISTS idx_college_admissions_college_id_desc
+  ON college_admissions (college_id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_college_financial_data_college_id_desc
+  ON college_financial_data (college_id DESC);
+
+-- ─── 4. Ensure RLS public-read policies still cover the updated table ─────────
+
+-- The GRANT and policy are idempotent (re-running this file is safe).
+GRANT SELECT ON colleges_comprehensive TO anon, authenticated;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'colleges_comprehensive' AND policyname = 'public_read'
+  ) THEN
+    ALTER TABLE IF EXISTS colleges_comprehensive ENABLE ROW LEVEL SECURITY;
+    CREATE POLICY public_read ON colleges_comprehensive
+      FOR SELECT TO anon, authenticated USING (true);
+  END IF;
+END $$;
+
+-- ─── 5. Recreate search_colleges_filtered — optimised, column-safe ────────────
+--
+-- Key optimisation vs. migrations 047/054:
+--
+--   Old version: always performs two LATERAL JOINs (college_admissions +
+--   college_financial_data) for EVERY row during the initial scan, even when
+--   the caller has not supplied acceptance_rate or tuition filters.  This
+--   causes a full seq-scan + LATERAL per row → timeout on large tables.
+--
+--   New version: detects at function-entry time whether acceptance/tuition
+--   data is needed (for filtering or sorting).  When it is NOT needed it uses
+--   a fast-path CTE with no LATERAL JOINs at all — just simple equality /
+--   ILIKE filters on the main table.  This reduces the typical no-filter
+--   first-page load from ~6,200 index lookups to a single range scan.
+--
+-- Run this AFTER the indexes above exist so PostgreSQL can use them.
+
+CREATE OR REPLACE FUNCTION search_colleges_filtered(
+  p_query          text    DEFAULT NULL,
+  p_country        text    DEFAULT NULL,
+  p_state          text    DEFAULT NULL,
+  p_type           text    DEFAULT NULL,
+  p_setting        text    DEFAULT NULL,
+  p_min_acceptance float8  DEFAULT NULL,
+  p_max_acceptance float8  DEFAULT NULL,
+  p_max_tuition    float8  DEFAULT NULL,
+  p_sort_by        text    DEFAULT 'name',
+  p_page           int     DEFAULT 1,
+  p_page_size      int     DEFAULT 20
+)
+RETURNS TABLE (total int, ids json)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_sort_by          text;
+  v_needs_admissions bool;
+  v_needs_financials bool;
+BEGIN
+  -- Validate sort field
+  v_sort_by := CASE WHEN p_sort_by IN ('name','acceptance_rate','tuition') THEN p_sort_by ELSE 'name' END;
+
+  -- Determine whether child-table joins are required
+  v_needs_admissions := (p_min_acceptance IS NOT NULL
+                         OR p_max_acceptance IS NOT NULL
+                         OR v_sort_by = 'acceptance_rate');
+  v_needs_financials := (p_max_tuition IS NOT NULL
+                         OR v_sort_by = 'tuition');
+
+  -- ── FAST PATH: no child-table joins needed ──────────────────────────────────
+  -- When neither acceptance_rate nor tuition filtering/sorting is requested, skip
+  -- both LATERAL JOINs entirely.  All 6,200+ rows can then be scanned using
+  -- btree/GIN indexes on the main table alone.
+  IF NOT v_needs_admissions AND NOT v_needs_financials THEN
+    RETURN QUERY
+    WITH filtered AS (
+      SELECT c.id, c.name
+      FROM   colleges_comprehensive c
+      WHERE
+            (p_query   IS NULL OR c.name    ILIKE '%' || p_query   || '%')
+        AND (p_country IS NULL OR c.country =     p_country)
+        AND (p_state   IS NULL OR c.state   =     p_state)
+        AND (p_type    IS NULL OR c.type    =     p_type)
+        AND (p_setting IS NULL OR c.setting =     p_setting)
+    ),
+    counted  AS (SELECT COUNT(*)::int AS total FROM filtered),
+    paginated AS (
+      SELECT id FROM filtered
+      ORDER BY name ASC
+      LIMIT  p_page_size
+      OFFSET (p_page - 1) * p_page_size
+    )
+    SELECT
+      c.total,
+      COALESCE((SELECT json_agg(id) FROM paginated), '[]'::json)
+    FROM counted c;
+    RETURN;
+  END IF;
+
+  -- ── FULL PATH: LATERAL JOINs for acceptance_rate / tuition ─────────────────
+  RETURN QUERY
+  WITH filtered AS (
+    SELECT
+      c.id,
+      c.name,
+      ca.acceptance_rate,
+      COALESCE(cf.tuition_out_state, cf.tuition_international) AS tuition
+    FROM   colleges_comprehensive c
+    LEFT JOIN LATERAL (
+      SELECT acceptance_rate
+      FROM   college_admissions
+      WHERE  college_id = c.id
+      ORDER  BY id
+      LIMIT  1
+    ) ca ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT tuition_out_state, tuition_international
+      FROM   college_financial_data
+      WHERE  college_id = c.id
+      ORDER  BY id
+      LIMIT  1
+    ) cf ON TRUE
+    WHERE
+          (p_query          IS NULL OR c.name     ILIKE '%' || p_query || '%')
+      AND (p_country        IS NULL OR c.country  =     p_country)
+      AND (p_state          IS NULL OR c.state    =     p_state)
+      AND (p_type           IS NULL OR c.type     =     p_type)
+      AND (p_setting        IS NULL OR c.setting  =     p_setting)
+      AND (p_min_acceptance IS NULL OR ca.acceptance_rate >= p_min_acceptance)
+      AND (p_max_acceptance IS NULL OR ca.acceptance_rate <= p_max_acceptance)
+      AND (
+        p_max_tuition IS NULL
+        OR COALESCE(cf.tuition_out_state, cf.tuition_international) <= p_max_tuition
+      )
+  ),
+  counted AS (SELECT COUNT(*)::int AS total FROM filtered),
+  paginated AS (
+    SELECT id
+    FROM   filtered
+    ORDER BY
+      CASE WHEN v_sort_by = 'acceptance_rate' THEN acceptance_rate END ASC NULLS LAST,
+      CASE WHEN v_sort_by = 'tuition'         THEN tuition         END ASC NULLS LAST,
+      name ASC
+    LIMIT  p_page_size
+    OFFSET (p_page - 1) * p_page_size
+  )
+  SELECT
+    c.total,
+    COALESCE((SELECT json_agg(id) FROM paginated), '[]'::json)
+  FROM counted c;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION search_colleges_filtered TO anon, authenticated;
+
+-- ─── 6. Recreate get_distinct_states with guaranteed state column ─────────────
+
+CREATE OR REPLACE FUNCTION get_distinct_states()
+RETURNS TABLE (state text)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT DISTINCT state
+  FROM   colleges_comprehensive
+  WHERE  state IS NOT NULL
+  ORDER  BY state;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_distinct_states TO anon, authenticated;
