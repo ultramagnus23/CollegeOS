@@ -11,7 +11,7 @@
     "scrape:scorecard": "node collegeScorecard.js"
   },
   "dependencies": {
-    "axios": "^1.13.5",
+    "axios": "^1.15.0",
     "better-sqlite3": "^12.8.0",
     "cheerio": "^1.2.0",
     "openai": "^4.0.0",
