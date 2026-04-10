@@ -877,7 +877,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                 value={studentData.currentGPA}
                 onChange={e => updateData('currentGPA', e.target.value)}
                 min={0}
-                max={studentData.gpaType === 'percentage' ? 100 : 4.0}
+                max={studentData.gpaType === 'percentage' ? 100 : 4}
                 step={studentData.gpaType === 'percentage' ? 1 : 0.1}
                 placeholder={studentData.gpaType === 'percentage' ? '0–100' : '0.0–4.0'}
                 style={{ background: 'none', border: 'none', outline: 'none', fontSize: 64, fontWeight: 800, color: '#fff', width: '100%', textAlign: 'center', fontFamily: "'Clash Display', 'DM Sans', sans-serif" }}
@@ -901,9 +901,12 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                 onChange={e => updateData('satScore', e.target.value)}
                 min={400} max={1600}
                 placeholder="400–1600" style={{ ...inputFieldStyle(accent), marginTop: 6 }} />
-              {studentData.satScore && (parseInt(studentData.satScore) < 400 || parseInt(studentData.satScore) > 1600) && (
-                <div style={{ fontSize: 11, color: '#F87171', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>SAT score must be between 400 and 1600</div>
-              )}
+              {studentData.satScore && (() => {
+                const satVal = parseInt(studentData.satScore, 10);
+                return !isNaN(satVal) && (satVal < 400 || satVal > 1600) ? (
+                  <div style={{ fontSize: 11, color: '#F87171', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>SAT score must be between 400 and 1600</div>
+                ) : null;
+              })()}
               <ScoreBar value={+studentData.satScore} min={400} max={1600} accent={accent} />
             </div>
             <div>
@@ -912,9 +915,12 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                 onChange={e => updateData('actScore', e.target.value)}
                 min={1} max={36}
                 placeholder="1–36" style={{ ...inputFieldStyle(accent), marginTop: 6 }} />
-              {studentData.actScore && (parseInt(studentData.actScore) < 1 || parseInt(studentData.actScore) > 36) && (
-                <div style={{ fontSize: 11, color: '#F87171', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>ACT score must be between 1 and 36</div>
-              )}
+              {studentData.actScore && (() => {
+                const actVal = parseInt(studentData.actScore, 10);
+                return !isNaN(actVal) && (actVal < 1 || actVal > 36) ? (
+                  <div style={{ fontSize: 11, color: '#F87171', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>ACT score must be between 1 and 36</div>
+                ) : null;
+              })()}
               <ScoreBar value={+studentData.actScore} min={1} max={36} accent={accent} />
             </div>
           </div>
