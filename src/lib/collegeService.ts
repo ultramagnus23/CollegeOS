@@ -135,13 +135,22 @@ export async function searchColleges(
   );
   if (rpcError) throw rpcError;
 
-  // FIX: Supabase .rpc() returns an array of rows, not a plain object.
-  // The RPC returns one row with { total, ids }, so we take index [0].
-  const rpcRow = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-  const total: number = rpcRow?.total ?? 0;
-  const safeIds: number[] = rpcRow?.ids ?? [];
+  // Migration 054 changed the RPC from RETURNS json (scalar) to
+  // RETURNS TABLE(total int, ids json), so PostgREST always returns
+  // [{total, ids}] consistently across all PostgREST versions.
+  //
+  // Defensive fallback chain handles all PostgREST / Supabase versions:
+  //   • RETURNS TABLE  → rpcData = [{total, ids}]           → rpcData[0]
+  //   • RETURNS json (new PostgREST) → rpcData = {total, ids}  → rpcData
+  //   • RETURNS json (old PostgREST) → rpcData = [{search_colleges_filtered: {total,ids}}]
+  //                                    → rpcData[0].search_colleges_filtered
+  const outerRow  = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+  // Handle old PostgREST scalar wrapping where the key is the function name
+  const rpcRow    = (outerRow as any)?.search_colleges_filtered ?? outerRow;
+  const total: number     = rpcRow?.total ?? 0;
+  const safeIds: number[] = (rpcRow?.ids ?? []) as number[];
 
-  console.log('[searchColleges] rpcData:', rpcData, '→ total:', total, 'ids count:', safeIds.length);
+  console.log('[searchColleges] total:', total, 'ids:', safeIds.length);
 
   if (safeIds.length === 0) {
     return {
@@ -154,12 +163,24 @@ export async function searchColleges(
   }
 
   // ── Phase 2: fetch full rows for this page's IDs ──────────────────────────
+  // NOTE: If this returns [] despite safeIds being non-empty, Row Level Security
+  // is likely enabled on colleges_comprehensive without a public-read policy.
+  // Run migration 054_supabase_rls_public_read.sql in the Supabase SQL editor.
   const { data, error } = await client
     .from('colleges_comprehensive')
     .select(LIST_SELECT)
     .in('id', safeIds);
 
   if (error) throw error;
+
+  if ((!data || (data as any[]).length === 0) && safeIds.length > 0) {
+    console.warn(
+      '[searchColleges] Phase 2 returned 0 rows despite', safeIds.length,
+      'IDs from the RPC. This is almost certainly caused by Row Level Security ' +
+      'blocking the anon role on colleges_comprehensive. ' +
+      'Run migration 054_supabase_rls_public_read.sql in the Supabase SQL editor to fix it.'
+    );
+  }
 
   // Re-order to match the sorted IDs from the RPC (the IN query has no ordering)
   const byId = new Map(
