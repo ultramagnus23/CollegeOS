@@ -51,10 +51,10 @@ const validators = {
       act_score: Joi.number().options({ convert: true }).min(1).max(36).optional().allow(null),
       ib_predicted: Joi.number().options({ convert: true }).min(0).max(45).optional().allow(null)
     }).optional(),
-    gpa: Joi.number().options({ convert: true }).min(0).when('gpa_type', {
+    gpa: Joi.number().options({ convert: true }).when('gpa_type', {
       is: 'gpa',
-      then: Joi.number().max(4.0),
-      otherwise: Joi.number().max(100),
+      then: Joi.number().options({ convert: true }).min(0).max(4.0),
+      otherwise: Joi.number().options({ convert: true }).min(0).max(100),
     }).optional().allow(null),
     gpa_type: Joi.string().valid('gpa', 'percentage').optional().allow(null),
     subjects: Joi.array().items(Joi.any()).optional(),
