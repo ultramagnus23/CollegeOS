@@ -232,13 +232,24 @@ const ProfileCard: React.FC<{ name: string; country: string; dreamSchool: string
 );
 
 // ── GPA Score Display ──────────────────────────────────────────────────────
-const GPADisplay: React.FC<{ value: string; accent: string }> = ({ value, accent }) => {
+const GPADisplay: React.FC<{ value: string; accent: string; gpaType: string }> = ({ value, accent, gpaType }) => {
   const numVal = parseFloat(value);
   let label = '', labelColor = accent;
   if (!isNaN(numVal) && value) {
-    if (numVal >= 85 || numVal >= 3.5) { label = 'Strong academic profile'; labelColor = '#10B981'; }
-    else if (numVal >= 75 || numVal >= 3.0) { label = 'Solid foundation'; labelColor = accent; }
-    else if (numVal > 0) { label = "We'll find programs that fit"; labelColor = '#F59E0B'; }
+    if (gpaType === 'percentage') {
+      if (numVal > 90)       { label = 'Exceptional academic profile'; labelColor = '#10B981'; }
+      else if (numVal >= 80) { label = 'Strong academic profile';      labelColor = '#10B981'; }
+      else if (numVal >= 70) { label = 'Good academic profile';        labelColor = accent; }
+      else if (numVal >= 55) { label = 'Average academic profile';     labelColor = accent; }
+      else if (numVal >= 40) { label = 'Below average profile';        labelColor = '#F59E0B'; }
+      else if (numVal > 0)   { label = 'Weak academic profile';        labelColor = '#F87171'; }
+    } else {
+      // GPA scale (0–4.0)
+      if (numVal >= 3.7)      { label = 'Exceptional academic profile'; labelColor = '#10B981'; }
+      else if (numVal >= 3.5) { label = 'Strong academic profile';      labelColor = '#10B981'; }
+      else if (numVal >= 3.0) { label = 'Solid foundation';             labelColor = accent; }
+      else if (numVal > 0)    { label = "We'll find programs that fit"; labelColor = '#F59E0B'; }
+    }
   }
   return (
     <div style={{ textAlign: 'center' }}>
@@ -643,7 +654,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   function defaultData() {
     return {
       name: '', grade: '', currentBoard: '', country: '', dreamSchool: '',
-      currentGPA: '', satScore: '', actScore: '', ibPredicted: '', subjects: [],
+      currentGPA: '', gpaType: 'percentage', satScore: '', actScore: '', ibPredicted: '', subjects: [],
       careerInterests: [], majorCertain: false, potentialMajors: [], skillsStrengths: [],
       preferredCountries: [], budgetRange: '', campusSize: '', locationPreference: '',
       activities: [], leadership: [], awards: [],
@@ -841,24 +852,75 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           <h1 style={headlineStyle(accent)}>Academic<br /><span style={{ color: accent }}>Profile.</span></h1>
           <p style={subStyle(accent)}>Your numbers tell part of the story.</p>
           <div style={{ marginTop: 32 }}>
-            <label style={labelStyle}>GPA / Percentage</label>
-            <div style={{ background: surface, border: `1px solid ${hexToRgba(accent, 0.3)}`, borderRadius: 16, padding: '24px 32px', marginTop: 10, textAlign: 'center' }}>
-              <input value={studentData.currentGPA} onChange={e => updateData('currentGPA', e.target.value)}
-                placeholder="90%" style={{ background: 'none', border: 'none', outline: 'none', fontSize: 64, fontWeight: 800, color: '#fff', width: '100%', textAlign: 'center', fontFamily: "'Clash Display', 'DM Sans', sans-serif" }} />
-              {studentData.currentGPA && <GPADisplay value={studentData.currentGPA} accent={accent} />}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <label style={labelStyle}>GPA / Percentage</label>
+              <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: 3, gap: 3 }}>
+                {(['percentage', 'gpa'] as const).map(type => {
+                  const sel = studentData.gpaType === type;
+                  return (
+                    <button key={type} onClick={() => updateData('gpaType', type)} style={{
+                      padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                      background: sel ? accent : 'transparent',
+                      color: sel ? '#000' : 'rgba(255,255,255,0.5)',
+                      fontWeight: sel ? 700 : 400, fontSize: 12,
+                      fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s',
+                    }}>
+                      {type === 'percentage' ? 'Percentage (out of 100)' : 'GPA (out of 4.0)'}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{ background: surface, border: `1px solid ${hexToRgba(accent, 0.3)}`, borderRadius: 16, padding: '24px 32px', textAlign: 'center' }}>
+              <input
+                type="number"
+                value={studentData.currentGPA}
+                onChange={e => {
+                  const raw = e.target.value;
+                  const max = studentData.gpaType === 'percentage' ? 100 : 4.0;
+                  const num = parseFloat(raw);
+                  if (raw === '' || (!isNaN(num) && num >= 0 && num <= max)) {
+                    updateData('currentGPA', raw);
+                  }
+                }}
+                min={0}
+                max={studentData.gpaType === 'percentage' ? 100 : 4.0}
+                step={studentData.gpaType === 'percentage' ? 1 : 0.1}
+                placeholder={studentData.gpaType === 'percentage' ? '0–100' : '0.0–4.0'}
+                style={{ background: 'none', border: 'none', outline: 'none', fontSize: 64, fontWeight: 800, color: '#fff', width: '100%', textAlign: 'center', fontFamily: "'Clash Display', 'DM Sans', sans-serif" }}
+              />
+              {studentData.currentGPA && <GPADisplay value={studentData.currentGPA} accent={accent} gpaType={studentData.gpaType} />}
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 24 }}>
             <div>
               <label style={labelStyle}>SAT Score <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>(optional)</span></label>
-              <input type="number" value={studentData.satScore} onChange={e => updateData('satScore', e.target.value)}
+              <input type="number" value={studentData.satScore}
+                onChange={e => {
+                  const v = e.target.value;
+                  const n = parseInt(v, 10);
+                  if (v === '' || (!isNaN(n) && n >= 400 && n <= 1600)) updateData('satScore', v);
+                }}
+                min={400} max={1600}
                 placeholder="400–1600" style={{ ...inputFieldStyle(accent), marginTop: 6 }} />
+              {studentData.satScore && (parseInt(studentData.satScore) < 400 || parseInt(studentData.satScore) > 1600) && (
+                <div style={{ fontSize: 11, color: '#F87171', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>SAT score must be between 400 and 1600</div>
+              )}
               <ScoreBar value={+studentData.satScore} min={400} max={1600} accent={accent} />
             </div>
             <div>
               <label style={labelStyle}>ACT Score <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>(optional)</span></label>
-              <input type="number" value={studentData.actScore} onChange={e => updateData('actScore', e.target.value)}
+              <input type="number" value={studentData.actScore}
+                onChange={e => {
+                  const v = e.target.value;
+                  const n = parseInt(v, 10);
+                  if (v === '' || (!isNaN(n) && n >= 1 && n <= 36)) updateData('actScore', v);
+                }}
+                min={1} max={36}
                 placeholder="1–36" style={{ ...inputFieldStyle(accent), marginTop: 6 }} />
+              {studentData.actScore && (parseInt(studentData.actScore) < 1 || parseInt(studentData.actScore) > 36) && (
+                <div style={{ fontSize: 11, color: '#F87171', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>ACT score must be between 1 and 36</div>
+              )}
               <ScoreBar value={+studentData.actScore} min={1} max={36} accent={accent} />
             </div>
           </div>
@@ -1210,6 +1272,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       ? Number(studentData.ibPredicted) : null,
   },
   gpa: parseFloat(String(studentData.currentGPA).replace(/[^0-9.]/g, '')) || null,
+  gpa_type: studentData.gpaType || 'percentage',
   subjects: studentData.subjects || [],
             activities: (studentData.activities || []).filter((a: any) => a?.name?.trim()),
           });
