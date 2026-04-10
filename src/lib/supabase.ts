@@ -35,6 +35,7 @@ export interface CollegeRow {
   id: number;
   name: string;
   city: string | null;
+  // ── Preferred column names (migration 056 adds these) ──────────────────────
   state: string | null;
   country: string | null;
   type: string | null;           // 'public' | 'private' | 'for-profit'
@@ -49,6 +50,12 @@ export interface CollegeRow {
   founded_year: number | null;
   latitude: number | null;
   longitude: number | null;
+  // ── Legacy column names (migration 011 originals, may still exist) ─────────
+  state_region?: string | null;
+  institution_type?: string | null;
+  urban_classification?: string | null;
+  website_url?: string | null;
+  founding_year?: number | null;
 }
 
 export interface CollegeAdmissions {

@@ -86,6 +86,44 @@ export interface SearchResult {
 // ─── Search / List ────────────────────────────────────────────────────────────
 
 /**
+ * Direct fallback query used when search_colleges_filtered RPC is unavailable
+ * (e.g. the table is missing expected columns before migration 056 is run).
+ * Supports name search and country filter only; uses PostgREST count for totals.
+ */
+async function searchCollegesDirect(
+  client: NonNullable<typeof supabase>,
+  filters: CollegeFilters
+): Promise<SearchResult> {
+  const { query, country, sortBy = 'name', page = 1 } = filters;
+
+  let q = client
+    .from('colleges_comprehensive')
+    // 'estimated' uses PostgreSQL's planner stats — fast, no extra COUNT(*) scan.
+    .select(LIST_SELECT, { count: 'estimated' });
+
+  if (query) q = q.ilike('name', `%${query}%`);
+  if (country) q = q.eq('country', country);
+
+  // Simple name-based sort; acceptance_rate / tuition sorts require joins
+  // and are not supported in the direct fallback.
+  q = q
+    .order('name', { ascending: true })
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+
+  const { data, error, count } = await q;
+  if (error) throw error;
+
+  const total = count ?? 0;
+  return {
+    data: (data as CollegeWithRelations[]) ?? [],
+    count: total,
+    page,
+    pageSize: PAGE_SIZE,
+    totalPages: Math.ceil(total / PAGE_SIZE),
+  };
+}
+
+/**
  * Search and filter colleges from `colleges_comprehensive`.
  *
  * Delegates to the `search_colleges_filtered` Postgres function (migration 047)
@@ -97,6 +135,11 @@ export interface SearchResult {
  * Two network calls are made:
  *   1. RPC → receives { total, ids[] } for the requested page.
  *   2. SELECT … WHERE id IN (ids) → fetches the full LIST_SELECT payload.
+ *
+ * If the RPC fails with a column-not-found error (42703) — which happens when
+ * the table is missing the state / type / setting columns added by migration 056
+ * — the function automatically falls back to searchCollegesDirect() so colleges
+ * still load while the migration is pending.
  */
 export async function searchColleges(
   filters: CollegeFilters = {}
@@ -133,7 +176,38 @@ export async function searchColleges(
       p_page_size:      PAGE_SIZE,
     }
   );
-  if (rpcError) throw rpcError;
+
+  // If the RPC fails with an undefined-column error (42703), the
+  // colleges_comprehensive table is missing expected columns (state, type,
+  // setting).  Run migration 056_fix_college_schema.sql in the Supabase SQL
+  // Editor to permanently fix this.  In the meantime, fall back to a direct
+  // paginated query so colleges still load (without server-side filter support
+  // for state / type / setting until the migration is applied).
+  if (rpcError) {
+    const pgCode = (rpcError as { code?: string }).code;
+    const msg    = (rpcError as { message?: string }).message ?? '';
+    // 42703 = undefined_column (schema not migrated yet)
+    // 57014 = query_canceled / statement_timeout
+    // PGRST202 = function not found (PostgREST)
+    // "upstream timeout" = Supabase edge timeout wrapper
+    const isColumnError  = pgCode === '42703' || pgCode === 'PGRST202';
+    // 57014 = query_canceled (PostgreSQL statement_timeout)
+    // Supabase edge functions wrap timeouts with this exact message prefix.
+    const isTimeoutError = pgCode === '57014'
+      || msg.toLowerCase().startsWith('sql query ran into an upstream timeout');
+    if (isColumnError || isTimeoutError) {
+      console.warn(
+        '[searchColleges] RPC failed (code', pgCode, ').',
+        isColumnError
+          ? 'Schema not migrated — run migration 056_fix_college_schema.sql in Supabase SQL Editor.'
+          : 'Query timed out — ensure migration 056_fix_college_schema.sql has been run (it adds required indexes).',
+        'Falling back to direct query.',
+        rpcError.message
+      );
+      return searchCollegesDirect(client, filters);
+    }
+    throw rpcError;
+  }
 
   // Migration 054 changed the RPC from RETURNS json (scalar) to
   // RETURNS TABLE(total int, ids json), so PostgREST always returns
@@ -447,9 +521,9 @@ export function normalizeToCard(c: any): any {
   return {
     id:                 c.id,
     name:               c.name,
-    location:           c.location || [c.city, c.state].filter(Boolean).join(', ') || c.country || '',
+    location:           c.location || [c.city, c.state ?? c.state_region].filter(Boolean).join(', ') || c.country || '',
     country:            c.country ?? '',
-    type:               c.type ?? 'Unknown',
+    type:               c.type ?? c.institution_type ?? 'Unknown',
     ranking:            bestRank,
     acceptance_rate:    acceptanceRate,
     acceptanceRate:     acceptanceRate,
@@ -503,10 +577,10 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
     id:                    c.id,
     name:                  c.name,
     country:               c.country ?? '',
-    location:              [c.city, c.state].filter(Boolean).join(', '),
-    official_website:      c.website ?? '',
+    location:              [c.city, c.state ?? c.state_region].filter(Boolean).join(', '),
+    official_website:      c.website ?? c.website_url ?? '',
     admissions_url:        contact?.admissions_url ?? undefined,
-    type:                  c.type ?? null,
+    type:                  c.type ?? c.institution_type ?? null,
     description:           c.description ?? null,
     ranking:               bestRank,
     enrollment:            c.total_enrollment ?? null,
@@ -579,11 +653,11 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
     comprehensiveData: {
       totalEnrollment:      c.total_enrollment    ?? null,
       city:                 c.city                ?? null,
-      stateRegion:          c.state               ?? null,
-      institutionType:      c.type                ?? null,
+      stateRegion:          c.state ?? c.state_region ?? null,
+      institutionType:      c.type  ?? c.institution_type ?? null,
       religiousAffiliation: c.religious_affiliation ?? null,
-      foundingYear:         c.founded_year         ?? null,
-      websiteUrl:           c.website              ?? null,
+      foundingYear:         c.founded_year ?? c.founding_year ?? null,
+      websiteUrl:           c.website ?? c.website_url ?? null,
     },
     campusLife: campusLife
       ? {
