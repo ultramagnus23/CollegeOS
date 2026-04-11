@@ -13,7 +13,7 @@
  *   REDDIT_CLIENT_ID
  *   REDDIT_CLIENT_SECRET
  *   REDDIT_REFRESH_TOKEN
- *   ANTHROPIC_API_KEY
+ *   GEMINI_API_KEY          (used by claudeParser.js for AI-powered post parsing)
  *
  * Required environment variables (scholarship mode):
  *   DATABASE_URL                   – PostgreSQL connection string

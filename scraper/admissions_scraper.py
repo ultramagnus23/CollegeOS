@@ -43,6 +43,12 @@ log = logging.getLogger("admissions_scraper")
 DATABASE_URL = os.environ["DATABASE_URL"]
 DATA_GOV_API_KEY = os.environ.get("DATA_GOV_API_KEY") or os.environ.get("COLLEGE_SCORECARD_API_KEY", "")
 ADMISSIONS_YEAR = int(os.environ.get("ADMISSIONS_YEAR", "2023"))
+
+if not DATA_GOV_API_KEY:
+    log.warning(
+        "DATA_GOV_API_KEY is not set — College Scorecard lookups will be skipped. "
+        "Get a free key at https://api.data.gov/signup/ and set DATA_GOV_API_KEY."
+    )
 REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY_SEC", "1.0"))
 
 SCORECARD_BASE = "https://api.data.ed.gov/student/v1/schools"
@@ -56,7 +62,7 @@ def get_connection():
 
 def load_colleges(conn) -> list[dict]:
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute("SELECT id, name FROM colleges ORDER BY id")
+        cur.execute("SELECT id, name FROM colleges_comprehensive ORDER BY id")
         return cur.fetchall()
 
 

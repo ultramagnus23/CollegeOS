@@ -446,7 +446,7 @@ const CollegeDetail: React.FC = () => {
 
   const formatEnrollment = (num: number | null | undefined): string | null => {
     if (!num) return null;
-    return num?.toLocaleString() ?? null;
+    return num?.toLocaleString() ?? '';
   };
 
   const acceptanceRate = college.acceptanceRate ?? college.acceptance_rate;
@@ -934,12 +934,12 @@ const CollegeDetail: React.FC = () => {
                   
                   {/* Average SAT */}
                   {college.studentStats?.sat50 && (
-                    <StatItem label="Average SAT" value={college.studentStats?.sat50?.toString() ?? ''} icon={<FileText />} />
+                    <StatItem label="Average SAT" value={college.studentStats.sat50?.toString() ?? ''} icon={<FileText />} />
                   )}
                   
                   {/* Average ACT */}
                   {college.studentStats?.act50 && (
-                    <StatItem label="Average ACT" value={college.studentStats?.act50?.toString() ?? ''} icon={<FileText />} />
+                    <StatItem label="Average ACT" value={college.studentStats.act50?.toString() ?? ''} icon={<FileText />} />
                   )}
                   
                   {/* Average GPA */}
@@ -1945,14 +1945,14 @@ const CollegeDetail: React.FC = () => {
                         </div>
                         
                         {/* Calculate salary growth 6yr → 10yr */}
-                        {resolvedSalary6yr != null && (
+                        {resolvedSalary6yr != null && resolvedSalary10yr != null && (
                           <div className="p-4 bg-emerald-50 rounded-lg text-center">
                             <div className="text-2xl font-bold text-emerald-600">
                               +{(((resolvedSalary10yr - resolvedSalary6yr) / resolvedSalary6yr) * 100).toFixed(0)}%
                             </div>
                             <p className="text-sm text-emerald-700 mt-1">Salary Growth</p>
                             <p className="text-xs text-emerald-600">
-                              +${(resolvedSalary10yr - resolvedSalary6yr).toLocaleString()} (6yr → 10yr)
+                              +${(resolvedSalary10yr - resolvedSalary6yr)?.toLocaleString() ?? '0'} (6yr → 10yr)
                             </p>
                           </div>
                         )}

@@ -399,7 +399,7 @@ const Colleges: React.FC = () => {
                   <span style={{ color: ACCENT }}>Discover</span> Colleges
                 </h1>
                 <p style={{ color: S.muted, fontSize: 14 }}>
-                  {loading ? 'Loading…' : `${(totalCount ?? 0).toLocaleString()} colleges${totalPages > 1 ? ` (page ${currentPage} of ${totalPages})` : ''}`}
+                  {loading ? 'Loading…' : `${totalCount?.toLocaleString() ?? '0'} colleges${totalPages > 1 ? ` (page ${currentPage} of ${totalPages})` : ''}`}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -733,7 +733,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
 
   const formatEnrollment = (num: number | null | undefined): string => {
     if (!num) return 'N/A';
-    return num >= 1000 ? `${(num / 1000).toFixed(1)}K` : (num?.toString() ?? 'N/A');
+    return num >= 1000 ? `${(num / 1000).toFixed(1)}K` : num?.toString() ?? '';
   };
 
   const acceptanceRate = college?.acceptanceRate ?? college?.acceptance_rate;
@@ -804,9 +804,13 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
       {(college.majorCategories?.length || college.programs?.length) ? (
         <div style={{ padding: '12px 18px', borderTop: `1px solid ${S.border}` }}>
           <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6 }}>
-            {(college.majorCategories || college.programs || []).slice(0, 4).map((p, idx) => (
-              <span key={`${safeString(p)}-${idx}`} style={{ fontSize: 11, padding: '3px 9px', borderRadius: 100, background: h2r(accent,0.1), color: accent, fontFamily: S.font, fontWeight: 500 }}>{safeString(p)}</span>
-            ))}
+            {(college.majorCategories || college.programs || []).slice(0, 4).map((p, idx) => {
+              const label = typeof p === 'string' ? p : (p as any)?.program_name ?? '';
+              if (!label) return null;
+              return (
+                <span key={`${label}-${idx}`} style={{ fontSize: 11, padding: '3px 9px', borderRadius: 100, background: h2r(accent,0.1), color: accent, fontFamily: S.font, fontWeight: 500 }}>{label}</span>
+              );
+            })}
             {((college.majorCategories?.length || college.programs?.length || 0) > 4) && (
               <span style={{ fontSize: 11, padding: '3px 9px', borderRadius: 100, background: 'rgba(255,255,255,0.07)', color: S.muted, fontFamily: S.font }}>
                 +{(college.majorCategories?.length || college.programs?.length || 0) - 4} more
