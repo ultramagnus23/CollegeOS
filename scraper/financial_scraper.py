@@ -41,7 +41,7 @@ logging.basicConfig(
 log = logging.getLogger("financial_scraper")
 
 DATABASE_URL = os.environ["DATABASE_URL"]
-DATA_GOV_API_KEY = os.environ.get("DATA_GOV_API_KEY", "")
+DATA_GOV_API_KEY = os.environ.get("DATA_GOV_API_KEY") or os.environ.get("COLLEGE_SCORECARD_API_KEY", "")
 FINANCIAL_YEAR = os.environ.get("FINANCIAL_YEAR", "2022-23")
 
 if not DATA_GOV_API_KEY:

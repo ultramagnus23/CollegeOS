@@ -41,7 +41,7 @@ logging.basicConfig(
 log = logging.getLogger("admissions_scraper")
 
 DATABASE_URL = os.environ["DATABASE_URL"]
-DATA_GOV_API_KEY = os.environ.get("DATA_GOV_API_KEY", "")
+DATA_GOV_API_KEY = os.environ.get("DATA_GOV_API_KEY") or os.environ.get("COLLEGE_SCORECARD_API_KEY", "")
 ADMISSIONS_YEAR = int(os.environ.get("ADMISSIONS_YEAR", "2023"))
 
 if not DATA_GOV_API_KEY:

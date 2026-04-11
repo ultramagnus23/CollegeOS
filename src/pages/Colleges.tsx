@@ -7,6 +7,7 @@ import { normalizeCountryData, College, TestScores, GraduationRates } from '../t
 import FitBadge from '../components/FitBadge';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { safeString } from '../lib/utils';
 import {
   searchColleges,
   getDistinctCountries,
@@ -67,7 +68,7 @@ const Colleges: React.FC = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('');
-  const [sortBy, setSortBy] = useState('name');
+  const [sortBy, setSortBy] = useState('popularity');
   const [showFilters, setShowFilters] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -79,6 +80,24 @@ const Colleges: React.FC = () => {
 
   // Guard: prevents duplicate or concurrent batch fit calls (React StrictMode double-invoke safe)
   const fitBatchInFlight = useRef(false);
+
+  // ── ML-grade recommendations (cosine similarity + admit chance) ───────────
+  interface RecommendedCollege {
+    id: number;
+    name: string;
+    country?: string;
+    state?: string;
+    overall_fit: number;
+    admit_chance: number;
+    tier: string;
+    reasoning: string[];
+  }
+  const [recommendations, setRecommendations] = useState<RecommendedCollege[]>([]);
+  const [recsLoading, setRecsLoading] = useState(false);
+  const [recsError, setRecsError] = useState<string | null>(null);
+  const [recsLoaded, setRecsLoaded] = useState(false);
+  // Expandable "Why?" state: college id → boolean
+  const [whyExpanded, setWhyExpanded] = useState<Record<number, boolean>>({});
 
   /* ==================== LOAD FILTERS ==================== */
 
@@ -105,7 +124,7 @@ const Colleges: React.FC = () => {
   /* ==================== DEBOUNCE SEARCH ==================== */
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500);
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
@@ -162,17 +181,23 @@ const Colleges: React.FC = () => {
         const result = await searchColleges({
           query:   debouncedSearchTerm   || undefined,
           country: selectedCountry || undefined,
-          sortBy:  sortBy !== 'ranking' ? sortBy : 'name', // ranking handled client-side below
+          // 'popularity' and 'ranking' are handled client-side on the page result
+          sortBy:  (sortBy === 'ranking' || sortBy === 'popularity') ? 'name' : sortBy,
           page:    currentPage,
         });
 
         const normalized: any[] = result.data.map(normalizeToCard);
 
-        // Client-side ranking sort (ranking data is in list payload)
+        // Client-side sort for modes the RPC doesn't natively support
+        const popularityScore = (c: any) =>
+          (1 - (c.acceptanceRate ?? 0.5)) * (c.enrollment ?? 0);
+
         const sorted =
           sortBy === 'ranking'
             ? [...normalized].sort((a, b) => (a.ranking || 999) - (b.ranking || 999))
-            : normalized;
+            : sortBy === 'popularity'
+              ? [...normalized].sort((a, b) => popularityScore(b) - popularityScore(a))
+              : normalized;
 
         setTotalCount(result.count);
         setTotalPages(result.totalPages);
@@ -248,6 +273,10 @@ const Colleges: React.FC = () => {
 
         const sorted = [...normalized].sort((a, b) => {
           switch (sortBy) {
+            case 'popularity': {
+              const score = (c: any) => (1 - (c.acceptanceRate ?? 0.5)) * (c.enrollment ?? 0);
+              return score(b) - score(a);
+            }
             case 'ranking':
               return (a.ranking || 999) - (b.ranking || 999);
             case 'acceptance_rate':
@@ -274,7 +303,23 @@ const Colleges: React.FC = () => {
     }
   };
 
-  /* ==================== ACTIONS ==================== */
+  /* ==================== RECOMMENDATIONS ==================== */
+
+  useEffect(() => {
+    if (!user?.onboarding_complete || recsLoaded) return;
+    setRecsLoading(true);
+    api.recommend.getColleges({})
+      .then((res: any) => {
+        const data = res?.data ?? res;
+        const colleges: RecommendedCollege[] = (data?.colleges ?? []).slice(0, 10);
+        setRecommendations(colleges);
+        setRecsLoaded(true);
+      })
+      .catch(() => setRecsError('Could not load recommendations'))
+      .finally(() => setRecsLoading(false));
+  }, [user?.onboarding_complete]);
+
+/* ==================== ACTIONS ==================== */
 
   const handleAddCollege = async (collegeId: number) => {
     if (!user) {
@@ -425,6 +470,7 @@ const Colleges: React.FC = () => {
                 <div>
                   <label style={{ fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font }}>Sort By</label>
                   <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }} style={sel}>
+                    <option value="popularity">Most Popular</option>
                     <option value="name">Name (A–Z)</option>
                     <option value="ranking">Ranking (Best First)</option>
                     <option value="acceptance_rate">Acceptance Rate</option>
@@ -433,7 +479,7 @@ const Colleges: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                   <button
-                    onClick={() => { setSearchTerm(''); setSelectedCountry(''); setSelectedProgram(''); setSortBy('name'); setCurrentPage(1); }}
+                    onClick={() => { setSearchTerm(''); setSelectedCountry(''); setSelectedProgram(''); setSortBy('popularity'); setCurrentPage(1); }}
                     style={{ width: '100%', padding: '10px 14px', background: 'transparent', border: `1px solid ${S.border2}`, borderRadius: 10, color: S.muted, fontSize: 13, fontFamily: S.font, cursor: 'pointer' }}
                   >
                     Clear All
@@ -443,18 +489,165 @@ const Colleges: React.FC = () => {
             )}
           </div>
 
-          {/* ── Results ── */}
-          {loading && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '64px 0' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', border: `3px solid ${h2r(ACCENT,0.2)}`, borderTopColor: ACCENT, animation: 'spin 0.8s linear infinite' }} />
+          {/* ── Recommended for You (cosine-similarity ML engine) ─────────────── */}
+          {user?.onboarding_complete && (recommendations.length > 0 || recsLoading) && (
+            <div style={{ marginBottom: 36 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: h2r(ACCENT,0.9), textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: S.font }}>✨ Recommended for You</span>
+                <span style={{ fontSize: 11, color: S.muted, fontFamily: S.font }}>Based on your profile — cosine similarity fit engine</span>
+              </div>
+
+              {recsLoading && (
+                <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+                  {[0,1,2].map(i => (
+                    <div key={i} style={{ minWidth: 240, height: 140, background: S.surface, borderRadius: 16, border: `1px solid ${S.border}`, opacity: 0.5 }} />
+                  ))}
+                </div>
+              )}
+
+              {!recsLoading && recommendations.length > 0 && (
+                <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+                  {recommendations.map(rec => {
+                    const tierColor = rec.tier === 'Safety' ? '#22c55e' : rec.tier === 'Target' ? '#f59e0b' : '#ef4444';
+                    const isOpen = whyExpanded[rec.id] ?? false;
+                    return (
+                      <div
+                        key={rec.id}
+                        style={{
+                          minWidth: 240, maxWidth: 260, background: S.surface,
+                          border: `1px solid ${S.border}`, borderRadius: 16,
+                          padding: '14px 16px', cursor: 'pointer', flexShrink: 0,
+                          transition: 'border-color 0.15s',
+                          position: 'relative',
+                        }}
+                        onClick={() => navigate(`/colleges/${rec.id}`)}
+                      >
+                        {/* Dismiss button */}
+                        <button
+                          style={{ position: 'absolute', top: 10, right: 10, background: 'transparent', border: 'none', color: S.muted, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 2 }}
+                          title="Not for me"
+                          onClick={e => {
+                            e.stopPropagation();
+                            api.signals.fire(rec.id, 'dismissed').catch(() => {});
+                            setRecommendations(prev => prev.filter(r => r.id !== rec.id));
+                          }}
+                        >
+                          ✕
+                        </button>
+
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 4, paddingRight: 20, lineHeight: 1.3 }}>
+                          {rec.name}
+                        </div>
+                        {rec.state && <div style={{ fontSize: 11, color: S.muted, marginBottom: 10, fontFamily: S.font }}>{rec.state}{rec.country && rec.country !== 'United States' ? `, ${rec.country}` : ''}</div>}
+
+                        {/* Fit bar */}
+                        <div style={{ marginBottom: 8 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                            <span style={{ fontSize: 10, color: S.muted, fontFamily: S.font }}>Overall Fit</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: ACCENT, fontFamily: S.font }}>{rec.overall_fit}%</span>
+                          </div>
+                          <div style={{ height: 4, background: h2r(ACCENT,0.15), borderRadius: 9999 }}>
+                            <div style={{ height: '100%', width: `${rec.overall_fit}%`, background: ACCENT, borderRadius: 9999, transition: 'width 0.5s ease' }} />
+                          </div>
+                        </div>
+
+                        {/* Admit chance + tier */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, color: tierColor, fontWeight: 700, fontFamily: S.font }}>
+                            {rec.tier} · {rec.admit_chance}% chance
+                          </span>
+                          <button
+                            style={{ fontSize: 10, color: S.muted, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontFamily: S.font }}
+                            onClick={e => { e.stopPropagation(); setWhyExpanded(prev => ({ ...prev, [rec.id]: !prev[rec.id] })); }}
+                          >
+                            {isOpen ? 'Hide ▲' : 'Why? ▼'}
+                          </button>
+                        </div>
+
+                        {/* Reasoning (expandable) */}
+                        {isOpen && rec.reasoning && rec.reasoning.length > 0 && (
+                          <div style={{ fontSize: 11, color: S.muted, fontFamily: S.font, marginTop: 6, paddingTop: 6, borderTop: `1px solid ${S.border}` }}>
+                            {rec.reasoning.map((r, i) => <div key={i} style={{ marginBottom: 2 }}>• {r}</div>)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
-          {error && <div style={{ textAlign: 'center', padding: '64px 0', color: '#F87171', fontFamily: S.font }}>{error}</div>}
+
+          {/* ── Results ── */}
+          {loading && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 20 }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: S.surface,
+                    border: `1px solid ${S.border}`,
+                    borderRadius: 18,
+                    overflow: 'hidden',
+                    height: 280,
+                    animation: 'fadeUp 0.35s ease both',
+                    animationDelay: `${i * 0.06}s`,
+                  }}
+                >
+                  {/* shimmer top bar */}
+                  <div style={{ height: 3, background: h2r(ACCENT, 0.15) }} />
+                  {/* shimmer title */}
+                  <div style={{ padding: '18px 20px 14px' }}>
+                    <div style={{ height: 18, width: '65%', background: 'rgba(255,255,255,0.07)', borderRadius: 8, marginBottom: 10 }} />
+                    <div style={{ height: 12, width: '40%', background: 'rgba(255,255,255,0.04)', borderRadius: 6 }} />
+                  </div>
+                  {/* shimmer stats */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: S.border }}>
+                    {[0,1,2,3].map(j => (
+                      <div key={j} style={{ padding: '12px 16px', background: S.surface }}>
+                        <div style={{ height: 10, width: '50%', background: 'rgba(255,255,255,0.04)', borderRadius: 4, marginBottom: 6 }} />
+                        <div style={{ height: 14, width: '70%', background: 'rgba(255,255,255,0.06)', borderRadius: 4 }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {error && (
+            <div style={{ textAlign: 'center', padding: '64px 0' }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 8, fontFamily: S.font }}>
+                Couldn't load colleges
+              </div>
+              <div style={{ color: S.muted, fontSize: 14, fontFamily: S.font, marginBottom: 20 }}>
+                Check your connection and try again.
+              </div>
+              <button
+                onClick={loadColleges}
+                style={{
+                  padding: '9px 22px', background: ACCENT, border: 'none', borderRadius: 10,
+                  color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: S.font, cursor: 'pointer',
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
           {!loading && !error && colleges.length === 0 && (
             <div style={{ textAlign: 'center', padding: '64px 0' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>🌍</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 8, fontFamily: S.font }}>No colleges found</div>
-              <div style={{ color: S.muted, fontSize: 14, fontFamily: S.font }}>Try adjusting your search or filters</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 8, fontFamily: S.font }}>No colleges match your filters</div>
+              <div style={{ color: S.muted, fontSize: 14, fontFamily: S.font, marginBottom: 20 }}>Try broadening your search.</div>
+              <button
+                onClick={() => { setSearchTerm(''); setSelectedCountry(''); setSelectedProgram(''); setSortBy('popularity'); setCurrentPage(1); }}
+                style={{
+                  padding: '9px 22px', background: 'transparent', border: `1px solid ${S.border2}`,
+                  borderRadius: 10, color: S.muted, fontSize: 13, fontWeight: 600, fontFamily: S.font, cursor: 'pointer',
+                }}
+              >
+                Reset Filters
+              </button>
             </div>
           )}
 
@@ -586,7 +779,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(accent,0.12), color: accent, fontWeight: 600, fontFamily: S.font }}>{college?.type}</span>
+          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(accent,0.12), color: accent, fontWeight: 600, fontFamily: S.font }}>{safeString(college?.type)}</span>
           <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(255,255,255,0.07)', color: S.muted, fontFamily: S.font }}>{college?.country}</span>
           <FitBadge fitData={fit} className="ml-auto" />
         </div>

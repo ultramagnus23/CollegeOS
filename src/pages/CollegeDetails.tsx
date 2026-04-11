@@ -337,6 +337,12 @@ const CollegeDetail: React.FC = () => {
       }
 
       setCollege(collegeData);
+
+      // ── Fire 'viewed' signal for online-learning vector adjustment ──────────
+      if (user) {
+        api.signals.fire(collegeId, 'viewed').catch(() => {/* non-critical */});
+      }
+
       if (user) {
         try {
           setChancingLoading(true);
@@ -2164,6 +2170,16 @@ const ScoreBar: React.FC<{
 /* =========================
    Academics Tab Component with Searchable Majors
 ========================= */
+interface IpedsMajor {
+  major_id: number;
+  cip_code: string;
+  name: string;
+  broad_category: string;
+  is_stem: boolean;
+  awlevel?: number;
+  completions_count?: number;
+}
+
 interface AcademicsTabProps {
   college: College;
   majorCategories: string[];
@@ -2174,6 +2190,25 @@ interface AcademicsTabProps {
 const AcademicsTab: React.FC<AcademicsTabProps> = ({ college, majorCategories, academicStrengths, programs }) => {
   const [majorSearch, setMajorSearch] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState<string>('all');
+
+  // IPEDS-sourced majors fetched from the backend
+  const [ipedsMajors, setIpedsMajors] = React.useState<IpedsMajor[] | null>(null);
+  const [ipedsGrouped, setIpedsGrouped] = React.useState<Record<string, IpedsMajor[]>>({});
+  const [ipedsSource, setIpedsSource] = React.useState<string>('');
+
+  React.useEffect(() => {
+    if (!college?.id) return;
+    api.majors.getForCollege(college.id)
+      .then((res: any) => {
+        const data = res?.data ?? res;
+        if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
+          setIpedsMajors(data.data);
+          setIpedsGrouped(data.grouped ?? {});
+          setIpedsSource(data.source ?? 'ipeds');
+        }
+      })
+      .catch(() => { /* non-critical — fall back to programs array */ });
+  }, [college?.id]);
   
   // Categorize programs for filtering
   const categorizeProgram = (program: string): string => {
@@ -2232,6 +2267,64 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ college, majorCategories, a
         )}
 
         {/* Programs/Majors with Search */}
+        {/* IPEDS-sourced data takes priority when available */}
+        {ipedsMajors && ipedsMajors.length > 0 ? (
+          <Card title={`Majors Offered (${ipedsMajors.length}) — IPEDS verified`}>
+            <div className="space-y-4">
+              {/* Search bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+                <input
+                  type="text"
+                  placeholder="Search majors…"
+                  value={majorSearch}
+                  onChange={(e) => setMajorSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Grouped by broad_category */}
+              {Object.entries(ipedsGrouped).map(([category, majors]) => {
+                const filtered = majors.filter(m =>
+                  m.name.toLowerCase().includes(majorSearch.toLowerCase())
+                );
+                if (filtered.length === 0) return null;
+                return (
+                  <div key={category}>
+                    <h4 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                      {category} ({filtered.length})
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {filtered.map(major => (
+                        <div
+                          key={`${major.cip_code}-${major.awlevel}`}
+                          className="flex items-center gap-2 p-2 hover:bg-muted rounded border border-border"
+                          title={`CIP: ${major.cip_code}`}
+                        >
+                          <BookOpen className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
+                          <span className="text-sm truncate">{major.name}</span>
+                          {major.is_stem && (
+                            <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded shrink-0">STEM</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {ipedsMajors.filter(m =>
+                m.name.toLowerCase().includes(majorSearch.toLowerCase())
+              ).length === 0 && (
+                <p className="text-center text-muted-foreground/70 py-4">No majors match your search</p>
+              )}
+
+              <p className="text-xs text-muted-foreground/50 mt-2">
+                Data source: IPEDS Completions Survey (bachelor's &amp; master's degrees)
+              </p>
+            </div>
+          </Card>
+        ) : (
         <Card title={`Programs Offered${programs.length > 0 ? ` (${programs.length})` : ''}`}>
           {programs.length > 0 ? (
             <div className="space-y-4">
@@ -2303,6 +2396,7 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ college, majorCategories, a
             </div>
           )}
         </Card>
+        )}
 
         {/* Academic Stats - Only show items with values */}
         <Card title="Academic Statistics">
@@ -2325,10 +2419,10 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ college, majorCategories, a
                 <p className="text-sm text-muted-foreground">6-Year Grad Rate</p>
               </div>
             )}
-            {programs.length > 0 && (
+            {(ipedsMajors ? ipedsMajors.length > 0 : programs.length > 0) && (
               <div className="text-center p-4 bg-muted rounded-lg min-w-[120px]">
-                <div className="text-2xl font-bold text-primary">{programs.length}</div>
-                <p className="text-sm text-muted-foreground">Programs</p>
+                <div className="text-2xl font-bold text-primary">{ipedsMajors ? ipedsMajors.length : programs.length}</div>
+                <p className="text-sm text-muted-foreground">Majors</p>
               </div>
             )}
           </div>
