@@ -6,6 +6,10 @@
 -- 4. Create user_signals table for online learning / signal adjustments
 -- 5. Indexes for all new queries
 
+-- ─── Enable pg_trgm for fuzzy text search on major names ─────────────────────
+-- Required for the GIN index on majors.name created below.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- ─── 1. Extend colleges_comprehensive ────────────────────────────────────────
 
 ALTER TABLE colleges_comprehensive

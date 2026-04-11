@@ -203,7 +203,7 @@ router.post('/', authenticate, async (req, res, next) => {
 
       scored.push({
         college,
-        collegVector: colVec,
+        collegeVector: colVec,
         overallFit,
       });
     }
@@ -213,8 +213,8 @@ router.post('/', authenticate, async (req, res, next) => {
     const top50 = scored.slice(0, 50);
 
     // ── 6. Add admit chance to each ───────────────────────────────────────
-    const results = top50.map(({ college, collegVector, overallFit }) => {
-      const chancing = computeAdmitChance(userVector, collegVector, college, userProfile);
+    const results = top50.map(({ college, collegeVector, overallFit }) => {
+      const chancing = computeAdmitChance(userVector, collegeVector, college, userProfile);
       const { feature_vector: _fv, ...colWithoutVec } = college;
 
       return {
@@ -232,8 +232,7 @@ router.post('/', authenticate, async (req, res, next) => {
       count:         results.length,
       vectors_used:  vectorsUsed > 0,
       colleges:      results,
-    });
-  } catch (err) {
+    });  } catch (err) {
     logger.error('POST /api/recommend error: %s', err.message);
     next(err);
   }
