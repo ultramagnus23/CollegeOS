@@ -76,6 +76,10 @@ AWLEVEL_MASTERS   = 7
 
 BATCH_SIZE = 5000  # rows per insert batch
 
+# IPEDS ICLEVEL value for 4-year institutions
+# 1 = 4-year, 2 = 2-year, 3 = less-than-2-year
+ICLEVEL_4YEAR = "1"
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -122,8 +126,8 @@ def load_hd(hd_path: str) -> dict[str, dict]:
             "iclevel": str(row.get("ICLEVEL","")).strip(),   # 1=4yr, 2=2yr
         }
 
-    # Keep only 4-year institutions (ICLEVEL == "1")
-    four_yr = {k: v for k, v in result.items() if v["iclevel"] == "1"}
+    # Keep only 4-year institutions (ICLEVEL == ICLEVEL_4YEAR)
+    four_yr = {k: v for k, v in result.items() if v["iclevel"] == ICLEVEL_4YEAR}
     print(f"  4-year institutions in HD file: {len(four_yr):,}")
     return four_yr
 
