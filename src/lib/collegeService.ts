@@ -116,6 +116,11 @@ export async function searchColleges(
     page = 1,
   } = filters;
 
+  // The Supabase RPC (search_colleges_filtered) understands 'name', 'acceptance_rate',
+  // and 'tuition'. Map 'popularity' to 'name' for the server-side call; the
+  // returned page will then be re-sorted client-side by selectivity × enrollment.
+  const rpcSortBy = sortBy === 'popularity' ? 'name' : sortBy;
+
   // ── Phase 1: get total count + ordered IDs via server-side RPC ────────────
   const { data: rpcData, error: rpcError } = await client.rpc(
     'search_colleges_filtered',
@@ -128,7 +133,7 @@ export async function searchColleges(
       p_min_acceptance: minAcceptance  ?? null,
       p_max_acceptance: maxAcceptance  ?? null,
       p_max_tuition:    maxTuition     ?? null,
-      p_sort_by:        sortBy,
+      p_sort_by:        rpcSortBy,
       p_page:           page,
       p_page_size:      PAGE_SIZE,
     }

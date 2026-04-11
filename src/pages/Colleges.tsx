@@ -7,6 +7,7 @@ import { normalizeCountryData, College, TestScores, GraduationRates } from '../t
 import FitBadge from '../components/FitBadge';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { safeString } from '../lib/utils';
 import {
   searchColleges,
   getDistinctCountries,
@@ -67,7 +68,7 @@ const Colleges: React.FC = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('');
-  const [sortBy, setSortBy] = useState('name');
+  const [sortBy, setSortBy] = useState('popularity');
   const [showFilters, setShowFilters] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -123,7 +124,7 @@ const Colleges: React.FC = () => {
   /* ==================== DEBOUNCE SEARCH ==================== */
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500);
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
@@ -180,17 +181,23 @@ const Colleges: React.FC = () => {
         const result = await searchColleges({
           query:   debouncedSearchTerm   || undefined,
           country: selectedCountry || undefined,
-          sortBy:  sortBy !== 'ranking' ? sortBy : 'name', // ranking handled client-side below
+          // 'popularity' and 'ranking' are handled client-side on the page result
+          sortBy:  (sortBy === 'ranking' || sortBy === 'popularity') ? 'name' : sortBy,
           page:    currentPage,
         });
 
         const normalized: any[] = result.data.map(normalizeToCard);
 
-        // Client-side ranking sort (ranking data is in list payload)
+        // Client-side sort for modes the RPC doesn't natively support
+        const popularityScore = (c: any) =>
+          (1 - (c.acceptanceRate ?? 0.5)) * (c.enrollment ?? 0);
+
         const sorted =
           sortBy === 'ranking'
             ? [...normalized].sort((a, b) => (a.ranking || 999) - (b.ranking || 999))
-            : normalized;
+            : sortBy === 'popularity'
+              ? [...normalized].sort((a, b) => popularityScore(b) - popularityScore(a))
+              : normalized;
 
         setTotalCount(result.count);
         setTotalPages(result.totalPages);
@@ -266,6 +273,10 @@ const Colleges: React.FC = () => {
 
         const sorted = [...normalized].sort((a, b) => {
           switch (sortBy) {
+            case 'popularity': {
+              const score = (c: any) => (1 - (c.acceptanceRate ?? 0.5)) * (c.enrollment ?? 0);
+              return score(b) - score(a);
+            }
             case 'ranking':
               return (a.ranking || 999) - (b.ranking || 999);
             case 'acceptance_rate':
@@ -459,6 +470,7 @@ const Colleges: React.FC = () => {
                 <div>
                   <label style={{ fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font }}>Sort By</label>
                   <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }} style={sel}>
+                    <option value="popularity">Most Popular</option>
                     <option value="name">Name (A–Z)</option>
                     <option value="ranking">Ranking (Best First)</option>
                     <option value="acceptance_rate">Acceptance Rate</option>
@@ -467,7 +479,7 @@ const Colleges: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                   <button
-                    onClick={() => { setSearchTerm(''); setSelectedCountry(''); setSelectedProgram(''); setSortBy('name'); setCurrentPage(1); }}
+                    onClick={() => { setSearchTerm(''); setSelectedCountry(''); setSelectedProgram(''); setSortBy('popularity'); setCurrentPage(1); }}
                     style={{ width: '100%', padding: '10px 14px', background: 'transparent', border: `1px solid ${S.border2}`, borderRadius: 10, color: S.muted, fontSize: 13, fontFamily: S.font, cursor: 'pointer' }}
                   >
                     Clear All
@@ -568,16 +580,74 @@ const Colleges: React.FC = () => {
 
           {/* ── Results ── */}
           {loading && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '64px 0' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', border: `3px solid ${h2r(ACCENT,0.2)}`, borderTopColor: ACCENT, animation: 'spin 0.8s linear infinite' }} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 20 }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: S.surface,
+                    border: `1px solid ${S.border}`,
+                    borderRadius: 18,
+                    overflow: 'hidden',
+                    height: 280,
+                    animation: 'fadeUp 0.35s ease both',
+                    animationDelay: `${i * 0.06}s`,
+                  }}
+                >
+                  {/* shimmer top bar */}
+                  <div style={{ height: 3, background: h2r(ACCENT, 0.15) }} />
+                  {/* shimmer title */}
+                  <div style={{ padding: '18px 20px 14px' }}>
+                    <div style={{ height: 18, width: '65%', background: 'rgba(255,255,255,0.07)', borderRadius: 8, marginBottom: 10 }} />
+                    <div style={{ height: 12, width: '40%', background: 'rgba(255,255,255,0.04)', borderRadius: 6 }} />
+                  </div>
+                  {/* shimmer stats */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: S.border }}>
+                    {[0,1,2,3].map(j => (
+                      <div key={j} style={{ padding: '12px 16px', background: S.surface }}>
+                        <div style={{ height: 10, width: '50%', background: 'rgba(255,255,255,0.04)', borderRadius: 4, marginBottom: 6 }} />
+                        <div style={{ height: 14, width: '70%', background: 'rgba(255,255,255,0.06)', borderRadius: 4 }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
-          {error && <div style={{ textAlign: 'center', padding: '64px 0', color: '#F87171', fontFamily: S.font }}>{error}</div>}
+          {error && (
+            <div style={{ textAlign: 'center', padding: '64px 0' }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 8, fontFamily: S.font }}>
+                Couldn't load colleges
+              </div>
+              <div style={{ color: S.muted, fontSize: 14, fontFamily: S.font, marginBottom: 20 }}>
+                Check your connection and try again.
+              </div>
+              <button
+                onClick={loadColleges}
+                style={{
+                  padding: '9px 22px', background: ACCENT, border: 'none', borderRadius: 10,
+                  color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: S.font, cursor: 'pointer',
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
           {!loading && !error && colleges.length === 0 && (
             <div style={{ textAlign: 'center', padding: '64px 0' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>🌍</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 8, fontFamily: S.font }}>No colleges found</div>
-              <div style={{ color: S.muted, fontSize: 14, fontFamily: S.font }}>Try adjusting your search or filters</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 8, fontFamily: S.font }}>No colleges match your filters</div>
+              <div style={{ color: S.muted, fontSize: 14, fontFamily: S.font, marginBottom: 20 }}>Try broadening your search.</div>
+              <button
+                onClick={() => { setSearchTerm(''); setSelectedCountry(''); setSelectedProgram(''); setSortBy('popularity'); setCurrentPage(1); }}
+                style={{
+                  padding: '9px 22px', background: 'transparent', border: `1px solid ${S.border2}`,
+                  borderRadius: 10, color: S.muted, fontSize: 13, fontWeight: 600, fontFamily: S.font, cursor: 'pointer',
+                }}
+              >
+                Reset Filters
+              </button>
             </div>
           )}
 
@@ -709,7 +779,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(accent,0.12), color: accent, fontWeight: 600, fontFamily: S.font }}>{college?.type}</span>
+          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(accent,0.12), color: accent, fontWeight: 600, fontFamily: S.font }}>{safeString(college?.type)}</span>
           <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(255,255,255,0.07)', color: S.muted, fontFamily: S.font }}>{college?.country}</span>
           <FitBadge fitData={fit} className="ml-auto" />
         </div>
@@ -735,7 +805,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
         <div style={{ padding: '12px 18px', borderTop: `1px solid ${S.border}` }}>
           <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6 }}>
             {(college.majorCategories || college.programs || []).slice(0, 4).map((p, idx) => (
-              <span key={`${p}-${idx}`} style={{ fontSize: 11, padding: '3px 9px', borderRadius: 100, background: h2r(accent,0.1), color: accent, fontFamily: S.font, fontWeight: 500 }}>{p}</span>
+              <span key={`${safeString(p)}-${idx}`} style={{ fontSize: 11, padding: '3px 9px', borderRadius: 100, background: h2r(accent,0.1), color: accent, fontFamily: S.font, fontWeight: 500 }}>{safeString(p)}</span>
             ))}
             {((college.majorCategories?.length || college.programs?.length || 0) > 4) && (
               <span style={{ fontSize: 11, padding: '3px 9px', borderRadius: 100, background: 'rgba(255,255,255,0.07)', color: S.muted, fontFamily: S.font }}>
