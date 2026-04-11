@@ -457,14 +457,14 @@ const Colleges: React.FC = () => {
                   <label style={{ fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font }}>Country</label>
                   <select value={selectedCountry} onChange={(e) => { setSelectedCountry(e.target.value); setCurrentPage(1); }} style={sel}>
                     <option value="">All Countries</option>
-                    {countries.map(c => <option key={c}>{c}</option>)}
+                    {countries.map((c, i) => { const label = safeString(c); return <option key={label || i} value={label}>{label}</option>; })}
                   </select>
                 </div>
                 <div>
                   <label style={{ fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font }}>Program</label>
                   <select value={selectedProgram} onChange={(e) => { setSelectedProgram(e.target.value); setCurrentPage(1); }} style={sel}>
                     <option value="">All Programs</option>
-                    {programs.map(p => <option key={p}>{p}</option>)}
+                    {programs.map((p, i) => { const label = safeString(p); return <option key={label || i} value={label}>{label}</option>; })}
                   </select>
                 </div>
                 <div>
