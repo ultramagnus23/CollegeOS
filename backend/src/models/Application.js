@@ -13,6 +13,12 @@ class Application {
   static async create(userId, data) {
     const pool = dbManager.getDatabase();
 
+    // Strip any unknown fields before they reach the DB.
+    // Only columns defined in ALLOWED_INSERT_FIELDS are permitted.
+    const safeData = Object.fromEntries(
+      Object.entries(data).filter(([k]) => ALLOWED_INSERT_FIELDS.includes(k))
+    );
+
     // Check for duplicate first
     const existingApp = await this.findByUserAndCollege(userId, data.collegeId || data.college_id);
     if (existingApp) {
@@ -22,6 +28,7 @@ class Application {
       throw error;
     }
 
+    // Resolve collegeId from either camelCase or snake_case input
     const collegeId = data.collegeId || data.college_id;
     let rows;
     try {
@@ -32,10 +39,10 @@ class Application {
         [
           userId,
           collegeId,
-          data.status || 'researching',
-          data.applicationType || data.application_type || null,
-          data.priority || null,
-          data.notes || null
+          safeData.status || data.status || 'researching',
+          safeData.application_type || data.application_type || data.applicationType || null,
+          safeData.priority || data.priority || null,
+          safeData.notes || data.notes || null
         ]
       ));
     } catch (dbErr) {

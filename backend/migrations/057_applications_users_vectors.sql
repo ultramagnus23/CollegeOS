@@ -13,7 +13,7 @@ ALTER TABLE applications ADD COLUMN IF NOT EXISTS deadline        DATE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN DEFAULT false;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_data      JSONB;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_score        INTEGER DEFAULT 0;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS gpa                  DECIMAL(3,2);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS gpa                  DECIMAL(4,2);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS sat_score            INTEGER;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS act_score            INTEGER;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS intended_major       VARCHAR(255);
