@@ -51,7 +51,7 @@ if not DATA_GOV_API_KEY:
     )
 REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY_SEC", "1.0"))
 
-SCORECARD_BASE = "https://api.data.ed.gov/student/v1/schools"
+SCORECARD_BASE = "https://api.data.gov/ed/collegescorecard/v1/schools"
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
