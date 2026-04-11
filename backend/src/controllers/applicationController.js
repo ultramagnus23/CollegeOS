@@ -138,7 +138,10 @@ class ApplicationController {
           code: 'DUPLICATE_APPLICATION'
         }, { requestId }));
       }
-      // Surface DB errors so the client sees what went wrong (e.g. missing column)
+      // Surface DB errors so the client sees what went wrong (e.g. missing column).
+      // PostgreSQL error codes starting with '2' cover data exceptions (class 22),
+      // integrity constraint violations (class 23), etc. — all legitimate DB errors
+      // that should be forwarded rather than wrapped in a generic 500.
       if (error.detail || (error.code && typeof error.code === 'string' && error.code.startsWith('2'))) {
         return res.status(500).json({
           success: false,

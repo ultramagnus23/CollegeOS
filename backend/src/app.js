@@ -251,8 +251,8 @@ async function startServer() {
                   );
                   computed++;
                 }
-              } catch (_) {
-                // Skip individual failures
+              } catch (colErr) {
+                logger.warn(`Vector compute skipped for college ${id}: ${colErr.message}`);
               }
             }
             logger.info(`Precomputed vectors for ${computed} colleges`);
