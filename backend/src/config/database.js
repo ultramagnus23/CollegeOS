@@ -100,8 +100,10 @@ class DatabaseManager {
 
         try {
           await client.query('BEGIN');
-          // Execute each statement separately (skip empty ones)
-          const statements = sql.split(';').map(s => s.trim()).filter(s => s.length > 0);
+          // Execute each statement separately (skip empty ones).
+          // splitSqlStatements() handles dollar-quoted PL/pgSQL blocks
+          // (DO $$ ... $$;) so inner semicolons are not used as delimiters.
+          const statements = splitSqlStatements(sql);
           for (const stmt of statements) {
             try {
               await client.query(stmt);
@@ -153,6 +155,91 @@ class DatabaseManager {
       logger.info('Database pool closed');
     }
   }
+}
+
+/**
+ * Split a SQL string into individual statements, correctly handling:
+ *   - Dollar-quoted blocks:  DO $$ ... $$;  /  DO $body$ ... $body$;
+ *   - Single-quoted strings: '...'  (with '' escapes)
+ *   - Line comments:         -- ...
+ *   - Block comments:        /* ... *\/
+ *
+ * The plain sql.split(';') approach breaks PL/pgSQL blocks because the
+ * semicolons inside the $$ body are used as delimiters.  This function
+ * only treats a ';' as a statement terminator when it is NOT inside any
+ * of the constructs above.
+ *
+ * @param {string} sql - Raw SQL text (possibly multi-statement)
+ * @returns {string[]} Array of trimmed, non-empty statement strings
+ */
+function splitSqlStatements(sql) {
+  const statements = [];
+  let current = '';
+  let i = 0;
+  const len = sql.length;
+
+  while (i < len) {
+    // ── Line comment: -- ... \n ────────────────────────────────────────────
+    if (sql[i] === '-' && i + 1 < len && sql[i + 1] === '-') {
+      const end = sql.indexOf('\n', i);
+      if (end === -1) { current += sql.slice(i); i = len; }
+      else            { current += sql.slice(i, end + 1); i = end + 1; }
+      continue;
+    }
+
+    // ── Block comment: /* ... */ ───────────────────────────────────────────
+    if (sql[i] === '/' && i + 1 < len && sql[i + 1] === '*') {
+      const end = sql.indexOf('*/', i + 2);
+      if (end === -1) { current += sql.slice(i); i = len; }
+      else            { current += sql.slice(i, end + 2); i = end + 2; }
+      continue;
+    }
+
+    // ── Dollar-quoted string: $tag$ ... $tag$ ────────────────────────────
+    if (sql[i] === '$') {
+      // Scan forward for the closing '$' of the opening tag
+      let tagEnd = i + 1;
+      while (tagEnd < len && sql[tagEnd] !== '$' && sql[tagEnd] !== '\n') tagEnd++;
+      if (tagEnd < len && sql[tagEnd] === '$') {
+        const tag = sql.slice(i, tagEnd + 1); // e.g. '$$' or '$body$'
+        const closePos = sql.indexOf(tag, tagEnd + 1);
+        if (closePos !== -1) {
+          current += sql.slice(i, closePos + tag.length);
+          i = closePos + tag.length;
+          continue;
+        }
+      }
+    }
+
+    // ── Single-quoted string: '...' ('' = escaped quote) ─────────────────
+    if (sql[i] === "'") {
+      let j = i + 1;
+      while (j < len) {
+        if (sql[j] === "'" && j + 1 < len && sql[j + 1] === "'") { j += 2; }
+        else if (sql[j] === "'")                                   { j++; break; }
+        else                                                        { j++; }
+      }
+      current += sql.slice(i, j);
+      i = j;
+      continue;
+    }
+
+    // ── Statement terminator ──────────────────────────────────────────────
+    if (sql[i] === ';') {
+      const stmt = current.trim();
+      if (stmt) statements.push(stmt);
+      current = '';
+      i++;
+      continue;
+    }
+
+    current += sql[i];
+    i++;
+  }
+
+  const stmt = current.trim();
+  if (stmt) statements.push(stmt);
+  return statements;
 }
 
 /**

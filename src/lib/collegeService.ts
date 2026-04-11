@@ -86,6 +86,44 @@ export interface SearchResult {
 // ─── Search / List ────────────────────────────────────────────────────────────
 
 /**
+ * Direct fallback query used when search_colleges_filtered RPC is unavailable
+ * (e.g. the table is missing expected columns before migration 056 is run).
+ * Supports name search and country filter only; uses PostgREST count for totals.
+ */
+async function searchCollegesDirect(
+  client: NonNullable<typeof supabase>,
+  filters: CollegeFilters
+): Promise<SearchResult> {
+  const { query, country, sortBy = 'name', page = 1 } = filters;
+
+  let q = client
+    .from('colleges_comprehensive')
+    // 'estimated' uses PostgreSQL's planner stats — fast, no extra COUNT(*) scan.
+    .select(LIST_SELECT, { count: 'estimated' });
+
+  if (query) q = q.ilike('name', `%${query}%`);
+  if (country) q = q.eq('country', country);
+
+  // Simple name-based sort; acceptance_rate / tuition sorts require joins
+  // and are not supported in the direct fallback.
+  q = q
+    .order('name', { ascending: true })
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+
+  const { data, error, count } = await q;
+  if (error) throw error;
+
+  const total = count ?? 0;
+  return {
+    data: (data as CollegeWithRelations[]) ?? [],
+    count: total,
+    page,
+    pageSize: PAGE_SIZE,
+    totalPages: Math.ceil(total / PAGE_SIZE),
+  };
+}
+
+/**
  * Search and filter colleges from `colleges_comprehensive`.
  *
  * Delegates to the `search_colleges_filtered` Postgres function (migration 047)
@@ -97,6 +135,11 @@ export interface SearchResult {
  * Two network calls are made:
  *   1. RPC → receives { total, ids[] } for the requested page.
  *   2. SELECT … WHERE id IN (ids) → fetches the full LIST_SELECT payload.
+ *
+ * If the RPC fails with a column-not-found error (42703) — which happens when
+ * the table is missing the state / type / setting columns added by migration 056
+ * — the function automatically falls back to searchCollegesDirect() so colleges
+ * still load while the migration is pending.
  */
 export async function searchColleges(
   filters: CollegeFilters = {}
@@ -138,10 +181,55 @@ export async function searchColleges(
       p_page_size:      PAGE_SIZE,
     }
   );
-  if (rpcError) throw rpcError;
 
-  const { total, ids } = rpcData as { total: number; ids: number[] | null };
-  const safeIds: number[] = ids ?? [];
+  // If the RPC fails with an undefined-column error (42703), the
+  // colleges_comprehensive table is missing expected columns (state, type,
+  // setting).  Run migration 056_fix_college_schema.sql in the Supabase SQL
+  // Editor to permanently fix this.  In the meantime, fall back to a direct
+  // paginated query so colleges still load (without server-side filter support
+  // for state / type / setting until the migration is applied).
+  if (rpcError) {
+    const pgCode = (rpcError as { code?: string }).code;
+    const msg    = (rpcError as { message?: string }).message ?? '';
+    // 42703 = undefined_column (schema not migrated yet)
+    // 57014 = query_canceled / statement_timeout
+    // PGRST202 = function not found (PostgREST)
+    // "upstream timeout" = Supabase edge timeout wrapper
+    const isColumnError  = pgCode === '42703' || pgCode === 'PGRST202';
+    // 57014 = query_canceled (PostgreSQL statement_timeout)
+    // Supabase edge functions wrap timeouts with this exact message prefix.
+    const isTimeoutError = pgCode === '57014'
+      || msg.toLowerCase().startsWith('sql query ran into an upstream timeout');
+    if (isColumnError || isTimeoutError) {
+      console.warn(
+        '[searchColleges] RPC failed (code', pgCode, ').',
+        isColumnError
+          ? 'Schema not migrated — run migration 056_fix_college_schema.sql in Supabase SQL Editor.'
+          : 'Query timed out — ensure migration 056_fix_college_schema.sql has been run (it adds required indexes).',
+        'Falling back to direct query.',
+        rpcError.message
+      );
+      return searchCollegesDirect(client, filters);
+    }
+    throw rpcError;
+  }
+
+  // Migration 054 changed the RPC from RETURNS json (scalar) to
+  // RETURNS TABLE(total int, ids json), so PostgREST always returns
+  // [{total, ids}] consistently across all PostgREST versions.
+  //
+  // Defensive fallback chain handles all PostgREST / Supabase versions:
+  //   • RETURNS TABLE  → rpcData = [{total, ids}]           → rpcData[0]
+  //   • RETURNS json (new PostgREST) → rpcData = {total, ids}  → rpcData
+  //   • RETURNS json (old PostgREST) → rpcData = [{search_colleges_filtered: {total,ids}}]
+  //                                    → rpcData[0].search_colleges_filtered
+  const outerRow  = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+  // Handle old PostgREST scalar wrapping where the key is the function name
+  const rpcRow    = (outerRow as any)?.search_colleges_filtered ?? outerRow;
+  const total: number     = rpcRow?.total ?? 0;
+  const safeIds: number[] = (rpcRow?.ids ?? []) as number[];
+
+  console.log('[searchColleges] total:', total, 'ids:', safeIds.length);
 
   if (safeIds.length === 0) {
     return {
@@ -154,12 +242,24 @@ export async function searchColleges(
   }
 
   // ── Phase 2: fetch full rows for this page's IDs ──────────────────────────
+  // NOTE: If this returns [] despite safeIds being non-empty, Row Level Security
+  // is likely enabled on colleges_comprehensive without a public-read policy.
+  // Run migration 054_supabase_rls_public_read.sql in the Supabase SQL editor.
   const { data, error } = await client
     .from('colleges_comprehensive')
     .select(LIST_SELECT)
     .in('id', safeIds);
 
   if (error) throw error;
+
+  if ((!data || (data as any[]).length === 0) && safeIds.length > 0) {
+    console.warn(
+      '[searchColleges] Phase 2 returned 0 rows despite', safeIds.length,
+      'IDs from the RPC. This is almost certainly caused by Row Level Security ' +
+      'blocking the anon role on colleges_comprehensive. ' +
+      'Run migration 054_supabase_rls_public_read.sql in the Supabase SQL editor to fix it.'
+    );
+  }
 
   // Re-order to match the sorted IDs from the RPC (the IN query has no ordering)
   const byId = new Map(
@@ -297,11 +397,6 @@ export async function getCollegePrograms(
 
 /**
  * Return the distinct list of US states present in `colleges_comprehensive`.
- *
- * Uses the `get_distinct_states` RPC (migration 047) which performs a
- * `SELECT DISTINCT` server-side, avoiding the 1,000-row PostgREST cap that
- * would silently truncate results from a plain `.select('state')` call against
- * a 6,000-row table.
  */
 export async function getDistinctStates(): Promise<string[]> {
   const client = requireClient();
@@ -316,9 +411,6 @@ export async function getDistinctStates(): Promise<string[]> {
 
 /**
  * Return the distinct list of countries present in `colleges_comprehensive`.
- *
- * Uses the `get_distinct_countries` RPC (migration 047) for the same reason as
- * `getDistinctStates` — avoids the 1,000-row PostgREST cap.
  */
 export async function getDistinctCountries(): Promise<string[]> {
   const client = requireClient();
@@ -355,7 +447,6 @@ export function getDemographics(college: CollegeWithRelations) {
 
 /**
  * Format an acceptance rate (0–1) as a human-readable percentage string.
- * Handles both decimal (0.08) and percentage (8) formats.
  */
 export function formatAcceptanceRate(rate: number | null | undefined): string {
   if (rate === null || rate === undefined) return 'N/A';
@@ -388,49 +479,74 @@ function parseRangeString(
 }
 
 /**
- * Convert a `CollegeWithRelations` row into the flat shape expected by the
- * `Colleges.tsx` card list.  Returns a plain object typed as `any` because the
- * page's own `College` import is a loose legacy interface.
+ * Convert a `CollegeWithRelations` row into the flat shape expected by
+ * the `Colleges.tsx` card list.
  */
-export function normalizeToCard(c: CollegeWithRelations): any {
+export function normalizeToCard(c: any): any {
+  // The search_colleges_filtered RPC returns flat columns directly on `c`
+  // (e.g. c.acceptance_rate, c.tuition_international, c.ranking_qs).
+  // If the row came from a SELECT with nested child tables instead, fall back
+  // to reading those nested arrays so both code paths work.
   const admissions = c.college_admissions?.[0] ?? null;
   const financial  = c.college_financial_data?.[0] ?? null;
   const academics  = c.academic_details?.[0] ?? null;
-  const rankings   = c.college_rankings ?? [];
-  const programs   = c.college_programs ?? [];
 
-  // Best available numeric rank (smallest number wins)
-  const bestRank = rankings
-    .map((r) => (r.ranking_value ? parseInt(r.ranking_value, 10) : NaN))
-    .filter((n) => !isNaN(n) && n > 0)
-    .sort((a, b) => a - b)[0] ?? null;
+  // Acceptance rate: flat RPC column first, then nested fallback
+  const acceptanceRate =
+    c.acceptance_rate ??
+    admissions?.acceptance_rate ??
+    null;
 
-  const programNames = programs.map((p) => p.program_name).filter(Boolean);
+  // Tuition: flat RPC columns first, then nested fallback
+  const tuitionCost =
+    c.tuition_international ??
+    c.tuition_domestic ??
+    financial?.tuition_out_state ??
+    financial?.tuition_international ??
+    null;
+
+  // Ranking: flat RPC columns first, then nested fallback
+  const rankings = c.college_rankings ?? [];
+  const nestedRank = rankings
+    .map((r: any) => (r.ranking_value ? parseInt(r.ranking_value, 10) : NaN))
+    .filter((n: number) => !isNaN(n) && n > 0)
+    .sort((a: number, b: number) => a - b)[0] ?? null;
+  const bestRank =
+    c.ranking_qs ??
+    c.ranking_us_news ??
+    nestedRank ??
+    null;
+
+  // Programs: only available from nested SELECT, not from RPC
+  const programs = c.college_programs ?? [];
+  const programNames = programs
+    .filter((p: any) => typeof p === 'object' && typeof p.program_name === 'string')
+    .map((p: any) => p.program_name);
 
   return {
     id:                 c.id,
     name:               c.name,
-    location:           [c.city, c.state].filter(Boolean).join(', ') || c.country || '',
+    location:           c.location || [c.city, c.state ?? c.state_region].filter(Boolean).join(', ') || c.country || '',
     country:            c.country ?? '',
-    type:               c.type ?? 'Unknown',
+    type:               c.type ?? c.institution_type ?? 'Unknown',
     ranking:            bestRank,
-    acceptance_rate:    admissions?.acceptance_rate ?? null,
-    acceptanceRate:     admissions?.acceptance_rate ?? null,
-    tuition_cost:       financial?.tuition_out_state ?? financial?.tuition_international ?? null,
+    acceptance_rate:    acceptanceRate,
+    acceptanceRate:     acceptanceRate,
+    tuition_cost:       tuitionCost,
     averageGPA:         admissions?.gpa_50 ?? null,
     enrollment:         c.total_enrollment ?? null,
     description:        c.description ?? null,
     programs:           programNames,
     majorCategories:    programNames.slice(0, 6),
     academicStrengths:  [],
-    testScores: admissions
+    testScores:         admissions
       ? {
-          satRange: parseRangeString(admissions.sat_range) ?? undefined,
-          actRange: parseRangeString(admissions.act_range) ?? undefined,
+          satRange:   parseRangeString(admissions.sat_range) ?? undefined,
+          actRange:   parseRangeString(admissions.act_range) ?? undefined,
           averageGPA: admissions.gpa_50 ?? undefined,
         }
       : null,
-    graduationRates: academics
+    graduationRates:    academics
       ? { fourYear: academics.graduation_rate_4yr ?? null }
       : null,
     studentFacultyRatio: null,
@@ -439,8 +555,7 @@ export function normalizeToCard(c: CollegeWithRelations): any {
 
 /**
  * Convert a `CollegeWithRelations` row into the rich shape expected by
- * `CollegeDetails.tsx`.  All resolver chains in that page already have
- * fallback paths for the flat top-level fields populated here.
+ * `CollegeDetails.tsx`.
  */
 export function normalizeToDetail(c: CollegeWithRelations): any {
   const admissions   = c.college_admissions?.[0]    ?? null;
@@ -467,25 +582,21 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
     id:                    c.id,
     name:                  c.name,
     country:               c.country ?? '',
-    location:              [c.city, c.state].filter(Boolean).join(', '),
-    official_website:      c.website ?? '',
+    location:              [c.city, c.state ?? c.state_region].filter(Boolean).join(', '),
+    official_website:      c.website ?? c.website_url ?? '',
     admissions_url:        contact?.admissions_url ?? undefined,
-    type:                  c.type ?? null,
+    type:                  c.type ?? c.institution_type ?? null,
     description:           c.description ?? null,
     ranking:               bestRank,
     enrollment:            c.total_enrollment ?? null,
     religious_affiliation: c.religious_affiliation ?? null,
-    // Flat acceptance fields (checked by resolver chains in CollegeDetails)
     acceptance_rate:       admissions?.acceptance_rate ?? null,
     acceptanceRate:        admissions?.acceptance_rate ?? null,
     tuition_cost:          financial?.tuition_out_state ?? financial?.tuition_international ?? null,
-    // Flat financial fields
     avg_net_price:         financial?.avg_net_price ?? null,
-    // Flat academics fields
     median_debt:           academics?.median_debt        ?? null,
     median_salary_6yr:     academics?.median_salary_6yr  ?? null,
     median_salary_10yr:    academics?.median_salary_10yr ?? null,
-    // Flat demographics fields
     percent_male:          demographics?.percent_male          ?? null,
     percent_female:        demographics?.percent_female        ?? null,
     percent_white:         demographics?.percent_white         ?? null,
@@ -493,12 +604,10 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
     percent_hispanic:      demographics?.percent_hispanic      ?? null,
     percent_asian:         demographics?.percent_asian         ?? null,
     percent_international: demographics?.percent_international ?? null,
-    // Programs
     programs:         programNames,
     major_categories: degreeTypes,
     majorCategories:  programNames.slice(0, 6),
     academic_strengths: [],
-    // Nested shapes (matching the resolver chain expectations in CollegeDetails)
     testScores: admissions
       ? {
           satRange: satRange
@@ -527,12 +636,12 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
       : undefined,
     academicOutcomes: academics
       ? {
-          graduationRate4yr:    academics.graduation_rate_4yr  ?? null,
-          retentionRate:        academics.retention_rate       ?? null,
-          medianSalary6yr:      academics.median_salary_6yr   ?? null,
-          medianStartSalary:    academics.median_salary_6yr   ?? null,
-          medianSalary10yr:     academics.median_salary_10yr  ?? null,
-          medianMidCareerSalary: academics.median_salary_10yr ?? null,
+          graduationRate4yr:     academics.graduation_rate_4yr  ?? null,
+          retentionRate:         academics.retention_rate       ?? null,
+          medianSalary6yr:       academics.median_salary_6yr   ?? null,
+          medianStartSalary:     academics.median_salary_6yr   ?? null,
+          medianSalary10yr:      academics.median_salary_10yr  ?? null,
+          medianMidCareerSalary: academics.median_salary_10yr  ?? null,
         }
       : undefined,
     demographics: demographics
@@ -549,11 +658,11 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
     comprehensiveData: {
       totalEnrollment:      c.total_enrollment    ?? null,
       city:                 c.city                ?? null,
-      stateRegion:          c.state               ?? null,
-      institutionType:      c.type                ?? null,
+      stateRegion:          c.state ?? c.state_region ?? null,
+      institutionType:      c.type  ?? c.institution_type ?? null,
       religiousAffiliation: c.religious_affiliation ?? null,
-      foundingYear:         c.founded_year         ?? null,
-      websiteUrl:           c.website              ?? null,
+      foundingYear:         c.founded_year ?? c.founding_year ?? null,
+      websiteUrl:           c.website ?? c.website_url ?? null,
     },
     campusLife: campusLife
       ? {
@@ -564,10 +673,10 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
         }
       : undefined,
     rankings: rankings.map((r) => ({
-      year:        r.ranking_year ?? new Date().getFullYear(),
-      rankingBody: r.ranking_source,
+      year:         r.ranking_year ?? new Date().getFullYear(),
+      rankingBody:  r.ranking_source,
       nationalRank: r.ranking_value ? parseInt(r.ranking_value, 10) : null,
-      globalRank:  null,
+      globalRank:   null,
     })),
     graduationRates: academics
       ? { fourYear: academics.graduation_rate_4yr ?? null }

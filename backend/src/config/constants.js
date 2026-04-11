@@ -40,9 +40,10 @@ module.exports = {
   },
   
   COUNTRIES: [
-    'USA', 'UK', 'Canada', 'Australia', 'Singapore', 
-    'China', 'Hong Kong', 'India', 'Germany', 'France',
-    'Netherlands', 'Switzerland', 'Japan', 'South Korea'
+    'USA', 'UK', 'Canada', 'Australia', 'Ireland', 'New Zealand',
+    'Singapore', 'China', 'Hong Kong', 'India', 'Germany', 'France',
+    'Netherlands', 'Switzerland', 'Japan', 'South Korea',
+    'Sweden', 'Denmark', 'Norway', 'Finland', 'Italy', 'Spain'
   ],
   
   ACADEMIC_STRENGTHS: [
