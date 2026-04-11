@@ -138,6 +138,15 @@ class ApplicationController {
           code: 'DUPLICATE_APPLICATION'
         }, { requestId }));
       }
+      // Surface DB errors so the client sees what went wrong (e.g. missing column)
+      if (error.detail || (error.code && typeof error.code === 'string' && error.code.startsWith('2'))) {
+        return res.status(500).json({
+          success: false,
+          error: error.message,
+          detail: error.detail,
+          code: error.code
+        });
+      }
       next(error);
     }
   }

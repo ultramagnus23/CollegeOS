@@ -831,6 +831,88 @@ class ProfileService {
   }
   
   /**
+   * Calculate a profile strength score (0-100) with real variance based on
+   * GPA, test scores, extracurriculars, essays, and profile completeness.
+   *
+   * Score breakdown:
+   *   Academic (GPA + test scores): 0-40 points
+   *   Extracurriculars:             0-25 points
+   *   Essays:                       0-20 points
+   *   Profile completeness bonus:   0-15 points
+   *
+   * @param {object} user - Row from student_profiles (or merged user+profile)
+   * @param {number} completionPct - Profile completion percentage (0-100)
+   * @returns {{ score: number, breakdown: object, label: string }}
+   */
+  static calculateProfileScore(user, completionPct = 0) {
+    let score = 0;
+    const breakdown = {};
+
+    // ── Academic strength (0-40 points) ──────────────────────────────────────
+    let academic = 0;
+    const gpa = parseFloat(user.gpa_weighted || user.gpa_unweighted || user.gpa_4_scale || user.gpa);
+    if (!isNaN(gpa) && gpa > 0) {
+      if      (gpa >= 4.0) academic += 20;
+      else if (gpa >= 3.7) academic += 17;
+      else if (gpa >= 3.5) academic += 14;
+      else if (gpa >= 3.0) academic += 10;
+      else if (gpa >= 2.5) academic += 6;
+      else                 academic += 2;
+    }
+    const sat = parseInt(user.sat_total || user.sat_score);
+    const act = parseInt(user.act_composite || user.act_score);
+    if (!isNaN(sat) && sat > 0) {
+      if      (sat >= 1550) academic += 20;
+      else if (sat >= 1400) academic += 15;
+      else if (sat >= 1200) academic += 10;
+      else if (sat >= 1000) academic += 5;
+      else                  academic += 2;
+    } else if (!isNaN(act) && act > 0) {
+      if      (act >= 34) academic += 20;
+      else if (act >= 30) academic += 15;
+      else if (act >= 24) academic += 10;
+      else if (act >= 18) academic += 5;
+      else                academic += 2;
+    }
+    breakdown.academic = academic;
+    score += academic;
+
+    // ── Extracurriculars (0-25 points) ────────────────────────────────────────
+    let ec = 0;
+    // Count from student_activities table if provided, else from profile field
+    const activities = user._activities_count || 0;
+    if (activities >= 8)      ec = 25;
+    else if (activities >= 5) ec = 18;
+    else if (activities >= 3) ec = 12;
+    else if (activities >= 1) ec = 6;
+    breakdown.extracurriculars = ec;
+    score += ec;
+
+    // ── Essays (0-20 points) ──────────────────────────────────────────────────
+    let essays = 0;
+    if (user.essays_started)                          essays += 10;
+    const submitted = parseInt(user.essays_submitted_count) || 0;
+    if (submitted > 0) essays += Math.min(submitted * 2, 10);
+    essays = Math.min(essays, 20);
+    breakdown.essays = essays;
+    score += essays;
+
+    // ── Profile completeness bonus (0-15 points) ──────────────────────────────
+    const completionPoints = Math.round((completionPct / 100) * 15);
+    breakdown.completion = completionPoints;
+    score += completionPoints;
+
+    const total = Math.min(score, 100);
+    const label = total >= 85 ? 'Exceptional'
+                : total >= 70 ? 'Strong'
+                : total >= 55 ? 'Competitive'
+                : total >= 40 ? 'Developing'
+                :               'Early Stage';
+
+    return { score: total, breakdown, label };
+  }
+
+  /**
    * Safe JSON parse helper
    * @param {string} jsonString - JSON string to parse
    * @param {any} fallback - Fallback value

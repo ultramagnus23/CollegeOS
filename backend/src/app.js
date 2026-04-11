@@ -217,6 +217,51 @@ async function startServer() {
       // Start keep-alive pings to prevent Render free-tier connection reaping
       startKeepAlive();
 
+      // Precompute college feature vectors (non-blocking — runs after server starts)
+      setImmediate(async () => {
+        try {
+          const { buildCollegeVector } = require('./services/vectorService');
+          const pool = dbManager.getDatabase();
+          const { rows: missing } = await pool.query(
+            `SELECT id FROM colleges_comprehensive WHERE feature_vector IS NULL LIMIT 5000`
+          );
+          if (missing.length > 0) {
+            logger.info(`Precomputing feature vectors for ${missing.length} colleges…`);
+            let computed = 0;
+            for (const { id } of missing) {
+              try {
+                const { rows } = await pool.query(
+                  `SELECT cc.*, ca.admission_rate, ca.acceptance_rate,
+                          cfd.avg_net_price, cfd.avg_financial_aid,
+                          ad.graduation_rate_4yr, ad.sat_avg, ad.act_avg
+                   FROM colleges_comprehensive cc
+                   LEFT JOIN college_admissions ca   ON ca.college_id  = cc.id
+                   LEFT JOIN college_financial_data cfd ON cfd.college_id = cc.id
+                   LEFT JOIN academic_details ad       ON ad.college_id   = cc.id
+                   WHERE cc.id = $1`,
+                  [id]
+                );
+                if (rows[0]) {
+                  const vec = buildCollegeVector(rows[0]);
+                  await pool.query(
+                    `UPDATE colleges_comprehensive
+                     SET feature_vector = $1, vector_updated_at = NOW()
+                     WHERE id = $2`,
+                    [JSON.stringify(vec), id]
+                  );
+                  computed++;
+                }
+              } catch (_) {
+                // Skip individual failures
+              }
+            }
+            logger.info(`Precomputed vectors for ${computed} colleges`);
+          }
+        } catch (err) {
+          logger.warn('College vector precompute failed (non-fatal):', { error: err.message });
+        }
+      });
+
       // Refresh exchange rates every 6 hours
       setInterval(refreshExchangeRates, 6 * 60 * 60 * 1000);
 
