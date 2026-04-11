@@ -46,6 +46,8 @@ const grantsRoutes = require('./routes/grants');
 const loansRoutes = require('./routes/loans');
 const chanceRoutes = require('./routes/chance');
 const adminRoutes = require('./routes/admin');
+const recommendRoutes = require('./routes/recommend');
+const signalsRoutes = require('./routes/signals');
 
 // Create Express app
 const app = express();
@@ -127,6 +129,8 @@ app.use('/api/grants', grantsRoutes);
 app.use('/api/loans', loansRoutes);
 app.use('/api/chance', chanceRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/recommend', recommendRoutes);
+app.use('/api/signals', signalsRoutes);
 
 // 404 handler
 app.use((req, res) => {

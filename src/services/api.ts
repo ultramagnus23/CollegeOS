@@ -660,6 +660,55 @@ class ApiService {
     generate: () => this.generateRecommendations(),
   };
 
+  // Vector-based ML recommendations namespace
+  recommend = {
+    /**
+     * POST /api/recommend
+     * Returns top 50 colleges by cosine similarity + admit chance.
+     */
+    getColleges: (filters: Record<string, any> = {}) =>
+      this.request('/recommend', {
+        method: 'POST',
+        body: JSON.stringify({ filters }),
+      }),
+
+    /**
+     * GET /api/recommend/majors
+     * Returns top major categories and specific majors that match the user's
+     * interest vector dimensions.
+     */
+    getMajors: () => this.request('/recommend/majors'),
+  };
+
+  // Signals namespace — fire interaction signals for online learning
+  signals = {
+    /**
+     * Fire a signal when the user interacts with a college.
+     * type: 'added' | 'dismissed' | 'viewed' | 'removed'
+     */
+    fire: (collegeId: number, type: 'added' | 'dismissed' | 'viewed' | 'removed') =>
+      this.request('/signals', {
+        method: 'POST',
+        body: JSON.stringify({ collegeId, type }),
+      }),
+
+    getAll: () => this.request('/signals'),
+  };
+
+  // IPEDS majors namespace
+  majors = {
+    /** GET /api/colleges/majors — full master list */
+    getAll: () => this.request('/colleges/majors'),
+
+    /** GET /api/colleges/majors/search?q=... */
+    search: (q: string) =>
+      this.request(`/colleges/majors/search?q=${encodeURIComponent(q)}`),
+
+    /** GET /api/colleges/:id/majors — majors for a specific college */
+    getForCollege: (collegeId: number) =>
+      this.request(`/colleges/${collegeId}/majors`),
+  };
+
   // Timeline namespace
   timeline = {
     getMonthly: () => this.getMonthlyTimeline(),
