@@ -1,9 +1,23 @@
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
 
+// Columns that are allowed in INSERT / UPDATE operations.
+// Any field sent by the client that is NOT in this list is silently dropped
+// before it reaches the DB, preventing "column does not exist" errors.
+const ALLOWED_INSERT_FIELDS = [
+  'user_id', 'college_id', 'application_type', 'status',
+  'notes', 'deadline', 'priority',
+];
+
 class Application {
   static async create(userId, data) {
     const pool = dbManager.getDatabase();
+
+    // Strip any unknown fields before they reach the DB.
+    // Only columns defined in ALLOWED_INSERT_FIELDS are permitted.
+    const safeData = Object.fromEntries(
+      Object.entries(data).filter(([k]) => ALLOWED_INSERT_FIELDS.includes(k))
+    );
 
     // Check for duplicate first
     const existingApp = await this.findByUserAndCollege(userId, data.collegeId || data.college_id);
@@ -14,20 +28,30 @@ class Application {
       throw error;
     }
 
+    // Resolve collegeId from either camelCase or snake_case input
     const collegeId = data.collegeId || data.college_id;
-    const { rows } = await pool.query(
-      `INSERT INTO applications (user_id, college_id, status, application_type, priority, notes)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id`,
-      [
-        userId,
-        collegeId,
-        data.status || 'researching',
-        data.applicationType || data.application_type || null,
-        data.priority || null,
-        data.notes || null
-      ]
-    );
+    let rows;
+    try {
+      ({ rows } = await pool.query(
+        `INSERT INTO applications (user_id, college_id, status, application_type, priority, notes)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id`,
+        [
+          userId,
+          collegeId,
+          safeData.status || data.status || 'researching',
+          safeData.application_type || data.application_type || data.applicationType || null,
+          safeData.priority || data.priority || null,
+          safeData.notes || data.notes || null
+        ]
+      ));
+    } catch (dbErr) {
+      logger.error('DB error in Application.create:', dbErr);
+      const err = new Error(dbErr.message || 'Database error while creating application');
+      err.detail = dbErr.detail;
+      err.code = dbErr.code;
+      throw err;
+    }
 
     const applicationId = rows[0].id;
 
