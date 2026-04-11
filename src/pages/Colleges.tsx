@@ -80,6 +80,24 @@ const Colleges: React.FC = () => {
   // Guard: prevents duplicate or concurrent batch fit calls (React StrictMode double-invoke safe)
   const fitBatchInFlight = useRef(false);
 
+  // ── ML-grade recommendations (cosine similarity + admit chance) ───────────
+  interface RecommendedCollege {
+    id: number;
+    name: string;
+    country?: string;
+    state?: string;
+    overall_fit: number;
+    admit_chance: number;
+    tier: string;
+    reasoning: string[];
+  }
+  const [recommendations, setRecommendations] = useState<RecommendedCollege[]>([]);
+  const [recsLoading, setRecsLoading] = useState(false);
+  const [recsError, setRecsError] = useState<string | null>(null);
+  const [recsLoaded, setRecsLoaded] = useState(false);
+  // Expandable "Why?" state: college id → boolean
+  const [whyExpanded, setWhyExpanded] = useState<Record<number, boolean>>({});
+
   /* ==================== LOAD FILTERS ==================== */
 
   useEffect(() => {
@@ -274,7 +292,23 @@ const Colleges: React.FC = () => {
     }
   };
 
-  /* ==================== ACTIONS ==================== */
+  /* ==================== RECOMMENDATIONS ==================== */
+
+  useEffect(() => {
+    if (!user?.onboarding_complete || recsLoaded) return;
+    setRecsLoading(true);
+    api.recommend.getColleges({})
+      .then((res: any) => {
+        const data = res?.data ?? res;
+        const colleges: RecommendedCollege[] = (data?.colleges ?? []).slice(0, 10);
+        setRecommendations(colleges);
+        setRecsLoaded(true);
+      })
+      .catch(() => setRecsError('Could not load recommendations'))
+      .finally(() => setRecsLoading(false));
+  }, [user?.onboarding_complete]);
+
+/* ==================== ACTIONS ==================== */
 
   const handleAddCollege = async (collegeId: number) => {
     if (!user) {
@@ -442,6 +476,95 @@ const Colleges: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* ── Recommended for You (cosine-similarity ML engine) ─────────────── */}
+          {user?.onboarding_complete && (recommendations.length > 0 || recsLoading) && (
+            <div style={{ marginBottom: 36 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: h2r(ACCENT,0.9), textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: S.font }}>✨ Recommended for You</span>
+                <span style={{ fontSize: 11, color: S.muted, fontFamily: S.font }}>Based on your profile — cosine similarity fit engine</span>
+              </div>
+
+              {recsLoading && (
+                <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+                  {[0,1,2].map(i => (
+                    <div key={i} style={{ minWidth: 240, height: 140, background: S.surface, borderRadius: 16, border: `1px solid ${S.border}`, opacity: 0.5 }} />
+                  ))}
+                </div>
+              )}
+
+              {!recsLoading && recommendations.length > 0 && (
+                <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+                  {recommendations.map(rec => {
+                    const tierColor = rec.tier === 'Safety' ? '#22c55e' : rec.tier === 'Target' ? '#f59e0b' : '#ef4444';
+                    const isOpen = whyExpanded[rec.id] ?? false;
+                    return (
+                      <div
+                        key={rec.id}
+                        style={{
+                          minWidth: 240, maxWidth: 260, background: S.surface,
+                          border: `1px solid ${S.border}`, borderRadius: 16,
+                          padding: '14px 16px', cursor: 'pointer', flexShrink: 0,
+                          transition: 'border-color 0.15s',
+                          position: 'relative',
+                        }}
+                        onClick={() => navigate(`/colleges/${rec.id}`)}
+                      >
+                        {/* Dismiss button */}
+                        <button
+                          style={{ position: 'absolute', top: 10, right: 10, background: 'transparent', border: 'none', color: S.muted, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 2 }}
+                          title="Not for me"
+                          onClick={e => {
+                            e.stopPropagation();
+                            api.signals.fire(rec.id, 'dismissed').catch(() => {});
+                            setRecommendations(prev => prev.filter(r => r.id !== rec.id));
+                          }}
+                        >
+                          ✕
+                        </button>
+
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 4, paddingRight: 20, lineHeight: 1.3 }}>
+                          {rec.name}
+                        </div>
+                        {rec.state && <div style={{ fontSize: 11, color: S.muted, marginBottom: 10, fontFamily: S.font }}>{rec.state}{rec.country && rec.country !== 'United States' ? `, ${rec.country}` : ''}</div>}
+
+                        {/* Fit bar */}
+                        <div style={{ marginBottom: 8 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                            <span style={{ fontSize: 10, color: S.muted, fontFamily: S.font }}>Overall Fit</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: ACCENT, fontFamily: S.font }}>{rec.overall_fit}%</span>
+                          </div>
+                          <div style={{ height: 4, background: h2r(ACCENT,0.15), borderRadius: 9999 }}>
+                            <div style={{ height: '100%', width: `${rec.overall_fit}%`, background: ACCENT, borderRadius: 9999, transition: 'width 0.5s ease' }} />
+                          </div>
+                        </div>
+
+                        {/* Admit chance + tier */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, color: tierColor, fontWeight: 700, fontFamily: S.font }}>
+                            {rec.tier} · {rec.admit_chance}% chance
+                          </span>
+                          <button
+                            style={{ fontSize: 10, color: S.muted, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontFamily: S.font }}
+                            onClick={e => { e.stopPropagation(); setWhyExpanded(prev => ({ ...prev, [rec.id]: !prev[rec.id] })); }}
+                          >
+                            {isOpen ? 'Hide ▲' : 'Why? ▼'}
+                          </button>
+                        </div>
+
+                        {/* Reasoning (expandable) */}
+                        {isOpen && rec.reasoning && rec.reasoning.length > 0 && (
+                          <div style={{ fontSize: 11, color: S.muted, fontFamily: S.font, marginTop: 6, paddingTop: 6, borderTop: `1px solid ${S.border}` }}>
+                            {rec.reasoning.map((r, i) => <div key={i} style={{ marginBottom: 2 }}>• {r}</div>)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Results ── */}
           {loading && (

@@ -1,5 +1,5 @@
 // src/pages/CollegeRecommendations.tsx — College Recommendation Engine UI
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../services/api';
 import { toast } from 'sonner';
 
@@ -30,6 +30,19 @@ interface RecommendationResult {
     total_colleges_evaluated: number;
     exchange_rate_note: string;
   };
+}
+
+/** New ML recommendation from POST /api/recommend */
+interface MLRecommendation {
+  id:                  number;
+  name:                string;
+  country?:            string;
+  state?:              string;
+  overall_fit:         number;
+  admit_chance:        number;
+  tier:                string;
+  reasoning:           string[];
+  academic_similarity: number;
 }
 
 /* ─── Design tokens ───────────────────────────────────────────────────────── */
@@ -177,6 +190,30 @@ const CollegeRecommendations: React.FC = () => {
   const [error, setError]     = useState('');
   const [generating, setGenerating] = useState(false);
 
+  // ── New ML recommendations (cosine-similarity engine) ────────────────────
+  const [mlRecs, setMlRecs]           = useState<MLRecommendation[]>([]);
+  const [mlLoading, setMlLoading]     = useState(false);
+  const [mlExpanded, setMlExpanded]   = useState<Record<number, boolean>>({});
+  const [dismissed, setDismissed]     = useState<Set<number>>(new Set());
+
+  const loadML = useCallback(async () => {
+    try {
+      setMlLoading(true);
+      const res = await (api as any).recommend.getColleges({});
+      const colleges: MLRecommendation[] = (res?.colleges ?? res?.data?.colleges ?? []).slice(0, 20);
+      setMlRecs(colleges);
+    } catch {
+      // Non-critical — ML recommendations may not be available yet
+    } finally {
+      setMlLoading(false);
+    }
+  }, []);
+
+  const dismissML = useCallback((id: number) => {
+    (api as any).signals.fire(id, 'dismissed').catch(() => {});
+    setDismissed(prev => new Set([...prev, id]));
+  }, []);
+
   const load = async () => {
     try {
       setLoading(true);
@@ -214,15 +251,120 @@ const CollegeRecommendations: React.FC = () => {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    loadML();
+  }, []);
 
   const recs = data?.recommendations || [];
+  const visibleMLRecs = mlRecs.filter(r => !dismissed.has(r.id));
 
   return (
     <div style={{ minHeight: '100vh', background: S.bg, fontFamily: S.font, padding: '40px 24px' }}>
       <style>{GLOBAL}</style>
 
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
+        {/* ── ML Fit Section ── */}
+        {(mlLoading || visibleMLRecs.length > 0) && (
+          <div style={{ marginBottom: 40 }}>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>
+                ✨ Best Fit — Vector Engine
+              </div>
+              <div style={{ fontSize: 13, color: S.muted }}>
+                Ranked by cosine similarity between your profile and each college's 28-dimension feature vector.
+              </div>
+            </div>
+
+            {mlLoading && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 0' }}>
+                <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${ACCENT}`, borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
+                <span style={{ fontSize: 13, color: S.muted }}>Computing fit scores…</span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {visibleMLRecs.map((rec, idx) => {
+                const tierColor = rec.tier === 'Safety' ? '#22c55e' : rec.tier === 'Target' ? '#f59e0b' : '#ef4444';
+                const isOpen = mlExpanded[rec.id] ?? false;
+                return (
+                  <div
+                    key={rec.id}
+                    style={{
+                      background: S.surface, border: `1px solid ${S.border}`,
+                      borderLeft: `3px solid ${tierColor}`,
+                      borderRadius: 14, padding: '16px 20px',
+                      animation: `fadeUp 0.25s ease ${idx * 0.04}s both`,
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      {/* Rank */}
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: `${tierColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: tierColor, flexShrink: 0 }}>
+                        #{idx + 1}
+                      </div>
+
+                      {/* Info */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 2 }}>{rec.name}</div>
+                        {rec.state && <div style={{ fontSize: 11, color: S.muted, marginBottom: 8 }}>{rec.state}{rec.country && rec.country !== 'United States' ? `, ${rec.country}` : ''}</div>}
+
+                        {/* Fit bar */}
+                        <div style={{ marginBottom: 6 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                            <span style={{ fontSize: 10, color: S.muted }}>Overall Fit</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: ACCENT }}>{rec.overall_fit}%</span>
+                          </div>
+                          <div style={{ height: 5, background: `${ACCENT}22`, borderRadius: 9999 }}>
+                            <div style={{ height: '100%', width: `${rec.overall_fit}%`, background: ACCENT, borderRadius: 9999, transition: 'width 0.5s ease' }} />
+                          </div>
+                        </div>
+
+                        {/* Admit chance */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: 12, color: tierColor, fontWeight: 700 }}>
+                            {rec.tier} · {rec.admit_chance}% admit chance
+                          </span>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                              onClick={() => setMlExpanded(prev => ({ ...prev, [rec.id]: !prev[rec.id] }))}
+                              style={{ fontSize: 11, color: ACCENT, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                            >
+                              {isOpen ? 'Hide ▲' : 'Why this score? ▼'}
+                            </button>
+                            <button
+                              onClick={() => dismissML(rec.id)}
+                              style={{ fontSize: 11, color: S.muted, background: 'none', border: `1px solid ${S.border}`, borderRadius: 6, cursor: 'pointer', padding: '2px 8px' }}
+                            >
+                              Not for me
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Reasoning */}
+                        {isOpen && rec.reasoning && rec.reasoning.length > 0 && (
+                          <ul style={{ paddingLeft: 16, margin: '8px 0 0', borderTop: `1px solid ${S.border}`, paddingTop: 8 }}>
+                            {rec.reasoning.map((r, i) => (
+                              <li key={i} style={{ fontSize: 12, color: S.muted, marginBottom: 3 }}>{r}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {visibleMLRecs.length === 0 && !mlLoading && (
+              <div style={{ fontSize: 13, color: S.muted, padding: '12px 0' }}>
+                No ML recommendations available yet. Run <code>node scripts/precomputeCollegeVectors.js</code> to compute college vectors.
+              </div>
+            )}
+
+            <div style={{ borderBottom: `1px solid ${S.border}`, margin: '32px 0' }} />
+          </div>
+        )}
+
         {/* Header */}
         <div style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div>

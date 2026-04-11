@@ -29,6 +29,8 @@
     "db:check": "node scripts/diagnoseDatabase.js",
     "test": "jest --coverage",
     "lint": "eslint src/",
+    "vectors:precompute": "node scripts/precomputeCollegeVectors.js",
+    "vectors:force": "node scripts/precomputeCollegeVectors.js --force",
     "populate:majors": "node scripts/populateMajorsMapping.js",
     "populate:real-data": "node scripts/populateRealCollegeData.js",
     "scrape:test-deadlines": "node scripts/testDeadlineScraper.js",
