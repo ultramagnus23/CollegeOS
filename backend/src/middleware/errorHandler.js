@@ -77,6 +77,36 @@ const errorHandler = (err, req, res, next) => {
     status = 500;
     message = 'Database error';
     errorCode = 'DB_ERROR';
+  // PostgreSQL error codes
+  } else if (err.code === '23505') {
+    status = 400;
+    message = isProduction() ? 'Resource already exists' : (err.detail || 'Unique constraint violation');
+    errorCode = 'DUPLICATE_ENTRY';
+  } else if (err.code === '23503') {
+    status = 400;
+    message = isProduction() ? 'Invalid reference' : (err.detail || 'Foreign key constraint violation');
+    errorCode = 'FOREIGN_KEY_VIOLATION';
+  } else if (err.code === '23502') {
+    status = 400;
+    message = isProduction() ? 'Missing required field' : (err.detail || `Not-null constraint violation: ${err.column || 'unknown column'}`);
+    errorCode = 'NOT_NULL_VIOLATION';
+  } else if (err.code === '23514') {
+    status = 400;
+    message = isProduction() ? 'Invalid field value' : (err.detail || 'Check constraint violation');
+    errorCode = 'CHECK_VIOLATION';
+  } else if (err.code === '42703') {
+    status = 500;
+    message = isProduction() ? 'Database error' : `Undefined column: ${err.message}`;
+    errorCode = 'UNDEFINED_COLUMN';
+  } else if (err.code === '42P01') {
+    status = 500;
+    message = isProduction() ? 'Database error' : `Undefined table: ${err.message}`;
+    errorCode = 'UNDEFINED_TABLE';
+  } else if (err.code && err.code.startsWith('22')) {
+    // Class 22 = data exception (invalid type, out-of-range values, etc.)
+    status = 400;
+    message = isProduction() ? 'Invalid data' : (err.detail || err.message);
+    errorCode = 'DATA_EXCEPTION';
   } else if (err.name === 'JsonWebTokenError') {
     status = 401;
     message = 'Invalid token';
@@ -108,7 +138,12 @@ const errorHandler = (err, req, res, next) => {
     errorResponse.details = {
       name: err.name,
       originalMessage: err.message,
-      code: err.code
+      code: err.code,
+      // PostgreSQL-specific diagnostic fields
+      detail: err.detail || undefined,
+      hint:   err.hint   || undefined,
+      column: err.column || undefined,
+      table:  err.table  || undefined,
     };
   }
   

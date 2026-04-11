@@ -13,8 +13,63 @@ router.get('/all', CollegeController.browseAll);
 // Browse by major (Issue 7)
 router.get('/by-major/:major', CollegeController.browseByMajor);
 
-// Get all majors with counts (Issue 7)
-router.get('/majors', CollegeController.getMajors);
+// ─── IPEDS majors master list ──────────────────────────────────────────────
+// GET /api/colleges/majors
+//   Returns the full master list of IPEDS-verified majors with categories.
+//   Falls back to the legacy master_majors table if the new one is empty.
+router.get('/majors', async (req, res, next) => {
+  try {
+    const db   = require('../config/database');
+    const pool = db.getDatabase();
+
+    // Try the IPEDS-sourced table first
+    let { rows } = await pool.query(
+      `SELECT id, cip_code, name, broad_category, is_stem
+       FROM   majors
+       ORDER  BY broad_category, name`
+    ).catch(() => ({ rows: [] }));
+
+    // Fallback to legacy controller if new table is empty
+    if (!rows.length) {
+      return CollegeController.getMajors(req, res, next);
+    }
+
+    res.json({ success: true, count: rows.length, data: rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/colleges/majors/search?q=computer
+//   Fuzzy (ILIKE) search on major names.
+router.get('/majors/search', async (req, res, next) => {
+  try {
+    const db   = require('../config/database');
+    const pool = db.getDatabase();
+    const q    = (req.query.q || '').trim();
+
+    if (!q) {
+      return res.status(400).json({ success: false, message: 'q parameter is required' });
+    }
+
+    const { rows } = await pool.query(
+      `SELECT id, cip_code, name, broad_category, is_stem
+       FROM   majors
+       WHERE  name ILIKE $1
+       ORDER  BY
+         CASE WHEN name ILIKE $2 THEN 0 ELSE 1 END,
+         name
+       LIMIT 50`,
+      [`%${q}%`, `${q}%`]
+    );
+
+    res.json({ success: true, count: rows.length, data: rows });
+  } catch (err) {
+    // If table doesn't exist yet, return empty
+    logger.warn('Majors search error: %s', err.message);
+    res.json({ success: true, count: 0, data: [] });
+  }
+});
 
 router.get('/', CollegeController.getColleges);
 router.get('/search', CollegeController.searchColleges);
@@ -22,7 +77,78 @@ router.get('/filters/countries', CollegeController.getCountries);
 router.get('/filters/programs', CollegeController.getPrograms);
 router.get('/stats', CollegeController.getDatabaseStats);
 router.get('/:id', CollegeController.getCollegeById);
-router.get('/:id/majors', CollegeController.getCollegeMajors);
+
+// ─── GET /api/colleges/:id/majors ─────────────────────────────────────────────
+// Returns majors offered at this college.
+// Priority:
+//   1. IPEDS-sourced college_majors table (populated by build_college_majors.py)
+//   2. Fallback: legacy college_majors_offered + master_majors (controller)
+//   3. Fallback: college_programs table (program names as strings)
+router.get('/:id/majors', async (req, res, next) => {
+  try {
+    const db   = require('../config/database');
+    const pool = db.getDatabase();
+    const id   = parseInt(req.params.id);
+
+    if (isNaN(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid college ID' });
+    }
+
+    // ── 1. Try IPEDS college_majors table ──────────────────────────────────
+    let rows = [];
+    try {
+      const result = await pool.query(
+        `SELECT
+           m.id            AS major_id,
+           m.cip_code,
+           m.name,
+           m.broad_category,
+           m.is_stem,
+           cm.awlevel,
+           cm.completions_count
+         FROM   college_majors cm
+         JOIN   majors m ON m.id = cm.major_id
+         WHERE  cm.college_id = $1
+           AND  cm.offered    = true
+         ORDER  BY m.broad_category, m.name`,
+        [id]
+      );
+      rows = result.rows;
+    } catch (_) {
+      // table doesn't exist yet — fall through
+    }
+
+    if (rows.length > 0) {
+      // Group by broad_category
+      const grouped = {};
+      for (const row of rows) {
+        const cat = row.broad_category || 'Other';
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push({
+          major_id:          row.major_id,
+          cip_code:          row.cip_code,
+          name:              row.name,
+          is_stem:           row.is_stem,
+          awlevel:           row.awlevel,
+          completions_count: row.completions_count,
+        });
+      }
+
+      return res.json({
+        success:  true,
+        source:   'ipeds',
+        count:    rows.length,
+        grouped,
+        data:     rows,
+      });
+    }
+
+    // ── 2. Fallback to legacy controller ───────────────────────────────────
+    return CollegeController.getCollegeMajors(req, res, next);
+  } catch (err) {
+    next(err);
+  }
+});
 router.get('/:id/deadlines', CollegeDeadlineController.getCollegeDeadlines);
 
 // Protected routes - require authentication
@@ -77,6 +203,7 @@ router.get('/contributions/:collegeId', CollegeController.getContributions);
  *   type      — 'public' | 'private' | 'for-profit'
  *   setting   — 'urban' | 'suburban' | 'rural'
  *   page      — 1-based page number (default 1, 20 per page)
+ *   sortBy    — 'popularity' (default) | 'name' | 'acceptance_rate' | 'tuition' | 'ranking'
  */
 router.get('/comprehensive', async (req, res, next) => {
   try {
@@ -85,6 +212,17 @@ router.get('/comprehensive', async (req, res, next) => {
     const PAGE_SIZE = 20;
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const offset = (page - 1) * PAGE_SIZE;
+
+    // Allowlist sort expressions to prevent SQL injection
+    const SORT_EXPRESSIONS = {
+      popularity:      '(1 - COALESCE(ca.acceptance_rate, 0.5)) * COALESCE(cc.total_enrollment, 0) DESC',
+      name:            'cc.name ASC',
+      acceptance_rate: 'ca.acceptance_rate ASC NULLS LAST',
+      tuition:         'COALESCE(cfd.tuition_out_state, cfd.tuition_international) ASC NULLS LAST',
+      ranking:         'best_rank ASC NULLS LAST',
+    };
+    const sortKey = SORT_EXPRESSIONS[req.query.sortBy] ? req.query.sortBy : 'popularity';
+    const orderExpr = SORT_EXPRESSIONS[sortKey];
 
     const conditions = [];
     const params = [];
@@ -109,7 +247,11 @@ router.get('/comprehensive', async (req, res, next) => {
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const countSql = `SELECT COUNT(*) FROM colleges_comprehensive cc ${where}`;
+    const countSql = `
+      SELECT COUNT(*) FROM colleges_comprehensive cc
+      LEFT JOIN college_admissions ca ON ca.college_id = cc.id
+      ${where}
+    `;
     const { rows: countRows } = await pool.query(countSql, params);
     const total = parseInt(countRows[0].count);
 
@@ -119,13 +261,18 @@ router.get('/comprehensive', async (req, res, next) => {
         cc.*,
         ca.acceptance_rate, ca.test_optional, ca.sat_avg, ca.sat_range, ca.act_range, ca.gpa_50,
         cfd.tuition_in_state, cfd.tuition_out_state, cfd.tuition_international, cfd.avg_net_price,
-        ad.graduation_rate_4yr, ad.retention_rate, ad.median_salary_6yr, ad.median_salary_10yr, ad.median_debt
+        ad.graduation_rate_4yr, ad.retention_rate, ad.median_salary_6yr, ad.median_salary_10yr, ad.median_debt,
+        (
+          SELECT MIN(CAST(cr.ranking_value AS INTEGER))
+          FROM college_rankings cr
+          WHERE cr.college_id = cc.id AND cr.ranking_value ~ '^[0-9]+$'
+        ) AS best_rank
       FROM colleges_comprehensive cc
       LEFT JOIN college_admissions ca ON ca.college_id = cc.id
       LEFT JOIN college_financial_data cfd ON cfd.college_id = cc.id
       LEFT JOIN academic_details ad ON ad.college_id = cc.id
       ${where}
-      ORDER BY cc.name ASC
+      ORDER BY ${orderExpr}
       LIMIT $${idx++} OFFSET $${idx++}
     `;
 
@@ -139,6 +286,7 @@ router.get('/comprehensive', async (req, res, next) => {
         pageSize: PAGE_SIZE,
         total,
         totalPages: Math.ceil(total / PAGE_SIZE),
+        sortBy: sortKey,
       },
     });
   } catch (err) {
