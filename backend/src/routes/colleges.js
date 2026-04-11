@@ -203,6 +203,7 @@ router.get('/contributions/:collegeId', CollegeController.getContributions);
  *   type      — 'public' | 'private' | 'for-profit'
  *   setting   — 'urban' | 'suburban' | 'rural'
  *   page      — 1-based page number (default 1, 20 per page)
+ *   sortBy    — 'popularity' (default) | 'name' | 'acceptance_rate' | 'tuition' | 'ranking'
  */
 router.get('/comprehensive', async (req, res, next) => {
   try {
@@ -211,6 +212,17 @@ router.get('/comprehensive', async (req, res, next) => {
     const PAGE_SIZE = 20;
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const offset = (page - 1) * PAGE_SIZE;
+
+    // Allowlist sort expressions to prevent SQL injection
+    const SORT_EXPRESSIONS = {
+      popularity:      '(1 - COALESCE(ca.acceptance_rate, 0.5)) * COALESCE(cc.total_enrollment, 0) DESC',
+      name:            'cc.name ASC',
+      acceptance_rate: 'ca.acceptance_rate ASC NULLS LAST',
+      tuition:         'COALESCE(cfd.tuition_out_state, cfd.tuition_international) ASC NULLS LAST',
+      ranking:         'best_rank ASC NULLS LAST',
+    };
+    const sortKey = SORT_EXPRESSIONS[req.query.sortBy] ? req.query.sortBy : 'popularity';
+    const orderExpr = SORT_EXPRESSIONS[sortKey];
 
     const conditions = [];
     const params = [];
@@ -235,7 +247,11 @@ router.get('/comprehensive', async (req, res, next) => {
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const countSql = `SELECT COUNT(*) FROM colleges_comprehensive cc ${where}`;
+    const countSql = `
+      SELECT COUNT(*) FROM colleges_comprehensive cc
+      LEFT JOIN college_admissions ca ON ca.college_id = cc.id
+      ${where}
+    `;
     const { rows: countRows } = await pool.query(countSql, params);
     const total = parseInt(countRows[0].count);
 
@@ -245,13 +261,18 @@ router.get('/comprehensive', async (req, res, next) => {
         cc.*,
         ca.acceptance_rate, ca.test_optional, ca.sat_avg, ca.sat_range, ca.act_range, ca.gpa_50,
         cfd.tuition_in_state, cfd.tuition_out_state, cfd.tuition_international, cfd.avg_net_price,
-        ad.graduation_rate_4yr, ad.retention_rate, ad.median_salary_6yr, ad.median_salary_10yr, ad.median_debt
+        ad.graduation_rate_4yr, ad.retention_rate, ad.median_salary_6yr, ad.median_salary_10yr, ad.median_debt,
+        (
+          SELECT MIN(CAST(cr.ranking_value AS INTEGER))
+          FROM college_rankings cr
+          WHERE cr.college_id = cc.id AND cr.ranking_value ~ '^[0-9]+$'
+        ) AS best_rank
       FROM colleges_comprehensive cc
       LEFT JOIN college_admissions ca ON ca.college_id = cc.id
       LEFT JOIN college_financial_data cfd ON cfd.college_id = cc.id
       LEFT JOIN academic_details ad ON ad.college_id = cc.id
       ${where}
-      ORDER BY cc.name ASC
+      ORDER BY ${orderExpr}
       LIMIT $${idx++} OFFSET $${idx++}
     `;
 
@@ -265,6 +286,7 @@ router.get('/comprehensive', async (req, res, next) => {
         pageSize: PAGE_SIZE,
         total,
         totalPages: Math.ceil(total / PAGE_SIZE),
+        sortBy: sortKey,
       },
     });
   } catch (err) {
