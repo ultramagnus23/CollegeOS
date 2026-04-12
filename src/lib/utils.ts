@@ -21,9 +21,10 @@ export function safeString(val: unknown): string {
   if (typeof val === 'number' || typeof val === 'boolean') return String(val);
   if (typeof val === 'object') {
     const obj = val as Record<string, unknown>;
-    // Common patterns: { name: "..." }, { label: "..." }, { value: "..." }
-    for (const key of ['name', 'label', 'value', 'title', 'text']) {
-      if (typeof obj[key] === 'string') return obj[key] as string;
+    // Common patterns: { name: "..." }, { label: "..." }, { value: "..." },
+    // { category: "..." } (from college_programs), { degree_type: "..." }
+    for (const key of ['name', 'label', 'value', 'title', 'text', 'category', 'program_name', 'degree_type']) {
+      if (typeof obj[key] === 'string' && obj[key]) return obj[key] as string;
     }
     try {
       return JSON.stringify(val);

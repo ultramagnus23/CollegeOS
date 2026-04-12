@@ -192,14 +192,17 @@ function buildUserVector(onboardingData) {
   const d = onboardingData || {};
 
   // ── Academic  (dims 0–5) ──────────────────────────────────────────────────
-  const gpa_norm = norm(d.gpa, 4.0);
+  // Use 0 (not 0.5) for missing values so incomplete profiles don't inflate
+  // cosine similarity — a user with no academic data should NOT look like a
+  // perfect match for every college.
+  const gpa_norm = d.gpa ? norm(d.gpa, 4.0, 0) : 0;
 
-  let sat_norm = 0.5;
+  let sat_norm = 0;
   if (d.sat_score) {
-    sat_norm = norm(d.sat_score, 1600);
+    sat_norm = norm(d.sat_score, 1600, 0);
   } else if (d.act_score) {
     // Convert ACT → SAT-equivalent scale [0,1]
-    sat_norm = norm(d.act_score, 36);
+    sat_norm = norm(d.act_score, 36, 0);
   }
 
   const rank      = parseFloat(d.class_rank)  || null;
@@ -207,7 +210,7 @@ function buildUserVector(onboardingData) {
   const class_rank_norm =
     rank && classSize && classSize > 0
       ? clamp01(1 - rank / classSize)
-      : 0.5;
+      : 0;
 
   const ap_courses_norm = norm(parseFloat(d.num_ap_courses) || 0, 15, 0);
   const ib_courses_norm = norm(parseFloat(d.num_ib_courses) || 0, 6,  0);
@@ -236,13 +239,13 @@ function buildUserVector(onboardingData) {
 
   // ── Financial  (dims 14–17) ───────────────────────────────────────────────
   const budget_norm = d.max_budget_usd
-    ? norm(parseFloat(d.max_budget_usd), 80000)
-    : 0.5;
+    ? norm(parseFloat(d.max_budget_usd), 80000, 0)
+    : 0;
 
   const income        = parseFloat(d.family_income_usd) || null;
   const financial_need_norm = income !== null
     ? clamp01(1 - income / 200000)
-    : 0.5;
+    : 0;
 
   const merit_aid_priority = d.wants_merit_aid ? 1 : 0;
   const loan_tolerance     = d.willing_to_take_loans ? 1 : 0;
