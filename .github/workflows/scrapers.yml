@@ -2,10 +2,10 @@ name: CollegeOS Python Scrapers
 
 on:
   schedule:
-    - cron: '0 */6 * * *'   # reddit-scraper: every 6 hours
-    - cron: '0 2 * * *'     # admissions-scraper: daily 02:00 UTC
-    - cron: '0 3 * * *'     # financial-scraper: daily 03:00 UTC
-    - cron: '0 4 * * 0'     # college-profile-scraper: every Sunday 04:00 UTC
+    - cron: '0 */6 * * *'
+    - cron: '0 2 * * *'
+    - cron: '0 3 * * *'
+    - cron: '0 4 * * 0'
   workflow_dispatch:
 
 permissions:
@@ -38,6 +38,7 @@ jobs:
   admissions-scraper:
     name: Admissions Scraper (daily 02:00 UTC)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 2 * * *'
     steps:
       - uses: actions/checkout@v4
@@ -57,6 +58,7 @@ jobs:
   financial-scraper:
     name: Financial Scraper (daily 03:00 UTC)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 3 * * *'
     steps:
       - uses: actions/checkout@v4
