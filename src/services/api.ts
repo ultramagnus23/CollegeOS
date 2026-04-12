@@ -838,6 +838,18 @@ class ApiService {
     create: (data: any) => this.createApplication(data),
     update: (id: number, data: any) => this.updateApplication(id, data),
     delete: (id: number) => this.deleteApplication(id),
+    getDeadlines: (id: number) => this.request(`/applications/${id}/deadlines`),
+    getTasks: (id: number) => this.request(`/applications/${id}/tasks`),
+    toggleDeadline: (appId: number, deadlineId: number, completed: boolean) =>
+      this.request(`/applications/${appId}/deadlines/${deadlineId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ completed }),
+      }),
+    toggleTask: (appId: number, taskId: number, completed: boolean) =>
+      this.request(`/applications/${appId}/tasks/${taskId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ completed }),
+      }),
   };
 
   // Deadlines namespace
