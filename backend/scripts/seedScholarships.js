@@ -176,7 +176,7 @@ const SCHOLARSHIPS = [
     eligible_nationalities: ['US Citizens', 'Permanent Residents'],
     eligible_genders: ['all'],
     eligible_majors: [],
-    eligible_years: ['senior', 'freshman', 'sophomore', 'junior', 'senior'],
+    eligible_years: ['freshman', 'sophomore', 'junior', 'senior'],
     min_gpa: 2.50,
     deadline_month: 3, deadline_day: 31,
     renewable: false,
