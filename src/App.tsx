@@ -38,6 +38,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import Landing from "./pages/Landing";
 import Chancing from "./pages/Chancing";
+import FinancialAid from "./pages/FinancialAid";
 
 import { StudentProfile } from "./types/index";
 
@@ -157,6 +158,7 @@ const AppContent = () => {
             <Route path="/essays" element={<Essays />} />
             <Route path="/documents" element={<Documents />} />
             <Route path="/scholarships" element={<Scholarships />} />
+            <Route path="/financial-aid" element={<FinancialAid />} />
             <Route path="/recommenders" element={<Recommendations />} />
             <Route path="/recommendations" element={<Recommendations />} />
             <Route path="/college-recommendations" element={<CollegeRecommendations />} />

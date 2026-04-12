@@ -1297,6 +1297,79 @@ class ApiService {
   async adminHealth() {
     return this.request('/admin/health');
   }
+
+  // ==================== FINANCIAL AID ENDPOINTS ====================
+
+  financial = {
+    /** Full COA breakdown for a college */
+    getCOA: (collegeId: number, params?: { studentType?: string; currency?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.studentType) q.append('studentType', params.studentType);
+      if (params?.currency) q.append('currency', params.currency);
+      const qs = q.toString();
+      return this.request(`/financial/coa/${collegeId}${qs ? `?${qs}` : ''}`);
+    },
+
+    /** Personalised financial profile for a college (uses scoring engine) */
+    getCollegeProfile: (collegeId: number) =>
+      this.request(`/financial/college/${collegeId}`),
+
+    /** Net cost after user's scholarships */
+    getNetCost: (collegeId: number, params?: { studentType?: string; currency?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.studentType) q.append('studentType', params.studentType);
+      if (params?.currency) q.append('currency', params.currency);
+      const qs = q.toString();
+      return this.request(`/financial/net-cost/${collegeId}${qs ? `?${qs}` : ''}`);
+    },
+
+    /** All colleges in application list ranked by affordability */
+    getSummary: () => this.request('/financial/summary'),
+
+    /** Search scholarships */
+    searchScholarships: (filters?: {
+      country?: string;
+      needBased?: boolean;
+      meritBased?: boolean;
+      minAmount?: number;
+      search?: string;
+      limit?: number;
+      offset?: number;
+    }) => {
+      const q = new URLSearchParams();
+      if (filters?.country) q.append('country', filters.country);
+      if (filters?.needBased) q.append('needBased', 'true');
+      if (filters?.meritBased) q.append('meritBased', 'true');
+      if (filters?.minAmount) q.append('minAmount', String(filters.minAmount));
+      if (filters?.search) q.append('search', filters.search);
+      if (filters?.limit) q.append('limit', String(filters.limit));
+      if (filters?.offset) q.append('offset', String(filters.offset));
+      const qs = q.toString();
+      return this.request(`/financial/scholarships${qs ? `?${qs}` : ''}`);
+    },
+
+    /** Loan options with EMI calculation */
+    getLoans: (requiredAmount?: number) =>
+      this.request(`/financial/loans${requiredAmount ? `?requiredAmount=${requiredAmount}` : ''}`),
+
+    /** Financing options (legacy endpoint) */
+    getFinancingOptions: (params?: { requiredAmount?: number; type?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.requiredAmount) q.append('requiredAmount', String(params.requiredAmount));
+      if (params?.type) q.append('type', params.type);
+      const qs = q.toString();
+      return this.request(`/financial/financing-options${qs ? `?${qs}` : ''}`);
+    },
+
+    /** Compare COA across colleges */
+    compare: (collegeIds: number[], params?: { studentType?: string; currency?: string }) => {
+      const q = new URLSearchParams();
+      q.append('collegeIds', collegeIds.join(','));
+      if (params?.studentType) q.append('studentType', params.studentType);
+      if (params?.currency) q.append('currency', params.currency);
+      return this.request(`/financial/compare?${q.toString()}`);
+    },
+  };
 }
 
 // Export singleton instance

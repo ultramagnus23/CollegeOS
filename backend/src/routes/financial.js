@@ -8,6 +8,9 @@
 //   GET  /api/financial/compare                     – compare COA across colleges
 //   GET  /api/financial/scholarships                – search scholarships
 //   GET  /api/financial/financing-options           – financing options with fit scores
+//   GET  /api/financial/college/:collegeId          – full financial profile (scoring engine)
+//   GET  /api/financial/summary                     – all user's colleges ranked by affordability
+//   GET  /api/financial/loans                       – loan options + EMI for authenticated user
 
 'use strict';
 
@@ -24,6 +27,11 @@ const {
   computeNetCost,
   getFinancingOptionsWithFit,
 } = require('../services/financialCostService');
+const {
+  computeFinancialProfile,
+  matchScholarships,
+  recommendLoans,
+} = require('../services/financialScoringService');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -326,4 +334,165 @@ router.get('/financing-options', async (req, res, next) => {
   }
 });
 
+// ── GET /api/financial/college/:collegeId ─────────────────────────────────────
+
+/**
+ * Full financial profile for a college, personalised to the authenticated user.
+ * Includes predicted net cost, merit/need aid, ROI score, accessibility score.
+ *
+ * Requires authentication.
+ */
+router.get('/college/:collegeId', authenticate, async (req, res, next) => {
+  try {
+    const collegeId = parseIntParam(req.params.collegeId, null);
+    if (!collegeId) {
+      return res.status(400).json({ success: false, message: 'Invalid college ID' });
+    }
+
+    const pool = dbManager.getDatabase();
+
+    // Fetch college row
+    const { rows: colRows } = await pool.query(
+      'SELECT * FROM colleges WHERE id = $1',
+      [collegeId]
+    );
+    if (!colRows.length) {
+      return res.status(404).json({ success: false, message: 'College not found' });
+    }
+
+    const userCtx = await loadUserFinancialCtx(pool, req.user.userId);
+    const profile = await computeFinancialProfile(userCtx, colRows[0], pool);
+
+    res.json({ success: true, data: profile });
+  } catch (err) {
+    logger.error('GET /api/financial/college/:collegeId failed', { error: err.message });
+    next(err);
+  }
+});
+
+// ── GET /api/financial/summary ────────────────────────────────────────────────
+
+/**
+ * Rank all colleges in the user's application list by affordability.
+ * Returns each college with financial profile sorted by net_cost_usd ascending.
+ *
+ * Requires authentication.
+ */
+router.get('/summary', authenticate, async (req, res, next) => {
+  try {
+    const pool    = dbManager.getDatabase();
+    const userId  = req.user.userId;
+
+    // Load user's application list
+    const { rows: appRows } = await pool.query(
+      `SELECT a.college_id, c.name, c.country
+       FROM applications a
+       JOIN colleges c ON c.id = a.college_id
+       WHERE a.user_id = $1 AND a.status NOT IN ('rejected')`,
+      [userId]
+    );
+
+    if (!appRows.length) {
+      return res.json({ success: true, data: [], message: 'No colleges in your application list' });
+    }
+
+    const userCtx  = await loadUserFinancialCtx(pool, userId);
+    const profiles = [];
+
+    for (const row of appRows) {
+      try {
+        const profile = await computeFinancialProfile(userCtx, { id: row.college_id, name: row.name, country: row.country }, pool);
+        profiles.push(profile);
+      } catch (e) {
+        logger.warn(`Financial summary: skipped ${row.name}`, { error: e.message });
+      }
+    }
+
+    // Sort by net_cost_usd ascending (most affordable first), nulls last
+    profiles.sort((a, b) => {
+      if (a.net_cost_usd == null) return 1;
+      if (b.net_cost_usd == null) return -1;
+      return a.net_cost_usd - b.net_cost_usd;
+    });
+
+    // Tag most affordable and best ROI
+    if (profiles.length > 0) {
+      const withCost = profiles.filter(p => p.net_cost_usd != null);
+      if (withCost.length) withCost[0].badge = 'Most Affordable';
+      const withROI = profiles.filter(p => p.roi_score != null).sort((a, b) => b.roi_score - a.roi_score);
+      if (withROI.length) withROI[0].badge_roi = 'Best ROI';
+    }
+
+    res.json({ success: true, data: profiles, count: profiles.length });
+  } catch (err) {
+    logger.error('GET /api/financial/summary failed', { error: err.message });
+    next(err);
+  }
+});
+
+// ── GET /api/financial/loans ──────────────────────────────────────────────────
+
+/**
+ * Personalised loan recommendations with EMI calculation.
+ *
+ * Query params:
+ *   requiredAmount  - required loan amount in USD (default 50000)
+ *
+ * Optionally authenticated for personalised scoring.
+ */
+router.get('/loans', async (req, res, next) => {
+  try {
+    const requiredUSD = Math.max(0, parseIntParam(req.query.requiredAmount, 50000));
+    const pool = dbManager.getDatabase();
+
+    let userCtx = {
+      has_collateral: false,
+      willing_to_take_loan: true,
+      nationality: '',
+    };
+
+    if (req.headers.authorization) {
+      try {
+        const token = req.headers.authorization.replace('Bearer ', '');
+        const decoded = jwt.verify(token, config.jwt.secret);
+        const ctx = await loadUserFinancialCtx(pool, decoded.userId);
+        if (ctx) userCtx = { ...userCtx, ...ctx };
+      } catch { /* anonymous */ }
+    }
+
+    const loans = await recommendLoans(userCtx, requiredUSD, pool);
+    res.json({ success: true, data: loans, count: loans.length, required_amount_usd: requiredUSD });
+  } catch (err) {
+    logger.error('GET /api/financial/loans failed', { error: err.message });
+    next(err);
+  }
+});
+
 module.exports = router;
+
+// ── Helper: load user financial profile ───────────────────────────────────────
+
+async function loadUserFinancialCtx(pool, userId) {
+  const { rows } = await pool.query(
+    `SELECT u.family_income_usd, u.family_income_inr,
+            u.willing_to_take_loan, u.has_collateral,
+            u.nationality, u.citizenship,
+            sp.gpa, sp.sat_score, sp.act_score,
+            sp.intended_major AS intended_majors,
+            sp.gender
+     FROM users u
+     LEFT JOIN student_profiles sp ON sp.user_id = u.id
+     WHERE u.id = $1`,
+    [userId]
+  );
+  if (!rows.length) return {};
+  const r = rows[0];
+  return {
+    ...r,
+    intended_majors: Array.isArray(r.intended_majors)
+      ? r.intended_majors
+      : r.intended_majors
+        ? r.intended_majors.split(',').map(s => s.trim())
+        : [],
+  };
+}

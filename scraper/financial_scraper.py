@@ -1,273 +1,383 @@
 #!/usr/bin/env python3
-# CollegeOS Auto-generated scraper/financial_scraper.py — do not edit manually
 """
-Financial Aid Scraper
-─────────────────────
-For every college in the colleges table, fetches and upserts financial aid data:
-  avg_financial_aid_package, avg_net_price_* income brackets,
-  percent_receiving_aid, percent_receiving_grants,
-  meets_full_need, no_loan_policy, endowment_per_student, scholarship_count
+Financial Aid Scraper — Bulk Pagination Edition
+─────────────────────────────────────────────────
+Fetches ALL College Scorecard financial data in paginated bulk calls
+(~70 pages × 100 schools = 7 000+ schools, ~35 API calls total).
+No per-college requests. Matches against our colleges DB by name.
 
-Sources (tried in order):
-  1. IPEDS via Urban Institute Education Data API
-  2. College Scorecard API (data.ed.gov)
+Fetches from College Scorecard:
+  • Net price by 5 income brackets
+  • Tuition (in-state, out-of-state)
+  • Average net price
+  • Pell grant %
+  • Median debt at graduation
+  • Loan default rate (3yr)
+  • Median earnings at 6yr and 10yr post-entry
+  • Total cost of attendance
 
-Required environment variables
-───────────────────────────────
+Upserts into:
+  • college_financial_data   (per-year detail)
+  • colleges                 (summary columns for fast querying)
+
+Required env vars:
     DATABASE_URL
+    DATA_GOV_API_KEY   (free at https://api.data.gov/signup/)
 
-Optional
-────────
-    DATA_GOV_API_KEY    (College Scorecard)
-    FINANCIAL_YEAR      (academic year string, default: "2022-23")
-    REQUEST_DELAY_SEC   (default: 1.0)
+Optional:
+    FINANCIAL_YEAR      (e.g. "2023", default: current year - 1)
+    REQUEST_DELAY_SEC   (delay between pages, default 0.3)
 """
 
+import difflib
 import os
 import sys
 import time
 import logging
+
 import requests
 import psycopg2
 import psycopg2.extras
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%dT%H:%M:%S",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
-log = logging.getLogger("financial_scraper")
+# ── Logging ────────────────────────────────────────────────────────────────────
+try:
+    from logger import get_logger
+    log = get_logger("financial_scraper")
+except ImportError:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+    log = logging.getLogger("financial_scraper")
 
-DATABASE_URL = os.environ["DATABASE_URL"]
+# ── Configuration ─────────────────────────────────────────────────────────────
+DATABASE_URL     = os.environ["DATABASE_URL"]
 DATA_GOV_API_KEY = os.environ.get("DATA_GOV_API_KEY") or os.environ.get("COLLEGE_SCORECARD_API_KEY", "")
-FINANCIAL_YEAR = os.environ.get("FINANCIAL_YEAR", "2022-23")
+FINANCIAL_YEAR   = int(os.environ.get("FINANCIAL_YEAR", str(__import__("datetime").date.today().year - 1)))
+REQUEST_DELAY    = float(os.environ.get("REQUEST_DELAY_SEC", "0.3"))
+
+SCORECARD_BASE = "https://api.data.ed.gov/student/v1/schools"
+
+# Scorecard fields to fetch (one comma-separated string)
+SCORECARD_FIELDS = ",".join([
+    "school.name",
+    "id",
+    # Tuition
+    "latest.cost.tuition.in_state",
+    "latest.cost.tuition.out_of_state",
+    # Net price by income bracket
+    "latest.cost.avg_net_price.public",
+    "latest.cost.avg_net_price.private",
+    "latest.cost.net_price.consumer.by_income_level.0-30000",
+    "latest.cost.net_price.consumer.by_income_level.30001-48000",
+    "latest.cost.net_price.consumer.by_income_level.48001-75000",
+    "latest.cost.net_price.consumer.by_income_level.75001-110000",
+    "latest.cost.net_price.consumer.by_income_level.110001-plus",
+    # Aid
+    "latest.aid.pell_grant_rate",
+    "latest.aid.federal_loan_rate",
+    # Debt
+    "latest.aid.median_debt_suppressed.completers.overall",
+    # Earnings (6yr, 10yr post-entry)
+    "latest.earnings.6_yrs_after_entry.median",
+    "latest.earnings.10_yrs_after_entry.median",
+    # Default rate
+    "latest.repayment.3_yr_default_rate",
+])
 
 if not DATA_GOV_API_KEY:
     log.warning(
-        "DATA_GOV_API_KEY is not set — College Scorecard lookups will be skipped. "
-        "Get a free key at https://api.data.gov/signup/ and set DATA_GOV_API_KEY."
+        "DATA_GOV_API_KEY not set — College Scorecard fetches will fail. "
+        "Get a free key at https://api.data.gov/signup/"
     )
-REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY_SEC", "1.0"))
 
-SCORECARD_BASE = "https://api.data.ed.gov/student/v1/schools"
-IPEDS_BASE = "https://educationdata.urban.org/api/v1/college-university/ipeds"
-
-# ── DB helpers ────────────────────────────────────────────────────────────────
-
+# ── DB helpers ─────────────────────────────────────────────────────────────────
 
 def get_connection():
     return psycopg2.connect(DATABASE_URL)
 
 
-def load_colleges(conn) -> list[dict]:
+def load_colleges(conn) -> list:
+    """Load all colleges from DB, trying colleges then colleges_comprehensive."""
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-        cur.execute("SELECT id, name FROM colleges_comprehensive ORDER BY id")
+        try:
+            cur.execute("SELECT id, name FROM colleges ORDER BY id")
+        except psycopg2.errors.UndefinedTable:
+            cur.execute("SELECT id, name FROM colleges_comprehensive ORDER BY id")
         return cur.fetchall()
 
 
-def upsert_financial_aid(conn, college_id: int, academic_year: str, data: dict) -> None:
+def upsert_college_financial_data(conn, college_id: int, year: int, data: dict) -> None:
+    """Upsert into college_financial_data (per-year detail table)."""
     sql = """
-        INSERT INTO college_financial_aid
-          (college_id, academic_year,
-           avg_financial_aid_package,
-           avg_net_price_0_30k, avg_net_price_30_48k, avg_net_price_48_75k,
-           avg_net_price_75_110k, avg_net_price_110k_plus,
-           percent_receiving_aid, percent_receiving_grants,
-           meets_full_need, no_loan_policy,
-           endowment_per_student, scholarship_count,
-           updated_at)
-        VALUES
-          (%(college_id)s, %(academic_year)s,
-           %(avg_financial_aid_package)s,
-           %(avg_net_price_0_30k)s, %(avg_net_price_30_48k)s, %(avg_net_price_48_75k)s,
-           %(avg_net_price_75_110k)s, %(avg_net_price_110k_plus)s,
-           %(percent_receiving_aid)s, %(percent_receiving_grants)s,
-           %(meets_full_need)s, %(no_loan_policy)s,
-           %(endowment_per_student)s, %(scholarship_count)s,
-           NOW())
-        ON CONFLICT (college_id, academic_year)
-          DO UPDATE SET
-            avg_financial_aid_package  = EXCLUDED.avg_financial_aid_package,
-            avg_net_price_0_30k        = EXCLUDED.avg_net_price_0_30k,
-            avg_net_price_30_48k       = EXCLUDED.avg_net_price_30_48k,
-            avg_net_price_48_75k       = EXCLUDED.avg_net_price_48_75k,
-            avg_net_price_75_110k      = EXCLUDED.avg_net_price_75_110k,
-            avg_net_price_110k_plus    = EXCLUDED.avg_net_price_110k_plus,
-            percent_receiving_aid      = EXCLUDED.percent_receiving_aid,
-            percent_receiving_grants   = EXCLUDED.percent_receiving_grants,
-            meets_full_need            = EXCLUDED.meets_full_need,
-            no_loan_policy             = EXCLUDED.no_loan_policy,
-            endowment_per_student      = EXCLUDED.endowment_per_student,
-            scholarship_count          = EXCLUDED.scholarship_count,
-            updated_at                 = NOW()
+        INSERT INTO college_financial_data (
+            college_id, year,
+            tuition_in_state, tuition_out_state,
+            total_coa, avg_net_price,
+            net_price_0_30k, net_price_30_48k, net_price_48_75k,
+            net_price_75_110k, net_price_110k_plus,
+            pct_receiving_pell,
+            median_debt_at_graduation,
+            loan_default_rate_3yr,
+            median_earnings_6yr,
+            median_earnings_10yr,
+            updated_at
+        ) VALUES (
+            %(college_id)s, %(year)s,
+            %(tuition_in_state)s, %(tuition_out_state)s,
+            %(total_coa)s, %(avg_net_price)s,
+            %(net_price_0_30k)s, %(net_price_30_48k)s, %(net_price_48_75k)s,
+            %(net_price_75_110k)s, %(net_price_110k_plus)s,
+            %(pct_receiving_pell)s,
+            %(median_debt_at_graduation)s,
+            %(loan_default_rate_3yr)s,
+            %(median_earnings_6yr)s,
+            %(median_earnings_10yr)s,
+            NOW()
+        )
+        ON CONFLICT (college_id, year)
+        DO UPDATE SET
+            tuition_in_state       = COALESCE(EXCLUDED.tuition_in_state,    college_financial_data.tuition_in_state),
+            tuition_out_state      = COALESCE(EXCLUDED.tuition_out_state,   college_financial_data.tuition_out_state),
+            total_coa              = COALESCE(EXCLUDED.total_coa,           college_financial_data.total_coa),
+            avg_net_price          = COALESCE(EXCLUDED.avg_net_price,       college_financial_data.avg_net_price),
+            net_price_0_30k        = COALESCE(EXCLUDED.net_price_0_30k,     college_financial_data.net_price_0_30k),
+            net_price_30_48k       = COALESCE(EXCLUDED.net_price_30_48k,    college_financial_data.net_price_30_48k),
+            net_price_48_75k       = COALESCE(EXCLUDED.net_price_48_75k,    college_financial_data.net_price_48_75k),
+            net_price_75_110k      = COALESCE(EXCLUDED.net_price_75_110k,   college_financial_data.net_price_75_110k),
+            net_price_110k_plus    = COALESCE(EXCLUDED.net_price_110k_plus, college_financial_data.net_price_110k_plus),
+            pct_receiving_pell     = COALESCE(EXCLUDED.pct_receiving_pell,  college_financial_data.pct_receiving_pell),
+            median_debt_at_graduation = COALESCE(EXCLUDED.median_debt_at_graduation, college_financial_data.median_debt_at_graduation),
+            loan_default_rate_3yr  = COALESCE(EXCLUDED.loan_default_rate_3yr, college_financial_data.loan_default_rate_3yr),
+            median_earnings_6yr    = COALESCE(EXCLUDED.median_earnings_6yr,  college_financial_data.median_earnings_6yr),
+            median_earnings_10yr   = COALESCE(EXCLUDED.median_earnings_10yr, college_financial_data.median_earnings_10yr),
+            updated_at             = NOW()
     """
     params = {
         "college_id": college_id,
-        "academic_year": academic_year,
+        "year": year,
         **{k: data.get(k) for k in [
-            "avg_financial_aid_package",
-            "avg_net_price_0_30k", "avg_net_price_30_48k", "avg_net_price_48_75k",
-            "avg_net_price_75_110k", "avg_net_price_110k_plus",
-            "percent_receiving_aid", "percent_receiving_grants",
-            "meets_full_need", "no_loan_policy",
-            "endowment_per_student", "scholarship_count",
+            "tuition_in_state", "tuition_out_state",
+            "total_coa", "avg_net_price",
+            "net_price_0_30k", "net_price_30_48k", "net_price_48_75k",
+            "net_price_75_110k", "net_price_110k_plus",
+            "pct_receiving_pell",
+            "median_debt_at_graduation",
+            "loan_default_rate_3yr",
+            "median_earnings_6yr",
+            "median_earnings_10yr",
         ]},
     }
     with conn.cursor() as cur:
         cur.execute(sql, params)
-    conn.commit()
 
 
-# ── College Scorecard API ─────────────────────────────────────────────────────
+def update_colleges_summary(conn, college_id: int, data: dict) -> None:
+    """Update colleges table with summary financial columns for fast querying."""
+    sql = """
+        UPDATE colleges SET
+            avg_net_price_0_30k          = COALESCE(%(net_price_0_30k)s,    avg_net_price_0_30k),
+            avg_net_price_30_48k         = COALESCE(%(net_price_30_48k)s,   avg_net_price_30_48k),
+            avg_net_price_48_75k         = COALESCE(%(net_price_48_75k)s,   avg_net_price_48_75k),
+            avg_net_price_75_110k        = COALESCE(%(net_price_75_110k)s,  avg_net_price_75_110k),
+            avg_net_price_110k_plus      = COALESCE(%(net_price_110k_plus)s,avg_net_price_110k_plus),
+            pct_students_receiving_aid   = COALESCE(%(pct_students_receiving_aid)s, pct_students_receiving_aid),
+            median_earnings_6yr          = COALESCE(%(median_earnings_6yr)s, median_earnings_6yr),
+            median_earnings_10yr         = COALESCE(%(median_earnings_10yr)s, median_earnings_10yr),
+            loan_default_rate            = COALESCE(%(loan_default_rate)s,  loan_default_rate),
+            avg_total_debt_at_graduation = COALESCE(%(avg_total_debt_at_graduation)s, avg_total_debt_at_graduation)
+        WHERE id = %(college_id)s
+    """
+    params = {
+        "college_id": college_id,
+        "net_price_0_30k": data.get("net_price_0_30k"),
+        "net_price_30_48k": data.get("net_price_30_48k"),
+        "net_price_48_75k": data.get("net_price_48_75k"),
+        "net_price_75_110k": data.get("net_price_75_110k"),
+        "net_price_110k_plus": data.get("net_price_110k_plus"),
+        "pct_students_receiving_aid": data.get("pct_receiving_pell"),
+        "median_earnings_6yr": data.get("median_earnings_6yr"),
+        "median_earnings_10yr": data.get("median_earnings_10yr"),
+        "loan_default_rate": data.get("loan_default_rate_3yr"),
+        "avg_total_debt_at_graduation": data.get("median_debt_at_graduation"),
+    }
+    with conn.cursor() as cur:
+        cur.execute(sql, params)
+
+
+# ── Bulk Scorecard fetch ───────────────────────────────────────────────────────
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
-def fetch_scorecard_financial(college_name: str) -> dict:
-    if not DATA_GOV_API_KEY:
-        return {}
+def _fetch_scorecard_page(page: int, per_page: int = 100) -> dict:
     params = {
-        "school.name": college_name,
         "api_key": DATA_GOV_API_KEY,
-        "_fields": (
-            "school.name,"
-            "latest.aid.median_debt_suppressed.completers.overall,"
-            "latest.aid.pell_grant_rate,"
-            "latest.aid.federal_loan_rate,"
-            "latest.cost.avg_net_price.public,"
-            "latest.cost.avg_net_price.private,"
-            "latest.cost.net_price.consumer.by_income_level.0-30000,"
-            "latest.cost.net_price.consumer.by_income_level.30001-48000,"
-            "latest.cost.net_price.consumer.by_income_level.48001-75000,"
-            "latest.cost.net_price.consumer.by_income_level.75001-110000,"
-            "latest.cost.net_price.consumer.by_income_level.110001-plus"
-        ),
+        "per_page": per_page,
+        "page": page,
+        "_fields": SCORECARD_FIELDS,
     }
-    resp = requests.get(SCORECARD_BASE, params=params, timeout=15)
+    resp = requests.get(SCORECARD_BASE, params=params, timeout=30)
     resp.raise_for_status()
-    results = resp.json().get("results", [])
-    if not results:
-        return {}
-    r = results[0]
-
-    avg_net = r.get("latest.cost.avg_net_price.private") or r.get("latest.cost.avg_net_price.public")
-    pell_rate = r.get("latest.aid.pell_grant_rate")
-
-    return {
-        "avg_financial_aid_package": avg_net,
-        "avg_net_price_0_30k": r.get("latest.cost.net_price.consumer.by_income_level.0-30000"),
-        "avg_net_price_30_48k": r.get("latest.cost.net_price.consumer.by_income_level.30001-48000"),
-        "avg_net_price_48_75k": r.get("latest.cost.net_price.consumer.by_income_level.48001-75000"),
-        "avg_net_price_75_110k": r.get("latest.cost.net_price.consumer.by_income_level.75001-110000"),
-        "avg_net_price_110k_plus": r.get("latest.cost.net_price.consumer.by_income_level.110001-plus"),
-        "percent_receiving_grants": pell_rate,
-        "percent_receiving_aid": r.get("latest.aid.federal_loan_rate"),
-    }
+    return resp.json()
 
 
-# ── IPEDS API (Urban Institute) ───────────────────────────────────────────────
-
-@retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=1, min=2, max=8))
-def fetch_ipeds_financial(college_name: str) -> dict:
+def fetch_all_scorecard_financial() -> dict:
     """
-    Attempt to look up financial data from IPEDS via the Urban Institute API.
-    Returns an empty dict if the college is not found or the request fails.
+    Paginate through the entire College Scorecard dataset (~70 pages).
+    Returns dict keyed by lowercase school name → financial data dict.
     """
-    # Search by name to get unitid
-    search_url = f"{IPEDS_BASE}/institutional-characteristics/1/search/"
-    resp = requests.get(
-        search_url,
-        params={"name": college_name},
-        timeout=15,
-    )
-    resp.raise_for_status()
-    results = resp.json().get("results", [])
-    if not results:
+    if not DATA_GOV_API_KEY:
+        log.warning("Skipping Scorecard bulk fetch — no API key configured.")
         return {}
 
-    unitid = results[0].get("unitid")
-    if not unitid:
-        return {}
+    all_data: dict = {}
+    page = 0
+    per_page = 100
 
-    # Fetch student financial aid data
-    fin_url = f"{IPEDS_BASE}/sfa/{unitid}/1/"
-    fin_resp = requests.get(fin_url, timeout=15)
-    fin_resp.raise_for_status()
-    fin_data = fin_resp.json().get("results", [{}])[0]
+    while True:
+        try:
+            raw = _fetch_scorecard_page(page, per_page)
+        except Exception as e:
+            log.error(f"Scorecard API error on page {page}: {e}")
+            break
 
-    return {
-        "avg_financial_aid_package": fin_data.get("grnt_aid_avg"),
-        "avg_net_price_0_30k": fin_data.get("avg_net_price_income1"),
-        "avg_net_price_30_48k": fin_data.get("avg_net_price_income2"),
-        "avg_net_price_48_75k": fin_data.get("avg_net_price_income3"),
-        "avg_net_price_75_110k": fin_data.get("avg_net_price_income4"),
-        "avg_net_price_110k_plus": fin_data.get("avg_net_price_income5"),
-        "percent_receiving_aid": fin_data.get("pct_recv_aid"),
-        "percent_receiving_grants": fin_data.get("pct_recv_grant"),
-    }
+        results = raw.get("results", [])
+        if not results:
+            break
+
+        for r in results:
+            name = (r.get("school.name") or "").strip()
+            if not name:
+                continue
+
+            avg_net = (
+                r.get("latest.cost.avg_net_price.private")
+                or r.get("latest.cost.avg_net_price.public")
+            )
+
+            # Tuition: prefer out-of-state for international proxy
+            tuition_in  = r.get("latest.cost.tuition.in_state")
+            tuition_out = r.get("latest.cost.tuition.out_of_state")
+
+            # Cost of attendance: best approximation from available fields
+            total_coa = tuition_out or tuition_in  # living costs not in Scorecard; stored separately
+
+            earnings_6yr  = r.get("latest.earnings.6_yrs_after_entry.median")
+            earnings_10yr = r.get("latest.earnings.10_yrs_after_entry.median")
+            default_rate  = r.get("latest.repayment.3_yr_default_rate")
+            debt          = r.get("latest.aid.median_debt_suppressed.completers.overall")
+            pell_rate     = r.get("latest.aid.pell_grant_rate")
+
+            all_data[name.lower()] = {
+                "tuition_in_state":         _int(tuition_in),
+                "tuition_out_state":        _int(tuition_out),
+                "total_coa":                _int(total_coa),
+                "avg_net_price":            _int(avg_net),
+                "net_price_0_30k":          _int(r.get("latest.cost.net_price.consumer.by_income_level.0-30000")),
+                "net_price_30_48k":         _int(r.get("latest.cost.net_price.consumer.by_income_level.30001-48000")),
+                "net_price_48_75k":         _int(r.get("latest.cost.net_price.consumer.by_income_level.48001-75000")),
+                "net_price_75_110k":        _int(r.get("latest.cost.net_price.consumer.by_income_level.75001-110000")),
+                "net_price_110k_plus":      _int(r.get("latest.cost.net_price.consumer.by_income_level.110001-plus")),
+                "pct_receiving_pell":       _pct(pell_rate),
+                "median_debt_at_graduation":_int(debt),
+                "loan_default_rate_3yr":    _pct(default_rate),
+                "median_earnings_6yr":      _int(earnings_6yr),
+                "median_earnings_10yr":     _int(earnings_10yr),
+            }
+
+        total   = raw.get("metadata", {}).get("total", 0)
+        fetched = (page + 1) * per_page
+        log.info(f"Scorecard page {page}: {min(fetched, total)}/{total} schools fetched")
+
+        if fetched >= total:
+            break
+
+        page += 1
+        time.sleep(REQUEST_DELAY)
+
+    log.info(f"Scorecard bulk fetch complete — {len(all_data)} records loaded.")
+    return all_data
 
 
-def merge_dicts(*dicts) -> dict:
-    """Merge dicts left-to-right, preferring non-None values from earlier dicts."""
-    result = {}
-    for d in dicts:
-        for k, v in d.items():
-            if k not in result or result[k] is None:
-                result[k] = v
-    return result
+# ── Matching helpers ───────────────────────────────────────────────────────────
+
+def find_match(college_name: str, scorecard_data: dict) -> dict:
+    """Exact match first, then fuzzy match at 0.85 cutoff."""
+    key = college_name.lower().strip()
+    if key in scorecard_data:
+        return scorecard_data[key]
+    matches = difflib.get_close_matches(key, scorecard_data.keys(), n=1, cutoff=0.85)
+    if matches:
+        log.debug(f"Fuzzy match: '{college_name}' → '{matches[0]}'")
+        return scorecard_data[matches[0]]
+    return {}
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+def _int(v) -> int | None:
+    """Safe int conversion; returns None for null/missing values."""
+    try:
+        return int(v) if v is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _pct(v) -> float | None:
+    """Convert a 0–1 float to a 0–100 percentage; returns None for nulls."""
+    try:
+        f = float(v)
+        # Scorecard pell_grant_rate is 0-1; default_rate is also 0-1
+        return round(f * 100, 2) if 0.0 <= f <= 1.0 else round(f, 2)
+    except (TypeError, ValueError):
+        return None
+
+
+# ── Main ───────────────────────────────────────────────────────────────────────
 
 def main() -> int:
-    log.info("Financial aid scraper started.")
+    log.info(f"Financial aid scraper started (year={FINANCIAL_YEAR}).")
     conn = None
-    rows_upserted = 0
+    matched = 0
+    skipped = 0
 
     try:
         conn = get_connection()
         colleges = load_colleges(conn)
-        log.info(f"Loaded {len(colleges)} colleges.")
+        log.info(f"Loaded {len(colleges)} colleges from DB.")
+
+        # Bulk-fetch all Scorecard financial data in one paginated sweep
+        scorecard = fetch_all_scorecard_financial()
 
         for college in colleges:
-            college_id = college["id"]
+            college_id   = college["id"]
             college_name = college["name"]
 
+            data = find_match(college_name, scorecard)
+            if not data or not any(v is not None for v in data.values()):
+                log.debug(f"No financial data found for: {college_name}")
+                skipped += 1
+                continue
+
             try:
-                data: dict = {}
-
-                # Try IPEDS first (free, no key required)
-                try:
-                    ipeds_data = fetch_ipeds_financial(college_name)
-                    data = merge_dicts(ipeds_data, data)
-                except Exception as e:
-                    log.debug(f"IPEDS failed for {college_name}: {e}")
-
-                # Then Scorecard (richer net-price income brackets)
-                try:
-                    sc_data = fetch_scorecard_financial(college_name)
-                    data = merge_dicts(sc_data, data)
-                except Exception as e:
-                    log.debug(f"Scorecard failed for {college_name}: {e}")
-
-                time.sleep(REQUEST_DELAY)
-
-                if any(v is not None for v in data.values()):
-                    upsert_financial_aid(conn, college_id, FINANCIAL_YEAR, data)
-                    rows_upserted += 1
-                    log.debug(f"Upserted financial aid for {college_name}")
-                else:
-                    log.debug(f"No financial aid data for {college_name}")
-
+                upsert_college_financial_data(conn, college_id, FINANCIAL_YEAR, data)
+                update_colleges_summary(conn, college_id, data)
+                conn.commit()
+                matched += 1
+                log.debug(f"Updated financial data for: {college_name}")
             except Exception as e:
-                log.warning(f"Failed to process {college_name}: {e}")
+                conn.rollback()
+                log.warning(f"DB upsert failed for {college_name}: {e}")
+                skipped += 1
 
-        log.info(f"Done. {rows_upserted} colleges updated.")
-        print(f"ROWS_UPSERTED={rows_upserted}")
+        log.info(
+            f"Financial aid scraper complete. "
+            f"Matched={matched}, Skipped/no-data={skipped}, Total={len(colleges)}"
+        )
         return 0
 
     except Exception as e:
-        log.error(f"Fatal error: {e}", exc_info=True)
+        log.error(f"Fatal error in financial scraper: {e}", exc_info=True)
         return 1
     finally:
         if conn:
@@ -276,3 +386,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

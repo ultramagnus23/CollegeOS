@@ -21,7 +21,8 @@ import {
   Clock,
   Shield,
   Target,
-  Star
+  Star,
+  DollarSign
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -39,6 +40,7 @@ const DashboardLayout = () => {
     { name: 'Essays', href: '/essays', icon: PenTool },
     { name: 'Documents', href: '/documents', icon: FolderOpen },
     { name: 'Scholarships', href: '/scholarships', icon: Award },
+    { name: 'Financial Aid', href: '/financial-aid', icon: DollarSign },
     { name: 'Recommenders', href: '/recommenders', icon: Users },
     { name: 'Timeline', href: '/timeline', icon: Clock },
     ...(user?.role === 'admin' ? [{ name: 'Admin', href: '/admin', icon: Shield }] : []),
