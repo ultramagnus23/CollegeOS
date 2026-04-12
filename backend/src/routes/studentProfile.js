@@ -590,5 +590,35 @@ router.put('/:userId/preferences', authenticate, validatePreferences, profileCon
 router.get('/:userId/completion-status', authenticate, profileController.getCompletionStatus);
 router.post('/:userId/onboarding-draft', authenticate, profileController.saveOnboardingDraft);
 router.get('/:userId/onboarding-draft', authenticate, profileController.getOnboardingDraft);
+router.get('/:userId/score', authenticate, async (req, res, next) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    if (req.user.userId !== userId) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+    const ProfileService = require('../services/profileService');
+    const dbManager = require('../config/database');
+    const pool = dbManager.getDatabase();
+
+    const profile = (await pool.query(
+      `SELECT sp.*, COUNT(sa.id)::int AS _activities_count
+       FROM student_profiles sp
+       LEFT JOIN student_activities sa ON sa.student_id = sp.id
+       WHERE sp.user_id = $1
+       GROUP BY sp.id`,
+      [userId]
+    )).rows[0];
+
+    if (!profile) {
+      return res.json({ success: true, data: { score: 0, breakdown: {}, label: 'Early Stage' } });
+    }
+
+    const completionStatus = await ProfileService.getCompletionStatus(userId);
+    const result = ProfileService.calculateProfileScore(profile, completionStatus.percentage || 0);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router;

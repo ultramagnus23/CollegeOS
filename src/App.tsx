@@ -131,8 +131,6 @@ const AppContent = () => {
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/terms" element={<Terms />} />
-          <Route path="/colleges" element={<Colleges />} />
-          <Route path="/colleges/:id" element={<CollegeDetails />} />
 
           <Route
             path="/onboarding"
@@ -151,6 +149,8 @@ const AppContent = () => {
             }
           >
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/colleges" element={<Colleges />} />
+            <Route path="/colleges/:id" element={<CollegeDetails />} />
             <Route path="/applications" element={<Applications />} />
             <Route path="/requirements" element={<Requirements />} />
             <Route path="/deadlines" element={<Deadlines />} />
