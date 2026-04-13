@@ -4,11 +4,13 @@
 -- causing FK violations (500 errors) and wrong-college lookups.
 
 -- Drop the FK constraint that references the legacy `colleges` table.
--- Constraint name follows the Postgres default naming convention.
+-- NOTE: 'applications_college_id_fkey' is the auto-generated Postgres default constraint
+-- name for an unnamed FOREIGN KEY on applications(college_id).  If the database used a
+-- custom name you can identify it with:
+--   SELECT conname FROM pg_constraint WHERE conrelid='applications'::regclass AND contype='f';
 ALTER TABLE applications DROP CONSTRAINT IF EXISTS applications_college_id_fkey;
 
 -- Also drop the unique constraint that included college_id (it may reference the old FK).
--- We keep the logical uniqueness via a partial unique index instead.
 ALTER TABLE applications DROP CONSTRAINT IF EXISTS applications_user_id_college_id_application_type_key;
 
 -- Add a new FK pointing at colleges_comprehensive.
