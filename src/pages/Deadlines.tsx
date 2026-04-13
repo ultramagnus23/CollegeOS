@@ -145,6 +145,7 @@ const Deadlines: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'my' | 'college'>('my');
   const [intelligenceDeadlines, setIntelligenceDeadlines] = useState<IntelligenceDeadline[]>([]);
   const [intelligenceLoading, setIntelligenceLoading] = useState(false);
+  const [intelligenceLoaded, setIntelligenceLoaded] = useState(false);
   const [formData, setFormData] = useState<DeadlineFormData>({
     applicationId: '',
     deadlineType: 'application',
@@ -155,10 +156,10 @@ const Deadlines: React.FC = () => {
   useEffect(() => { loadData(); }, []);
 
   useEffect(() => {
-    if (activeTab === 'college' && intelligenceDeadlines.length === 0) {
+    if (activeTab === 'college' && !intelligenceLoaded) {
       loadIntelligenceDeadlines();
     }
-  }, [activeTab]);
+  }, [activeTab, intelligenceLoaded]);
 
   const loadData = async () => {
     try {
@@ -180,6 +181,7 @@ const Deadlines: React.FC = () => {
     try {
       const res = await api.deadlines.intelligence.getUpcoming(90);
       setIntelligenceDeadlines(res.data || []);
+      setIntelligenceLoaded(true);
     } catch {
       toast.error('Failed to load college deadlines');
     } finally {

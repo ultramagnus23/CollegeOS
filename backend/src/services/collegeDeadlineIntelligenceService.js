@@ -30,6 +30,9 @@ const CONFIDENCE_TIERS = {
   CONFIRMED: 'confirmed',   // 0.7  – 1.0
 };
 
+/** How far back (days) to look when listing country deadlines. */
+const COUNTRY_DEADLINE_LOOKBACK_DAYS = 30;
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
@@ -194,8 +197,8 @@ async function getUpcomingForUser(userId, daysAhead = 90) {
      JOIN college_deadlines cd ON cd.college_id = a.college_id
      JOIN colleges_comprehensive c ON c.id = cd.college_id
      WHERE a.user_id = $1
-       AND cd.deadline_date BETWEEN NOW() AND (NOW() + ($2 || ' days')::INTERVAL)
-     ORDER BY cd.deadline_date ASC`,
+       AND (cd.deadline_date IS NULL OR cd.deadline_date BETWEEN NOW() AND (NOW() + ($2 || ' days')::INTERVAL))
+     ORDER BY cd.deadline_date ASC NULLS LAST`,
     [userId, daysAhead]
   );
 
@@ -235,9 +238,9 @@ async function getByCountry(country) {
      FROM colleges_comprehensive c
      JOIN college_deadlines cd ON cd.college_id = c.id
      WHERE LOWER(c.country) = LOWER($1)
-       AND (cd.deadline_date IS NULL OR cd.deadline_date >= NOW() - INTERVAL '30 days')
-     ORDER BY c.name ASC, cd.deadline_date ASC`,
-    [country]
+       AND (cd.deadline_date IS NULL OR cd.deadline_date >= NOW() - ($2 || ' days')::INTERVAL)
+     ORDER BY c.name ASC, cd.deadline_date ASC NULLS LAST`,
+    [country, COUNTRY_DEADLINE_LOOKBACK_DAYS]
   );
 
   // Group by college
@@ -310,11 +313,11 @@ async function estimateFromHistory(collegeId, deadlineType, targetYear) {
     return { estimated: false, date: null, basis: 'no_history' };
   }
 
-  // Compute average day-of-year
+  // Compute average day-of-year (1 = Jan 1, 365/366 = Dec 31)
   const dayNumbers = histRes.rows.map(r => {
     const d = new Date(r.deadline_date);
-    const start = new Date(d.getFullYear(), 0, 0);
-    return Math.floor((d - start) / 86400000);
+    const start = new Date(d.getFullYear(), 0, 1); // Jan 1 of that year
+    return Math.floor((d - start) / 86400000) + 1; // +1 so Jan 1 = day 1
   });
   const avgDay = Math.round(dayNumbers.reduce((a, b) => a + b, 0) / dayNumbers.length);
 
