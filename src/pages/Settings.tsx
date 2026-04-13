@@ -274,7 +274,7 @@ const SCROLL_DELAY_MS = 100;
     setSyncing(true);
     try {
       await api.chancing.getForStudent();
-      showMessage('success', 'Chancing synced — visit the Chancing page to see updated results.');
+      showMessage('success', 'Chancing data refreshed — visit the Chancing page to see updated results.');
     } catch {
       showMessage('error', 'Could not sync chancing. Try again in a moment.');
     } finally {

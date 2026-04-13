@@ -298,7 +298,7 @@ export default function Chancing() {
             <strong style={{ color: 'var(--color-text-primary)' }}>How it works: </strong>
             We compare your SAT score and GPA to each college's median admitted-student stats, then apply a sigmoid probability model
             anchored to the college's real acceptance rate. An international applicant discount (–15 pp) is applied throughout.
-            Thresholds: Safety ≥ 65%, Match 35–65%, Reach 15–35%, Long Shot &lt; 15%.
+            Thresholds: Safety ≥ 65%, Match 35–65%, Reach 15–35%, Long Shot {'<'} 15%.
           </div>
 
           {loading && (

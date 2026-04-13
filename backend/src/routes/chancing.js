@@ -47,7 +47,7 @@ async function getChancingResults(userId, colleges) {
       college: {
         id: college.id,
         name: college.name,
-        location: `${college.location_city || college.city || ''}, ${college.location_state || college.state_region || ''}`.trim().replace(/^,\s*|,\s*$/, ''),
+        location: [college.location_city || college.city, college.location_state || college.state_region].filter(Boolean).join(', '),
         acceptanceRate: college.acceptance_rate
       },
       chancing: {
