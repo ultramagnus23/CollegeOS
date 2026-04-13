@@ -59,16 +59,19 @@ const validators = {
     gpa_type: Joi.string().valid('gpa', 'percentage').optional().allow(null),
     subjects: Joi.array().items(Joi.any()).optional(),
     activities: Joi.array().items(Joi.any()).optional(),
-    language_preferences: Joi.array().items(Joi.string().trim()).optional()
+    language_preferences: Joi.array().items(Joi.string().trim()).optional(),
+    current_grade: Joi.string().trim().max(100).optional().allow(null, ''),
+    gender: Joi.string().trim().max(100).optional().allow(null, '')
   }),
   
   // Create application
   createApplication: Joi.object({
     collegeId: Joi.number().options({ convert: true }).integer().positive().optional(),
     college_id: Joi.number().options({ convert: true }).integer().positive().optional(),
+    college_name: Joi.string().trim().max(500).optional(),
     applicationType: Joi.string().trim().optional(),
     application_type: Joi.string().trim().optional(),
-    priority: Joi.string().trim().valid('reach', 'target', 'safety').optional(),
+    priority: Joi.string().trim().valid('reach', 'target', 'safety', 'medium', 'high', 'low').optional(),
     notes: Joi.string().trim().max(1000).optional()
   }).or('collegeId', 'college_id'),
   
@@ -76,7 +79,7 @@ const validators = {
   updateApplication: Joi.object({
     status: Joi.string().trim().valid(...Object.values(APPLICATION_STATUS)).optional(),
     applicationType: Joi.string().trim().optional(),
-    priority: Joi.string().trim().valid('reach', 'target', 'safety').optional(),
+    priority: Joi.string().trim().valid('reach', 'target', 'safety', 'medium', 'high', 'low').optional(),
     notes: Joi.string().trim().max(1000).optional(),
     submittedAt: Joi.date().optional(),
     decisionReceivedAt: Joi.date().optional()

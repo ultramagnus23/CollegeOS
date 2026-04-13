@@ -654,6 +654,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   function defaultData() {
     return {
       name: '', grade: '', currentBoard: '', country: '', dreamSchool: '',
+      current_grade: '', gender: '',
       currentGPA: '', gpaType: 'percentage', satScore: '', actScore: '', ibPredicted: '', subjects: [],
       careerInterests: [], majorCertain: false, potentialMajors: [], skillsStrengths: [],
       preferredCountries: [], budgetRange: '', campusSize: '', locationPreference: '',
@@ -838,6 +839,37 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                   <option value="">Select your country</option>
                   {['India','USA','UK','Canada','Singapore','UAE','Pakistan','Bangladesh','Sri Lanka','Nepal','Other'].map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={labelStyle}>Current Grade</label>
+                  <select value={studentData.current_grade} onChange={e => updateData('current_grade', e.target.value)} style={{ ...inputFieldStyle(accent), marginTop: 6 }}>
+                    <option value="">Select grade</option>
+                    <option value="9th Grade (Freshman)">9th Grade (Freshman)</option>
+                    <option value="10th Grade (Sophomore)">10th Grade (Sophomore)</option>
+                    <option value="11th Grade (Junior)">11th Grade (Junior)</option>
+                    <option value="12th Grade (Senior)">12th Grade (Senior)</option>
+                    <option value="Gap Year">Gap Year</option>
+                    <option value="Transfer Student">Already in College (Transfer)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>
+                    Gender
+                    <span title="Used only for scholarship matching" style={{ marginLeft: 6, fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>ℹ️ for scholarships</span>
+                  </label>
+                  <select value={studentData.gender} onChange={e => updateData('gender', e.target.value)} style={{ ...inputFieldStyle(accent), marginTop: 6 }}>
+                    <option value="">Prefer not to say</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Non-binary">Non-binary</option>
+                    <option value="Transgender">Transgender</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>
+                    Used only for scholarship matching
+                  </div>
+                </div>
               </div>
             </div>
             <SocialProof />
@@ -1263,18 +1295,20 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           await completeOnboarding({
             target_countries: studentData.preferredCountries,
             intended_majors: studentData.potentialMajors,
-  test_status: {
-    sat_score: studentData.satScore 
-      ? Number(studentData.satScore) : null,
-    act_score: studentData.actScore 
-      ? Number(studentData.actScore) : null,
-    ib_predicted: studentData.ibPredicted 
-      ? Number(studentData.ibPredicted) : null,
-  },
-  gpa: parseFloat(String(studentData.currentGPA).replace(/[^0-9.]/g, '')) || null,
-  gpa_type: studentData.gpaType || 'percentage',
-  subjects: studentData.subjects || [],
+            test_status: {
+              sat_score: studentData.satScore
+                ? Number(studentData.satScore) : null,
+              act_score: studentData.actScore
+                ? Number(studentData.actScore) : null,
+              ib_predicted: studentData.ibPredicted
+                ? Number(studentData.ibPredicted) : null,
+            },
+            gpa: parseFloat(String(studentData.currentGPA).replace(/[^0-9.]/g, '')) || null,
+            gpa_type: studentData.gpaType || 'percentage',
+            subjects: studentData.subjects || [],
             activities: (studentData.activities || []).filter((a: any) => a?.name?.trim()),
+            current_grade: studentData.current_grade || null,
+            gender: studentData.gender || null,
           });
 
           // 2b. Send why_college_matters to trigger values_vector computation via valuesEngine.js

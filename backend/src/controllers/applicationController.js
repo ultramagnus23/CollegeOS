@@ -356,6 +356,235 @@ class ApplicationController {
       next(error);
     }
   }
+
+  // Get deadlines for a specific application
+  static async getApplicationDeadlines(req, res, next) {
+    const requestId = generateRequestId();
+    try {
+      const { id } = req.params;
+      const userId = req.user?.userId;
+      const applicationId = parseInt(id, 10);
+      logger.info(`[${requestId}] GET /applications/${applicationId}/deadlines`);
+
+      const application = await Application.findById(applicationId);
+      if (!application) {
+        return res.status(404).json({ success: false, message: 'Application not found' });
+      }
+      if (application.user_id !== userId) {
+        return res.status(403).json({ success: false, message: 'Access denied' });
+      }
+
+      const dbManager = require('../config/database');
+      const pool = dbManager.getDatabase();
+
+      // Try application_deadlines table first, fall back to deadlines table
+      let rows = [];
+      try {
+        const result = await pool.query(
+          `SELECT * FROM application_deadlines
+           WHERE application_id = $1
+           ORDER BY deadline_date ASC NULLS LAST`,
+          [applicationId]
+        );
+        rows = result.rows;
+      } catch {
+        // application_deadlines table may not exist yet — fall back to deadlines table
+        try {
+          const result = await pool.query(
+            `SELECT id, deadline_type, deadline_date, is_completed as completed, notes
+             FROM deadlines
+             WHERE application_id = $1
+             ORDER BY deadline_date ASC NULLS LAST`,
+            [applicationId]
+          );
+          rows = result.rows;
+        } catch {
+          rows = [];
+        }
+      }
+
+      // Auto-seed standard deadlines if none exist
+      if (rows.length === 0) {
+        const year = new Date().getFullYear();
+        const appYear = new Date().getMonth() >= 6 ? year + 1 : year;
+        const defaults = [
+          { deadline_type: 'FAFSA Opens',   deadline_date: `${appYear}-10-01`, notes: 'Free Application for Federal Student Aid opens' },
+          { deadline_type: 'RD Deadline',   deadline_date: `${appYear + 1}-01-01`, notes: 'Regular Decision deadline (default)' },
+          { deadline_type: 'ED Deadline',   deadline_date: `${appYear}-11-01`, notes: 'Early Decision deadline (default)' },
+          { deadline_type: 'EA Deadline',   deadline_date: `${appYear}-11-01`, notes: 'Early Action deadline (default)' },
+        ];
+        try {
+          for (const d of defaults) {
+            await pool.query(
+              `INSERT INTO application_deadlines (application_id, deadline_type, deadline_date, notes)
+               VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+              [parseInt(id), d.deadline_type, d.deadline_date, d.notes]
+            );
+          }
+          const result = await pool.query(
+            `SELECT * FROM application_deadlines WHERE application_id = $1 ORDER BY deadline_date ASC`,
+            [parseInt(id)]
+          );
+          rows = result.rows;
+        } catch {
+          rows = defaults.map((d, i) => ({ id: i + 1, ...d, completed: false }));
+        }
+      }
+
+      res.json({ success: true, data: rows });
+    } catch (error) {
+      logger.error(`[${requestId}] Error in getApplicationDeadlines:`, error);
+      next(error);
+    }
+  }
+
+  // Get tasks for a specific application
+  static async getApplicationTasks(req, res, next) {
+    const requestId = generateRequestId();
+    try {
+      const { id } = req.params;
+      const userId = req.user?.userId;
+      const applicationId = Number.parseInt(id, 10);
+      if (!Number.isInteger(applicationId)) {
+        return res.status(400).json({ success: false, message: 'Invalid application id' });
+      }
+      logger.info(`[${requestId}] GET /applications/${applicationId}/tasks`);
+
+      const application = await Application.findById(applicationId);
+      if (!application) {
+        return res.status(404).json({ success: false, message: 'Application not found' });
+      }
+      if (application.user_id !== userId) {
+        return res.status(403).json({ success: false, message: 'Access denied' });
+      }
+
+      const dbManager = require('../config/database');
+      const pool = dbManager.getDatabase();
+      let rows = [];
+
+      // Try application_tasks table first, fall back to tasks table
+      try {
+        const result = await pool.query(
+          `SELECT * FROM application_tasks
+           WHERE application_id = $1
+           ORDER BY created_at ASC`,
+          [applicationId]
+        );
+        rows = result.rows;
+      } catch {
+        try {
+          const result = await pool.query(
+            `SELECT id, task_type, title, description, status='complete' as completed, deadline as due_date
+             FROM tasks
+             WHERE application_id = $1
+             ORDER BY priority ASC, deadline ASC`,
+            [applicationId]
+          );
+          rows = result.rows;
+        } catch {
+          rows = [];
+        }
+      }
+
+      // Auto-seed standard tasks if none exist
+      if (rows.length === 0) {
+        const collegeName = application.college_name || 'this college';
+        const defaultTasks = [
+          { task_type: 'essay',          title: 'Write Common App personal statement (650 words)' },
+          { task_type: 'essay',          title: `Write supplemental essay for ${collegeName}` },
+          { task_type: 'recommendation', title: 'Request recommendation letter 1' },
+          { task_type: 'recommendation', title: 'Request recommendation letter 2' },
+          { task_type: 'document',       title: `Send official transcripts to ${collegeName}` },
+          { task_type: 'test_score',     title: `Submit SAT/ACT scores to ${collegeName}` },
+        ];
+        try {
+          for (const t of defaultTasks) {
+            await pool.query(
+              `INSERT INTO application_tasks (application_id, task_type, title)
+               VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+              [applicationId, t.task_type, t.title]
+            );
+          }
+          const result = await pool.query(
+            `SELECT * FROM application_tasks WHERE application_id = $1 ORDER BY created_at ASC`,
+            [applicationId]
+          );
+          rows = result.rows;
+        } catch {
+          rows = defaultTasks.map((t, i) => ({ id: i + 1, ...t, completed: false }));
+        }
+      }
+
+      res.json({ success: true, data: rows });
+    } catch (error) {
+      logger.error(`[${requestId}] Error in getApplicationTasks:`, error);
+      next(error);
+    }
+  }
+
+  // Toggle a deadline's completed status
+  static async toggleApplicationDeadline(req, res, next) {
+    try {
+      const { id, deadlineId } = req.params;
+      const { completed } = req.body;
+      const userId = req.user?.userId;
+
+      const application = await Application.findById(parseInt(id));
+      if (!application || application.user_id !== userId) {
+        return res.status(403).json({ success: false, message: 'Access denied' });
+      }
+
+      const dbManager = require('../config/database');
+      const pool = dbManager.getDatabase();
+      try {
+        await pool.query(
+          `UPDATE application_deadlines SET completed = $1 WHERE id = $2 AND application_id = $3`,
+          [!!completed, parseInt(deadlineId), parseInt(id)]
+        );
+      } catch {
+        // Fall back to deadlines table
+        await pool.query(
+          `UPDATE deadlines SET is_completed = $1 WHERE id = $2`,
+          [completed ? 1 : 0, parseInt(deadlineId)]
+        );
+      }
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Toggle a task's completed status
+  static async toggleApplicationTask(req, res, next) {
+    try {
+      const { id, taskId } = req.params;
+      const { completed } = req.body;
+      const userId = req.user?.userId;
+
+      const application = await Application.findById(parseInt(id));
+      if (!application || application.user_id !== userId) {
+        return res.status(403).json({ success: false, message: 'Access denied' });
+      }
+
+      const dbManager = require('../config/database');
+      const pool = dbManager.getDatabase();
+      try {
+        await pool.query(
+          `UPDATE application_tasks SET completed = $1 WHERE id = $2 AND application_id = $3`,
+          [!!completed, parseInt(taskId), parseInt(id)]
+        );
+      } catch {
+        // Fall back to tasks table
+        await pool.query(
+          `UPDATE tasks SET status = $1 WHERE id = $2`,
+          [completed ? 'complete' : 'not_started', parseInt(taskId)]
+        );
+      }
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = ApplicationController;
