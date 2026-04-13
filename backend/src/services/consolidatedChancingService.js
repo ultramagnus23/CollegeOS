@@ -295,10 +295,14 @@ async function calculateChance(studentProfile, college, application = {}) {
     // ── FACTOR 4 — International Pool (weight 0.14) ─────────────────────────
     const studentCountry = sp.country ?? null;
     const collegeCountry = col.country ?? col.location_country ?? 'US';
-    const isDomestic     = studentCountry != null
-      && (studentCountry.toUpperCase() === (collegeCountry ?? 'US').toUpperCase()
-          || (collegeCountry === 'US' || collegeCountry === 'USA')
-             && (studentCountry === 'US' || studentCountry === 'USA'));
+
+    // Normalise country codes to uppercase for consistent comparison
+    const studentCountryUC = studentCountry?.toUpperCase() ?? null;
+    const collegeCountryUC = (collegeCountry ?? 'US').toUpperCase();
+    const isUsCollege = collegeCountryUC === 'US' || collegeCountryUC === 'USA';
+    const isDomestic  = studentCountryUC != null
+      && (studentCountryUC === collegeCountryUC
+          || (isUsCollege && (studentCountryUC === 'US' || studentCountryUC === 'USA')));
 
     let intlScore = null;
     let adjustedIntlRate = null;
@@ -333,15 +337,14 @@ async function calculateChance(studentProfile, college, application = {}) {
 
       const intendedMajor = app.intended_major ?? sp.intended_major ?? '';
       const isStem = STEM_KEYWORDS.some(kw => intendedMajor.toLowerCase().includes(kw));
-      const countryUpper = (studentCountry ?? '').toUpperCase();
 
       let countryMultiplier = 1.0;
-      if (HIGH_COMPETITION[countryUpper]) {
+      if (HIGH_COMPETITION[studentCountryUC ?? '']) {
         countryMultiplier = isStem
-          ? HIGH_COMPETITION[countryUpper].stem
-          : HIGH_COMPETITION[countryUpper].other;
-      } else if (LOW_COMPETITION[countryUpper]) {
-        countryMultiplier = LOW_COMPETITION[countryUpper];
+          ? HIGH_COMPETITION[studentCountryUC].stem
+          : HIGH_COMPETITION[studentCountryUC].other;
+      } else if (LOW_COMPETITION[studentCountryUC ?? '']) {
+        countryMultiplier = LOW_COMPETITION[studentCountryUC];
       }
 
       const schoolTypeMultiplierMap = {
@@ -396,13 +399,15 @@ async function calculateChance(studentProfile, college, application = {}) {
     // ── FACTOR 6 — Institutional Fit (weight 0.08) ─────────────────────────
     const topMajors   = Array.isArray(col.top_majors) ? col.top_majors : [];
     const intendedMajorStr = app.intended_major ?? sp.intended_major ?? '';
+    // Support both the new college_type column and legacy school_type
+    const collegeType = col.college_type ?? col.school_type ?? null;
 
     let majorScore = 0.50;
     if (intendedMajorStr) {
       const lowerMajor = intendedMajorStr.toLowerCase();
       const isEngineering = lowerMajor.includes('engineering');
 
-      if (isEngineering && col.school_type === 'liberal_arts') {
+      if (isEngineering && collegeType === 'liberal_arts') {
         majorScore = 0.20;
       } else if (topMajors.some(m => lowerMajor.includes(m.toLowerCase()))) {
         majorScore = 0.65;
@@ -411,8 +416,8 @@ async function calculateChance(studentProfile, college, application = {}) {
 
     let typeAdjustment = 0;
     const isStemMajor = STEM_KEYWORDS.some(kw => intendedMajorStr.toLowerCase().includes(kw));
-    if (isStemMajor && col.school_type === 'liberal_arts')    typeAdjustment = -0.05;
-    if (!isStemMajor && col.school_type === 'technical')      typeAdjustment = -0.05;
+    if (isStemMajor && collegeType === 'liberal_arts')    typeAdjustment = -0.05;
+    if (!isStemMajor && collegeType === 'technical')      typeAdjustment = -0.05;
 
     const institutionalFitScore = clamp(majorScore + typeAdjustment, 0.15, 0.85);
 
@@ -420,7 +425,7 @@ async function calculateChance(studentProfile, college, application = {}) {
       score: institutionalFitScore,
       weight: 0.08,
       contribution: institutionalFitScore * 0.08,
-      detail: `Major alignment score, school type: ${col.school_type ?? 'unknown'}`,
+      detail: `Major alignment score, college type: ${collegeType ?? 'unknown'}`,
     };
 
     // ── FACTOR 7 — Financial Signal (weight 0.04) ───────────────────────────

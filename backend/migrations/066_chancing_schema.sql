@@ -22,9 +22,9 @@ ALTER TABLE colleges_comprehensive
   ADD COLUMN IF NOT EXISTS meets_full_need                 BOOLEAN DEFAULT FALSE,
   ADD COLUMN IF NOT EXISTS tracks_demonstrated_interest    BOOLEAN DEFAULT FALSE,
   ADD COLUMN IF NOT EXISTS top_majors                      JSON,
-  -- school_type already exists as TEXT in some deployments; guard with IF NOT EXISTS
-  ADD COLUMN IF NOT EXISTS school_type                     TEXT
-    CHECK (school_type IN ('university','liberal_arts','technical','public'));
+  -- college_type distinguishes institution kind (distinct from student_profiles.school_type)
+  ADD COLUMN IF NOT EXISTS college_type                    TEXT
+    CHECK (college_type IN ('university','liberal_arts','technical','public'));
 
 -- Index: yield rate is used in strategy factor lookups
 CREATE INDEX IF NOT EXISTS idx_colleges_comp_yield_rate
