@@ -78,7 +78,7 @@ async function getChancingResults(userId, colleges) {
  */
 router.post('/calculate', authenticate, async (req, res, next) => {
   try {
-    const { collegeId } = req.body;
+    const { collegeId, decision_type, demonstrated_interest, intended_major } = req.body;
     
     if (!collegeId) {
       return res.status(400).json({
@@ -107,9 +107,16 @@ router.post('/calculate', authenticate, async (req, res, next) => {
         message: 'College not found'
       });
     }
+
+    // Build application context from request body
+    const application = {
+      decision_type:          decision_type          ?? null,
+      demonstrated_interest:  demonstrated_interest  ?? null,
+      intended_major:         intended_major         ?? profile.intended_major ?? null,
+    };
     
     const country = college.location_country || college.country || 'USA';
-    const chancing = await consolidatedChancingService.calculateChance(profile, college);
+    const chancing = await consolidatedChancingService.calculateChance(profile, college, application);
     const predictionType = 'deterministic';
     
     // Log prediction for analytics
@@ -125,7 +132,7 @@ router.post('/calculate', authenticate, async (req, res, next) => {
           chancing.probability ?? null,
           chancing.category,
           chancing.confidence,
-          JSON.stringify([])
+          JSON.stringify(chancing.factorScores ?? [])
         ]
       );
     } catch (auditError) {
@@ -143,7 +150,20 @@ router.post('/calculate', authenticate, async (req, res, next) => {
           country: country,
           acceptanceRate: college.acceptance_rate
         },
-        chancing: chancing,
+        chancing: {
+          tier:               chancing.tier,
+          probability:        chancing.probability,
+          confidence:         chancing.confidence,
+          explanation:        chancing.explanation,
+          studentSAT:         chancing.studentSAT,
+          collegeSAT:         chancing.collegeSAT,
+          studentGPA:         chancing.studentGPA,
+          collegeGPA:         chancing.collegeGPA,
+          probabilityRange:   chancing.probabilityRange,
+          factorScores:       chancing.factorScores,
+          missingDataFields:  chancing.missingDataFields,
+          recommendedActions: chancing.recommendedActions,
+        },
         predictionType: predictionType,
         profile: {
           gpa: profile.gpa_unweighted || profile.gpa_weighted,
