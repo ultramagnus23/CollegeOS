@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { StudentProfile } from '../types';
+import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface StructuredActivity {
@@ -633,6 +634,8 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   const [transitioning, setTransitioning] = useState(false);
   const progressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const { completionPercent: backendCompletionPercent, refetch: refetchCompletion } = useProfileCompletion();
+
   const [studentData, setStudentData] = useState<any>(() => {
     try {
       const saved = localStorage.getItem('onboarding_data');
@@ -1122,9 +1125,9 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
 
           {/* Profile ring */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 40 }}>
-            <ProfileRing score={calcProfileScore()} />
+            <ProfileRing score={backendCompletionPercent > 0 ? backendCompletionPercent : calcProfileScore()} />
             <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginTop: 8, fontFamily: "'DM Sans', sans-serif" }}>
-              Your profile is in the top {100 - calcProfileScore()}% of applicants from {studentData.country || 'your region'}
+              Your profile is in the top {100 - (backendCompletionPercent > 0 ? backendCompletionPercent : calcProfileScore())}% of applicants from {studentData.country || 'your region'}
             </div>
           </div>
 
@@ -1232,6 +1235,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           try {
             await api.completeTour();
             await refreshUser();
+            refetchCompletion();
           } catch {
             // non-blocking
           }

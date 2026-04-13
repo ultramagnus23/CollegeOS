@@ -272,9 +272,21 @@ def parse_post(post: dict) -> list[dict]:
     """
     Parse a post dict (from Reddit public JSON API) into a list of DB row dicts
     (one per college). Returns empty list if nothing useful is found.
+    Fix 7: safely handle missing keys; skip posts with very short titles.
     """
-    data = post["data"]
-    full_text = f"{data['title']}\n\n{data.get('selftext', '')}"
+    data = post.get("data") or {}
+    title = data.get("title") or ""
+    selftext = data.get("selftext") or ""
+    post_id = data.get("id") or ""
+    permalink = data.get("permalink") or ""
+    created_utc = data.get("created_utc") or 0
+    subreddit = data.get("subreddit") or ""
+
+    # Skip posts with no meaningful title
+    if len(title.strip()) < 20:
+        return []
+
+    full_text = f"{title}\n\n{selftext}"
 
     gpa = _parse_gpa(full_text)
     sat = _parse_sat(full_text)
@@ -290,8 +302,8 @@ def parse_post(post: dict) -> list[dict]:
     if not college_outcomes:
         return []
 
-    post_date = datetime.datetime.utcfromtimestamp(data["created_utc"])
-    post_url = f"https://reddit.com{data['permalink']}"
+    post_date = datetime.datetime.utcfromtimestamp(created_utc)
+    post_url = f"https://reddit.com{permalink}"
 
     rows = []
     for co in college_outcomes:
@@ -303,7 +315,7 @@ def parse_post(post: dict) -> list[dict]:
         if act is not None and not (1 <= act <= 36):
             continue
         rows.append({
-            "reddit_post_id": data["id"],
+            "reddit_post_id": post_id,
             "college_name": co["college_name"],
             "gpa": gpa,
             "sat_score": sat,
@@ -323,8 +335,11 @@ def parse_post(post: dict) -> list[dict]:
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(min=2, max=30))
 def get_connection():
-    return psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.set_session(autocommit=False)
+    return conn
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
@@ -355,6 +370,10 @@ def upsert_rows(conn, rows: list[dict]) -> int:
 # ── Reddit public JSON API ────────────────────────────────────────────────────
 
 def fetch_posts(subreddit: str, query: str, after: Optional[str] = None) -> dict:
+    """
+    Fetch one page from Reddit. Fix 8: exponential backoff on 429.
+    If Retry-After header is present, use it; otherwise use 30 * 2**attempt.
+    """
     url = f"https://www.reddit.com/r/{subreddit}/search.json"
     params = {
         "q": query,
@@ -365,13 +384,49 @@ def fetch_posts(subreddit: str, query: str, after: Optional[str] = None) -> dict
     }
     if after:
         params["after"] = after
-    response = requests.get(url, headers=HEADERS, params=params, timeout=REQUEST_TIMEOUT)
-    if response.status_code == 429:
-        log.warning("Rate limited by Reddit; sleeping 60 s before retry")
-        time.sleep(60)
+
+    max_attempts = 5
+    for attempt in range(max_attempts):
         response = requests.get(url, headers=HEADERS, params=params, timeout=REQUEST_TIMEOUT)
+        if response.status_code == 429:
+            retry_after = response.headers.get("Retry-After")
+            if retry_after:
+                wait_sec = int(retry_after)
+                log.warning(f"Rate limited (Retry-After={wait_sec}s); waiting...")
+            else:
+                wait_sec = min(300, 30 * (2 ** attempt))
+                log.warning(f"Rate limited (no Retry-After header); exponential backoff {wait_sec}s (attempt {attempt + 1}/{max_attempts})")
+            time.sleep(wait_sec)
+            continue
+        response.raise_for_status()
+        return response.json()
+
+    # Exhausted attempts
     response.raise_for_status()
-    return response.json()
+    return {}
+
+
+def _check_unique_constraint(conn) -> None:
+    """Fix 9: Log a warning if the unique constraint on chance_me_posts is missing."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT COUNT(*) FROM pg_constraint
+                WHERE conrelid = 'chance_me_posts'::regclass
+                  AND contype = 'u'
+                  AND array_to_string(conkey, ',') IN (
+                    SELECT array_to_string(ARRAY[
+                        (SELECT attnum FROM pg_attribute WHERE attrelid = 'chance_me_posts'::regclass AND attname = 'reddit_post_id'),
+                        (SELECT attnum FROM pg_attribute WHERE attrelid = 'chance_me_posts'::regclass AND attname = 'college_name')
+                    ]::smallint[], ',')
+                  )
+            """)
+            count = cur.fetchone()[0]
+            if count == 0:
+                log.warning("MISSING unique constraint on chance_me_posts(reddit_post_id, college_name). "
+                            "ON CONFLICT in upsert will not work correctly.")
+    except Exception as e:
+        log.debug(f"Could not check unique constraint: {e}")
 
 
 def paginate(subreddit: str, query: str, max_pages: int = 5) -> list:
@@ -379,11 +434,11 @@ def paginate(subreddit: str, query: str, max_pages: int = 5) -> list:
     after = None
     for _ in range(max_pages):
         data = fetch_posts(subreddit, query, after)
-        children = data["data"]["children"]
+        children = (data.get("data") or {}).get("children") or []
         if not children:
             break
         posts.extend(children)
-        after = data["data"].get("after")
+        after = (data.get("data") or {}).get("after")
         if not after:
             break
         time.sleep(1)
@@ -398,13 +453,15 @@ def main() -> int:
     total_posts = 0
     total_inserted = 0
     total_skipped_validation = 0
-    total_skipped_duplicate = 0
 
     # Number of paginated pages per subreddit/query (100 posts each)
     max_pages = max(1, POSTS_PER_SUBREDDIT // 100)
 
     try:
         conn = get_connection()
+
+        # Fix 9: verify unique constraint exists before starting
+        _check_unique_constraint(conn)
 
         for subreddit_name in SUBREDDITS:
             log.info(f"Scraping r/{subreddit_name} (up to {POSTS_PER_SUBREDDIT} posts)...")
@@ -420,7 +477,8 @@ def main() -> int:
                 try:
                     rows = parse_post(post)
                 except Exception as e:
-                    log.warning(f"Parse error on {post['data'].get('id')}: {e}")
+                    post_id = (post.get("data") or {}).get("id", "?")
+                    log.warning(f"Parse error on {post_id}: {e}")
                     total_skipped_validation += 1
                     continue
 
@@ -428,16 +486,27 @@ def main() -> int:
                     total_skipped_validation += 1
                     continue
 
+                # Fix 9: no separate UniqueViolation catch — ON CONFLICT handles it.
+                # Catch all exceptions here, reconnect on OperationalError.
                 try:
                     n = upsert_rows(conn, rows)
                     total_inserted += n
                     sub_inserted += n
-                except psycopg2.errors.UniqueViolation:
+                except psycopg2.OperationalError as e:
+                    log.warning(f"DB connection lost, reconnecting: {e}")
                     conn.rollback()
-                    total_skipped_duplicate += 1
+                    try:
+                        conn = get_connection()
+                        n = upsert_rows(conn, rows)
+                        total_inserted += n
+                        sub_inserted += n
+                    except Exception as retry_err:
+                        log.warning(f"Retry after reconnect failed: {retry_err}")
+                        total_skipped_validation += 1
                 except Exception as e:
                     conn.rollback()
-                    log.warning(f"DB error for post {post['data'].get('id')}: {e}")
+                    post_id = (rows[0].get("reddit_post_id") or "?") if rows else "?"
+                    log.warning(f"DB error for post {post_id}: {e}")
                     total_skipped_validation += 1
 
             log.info(f"r/{subreddit_name}: {sub_posts} posts, {sub_inserted} rows inserted")
@@ -451,8 +520,7 @@ def main() -> int:
 
     summary = (
         f"Scraped {total_posts} posts, inserted {total_inserted} rows, "
-        f"skipped {total_skipped_validation} (validation failed), "
-        f"skipped {total_skipped_duplicate} (duplicates)"
+        f"skipped {total_skipped_validation} (validation/error)"
     )
     log.info(summary)
     print(f"ROWS_UPSERTED={total_inserted}")

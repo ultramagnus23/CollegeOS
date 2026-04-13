@@ -43,7 +43,7 @@ DATABASE_URL = os.environ["DATABASE_URL"]
 DATA_GOV_API_KEY = os.environ.get("DATA_GOV_API_KEY", "")
 REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY_SEC", "2.0"))
 
-SCORECARD_BASE = "https://api.data.ed.gov/student/v1/schools"
+SCORECARD_BASE = "https://api.data.gov/ed/collegescorecard/v1/schools"
 
 SCORECARD_FIELDS = ",".join([
     "school.name",
@@ -80,8 +80,20 @@ SCORECARD_FIELDS = ",".join([
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
 
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(min=2, max=30))
 def get_connection():
-    return psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.set_session(autocommit=False)
+    return conn
+
+
+def safe_execute(conn, fn):
+    """Re-connect on OperationalError (dropped connection mid-run)."""
+    try:
+        return fn(conn)
+    except psycopg2.OperationalError:
+        conn = get_connection()
+        return fn(conn)
 
 
 def load_colleges(conn) -> list[dict]:

@@ -45,13 +45,25 @@ DATA_GOV_API_KEY = os.environ.get("DATA_GOV_API_KEY", "")
 ADMISSIONS_YEAR = int(os.environ.get("ADMISSIONS_YEAR", "2023"))
 REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY_SEC", "1.0"))
 
-SCORECARD_BASE = "https://api.data.ed.gov/student/v1/schools"
+SCORECARD_BASE = "https://api.data.gov/ed/collegescorecard/v1/schools"
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
 
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(min=2, max=30))
 def get_connection():
-    return psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.set_session(autocommit=False)
+    return conn
+
+
+def safe_execute(conn, fn):
+    """Re-connect on OperationalError (dropped connection mid-run)."""
+    try:
+        return fn(conn)
+    except psycopg2.OperationalError:
+        conn = get_connection()
+        return fn(conn)
 
 
 def load_colleges(conn) -> list[dict]:
@@ -118,44 +130,93 @@ def get_existing_stats(conn, college_id: int, year: int) -> dict:
 
 # ── Scorecard API ─────────────────────────────────────────────────────────────
 
+def _safe(r: dict, key: str):
+    """Return None for missing, empty, or PrivacySuppressed values."""
+    v = r.get(key)
+    return None if v in (None, "", "PrivacySuppressed") else v
+
+
+BULK_FIELDS = ",".join([
+    "id",
+    "school.name",
+    "latest.admissions.admission_rate.overall",
+    "latest.admissions.sat_scores.midpoint.critical_reading",
+    "latest.admissions.sat_scores.midpoint.math",
+    "latest.admissions.act_scores.midpoint.cumulative",
+    "latest.admissions.applicants.total",
+    "latest.admissions.admissions_yield_all",
+])
+
+
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
-def fetch_scorecard(college_name: str) -> dict:
+def _fetch_scorecard_page(page: int) -> list[dict]:
+    if not DATA_GOV_API_KEY:
+        return []
+    params = {
+        "api_key": DATA_GOV_API_KEY,
+        "_fields": BULK_FIELDS,
+        "per_page": 100,
+        "page": page,
+    }
+    resp = requests.get(SCORECARD_BASE, params=params, timeout=20)
+    resp.raise_for_status()
+    return resp.json().get("results", [])
+
+
+def fetch_all_scorecard() -> dict:
+    """
+    Bulk-fetch all Scorecard schools (~63 pages of 100) and return a dict
+    keyed by lowercased, stripped school.name for fast O(1) lookup.
+    Reduces ~6200 per-college API calls to ~63 bulk calls.
+    """
     if not DATA_GOV_API_KEY:
         return {}
-    params = {
-        "school.name": college_name,
-        "api_key": DATA_GOV_API_KEY,
-        "_fields": (
-            "school.name,"
-            "latest.admissions.admission_rate.overall,"
-            "latest.admissions.sat_scores.midpoint.critical_reading,"
-            "latest.admissions.sat_scores.midpoint.math,"
-            "latest.admissions.act_scores.midpoint.cumulative,"
-            "latest.student.enrollment.undergrad_12_month,"
-            "latest.admissions.admissions_yield_all,"
-            "latest.admissions.applicants.total"
-        ),
-    }
-    resp = requests.get(SCORECARD_BASE, params=params, timeout=15)
-    resp.raise_for_status()
-    data = resp.json()
-    results = data.get("results", [])
-    if not results:
-        return {}
-    r = results[0]
+    lookup: dict = {}
+    page = 0
+    while True:
+        results = _fetch_scorecard_page(page)
+        if not results:
+            break
+        for r in results:
+            name = (r.get("school.name") or "").strip().lower()
+            if name:
+                lookup[name] = r
+        log.debug(f"Fetched Scorecard page {page} ({len(results)} records)")
+        if len(results) < 100:
+            break
+        page += 1
+        time.sleep(REQUEST_DELAY)
+    log.info(f"Scorecard bulk fetch complete: {len(lookup)} schools indexed.")
+    return lookup
 
-    # Combine SAT CR + Math midpoints
-    cr = r.get("latest.admissions.sat_scores.midpoint.critical_reading")
-    math = r.get("latest.admissions.sat_scores.midpoint.math")
+
+def scorecard_stats_for(r: dict) -> dict:
+    """Map a single Scorecard result dict to admissions stats fields."""
+    cr = _safe(r, "latest.admissions.sat_scores.midpoint.critical_reading")
+    math = _safe(r, "latest.admissions.sat_scores.midpoint.math")
     median_sat = int(cr + math) if cr and math else None
-
     return {
-        "acceptance_rate": r.get("latest.admissions.admission_rate.overall"),
+        "acceptance_rate": _safe(r, "latest.admissions.admission_rate.overall"),
         "median_sat": median_sat,
-        "median_act": r.get("latest.admissions.act_scores.midpoint.cumulative"),
-        "total_applicants": r.get("latest.admissions.applicants.total"),
-        "yield_rate": r.get("latest.admissions.admissions_yield_all"),
+        "median_act": _safe(r, "latest.admissions.act_scores.midpoint.cumulative"),
+        "total_applicants": _safe(r, "latest.admissions.applicants.total"),
+        "yield_rate": _safe(r, "latest.admissions.admissions_yield_all"),
     }
+
+
+def match_college(college_name: str, lookup: dict) -> dict:
+    """
+    Look up a college in the Scorecard lookup dict.
+    Tries exact lowercase match first, then falls back to first-30-char prefix.
+    """
+    key = college_name.strip().lower()
+    if key in lookup:
+        return lookup[key]
+    prefix = key[:30]
+    for k, v in lookup.items():
+        if k[:30] == prefix:
+            return v
+    return {}
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -171,20 +232,24 @@ def main() -> int:
         colleges = load_colleges(conn)
         log.info(f"Loaded {len(colleges)} colleges.")
 
+        # Bulk-fetch all Scorecard data upfront (~63 API calls vs ~6200)
+        log.info("Fetching Scorecard data in bulk...")
+        scorecard_lookup = fetch_all_scorecard()
+        log.info(f"Scorecard lookup ready: {len(scorecard_lookup)} entries.")
+
         for college in colleges:
             college_id = college["id"]
             college_name = college["name"]
 
             try:
-                stats = fetch_scorecard(college_name)
-                time.sleep(REQUEST_DELAY)
+                raw = match_college(college_name, scorecard_lookup)
+                stats = scorecard_stats_for(raw) if raw else {}
 
-                if stats:
+                if stats and any(v is not None for v in stats.values()):
                     upsert_admissions_stats(conn, college_id, ADMISSIONS_YEAR, stats, "fresh")
                     rows_upserted += 1
                     log.debug(f"Upserted stats for {college_name}")
                 else:
-                    # Keep existing data but mark stale
                     existing = get_existing_stats(conn, college_id, ADMISSIONS_YEAR)
                     if existing:
                         upsert_admissions_stats(conn, college_id, ADMISSIONS_YEAR, existing, "stale")
@@ -195,7 +260,6 @@ def main() -> int:
 
             except Exception as e:
                 log.warning(f"Failed to scrape {college_name}: {e}")
-                # Never delete — mark stale if row exists
                 try:
                     existing = get_existing_stats(conn, college_id, ADMISSIONS_YEAR)
                     if existing:
@@ -206,6 +270,20 @@ def main() -> int:
 
         log.info(f"Done. {rows_upserted} upserted fresh, {stale_count} marked stale.")
         print(f"ROWS_UPSERTED={rows_upserted}")
+
+        # Fix 10 — Write scrape history record (ignore if table missing)
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO scrape_history (scraper_name, rows_upserted, status, ran_at)
+                    VALUES (%s, %s, 'success', NOW())
+                    ON CONFLICT DO NOTHING
+                """, ('admissions_scraper', rows_upserted))
+                conn.commit()
+        except Exception as e:
+            log.warning(f"Could not write scrape_history (table may not exist): {e}")
+            conn.rollback()
+
         return 0
 
     except Exception as e:

@@ -315,7 +315,7 @@ const getCompletionStatus = async (req, res, next) => {
       });
     }
     
-    const status = ProfileService.getCompletionStatus(userId);
+    const status = await ProfileService.getCompletionStatus(userId);
     
     res.json({
       success: true,

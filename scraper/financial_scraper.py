@@ -45,14 +45,26 @@ DATA_GOV_API_KEY = os.environ.get("DATA_GOV_API_KEY", "")
 FINANCIAL_YEAR = os.environ.get("FINANCIAL_YEAR", "2022-23")
 REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY_SEC", "1.0"))
 
-SCORECARD_BASE = "https://api.data.ed.gov/student/v1/schools"
+SCORECARD_BASE = "https://api.data.gov/ed/collegescorecard/v1/schools"
 IPEDS_BASE = "https://educationdata.urban.org/api/v1/college-university/ipeds"
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
 
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(min=2, max=30))
 def get_connection():
-    return psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.set_session(autocommit=False)
+    return conn
+
+
+def safe_execute(conn, fn):
+    """Re-connect on OperationalError (dropped connection mid-run)."""
+    try:
+        return fn(conn)
+    except psycopg2.OperationalError:
+        conn = get_connection()
+        return fn(conn)
 
 
 def load_colleges(conn) -> list[dict]:
@@ -116,6 +128,12 @@ def upsert_financial_aid(conn, college_id: int, academic_year: str, data: dict) 
 
 # ── College Scorecard API ─────────────────────────────────────────────────────
 
+def _safe(r: dict, key: str):
+    """Return None for missing, empty, or PrivacySuppressed values."""
+    v = r.get(key)
+    return None if v in (None, "", "PrivacySuppressed") else v
+
+
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
 def fetch_scorecard_financial(college_name: str) -> dict:
     if not DATA_GOV_API_KEY:
@@ -144,61 +162,65 @@ def fetch_scorecard_financial(college_name: str) -> dict:
         return {}
     r = results[0]
 
-    avg_net = r.get("latest.cost.avg_net_price.private") or r.get("latest.cost.avg_net_price.public")
-    pell_rate = r.get("latest.aid.pell_grant_rate")
+    avg_net = _safe(r, "latest.cost.avg_net_price.private") or _safe(r, "latest.cost.avg_net_price.public")
 
     return {
         "avg_financial_aid_package": avg_net,
-        "avg_net_price_0_30k": r.get("latest.cost.net_price.consumer.by_income_level.0-30000"),
-        "avg_net_price_30_48k": r.get("latest.cost.net_price.consumer.by_income_level.30001-48000"),
-        "avg_net_price_48_75k": r.get("latest.cost.net_price.consumer.by_income_level.48001-75000"),
-        "avg_net_price_75_110k": r.get("latest.cost.net_price.consumer.by_income_level.75001-110000"),
-        "avg_net_price_110k_plus": r.get("latest.cost.net_price.consumer.by_income_level.110001-plus"),
-        "percent_receiving_grants": pell_rate,
-        "percent_receiving_aid": r.get("latest.aid.federal_loan_rate"),
+        "avg_net_price_0_30k": _safe(r, "latest.cost.net_price.consumer.by_income_level.0-30000"),
+        "avg_net_price_30_48k": _safe(r, "latest.cost.net_price.consumer.by_income_level.30001-48000"),
+        "avg_net_price_48_75k": _safe(r, "latest.cost.net_price.consumer.by_income_level.48001-75000"),
+        "avg_net_price_75_110k": _safe(r, "latest.cost.net_price.consumer.by_income_level.75001-110000"),
+        "avg_net_price_110k_plus": _safe(r, "latest.cost.net_price.consumer.by_income_level.110001-plus"),
+        # Fix 4: map pell_grant_rate to percent_receiving_grants (not federal_loan_rate)
+        "percent_receiving_grants": _safe(r, "latest.aid.pell_grant_rate"),
+        "percent_receiving_aid": _safe(r, "latest.aid.federal_loan_rate"),
     }
 
 
 # ── IPEDS API (Urban Institute) ───────────────────────────────────────────────
 
-@retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=1, min=2, max=8))
 def fetch_ipeds_financial(college_name: str) -> dict:
     """
-    Attempt to look up financial data from IPEDS via the Urban Institute API.
-    Returns an empty dict if the college is not found or the request fails.
+    Look up financial data from IPEDS via the Urban Institute Education Data API.
+    Returns an empty dict if the college is not found or any request fails.
+    IPEDS is a secondary source — must never crash the main loop.
     """
-    # Search by name to get unitid
-    search_url = f"{IPEDS_BASE}/institutional-characteristics/1/search/"
-    resp = requests.get(
-        search_url,
-        params={"name": college_name},
-        timeout=15,
-    )
-    resp.raise_for_status()
-    results = resp.json().get("results", [])
-    if not results:
+    try:
+        # Fix 5: corrected endpoint format
+        search_url = "https://educationdata.urban.org/api/v1/college-university/ipeds/institutional-characteristics/1/"
+        resp = requests.get(
+            search_url,
+            params={"name": college_name, "per_page": 1},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        results = resp.json().get("results", [])
+        if not results:
+            return {}
+
+        unitid = results[0].get("unitid")
+        if not unitid:
+            return {}
+
+        # Fetch student financial aid data for this institution
+        fin_url = f"https://educationdata.urban.org/api/v1/college-university/ipeds/student-financial-aid/{unitid}/1/"
+        fin_resp = requests.get(fin_url, timeout=15)
+        fin_resp.raise_for_status()
+        fin_data = fin_resp.json().get("results", [{}])[0]
+
+        return {
+            "avg_financial_aid_package": fin_data.get("grnt_aid_avg"),
+            "avg_net_price_0_30k": fin_data.get("avg_net_price_income1"),
+            "avg_net_price_30_48k": fin_data.get("avg_net_price_income2"),
+            "avg_net_price_48_75k": fin_data.get("avg_net_price_income3"),
+            "avg_net_price_75_110k": fin_data.get("avg_net_price_income4"),
+            "avg_net_price_110k_plus": fin_data.get("avg_net_price_income5"),
+            "percent_receiving_aid": fin_data.get("pct_recv_aid"),
+            "percent_receiving_grants": fin_data.get("pct_recv_grant"),
+        }
+    except Exception as e:
+        log.debug(f"IPEDS fetch failed for {college_name}: {e}")
         return {}
-
-    unitid = results[0].get("unitid")
-    if not unitid:
-        return {}
-
-    # Fetch student financial aid data
-    fin_url = f"{IPEDS_BASE}/sfa/{unitid}/1/"
-    fin_resp = requests.get(fin_url, timeout=15)
-    fin_resp.raise_for_status()
-    fin_data = fin_resp.json().get("results", [{}])[0]
-
-    return {
-        "avg_financial_aid_package": fin_data.get("grnt_aid_avg"),
-        "avg_net_price_0_30k": fin_data.get("avg_net_price_income1"),
-        "avg_net_price_30_48k": fin_data.get("avg_net_price_income2"),
-        "avg_net_price_48_75k": fin_data.get("avg_net_price_income3"),
-        "avg_net_price_75_110k": fin_data.get("avg_net_price_income4"),
-        "avg_net_price_110k_plus": fin_data.get("avg_net_price_income5"),
-        "percent_receiving_aid": fin_data.get("pct_recv_aid"),
-        "percent_receiving_grants": fin_data.get("pct_recv_grant"),
-    }
 
 
 def merge_dicts(*dicts) -> dict:
@@ -228,21 +250,22 @@ def main() -> int:
             college_name = college["name"]
 
             try:
-                data: dict = {}
-
                 # Try IPEDS first (free, no key required)
+                ipeds_data: dict = {}
                 try:
                     ipeds_data = fetch_ipeds_financial(college_name)
-                    data = merge_dicts(ipeds_data, data)
                 except Exception as e:
                     log.debug(f"IPEDS failed for {college_name}: {e}")
 
-                # Then Scorecard (richer net-price income brackets)
+                # Then Scorecard (richer income brackets take priority)
+                sc_data: dict = {}
                 try:
                     sc_data = fetch_scorecard_financial(college_name)
-                    data = merge_dicts(sc_data, data)
                 except Exception as e:
                     log.debug(f"Scorecard failed for {college_name}: {e}")
+
+                # Fix 4: Scorecard values take priority over IPEDS
+                data = merge_dicts(sc_data, ipeds_data)
 
                 time.sleep(REQUEST_DELAY)
 
