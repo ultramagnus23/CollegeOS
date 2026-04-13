@@ -13,6 +13,7 @@ import CollegeListOverview from '../components/dashboard/CollegeListOverview';
 import ProfileCompleteness from '../components/ProfileCompleteness';
 import { CompactDecisionCountdown } from '@/components/DecisionCountdown';
 import { useTutorial } from '../components/tutorial/TutorialOverlay';
+import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 
 /* ─── Design tokens ──────────────────────────────────────────────────── */
 const h2r = (hex: string, a: number) => {
@@ -157,10 +158,11 @@ const Dashboard = () => {
   const [decisionDates, setDecisionDates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [recommendedActions, setRecommendedActions] = useState<any[]>([]);
-  const [profileStrength, setProfileStrength] = useState(0);
   const [urgentAlerts, setUrgentAlerts] = useState<any[]>([]);
   const [collegeList, setCollegeList] = useState<any[]>([]);
   const [todaysTasks, setTodaysTasks] = useState<any[]>([]);
+
+  const { completionPercent: profileStrength } = useProfileCompletion();
 
   const safe = (s: any, f: any) => { try { return s ? JSON.parse(s) : f; } catch { return f; } };
   const targetCountries = safe(user?.target_countries, []);
@@ -233,18 +235,16 @@ const Dashboard = () => {
         }));
       }
 
-      // Automation
+      // Automation — recommended actions only (profile strength comes from useProfileCompletion hook)
       try {
         const profile = { gpa:user?.gpa||3.5, satScore:user?.sat_score, actScore:user?.act_score, activities:[], grade:user?.grade||'Grade 12', curriculum:user?.curriculum||'CBSE' };
-        const [str, act] = await Promise.all([api.automation.getProfileStrength(profile), api.automation.getRecommendedActions(profile)]);
-        if (str.success&&str.data) setProfileStrength(str.data.percentage||0);
+        const act = await api.automation.getRecommendedActions(profile);
         if (act.success&&act.data) setRecommendedActions(act.data.map((a:any,i:number)=>({ id:`action-${i}`, ...a, impactScore:a.impact==='Unlocks personalized college recommendations'?20:a.impact==='Better reach/target/safety classification'?15:10 })));
       } catch {
         setRecommendedActions([
           { id:'a1', priority:'high', category:'profile', action:'Complete your profile', reason:'Unlocks personalized recommendations', impact:'Unlocks personalized college recommendations', impactScore:20 },
           { id:'a2', priority:'medium', category:'applications', action:'Add colleges to your list', reason:'Build a balanced reach/target/safety list', impact:'Better application strategy', impactScore:15 },
         ]);
-        setProfileStrength(45);
       }
     } catch (e) { console.error('Dashboard load error:', e); } finally { setLoading(false); }
   };

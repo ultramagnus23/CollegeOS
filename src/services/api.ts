@@ -381,9 +381,9 @@ class ApiService {
     return this.request(`/profile/${userId}/completion-status`);
   }
 
-  // Get profile score (breakdown: academic, extracurriculars, essays, completion)
-  async getProfileScore(userId: number) {
-    return this.request(`/profile/${userId}/score`);
+  // Get unified profile completion (single source of truth)
+  async getProfileCompletion() {
+    return this.request('/profile/completion');
   }
 
   // Save onboarding draft

@@ -1,36 +1,19 @@
 #!/usr/bin/env python3
+# Auth-free — uses Reddit public JSON API, no credentials needed
 # CollegeOS Auto-generated scraper/reddit_scraper.py — do not edit manually
 """
 Reddit Chance-Me Scraper
 ────────────────────────
-Fetches posts from r/chanceme, r/ApplyingToCollege, r/collegeresults.
-Extracts structured applicant + outcome data and upserts to chance_me_posts.
-
-Authentication modes
-────────────────────
-1. OAuth (preferred, 60 req/min):
-     Set REDDIT_CLIENT_ID + REDDIT_CLIENT_SECRET.
-     Register a free app at https://www.reddit.com/prefs/apps (type: script).
-
-2. Public JSON API (no credentials required, ~10 req/min):
-     Leave REDDIT_CLIENT_ID unset. No sign-up needed. The scraper will hit
-     https://www.reddit.com/r/<sub>/top.json directly with a custom User-Agent.
-     Slower but fully functional for data gathering.
+Fetches posts from r/chanceme, r/ApplyingToCollege, r/collegeresults using the
+Reddit public JSON API (no OAuth or credentials required), extracts structured
+applicant + outcome data, and upserts to chance_me_posts.
 
 Required environment variables
 ───────────────────────────────
     DATABASE_URL
 
-Optional — OAuth path (leave unset to use public API)
-────────────────────────────────────────────────────────
-    REDDIT_CLIENT_ID
-    REDDIT_CLIENT_SECRET
-    REDDIT_USER_AGENT      (e.g. "CollegeOS/1.0 by YourUsername")
-    REDDIT_USERNAME        (for script-auth)
-    REDDIT_PASSWORD
-
-Optional — tuning
-─────────────────
+Optional
+────────
     POSTS_PER_SUBREDDIT    (default 500)
 
 Exit codes: 0 = success, 1 = failure.
@@ -44,6 +27,7 @@ import logging
 import datetime
 from typing import Optional
 
+import requests
 import psycopg2
 import psycopg2.extras
 import requests
@@ -62,14 +46,13 @@ log = logging.getLogger("reddit_scraper")
 # ── Config ────────────────────────────────────────────────────────────────────
 
 DATABASE_URL = os.environ["DATABASE_URL"]
-REDDIT_CLIENT_ID = os.environ.get("REDDIT_CLIENT_ID", "")
-REDDIT_CLIENT_SECRET = os.environ.get("REDDIT_CLIENT_SECRET", "")
-REDDIT_USER_AGENT = os.environ.get("REDDIT_USER_AGENT", "CollegeOS/1.0 (+https://github.com/ultramagnus23/CollegeOS)")
-REDDIT_USERNAME = os.environ.get("REDDIT_USERNAME", "")
-REDDIT_PASSWORD = os.environ.get("REDDIT_PASSWORD", "")
 POSTS_PER_SUBREDDIT = int(os.environ.get("POSTS_PER_SUBREDDIT", "500"))
 
-USE_OAUTH = bool(REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET)
+HEADERS = {"User-Agent": "CollegeOS/1.0"}
+REQUEST_TIMEOUT = 30
+
+# Search query used across all subreddits
+SEARCH_QUERY = "chance me OR results"
 
 SUBREDDITS = ["chanceme", "ApplyingToCollege", "collegeresults"]
 
@@ -286,12 +269,25 @@ def _extract_college_outcomes(text: str) -> list[dict]:
     return results
 
 
-def parse_post(post) -> list[dict]:
+def parse_post(post: dict) -> list[dict]:
     """
-    Parse a PRAW submission into a list of DB row dicts (one per college).
-    Returns empty list if nothing useful is found.
+    Parse a post dict (from Reddit public JSON API) into a list of DB row dicts
+    (one per college). Returns empty list if nothing useful is found.
+    Fix 7: safely handle missing keys; skip posts with very short titles.
     """
-    full_text = f"{post.title}\n\n{post.selftext}"
+    data = post.get("data") or {}
+    title = data.get("title") or ""
+    selftext = data.get("selftext") or ""
+    post_id = data.get("id") or ""
+    permalink = data.get("permalink") or ""
+    created_utc = data.get("created_utc") or 0
+    subreddit = data.get("subreddit") or ""
+
+    # Skip posts with no meaningful title
+    if len(title.strip()) < 20:
+        return []
+
+    full_text = f"{title}\n\n{selftext}"
 
     gpa = _parse_gpa(full_text)
     sat = _parse_sat(full_text)
@@ -307,8 +303,8 @@ def parse_post(post) -> list[dict]:
     if not college_outcomes:
         return []
 
-    post_date = datetime.datetime.utcfromtimestamp(post.created_utc)
-    post_url = f"https://reddit.com{post.permalink}"
+    post_date = datetime.datetime.utcfromtimestamp(created_utc)
+    post_url = f"https://reddit.com{permalink}"
 
     rows = []
     for co in college_outcomes:
@@ -320,7 +316,7 @@ def parse_post(post) -> list[dict]:
         if act is not None and not (1 <= act <= 36):
             continue
         rows.append({
-            "reddit_post_id": post.id,
+            "reddit_post_id": post_id,
             "college_name": co["college_name"],
             "gpa": gpa,
             "sat_score": sat,
@@ -340,8 +336,11 @@ def parse_post(post) -> list[dict]:
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(min=2, max=30))
 def get_connection():
-    return psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.set_session(autocommit=False)
+    return conn
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
@@ -369,114 +368,82 @@ def upsert_rows(conn, rows: list[dict]) -> int:
     return len(rows)
 
 
-# ── Reddit client ─────────────────────────────────────────────────────────────
+# ── Reddit public JSON API ────────────────────────────────────────────────────
 
-def _make_session() -> requests.Session:
-    """Return a requests.Session with the correct User-Agent header."""
-    s = requests.Session()
-    s.headers.update({"User-Agent": REDDIT_USER_AGENT})
-    return s
-
-
-def _public_fetch_listing(session: requests.Session, subreddit: str,
-                          sort: str = "top", time_filter: str = "all",
-                          limit: int = 100, after: Optional[str] = None) -> dict:
+def fetch_posts(subreddit: str, query: str, after: Optional[str] = None) -> dict:
     """
-    Fetch one page from Reddit's public .json endpoint (no credentials needed).
-    Retries on 429 with the Retry-After header.
+    Fetch one page from Reddit. Fix 8: exponential backoff on 429.
+    If Retry-After header is present, use it; otherwise use 30 * 2**attempt.
     """
-    url = f"https://www.reddit.com/r/{subreddit}/{sort}.json"
-    params: dict = {"limit": limit, "raw_json": 1}
-    if sort == "top":
-        params["t"] = time_filter
+    url = f"https://www.reddit.com/r/{subreddit}/search.json"
+    params = {
+        "q": query,
+        "sort": "relevance",
+        "t": "all",
+        "limit": 100,
+        "restrict_sr": 1,
+    }
     if after:
         params["after"] = after
 
-    for attempt in range(5):
-        resp = session.get(url, params=params, timeout=30)
-        if resp.status_code == 429:
-            wait = int(resp.headers.get("Retry-After", 120))
-            log.warning(f"Rate limited (public API), waiting {wait}s …")
-            time.sleep(wait)
+    max_attempts = 5
+    for attempt in range(max_attempts):
+        response = requests.get(url, headers=HEADERS, params=params, timeout=REQUEST_TIMEOUT)
+        if response.status_code == 429:
+            retry_after = response.headers.get("Retry-After")
+            if retry_after:
+                wait_sec = int(retry_after)
+                log.warning(f"Rate limited (Retry-After={wait_sec}s); waiting...")
+            else:
+                wait_sec = min(300, 30 * (2 ** attempt))
+                log.warning(f"Rate limited (no Retry-After header); exponential backoff {wait_sec}s (attempt {attempt + 1}/{max_attempts})")
+            time.sleep(wait_sec)
             continue
-        resp.raise_for_status()
-        return resp.json()
-    raise RuntimeError(f"Reddit public API failed after 5 attempts for r/{subreddit}/{sort}")
+        response.raise_for_status()
+        return response.json()
+
+    # Exhausted attempts
+    response.raise_for_status()
+    return {}
 
 
-def fetch_posts_public(subreddit_name: str, limit: int):
-    """
-    Yield posts using the public JSON API.
-    Fetches top-all-time (up to `limit` posts, paginating as needed) then new.
-    Rate limit: ~10 req/min → 6-second delay between pages.
-    """
-    session = _make_session()
-    seen_ids: set = set()
-    delay = 6.5  # conservative for the ~10 req/min public limit
-
-    for sort, time_filter in [("top", "all"), ("new", None)]:
-        after = None
-        collected = 0
-        while collected < limit:
-            time.sleep(delay)
-            data = _public_fetch_listing(
-                session, subreddit_name, sort=sort,
-                time_filter=time_filter or "all",
-                limit=min(100, limit - collected),
-                after=after,
-            )
-            children = data.get("data", {}).get("children", [])
-            if not children:
-                break
-            for child in children:
-                if child.get("kind") != "t3":
-                    continue
-                post_data = child["data"]
-                if post_data.get("stickied"):
-                    continue
-                post_id = post_data.get("id")
-                if post_id and post_id not in seen_ids:
-                    seen_ids.add(post_id)
-                    yield _PublicPost(post_data)
-                    collected += 1
-            after = data.get("data", {}).get("after")
-            if not after:
-                break
+def _check_unique_constraint(conn) -> None:
+    """Fix 9: Log a warning if the unique constraint on chance_me_posts is missing."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT COUNT(*) FROM pg_constraint
+                WHERE conrelid = 'chance_me_posts'::regclass
+                  AND contype = 'u'
+                  AND array_to_string(conkey, ',') IN (
+                    SELECT array_to_string(ARRAY[
+                        (SELECT attnum FROM pg_attribute WHERE attrelid = 'chance_me_posts'::regclass AND attname = 'reddit_post_id'),
+                        (SELECT attnum FROM pg_attribute WHERE attrelid = 'chance_me_posts'::regclass AND attname = 'college_name')
+                    ]::smallint[], ',')
+                  )
+            """)
+            count = cur.fetchone()[0]
+            if count == 0:
+                log.warning("MISSING unique constraint on chance_me_posts(reddit_post_id, college_name). "
+                            "ON CONFLICT in upsert will not work correctly.")
+    except Exception as e:
+        log.debug(f"Could not check unique constraint: {e}")
 
 
-class _PublicPost:
-    """Thin wrapper so public-API post dicts look like PRAW Submission objects."""
-
-    def __init__(self, data: dict):
-        self.id = data.get("id", "")
-        self.title = data.get("title", "")
-        self.selftext = data.get("selftext", "")
-        self.permalink = data.get("permalink", "")
-        self.created_utc = data.get("created_utc", 0)
-        self.subreddit = data.get("subreddit", "")
-
-
-def fetch_posts_oauth(subreddit_name: str, limit: int):
-    """Yield posts using PRAW (OAuth).  Requires REDDIT_CLIENT_ID etc."""
-    import praw  # only imported when credentials are present
-
-    kwargs = dict(
-        client_id=REDDIT_CLIENT_ID,
-        client_secret=REDDIT_CLIENT_SECRET,
-        user_agent=REDDIT_USER_AGENT,
-    )
-    if REDDIT_USERNAME and REDDIT_PASSWORD:
-        kwargs.update(username=REDDIT_USERNAME, password=REDDIT_PASSWORD)
-    reddit = praw.Reddit(**kwargs)
-
-    sub = reddit.subreddit(subreddit_name)
-    seen_ids: set = set()
-
-    for listing in [sub.new(limit=limit), sub.hot(limit=limit)]:
-        for post in listing:
-            if post.id not in seen_ids:
-                seen_ids.add(post.id)
-                yield post
+def paginate(subreddit: str, query: str, max_pages: int = 5) -> list:
+    posts = []
+    after = None
+    for _ in range(max_pages):
+        data = fetch_posts(subreddit, query, after)
+        children = (data.get("data") or {}).get("children") or []
+        if not children:
+            break
+        posts.extend(children)
+        after = (data.get("data") or {}).get("after")
+        if not after:
+            break
+        time.sleep(1)
+    return posts
 
 
 def fetch_posts(subreddit_name: str, limit: int):
@@ -500,24 +467,32 @@ def main() -> int:
     total_posts = 0
     total_inserted = 0
     total_skipped_validation = 0
-    total_skipped_duplicate = 0
+
+    # Number of paginated pages per subreddit/query (100 posts each)
+    max_pages = max(1, POSTS_PER_SUBREDDIT // 100)
 
     try:
         conn = get_connection()
+
+        # Fix 9: verify unique constraint exists before starting
+        _check_unique_constraint(conn)
 
         for subreddit_name in SUBREDDITS:
             log.info(f"Scraping r/{subreddit_name} (up to {POSTS_PER_SUBREDDIT} posts)...")
             sub_posts = 0
             sub_inserted = 0
 
-            for post in fetch_posts(subreddit_name, POSTS_PER_SUBREDDIT):
+            posts = paginate(subreddit_name, SEARCH_QUERY, max_pages=max_pages)
+
+            for post in posts:
                 total_posts += 1
                 sub_posts += 1
 
                 try:
                     rows = parse_post(post)
                 except Exception as e:
-                    log.warning(f"Parse error on {post.id}: {e}")
+                    post_id = (post.get("data") or {}).get("id", "?")
+                    log.warning(f"Parse error on {post_id}: {e}")
                     total_skipped_validation += 1
                     continue
 
@@ -525,16 +500,27 @@ def main() -> int:
                     total_skipped_validation += 1
                     continue
 
+                # Fix 9: no separate UniqueViolation catch — ON CONFLICT handles it.
+                # Catch all exceptions here, reconnect on OperationalError.
                 try:
                     n = upsert_rows(conn, rows)
                     total_inserted += n
                     sub_inserted += n
-                except psycopg2.errors.UniqueViolation:
+                except psycopg2.OperationalError as e:
+                    log.warning(f"DB connection lost, reconnecting: {e}")
                     conn.rollback()
-                    total_skipped_duplicate += 1
+                    try:
+                        conn = get_connection()
+                        n = upsert_rows(conn, rows)
+                        total_inserted += n
+                        sub_inserted += n
+                    except Exception as retry_err:
+                        log.warning(f"Retry after reconnect failed: {retry_err}")
+                        total_skipped_validation += 1
                 except Exception as e:
                     conn.rollback()
-                    log.warning(f"DB error for post {post.id}: {e}")
+                    post_id = (rows[0].get("reddit_post_id") or "?") if rows else "?"
+                    log.warning(f"DB error for post {post_id}: {e}")
                     total_skipped_validation += 1
 
             log.info(f"r/{subreddit_name}: {sub_posts} posts, {sub_inserted} rows inserted")
@@ -548,8 +534,7 @@ def main() -> int:
 
     summary = (
         f"Scraped {total_posts} posts, inserted {total_inserted} rows, "
-        f"skipped {total_skipped_validation} (validation failed), "
-        f"skipped {total_skipped_duplicate} (duplicates)"
+        f"skipped {total_skipped_validation} (validation/error)"
     )
     log.info(summary)
     print(f"ROWS_UPSERTED={total_inserted}")
