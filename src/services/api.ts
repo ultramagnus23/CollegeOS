@@ -374,6 +374,11 @@ class ApiService {
     return this.request(`/profile/${userId}/completion-status`);
   }
 
+  // Get unified profile completion (single source of truth)
+  async getProfileCompletion() {
+    return this.request('/profile/completion');
+  }
+
   // Save onboarding draft
   async saveOnboardingDraft(userId: number, data: any) {
     return this.request(`/profile/${userId}/onboarding-draft`, {

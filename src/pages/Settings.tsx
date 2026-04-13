@@ -15,6 +15,7 @@ import HelpTooltip, { FIELD_HELP_TEXT } from '@/components/common/HelpTooltip';
 import { ValidationMessage, useFormValidation, ValidationRules } from '@/hooks/useFormValidation';
 import { useAutosave, DraftRestoreBanner } from '@/hooks/useAutosave';
 import ConfirmModal from '@/components/common/ConfirmModal';
+import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 
 // Section configuration for navigation
 const SECTIONS = [
@@ -54,38 +55,17 @@ interface ProfileData {
   activities: any[];
 }
 
-/* ─── Local Profile Completion Calculation ───────────────────────────── */
-const COMPLETION_FIELDS = [
-  { key: 'gpa_4_scale_or_pct', label: 'GPA / Class 12 %', section: '#academic' },
-  { key: 'curriculum', label: 'Curriculum', section: '#academic' },
-  { key: 'intended_major', label: 'Intended Major', section: '#preferences' },
-  { key: 'degree_level', label: 'Degree Level', section: '#preferences' },
-  { key: 'test_score', label: 'SAT / IELTS Score', section: '#test-scores' },
-  { key: 'annual_family_income_inr', label: 'Annual Family Income', section: '#preferences' },
-  { key: 'max_budget_per_year_inr', label: 'Max Budget / Year', section: '#preferences' },
-  { key: 'preferred_countries', label: 'Preferred Countries', section: '#preferences' },
-  { key: 'why_college_matters', label: 'Why College Matters (50+ chars)', section: '#goals' },
-  { key: 'values_vector', label: 'Values & Goals', section: '#goals' },
-];
-
-function computeCompletion(profile: any): { pct: number; missing: typeof COMPLETION_FIELDS } {
-  if (!profile) return { pct: 0, missing: COMPLETION_FIELDS };
-  const checks: Record<string, boolean> = {
-    gpa_4_scale_or_pct: !!(profile.gpa_4_scale || profile.class_12_percentage),
-    curriculum: !!profile.curriculum,
-    intended_major: !!profile.intended_major,
-    degree_level: !!profile.degree_level,
-    test_score: !!(profile.sat_total || profile.ielts_overall),
-    annual_family_income_inr: !!profile.annual_family_income_inr,
-    max_budget_per_year_inr: !!profile.max_budget_per_year_inr,
-    preferred_countries: Array.isArray(profile.preferred_countries) && profile.preferred_countries.length > 0,
-    why_college_matters: typeof profile.why_college_matters === 'string' && profile.why_college_matters.length >= 50,
-    values_vector: profile.values_vector !== null && profile.values_vector !== undefined,
-  };
-  const completed = Object.values(checks).filter(Boolean).length;
-  const missing = COMPLETION_FIELDS.filter(f => !checks[f.key]);
-  return { pct: Math.round((completed / 10) * 100), missing };
-}
+/* ─── Field-to-settings-section navigation map (for missing fields hints) ─── */
+const FIELD_SECTION_MAP: Record<string, string> = {
+  'First Name': '#basic', 'Email': '#basic', 'Country': '#basic',
+  'Phone Number': '#basic', 'Date of Birth': '#basic', 'School Name': '#basic',
+  'Curriculum Type': '#academic', 'Graduation Year': '#academic', 'Subjects': '#academic',
+  'GPA (Weighted)': '#academic', 'GPA (Unweighted)': '#academic',
+  'SAT Score': '#test-scores', 'ACT Score': '#test-scores',
+  'IELTS Score': '#test-scores', 'TOEFL Score': '#test-scores',
+  'College Size Preference': '#preferences', 'Campus Setting Preference': '#preferences',
+  'Activities': '#activities',
+};
 
 const Settings = () => {
   const { user, refreshUser } = useAuth();
@@ -97,6 +77,8 @@ const Settings = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [completionStatus, setCompletionStatus] = useState<any>(null);
   const [activeSection, setActiveSection] = useState<SectionId>('basic');
+
+  const { completionPercent, missingFields, refetch: refetchCompletion } = useProfileCompletion();
   
   // Section refs for scrolling
   const sectionRefs = useRef<Record<SectionId, HTMLDivElement | null>>({
@@ -321,6 +303,7 @@ const SCROLL_DELAY_MS = 100;
       await refreshUser?.();
       setEditMode(prev => ({ ...prev, basic: false }));
       showMessage('success', 'Basic info saved successfully');
+      refetchCompletion();
     } catch (error: any) {
       console.error('Failed to save basic info:', error);
       showMessage('error', error.message || 'Failed to save');
@@ -354,6 +337,7 @@ const SCROLL_DELAY_MS = 100;
       await loadProfile();
       setEditMode(prev => ({ ...prev, academic: false }));
       showMessage('success', 'Academic info saved successfully');
+      refetchCompletion();
     } catch (error: any) {
       console.error('Failed to save academic info:', error);
       showMessage('error', error.message || 'Failed to save');
@@ -389,6 +373,7 @@ const SCROLL_DELAY_MS = 100;
       await loadProfile();
       setEditMode(prev => ({ ...prev, testScores: false }));
       showMessage('success', 'Test scores saved successfully');
+      refetchCompletion();
     } catch (error: any) {
       console.error('Failed to save test scores:', error);
       showMessage('error', error.message || 'Failed to save');
@@ -425,6 +410,7 @@ const SCROLL_DELAY_MS = 100;
       await loadProfile();
       setEditMode(prev => ({ ...prev, preferences: false }));
       showMessage('success', 'Preferences saved successfully');
+      refetchCompletion();
     } catch (error: any) {
       console.error('Failed to save preferences:', error);
       showMessage('error', error.message || 'Failed to save');
@@ -459,6 +445,7 @@ const SCROLL_DELAY_MS = 100;
         weeks_per_year: ''
       });
       showMessage('success', 'Activity added successfully');
+      refetchCompletion();
     } catch (error: any) {
       showMessage('error', error.message || 'Failed to add activity');
     }
@@ -522,8 +509,7 @@ const SCROLL_DELAY_MS = 100;
       {/* Profile Completion Widget */}
       <div className="mb-6">
         {(() => {
-          const profile = profileData?.profile || profileData?.user;
-          const { pct, missing } = computeCompletion(profile);
+          const pct = completionPercent;
           const color = pct >= 80 ? '#10B981' : pct >= 50 ? '#FBBF24' : '#FB923C';
           return (
             <div className="bg-card rounded-xl border border-border p-5">
@@ -535,16 +521,16 @@ const SCROLL_DELAY_MS = 100;
                 <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 9999, transition: 'width 0.6s ease' }} />
               </div>
               <p className="text-sm text-muted-foreground mb-3">Your profile is {pct}% complete</p>
-              {missing.length > 0 && (
+              {missingFields.length > 0 && (
                 <div className="border-t border-border pt-3">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Missing fields</p>
                   <div className="flex flex-col gap-1">
-                    {missing.map(f => (
-                      <button key={f.key} onClick={() => navigate(`/settings${f.section}`)}
-                        aria-label={`Complete ${f.label}`}
+                    {missingFields.map(label => (
+                      <button key={label} onClick={() => navigate(`/settings${FIELD_SECTION_MAP[label] || ''}`)}
+                        aria-label={`Complete ${label}`}
                         className="flex items-center gap-2 p-2 text-sm text-left rounded-lg hover:bg-muted transition-colors group">
                         <AlertCircle size={13} className="text-orange-500 shrink-0" />
-                        <span className="text-foreground">{f.label}</span>
+                        <span className="text-foreground">{label}</span>
                         <ChevronRight size={13} className="ml-auto text-muted-foreground group-hover:text-foreground" />
                       </button>
                     ))}
