@@ -64,7 +64,7 @@ const S = {
   border2: 'var(--color-border-strong)',
   muted: 'var(--color-text-secondary)',
   dim: 'var(--color-text-disabled)',
-  font: "'DM Sans',sans-serif",
+  font: "'Inter', system-ui, sans-serif",
 };
 const inp: React.CSSProperties = {
   width: '100%', padding: '10px 14px', background: S.surface2,

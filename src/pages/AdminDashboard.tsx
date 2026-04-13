@@ -30,7 +30,7 @@ const S = {
     padding: '32px',
     background: '#0f0f1a',
     minHeight: '100vh',
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "'Inter', system-ui, sans-serif",
   } as React.CSSProperties,
   h1: {
     fontSize: 28,
@@ -92,7 +92,7 @@ function Stat({ label, value, accent = '#94a3b8' }: { label: string; value: stri
         textTransform: 'uppercase',
         letterSpacing: '0.06em',
         marginBottom: 6,
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Inter', system-ui, sans-serif",
       }}>
         {label}
       </div>
@@ -100,7 +100,7 @@ function Stat({ label, value, accent = '#94a3b8' }: { label: string; value: stri
         fontSize: 22,
         fontWeight: 700,
         color: accent,
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Inter', system-ui, sans-serif",
         lineHeight: 1.2,
         wordBreak: 'break-word',
       }}>
@@ -121,7 +121,7 @@ function StatusBadge({ status }: { status: string | null }) {
       color,
       fontWeight: 600,
       fontSize: 13,
-      fontFamily: "'DM Sans', sans-serif",
+      fontFamily: "'Inter', system-ui, sans-serif",
     }}>
       {status ?? '—'}
     </span>

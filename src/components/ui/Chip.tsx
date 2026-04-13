@@ -52,7 +52,7 @@ const Chip: React.FC<ChipProps> = ({
           transform: selected ? 'scale(1.05)' : 'scale(1)',
           animation: selected ? 'chip-bounce 0.3s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
           boxShadow: selected ? `0 0 12px ${hexToRgba(accentColor, 0.3)}` : 'none',
-          fontFamily: "'DM Sans', sans-serif",
+          fontFamily: "'Inter', system-ui, sans-serif",
           whiteSpace: 'nowrap',
         }}
       >

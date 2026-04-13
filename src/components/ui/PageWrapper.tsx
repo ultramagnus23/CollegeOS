@@ -34,7 +34,7 @@ const PageWrapper: React.FC<PageWrapperProps> = ({ children, className = '' }) =
         minHeight: '100%',
         background: 'var(--color-bg-primary)',
         color: 'var(--color-text-primary)',
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Inter', system-ui, sans-serif",
       }}
     >
       {children}

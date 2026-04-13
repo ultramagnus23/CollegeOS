@@ -27,7 +27,7 @@ const S = {
   border2: 'var(--color-border-strong)',
   muted: 'var(--color-text-secondary)',
   dim: 'var(--color-text-disabled)',
-  font: "'DM Sans',sans-serif",
+  font: "'Inter', system-ui, sans-serif",
 };
 const inp: React.CSSProperties = { width:'100%', padding:'10px 14px', background:S.surface2, border:`1px solid ${S.border2}`, borderRadius:10, color:'var(--color-text-primary)', fontSize:14, fontFamily:S.font };
 const lbl: React.CSSProperties = { fontSize:11, color:S.dim, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6, fontWeight:600, display:'block', fontFamily:S.font };
