@@ -42,15 +42,25 @@ class User {
     const pool = dbManager.getDatabase();
     await pool.query(
       `UPDATE users
-       SET target_countries = $1, intended_majors = $2, test_status = $3,
-           language_preferences = $4, onboarding_complete = 1, updated_at = NOW()
+       SET target_countries    = $1,
+           intended_majors     = $2,
+           test_status         = $3,
+           language_preferences = $4,
+           onboarding_complete = 1,
+           gpa                 = COALESCE($6, gpa),
+           current_grade       = COALESCE($7, current_grade),
+           gender              = COALESCE($8, gender),
+           updated_at          = NOW()
        WHERE id = $5`,
       [
         JSON.stringify(data.target_countries),
         JSON.stringify(data.intended_majors),
         JSON.stringify(data.test_status),
         JSON.stringify(data.language_preferences),
-        userId
+        userId,
+        data.gpa != null ? parseFloat(data.gpa) : null,
+        data.current_grade || null,
+        data.gender || null,
       ]
     );
     return this.findById(userId);
