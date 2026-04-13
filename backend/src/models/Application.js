@@ -83,9 +83,13 @@ class Application {
   static async findByUserAndCollege(userId, collegeId) {
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
-      `SELECT a.*, c.name as college_name, c.country, c.official_website
+      `SELECT a.*,
+              COALESCE(cc.name, c.name) AS college_name,
+              COALESCE(cc.country, c.country) AS country,
+              COALESCE(cc.website_url, c.official_website) AS official_website
        FROM applications a
-       JOIN colleges c ON a.college_id = c.id
+       LEFT JOIN colleges_comprehensive cc ON a.college_id = cc.id
+       LEFT JOIN colleges c ON a.college_id = c.id
        WHERE a.user_id = $1 AND a.college_id = $2`,
       [userId, collegeId]
     );
@@ -95,9 +99,13 @@ class Application {
   static async findById(id) {
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
-      `SELECT a.*, c.name as college_name, c.country, c.official_website
+      `SELECT a.*,
+              COALESCE(cc.name, c.name) AS college_name,
+              COALESCE(cc.country, c.country) AS country,
+              COALESCE(cc.website_url, c.official_website) AS official_website
        FROM applications a
-       JOIN colleges c ON a.college_id = c.id
+       LEFT JOIN colleges_comprehensive cc ON a.college_id = cc.id
+       LEFT JOIN colleges c ON a.college_id = c.id
        WHERE a.id = $1`,
       [id]
     );
@@ -107,9 +115,13 @@ class Application {
   static async findByUser(userId, filters = {}) {
     const pool = dbManager.getDatabase();
     let query = `
-      SELECT a.*, c.name as college_name, c.country, c.official_website
+      SELECT a.*,
+             COALESCE(cc.name, c.name) AS college_name,
+             COALESCE(cc.country, c.country) AS country,
+             COALESCE(cc.website_url, c.official_website) AS official_website
       FROM applications a
-      JOIN colleges c ON a.college_id = c.id
+      LEFT JOIN colleges_comprehensive cc ON a.college_id = cc.id
+      LEFT JOIN colleges c ON a.college_id = c.id
       WHERE a.user_id = $1
     `;
     const params = [userId];

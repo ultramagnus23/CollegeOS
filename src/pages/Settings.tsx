@@ -93,6 +93,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [completionStatus, setCompletionStatus] = useState<any>(null);
@@ -267,6 +268,18 @@ const SCROLL_DELAY_MS = 100;
   const showMessage = (type: 'success' | 'error', text: string) => {
     setSaveMessage({ type, text });
     setTimeout(() => setSaveMessage(null), 3000);
+  };
+
+  const syncChancing = async () => {
+    setSyncing(true);
+    try {
+      await api.chancing.getForStudent();
+      showMessage('success', 'Chancing data refreshed — visit the Chancing page to see updated results.');
+    } catch {
+      showMessage('error', 'Could not sync chancing. Try again in a moment.');
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const toggleEditMode = (section: string) => {
@@ -502,9 +515,21 @@ const SCROLL_DELAY_MS = 100;
         onCancel={() => setConfirmDelete(null)}
       />
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
-        <p className="text-muted-foreground">Manage your profile and preferences</p>
+      <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
+          <p className="text-muted-foreground">Manage your profile and preferences</p>
+        </div>
+        <Button
+          onClick={syncChancing}
+          disabled={syncing}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          {syncing ? <Loader2 size={14} className="animate-spin" /> : <Target size={14} />}
+          {syncing ? 'Syncing…' : 'Sync to Chancing'}
+        </Button>
       </div>
 
       {/* Save Message */}

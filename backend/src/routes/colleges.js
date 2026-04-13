@@ -189,9 +189,10 @@ router.post('/requests/:id/upvote', CollegeController.upvoteRequest);
 router.post('/contributions', authenticate, CollegeController.contributeData);
 router.get('/contributions/:collegeId', CollegeController.getContributions);
 
-// ─── colleges_comprehensive endpoints ─────────────────────────────────────────
-// These routes query the `colleges_comprehensive` table (Supabase-seeded, 6,207 rows)
-// and its related child tables using the existing PostgreSQL pool.
+// ─── colleges endpoints ────────────────────────────────────────────────────────
+// These routes query the `colleges_canonical` view (Supabase-seeded, ~6,322 rows)
+// which joins colleges_comprehensive with college_admissions, college_financial_data,
+// and academic_details so each college is a single denormalized row.
 
 /**
  * GET /api/colleges/comprehensive
@@ -215,10 +216,10 @@ router.get('/comprehensive', async (req, res, next) => {
 
     // Allowlist sort expressions to prevent SQL injection
     const SORT_EXPRESSIONS = {
-      popularity:      '(1 - COALESCE(ca.acceptance_rate, 0.5)) * COALESCE(cc.total_enrollment, 0) DESC',
+      popularity:      '(1 - COALESCE(cc.adm_acceptance_rate, 0.5)) * COALESCE(cc.total_enrollment, 0) DESC',
       name:            'cc.name ASC',
-      acceptance_rate: 'ca.acceptance_rate ASC NULLS LAST',
-      tuition:         'COALESCE(cfd.tuition_out_state, cfd.tuition_international) ASC NULLS LAST',
+      acceptance_rate: 'cc.adm_acceptance_rate ASC NULLS LAST',
+      tuition:         'COALESCE(cc.tuition_out_state, cc.fin_tuition_intl) ASC NULLS LAST',
       ranking:         'best_rank ASC NULLS LAST',
     };
     const sortKey = SORT_EXPRESSIONS[req.query.sortBy] ? req.query.sortBy : 'popularity';
@@ -248,8 +249,7 @@ router.get('/comprehensive', async (req, res, next) => {
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const countSql = `
-      SELECT COUNT(*) FROM colleges_comprehensive cc
-      LEFT JOIN college_admissions ca ON ca.college_id = cc.id
+      SELECT COUNT(*) FROM colleges_canonical cc
       ${where}
     `;
     const { rows: countRows } = await pool.query(countSql, params);
@@ -259,18 +259,12 @@ router.get('/comprehensive', async (req, res, next) => {
     const dataSql = `
       SELECT
         cc.*,
-        ca.acceptance_rate, ca.test_optional, ca.sat_avg, ca.sat_range, ca.act_range, ca.gpa_50,
-        cfd.tuition_in_state, cfd.tuition_out_state, cfd.tuition_international, cfd.avg_net_price,
-        ad.graduation_rate_4yr, ad.retention_rate, ad.median_salary_6yr, ad.median_salary_10yr, ad.median_debt,
         (
           SELECT MIN(CAST(cr.ranking_value AS INTEGER))
           FROM college_rankings cr
           WHERE cr.college_id = cc.id AND cr.ranking_value ~ '^[0-9]+$'
         ) AS best_rank
-      FROM colleges_comprehensive cc
-      LEFT JOIN college_admissions ca ON ca.college_id = cc.id
-      LEFT JOIN college_financial_data cfd ON cfd.college_id = cc.id
-      LEFT JOIN academic_details ad ON ad.college_id = cc.id
+      FROM colleges_canonical cc
       ${where}
       ORDER BY ${orderExpr}
       LIMIT $${idx++} OFFSET $${idx++}
@@ -387,15 +381,8 @@ router.post('/comprehensive/compare', async (req, res, next) => {
     if (!ids.length) return res.status(400).json({ success: false, message: 'Provide at least one college ID' });
 
     const { rows } = await pool.query(
-      `SELECT
-        cc.*,
-        ca.acceptance_rate, ca.test_optional, ca.sat_avg, ca.sat_range, ca.act_range, ca.gpa_50,
-        cfd.tuition_in_state, cfd.tuition_out_state, cfd.tuition_international, cfd.avg_net_price,
-        ad.graduation_rate_4yr, ad.retention_rate, ad.median_salary_6yr, ad.median_salary_10yr, ad.median_debt
-      FROM colleges_comprehensive cc
-      LEFT JOIN college_admissions ca ON ca.college_id = cc.id
-      LEFT JOIN college_financial_data cfd ON cfd.college_id = cc.id
-      LEFT JOIN academic_details ad ON ad.college_id = cc.id
+      `SELECT cc.*
+      FROM colleges_canonical cc
       WHERE cc.id = ANY($1)`,
       [ids]
     );
