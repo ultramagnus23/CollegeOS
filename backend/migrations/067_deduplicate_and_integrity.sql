@@ -276,7 +276,7 @@ SELECT
   cc.ranking_the,
   cc.popularity_score,
 
-  -- ── Admissions (most recent year) ────────────────────────────────────
+  -- ── Admissions (most recent row per college) ─────────────────────────
   ca.acceptance_rate          AS adm_acceptance_rate,
   ca.sat_avg,
   ca.sat_range,
@@ -285,14 +285,12 @@ SELECT
   ca.test_optional,
   ca.yield_rate               AS adm_yield_rate,
   ca.application_volume,
-  ca.year                     AS adm_data_year,
 
-  -- ── Financial (most recent year) ─────────────────────────────────────
+  -- ── Financial (most recent row per college) ──────────────────────────
   cfd.tuition_in_state,
   cfd.tuition_out_state,
   cfd.tuition_international   AS fin_tuition_intl,
   cfd.avg_net_price,
-  cfd.year                    AS fin_data_year,
 
   -- ── Academic outcomes ────────────────────────────────────────────────
   ad.graduation_rate_4yr,
@@ -324,7 +322,7 @@ LEFT JOIN LATERAL (
   SELECT *
   FROM   college_admissions
   WHERE  college_id = cc.id
-  ORDER  BY year DESC NULLS LAST
+  ORDER  BY id DESC
   LIMIT  1
 ) ca ON true
 
@@ -333,7 +331,7 @@ LEFT JOIN LATERAL (
   SELECT *
   FROM   college_financial_data
   WHERE  college_id = cc.id
-  ORDER  BY year DESC NULLS LAST
+  ORDER  BY id DESC
   LIMIT  1
 ) cfd ON true
 
@@ -342,7 +340,7 @@ LEFT JOIN LATERAL (
   SELECT *
   FROM   academic_details
   WHERE  college_id = cc.id
-  ORDER  BY year DESC NULLS LAST
+  ORDER  BY id DESC
   LIMIT  1
 ) ad ON true;
 
