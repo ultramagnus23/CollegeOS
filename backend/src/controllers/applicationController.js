@@ -363,9 +363,10 @@ class ApplicationController {
     try {
       const { id } = req.params;
       const userId = req.user?.userId;
-      logger.info(`[${requestId}] GET /applications/${sanitizeForLog(id)}/deadlines`);
+      const applicationId = parseInt(id, 10);
+      logger.info(`[${requestId}] GET /applications/${applicationId}/deadlines`);
 
-      const application = await Application.findById(parseInt(id));
+      const application = await Application.findById(applicationId);
       if (!application) {
         return res.status(404).json({ success: false, message: 'Application not found' });
       }
@@ -383,7 +384,7 @@ class ApplicationController {
           `SELECT * FROM application_deadlines
            WHERE application_id = $1
            ORDER BY deadline_date ASC NULLS LAST`,
-          [parseInt(id)]
+          [applicationId]
         );
         rows = result.rows;
       } catch {
@@ -394,7 +395,7 @@ class ApplicationController {
              FROM deadlines
              WHERE application_id = $1
              ORDER BY deadline_date ASC NULLS LAST`,
-            [parseInt(id)]
+            [applicationId]
           );
           rows = result.rows;
         } catch {
