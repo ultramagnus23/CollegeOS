@@ -1,50 +1,27 @@
 'use strict';
 
+// Auth-free — uses Reddit public JSON API, no credentials needed
+
 /**
- * Reddit client.
- *
- * When Reddit OAuth credentials are present (REDDIT_CLIENT_ID,
- * REDDIT_CLIENT_SECRET, REDDIT_REFRESH_TOKEN) the client uses OAuth2 for the
- * authenticated API (60 req/min).
- *
- * When no credentials are set the client falls back to Reddit's free public
- * JSON API (no sign-up required) which allows ~10 req/min with a custom
- * User-Agent.  The request delay is increased accordingly.
- *
- * Optional environment variables (OAuth path):
- *   REDDIT_CLIENT_ID
- *   REDDIT_CLIENT_SECRET
- *   REDDIT_REFRESH_TOKEN
+ * Reddit public JSON API client.
+ * Fetches posts from r/collegeresults, r/chanceme, and r/ApplyingToCollege
+ * using Reddit's unauthenticated search endpoint — no OAuth or credentials required.
  */
 
 const axios = require('axios');
 const logger = require('./logger');
 
-const TOKEN_URL = 'https://www.reddit.com/api/v1/access_token';
-const API_BASE_OAUTH = 'https://oauth.reddit.com';
-const API_BASE_PUBLIC = 'https://www.reddit.com';
-const USER_AGENT = 'CollegeOS-Scraper/1.0 (+https://github.com/ultramagnus23/CollegeOS)';
+const API_BASE = 'https://www.reddit.com';
+const USER_AGENT = 'CollegeOS/1.0';
 
 // Subreddits to scrape
 const SUBREDDITS = ['collegeresults', 'chanceme', 'ApplyingToCollege'];
 
-// Public (unauthenticated) rate limit is ~10 req/min; OAuth allows 60 req/min.
-const REQUEST_DELAY_MS_OAUTH = 1100;
-const REQUEST_DELAY_MS_PUBLIC = 6500;
+// Search query used across all subreddits
+const SEARCH_QUERY = 'chance me OR results';
 
-let accessToken = null;
-let tokenExpiresAt = 0;
-
-/**
- * Returns true when OAuth credentials are configured.
- */
-function hasOAuthCredentials() {
-  return !!(
-    process.env.REDDIT_CLIENT_ID &&
-    process.env.REDDIT_CLIENT_SECRET &&
-    process.env.REDDIT_REFRESH_TOKEN
-  );
-}
+// Milliseconds to wait between paginated requests to stay under Reddit's rate limit.
+const REQUEST_DELAY_MS = 1100;
 
 /**
  * Sleep for `ms` milliseconds.
@@ -55,104 +32,13 @@ function sleep(ms) {
 }
 
 /**
- * Obtain a fresh OAuth access token using the stored refresh token.
- */
-async function refreshAccessToken() {
-  const clientId = process.env.REDDIT_CLIENT_ID;
-  const clientSecret = process.env.REDDIT_CLIENT_SECRET;
-  const refreshToken = process.env.REDDIT_REFRESH_TOKEN;
-
-  if (!clientId || !clientSecret || !refreshToken) {
-    throw new Error(
-      'Missing Reddit credentials. Set REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, and REDDIT_REFRESH_TOKEN.'
-    );
-  }
-
-  const params = new URLSearchParams({
-    grant_type: 'refresh_token',
-    refresh_token: refreshToken,
-  });
-
-  const response = await axios.post(TOKEN_URL, params.toString(), {
-    auth: { username: clientId, password: clientSecret },
-    headers: {
-      'User-Agent': USER_AGENT,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-  });
-
-  const { access_token, expires_in } = response.data;
-  if (!access_token) {
-    throw new Error('Reddit OAuth token response missing access_token');
-  }
-
-  accessToken = access_token;
-  // Refresh 60 s before actual expiry to be safe
-  tokenExpiresAt = Date.now() + (expires_in - 60) * 1000;
-  logger.info('Reddit access token refreshed');
-}
-
-/**
- * Return a valid access token, refreshing if necessary.
- * @returns {Promise<string>}
- */
-async function getToken() {
-  if (!accessToken || Date.now() >= tokenExpiresAt) {
-    await refreshAccessToken();
-  }
-  return accessToken;
-}
-
-/**
- * Make an authenticated GET request to the Reddit OAuth API.
- * Handles 429 rate-limit responses with exponential backoff.
+ * Make a GET request to the Reddit public JSON API.
+ * Handles 429 rate-limit responses with a 60-second back-off.
  * @param {string} url
  * @param {object} [params]
  * @returns {Promise<object>}
  */
 async function redditGet(url, params = {}) {
-  let token = await getToken();
-  let attempt = 0;
-  const maxAttempts = 5;
-
-  while (attempt < maxAttempts) {
-    try {
-      const response = await axios.get(url, {
-        params,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'User-Agent': USER_AGENT,
-        },
-      });
-      return response.data;
-    } catch (err) {
-      const status = err?.response?.status;
-      if (status === 429) {
-        const retryAfter = parseInt(err.response.headers['retry-after'] || '60', 10);
-        logger.warn({ msg: 'Reddit rate limited, backing off', retryAfterSeconds: retryAfter });
-        await sleep(retryAfter * 1000);
-        attempt++;
-      } else if (status === 401) {
-        // Token expired mid-flight — refresh and update local variable for retry
-        await refreshAccessToken();
-        token = await getToken();
-        attempt++;
-      } else {
-        throw err;
-      }
-    }
-  }
-  throw new Error(`Reddit API request failed after ${maxAttempts} attempts: ${url}`);
-}
-
-/**
- * Make an unauthenticated GET request to Reddit's public JSON API.
- * Handles 429 rate-limit responses with exponential backoff.
- * @param {string} url
- * @param {object} [params]
- * @returns {Promise<object>}
- */
-async function redditGetPublic(url, params = {}) {
   let attempt = 0;
   const maxAttempts = 5;
 
@@ -166,8 +52,8 @@ async function redditGetPublic(url, params = {}) {
     } catch (err) {
       const status = err?.response?.status;
       if (status === 429) {
-        const retryAfter = parseInt(err?.response?.headers?.['retry-after'] || '120', 10);
-        logger.warn({ msg: 'Reddit public API rate limited, backing off', retryAfterSeconds: retryAfter });
+        const retryAfter = parseInt(err.response.headers['retry-after'] || '60', 10);
+        logger.warn({ msg: 'Reddit rate limited, backing off', retryAfterSeconds: retryAfter });
         await sleep(retryAfter * 1000);
         attempt++;
       } else {
@@ -175,24 +61,29 @@ async function redditGetPublic(url, params = {}) {
       }
     }
   }
-  throw new Error(`Reddit public API request failed after ${maxAttempts} attempts: ${url}`);
+  throw new Error(`Reddit API request failed after ${maxAttempts} attempts: ${url}`);
 }
 
 /**
- * Fetch posts from a subreddit listing (OAuth path).
+ * Search a subreddit for posts matching `query`.
  * @param {string} subreddit
- * @param {'top'|'new'} sort
- * @param {'all'|'year'|'month'|'week'} time  - only used when sort = 'top'
+ * @param {string} query
  * @param {number} limit  - max posts per page (Reddit caps at 100)
  * @param {string|null} after  - pagination cursor
  * @returns {Promise<{posts: object[], after: string|null}>}
  */
-async function fetchPostsOAuth(subreddit, sort, time, limit, after) {
-  const params = { limit, raw_json: 1 };
-  if (sort === 'top') params.t = time;
+async function fetchPosts(subreddit, query, limit, after) {
+  const params = {
+    q: query,
+    sort: 'relevance',
+    t: 'all',
+    limit,
+    restrict_sr: 1,
+    raw_json: 1,
+  };
   if (after) params.after = after;
 
-  const url = `${API_BASE_OAUTH}/r/${subreddit}/${sort}`;
+  const url = `${API_BASE}/r/${subreddit}/search.json`;
   const data = await redditGet(url, params);
 
   const children = data?.data?.children || [];
@@ -245,9 +136,8 @@ async function fetchPosts(subreddit, sort, time, limit, after) {
 }
 
 /**
- * Seed mode: scrape as many historical posts as possible from both subreddits,
- * sorted by top-all-time.  Yields batches of posts.
- * Works with or without Reddit OAuth credentials.
+ * Seed mode: scrape as many historical posts as possible from all subreddits.
+ * Yields batches of posts.
  * @param {number} maxPages  - safety cap on pages per subreddit (0 = unlimited)
  * @yields {{subreddit: string, posts: object[]}}
  */
@@ -259,15 +149,15 @@ async function* seedPosts(maxPages = 0) {
   }
 
   for (const sub of SUBREDDITS) {
-    logger.info({ msg: 'Seed: fetching subreddit', subreddit: sub, sort: 'top/all' });
+    logger.info({ msg: 'Seed: fetching subreddit', subreddit: sub });
     let after = null;
     let page = 0;
 
     while (true) {
       if (maxPages > 0 && page >= maxPages) break;
 
-      await sleep(delay);
-      const { posts, after: nextAfter } = await fetchPosts(sub, 'top', 'all', 100, after);
+      await sleep(REQUEST_DELAY_MS);
+      const { posts, after: nextAfter } = await fetchPosts(sub, SEARCH_QUERY, 100, after);
 
       if (posts.length === 0) break;
       yield { subreddit: sub, posts };
@@ -282,9 +172,7 @@ async function* seedPosts(maxPages = 0) {
 }
 
 /**
- * Incremental mode: scrape new posts from the last 2 weeks, sorted by new.
- * Stops pagination when it encounters posts older than the cutoff.
- * Works with or without Reddit OAuth credentials.
+ * Incremental mode: scrape new posts, stopping when posts older than `since` are encountered.
  * @param {Date} since  - only return posts newer than this date
  * @yields {{subreddit: string, posts: object[]}}
  */
@@ -302,8 +190,8 @@ async function* incrementalPosts(since) {
     let done = false;
 
     while (!done) {
-      await sleep(delay);
-      const { posts, after: nextAfter } = await fetchPosts(sub, 'new', null, 100, after);
+      await sleep(REQUEST_DELAY_MS);
+      const { posts, after: nextAfter } = await fetchPosts(sub, SEARCH_QUERY, 100, after);
 
       if (posts.length === 0) break;
 

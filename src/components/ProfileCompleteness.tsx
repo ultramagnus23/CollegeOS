@@ -4,12 +4,25 @@ import { CheckCircle2, Circle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { profileService } from '@/services/profileService';
 import { Progress } from '@/components/ui/progress';
+import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 
 interface CompletionItem {
   label: string;
   done: boolean;
   href?: string;
 }
+
+// Section navigation map for backend-supplied missing field labels
+const FIELD_HREF_MAP: Record<string, string> = {
+  'First Name': '/settings#basic', 'Email': '/settings#basic', 'Country': '/settings#basic',
+  'Phone Number': '/settings#basic', 'Date of Birth': '/settings#basic', 'School Name': '/settings#basic',
+  'Curriculum Type': '/settings#academic', 'Graduation Year': '/settings#academic', 'Subjects': '/settings#academic',
+  'GPA (Weighted)': '/settings#academic', 'GPA (Unweighted)': '/settings#academic',
+  'SAT Score': '/settings#test-scores', 'ACT Score': '/settings#test-scores',
+  'IELTS Score': '/settings#test-scores', 'TOEFL Score': '/settings#test-scores',
+  'College Size Preference': '/settings#preferences', 'Campus Setting Preference': '/settings#preferences',
+  'Activities': '/settings#activities',
+};
 
 const parseJsonArray = (value?: string | string[]) => {
   if (!value) return [];
@@ -20,14 +33,26 @@ const parseJsonArray = (value?: string | string[]) => {
 export default function ProfileCompleteness() {
   const { user } = useAuth();
   const profile = profileService.getProfile();
+  const { completionPercent, completedFields, missingFields } = useProfileCompletion();
 
+  // Build navigation items by merging backend data with local fallback labels
   const items = useMemo<CompletionItem[]>(() => {
+    // When backend data is available, use it
+    if (completedFields.length > 0 || missingFields.length > 0) {
+      const allLabels = [...completedFields, ...missingFields];
+      return allLabels.map(label => ({
+        label,
+        done: completedFields.includes(label),
+        href: FIELD_HREF_MAP[label],
+      }));
+    }
+
+    // Fallback to local calculation while backend data loads
     const targetCountries = parseJsonArray(user?.target_countries ?? profile?.target_countries ?? profile?.preferredCountries);
     const intendedMajors = parseJsonArray(user?.intended_majors ?? profile?.intended_majors ?? profile?.potentialMajors);
     const testStatus = typeof user?.test_status === 'string'
       ? (() => { try { return JSON.parse(user.test_status); } catch { return {}; } })()
       : user?.test_status;
-
     const gpa = profile?.gpa ?? profile?.currentGPA ?? profile?.percentage ?? null;
     const sat = profile?.satScore ?? testStatus?.sat_score ?? profile?.test_status?.satScore ?? null;
     const act = profile?.actScore ?? testStatus?.act_score ?? profile?.test_status?.actScore ?? null;
@@ -42,10 +67,9 @@ export default function ProfileCompleteness() {
       { label: 'Extracurriculars', done: activities.length > 0, href: '/settings#activities' },
       { label: 'Nationality (India)', done: Boolean(user?.country), href: '/settings#basic' },
     ];
-  }, [profile, user]);
+  }, [completedFields, missingFields, profile, user]);
 
-  const completed = items.filter(item => item.done).length;
-  const percentage = Math.round((completed / items.length) * 100);
+  const percentage = completionPercent;
 
   return (
     <div className="bg-card border border-border rounded-xl p-5 space-y-4">

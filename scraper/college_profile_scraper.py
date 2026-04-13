@@ -50,7 +50,7 @@ if not DATA_GOV_API_KEY:
         "Get a free key at https://api.data.gov/signup/ and set DATA_GOV_API_KEY."
     )
 
-SCORECARD_BASE = "https://api.data.ed.gov/student/v1/schools"
+SCORECARD_BASE = "https://api.data.gov/ed/collegescorecard/v1/schools"
 
 # Fields fetched from the College Scorecard API.
 # Covers: admissions stats, SAT/ACT percentiles, financials, enrollment, and
@@ -81,8 +81,20 @@ SCORECARD_FIELDS = ",".join([
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
 
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(min=2, max=30))
 def get_connection():
-    return psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.set_session(autocommit=False)
+    return conn
+
+
+def safe_execute(conn, fn):
+    """Re-connect on OperationalError (dropped connection mid-run)."""
+    try:
+        return fn(conn)
+    except psycopg2.OperationalError:
+        conn = get_connection()
+        return fn(conn)
 
 
 def load_colleges(conn) -> list[dict]:

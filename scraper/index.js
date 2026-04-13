@@ -10,10 +10,7 @@
  *   node index.js scholarship  # Fetch & upsert scholarships (DAAD, Inlaks, NSF, etc.)
  *
  * Required environment variables (Reddit / admissions modes):
- *   REDDIT_CLIENT_ID
- *   REDDIT_CLIENT_SECRET
- *   REDDIT_REFRESH_TOKEN
- *   GEMINI_API_KEY          (used by claudeParser.js for AI-powered post parsing)
+ *   ANTHROPIC_API_KEY
  *
  * Required environment variables (scholarship mode):
  *   DATABASE_URL                   – PostgreSQL connection string

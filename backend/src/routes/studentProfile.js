@@ -9,6 +9,7 @@ const User = require('../models/User');
 const { authenticate } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const profileController = require('../controllers/profileController');
+const ProfileService = require('../services/profileService');
 const {
   validateBasicInfo,
   validateAcademicInfo,
@@ -578,6 +579,55 @@ router.get('/snapshot', authenticate, async (req, res, next) => {
 // ==========================================
 // PER-USER PROFILE MANAGEMENT ENDPOINTS
 // ==========================================
+
+/**
+ * GET /api/profile/completion
+ * Single source of truth for profile completion percentage.
+ * Returns completionPercent, completedFields, missingFields and writes
+ * the result back to student_profiles.profile_completion_percentage.
+ */
+router.get('/completion', authenticate, async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const status = await ProfileService.getCompletionStatus(userId);
+
+    const allFields = [
+      'First Name', 'Email', 'Curriculum Type', 'Country', 'Graduation Year', 'Subjects',
+      'Phone Number', 'Date of Birth', 'GPA (Weighted)', 'GPA (Unweighted)', 'SAT Score',
+      'ACT Score', 'IELTS Score', 'TOEFL Score', 'School Name',
+      'College Size Preference', 'Campus Setting Preference', 'Activities',
+    ];
+    const missingFields = [
+      ...(status.missing_critical || []),
+      ...(status.missing_optional || []),
+    ];
+    const completedFields = allFields.filter(f => !missingFields.includes(f));
+
+    // Write result back so student_profiles.profile_completion_percentage stays current
+    try {
+      const dbManager = require('../config/database');
+      const pool = dbManager.getDatabase();
+      await pool.query(
+        'UPDATE student_profiles SET profile_completion_percentage = $1, updated_at = NOW() WHERE user_id = $2',
+        [status.percentage, userId]
+      );
+    } catch (writeErr) {
+      logger.warn('Could not write profile_completion_percentage:', writeErr.message);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        completionPercent: status.percentage,
+        completedFields,
+        missingFields,
+      },
+    });
+  } catch (error) {
+    logger.error('Get profile completion failed:', error);
+    next(error);
+  }
+});
 
 router.get('/:userId', authenticate, profileController.getProfile);
 router.put('/:userId/basic', authenticate, validateBasicInfo, profileController.updateBasicInfo);
