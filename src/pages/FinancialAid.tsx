@@ -18,7 +18,7 @@ const S = {
   text: 'var(--color-text-primary)',
   muted: 'var(--color-text-secondary)',
   dim: 'var(--color-text-disabled)',
-  font: "'DM Sans',sans-serif",
+  font: "'Inter', system-ui, sans-serif",
 };
 const GLOBAL = `
   @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
