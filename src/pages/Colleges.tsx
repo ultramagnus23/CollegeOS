@@ -200,7 +200,7 @@ const Colleges: React.FC = () => {
           console.warn(
             `[Colleges] Deduplication removed ${normalized.length - deduped.length} duplicate` +
             ` row(s) on page ${currentPage}. Total from API: ${normalized.length}, unique IDs: ${deduped.length}.` +
-            ' Run migration 067_deduplicate_and_integrity.sql in the Supabase SQL editor to fix this at source.'
+            ' Run the deduplication migration (see backend/migrations/) in the Supabase SQL editor to fix this at source.'
           );
         } else {
           console.debug(

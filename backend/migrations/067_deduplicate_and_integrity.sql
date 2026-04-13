@@ -212,42 +212,37 @@ BEGIN
 END $$;
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- STEP 5 — Unique constraint on college_majors(college_id, major_id)
+-- STEP 5 — Prevent duplicate (college_id, major_id) pairs in college_majors
 -- ═══════════════════════════════════════════════════════════════════════════
--- The existing PK is (college_id, major_id, awlevel), which is correct for
--- storing multiple award-level offerings.  However seed_majors.py upserts
--- with awlevel=6 universally, so (college_id, major_id) duplicates can slip
--- in when awlevel differs across re-seeds.
+-- The existing PK is (college_id, major_id, awlevel), which is intentionally
+-- correct for storing multiple award levels (e.g. Bachelor's AND Master's for
+-- the same major).  We must NOT change that PK as it would silently discard
+-- award-level granularity used by seed scripts and analytics.
 --
--- Strategy: keep the row with the highest awlevel per (college_id, major_id)
--- pair, then add a unique constraint on (college_id, major_id) so future
--- upserts cannot create duplicates.
+-- The actual seeding problem is that seed_majors.py re-runs with awlevel=6
+-- universally, which can produce two rows that differ only in awlevel when
+-- the school's awlevel changes across seeds.  The fix is a partial unique
+-- index on offered=true rows (per (college_id, major_id)) so the upsert
+-- conflict target in seed_majors.py resolves cleanly, while still allowing
+-- a school to record the same major at different award levels.
 
--- 5a. Delete lower-awlevel duplicates (keep one row per college+major).
+-- 5a. Remove duplicates introduced by same awlevel re-seeds (identical rows).
+--     Keep only one row per (college_id, major_id, awlevel) triple — the PK
+--     should already prevent this, but historical loads bypassed constraints.
+--     (This is a no-op if the PK already enforces uniqueness.)
 DELETE FROM college_majors
-WHERE (college_id, major_id, awlevel) IN (
-  SELECT college_id, major_id, awlevel
-  FROM (
-    SELECT college_id, major_id, awlevel,
-           ROW_NUMBER() OVER (
-             PARTITION BY college_id, major_id
-             ORDER BY awlevel DESC    -- keep highest awlevel
-           ) AS rn
-    FROM college_majors
-  ) ranked
-  WHERE rn > 1
+WHERE ctid NOT IN (
+  SELECT MIN(ctid)
+  FROM   college_majors
+  GROUP  BY college_id, major_id, awlevel
 );
 
--- 5b. Drop the old composite PK (college_id, major_id, awlevel) and replace
---     with (college_id, major_id) so upserts in seed_majors.py are safe.
---     We preserve awlevel as a plain column.
-
-ALTER TABLE college_majors
-  DROP CONSTRAINT IF EXISTS college_majors_pkey;
-
-ALTER TABLE college_majors
-  ADD CONSTRAINT college_majors_pkey
-  PRIMARY KEY (college_id, major_id);
+-- 5b. Add a partial unique index on (college_id, major_id) WHERE offered = true
+--     so the frontend "show offered majors" query returns exactly one row per
+--     college+major pair, and seed_majors.py upserts on this conflict target.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_college_majors_offered
+  ON college_majors (college_id, major_id)
+  WHERE offered = true;
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- STEP 6 — Canonical materialized view
@@ -411,9 +406,10 @@ SELECT 'college_majors', COUNT(*)
 FROM college_majors cm
 WHERE NOT EXISTS (SELECT 1 FROM colleges_comprehensive cc WHERE cc.id = cm.college_id);
 
--- Duplicate (college_id, major_id) pairs in college_majors:
+-- Duplicate (college_id, major_id) pairs in college_majors (offered=true):
 SELECT college_id, major_id, COUNT(*) AS cnt
 FROM college_majors
+WHERE offered = true
 GROUP BY college_id, major_id
 HAVING COUNT(*) > 1
 ORDER BY cnt DESC
