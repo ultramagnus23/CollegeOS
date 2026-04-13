@@ -16,11 +16,12 @@ const logger = require('../utils/logger');
 const { sanitizeForLog, sanitizeObject } = require('../utils/security');
 
 const TIER_RANK = {
-  'Safety': 3,
-  'Match': 2,
-  'Reach': 1,
-  'Long Shot': 0,
-  'Unknown': -1,
+  'Safety': 5,
+  'Match': 4,
+  'Reach': 3,
+  'Long Shot': 2,
+  'Extreme Reach': 1,
+  'Unknown': 0,
 };
 
 /**
@@ -36,12 +37,15 @@ async function getChancingResults(userId, colleges) {
   for (const college of colleges) {
     const chancing = await consolidatedChancingService.calculateChance(profile, college);
 
-    // Attach the raw stat values so the frontend can render factor breakdowns.
+    // Count how many chancing factors had real data (from the service's own tracking)
     const studentSAT = profile?.sat_total ?? profile?.sat_score ?? null;
     const studentGPA = profile?.gpa_unweighted ?? profile?.gpa_weighted ?? profile?.gpa ?? null;
     const collegeSAT = college?.sat_avg ?? college?.sat_total_50 ?? college?.median_sat ?? null;
     const collegeGPA = college?.gpa_50 ?? college?.median_gpa ?? null;
-    const factorsUsed = (studentSAT != null && collegeSAT != null ? 1 : 0) + (studentGPA != null && collegeGPA != null ? 1 : 0);
+    // Use number of active factorScores keys as factorsUsed for accurate UI signal
+    const factorsUsed = chancing.factorScores
+      ? Object.values(chancing.factorScores).filter(f => f && f.score != null).length
+      : (studentSAT != null && collegeSAT != null ? 1 : 0) + (studentGPA != null && collegeGPA != null ? 1 : 0);
 
     results.push({
       college: {
@@ -60,10 +64,10 @@ async function getChancingResults(userId, colleges) {
       }
     });
   }
-  results.sort((a, b) => (TIER_RANK[b.chancing.tier] || -1) - (TIER_RANK[a.chancing.tier] || -1));
+  results.sort((a, b) => (TIER_RANK[b.chancing.tier] ?? 0) - (TIER_RANK[a.chancing.tier] ?? 0));
   const safety = results.filter(r => r.chancing.tier === 'Safety');
   const target = results.filter(r => r.chancing.tier === 'Match');
-  const reach = results.filter(r => r.chancing.tier === 'Reach' || r.chancing.tier === 'Long Shot');
+  const reach = results.filter(r => r.chancing.tier === 'Reach' || r.chancing.tier === 'Long Shot' || r.chancing.tier === 'Extreme Reach');
   return {
     results,
     grouped: { safety, target, reach },
@@ -333,7 +337,7 @@ router.get('/recommendations', authenticate, async (req, res, next) => {
     results.grouped = {
       safety: results.results.filter(r => r.chancing.tier === 'Safety'),
       target: results.results.filter(r => r.chancing.tier === 'Match'),
-      reach: results.results.filter(r => r.chancing.tier === 'Reach' || r.chancing.tier === 'Long Shot')
+      reach: results.results.filter(r => r.chancing.tier === 'Reach' || r.chancing.tier === 'Long Shot' || r.chancing.tier === 'Extreme Reach')
     };
     
     res.json({

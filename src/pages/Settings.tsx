@@ -101,8 +101,6 @@ const Settings = () => {
     activities: false,
     goals: false,
     testScores: false,
-    preferences: false,
-    activities: false
   });
   
   // Form data for editing
@@ -1439,7 +1437,7 @@ const SCROLL_DELAY_MS = 100;
                     onClick={async () => {
                       setSaving(true);
                       try {
-                        await api.updateProfile(user!.id, {
+                        await api.updateProfile({
                           why_college_matters: formData.why_college_matters || null,
                           life_goals_raw: formData.life_goals_raw || null,
                         });

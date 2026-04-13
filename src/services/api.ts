@@ -858,6 +858,18 @@ class ApiService {
     create: (data: any) => this.createDeadline(data),
     update: (id: number, data: any) => this.updateDeadline(id, data),
     delete: (id: number) => this.deleteDeadline(id),
+    intelligence: {
+      getUpcoming: (days = 90) =>
+        this.request(`/deadlines/intelligence/upcoming?days=${days}`),
+      getForCollege: (id: number) =>
+        this.request(`/deadlines/intelligence/college/${id}`),
+      getByCountry: (country: string) =>
+        this.request(`/deadlines/intelligence/country/${encodeURIComponent(country)}`),
+      getHistory: (collegeId: number) =>
+        this.request(`/deadlines/intelligence/history/${collegeId}`),
+      refresh: (collegeId: number) =>
+        this.request(`/deadlines/intelligence/refresh/${collegeId}`, { method: 'POST' }),
+    },
   };
 
   // Essays namespace

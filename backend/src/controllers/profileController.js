@@ -22,7 +22,7 @@ const getProfile = async (req, res, next) => {
       });
     }
     
-    const profile = ProfileService.getCompleteProfile(userId);
+    const profile = await ProfileService.getCompleteProfile(userId);
     
     res.json({
       success: true,
@@ -57,7 +57,7 @@ const updateBasicInfo = async (req, res, next) => {
     }
     
     const data = req.validatedData || req.body;
-    const profile = ProfileService.updateBasicInfo(userId, data);
+    const profile = await ProfileService.updateBasicInfo(userId, data);
     
     res.json({
       success: true,
@@ -93,7 +93,7 @@ const updateAcademicInfo = async (req, res, next) => {
     }
     
     const data = req.validatedData || req.body;
-    const result = ProfileService.updateAcademicInfo(userId, data);
+    const result = await ProfileService.updateAcademicInfo(userId, data);
     
     const response = {
       success: true,
@@ -136,7 +136,7 @@ const updateSubjects = async (req, res, next) => {
     }
     
     const data = req.validatedData || req.body;
-    const profile = ProfileService.updateSubjects(userId, data);
+    const profile = await ProfileService.updateSubjects(userId, data);
     
     res.json({
       success: true,
@@ -172,7 +172,7 @@ const updateTestScores = async (req, res, next) => {
     }
     
     const data = req.validatedData || req.body;
-    const profile = ProfileService.updateTestScores(userId, data);
+    const profile = await ProfileService.updateTestScores(userId, data);
     
     res.json({
       success: true,
@@ -208,7 +208,7 @@ const updateActivities = async (req, res, next) => {
     }
     
     const data = req.validatedData || req.body;
-    const profile = ProfileService.updateActivities(userId, data);
+    const profile = await ProfileService.updateActivities(userId, data);
     
     res.json({
       success: true,
@@ -244,7 +244,7 @@ const deleteActivity = async (req, res, next) => {
       });
     }
     
-    const profile = ProfileService.deleteActivity(userId, activityId);
+    const profile = await ProfileService.deleteActivity(userId, activityId);
     
     res.json({
       success: true,
@@ -280,7 +280,7 @@ const updatePreferences = async (req, res, next) => {
     }
     
     const data = req.validatedData || req.body;
-    const profile = ProfileService.updatePreferences(userId, data);
+    const profile = await ProfileService.updatePreferences(userId, data);
     
     res.json({
       success: true,
@@ -343,7 +343,7 @@ const saveOnboardingDraft = async (req, res, next) => {
       });
     }
     
-    const result = ProfileService.saveOnboardingDraft(userId, req.body);
+    const result = await ProfileService.saveOnboardingDraft(userId, req.body);
     
     res.json({
       success: true,
@@ -372,7 +372,7 @@ const getOnboardingDraft = async (req, res, next) => {
       });
     }
     
-    const draft = ProfileService.getOnboardingDraft(userId);
+    const draft = await ProfileService.getOnboardingDraft(userId);
     
     res.json({
       success: true,

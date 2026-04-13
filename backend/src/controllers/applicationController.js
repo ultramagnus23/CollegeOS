@@ -407,11 +407,14 @@ class ApplicationController {
       if (rows.length === 0) {
         const year = new Date().getFullYear();
         const appYear = new Date().getMonth() >= 6 ? year + 1 : year;
+        const isUS = /^(US|USA|United States)$/i.test(application.country || '');
         const defaults = [
-          { deadline_type: 'FAFSA Opens',   deadline_date: `${appYear}-10-01`, notes: 'Free Application for Federal Student Aid opens' },
-          { deadline_type: 'RD Deadline',   deadline_date: `${appYear + 1}-01-01`, notes: 'Regular Decision deadline (default)' },
-          { deadline_type: 'ED Deadline',   deadline_date: `${appYear}-11-01`, notes: 'Early Decision deadline (default)' },
-          { deadline_type: 'EA Deadline',   deadline_date: `${appYear}-11-01`, notes: 'Early Action deadline (default)' },
+          ...(isUS ? [
+            { deadline_type: 'FAFSA Opens', deadline_date: `${appYear}-10-01`, notes: 'Free Application for Federal Student Aid opens' },
+            { deadline_type: 'ED Deadline', deadline_date: `${appYear}-11-01`, notes: 'Early Decision deadline (default)' },
+            { deadline_type: 'EA Deadline', deadline_date: `${appYear}-11-01`, notes: 'Early Action deadline (default)' },
+          ] : []),
+          { deadline_type: 'Application Deadline', deadline_date: `${appYear + 1}-01-01`, notes: 'Application deadline (default)' },
         ];
         try {
           for (const d of defaults) {
@@ -489,13 +492,14 @@ class ApplicationController {
       // Auto-seed standard tasks if none exist
       if (rows.length === 0) {
         const collegeName = application.college_name || 'this college';
+        const isUS = /^(US|USA|United States)$/i.test(application.country || '');
         const defaultTasks = [
-          { task_type: 'essay',          title: 'Write Common App personal statement (650 words)' },
+          { task_type: 'essay',          title: isUS ? 'Write Common App personal statement (650 words)' : `Write personal statement / application essay for ${collegeName}` },
           { task_type: 'essay',          title: `Write supplemental essay for ${collegeName}` },
           { task_type: 'recommendation', title: 'Request recommendation letter 1' },
           { task_type: 'recommendation', title: 'Request recommendation letter 2' },
           { task_type: 'document',       title: `Send official transcripts to ${collegeName}` },
-          { task_type: 'test_score',     title: `Submit SAT/ACT scores to ${collegeName}` },
+          { task_type: 'test_score',     title: `Submit test scores to ${collegeName}` },
         ];
         try {
           for (const t of defaultTasks) {
