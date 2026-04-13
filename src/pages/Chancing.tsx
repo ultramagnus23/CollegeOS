@@ -296,9 +296,9 @@ export default function Chancing() {
           {/* How it works info box */}
           <div style={{ marginBottom: 28, padding: '14px 18px', background: h2r(ACCENT, 0.06), border: `1px solid ${h2r(ACCENT, 0.2)}`, borderRadius: 12, fontSize: 12, color: S.muted, lineHeight: 1.7 }}>
             <strong style={{ color: 'var(--color-text-primary)' }}>How it works: </strong>
-            We compare your SAT score and GPA to each college's median admitted-student stats, then apply a sigmoid probability model
-            anchored to the college's real acceptance rate. An international applicant discount (–15 pp) is applied throughout.
-            Thresholds: Safety ≥ 65%, Match 35–65%, Reach 15–35%, Long Shot {'<'} 15%.
+            We use a 7-factor probabilistic model: academic fit (SAT/GPA vs admitted band), school selectivity, holistic profile (ECs, awards), international pool competitiveness, application strategy (ED/EA/RD), institutional fit, and financial signal.
+            Each factor is weighted and combined into a composite probability anchored to the college's real acceptance rate.
+            Thresholds: Safety ≥ 68%, Match 42–67%, Reach 20–41%, Long Shot 8–19%, Extreme Reach {'<'} 8%.
           </div>
 
           {loading && (
