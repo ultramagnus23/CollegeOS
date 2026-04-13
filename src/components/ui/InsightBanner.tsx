@@ -56,7 +56,7 @@ const InsightBanner: React.FC<InsightBannerProps & { inline?: boolean }> = ({
       }}>
         <style>{`@keyframes insight-fade-in { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }`}</style>
         <span style={{ fontSize: 20, flexShrink: 0 }}>✨</span>
-        <p style={{ fontSize: 14, color: accentColor, lineHeight: 1.6, fontFamily: "'DM Sans', sans-serif", margin: 0 }}>
+        <p style={{ fontSize: 14, color: accentColor, lineHeight: 1.6, fontFamily: "'Inter', system-ui, sans-serif", margin: 0 }}>
           {message}
         </p>
         {onDismiss && (
@@ -84,7 +84,7 @@ const InsightBanner: React.FC<InsightBannerProps & { inline?: boolean }> = ({
         <div style={{ fontSize: 32, marginBottom: 16 }}>✨</div>
         <p style={{
           fontSize: 22, fontWeight: 600, color: '#fff',
-          lineHeight: 1.6, fontFamily: "'DM Sans', sans-serif",
+          lineHeight: 1.6, fontFamily: "'Inter', system-ui, sans-serif",
         }}>
           {message}
         </p>
@@ -95,7 +95,7 @@ const InsightBanner: React.FC<InsightBannerProps & { inline?: boolean }> = ({
               marginTop: 24, padding: '10px 24px',
               background: accentColor, border: 'none', borderRadius: 8,
               color: '#000', fontWeight: 700, cursor: 'pointer',
-              fontSize: 14, fontFamily: "'DM Sans', sans-serif",
+              fontSize: 14, fontFamily: "'Inter', system-ui, sans-serif",
             }}
           >Got it</button>
         )}

@@ -54,7 +54,7 @@ const DashboardLayout = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'var(--color-bg-primary)', color: 'var(--color-text-primary)', fontFamily: "'Inter', system-ui, sans-serif" }}>
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
