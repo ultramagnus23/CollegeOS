@@ -21,8 +21,7 @@ import {
   Clock,
   Shield,
   Target,
-  Star,
-  DollarSign
+  Star
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -39,8 +38,7 @@ const DashboardLayout = () => {
     { name: 'Deadlines', href: '/deadlines', icon: Calendar },
     { name: 'Essays', href: '/essays', icon: PenTool },
     { name: 'Documents', href: '/documents', icon: FolderOpen },
-    { name: 'Scholarships', href: '/scholarships', icon: Award },
-    { name: 'Financial Aid', href: '/financial-aid', icon: DollarSign },
+    { name: 'Scholarships & Aid', href: '/scholarships', icon: Award },
     { name: 'Recommenders', href: '/recommenders', icon: Users },
     { name: 'Timeline', href: '/timeline', icon: Clock },
     ...(user?.role === 'admin' ? [{ name: 'Admin', href: '/admin', icon: Shield }] : []),
@@ -84,7 +82,7 @@ const DashboardLayout = () => {
             }}
           >
             <div>
-              <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>College App OS</h1>
+              <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}>CollegeOS</h1>
               <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 4 }}>Welcome, {user?.full_name}</p>
             </div>
             <div className="flex items-center gap-2">
@@ -175,7 +173,7 @@ const DashboardLayout = () => {
         >
           <Menu size={22} aria-hidden="true" />
         </button>
-        <h1 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>College App OS</h1>
+        <h1 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>CollegeOS</h1>
         <ThemeToggle />
       </header>
 
