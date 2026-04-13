@@ -72,6 +72,68 @@ class College {
 
   static async findById(id) {
     const pool = dbManager.getDatabase();
+
+    // First try the comprehensive table (used by the Supabase-powered frontend).
+    const { rows: compDirect } = await pool.query(
+      'SELECT * FROM colleges_comprehensive WHERE id=$1', [id]
+    );
+    if (compDirect[0]) {
+      const cc = compDirect[0];
+      // Build a College-shaped object from colleges_comprehensive columns.
+      const formattedCollege = this.formatCollege({
+        id: cc.id,
+        name: cc.name,
+        country: cc.country,
+        location: [cc.city, cc.state_region].filter(Boolean).join(', ') || cc.country,
+        official_website: cc.website_url || null,
+        admissions_url: null,
+        acceptance_rate: null,
+        tuition_domestic: null,
+        tuition_international: null,
+        student_population: cc.total_enrollment || null,
+        average_gpa: null,
+        sat_range: null,
+        act_range: null,
+        graduation_rate: null,
+        ranking: null,
+        trust_tier: 'official',
+        is_verified: true,
+        location_city: cc.city || null,
+        location_state: cc.state_region || null,
+        location_country: cc.country,
+      });
+
+      try {
+        const [admR, statsR, finR] = await Promise.all([
+          pool.query('SELECT * FROM college_admissions WHERE college_id=$1 ORDER BY year DESC LIMIT 1', [cc.id]),
+          pool.query('SELECT * FROM admitted_student_stats WHERE college_id=$1 ORDER BY year DESC LIMIT 1', [cc.id]),
+          pool.query('SELECT * FROM college_financial_data WHERE college_id=$1 ORDER BY year DESC LIMIT 1', [cc.id]),
+        ]);
+        if (admR.rows[0]) {
+          const a = admR.rows[0];
+          formattedCollege.acceptance_rate = a.acceptance_rate;
+          formattedCollege.acceptanceRate = a.acceptance_rate;
+        }
+        if (statsR.rows[0]) {
+          const s = statsR.rows[0];
+          formattedCollege.sat_avg = s.sat_avg || s.sat_50 || null;
+          formattedCollege.sat_total_50 = s.sat_avg || s.sat_50 || null;
+          formattedCollege.gpa_50 = s.gpa_50 || null;
+          formattedCollege.median_gpa = s.gpa_50 || null;
+        }
+        if (finR.rows[0]) {
+          const f = finR.rows[0];
+          formattedCollege.tuition_international = f.tuition_international || null;
+          formattedCollege.tuition_domestic = f.tuition_in_state || null;
+        }
+      } catch (enrichErr) {
+        logger.warn('College.findById: enrichment error for colleges_comprehensive', { id, error: enrichErr?.message });
+      }
+
+      return formattedCollege;
+    }
+
+    // Fall back to the legacy colleges table.
     const { rows } = await pool.query('SELECT * FROM colleges WHERE id=$1', [id]);
     if (!rows[0]) return null;
     const formattedCollege = this.formatCollege(rows[0]);

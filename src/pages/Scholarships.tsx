@@ -19,7 +19,23 @@ interface Grant { id: number; name: string; provider: string; provider_type?: st
 interface GovernmentLoan { id: number; bank_name?: string; scheme_name?: string; max_loan_amount_inr?: number; interest_rate?: number; csis_subsidy?: boolean; provider?: string; status?: string; }
 interface PrivateLoan { id: number; lender_name?: string; max_amount?: number; interest_rate_min?: number; interest_rate_max?: number; cosigner_required?: boolean; provider?: string; status?: string; }
 
-type Tab = 'scholarships' | 'grants' | 'government' | 'private' | 'college';
+interface CollegeFinancialProfile {
+  college_id: number; college_name: string; country?: string;
+  tuition_international?: number; tuition_domestic?: number;
+  room_board?: number; total_coa?: number; net_cost?: number;
+  currency?: string; meets_full_need?: boolean; need_blind_international?: boolean;
+  international_aid_available?: boolean; avg_financial_aid?: number;
+  pct_students_with_aid?: number; aid_deadline?: string;
+}
+interface LoanOption {
+  id: number; provider?: string; loan_type?: string;
+  max_amount?: number; interest_rate_min?: number; interest_rate_max?: number;
+  emi_per_lakh?: number; tenure_years?: number; processing_fee_pct?: number;
+  cosigner_required?: boolean; collateral_required?: boolean;
+  prepayment_penalty?: boolean;
+}
+
+type Tab = 'scholarships' | 'grants' | 'government' | 'private' | 'college-costs' | 'loans' | 'international-aid';
 
 /* ─── Design ─────────────────────────────────────────────────────────── */
 const ACCENT = '#A855F7';
@@ -65,7 +81,12 @@ const Scholarships: React.FC = () => {
   const [grants, setGrants] = useState<Grant[]>([]);
   const [govLoans, setGovLoans] = useState<GovernmentLoan[]>([]);
   const [privLoans, setPrivLoans] = useState<PrivateLoan[]>([]);
+  const [collegeCosts, setCollegeCosts] = useState<CollegeFinancialProfile[]>([]);
+  const [intlColleges, setIntlColleges] = useState<CollegeFinancialProfile[]>([]);
+  const [finLoans, setFinLoans] = useState<LoanOption[]>([]);
+  const [loanAmount, setLoanAmount] = useState(50000);
   const [loading, setLoading] = useState(true);
+  const [finLoading, setFinLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [matchScores, setMatchScores] = useState<Record<number, number>>({});
@@ -76,6 +97,8 @@ const Scholarships: React.FC = () => {
   useEffect(() => { if (activeTab === 'grants') loadGrants(); }, [activeTab]);
   useEffect(() => { if (activeTab === 'government') loadGovLoans(); }, [activeTab]);
   useEffect(() => { if (activeTab === 'private') loadPrivLoans(); }, [activeTab]);
+  useEffect(() => { if (activeTab === 'college-costs' || activeTab === 'international-aid') loadCollegeCosts(); }, [activeTab]);
+  useEffect(() => { if (activeTab === 'loans') loadFinLoans(); }, [activeTab, loanAmount]);
 
   const loadScholarships = async () => {
     setLoading(true);
@@ -110,6 +133,28 @@ const Scholarships: React.FC = () => {
     } catch { setPrivLoans([]); }
   };
 
+  const loadCollegeCosts = async () => {
+    setFinLoading(true);
+    try {
+      const res = await api.financial.getSummary() as any;
+      const data: CollegeFinancialProfile[] = res?.data || [];
+      setCollegeCosts(data);
+      setIntlColleges(data.filter((p: CollegeFinancialProfile) =>
+        p.international_aid_available || p.need_blind_international || p.meets_full_need
+      ));
+    } catch { setCollegeCosts([]); setIntlColleges([]); }
+    finally { setFinLoading(false); }
+  };
+
+  const loadFinLoans = async () => {
+    setFinLoading(true);
+    try {
+      const res = await api.financial.getLoans(loanAmount) as any;
+      setFinLoans(res?.data || []);
+    } catch { setFinLoans([]); }
+    finally { setFinLoading(false); }
+  };
+
   const handleTrack = async (id: number) => {
     setTrackingId(id);
     try {
@@ -133,11 +178,13 @@ const Scholarships: React.FC = () => {
   };
 
   const TABS: { id: Tab; label: string }[] = [
-    { id: 'scholarships', label: 'Scholarships' },
-    { id: 'grants', label: 'Grants' },
-    { id: 'government', label: 'Government Loans' },
-    { id: 'private', label: 'Private Loans' },
-    { id: 'college', label: 'College Aid' },
+    { id: 'scholarships', label: '🎓 Scholarships' },
+    { id: 'grants', label: '💰 Grants' },
+    { id: 'government', label: '🏛️ Gov. Loans' },
+    { id: 'private', label: '🏦 Private Loans' },
+    { id: 'college-costs', label: '🏫 College Costs' },
+    { id: 'loans', label: '💳 EMI Calculator' },
+    { id: 'international-aid', label: '🌍 Intl Aid' },
   ];
 
   const pagedScholarships = scholarships.slice(0, page * 10);
@@ -149,7 +196,7 @@ const Scholarships: React.FC = () => {
 
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 6 }}>Financial Aid</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 6 }}>Funding & Financial Aid</h1>
           <p style={{ fontSize: 14, color: S.muted }}>
             Based on your profile, you qualify for <strong style={{ color: 'var(--color-text-primary)' }}>{scholarships.length}</strong> scholarships and funding options.
           </p>
@@ -355,9 +402,128 @@ const Scholarships: React.FC = () => {
           </div>
         )}
 
-        {/* College Aid Tab */}
-        {activeTab === 'college' && (
-          <EmptyState icon="🏫" title="College Aid" desc="Select a college to view its institutional aid options. This feature is coming soon." />
+        {/* College Aid Tab — replaced by college-costs, loans, international-aid tabs */}
+        {activeTab === 'college-costs' && (
+          <div>
+            {finLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+                <div style={{ width: 36, height: 36, border: `3px solid ${S.border2}`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              </div>
+            ) : collegeCosts.length === 0 ? (
+              <EmptyState icon="🏫" title="No college cost data yet" desc="Add colleges to your applications list to see personalised cost breakdowns." />
+            ) : (
+              <>
+                <div style={{ marginBottom: 20, padding: '12px 16px', background: h2r(ACCENT, 0.07), border: `1px solid ${h2r(ACCENT, 0.2)}`, borderRadius: 10, fontSize: 12, color: S.muted }}>
+                  📊 Costs are personalised to your profile. Sorted by estimated net cost (lowest first).
+                </div>
+                {collegeCosts.map((p, i) => (
+                  <div key={p.college_id} style={{ background: S.surface, border: `1px solid ${S.border}`, borderLeft: `3px solid ${ACCENT}`, borderRadius: 16, padding: '18px 22px', marginBottom: 12, animation: 'fadeUp 0.3s ease both', animationDelay: `${i * 0.04}s` }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                      <div>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 4 }}>{p.college_name}</h3>
+                        {p.country && <p style={{ fontSize: 13, color: S.muted, marginBottom: 10 }}>{p.country}</p>}
+                        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                          {p.tuition_international != null && (
+                            <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700 }}>Tuition: ${p.tuition_international.toLocaleString()}</span>
+                          )}
+                          {p.room_board != null && (
+                            <span style={{ fontSize: 13, color: S.muted }}>R&B: ${p.room_board.toLocaleString()}</span>
+                          )}
+                          {p.total_coa != null && (
+                            <span style={{ fontSize: 13, color: S.muted }}>COA: ${p.total_coa.toLocaleString()}</span>
+                          )}
+                          {p.net_cost != null && (
+                            <span style={{ fontSize: 13, color: '#10B981', fontWeight: 700 }}>Net: ${p.net_cost.toLocaleString()}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {p.meets_full_need && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(16,185,129,0.12)', color: '#10B981', fontWeight: 600 }}>Meets Full Need</span>}
+                        {p.need_blind_international && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(59,158,255,0.12)', color: '#3B9EFF', fontWeight: 600 }}>Need-Blind Intl</span>}
+                        {p.international_aid_available && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(ACCENT, 0.12), color: ACCENT, fontWeight: 600 }}>Intl Aid</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'loans' && (
+          <div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 13, color: S.muted }}>Loan amount (USD):</span>
+              <input
+                type="number"
+                value={loanAmount}
+                onChange={e => setLoanAmount(Number(e.target.value))}
+                min={1000} step={1000}
+                style={{ width: 120, padding: '8px 12px', background: S.surface2, border: `1px solid ${S.border2}`, borderRadius: 10, color: 'var(--color-text-primary)', fontSize: 13, fontFamily: S.font }}
+              />
+              <button onClick={loadFinLoans} style={{ padding: '8px 18px', background: h2r(ACCENT, 0.15), border: `1px solid ${h2r(ACCENT, 0.3)}`, borderRadius: 10, color: ACCENT, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: S.font }}>
+                Calculate EMI
+              </button>
+            </div>
+            {finLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+                <div style={{ width: 36, height: 36, border: `3px solid ${S.border2}`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              </div>
+            ) : finLoans.length === 0 ? (
+              <EmptyState icon="💳" title="No loan options found" desc="Enter a loan amount and click Calculate EMI to see financing options." />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {finLoans.map((l, i) => (
+                  <div key={l.id} style={{ background: S.surface, border: `1px solid ${S.border}`, borderLeft: '3px solid #FBBF24', borderRadius: 16, padding: '18px 22px', animation: 'fadeUp 0.3s ease both', animationDelay: `${i * 0.04}s` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                      <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font }}>{l.provider || 'Lender'}</h3>
+                      {l.loan_type && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(251,191,36,0.12)', color: '#FBBF24', fontWeight: 600 }}>{l.loan_type}</span>}
+                      {l.cosigner_required && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(239,68,68,0.12)', color: '#EF4444', fontWeight: 600 }}>Co-signer Required</span>}
+                    </div>
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                      {l.max_amount != null && <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700 }}>Max: ${l.max_amount.toLocaleString()}</span>}
+                      {(l.interest_rate_min != null || l.interest_rate_max != null) && (
+                        <span style={{ fontSize: 13, color: S.muted }}>
+                          Rate: {l.interest_rate_min != null ? `${l.interest_rate_min}%` : '—'}
+                          {l.interest_rate_max != null ? `–${l.interest_rate_max}%` : ''}
+                        </span>
+                      )}
+                      {l.emi_per_lakh != null && <span style={{ fontSize: 13, color: S.muted }}>EMI/lakh: ₹{l.emi_per_lakh.toLocaleString()}</span>}
+                      {l.tenure_years != null && <span style={{ fontSize: 13, color: S.muted }}>Tenure: {l.tenure_years} yr</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'international-aid' && (
+          <div>
+            <div style={{ marginBottom: 20, padding: '12px 16px', background: 'rgba(59,158,255,0.06)', border: '1px solid rgba(59,158,255,0.2)', borderRadius: 10, fontSize: 12, color: S.muted }}>
+              🌍 Colleges in your list that offer international financial aid, need-blind admissions, or meet full demonstrated need.
+            </div>
+            {finLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+                <div style={{ width: 36, height: 36, border: `3px solid ${S.border2}`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              </div>
+            ) : intlColleges.length === 0 ? (
+              <EmptyState icon="🌍" title="No international aid data yet" desc="Add colleges to your list — those with international financial aid will appear here." />
+            ) : (
+              intlColleges.map((p, i) => (
+                <div key={p.college_id} style={{ background: S.surface, border: `1px solid ${S.border}`, borderLeft: '3px solid #3B9EFF', borderRadius: 16, padding: '18px 22px', marginBottom: 12, animation: 'fadeUp 0.3s ease both', animationDelay: `${i * 0.04}s` }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 4 }}>{p.college_name}</h3>
+                  {p.country && <p style={{ fontSize: 13, color: S.muted, marginBottom: 10 }}>{p.country}</p>}
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {p.meets_full_need && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(16,185,129,0.12)', color: '#10B981', fontWeight: 600 }}>Meets Full Need</span>}
+                    {p.need_blind_international && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(59,158,255,0.12)', color: '#3B9EFF', fontWeight: 600 }}>Need-Blind Intl</span>}
+                    {p.international_aid_available && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(ACCENT, 0.12), color: ACCENT, fontWeight: 600 }}>Intl Aid Available</span>}
+                    {p.avg_financial_aid != null && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(251,191,36,0.12)', color: '#FBBF24', fontWeight: 600 }}>Avg Aid: ${p.avg_financial_aid.toLocaleString()}</span>}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         )}
 
       </div>
