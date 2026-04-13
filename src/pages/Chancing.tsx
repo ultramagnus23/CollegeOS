@@ -23,11 +23,12 @@ const S = {
 };
 
 const TIER_META: Record<string, { color: string; bg: string; bar: string; label: string }> = {
-  'Safety':    { color: '#10B981', bg: 'rgba(16,185,129,0.1)',  bar: '#10B981', label: 'Safety — High confidence of admission' },
-  'Match':     { color: '#3B9EFF', bg: 'rgba(59,158,255,0.1)',  bar: '#3B9EFF', label: 'Match — Reasonable shot at admission' },
-  'Reach':     { color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',  bar: '#F59E0B', label: 'Reach — Challenging but possible' },
-  'Long Shot': { color: '#EF4444', bg: 'rgba(239,68,68,0.1)',   bar: '#EF4444', label: 'Long Shot — Very selective, apply strategically' },
-  'Unknown':   { color: 'var(--color-text-secondary)', bg: 'var(--color-surface-subtle)', bar: 'var(--color-border)', label: 'Unknown — Add profile data for analysis' },
+  'Safety':        { color: '#10B981', bg: 'rgba(16,185,129,0.1)',  bar: '#10B981', label: 'Safety — High confidence of admission' },
+  'Match':         { color: '#3B9EFF', bg: 'rgba(59,158,255,0.1)',  bar: '#3B9EFF', label: 'Match — Reasonable shot at admission' },
+  'Reach':         { color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',  bar: '#F59E0B', label: 'Reach — Challenging but possible' },
+  'Long Shot':     { color: '#EF4444', bg: 'rgba(239,68,68,0.1)',   bar: '#EF4444', label: 'Long Shot — Very selective, apply strategically' },
+  'Extreme Reach': { color: '#991B1B', bg: 'rgba(153,27,27,0.1)',   bar: '#991B1B', label: 'Extreme Reach — Highly unlikely; include only as a dream school' },
+  'Unknown':       { color: 'var(--color-text-secondary)', bg: 'var(--color-surface-subtle)', bar: 'var(--color-border)', label: 'Unknown — Add profile data for analysis' },
 };
 
 interface ChancingResult {
@@ -38,12 +39,14 @@ interface ChancingResult {
   chancing: {
     tier: string; confidence: string;
     explanation: string | { summary: string; factors?: any; probabilityRange?: any; missingDataFields?: string[]; recommendedActions?: string[] };
-    probability?: number;
+    probability?: number | null;
     studentSAT?: number; collegeSAT?: number;
     studentGPA?: number; collegeGPA?: number;
     factorsUsed?: number;
     missingDataFields?: string[];
     recommendedActions?: string[];
+    probabilityRange?: { low: number; high: number } | null;
+    factorScores?: Record<string, { score: number | null; weight: number; contribution: number | null; detail?: string }>;
   };
 }
 
@@ -95,30 +98,44 @@ function StatComp({
 /* ─── Recommendation bullets ─────────────────────────────────────── */
 function Recommendations({ result }: { result: ChancingResult }) {
   const recs: string[] = [];
-  const { tier, confidence, probability = 0, studentSAT, collegeSAT, studentGPA, collegeGPA, factorsUsed = 0 } = result.chancing;
+  const { tier, confidence, missingDataFields = [], recommendedActions = [] } = result.chancing;
+  const probability = result.chancing.probability ?? 0;
+  const { studentSAT, collegeSAT, studentGPA, collegeGPA, factorsUsed = 0 } = result.chancing;
 
-  if (confidence === 'Low' || factorsUsed === 0) {
-    recs.push('Complete your profile (GPA, SAT/ACT) for a more accurate chancing estimate.');
+  // Use AI-generated recommendations from the 7-factor service when available
+  if (recommendedActions.length > 0) {
+    recs.push(...recommendedActions);
+  } else {
+    // Fallback: derive recommendations locally
+    if (confidence === 'Low' || factorsUsed === 0) {
+      recs.push('Complete your profile (GPA, SAT/ACT) for a more accurate chancing estimate.');
+    }
+    if (studentSAT != null && collegeSAT != null && studentSAT < collegeSAT) {
+      const gap = collegeSAT - studentSAT;
+      recs.push(`Your SAT is ${gap} points below the college median (${collegeSAT}). Retaking to close this gap could meaningfully lift your probability.`);
+    }
+    if (studentGPA != null && collegeGPA != null && studentGPA < collegeGPA) {
+      const gap = (collegeGPA - studentGPA).toFixed(2);
+      recs.push(`Your GPA is ${gap} points below the college median (${collegeGPA}). Strong senior-year grades and rigorous coursework strengthen your application.`);
+    }
+    if (tier === 'Long Shot' || tier === 'Extreme Reach' || probability < 0.15) {
+      recs.push('Consider adding this college as a "reach" and ensuring a strong personal statement, recommendations, and extracurricular narrative.');
+      recs.push('Balance your college list with Match and Safety schools to improve your overall admission odds.');
+    }
+    if (tier === 'Reach' && result.college.acceptanceRate != null) {
+      const pct = Math.round(result.college.acceptanceRate * 100);
+      recs.push(`This college admits ~${pct}% of applicants overall. International pools are more competitive — focus on differentiating your application.`);
+    }
+    if (tier === 'Safety' || tier === 'Match') {
+      recs.push('You are well-positioned for this college. Make sure your essays and recommendations reflect genuine interest and fit.');
+    }
   }
-  if (studentSAT != null && collegeSAT != null && studentSAT < collegeSAT) {
-    const gap = collegeSAT - studentSAT;
-    recs.push(`Your SAT is ${gap} points below the college median (${collegeSAT}). Retaking to close this gap could meaningfully lift your probability.`);
+
+  // Show missing profile data hints
+  if (missingDataFields.length > 0) {
+    recs.push(`Missing profile data that would improve accuracy: ${missingDataFields.join(', ')}.`);
   }
-  if (studentGPA != null && collegeGPA != null && studentGPA < collegeGPA) {
-    const gap = (collegeGPA - studentGPA).toFixed(2);
-    recs.push(`Your GPA is ${gap} points below the college median (${collegeGPA}). Strong senior-year grades and rigorous coursework strengthen your application.`);
-  }
-  if (tier === 'Long Shot' || probability < 0.15) {
-    recs.push('Consider adding this college as a "reach" and ensuring a strong personal statement, recommendations, and extracurricular narrative.');
-    recs.push('Balance your college list with Match and Safety schools to improve your overall admission odds.');
-  }
-  if (tier === 'Reach' && result.college.acceptanceRate != null) {
-    const pct = Math.round(result.college.acceptanceRate * 100);
-    recs.push(`This college admits ~${pct}% of applicants overall. International pools are more competitive — focus on differentiating your application.`);
-  }
-  if (tier === 'Safety' || tier === 'Match') {
-    recs.push('You are well-positioned for this college. Make sure your essays and recommendations reflect genuine interest and fit.');
-  }
+
   if (recs.length === 0) {
     recs.push('Keep your profile up-to-date to get the most accurate chancing results.');
   }
@@ -183,6 +200,13 @@ function ChancingCard({ result, index }: { result: ChancingResult; index: number
 
       {/* Probability bar */}
       {pct != null && <ProbBar pct={pct} color={meta.bar} />}
+
+      {/* Probability range when available */}
+      {result.chancing.probabilityRange != null && (
+        <p style={{ fontSize: 11, color: S.dim, marginTop: 2 }}>
+          Range: {Math.round(result.chancing.probabilityRange.low * 100)}%–{Math.round(result.chancing.probabilityRange.high * 100)}%
+        </p>
+      )}
 
       {/* Tier description */}
       <p style={{ fontSize: 12, color: S.muted, marginTop: 8, fontStyle: 'italic' }}>{meta.label}</p>

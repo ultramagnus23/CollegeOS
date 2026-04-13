@@ -101,8 +101,6 @@ const Settings = () => {
     activities: false,
     goals: false,
     testScores: false,
-    preferences: false,
-    activities: false
   });
   
   // Form data for editing

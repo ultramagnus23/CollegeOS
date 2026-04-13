@@ -261,10 +261,31 @@ async function calculateChance(studentProfile, college, application = {}) {
     // Weight shift goes to F1 if school is less holistic
     if (acceptRate > 0.45) f1Weight += 0.08;
 
-    const extracurriculars  = Array.isArray(sp.extracurriculars)  ? sp.extracurriculars  : [];
-    const awards            = Array.isArray(sp.awards)            ? sp.awards            : [];
-    const leadershipRoles   = Array.isArray(sp.leadership_roles)  ? sp.leadership_roles  : [];
-    const essay             = sp.essay ?? '';
+    // sp.extracurriculars: JSONB col (migration 066) with { tier } entries.
+    // Fall back to sp.activities (from student_activities table) which use tier_rating.
+    const rawECs = Array.isArray(sp.extracurriculars) ? sp.extracurriculars
+      : Array.isArray(sp.activities) ? sp.activities : [];
+    const extracurriculars = rawECs.map(e => ({ ...e, tier: e.tier ?? e.tier_rating ?? 3 }));
+
+    // sp.awards: from student_awards table — has award_level TEXT, not tier INT.
+    // Normalise award_level → tier so scoring formulas work correctly.
+    const rawAwards = Array.isArray(sp.awards) ? sp.awards : [];
+    const awards = rawAwards.map(a => ({
+      ...a,
+      tier: a.tier != null ? a.tier
+        : (a.award_level === 'International' || a.award_level === 'National' ? 1
+          : a.award_level === 'State' || a.award_level === 'Regional' ? 2 : 3),
+    }));
+
+    // sp.leadership_roles: JSONB col (migration 066). Fall back to activities that
+    // indicate leadership via position_title or activity_type keywords.
+    const LEADERSHIP_KW = ['president', 'captain', 'founder', 'lead', 'chair', 'director', 'editor', 'head'];
+    const leadershipRoles = Array.isArray(sp.leadership_roles) ? sp.leadership_roles
+      : extracurriculars.filter(e => {
+          const title = ((e.position_title || '') + ' ' + (e.activity_type || '')).toLowerCase();
+          return LEADERSHIP_KW.some(kw => title.includes(kw));
+        });
+    const essay = sp.essay ?? '';
 
     const tier1ECs = extracurriculars.filter(e => e.tier === 1).length;
     const tier2ECs = extracurriculars.filter(e => e.tier === 2).length;
