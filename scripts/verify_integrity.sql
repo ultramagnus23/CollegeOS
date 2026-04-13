@@ -125,8 +125,7 @@ LIMIT 50;
 
 SELECT 'college_admissions' AS table_name,
         ca.id               AS row_id,
-        ca.college_id,
-        ca.year
+        ca.college_id
 FROM   college_admissions ca
 WHERE  NOT EXISTS (
          SELECT 1 FROM colleges_comprehensive cc WHERE cc.id = ca.college_id
@@ -135,8 +134,7 @@ LIMIT 10;
 
 SELECT 'college_financial_data' AS table_name,
         cfd.id                  AS row_id,
-        cfd.college_id,
-        cfd.year
+        cfd.college_id
 FROM   college_financial_data cfd
 WHERE  NOT EXISTS (
          SELECT 1 FROM colleges_comprehensive cc WHERE cc.id = cfd.college_id
