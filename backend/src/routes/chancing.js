@@ -35,14 +35,29 @@ async function getChancingResults(userId, colleges) {
   const results = [];
   for (const college of colleges) {
     const chancing = await consolidatedChancingService.calculateChance(profile, college);
+
+    // Attach the raw stat values so the frontend can render factor breakdowns.
+    const studentSAT = profile?.sat_total ?? profile?.sat_score ?? null;
+    const studentGPA = profile?.gpa_unweighted ?? profile?.gpa_weighted ?? profile?.gpa ?? null;
+    const collegeSAT = college?.sat_avg ?? college?.sat_total_50 ?? college?.median_sat ?? null;
+    const collegeGPA = college?.gpa_50 ?? college?.median_gpa ?? null;
+    const factorsUsed = (studentSAT != null && collegeSAT != null ? 1 : 0) + (studentGPA != null && collegeGPA != null ? 1 : 0);
+
     results.push({
       college: {
         id: college.id,
         name: college.name,
-        location: `${college.location_city || ''}, ${college.location_state || ''}`.trim(),
+        location: `${college.location_city || college.city || ''}, ${college.location_state || college.state_region || ''}`.trim().replace(/^,\s*|,\s*$/, ''),
         acceptanceRate: college.acceptance_rate
       },
-      chancing
+      chancing: {
+        ...chancing,
+        studentSAT,
+        collegeSAT,
+        studentGPA,
+        collegeGPA,
+        factorsUsed,
+      }
     });
   }
   results.sort((a, b) => (TIER_RANK[b.chancing.tier] || -1) - (TIER_RANK[a.chancing.tier] || -1));
