@@ -159,6 +159,11 @@ function runMlRetrain() {
     { RETRAIN_EVERY: String(RETRAIN_THRESHOLD) });
 }
 
+function runDeadlineIntelligenceScraper() {
+  return runProcess('deadline_intelligence', 'node',
+    [path.join(__dirname, 'deadlineIntelligenceScraper.js')]);
+}
+
 // ── Safe wrapper ──────────────────────────────────────────────────────────────
 
 function safe(name, fn) {
@@ -178,6 +183,7 @@ function start() {
   logger.info('  - Reddit scraper:    every 6h');
   logger.info('  - Admissions data:   every 24h at 2am UTC');
   logger.info('  - Financial aid:     every 24h at 3am UTC');
+  logger.info('  - Deadline intelligence: every 24h at 1am UTC');
   logger.info('  - SAT/GPA stats:     every Sunday 4am UTC');
   logger.info('  - Tuition/costs:     every Sunday 5am UTC');
   logger.info('  - Acceptance rates:  every Sunday 6am UTC');
@@ -185,6 +191,9 @@ function start() {
 
   // Reddit incremental — every 6 hours
   jobs.push(cron.schedule('0 */6 * * *', safe('reddit', runRedditScraper), { timezone: 'UTC' }));
+
+  // Deadline intelligence — every day at 01:00 UTC
+  jobs.push(cron.schedule('0 1 * * *', safe('deadline_intelligence', runDeadlineIntelligenceScraper), { timezone: 'UTC' }));
 
   // Admissions stats — every day at 02:00 UTC
   jobs.push(cron.schedule('0 2 * * *', safe('admissions', runAdmissionsScraper), { timezone: 'UTC' }));
