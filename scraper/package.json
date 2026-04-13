@@ -9,9 +9,9 @@
     "scholarship": "node index.js scholarship"
   },
   "dependencies": {
-    "openai": "^4.0.0",
-    "axios": "^1.13.5",
+    "axios": "^1.15.0",
     "better-sqlite3": "^12.8.0",
+    "openai": "^4.0.0",
     "pg": "^8.20.0",
     "winston": "^3.11.0"
   }
