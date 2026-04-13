@@ -29,7 +29,7 @@ const S = {
   border2: 'var(--color-border-strong)',
   muted: 'var(--color-text-secondary)',
   dim: 'var(--color-text-disabled)',
-  font: "'DM Sans',sans-serif",
+  font: "'Inter', system-ui, sans-serif",
 };
 const GLOBAL_COLLEGES = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
@@ -780,7 +780,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
     border: 'var(--color-border)',
     muted: 'var(--color-text-secondary)',
     dim: 'var(--color-text-disabled)',
-    font: "'DM Sans',sans-serif",
+    font: "'Inter', system-ui, sans-serif",
   };
 
   return (

@@ -91,7 +91,7 @@ const Constellation: React.FC<{ step: number }> = ({ step }) => {
                 fontSize: 10, fontWeight: isActive ? 700 : 400,
                 color: isActive ? n.accent : 'rgba(255,255,255,0.4)',
                 letterSpacing: '0.05em', textTransform: 'uppercase',
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Inter', system-ui, sans-serif",
               }}>{n.label}</span>
             </div>
           );
@@ -112,7 +112,7 @@ const Chip: React.FC<{ label: string; selected: boolean; accent: string; onClick
     cursor: 'pointer', transition: 'all 0.12s ease',
     transform: selected ? 'scale(1.05)' : 'scale(1)',
     boxShadow: selected ? `0 0 12px ${hexToRgba(accent, 0.3)}` : 'none',
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "'Inter', system-ui, sans-serif",
     whiteSpace: 'nowrap',
   }}>{label}</button>
 );
@@ -134,7 +134,7 @@ const SegmentedControl: React.FC<{
           color: isSelected ? '#000' : 'var(--color-text-secondary)',
           fontWeight: isSelected ? 700 : 400, fontSize: 13,
           cursor: 'pointer', transition: 'all 0.15s ease',
-          fontFamily: "'DM Sans', sans-serif",
+          fontFamily: "'Inter', system-ui, sans-serif",
         }}>{opt}</button>
       );
     })}
@@ -164,7 +164,7 @@ const SocialProof: React.FC = () => {
       <span style={{
         fontSize: 12, color: 'rgba(255,255,255,0.35)', fontStyle: 'italic',
         transition: 'opacity 0.4s ease', opacity: visible ? 1 : 0,
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Inter', system-ui, sans-serif",
       }}>"{proofs[idx]}"</span>
     </div>
   );
@@ -196,21 +196,21 @@ const ProfileCard: React.FC<{ name: string; country: string; dreamSchool: string
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       marginBottom: 20, fontSize: 22,
     }}>🎓</div>
-    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6, fontFamily: "'DM Sans', sans-serif" }}>ADMISSIONS PROFILE</div>
+    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6, fontFamily: "'Inter', system-ui, sans-serif" }}>ADMISSIONS PROFILE</div>
     <div style={{
       fontSize: name ? 28 : 20, fontWeight: 800, color: name ? '#fff' : 'rgba(255,255,255,0.2)',
-      marginBottom: 8, minHeight: 40, fontFamily: "'Clash Display', 'DM Sans', sans-serif",
+      marginBottom: 8, minHeight: 40, fontFamily: "'Inter', system-ui, sans-serif",
       transition: 'all 0.2s ease',
     }}>{name || 'Your Name'}</div>
-    {country && <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 4, fontFamily: "'DM Sans', sans-serif" }}>📍 {country}</div>}
-    {dreamSchool && <div style={{ fontSize: 13, color: 'rgba(108,99,255,0.8)', marginBottom: 20, fontFamily: "'DM Sans', sans-serif" }}>🎯 {dreamSchool}</div>}
+    {country && <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 4, fontFamily: "'Inter', system-ui, sans-serif" }}>📍 {country}</div>}
+    {dreamSchool && <div style={{ fontSize: 13, color: 'rgba(108,99,255,0.8)', marginBottom: 20, fontFamily: "'Inter', system-ui, sans-serif" }}>🎯 {dreamSchool}</div>}
     <div style={{ marginTop: 24 }}>
-      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginBottom: 8, fontFamily: "'DM Sans', sans-serif" }}>PROFILE STRENGTH</div>
+      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginBottom: 8, fontFamily: "'Inter', system-ui, sans-serif" }}>PROFILE STRENGTH</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 4 }}>
           <div style={{ width: '15%', height: '100%', background: '#6C63FF', borderRadius: 4, transition: 'width 0.5s ease' }} />
         </div>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: "'DM Sans', sans-serif" }}>Building...</span>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: "'Inter', system-ui, sans-serif" }}>Building...</span>
       </div>
     </div>
     {/* Blurred match cards preview */}
@@ -226,7 +226,7 @@ const ProfileCard: React.FC<{ name: string; country: string; dreamSchool: string
         </div>
       ))}
     </div>
-    <div style={{ textAlign: 'center', marginTop: 8, fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ textAlign: 'center', marginTop: 8, fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: "'Inter', system-ui, sans-serif" }}>
       Your matches unlock at the end
     </div>
   </div>
@@ -256,11 +256,11 @@ const GPADisplay: React.FC<{ value: string; accent: string; gpaType: string }> =
     <div style={{ textAlign: 'center' }}>
       <div style={{
         fontSize: 72, fontWeight: 800, color: value ? '#fff' : 'rgba(255,255,255,0.15)',
-        lineHeight: 1, marginBottom: 8, fontFamily: "'Clash Display', 'DM Sans', sans-serif",
+        lineHeight: 1, marginBottom: 8, fontFamily: "'Inter', system-ui, sans-serif",
         transition: 'color 0.2s ease',
       }}>{value || '—'}</div>
       {label && (
-        <div style={{ fontSize: 14, color: labelColor, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", transition: 'all 0.3s ease' }}>
+        <div style={{ fontSize: 14, color: labelColor, fontWeight: 600, fontFamily: "'Inter', system-ui, sans-serif", transition: 'all 0.3s ease' }}>
           {label}
         </div>
       )}
@@ -385,7 +385,7 @@ const RadarChart: React.FC<{ activities: StructuredActivity[]; accent: string }>
         const end = getAxisEnd(i);
         const lx = cx + (r + 20) * Math.cos((i * Math.PI * 2) / axes - Math.PI / 2);
         const ly = cy + (r + 20) * Math.sin((i * Math.PI * 2) / axes - Math.PI / 2);
-        return <text key={i} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.5)" fontSize="10" fontFamily="'DM Sans', sans-serif">{RADAR_AXES[i]}</text>;
+        return <text key={i} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.5)" fontSize="10" fontFamily="'Inter', system-ui, sans-serif">{RADAR_AXES[i]}</text>;
       })}
     </svg>
   );
@@ -425,11 +425,11 @@ const ActivitiesOnboardingStep: React.FC<{
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, minHeight: 500 }}>
       {/* Left panel */}
       <div>
-        <div style={{ fontSize: 42, fontWeight: 800, color: '#fff', lineHeight: 1.1, marginBottom: 8, fontFamily: "'Clash Display', 'DM Sans', sans-serif" }}>
+        <div style={{ fontSize: 42, fontWeight: 800, color: '#fff', lineHeight: 1.1, marginBottom: 8, fontFamily: "'Inter', system-ui, sans-serif" }}>
           Your<br />
           <span style={{ color: accent }}>Spike.</span>
         </div>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, marginBottom: 24, fontFamily: "'DM Sans', sans-serif" }}>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, marginBottom: 24, fontFamily: "'Inter', system-ui, sans-serif" }}>
           Colleges don't want well-rounded students. They want well-rounded <em>classes</em>. What makes you irreplaceable?
         </p>
 
@@ -437,7 +437,7 @@ const ActivitiesOnboardingStep: React.FC<{
           background: validCount >= 2 ? hexToRgba('#10B981', 0.1) : hexToRgba('#F59E0B', 0.1),
           border: `1px solid ${validCount >= 2 ? '#10B981' : '#F59E0B'}`,
           borderRadius: 10, padding: '10px 14px', marginBottom: 20, fontSize: 13,
-          color: validCount >= 2 ? '#10B981' : '#F59E0B', fontFamily: "'DM Sans', sans-serif",
+          color: validCount >= 2 ? '#10B981' : '#F59E0B', fontFamily: "'Inter', system-ui, sans-serif",
         }}>
           {validCount >= 2 ? '✅' : '⚠️'} {validCount}/2 required activities added
         </div>
@@ -452,8 +452,8 @@ const ActivitiesOnboardingStep: React.FC<{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
               <div>
-                <div style={{ fontWeight: 700, color: '#fff', fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>{act.name}</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2, fontFamily: "'DM Sans', sans-serif" }}>
+                <div style={{ fontWeight: 700, color: '#fff', fontSize: 14, fontFamily: "'Inter', system-ui, sans-serif" }}>{act.name}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2, fontFamily: "'Inter', system-ui, sans-serif" }}>
                   {act.type} · {act.yearsInvolved}yr · {act.hoursPerWeek}h/wk
                 </div>
               </div>
@@ -470,7 +470,7 @@ const ActivitiesOnboardingStep: React.FC<{
           <button onClick={() => { onActivitiesChange([...structured, { ...emptyActivity }]); setEditing(structured.length); setCurrent({ ...emptyActivity }); }} style={{
             width: '100%', padding: '12px', border: `2px dashed ${hexToRgba(accent, 0.4)}`,
             borderRadius: 10, background: 'none', color: hexToRgba(accent, 0.8), cursor: 'pointer',
-            fontSize: 14, fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s',
+            fontSize: 14, fontFamily: "'Inter', system-ui, sans-serif", transition: 'all 0.15s',
           }}>+ Add Activity</button>
         )}
 
@@ -480,7 +480,7 @@ const ActivitiesOnboardingStep: React.FC<{
             background: surface, border: `1px solid ${hexToRgba(accent, 0.3)}`,
             borderRadius: 12, padding: 20, marginTop: 12,
           }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: accent, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: "'DM Sans', sans-serif" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: accent, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: "'Inter', system-ui, sans-serif" }}>
               {current.name ? 'Edit Activity' : 'New Activity'}
             </div>
             <input
@@ -494,7 +494,7 @@ const ActivitiesOnboardingStep: React.FC<{
             </select>
             {/* Tier bar */}
             <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, fontFamily: "'DM Sans', sans-serif" }}>Tier</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, fontFamily: "'Inter', system-ui, sans-serif" }}>Tier</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: 'rgba(255,255,255,0.05)', borderRadius: 8, overflow: 'hidden', height: 36 }}>
                 {[1,2,3,4].map(tier => (
                   <button key={tier} onClick={() => setCurrent({ ...current, tier })} style={{
@@ -502,11 +502,11 @@ const ActivitiesOnboardingStep: React.FC<{
                     background: current.tier === tier ? TIER_DATA[tier as keyof typeof TIER_DATA].color : 'transparent',
                     color: current.tier === tier ? '#000' : 'rgba(255,255,255,0.5)',
                     fontSize: 11, fontWeight: current.tier === tier ? 700 : 400,
-                    transition: 'all 0.15s', fontFamily: "'DM Sans', sans-serif",
+                    transition: 'all 0.15s', fontFamily: "'Inter', system-ui, sans-serif",
                   }}>{tier === 1 ? 'Natl' : tier === 2 ? 'State' : tier === 3 ? 'School' : 'Partic.'}</button>
                 ))}
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 6, fontFamily: "'DM Sans', sans-serif" }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 6, fontFamily: "'Inter', system-ui, sans-serif" }}>
                 {TIER_DATA[current.tier as keyof typeof TIER_DATA]?.desc}
               </div>
             </div>
@@ -519,11 +519,11 @@ const ActivitiesOnboardingStep: React.FC<{
               <button onClick={save} disabled={!current.name.trim()} style={{
                 padding: '10px 20px', background: accent, border: 'none', borderRadius: 8,
                 color: '#000', fontWeight: 700, cursor: 'pointer', fontSize: 13,
-                fontFamily: "'DM Sans', sans-serif", opacity: current.name.trim() ? 1 : 0.4,
+                fontFamily: "'Inter', system-ui, sans-serif", opacity: current.name.trim() ? 1 : 0.4,
               }}>Save</button>
               <button onClick={() => setEditing(null)} style={{
                 padding: '10px 20px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8,
-                color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 13, fontFamily: "'DM Sans', sans-serif",
+                color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 13, fontFamily: "'Inter', system-ui, sans-serif",
               }}>Cancel</button>
             </div>
           </div>
@@ -532,10 +532,10 @@ const ActivitiesOnboardingStep: React.FC<{
 
       {/* Right panel — radar */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'DM Sans', sans-serif" }}>Your Spike Map</div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'Inter', system-ui, sans-serif" }}>Your Spike Map</div>
         <RadarChart activities={structured} accent={accent} />
         {validCount === 0 && (
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textAlign: 'center', fontFamily: "'DM Sans', sans-serif" }}>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textAlign: 'center', fontFamily: "'Inter', system-ui, sans-serif" }}>
             Add activities to see your fingerprint form
           </div>
         )}
@@ -547,7 +547,7 @@ const ActivitiesOnboardingStep: React.FC<{
 const inputStyle = (accent: string): React.CSSProperties => ({
   width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.06)',
   border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#fff', fontSize: 14,
-  outline: 'none', fontFamily: "'DM Sans', sans-serif", boxSizing: 'border-box',
+  outline: 'none', fontFamily: "'Inter', system-ui, sans-serif", boxSizing: 'border-box',
   transition: 'border-color 0.15s',
 });
 
@@ -575,7 +575,7 @@ const LoadingSequence: React.FC<{ name: string; onDone: () => void }> = ({ name,
       position: 'fixed', inset: 0, background: '#050508', zIndex: 1000,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
     }}>
-      <div style={{ fontSize: 32, fontWeight: 800, color: '#fff', marginBottom: 24, fontFamily: "'Clash Display', 'DM Sans', sans-serif", textAlign: 'center' }}>
+      <div style={{ fontSize: 32, fontWeight: 800, color: '#fff', marginBottom: 24, fontFamily: "'Inter', system-ui, sans-serif", textAlign: 'center' }}>
         {messages[idx]}
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
@@ -613,8 +613,8 @@ const ProfileRing: React.FC<{ score: number }> = ({ score }) => {
         strokeDasharray={`${pct} ${c}`} strokeLinecap="round"
         style={{ transform: 'rotate(-90deg)', transformOrigin: '100px 100px', filter: 'drop-shadow(0 0 12px rgba(255,215,0,0.6))' }}
       />
-      <text x="100" y="95" textAnchor="middle" dominantBaseline="middle" fill="#FFD700" fontSize="36" fontWeight="800" fontFamily="'DM Sans', sans-serif">{displayed}</text>
-      <text x="100" y="125" textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.4)" fontSize="12" fontFamily="'DM Sans', sans-serif">Profile Score</text>
+      <text x="100" y="95" textAnchor="middle" dominantBaseline="middle" fill="#FFD700" fontSize="36" fontWeight="800" fontFamily="'Inter', system-ui, sans-serif">{displayed}</text>
+      <text x="100" y="125" textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.4)" fontSize="12" fontFamily="'Inter', system-ui, sans-serif">Profile Score</text>
     </svg>
   );
 };
@@ -627,7 +627,7 @@ const Insight: React.FC<{ message: string; onDone: () => void }> = ({ message, o
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 999,
       display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)',
     }}>
-      <div style={{ fontSize: 22, fontWeight: 600, color: '#fff', textAlign: 'center', maxWidth: 500, lineHeight: 1.6, fontFamily: "'DM Sans', sans-serif", padding: '0 24px' }}>
+      <div style={{ fontSize: 22, fontWeight: 600, color: '#fff', textAlign: 'center', maxWidth: 500, lineHeight: 1.6, fontFamily: "'Inter', system-ui, sans-serif", padding: '0 24px' }}>
         {message}
       </div>
     </div>
@@ -819,10 +819,10 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       case 1: return (
         <div style={{ display: 'grid', gridTemplateColumns: '55% 45%', gap: 48 }}>
           <div>
-            <h1 style={{ fontSize: 48, fontWeight: 800, color: '#fff', lineHeight: 1.1, marginBottom: 12, letterSpacing: '-0.02em', fontFamily: "'Clash Display', 'DM Sans', sans-serif" }}>
+            <h1 style={{ fontSize: 48, fontWeight: 800, color: '#fff', lineHeight: 1.1, marginBottom: 12, letterSpacing: '-0.02em', fontFamily: "'Inter', system-ui, sans-serif" }}>
               Your college<br />journey starts<br /><span style={{ color: accent }}>here.</span>
             </h1>
-            <p style={{ fontSize: 18, color: hexToRgba(accent, 0.7), marginBottom: 40, fontFamily: "'DM Sans', sans-serif" }}>
+            <p style={{ fontSize: 18, color: hexToRgba(accent, 0.7), marginBottom: 40, fontFamily: "'Inter', system-ui, sans-serif" }}>
               Tell us who you are.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -869,7 +869,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                     <option value="Transgender">Transgender</option>
                     <option value="Prefer not to say">Prefer not to say</option>
                   </select>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 4, fontFamily: "'Inter', system-ui, sans-serif" }}>
                     Used only for scholarship matching
                   </div>
                 </div>
@@ -898,7 +898,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                       background: sel ? accent : 'transparent',
                       color: sel ? '#000' : 'rgba(255,255,255,0.5)',
                       fontWeight: sel ? 700 : 400, fontSize: 12,
-                      fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s',
+                      fontFamily: "'Inter', system-ui, sans-serif", transition: 'all 0.15s',
                     }}>
                       {type === 'percentage' ? 'Percentage (out of 100)' : 'GPA (out of 4.0)'}
                     </button>
@@ -915,13 +915,13 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                 max={studentData.gpaType === 'percentage' ? 100 : 4}
                 step={studentData.gpaType === 'percentage' ? 1 : 0.1}
                 placeholder={studentData.gpaType === 'percentage' ? '0–100' : '0.0–4.0'}
-                style={{ background: 'none', border: 'none', outline: 'none', fontSize: 64, fontWeight: 800, color: '#fff', width: '100%', textAlign: 'center', fontFamily: "'Clash Display', 'DM Sans', sans-serif" }}
+                style={{ background: 'none', border: 'none', outline: 'none', fontSize: 64, fontWeight: 800, color: '#fff', width: '100%', textAlign: 'center', fontFamily: "'Inter', system-ui, sans-serif" }}
               />
               {studentData.currentGPA && (() => {
                 const v = parseFloat(studentData.currentGPA);
                 const max = studentData.gpaType === 'percentage' ? 100 : 4.0;
                 return !isNaN(v) && (v < 0 || v > max) ? (
-                  <div style={{ fontSize: 12, color: '#F87171', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>
+                  <div style={{ fontSize: 12, color: '#F87171', marginTop: 4, fontFamily: "'Inter', system-ui, sans-serif" }}>
                     {studentData.gpaType === 'percentage' ? 'Percentage must be between 0 and 100' : 'GPA must be between 0.0 and 4.0'}
                   </div>
                 ) : null;
@@ -939,7 +939,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
               {studentData.satScore && (() => {
                 const satVal = parseInt(studentData.satScore, 10);
                 return !isNaN(satVal) && (satVal < 400 || satVal > 1600) ? (
-                  <div style={{ fontSize: 11, color: '#F87171', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>SAT score must be between 400 and 1600</div>
+                  <div style={{ fontSize: 11, color: '#F87171', marginTop: 4, fontFamily: "'Inter', system-ui, sans-serif" }}>SAT score must be between 400 and 1600</div>
                 ) : null;
               })()}
               <ScoreBar value={+studentData.satScore} min={400} max={1600} accent={accent} />
@@ -953,7 +953,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
               {studentData.actScore && (() => {
                 const actVal = parseInt(studentData.actScore, 10);
                 return !isNaN(actVal) && (actVal < 1 || actVal > 36) ? (
-                  <div style={{ fontSize: 11, color: '#F87171', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>ACT score must be between 1 and 36</div>
+                  <div style={{ fontSize: 11, color: '#F87171', marginTop: 4, fontFamily: "'Inter', system-ui, sans-serif" }}>ACT score must be between 1 and 36</div>
                 ) : null;
               })()}
               <ScoreBar value={+studentData.actScore} min={1} max={36} accent={accent} />
@@ -986,7 +986,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             <div style={{ marginTop: 28, marginBottom: 24 }}>
               <label style={labelStyle}>Major Certainty</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 10 }}>
-                <span style={{ fontSize: 13, color: studentData.majorCertain === false ? accent : 'rgba(255,255,255,0.4)', fontFamily: "'DM Sans', sans-serif" }}>Exploring</span>
+                <span style={{ fontSize: 13, color: studentData.majorCertain === false ? accent : 'rgba(255,255,255,0.4)', fontFamily: "'Inter', system-ui, sans-serif" }}>Exploring</span>
                 <div onClick={() => updateData('majorCertain', !studentData.majorCertain)} style={{
                   width: 52, height: 28, borderRadius: 14,
                   background: studentData.majorCertain ? accent : 'rgba(255,255,255,0.15)',
@@ -999,9 +999,9 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                     transition: 'left 0.2s ease', boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
                   }} />
                 </div>
-                <span style={{ fontSize: 13, color: studentData.majorCertain === true ? accent : 'rgba(255,255,255,0.4)', fontFamily: "'DM Sans', sans-serif" }}>Decided</span>
+                <span style={{ fontSize: 13, color: studentData.majorCertain === true ? accent : 'rgba(255,255,255,0.4)', fontFamily: "'Inter', system-ui, sans-serif" }}>Decided</span>
               </div>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 8, fontFamily: "'DM Sans', sans-serif" }}>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 8, fontFamily: "'Inter', system-ui, sans-serif" }}>
                 {studentData.majorCertain ? "Great — select your intended major." : "No worries — pick a few you're curious about."}
               </p>
             </div>
@@ -1021,7 +1021,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           </div>
 
           <div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, marginTop: 68, fontFamily: "'DM Sans', sans-serif" }}>Skills &amp; Strengths</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, marginTop: 68, fontFamily: "'Inter', system-ui, sans-serif" }}>Skills &amp; Strengths</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {skills.map(sk => (
                 <Chip key={sk} label={sk} selected={studentData.skillsStrengths.includes(sk)} accent={accent}
@@ -1040,8 +1040,8 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                 background: hexToRgba(accent, 0.12), border: `1px solid ${hexToRgba(accent, 0.4)}`,
                 borderRadius: 12, transition: 'all 0.3s ease',
               }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontFamily: "'DM Sans', sans-serif" }}>Your Archetype</div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: accent, fontFamily: "'DM Sans', sans-serif" }}>{getArchetype(studentData.skillsStrengths)}</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontFamily: "'Inter', system-ui, sans-serif" }}>Your Archetype</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: accent, fontFamily: "'Inter', system-ui, sans-serif" }}>{getArchetype(studentData.skillsStrengths)}</div>
               </div>
             )}
           </div>
@@ -1072,8 +1072,8 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                     position: 'relative',
                   }}>
                     <div style={{ fontSize: 24, marginBottom: 6 }}>{c.flag}</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 2, fontFamily: "'DM Sans', sans-serif" }}>{c.name}</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: "'DM Sans', sans-serif" }}>{c.desc}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 2, fontFamily: "'Inter', system-ui, sans-serif" }}>{c.name}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: "'Inter', system-ui, sans-serif" }}>{c.desc}</div>
                     {sel && <div style={{ position: 'absolute', top: 8, right: 8, width: 16, height: 16, borderRadius: '50%', background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>✓</div>}
                   </button>
                 );
@@ -1093,7 +1093,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                     border: `1px solid ${sel ? accent : 'rgba(255,255,255,0.1)'}`,
                     color: sel ? accent : 'rgba(255,255,255,0.7)',
                     fontWeight: sel ? 700 : 400, fontSize: 13,
-                    fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s',
+                    fontFamily: "'Inter', system-ui, sans-serif", transition: 'all 0.15s',
                     boxShadow: sel ? `0 0 12px ${hexToRgba(accent, 0.25)}` : 'none',
                   }}>
                     <div>{b.label}</div>
@@ -1149,7 +1149,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                 ...inputFieldStyle(accent), marginTop: 10, resize: 'none', lineHeight: 1.7,
                 fontSize: 16, padding: '16px 20px',
               }} />
-            <div style={{ fontSize: 11, color: studentData.careerGoals.length >= 100 ? '#10B981' : 'rgba(255,255,255,0.3)', marginTop: 6, fontFamily: "'DM Sans', sans-serif" }}>
+            <div style={{ fontSize: 11, color: studentData.careerGoals.length >= 100 ? '#10B981' : 'rgba(255,255,255,0.3)', marginTop: 6, fontFamily: "'Inter', system-ui, sans-serif" }}>
               {studentData.careerGoals.length >= 100 ? '✅ Great detail' : `${studentData.careerGoals.length}/100 chars for strong match`}
             </div>
           </div>
@@ -1164,7 +1164,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             {getSentiment(studentData.whyCollege) && (
               <div style={{
                 fontSize: 13, color: accent, marginTop: 8, fontWeight: 600,
-                fontFamily: "'DM Sans', sans-serif", transition: 'all 0.3s',
+                fontFamily: "'Inter', system-ui, sans-serif", transition: 'all 0.3s',
               }}>✨ {getSentiment(studentData.whyCollege)}</div>
             )}
           </div>
@@ -1191,11 +1191,11 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             ))}
           </div>
 
-          <h1 style={{ fontSize: 52, fontWeight: 900, color: '#fff', marginBottom: 16, letterSpacing: '-0.02em', fontFamily: "'Clash Display', 'DM Sans', sans-serif" }}>
+          <h1 style={{ fontSize: 52, fontWeight: 900, color: '#fff', marginBottom: 16, letterSpacing: '-0.02em', fontFamily: "'Inter', system-ui, sans-serif" }}>
             {studentData.name ? `${studentData.name},` : ''}<br />
             <span style={{ color: '#FFD700' }}>your matches are ready.</span>
           </h1>
-          <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.5)', marginBottom: 48, lineHeight: 1.6, fontFamily: "'DM Sans', sans-serif" }}>
+          <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.5)', marginBottom: 48, lineHeight: 1.6, fontFamily: "'Inter', system-ui, sans-serif" }}>
             Based on your academic profile, interests, and spike — we found universities that want exactly who you are.
           </p>
 
@@ -1210,7 +1210,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                 animationDelay: `${i * 0.3}s`,
               }}>
                 <div style={{ width: 48, height: 48, borderRadius: 10, background: 'rgba(255,215,0,0.1)', margin: '0 auto 12px', filter: 'blur(4px)' }} />
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,215,0,0.6)', fontFamily: "'DM Sans', sans-serif" }}>{label}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,215,0,0.6)', fontFamily: "'Inter', system-ui, sans-serif" }}>{label}</div>
                 <div style={{ height: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 4, marginTop: 8, filter: 'blur(2px)' }} />
                 <div style={{ height: 8, width: '70%', background: 'rgba(255,255,255,0.08)', borderRadius: 4, marginTop: 6, filter: 'blur(2px)' }} />
               </div>
@@ -1220,7 +1220,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           {/* Profile ring */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 40 }}>
             <ProfileRing score={backendCompletionPercent > 0 ? backendCompletionPercent : calcProfileScore()} />
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginTop: 8, fontFamily: "'DM Sans', sans-serif" }}>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginTop: 8, fontFamily: "'Inter', system-ui, sans-serif" }}>
               Your profile is in the top {100 - (backendCompletionPercent > 0 ? backendCompletionPercent : calcProfileScore())}% of applicants from {studentData.country || 'your region'}
             </div>
           </div>
@@ -1232,7 +1232,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             width: 280, height: 64, borderRadius: 16,
             background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
             border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700,
-            color: '#000', fontFamily: "'DM Sans', sans-serif",
+            color: '#000', fontFamily: "'Inter', system-ui, sans-serif",
             animation: 'glow-pulse 2s ease-in-out infinite',
             letterSpacing: '0.02em',
           }}>
@@ -1248,22 +1248,22 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   const labelStyle: React.CSSProperties = {
     fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)',
     textTransform: 'uppercase', letterSpacing: '0.08em',
-    fontFamily: "'DM Sans', sans-serif",
+    fontFamily: "'Inter', system-ui, sans-serif",
   };
 
   const headlineStyle = (acc: string): React.CSSProperties => ({
     fontSize: 48, fontWeight: 800, color: 'var(--color-text-primary)', lineHeight: 1.1, marginBottom: 10,
-    letterSpacing: '-0.02em', fontFamily: "'Clash Display', 'DM Sans', sans-serif",
+    letterSpacing: '-0.02em', fontFamily: "'Inter', system-ui, sans-serif",
   });
 
   const subStyle = (acc: string): React.CSSProperties => ({
-    fontSize: 18, color: hexToRgba(acc, 0.65), marginBottom: 0, fontFamily: "'DM Sans', sans-serif",
+    fontSize: 18, color: hexToRgba(acc, 0.65), marginBottom: 0, fontFamily: "'Inter', system-ui, sans-serif",
   });
 
   const inputFieldStyle = (acc: string): React.CSSProperties => ({
     width: '100%', padding: '14px 18px', background: surface,
     border: `1px solid var(--color-border-strong)`, borderRadius: 12, color: 'var(--color-text-primary)', fontSize: 15,
-    outline: 'none', fontFamily: "'DM Sans', sans-serif", boxSizing: 'border-box',
+    outline: 'none', fontFamily: "'Inter', system-ui, sans-serif", boxSizing: 'border-box',
     transition: 'border-color 0.15s',
   });
 
@@ -1285,7 +1285,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
         input::placeholder, textarea::placeholder { color: var(--color-text-disabled); }
         input:focus, textarea:focus, select:focus { border-color: ${accent} !important; outline: none; }
         select option { background: var(--color-bg-surface); color: var(--color-text-primary); }
-        textarea { font-family: 'DM Sans', sans-serif; }
+        textarea { font-family: 'Inter', system-ui, sans-serif; }
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: var(--color-surface-subtle); } ::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 4px; }
       `}</style>
 
@@ -1357,7 +1357,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       <div style={{
         minHeight: '100vh', background: bg,
         transition: 'background 0.5s ease',
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Inter', system-ui, sans-serif",
       }}>
         {/* Top constellation */}
         <div style={{ maxWidth: 1280, margin: '0 auto', paddingTop: 24 }}>
@@ -1385,11 +1385,11 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             padding: '12px 24px', borderRadius: 10,
             background: 'var(--color-surface-subtle)', border: '1px solid var(--color-border)',
             color: 'var(--color-text-secondary)', cursor: step === 1 ? 'not-allowed' : 'pointer',
-            fontSize: 14, fontFamily: "'DM Sans', sans-serif",
+            fontSize: 14, fontFamily: "'Inter', system-ui, sans-serif",
             opacity: step === 1 ? 0.3 : 1,
           }}>← Back</button>
 
-          <span style={{ fontSize: 13, color: 'var(--color-text-disabled)', fontFamily: "'DM Sans', sans-serif" }}>
+          <span style={{ fontSize: 13, color: 'var(--color-text-disabled)', fontFamily: "'Inter', system-ui, sans-serif" }}>
             Step {step} of 7
           </span>
 
@@ -1399,7 +1399,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
               background: isStepComplete() ? accent : 'var(--color-surface-subtle)',
               border: 'none', cursor: 'pointer',
               color: isStepComplete() ? '#000' : 'var(--color-text-disabled)',
-              fontSize: 15, fontWeight: 700, fontFamily: "'DM Sans', sans-serif",
+              fontSize: 15, fontWeight: 700, fontFamily: "'Inter', system-ui, sans-serif",
               transition: 'all 0.2s ease',
               boxShadow: isStepComplete() ? `0 0 20px ${hexToRgba(accent, 0.4)}` : 'none',
             }}>

@@ -19,7 +19,7 @@ const S = {
   border2: 'var(--color-border-strong)',
   muted: 'var(--color-text-secondary)',
   dim: 'var(--color-text-disabled)',
-  font: "'DM Sans', sans-serif",
+  font: "'Inter', system-ui, sans-serif",
 };
 
 const TIER_META: Record<string, { color: string; bg: string; bar: string; label: string }> = {
