@@ -188,16 +188,36 @@ const Colleges: React.FC = () => {
 
         const normalized: any[] = result.data.map(normalizeToCard);
 
+        // Client-side deduplication by ID — guards against duplicate rows
+        // that survived the DB seed phase.
+        const seenIds = new Set<number>();
+        const deduped = normalized.filter(c => {
+          if (seenIds.has(c.id)) return false;
+          seenIds.add(c.id);
+          return true;
+        });
+        if (deduped.length !== normalized.length) {
+          console.warn(
+            `[Colleges] Deduplication removed ${normalized.length - deduped.length} duplicate` +
+            ` row(s) on page ${currentPage}. Total from API: ${normalized.length}, unique IDs: ${deduped.length}.` +
+            ' Run migration 067_deduplicate_and_integrity.sql in the Supabase SQL editor to fix this at source.'
+          );
+        } else {
+          console.debug(
+            `[Colleges] Page ${currentPage}: ${deduped.length} unique colleges (API total: ${result.count})`
+          );
+        }
+
         // Client-side sort for modes the RPC doesn't natively support
         const popularityScore = (c: any) =>
           (1 - (c.acceptanceRate ?? 0.5)) * (c.enrollment ?? 0);
 
         const sorted =
           sortBy === 'ranking'
-            ? [...normalized].sort((a, b) => (a.ranking || 999) - (b.ranking || 999))
+            ? [...deduped].sort((a, b) => (a.ranking || 999) - (b.ranking || 999))
             : sortBy === 'popularity'
-              ? [...normalized].sort((a, b) => popularityScore(b) - popularityScore(a))
-              : normalized;
+              ? [...deduped].sort((a, b) => popularityScore(b) - popularityScore(a))
+              : deduped;
 
         setTotalCount(result.count);
         setTotalPages(result.totalPages);
@@ -271,7 +291,23 @@ const Colleges: React.FC = () => {
           };
         });
 
-        const sorted = [...normalized].sort((a, b) => {
+        // Client-side deduplication by ID
+        const legacySeenIds = new Set<number>();
+        const legacyDeduped = normalized.filter(c => {
+          if (legacySeenIds.has(c.id)) return false;
+          legacySeenIds.add(c.id);
+          return true;
+        });
+        if (legacyDeduped.length !== normalized.length) {
+          console.warn(
+            `[Colleges] Legacy path: removed ${normalized.length - legacyDeduped.length} duplicate row(s). ` +
+            `Unique IDs: ${legacyDeduped.length} / ${normalized.length} total.`
+          );
+        } else {
+          console.debug(`[Colleges] Legacy path: ${legacyDeduped.length} unique colleges`);
+        }
+
+        const sorted = [...legacyDeduped].sort((a, b) => {
           switch (sortBy) {
             case 'popularity': {
               const score = (c: any) => (1 - (c.acceptanceRate ?? 0.5)) * (c.enrollment ?? 0);
