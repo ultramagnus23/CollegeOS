@@ -34,9 +34,8 @@ const AuthPage = () => {
   // If the user is already authenticated, redirect declaratively.
   // This is driven purely by AuthContext state — no imperative navigate() needed.
   if (user) {
-    const needsTour = user.has_completed_tour !== true;
     const needsOnboarding = !user.onboarding_complete;
-    return <Navigate to={needsTour || needsOnboarding ? '/onboarding' : '/dashboard'} replace />;
+    return <Navigate to={needsOnboarding ? '/onboarding' : '/dashboard'} replace />;
   }
 
   const handleGoogleSignIn = async () => {
