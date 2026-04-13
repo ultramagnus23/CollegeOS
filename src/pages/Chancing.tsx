@@ -36,10 +36,14 @@ interface ChancingResult {
     acceptanceRate?: number;
   };
   chancing: {
-    tier: string; confidence: string; explanation: string; probability?: number;
+    tier: string; confidence: string;
+    explanation: string | { summary: string; factors?: any; probabilityRange?: any; missingDataFields?: string[]; recommendedActions?: string[] };
+    probability?: number;
     studentSAT?: number; collegeSAT?: number;
     studentGPA?: number; collegeGPA?: number;
     factorsUsed?: number;
+    missingDataFields?: string[];
+    recommendedActions?: string[];
   };
 }
 
@@ -185,7 +189,9 @@ function ChancingCard({ result, index }: { result: ChancingResult; index: number
 
       {/* Explanation */}
       <p style={{ fontSize: 13, color: 'var(--color-text-primary)', marginTop: 10, lineHeight: 1.6 }}>
-        {result.chancing.explanation}
+        {typeof result.chancing.explanation === 'object'
+          ? result.chancing.explanation?.summary
+          : result.chancing.explanation}
       </p>
 
       {/* Stat comparisons */}
