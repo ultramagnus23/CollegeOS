@@ -111,15 +111,27 @@ class College {
         ]);
         if (admR.rows[0]) {
           const a = admR.rows[0];
-          formattedCollege.acceptance_rate = a.acceptance_rate;
-          formattedCollege.acceptanceRate = a.acceptance_rate;
+          // Normalise acceptance_rate to a 0–1 fraction
+          const rawRate = a.acceptance_rate;
+          const normRate = rawRate != null
+            ? (rawRate > 1 ? rawRate / 100 : rawRate)
+            : null;
+          formattedCollege.acceptance_rate = normRate;
+          formattedCollege.acceptanceRate = normRate;
         }
         if (statsR.rows[0]) {
           const s = statsR.rows[0];
           formattedCollege.sat_avg = s.sat_avg || s.sat_50 || null;
           formattedCollege.sat_total_50 = s.sat_avg || s.sat_50 || null;
+          formattedCollege.sat_25 = s.sat_25 ?? null;
+          formattedCollege.sat_75 = s.sat_75 ?? null;
+          formattedCollege.act_avg = s.act_avg || s.act_50 || null;
+          formattedCollege.act_25 = s.act_25 ?? null;
+          formattedCollege.act_75 = s.act_75 ?? null;
           formattedCollege.gpa_50 = s.gpa_50 || null;
           formattedCollege.median_gpa = s.gpa_50 || null;
+          formattedCollege.gpa_25 = s.gpa_25 ?? null;
+          formattedCollege.gpa_75 = s.gpa_75 ?? null;
         }
         if (finR.rows[0]) {
           const f = finR.rows[0];
@@ -169,10 +181,26 @@ class College {
         if (admR.rows[0]) {
           const a = admR.rows[0];
           formattedCollege.admissionsData = { year:a.year, acceptanceRate:a.acceptance_rate, earlyDecisionRate:a.early_decision_rate, earlyActionRate:a.early_action_rate, regularDecisionRate:a.regular_decision_rate, waitlistRate:a.waitlist_rate, transferAcceptanceRate:a.transfer_acceptance_rate, yieldRate:a.yield_rate, applicationVolume:a.application_volume, admitVolume:a.admit_volume, enrollmentVolume:a.enrollment_volume, internationalAcceptRate:a.international_accept_rate, inStateAcceptRate:a.in_state_accept_rate, outStateAcceptRate:a.out_state_accept_rate, testOptionalFlag:a.test_optional_flag, source:a.source, confidenceScore:a.confidence_score };
+          // Expose flat acceptance_rate for calculateChance
+          if (a.acceptance_rate != null) {
+            const normRate = a.acceptance_rate > 1 ? a.acceptance_rate / 100 : a.acceptance_rate;
+            formattedCollege.acceptance_rate = normRate;
+            formattedCollege.acceptanceRate = normRate;
+          }
         }
         if (statsR.rows[0]) {
           const s = statsR.rows[0];
           formattedCollege.studentStats = { year:s.year, gpa25:s.gpa_25, gpa50:s.gpa_50, gpa75:s.gpa_75, sat25:s.sat_25, sat50:s.sat_50, sat75:s.sat_75, act25:s.act_25, act50:s.act_50, act75:s.act_75, classRankTop10Percent:s.class_rank_top10_percent, avgCourseRigorIndex:s.avg_course_rigor_index, source:s.source, confidenceScore:s.confidence_score };
+          // Expose flat percentile bands for calculateChance
+          formattedCollege.sat_avg = s.sat_avg || s.sat_50 || null;
+          formattedCollege.sat_25 = s.sat_25 ?? null;
+          formattedCollege.sat_75 = s.sat_75 ?? null;
+          formattedCollege.act_avg = s.act_avg || s.act_50 || null;
+          formattedCollege.act_25 = s.act_25 ?? null;
+          formattedCollege.act_75 = s.act_75 ?? null;
+          formattedCollege.gpa_50 = s.gpa_50 || null;
+          formattedCollege.gpa_25 = s.gpa_25 ?? null;
+          formattedCollege.gpa_75 = s.gpa_75 ?? null;
         }
         if (finR.rows[0]) {
           const f = finR.rows[0];
