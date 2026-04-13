@@ -70,7 +70,13 @@ def run_via_psycopg2(queries: list[tuple[str, str]]) -> list[tuple[str, list[dic
 
     db_url = os.getenv("DATABASE_URL")
     if not db_url:
-        raise EnvironmentError("DATABASE_URL is not set")
+        raise EnvironmentError(
+            "DATABASE_URL is not set.\n"
+            "Find it in Supabase Dashboard → Settings → Database → Connection String\n"
+            "(use the 'Session mode' pooler URL for scripts: "
+            "postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres).\n"
+            "Alternatively, set SUPABASE_URL + SUPABASE_SERVICE_KEY to use the Supabase RPC path."
+        )
 
     conn = psycopg2.connect(db_url)
     cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
