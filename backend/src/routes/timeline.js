@@ -26,7 +26,8 @@ router.get('/monthly', authenticate, async (req, res, next) => {
         [userId]
       );
       tasks = result.rows;
-    } catch {
+    } catch (err) {
+      logger.error('Failed to fetch tasks for timeline:', err);
       tasks = [];
     }
 
@@ -42,7 +43,8 @@ router.get('/monthly', authenticate, async (req, res, next) => {
         [userId]
       );
       deadlines = result.rows;
-    } catch {
+    } catch (err) {
+      logger.error('Failed to fetch deadlines for timeline:', err);
       deadlines = [];
     }
 
