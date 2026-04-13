@@ -443,9 +443,13 @@ class ApplicationController {
     try {
       const { id } = req.params;
       const userId = req.user?.userId;
-      logger.info(`[${requestId}] GET /applications/${sanitizeForLog(id)}/tasks`);
+      const applicationId = Number.parseInt(id, 10);
+      if (!Number.isInteger(applicationId)) {
+        return res.status(400).json({ success: false, message: 'Invalid application id' });
+      }
+      logger.info(`[${requestId}] GET /applications/${applicationId}/tasks`);
 
-      const application = await Application.findById(parseInt(id));
+      const application = await Application.findById(applicationId);
       if (!application) {
         return res.status(404).json({ success: false, message: 'Application not found' });
       }
@@ -463,7 +467,7 @@ class ApplicationController {
           `SELECT * FROM application_tasks
            WHERE application_id = $1
            ORDER BY created_at ASC`,
-          [parseInt(id)]
+          [applicationId]
         );
         rows = result.rows;
       } catch {
@@ -473,7 +477,7 @@ class ApplicationController {
              FROM tasks
              WHERE application_id = $1
              ORDER BY priority ASC, deadline ASC`,
-            [parseInt(id)]
+            [applicationId]
           );
           rows = result.rows;
         } catch {
@@ -497,12 +501,12 @@ class ApplicationController {
             await pool.query(
               `INSERT INTO application_tasks (application_id, task_type, title)
                VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-              [parseInt(id), t.task_type, t.title]
+              [applicationId, t.task_type, t.title]
             );
           }
           const result = await pool.query(
             `SELECT * FROM application_tasks WHERE application_id = $1 ORDER BY created_at ASC`,
-            [parseInt(id)]
+            [applicationId]
           );
           rows = result.rows;
         } catch {
