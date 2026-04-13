@@ -252,17 +252,18 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_college_majors_offered
 -- assembling partial joins that can drift out of sync.
 
 DROP MATERIALIZED VIEW IF EXISTS colleges_canonical;
+DROP VIEW IF EXISTS colleges_canonical;
 
-CREATE MATERIALIZED VIEW colleges_canonical AS
+CREATE OR REPLACE VIEW colleges_canonical AS
 SELECT
   -- ── Core identity ─────────────────────────────────────────────────────
   cc.id,
   cc.ipeds_unit_id,
   cc.name,
   cc.country,
-  cc.state                    AS state_region,
+  cc.state,
   cc.city,
-  cc.type                     AS institution_type,
+  cc.type,
   cc.setting,
   cc.total_enrollment,
   cc.description,
@@ -295,6 +296,8 @@ SELECT
   -- ── Academic outcomes ────────────────────────────────────────────────
   ad.graduation_rate_4yr,
   ad.median_salary_6yr,
+  ad.median_salary_10yr,
+  ad.median_debt,
   ad.retention_rate,
 
   -- ── Chancing fields (added by migration 066) ─────────────────────────
@@ -343,19 +346,6 @@ LEFT JOIN LATERAL (
   ORDER  BY id DESC
   LIMIT  1
 ) ad ON true;
-
--- Index on id so single-college lookups are instant
-CREATE UNIQUE INDEX IF NOT EXISTS idx_colleges_canonical_id
-  ON colleges_canonical (id);
-
--- Index on ipeds_unit_id for external ID lookups
-CREATE INDEX IF NOT EXISTS idx_colleges_canonical_ipeds
-  ON colleges_canonical (ipeds_unit_id)
-  WHERE ipeds_unit_id IS NOT NULL;
-
--- Full-text search index on name (supports ILIKE-based search)
-CREATE INDEX IF NOT EXISTS idx_colleges_canonical_name
-  ON colleges_canonical USING gin (to_tsvector('english', name));
 
 -- ── Grant read access to the anon role (Supabase public read) ─────────────
 GRANT SELECT ON colleges_canonical TO anon;
