@@ -512,15 +512,20 @@ async function calculateChance(studentProfile, college, application = {}) {
     let selectivityCeiling;
     let chanceLabel;
     if (acceptRate < 0.05) {
-      selectivityCeiling = 0.15; chanceLabel = 'Extreme Reach';
+      selectivityCeiling = 0.15;
+      chanceLabel = 'Extreme Reach';
     } else if (acceptRate < 0.10) {
-      selectivityCeiling = 0.25; chanceLabel = 'Reach';
+      selectivityCeiling = 0.25;
+      chanceLabel = 'Reach';
     } else if (acceptRate < 0.20) {
-      selectivityCeiling = 0.45; chanceLabel = 'Reach–Match';
+      selectivityCeiling = 0.45;
+      chanceLabel = 'Reach–Match';
     } else if (acceptRate < 0.40) {
-      selectivityCeiling = 0.65; chanceLabel = 'Match';
+      selectivityCeiling = 0.65;
+      chanceLabel = 'Match';
     } else {
-      selectivityCeiling = 0.85; chanceLabel = 'Safety';
+      selectivityCeiling = 0.85;
+      chanceLabel = 'Safety';
     }
 
     // Hard rule: < 10% → cap at 30%

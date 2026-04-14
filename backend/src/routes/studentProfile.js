@@ -562,15 +562,26 @@ router.post('/extended', authenticate, async (req, res, next) => {
     // Activities → extracurriculars JSONB
     if (Array.isArray(data.activities) && data.activities.length > 0) {
       const validActivities = data.activities.filter(a => a?.name?.trim());
-      mapped.extracurriculars = validActivities.map(a => ({
-        name: a.name,
-        type: a.type || '',
-        tier: a.tier ?? (a.type === 'varsity' || a.type === 'national' ? 1 : a.type === 'club' || a.type === 'local' ? 2 : 3),
-        yearsInvolved: a.yearsInvolved || 0,
-        hoursPerWeek: a.hoursPerWeek || 0,
-        leadership: a.leadership || '',
-        achievements: a.achievements || '',
-      }));
+      mapped.extracurriculars = validActivities.map(a => {
+        // Derive tier if not explicitly set: national/varsity = 1, club/local = 2, default = 3
+        let tier = 3;
+        if (a.tier != null) {
+          tier = a.tier;
+        } else if (a.type === 'varsity' || a.type === 'national') {
+          tier = 1;
+        } else if (a.type === 'club' || a.type === 'local') {
+          tier = 2;
+        }
+        return {
+          name: a.name,
+          type: a.type || '',
+          tier,
+          yearsInvolved: a.yearsInvolved || 0,
+          hoursPerWeek: a.hoursPerWeek || 0,
+          leadership: a.leadership || '',
+          achievements: a.achievements || '',
+        };
+      });
     }
 
     // Subjects / current_grade / gender stay in users table (handled by completeOnboarding)
