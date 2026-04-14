@@ -210,14 +210,16 @@ const Colleges: React.FC = () => {
 
         // Client-side sort for modes the RPC doesn't natively support
         const popularityScore = (c: any) =>
-          (1 - (c.acceptanceRate ?? 0.5)) * (c.enrollment ?? 0);
+          (c.enrollment ?? 0) * 0.00001 +
+          (1 - (c.acceptanceRate ?? 0.5)) * 2 +
+          (c.acceptanceRate != null && c.tuition_cost != null && c.enrollment != null ? 1 : 0);
 
         const sorted =
           sortBy === 'ranking'
             ? [...deduped].sort((a, b) => (a.ranking || 999) - (b.ranking || 999))
             : sortBy === 'popularity'
               ? [...deduped].sort((a, b) => popularityScore(b) - popularityScore(a))
-              : deduped;
+              : deduped.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
         setTotalCount(result.count);
         setTotalPages(result.totalPages);
@@ -745,6 +747,19 @@ const Colleges: React.FC = () => {
 
 /* ==================== DARK COLLEGE CARD ==================== */
 
+const COUNTRY_COLORS: Record<string, string> = {
+  'United States': '#3B82F6',
+  'United Kingdom': '#EF4444',
+  'India': '#10B981',
+  'Canada': '#8B5CF6',
+  'Australia': '#F59E0B',
+  'Germany': '#06B6D4',
+  'France': '#8B5CF6',
+  'Singapore': '#EC4899',
+  'China': '#F97316',
+  'Japan': '#E11D48',
+};
+
 const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onViewDetails, isAdding, fit }) => {
   if (!college) return null;
 
@@ -753,14 +768,16 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
     return `rgba(${r},${g},${b},${a})`;
   };
 
+  const NOT_AVAILABLE = 'Data not available yet';
+
   const formatAcceptanceRate = (rate: number | null | undefined): string => {
-    if (rate === null || rate === undefined) return 'N/A';
+    if (rate === null || rate === undefined) return NOT_AVAILABLE;
     const pct = rate <= 1 ? rate * 100 : rate;
     return `${pct.toFixed(1)}%`;
   };
 
   const formatCurrency = (amount: number | null | undefined, country: string): string => {
-    if (amount === null || amount === undefined) return 'N/A';
+    if (amount === null || amount === undefined) return NOT_AVAILABLE;
     if (country === 'India') return `₹${(amount / 100000).toFixed(1)}L`;
     if (country === 'United Kingdom') return `£${(amount / 1000).toFixed(0)}K`;
     if (country === 'Germany') return amount === 0 ? 'Free' : `€${amount?.toLocaleString() ?? '0'}`;
@@ -768,12 +785,12 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
   };
 
   const formatEnrollment = (num: number | null | undefined): string => {
-    if (!num) return 'N/A';
+    if (!num) return NOT_AVAILABLE;
     return num >= 1000 ? `${(num / 1000).toFixed(1)}K` : num?.toString() ?? '';
   };
 
   const acceptanceRate = college?.acceptanceRate ?? college?.acceptance_rate;
-  const accent = '#3B9EFF';
+  const countryAccent = COUNTRY_COLORS[college?.country ?? ''] ?? '#3B9EFF';
   const S = {
     surface: 'var(--color-bg-surface)',
     surface2: 'var(--color-surface-subtle)',
@@ -792,11 +809,11 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
         transition: 'border-color 0.2s, box-shadow 0.2s',
         display: 'flex', flexDirection: 'column',
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = h2r(accent,0.4); (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${h2r(accent,0.1)}`; }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = h2r(countryAccent,0.4); (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 24px ${h2r(countryAccent,0.1)}`; }}
       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
     >
-      {/* Accent top bar */}
-      <div style={{ height: 3, background: `linear-gradient(90deg, ${accent} 0%, ${h2r(accent,0.3)} 100%)` }} />
+      {/* Country-coded accent top bar */}
+      <div style={{ height: 3, background: `linear-gradient(90deg, ${countryAccent} 0%, ${h2r(countryAccent,0.3)} 100%)` }} />
 
       {/* Header */}
       <div style={{ padding: '18px 20px 14px', borderBottom: `1px solid ${S.border}` }}>
@@ -809,13 +826,13 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
             </div>
           </div>
           {college?.ranking && (
-            <div style={{ padding: '3px 10px', background: h2r(accent,0.12), border: `1px solid ${h2r(accent,0.3)}`, borderRadius: 8, fontSize: 12, fontWeight: 700, color: accent, fontFamily: S.font, flexShrink: 0 }}>
+            <div style={{ padding: '3px 10px', background: h2r(countryAccent,0.12), border: `1px solid ${h2r(countryAccent,0.3)}`, borderRadius: 8, fontSize: 12, fontWeight: 700, color: countryAccent, fontFamily: S.font, flexShrink: 0 }}>
               #{college.ranking}
             </div>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(accent,0.12), color: accent, fontWeight: 600, fontFamily: S.font }}>{safeString(college?.type)}</span>
+          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(countryAccent,0.12), color: countryAccent, fontWeight: 600, fontFamily: S.font }}>{safeString(college?.type)}</span>
           <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(255,255,255,0.07)', color: S.muted, fontFamily: S.font }}>{college?.country}</span>
           <FitBadge fitData={fit} className="ml-auto" />
         </div>
@@ -826,12 +843,12 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
         {[
           { icon: '📈', label: 'Acceptance', value: formatAcceptanceRate(acceptanceRate), color: '#10B981' },
           { icon: '💰', label: 'Tuition', value: formatCurrency(college?.tuition_cost, college?.country ?? ''), color: '#3B9EFF' },
-          { icon: '🎓', label: 'Avg GPA', value: college?.averageGPA != null ? college.averageGPA.toFixed(2) : 'N/A', color: '#A855F7' },
+          { icon: '🎓', label: 'Avg GPA', value: college?.averageGPA != null ? college.averageGPA.toFixed(2) : NOT_AVAILABLE, color: '#A855F7' },
           { icon: '👥', label: 'Students', value: formatEnrollment(college?.enrollment), color: '#F59E0B' },
         ].map((stat, i) => (
           <div key={i} style={{ padding: '12px 16px', background: S.surface }}>
             <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font, marginBottom: 3 }}>{stat.label}</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)', fontFamily: S.font }}>{stat.value}</div>
+            <div style={{ fontSize: stat.value === NOT_AVAILABLE ? 11 : 15, fontWeight: 700, color: stat.value === NOT_AVAILABLE ? S.dim : 'var(--color-text-primary)', fontFamily: S.font }}>{stat.value}</div>
           </div>
         ))}
       </div>
@@ -844,7 +861,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
               const label = typeof p === 'string' ? p : (p as any)?.program_name ?? '';
               if (!label) return null;
               return (
-                <span key={`${label}-${idx}`} style={{ fontSize: 11, padding: '3px 9px', borderRadius: 100, background: h2r(accent,0.1), color: accent, fontFamily: S.font, fontWeight: 500 }}>{label}</span>
+                <span key={`${label}-${idx}`} style={{ fontSize: 11, padding: '3px 9px', borderRadius: 100, background: h2r(countryAccent,0.1), color: countryAccent, fontFamily: S.font, fontWeight: 500 }}>{label}</span>
               );
             })}
             {((college.majorCategories?.length || college.programs?.length || 0) > 4) && (
@@ -868,7 +885,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
         <button
           onClick={onViewDetails}
           style={{ flex: 1, padding: '9px 0', background: 'transparent', border: `1px solid ${S.border}`, borderRadius: 10, color: S.muted, fontSize: 13, fontWeight: 600, fontFamily: S.font, cursor: 'pointer' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = h2r(accent,0.4); (e.currentTarget as HTMLElement).style.color = accent; }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = h2r(countryAccent,0.4); (e.currentTarget as HTMLElement).style.color = countryAccent; }}
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border)'; (e.currentTarget as HTMLElement).style.color = 'var(--color-text-secondary)'; }}
         >
           View Details
@@ -877,7 +894,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
           onClick={onAdd}
           disabled={isAdding}
           style={{
-            flex: 1, padding: '9px 0', background: accent, border: 'none',
+            flex: 1, padding: '9px 0', background: countryAccent, border: 'none',
             borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700,
             fontFamily: S.font, cursor: isAdding ? 'not-allowed' : 'pointer',
             opacity: isAdding ? 0.6 : 1,
