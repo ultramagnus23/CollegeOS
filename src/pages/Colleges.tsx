@@ -791,7 +791,6 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
 
   const acceptanceRate = college?.acceptanceRate ?? college?.acceptance_rate;
   const countryAccent = COUNTRY_COLORS[college?.country ?? ''] ?? '#3B9EFF';
-  const accent = '#3B9EFF';
   const S = {
     surface: 'var(--color-bg-surface)',
     surface2: 'var(--color-surface-subtle)',
@@ -895,7 +894,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
           onClick={onAdd}
           disabled={isAdding}
           style={{
-            flex: 1, padding: '9px 0', background: accent, border: 'none',
+            flex: 1, padding: '9px 0', background: countryAccent, border: 'none',
             borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700,
             fontFamily: S.font, cursor: isAdding ? 'not-allowed' : 'pointer',
             opacity: isAdding ? 0.6 : 1,
