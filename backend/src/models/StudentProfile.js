@@ -123,7 +123,17 @@ class StudentProfile {
       hooks: 'hooks',
       careerGoals: 'career_goals',
       whyCollege: 'why_college',
-      interestTags: 'interest_tags'
+      interestTags: 'interest_tags',
+      // Chancing / migration-066 fields
+      extracurriculars: 'extracurriculars',
+      awards: 'awards',
+      leadershipRoles: 'leadership_roles',
+      research: 'research',
+      needBasedAid: 'need_based_aid',
+      intendedMajor: 'intended_major',
+      schoolType: 'school_type',
+      // Onboarding checkpoint
+      onboardingStep: 'onboarding_step',
     };
 
     for (const [camelKey, snakeKey] of Object.entries(fieldMap)) {

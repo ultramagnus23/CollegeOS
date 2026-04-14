@@ -505,19 +505,69 @@ async function calculateChance(studentProfile, college, application = {}) {
       rawComposite = academicPortion * profileMultiplier + rest;
     }
 
-    // Elite school ceiling (near-random at sub-5% schools)
-    if (selTier.tier === 'elite') {
-      const ceiling = clamp(acceptRate * 8, 0.12, 0.40);
-      rawComposite  = Math.min(rawComposite, ceiling);
+    // ── LAYER 2 — Selectivity Ceiling ───────────────────────────────────────
+    // Hard ceiling based on acceptance rate band.
+    // No college may display above 2× its historical acceptance rate.
+    // Colleges with acceptance_rate < 10% are hard-capped at 30%.
+    let selectivityCeiling;
+    let chanceLabel;
+    if (acceptRate < 0.05) {
+      selectivityCeiling = 0.15; chanceLabel = 'Extreme Reach';
+    } else if (acceptRate < 0.10) {
+      selectivityCeiling = 0.25; chanceLabel = 'Reach';
+    } else if (acceptRate < 0.20) {
+      selectivityCeiling = 0.45; chanceLabel = 'Reach–Match';
+    } else if (acceptRate < 0.40) {
+      selectivityCeiling = 0.65; chanceLabel = 'Match';
+    } else {
+      selectivityCeiling = 0.85; chanceLabel = 'Safety';
     }
 
-    const probability = clamp(rawComposite, 0.01, 0.95);
+    // Hard rule: < 10% → cap at 30%
+    if (acceptRate < 0.10) {
+      selectivityCeiling = Math.min(selectivityCeiling, 0.30);
+    }
+
+    // Hard rule: never above 2× historical acceptance rate
+    const twiceAcceptRate = acceptRate * 2;
+    if (selectivityCeiling > twiceAcceptRate && twiceAcceptRate < 0.85) {
+      selectivityCeiling = Math.max(twiceAcceptRate, 0.02);
+    }
+
+    // ── LAYER 3 — Final Formula ──────────────────────────────────────────────
+    // displayed_chance = min(raw_probability × (acceptance_rate / 0.50), selectivity_ceiling)
+    const scaledProbability = rawComposite * (acceptRate / 0.50);
+    const cappedProbability = Math.min(scaledProbability, selectivityCeiling);
+    const ceilingApplied    = cappedProbability < rawComposite;
+
+    const probability = clamp(cappedProbability, 0.01, 0.95);
 
     // Probability range
     const probabilityRange = {
       low:  clamp(probability - rangeHalfWidth, 0.01, 0.93),
       high: clamp(probability + rangeHalfWidth, 0.03, 0.95),
     };
+
+    // ── ASYNC AUDIT LOG ──────────────────────────────────────────────────────
+    // Log every calculation to chancing_audit_log for model retraining.
+    // Uses setImmediate to avoid blocking the response.
+    setImmediate(async () => {
+      try {
+        const dbManager = require('../config/database');
+        const pool = dbManager.getDatabase();
+        const logUserId  = sp.user_id  ?? sp.userId  ?? null;
+        const logCollegeId = col.id ?? null;
+        await pool.query(
+          `INSERT INTO chancing_audit_log
+             (user_id, college_id, raw_probability, displayed_chance, ceiling_applied)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [logUserId, logCollegeId,
+           clamp(rawComposite, 0, 1),
+           probability,
+           ceilingApplied]
+        );
+      } catch { /* non-fatal: audit log write failure must not break chancing */ }
+    });
 
     // ── CONFIDENCE SCORING ──────────────────────────────────────────────────
     let confPoints = 0;
@@ -534,6 +584,8 @@ async function calculateChance(studentProfile, college, application = {}) {
     const confidence = confPoints >= 11 ? 'High' : confPoints >= 6 ? 'Medium' : 'Low';
 
     // ── TIER MAPPING ────────────────────────────────────────────────────────
+    // Use probability-based tier for detailed breakdown, but expose chanceLabel
+    // (acceptance-rate-based) as the primary displayable label.
     let tier;
     if (probability >= 0.68)      tier = 'Safety';
     else if (probability >= 0.42) tier = 'Match';
@@ -600,6 +652,9 @@ async function calculateChance(studentProfile, college, application = {}) {
       tier,
       category: tierBucket(tier),
       probability,
+      // Selectivity-ceiling-derived display values (use these in UI)
+      chance_percentage: Math.round(probability * 100),
+      chance_label: chanceLabel,
       confidence,
       explanation,
       studentSAT: studentSATRaw,

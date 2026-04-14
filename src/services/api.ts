@@ -496,6 +496,10 @@ class ApiService {
     return this.request(`/colleges/${id}/data?type=${type}`);
   }
 
+  async getSuggestedColleges() {
+    return this.request('/colleges/suggested');
+  }
+
   // ==================== APPLICATION ENDPOINTS ====================
 
   async getApplications(filters: any = {}) {
