@@ -110,11 +110,32 @@ class AuthController {
 
       // Persist extended profile fields (always — students need not fill every field)
       try {
-        await StudentProfile.upsert(userId, {
-          ...data,
+        // Map onboarding field names to student_profiles column names
+        const gpaVal = typeof data.gpa === 'number' ? data.gpa : parseFloat(String(data.gpa || '').replace(/[^0-9.]/g, '')) || null;
+        const profileData = {
+          country: data.country || null,
+          // GPA: 4.0-scale → gpa_unweighted; percentage → board_exam_percentage
+          ...(gpaVal != null
+            ? (data.gpa_type === 'percentage' || gpaVal > 4.0
+                ? { board_exam_percentage: gpaVal }
+                : { gpa_unweighted: gpaVal })
+            : {}),
+          sat_total:          data.test_status?.sat_score  ? parseInt(data.test_status.sat_score,  10) : null,
+          act_composite:      data.test_status?.act_score  ? parseInt(data.test_status.act_score,  10) : null,
+          ib_predicted_score: data.test_status?.ib_predicted ? parseInt(data.test_status.ib_predicted, 10) : null,
+          intended_majors:    JSON.stringify(data.intended_majors  || []),
+          preferred_countries: JSON.stringify(data.target_countries || []),
           why_college_matters: data.why_college_matters || null,
           life_goals_raw:      data.life_goals_raw      || null,
-        });
+          onboarding_step:     7,  // mark complete
+        };
+
+        // Strip out null/undefined values so we don't overwrite existing data with nulls
+        const cleanProfileData = Object.fromEntries(
+          Object.entries(profileData).filter(([, v]) => v !== null && v !== undefined)
+        );
+
+        await StudentProfile.upsert(userId, cleanProfileData);
       } catch (profileErr) {
         logger.error('Failed to upsert student profile during onboarding', { userId, error: profileErr?.message });
       }

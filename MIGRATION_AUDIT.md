@@ -1,6 +1,6 @@
 # CollegeOS — PostgreSQL Migration Audit
 
-> **Generated:** 2026-03-30  
+> **Generated:** 2026-03-30 (updated 2026-04-14)
 > **Status:** Migration **100 % complete** for both the runtime application and utility scripts.
 
 ---
@@ -172,6 +172,26 @@ application build.
 ## 6. Remaining Cosmetic / Future Improvements (Non-Blocking)
 
 These items do not affect runtime correctness but may be addressed in follow-up work:
+
+---
+
+### Migration 070 — `chancing_audit_log` (2026-04-14)
+
+**File:** `backend/migrations/070_chancing_audit_log.sql`
+
+**Status:** Pending application (must be run in Supabase SQL editor or via runMigrations).
+
+**Changes:**
+- Creates `chancing_audit_log` table with columns:
+  `id`, `user_id`, `college_id`, `raw_probability`, `displayed_chance`, `ceiling_applied`, `created_at`
+- Adds indexes on `user_id` and `created_at DESC`
+
+**Notes:**
+- `onboarding_step` column on `student_profiles` already exists (migration 024 — no re-run needed).
+- The `chancing_audit_log` table is written to asynchronously on every `calculateChance()` call
+  so that ceiling overrides can be reviewed during model retraining.
+
+---
 
 1. **Migrate `INTEGER` boolean columns** (`is_completed`, `is_active`, etc.) to
    `BOOLEAN` in a new migration, and update frontend types / comparisons
