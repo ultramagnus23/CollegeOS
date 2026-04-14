@@ -309,7 +309,16 @@ const CollegeDetail: React.FC = () => {
     tier: string;
     category: string;
     confidence: string;
-    explanation: string;
+    explanation: string | {
+      summary?: string;
+      factors?: Record<string, unknown>;
+      probabilityRange?: { low: number; high: number };
+      missingDataFields?: string[];
+      recommendedActions?: string[];
+    };
+    probabilityRange?: { low: number; high: number };
+    missingDataFields?: string[];
+    recommendedActions?: string[];
   } | null>(null);
   const [chancingLoading, setChancingLoading] = useState(false);
 
@@ -387,8 +396,38 @@ const CollegeDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-6 animate-pulse">
+        {/* Hero skeleton */}
+        <div className="rounded-2xl overflow-hidden bg-muted">
+          <div className="h-64 bg-muted-foreground/10" />
+          <div className="p-6 space-y-3">
+            <div className="h-8 w-1/2 bg-muted-foreground/10 rounded-lg" />
+            <div className="h-4 w-1/3 bg-muted-foreground/10 rounded" />
+            <div className="flex gap-3 mt-4">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="h-10 w-24 bg-muted-foreground/10 rounded-xl" />
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* Stats bar skeleton */}
+        <div className="flex gap-4 flex-wrap">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="h-12 w-36 bg-muted-foreground/10 rounded-xl" />
+          ))}
+        </div>
+        {/* Tabs skeleton */}
+        <div className="flex gap-2">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="h-10 w-24 bg-muted-foreground/10 rounded-lg" />
+          ))}
+        </div>
+        {/* Content skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="h-40 bg-muted-foreground/10 rounded-xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -834,8 +873,39 @@ const CollegeDetail: React.FC = () => {
                   {chancingResult.tier === 'Unknown' ? (
                     <p className="text-sm text-muted-foreground">Chancing unavailable right now — check back in a moment.</p>
                   ) : (
-                    <p className="text-sm text-muted-foreground">{chancingResult.explanation}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {typeof chancingResult.explanation === 'string'
+                        ? chancingResult.explanation
+                        : chancingResult.explanation?.summary ?? ''}
+                    </p>
                   )}
+                  {/* Probability range */}
+                  {(() => {
+                    const pr = (typeof chancingResult.explanation === 'object' && chancingResult.explanation?.probabilityRange)
+                      || chancingResult.probabilityRange;
+                    if (!pr) return null;
+                    return (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Estimated range: {Math.round(pr.low * 100)}%–{Math.round(pr.high * 100)}%
+                      </p>
+                    );
+                  })()}
+                  {/* Recommended actions */}
+                  {(() => {
+                    const actions = (typeof chancingResult.explanation === 'object' && chancingResult.explanation?.recommendedActions)
+                      || chancingResult.recommendedActions;
+                    if (!actions?.length) return null;
+                    return (
+                      <ul className="mt-2 space-y-1">
+                        {actions.map((action, i) => (
+                          <li key={i} className="text-xs text-muted-foreground flex items-start gap-1">
+                            <span className="mt-0.5 shrink-0">•</span>
+                            <span>{action}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
                 </div>
                 </div>
                 <div className="text-xs text-muted-foreground max-w-xs">
