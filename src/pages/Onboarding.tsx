@@ -677,9 +677,9 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       // Prefer backend draft (multi-device resume)
       setStudentData((prev: any) => ({ ...defaultData(), ...prev, ...draft }));
       try { localStorage.setItem('onboarding_data', JSON.stringify({ ...draft })); } catch {}
-      // Resume from last completed step (but don't skip past step 6 — step 7 is the reveal)
-      if (savedStep > 1 && savedStep < 7) {
-        setStep(Math.min(savedStep, 6));
+      // Resume from the last completed step. Step 7 is the reveal screen — never auto-skip to it.
+      if (savedStep >= 1 && savedStep <= 6) {
+        setStep(savedStep);
       }
     }).catch(() => { /* silent */ });
   }, [user?.id]);
@@ -736,8 +736,10 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   };
 
   const doNextStep = () => {
-    // Persist this step's data to student_profiles before moving on
-    saveStepData(studentData, step);
+    // Fire-and-forget per-step profile save. Data is already in localStorage and
+    // the debounced draft save also runs. The final save before routing is the
+    // authoritative write; this is an opportunistic checkpoint.
+    void saveStepData(studentData, step);
     setTransitioning(true);
     setTimeout(() => { setStep(s => Math.min(s + 1, 7)); setTransitioning(false); }, 280);
   };

@@ -187,9 +187,10 @@ These items do not affect runtime correctness but may be addressed in follow-up 
 - Adds indexes on `user_id` and `created_at DESC`
 
 **Notes:**
-- `onboarding_step` column on `student_profiles` already exists (migration 024 — no re-run needed).
 - The `chancing_audit_log` table is written to asynchronously on every `calculateChance()` call
   so that ceiling overrides can be reviewed during model retraining.
+- The `onboarding_step` column on `student_profiles` already exists from migration 024;
+  no additional schema change is needed for onboarding checkpoint tracking.
 
 ---
 

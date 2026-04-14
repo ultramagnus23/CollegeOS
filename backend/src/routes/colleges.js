@@ -445,7 +445,9 @@ router.get('/suggested', authenticate, async (req, res, next) => {
     const studentGPA = profile?.gpa_unweighted ?? profile?.gpa_weighted ?? null;
     const studentSAT = profile?.sat_total ?? null;
     const boardPct   = profile?.board_exam_percentage ?? null;
-    // Convert board percentage to a 4.0 scale GPA for comparison if no direct GPA
+    // Convert board percentage to a 4.0 scale GPA for rough alignment comparison only.
+    // This is a linear approximation (boardPct / 100 × 4.0) and not an exact equivalence;
+    // it is used solely for ranking relative match quality, not for admissions prediction.
     const effectiveGPA = studentGPA ?? (boardPct != null ? (boardPct / 100) * 4.0 : null);
 
     // Fetch all colleges that have acceptance_rate and enough data for scoring
