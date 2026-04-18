@@ -33,7 +33,7 @@ jobs:
         run: python scraper/pipeline.py
 
       - name: Notify Slack on failure
-        if: failure() && secrets.SLACK_WEBHOOK != ''
+        if: failure() && secrets.SLACK_WEBHOOK
         uses: slackapi/slack-github-action@v2
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK }}

@@ -67,8 +67,20 @@ def _check_acceptance_rate(value, source: str = "") -> Optional[float]:
     except (TypeError, ValueError):
         return None
 
-    # Normalise: if > 1.0 assume it's already in percent form
-    rate_pct = v * 100 if v <= 1.0 else v
+    # Determine whether the value is already a fraction (0–1) or a percentage (1–100).
+    # Values in (1.0, 100.0] are unambiguously percentages.
+    # Values in [0, 1.0] are treated as fractions.
+    # Values > 100 are always invalid.
+    if v > 100.0:
+        log.debug(f"[{source}] Rejected acceptance_rate={v} (>100)")
+        return None
+
+    if v > 1.0:
+        # Percent form — convert to fraction
+        rate_pct = v
+    else:
+        # Fraction form — convert to percent for range check
+        rate_pct = v * 100.0
 
     if not (ACCEPTANCE_MIN <= rate_pct <= ACCEPTANCE_MAX):
         log.debug(f"[{source}] Rejected acceptance_rate={v} (pct={rate_pct:.2f})")

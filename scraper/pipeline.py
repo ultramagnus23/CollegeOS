@@ -220,13 +220,16 @@ def merge_sources(
             existing = merged.setdefault(key, {"name": rec["name"]})
             for field, val in rec.items():
                 if val is not None:
-                    # Higher priority sources always win for overlapping fields
+                    # Sources are applied in ascending priority order so that
+                    # higher-priority sources (applied last) overwrite lower ones.
                     existing[field] = val
             existing["_priority"] = max(existing.get("_priority", 0), source_priority)
 
-    _apply(nces, priority=1)       # lowest priority — sets baseline
-    _apply(scorecard, priority=2)  # scorecard fills earnings/completion
-    _apply(ipeds, priority=3)      # IPEDS wins for admission / enrollment
+    # Applied in ascending priority: NCES sets baseline, Scorecard fills earnings/
+    # completion, IPEDS overwrites admission/enrollment (highest priority, last applied).
+    _apply(nces, priority=1)
+    _apply(scorecard, priority=2)
+    _apply(ipeds, priority=3)
 
     return merged
 
