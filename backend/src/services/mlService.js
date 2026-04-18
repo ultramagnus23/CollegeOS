@@ -1,40 +1,71 @@
 // backend/src/services/mlService.js
-// Calls the HuggingFace Spaces chancing model, caches results in memory,
-// and returns a DB-based fallback when the Space is unreachable.
+// Calls the HuggingFace Spaces chancing model, caches results in Redis
+// (falls back to an in-process Map when REDIS_URL is not set), and returns
+// a DB-based fallback when the Space is unreachable.
 
 'use strict';
 
 const logger = require('../utils/logger');
 const dbManager = require('../config/database');
+const cache = require('./cacheService');
 
 // ── Configuration ──────────────────────────────────────────────────────────
 
 const HF_SPACE_URL = process.env.HF_SPACE_URL || '';
 // HuggingFace Spaces can have 30–60 s cold starts — use a generous timeout
 const HF_TIMEOUT_MS = parseInt(process.env.HF_TIMEOUT_MS || '90000', 10);
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const FALLBACK_TTL_MS = 60 * 60 * 1000;   // 1 hour (shorter TTL for DB fallback)
+const CACHE_TTL_SEC = 24 * 60 * 60;  // 24 hours (Redis TTL, in seconds)
+const FALLBACK_TTL_SEC = 60 * 60;    // 1 hour for DB fallback (retry HF sooner)
 const MIN_RESULTS = 5; // reject HF response if fewer than this
 
-// ── In-memory LRU-style cache ─────────────────────────────────────────────
-// Simple Map with TTL.  Keyed by `userId`.
-// If Redis is available in the environment, swap this map for a Redis client.
-// Key: `chances:${userId}`
+// ── Persist suggestions to user_suggestions table ────────────────────────
 
-const _cache = new Map(); // Map<string, { data: any[], ts: number }>
-
-function _cacheGet(key) {
-  const entry = _cache.get(key);
-  if (!entry) return null;
-  if (Date.now() - entry.ts > CACHE_TTL_MS) {
-    _cache.delete(key);
-    return null;
+/**
+ * Upsert ML suggestions for a user into the user_suggestions table.
+ * Fire-and-forget: errors are logged but never propagated to callers.
+ *
+ * @param {string|number} userId
+ * @param {Array}  results
+ * @param {boolean} isFallback
+ */
+async function _persistSuggestions(userId, results, isFallback) {
+  try {
+    const pool = dbManager.getDatabase();
+    await pool.query(
+      `INSERT INTO user_suggestions (user_id, suggestions, generated_at, is_fallback)
+       VALUES ($1, $2, NOW(), $3)
+       ON CONFLICT (user_id) DO UPDATE SET
+         suggestions  = EXCLUDED.suggestions,
+         generated_at = EXCLUDED.generated_at,
+         is_fallback  = EXCLUDED.is_fallback`,
+      [String(userId), JSON.stringify(results), isFallback],
+    );
+  } catch (err) {
+    logger.warn('mlService: failed to persist suggestions to DB', { error: err.message });
   }
-  return entry.data;
 }
 
-function _cacheSet(key, data) {
-  _cache.set(key, { data, ts: Date.now() });
+/**
+ * Upsert a student profile into the user_profiles table.
+ * Fire-and-forget: errors are logged but never propagated.
+ *
+ * @param {string|number} userId
+ * @param {Object} studentProfile
+ */
+async function upsertUserProfile(userId, studentProfile) {
+  try {
+    const pool = dbManager.getDatabase();
+    await pool.query(
+      `INSERT INTO user_profiles (user_id, student_profile, created_at, updated_at)
+       VALUES ($1, $2, NOW(), NOW())
+       ON CONFLICT (user_id) DO UPDATE SET
+         student_profile = EXCLUDED.student_profile,
+         updated_at      = NOW()`,
+      [String(userId), JSON.stringify(studentProfile)],
+    );
+  } catch (err) {
+    logger.warn('mlService: failed to upsert user profile', { error: err.message });
+  }
 }
 
 // ── Fallback: top colleges from DB by popularity_score ────────────────────
@@ -168,8 +199,8 @@ async function _callHuggingFace(studentProfile) {
 async function getChances(userId, studentProfile) {
   const cacheKey = `chances:${userId}`;
 
-  // 1. Cache hit
-  const cached = _cacheGet(cacheKey);
+  // 1. Redis cache hit
+  const cached = await cache.get(cacheKey);
   if (cached) {
     logger.debug(`mlService cache hit for user ${userId}`);
     return { results: cached, isFallback: false, source: 'cache' };
@@ -178,7 +209,8 @@ async function getChances(userId, studentProfile) {
   // 2. Live HuggingFace call
   try {
     const results = await _callHuggingFace(studentProfile);
-    _cacheSet(cacheKey, results);
+    await cache.set(cacheKey, results, CACHE_TTL_SEC);
+    await _persistSuggestions(userId, results, false);
     logger.info(`mlService HF success for user ${userId}: ${results.length} results`);
     return { results, isFallback: false, source: 'huggingface' };
   } catch (hfErr) {
@@ -191,10 +223,9 @@ async function getChances(userId, studentProfile) {
   // 3. DB fallback
   const fallback = await _fallbackColleges();
   logger.info(`mlService DB fallback for user ${userId}: ${fallback.length} colleges`);
-  // Cache the fallback with a shorter TTL (1 hour) to retry HF sooner
   if (fallback.length > 0) {
-    // Use a shorter TTL for the fallback so the HF Space is retried sooner
-    _cache.set(cacheKey, { data: fallback, ts: Date.now() - (CACHE_TTL_MS - FALLBACK_TTL_MS) });
+    await cache.set(cacheKey, fallback, FALLBACK_TTL_SEC);
+    await _persistSuggestions(userId, fallback, true);
   }
   return { results: fallback, isFallback: true, source: 'db_fallback' };
 }
@@ -204,8 +235,8 @@ async function getChances(userId, studentProfile) {
  *
  * @param {string|number} userId
  */
-function invalidateCache(userId) {
-  _cache.delete(`chances:${userId}`);
+async function invalidateCache(userId) {
+  await cache.del(`chances:${userId}`);
 }
 
-module.exports = { getChances, invalidateCache };
+module.exports = { getChances, invalidateCache, upsertUserProfile };

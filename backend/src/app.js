@@ -93,9 +93,27 @@ app.use(securityValidation);
 // Rate limiting for all API routes
 app.use('/api/', apiLimiter);
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', ts: Date.now() });
+// Health check — used by Render as the service health check URL.
+// Returns DB connectivity status for operational monitoring.
+app.get('/health', async (req, res) => {
+  let dbConnected = false;
+  try {
+    const pool = dbManager.getDatabase();
+    const client = await Promise.race([
+      pool.connect(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
+    ]);
+    await client.query('SELECT 1');
+    client.release();
+    dbConnected = true;
+  } catch (_) {
+    dbConnected = false;
+  }
+  res.status(dbConnected ? 200 : 503).json({
+    status: dbConnected ? 'ok' : 'degraded',
+    timestamp: new Date().toISOString(),
+    dbConnected,
+  });
 });
 
 // API routes

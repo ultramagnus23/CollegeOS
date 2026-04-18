@@ -21,8 +21,9 @@ export interface SuggestionResult {
   college_name: string;
   state?: string;
   probability: number;            // 0.03-0.97
-  label: 'Likely' | 'Target' | 'Reach';
+  label: 'Likely' | 'Target' | 'Reach' | 'Unknown';
   acceptance_rate: number | null;
+  isFallback?: boolean;
 }
 
 export interface SuggestionsPayload {
@@ -31,4 +32,13 @@ export interface SuggestionsPayload {
   source: 'cache' | 'huggingface' | 'db_fallback';
   data: SuggestionResult[];
   generatedAt: string;            // ISO timestamp
+}
+
+/** Shape returned by POST /api/chances/predict */
+export interface PredictPayload {
+  success: boolean;
+  recommendations: SuggestionResult[];
+  count: number;
+  isFallback: boolean;
+  generatedAt: string;
 }

@@ -1398,6 +1398,17 @@ class ApiService {
      * Call this after updating the student profile so the next get() fetches fresh results.
      */
     invalidate: () => this.request('/chances/invalidate', { method: 'POST' }),
+
+    /**
+     * POST /api/chances/predict — send a complete student profile directly to the ML
+     * service and get back ranked college recommendations.  Prefer this over get()
+     * when the profile was just collected (e.g., at onboarding step 4).
+     */
+    predict: (studentProfile: Record<string, unknown>) =>
+      this.request('/chances/predict', {
+        method: 'POST',
+        body: JSON.stringify({ studentProfile }),
+      }),
   };
 }
 

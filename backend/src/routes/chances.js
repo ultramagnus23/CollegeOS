@@ -1,5 +1,8 @@
 // backend/src/routes/chances.js
-// GET /api/chances — return ML-powered admission chances for the authenticated user.
+// GET  /api/chances          — return ML-powered admission chances for the authenticated user.
+// POST /api/chances/invalidate — clear the cached chances for the authenticated user.
+// POST /api/chances/predict  — accept a student profile in the request body, call the ML
+//                              service, persist profile + suggestions, and return results.
 
 'use strict';
 
@@ -7,8 +10,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const StudentProfile = require('../models/StudentProfile');
-const mlService = require('../services/mlService');
-const { invalidateCache } = require('../services/mlService');
+const { getChances, invalidateCache, upsertUserProfile } = require('../services/mlService');
 const logger = require('../utils/logger');
 
 /**
@@ -74,7 +76,7 @@ router.get('/', authenticate, async (req, res, next) => {
 
     const studentFeatures = buildStudentFeatures(profile);
 
-    const { results, isFallback, source } = await mlService.getChances(userId, studentFeatures);
+    const { results, isFallback, source } = await getChances(userId, studentFeatures);
 
     return res.json({
       success: true,
@@ -94,9 +96,137 @@ router.get('/', authenticate, async (req, res, next) => {
  * Invalidates the cached chances for the authenticated user.
  * Call this after updating a student profile so the next GET returns fresh data.
  */
-router.post('/invalidate', authenticate, (req, res) => {
-  invalidateCache(req.user.userId);
+router.post('/invalidate', authenticate, async (req, res) => {
+  await invalidateCache(req.user.userId);
   res.json({ success: true, message: 'Chances cache cleared' });
+});
+
+// ── Validation helper ────────────────────────────────────────────────────────
+
+/**
+ * Validate the student profile fields required by the ML model.
+ * Returns an error message string on failure, or null on success.
+ *
+ * @param {Object} p  Student profile object from the request body.
+ * @returns {string|null}
+ */
+function validateStudentProfile(p) {
+  if (!p || typeof p !== 'object') return 'studentProfile must be an object';
+
+  const hasSat = p.satScore !== undefined && p.satScore !== null;
+  const hasAct = p.actScore !== undefined && p.actScore !== null;
+
+  if (!hasSat && !hasAct) {
+    return 'At least one of satScore or actScore is required';
+  }
+  if (hasSat && (typeof p.satScore !== 'number' || p.satScore < 400 || p.satScore > 1600)) {
+    return 'satScore must be a number between 400 and 1600';
+  }
+  if (hasAct && (typeof p.actScore !== 'number' || p.actScore < 1 || p.actScore > 36)) {
+    return 'actScore must be a number between 1 and 36';
+  }
+
+  const gpa = p.gpaUnweighted;
+  if (typeof gpa !== 'number' || gpa < 1.5 || gpa > 4.0) {
+    return 'gpaUnweighted must be a number between 1.5 and 4.0';
+  }
+
+  return null;
+}
+
+/**
+ * POST /api/chances/predict
+ *
+ * Accepts a student profile in the request body, calls the ML service
+ * (with Redis cache + DB fallback), persists the profile and results,
+ * and returns a ranked list of college recommendations.
+ *
+ * Request body:
+ * {
+ *   studentProfile: {
+ *     satScore:            number | null,
+ *     actScore:            number | null,
+ *     gpaUnweighted:       number,          // 1.5–4.0, required
+ *     gpaWeighted:         number,
+ *     essayQuality:        number,          // 1–5
+ *     extracurriculars:    number,
+ *     leadershipPositions: number,
+ *     firstGen:            boolean,
+ *     legacy:              boolean,
+ *     recruitedAthlete:    boolean,
+ *     incomeLevel:         number,          // 1–4
+ *     maxTuition:          number
+ *   }
+ * }
+ *
+ * Response:
+ * {
+ *   success:         true,
+ *   recommendations: [...],
+ *   count:           N,
+ *   isFallback:      bool,
+ *   generatedAt:     ISO string
+ * }
+ */
+router.post('/predict', authenticate, async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const { studentProfile } = req.body;
+
+    // Validate the incoming profile
+    const validationError = validateStudentProfile(studentProfile);
+    if (validationError) {
+      return res.status(400).json({
+        success: false,
+        message: validationError,
+        errorCode: 'VALIDATION_ERROR',
+      });
+    }
+
+    // Map camelCase frontend fields → snake_case ML feature dict
+    const studentFeatures = {
+      sat_score:            studentProfile.satScore   ?? null,
+      act_score:            studentProfile.actScore   ?? null,
+      gpa_unweighted:       studentProfile.gpaUnweighted,
+      gpa_weighted:         studentProfile.gpaWeighted ?? studentProfile.gpaUnweighted,
+      extracurriculars:     studentProfile.extracurriculars ?? 5,
+      leadership_positions: studentProfile.leadershipPositions ?? 1,
+      essays_quality:       studentProfile.essayQuality ?? 3,
+      first_gen:            studentProfile.firstGen   ?? false,
+      legacy:               studentProfile.legacy     ?? false,
+      recruited_athlete:    studentProfile.recruitedAthlete ?? false,
+      income_bracket:       studentProfile.incomeLevel ?? 2,
+    };
+
+    // Persist the raw student profile (fire-and-forget)
+    await upsertUserProfile(userId, studentProfile);
+
+    // Call ML service (Redis cache → HuggingFace → DB fallback)
+    const { results, isFallback, source } = await getChances(userId, studentFeatures);
+
+    logger.info('POST /api/chances/predict success', {
+      userId,
+      count: results.length,
+      isFallback,
+      source,
+    });
+
+    return res.json({
+      success: true,
+      recommendations: results,
+      count: results.length,
+      isFallback,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    logger.error('POST /api/chances/predict failed:', { error: err.message });
+    // Return 503 (not 500) so the frontend can show a "try again" message
+    return res.status(503).json({
+      success: false,
+      error: 'ML service temporarily unavailable. Please try again.',
+      errorCode: 'ML_UNAVAILABLE',
+    });
+  }
 });
 
 module.exports = router;
