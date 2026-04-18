@@ -1345,6 +1345,21 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           }
 
           await onComplete(studentData);
+
+          // 4. Attempt to pre-fetch ML chances so the suggestions page loads instantly.
+          // Fire-and-forget: if HF is cold/down, the user can refresh on the suggestions page.
+          try {
+            const chancesRes = await (api as any).chances.get() as { success: boolean; data: any[]; isFallback: boolean; source: string };
+            if (chancesRes?.data && chancesRes.data.length > 0) {
+              localStorage.setItem('collegeos_suggestions', JSON.stringify({
+                ...chancesRes,
+                generatedAt: new Date().toISOString(),
+              }));
+              navigate('/suggestions');
+              return;
+            }
+          } catch { /* non-critical — fall through to dashboard */ }
+
           navigate('/dashboard');
         } catch (err) {
           console.error('Failed to save profile:', err);
