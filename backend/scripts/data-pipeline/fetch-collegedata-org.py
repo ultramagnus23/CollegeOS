@@ -203,13 +203,15 @@ def parse_ipeds_csv(csv_io: io.StringIO, max_rows: Optional[int] = None) -> list
         if not name:
             continue
 
-        # Build SAT composite from components
-        sv_mid = _safe_int(row.get("SATVRMID") or row.get("SATWR25"))
-        sm_mid = _safe_int(row.get("SATMTMID") or row.get("SATMT25"))
-        sv_75 = _safe_int(row.get("SATVR75") or row.get("SATWR75"))
-        sm_75 = _safe_int(row.get("SATMT75"))
-        sv_25 = _safe_int(row.get("SATVR25") or row.get("SATWR25"))
+        # Build SAT composite from sub-scores.
+        # SATVRMID / SATMTMID are midpoint columns; SATVR25/SATMT25 are 25th-percentile
+        # fallbacks used only when midpoint columns are absent.
+        sv_mid = _safe_int(row.get("SATVRMID"))
+        sm_mid = _safe_int(row.get("SATMTMID"))
+        sv_25 = _safe_int(row.get("SATVR25"))
+        sv_75 = _safe_int(row.get("SATVR75"))
         sm_25 = _safe_int(row.get("SATMT25"))
+        sm_75 = _safe_int(row.get("SATMT75"))
 
         sat_25 = (sv_25 + sm_25) if (sv_25 and sm_25) else None
         sat_75 = (sv_75 + sm_75) if (sv_75 and sm_75) else None

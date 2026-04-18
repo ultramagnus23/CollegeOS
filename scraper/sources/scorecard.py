@@ -75,7 +75,8 @@ def _normalise(record: dict) -> dict:
 
     return {
         "name": name,
-        # Carry acceptance_rate as a backup for IPEDS (lower priority in merge)
+        # Carry acceptance_rate as a backup — IPEDS takes priority in the merge,
+        # so this value is only used when IPEDS has no data for a given institution.
         "acceptance_rate": float(adm) if adm is not None else None,
         "total_enrollment": _safe(record, "latest.student.enrollment.all"),
         "applications_received": _safe(record, "latest.admissions.applicants.total"),
