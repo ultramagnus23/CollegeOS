@@ -1382,6 +1382,23 @@ class ApiService {
       return this.request(`/financial/compare?${q.toString()}`);
     },
   };
+
+  // ==================== ML CHANCING ENDPOINTS ====================
+
+  chances = {
+    /**
+     * GET /api/chances — returns ranked college list from the HuggingFace ML model.
+     * Uses the student's stored profile from the backend; call saveExtendedProfile first
+     * if the profile has just been updated.
+     */
+    get: () => this.request('/chances'),
+
+    /**
+     * POST /api/chances/invalidate — clears the server-side 24-hour cache for this user.
+     * Call this after updating the student profile so the next get() fetches fresh results.
+     */
+    invalidate: () => this.request('/chances/invalidate', { method: 'POST' }),
+  };
 }
 
 // Export singleton instance
