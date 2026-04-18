@@ -293,7 +293,7 @@ def main() -> int:
             f"Overall staged: {total_records} records, "
             f"{total_with_ar} acceptance rates ({ar_pct:.1f}%)"
         )
-        if ar_pct < 50:
+        if ar_pct < _CFG.get("min_acceptance_rate_coverage", 50.0):
             log.warning(
                 f"⚠ Only {ar_pct:.1f}% of staged records have acceptance_rate. "
                 f"Check API keys and scraper output."
