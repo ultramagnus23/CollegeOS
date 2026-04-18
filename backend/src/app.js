@@ -95,7 +95,8 @@ app.use('/api/', apiLimiter);
 
 // Health check — used by Render as the service health check URL.
 // Returns DB connectivity status for operational monitoring.
-app.get('/health', async (req, res) => {
+// Rate-limited to prevent DB-query abuse from unauthenticated callers.
+app.get('/health', apiLimiter, async (req, res) => {
   let dbConnected = false;
   try {
     const pool = dbManager.getDatabase();
