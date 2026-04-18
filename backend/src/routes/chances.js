@@ -24,9 +24,13 @@ function buildStudentFeatures(profile) {
     act_score:            profile.act_composite ?? profile.act_score  ?? null,
     gpa_unweighted:       profile.gpa_unweighted ?? profile.gpa       ?? null,
     gpa_weighted:         profile.gpa_weighted   ?? null,
+    // extracurriculars may be stored as a count (int) or as an array of activity
+    // objects depending on which profile route wrote it.  Handle both forms.
     extracurriculars:     Array.isArray(profile.extracurriculars)
                             ? profile.extracurriculars.length
-                            : (profile.extracurriculars ?? 5),
+                            : (typeof profile.extracurriculars === 'number'
+                                ? profile.extracurriculars
+                                : 5),
     leadership_positions: profile.leadership_roles ?? profile.leadership_positions ?? 1,
     essays_quality:       profile.essays_quality ?? 3,
     first_gen:            profile.first_gen ?? false,

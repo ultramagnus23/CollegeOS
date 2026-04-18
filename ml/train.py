@@ -194,14 +194,15 @@ def main() -> int:
     log.info(f"Label distribution: {y.mean():.3f} positive rate ({y.sum():,} admitted)")
     log.info(f"Feature matrix: {X.shape[0]:,} rows × {X.shape[1]} features")
 
-    # ── Split: 70% train, 10% val, 20% test ──────────────────────────────────
+    # Split: 70% train, 10% val, 20% test
     X_temp, X_test, y_temp, y_test = train_test_split(
         X, y, test_size=0.20, random_state=42, stratify=y
     )
     X_train, X_val, y_train, y_val = train_test_split(
         X_temp, y_temp, test_size=0.125, random_state=42, stratify=y_temp
     )
-    # Result: ~70% train / ~12.5% val (of 80%) / 20% test
+    # Result: ~70% train / ~10% val / ~20% test
+    # (test_size=0.125 applied to 80% of data → 0.125 × 0.80 = 10% of total)
     log.info(f"Split: train={len(X_train):,}, val={len(X_val):,}, test={len(X_test):,}")
 
     # ── First training attempt ────────────────────────────────────────────────

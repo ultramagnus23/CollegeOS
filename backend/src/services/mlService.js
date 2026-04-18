@@ -13,6 +13,7 @@ const HF_SPACE_URL = process.env.HF_SPACE_URL || '';
 // HuggingFace Spaces can have 30–60 s cold starts — use a generous timeout
 const HF_TIMEOUT_MS = parseInt(process.env.HF_TIMEOUT_MS || '90000', 10);
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const FALLBACK_TTL_MS = 60 * 60 * 1000;   // 1 hour (shorter TTL for DB fallback)
 const MIN_RESULTS = 5; // reject HF response if fewer than this
 
 // ── In-memory LRU-style cache ─────────────────────────────────────────────
@@ -192,7 +193,8 @@ async function getChances(userId, studentProfile) {
   logger.info(`mlService DB fallback for user ${userId}: ${fallback.length} colleges`);
   // Cache the fallback with a shorter TTL (1 hour) to retry HF sooner
   if (fallback.length > 0) {
-    _cache.set(cacheKey, { data: fallback, ts: Date.now() - (CACHE_TTL_MS - 60 * 60 * 1000) });
+    // Use a shorter TTL for the fallback so the HF Space is retried sooner
+    _cache.set(cacheKey, { data: fallback, ts: Date.now() - (CACHE_TTL_MS - FALLBACK_TTL_MS) });
   }
   return { results: fallback, isFallback: true, source: 'db_fallback' };
 }
