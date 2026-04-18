@@ -75,6 +75,9 @@ def _safe_float(value) -> float | None:
         return f if f != 0.0 else None
     except (TypeError, ValueError):
         return None
+
+
+def _load_features() -> list[str]:
     """Load the canonical feature list from features.txt (once, then cached)."""
     global _features
     if _features is not None:
