@@ -66,7 +66,15 @@ def _load_model():
     return _model
 
 
-def _load_features() -> list[str]:
+def _safe_float(value) -> float | None:
+    """Convert a value to float, returning None for zero/missing/falsy values."""
+    if value is None:
+        return None
+    try:
+        f = float(value)
+        return f if f != 0.0 else None
+    except (TypeError, ValueError):
+        return None
     """Load the canonical feature list from features.txt (once, then cached)."""
     global _features
     if _features is not None:
@@ -193,10 +201,10 @@ def predict_chances(
             "income_bracket":      float(student_profile.get("income_bracket") or 2),
             # College fields
             "acceptance_rate":     float(college.get("acceptance_rate") or 0.50),
-            "sat_25":              float(college.get("sat_25") or college.get("median_sat_25") or 0) or None,
-            "sat_75":              float(college.get("sat_75") or college.get("median_sat_75") or 0) or None,
-            "act_25":              float(college.get("act_25") or college.get("median_act_25") or 0) or None,
-            "act_75":              float(college.get("act_75") or college.get("median_act_75") or 0) or None,
+            "sat_25":              _safe_float(college.get("sat_25") or college.get("median_sat_25")),
+            "sat_75":              _safe_float(college.get("sat_75") or college.get("median_sat_75")),
+            "act_25":              _safe_float(college.get("act_25") or college.get("median_act_25")),
+            "act_75":              _safe_float(college.get("act_75") or college.get("median_act_75")),
             "total_enrollment":    float(college.get("total_enrollment") or 0),
             "ranking_us_news":     college.get("ranking_us_news"),
             # Metadata (not in feature matrix but needed for output)

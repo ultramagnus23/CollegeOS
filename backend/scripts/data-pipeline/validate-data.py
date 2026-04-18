@@ -72,7 +72,7 @@ def _check_acceptance_rate(value, source: str = "") -> Optional[float]:
     # Values in [0, 1.0] are treated as fractions.
     # Values > 100 are always invalid.
     if v > 100.0:
-        log.debug(f"[{source}] Rejected acceptance_rate={v} (>100)")
+        log.debug(f"[{source}] Rejected acceptance_rate={v} (percentage form >100 — invalid)")
         return None
 
     if v > 1.0:
