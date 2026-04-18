@@ -59,8 +59,8 @@ COLLEGEDATA_STAGING_PATH = os.environ.get(
 )
 DRY_RUN = os.environ.get("DRY_RUN", "0") == "1"
 
-# Fuzzy match threshold (0–1). 0.85 avoids false positives on similarly-named schools.
-FUZZY_THRESHOLD = 0.85
+# Fuzzy match threshold — read from config so it can be tuned without code changes
+FUZZY_THRESHOLD = float(_CFG.get("fuzzy_match_threshold", 0.85))
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
 

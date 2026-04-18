@@ -32,5 +32,11 @@ db_target_table: "colleges_comprehensive"
 acceptance_rate_min: 0.5
 acceptance_rate_max: 100.0
 
+# Minimum acceptance-rate coverage to avoid a warning (percent of staged records)
+min_acceptance_rate_coverage: 50.0
+
+# Fuzzy-match threshold for name matching (0.0–1.0)
+fuzzy_match_threshold: 0.85
+
 # Log level (DEBUG | INFO | WARNING | ERROR)
 log_level: "INFO"
