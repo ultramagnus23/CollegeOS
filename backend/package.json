@@ -55,6 +55,7 @@
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",
     "https-proxy-agent": "^7.0.4",
+    "ioredis": "^5.10.1",
     "joi": "^17.12.0",
     "jsonwebtoken": "^9.0.2",
     "natural": "^8.1.0",

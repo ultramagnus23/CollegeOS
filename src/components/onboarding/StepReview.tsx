@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { SUGGESTED_COLLEGE_COUNT } from '../../constants/ml';
 import { api } from '../../services/api';
-import { SuggestionsPayload } from '../../types/student';
+import { PredictPayload, SuggestionsPayload } from '../../types/student';
 
 const INCOME_LABELS: Record<number, string> = {
   1: 'Under $30k',
@@ -45,48 +45,35 @@ const StepReview: React.FC<StepReviewProps> = ({ onBack, onComplete }) => {
     const timeoutId = { id: 0 as ReturnType<typeof setTimeout> };
 
     try {
-      // 1. Persist ML-specific fields to the backend student profile
-      await api.saveExtendedProfile({
-        gpa_unweighted: profile.gpaUnweighted,
-        gpa_weighted: profile.gpaWeighted || profile.gpaUnweighted,
-        sat_total: profile.satScore,
-        act_composite: profile.actScore,
-        essays_quality: profile.essayQuality,
-        extracurriculars: profile.extracurriculars,
-        leadership_positions: profile.leadershipPositions,
-        first_gen: profile.firstGen,
-        legacy: profile.legacy,
-        recruited_athlete: profile.recruitedAthlete,
-        income_bracket: profile.incomeLevel,
-        max_tuition: profile.maxTuition,
-      });
+      // Call POST /api/chances/predict — sends profile directly, handles persist + cache internally
+      const predictPromise = api.chances.predict(
+        profile as unknown as Record<string, unknown>,
+      ) as Promise<PredictPayload>;
 
-      // 2. Bust cache so HF re-runs with the updated profile
-      try { await api.chances.invalidate(); } catch { /* non-critical */ }
-
-      // 3. Fetch chances with a 90-second timeout wrapper
-      const chancesPromise = api.chances.get() as Promise<SuggestionsPayload>;
       const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutId.id = setTimeout(() => reject(new Error('AbortError')), 90_000);
       });
 
-      const chancesRes = await Promise.race([chancesPromise, timeoutPromise]);
+      const predictRes = await Promise.race([predictPromise, timeoutPromise]);
 
       clearTimeout(timeoutId.id);
 
-      if (!chancesRes?.data || chancesRes.data.length === 0) {
+      if (!predictRes?.recommendations || predictRes.recommendations.length === 0) {
         throw new Error('No results returned. Please try again.');
       }
 
       // Slice to SUGGESTED_COLLEGE_COUNT, sort by probability desc
-      const sorted = [...chancesRes.data]
+      const sorted = [...predictRes.recommendations]
         .sort((a, b) => b.probability - a.probability)
         .slice(0, SUGGESTED_COLLEGE_COUNT);
 
+      // Shape as SuggestionsPayload for the suggestions page
       const payload: SuggestionsPayload = {
-        ...chancesRes,
+        success: true,
+        isFallback: predictRes.isFallback,
+        source: 'huggingface',
         data: sorted,
-        generatedAt: new Date().toISOString(),
+        generatedAt: predictRes.generatedAt || new Date().toISOString(),
       };
 
       localStorage.setItem('collegeos_suggestions', JSON.stringify(payload));
