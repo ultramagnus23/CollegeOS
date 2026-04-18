@@ -2,8 +2,10 @@
 """
 Python APScheduler Orchestrator Worker
 ────────────────────────────────────────
-Runs as a standalone Railway/Render service (separate from the Node backend).
-Schedules the ML data pipeline and training pipeline.
+Runs as a standalone background service (e.g. on Railway/Render or a VPS).
+Schedules the ML data pipeline and training pipeline as an alternative to
+the GitHub Actions workflow (.github/workflows/daily-data-refresh.yml).
+Use whichever scheduling approach fits your deployment.
 
 Schedule
 ────────
