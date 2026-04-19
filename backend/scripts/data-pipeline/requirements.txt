@@ -1,0 +1,25 @@
+# Requirements for backend/scripts/data-pipeline/
+# Install with: pip install -r backend/scripts/data-pipeline/requirements.txt
+
+# PostgreSQL
+psycopg2-binary>=2.9.0
+
+# HTTP client
+requests>=2.31.0
+
+# HTML parsing
+beautifulsoup4>=4.12.0
+lxml>=5.1.0
+
+# Config
+PyYAML>=6.0.1
+
+# Retry logic
+tenacity>=8.2.0
+
+# Data validation / ML calibration
+scikit-learn>=1.3.0
+pandas>=2.0.0
+
+# Env vars
+python-dotenv>=1.0.0
