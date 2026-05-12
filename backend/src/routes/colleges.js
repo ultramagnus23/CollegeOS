@@ -421,4 +421,141 @@ router.get('/comprehensive/stats', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/colleges/suggested
+ * Returns a tier-balanced list of suggested colleges for the authenticated user.
+ *
+ * Algorithm:
+ *   match_score = 0.5 × gpa_alignment + 0.3 × test_score_alignment + 0.2 × popularity_signal
+ *
+ * Tier balance enforced in final list:
+ *   - At least 3 Safety  (acceptance_rate > 0.40)
+ *   - At least 4 Match   (acceptance_rate 0.20–0.40)
+ *   - At least 3 Reach/Extreme Reach (acceptance_rate < 0.20)
+ */
+router.get('/suggested', authenticate, async (req, res, next) => {
+  try {
+    const db = require('../config/database');
+    const pool = db.getDatabase();
+    const StudentProfile = require('../models/StudentProfile');
+
+    const profile = await StudentProfile.findByUserId(req.user.userId);
+
+    // Student academic metrics (with sensible defaults so scoring still works)
+    const studentGPA = profile?.gpa_unweighted ?? profile?.gpa_weighted ?? null;
+    const studentSAT = profile?.sat_total ?? null;
+    const boardPct   = profile?.board_exam_percentage ?? null;
+    // Convert board percentage to a 4.0 scale GPA for rough alignment comparison only.
+    // This is a linear approximation (boardPct / 100 × 4.0) and not an exact equivalence;
+    // it is used solely for ranking relative match quality, not for admissions prediction.
+    const effectiveGPA = studentGPA ?? (boardPct != null ? (boardPct / 100) * 4.0 : null);
+
+    // Fetch all colleges that have acceptance_rate and enough data for scoring
+    const { rows: colleges } = await pool.query(
+      `SELECT id, name, city, state, country,
+              acceptance_rate,
+              gpa_50    AS median_gpa,
+              sat_avg   AS median_sat,
+              popularity_score
+       FROM   colleges_comprehensive
+       WHERE  acceptance_rate IS NOT NULL
+         AND  acceptance_rate > 0
+       LIMIT  500`
+    );
+
+    if (!colleges || colleges.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    // Determine tier label from acceptance_rate
+    function tierLabel(ar) {
+      if (ar < 0.05)  return 'Extreme Reach';
+      if (ar < 0.20)  return 'Reach';
+      if (ar <= 0.40) return 'Match';
+      return 'Safety';
+    }
+
+    // Compute match_score for each college
+    const scored = colleges.map(c => {
+      const ar  = parseFloat(c.acceptance_rate) || 0;
+      const cgpa = parseFloat(c.median_gpa) || null;
+      const csat = parseFloat(c.median_sat) || null;
+      const pop  = parseFloat(c.popularity_score) || 0;
+
+      // GPA alignment: 1 - |student_gpa - college_median_gpa| / 4.0
+      let gpaAlignment = 0.5;
+      if (effectiveGPA != null && cgpa != null) {
+        gpaAlignment = Math.max(0, 1 - Math.abs(effectiveGPA - cgpa) / 4.0);
+      }
+
+      // Test score alignment: 1 - |student_sat - college_median_sat| / 1600
+      let testAlignment = 0.5;
+      if (studentSAT != null && csat != null) {
+        testAlignment = Math.max(0, 1 - Math.abs(studentSAT - csat) / 1600);
+      }
+
+      // Popularity signal: normalised 0–1 from popularity_score
+      const popularitySignal = Math.min(pop / 100, 1);
+
+      const matchScore = 0.5 * gpaAlignment + 0.3 * testAlignment + 0.2 * popularitySignal;
+
+      return {
+        id: c.id,
+        name: c.name,
+        location: [c.city, c.state, c.country].filter(Boolean).join(', '),
+        acceptanceRate: ar,
+        tier: tierLabel(ar),
+        matchScore,
+      };
+    });
+
+    // Sort descending by match_score
+    scored.sort((a, b) => b.matchScore - a.matchScore);
+
+    // Split by tier
+    const safeties = scored.filter(c => c.tier === 'Safety');
+    const matches  = scored.filter(c => c.tier === 'Match');
+    const reaches  = scored.filter(c => c.tier === 'Reach' || c.tier === 'Extreme Reach');
+
+    const SAFETY_MIN = 3;
+    const MATCH_MIN  = 4;
+    const REACH_MIN  = 3;
+
+    // Build balanced list: take top from each tier to meet minimums, then fill from overall ranked list
+    const finalSet = new Set();
+    const result   = [];
+
+    const addGroup = (group, min) => {
+      for (let i = 0; i < Math.min(min, group.length); i++) {
+        if (!finalSet.has(group[i].id)) {
+          finalSet.add(group[i].id);
+          result.push(group[i]);
+        }
+      }
+    };
+
+    addGroup(safeties, SAFETY_MIN);
+    addGroup(matches,  MATCH_MIN);
+    addGroup(reaches,  REACH_MIN);
+
+    // Inject top-ranked remaining colleges until we have at least 12 total
+    const TARGET_TOTAL = 12;
+    for (const c of scored) {
+      if (result.length >= TARGET_TOTAL) break;
+      if (!finalSet.has(c.id)) {
+        finalSet.add(c.id);
+        result.push(c);
+      }
+    }
+
+    // Sort final list by match_score descending
+    result.sort((a, b) => b.matchScore - a.matchScore);
+
+    res.json({ success: true, data: result });
+  } catch (err) {
+    logger.error('Suggested colleges failed:', err);
+    next(err);
+  }
+});
+
 module.exports = router;

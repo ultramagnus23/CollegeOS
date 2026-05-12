@@ -174,6 +174,7 @@ const AppContent = () => {
             <Route path="/recommendations" element={<Recommendations />} />
             <Route path="/college-recommendations" element={<CollegeRecommendations />} />
             <Route path="/chancing" element={<Chancing />} />
+            <Route path="/suggested-colleges" element={<SuggestedColleges />} />
             <Route path="/timeline" element={<Timeline />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/settings" element={<Settings />} />

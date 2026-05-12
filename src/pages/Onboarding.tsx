@@ -666,15 +666,21 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     };
   }
 
-  // On mount: restore draft from backend if newer than localStorage
+  // On mount: restore draft from backend if newer than localStorage, and resume step
   useEffect(() => {
     if (!user?.id) return;
     api.getOnboardingDraft(user.id).then((res: any) => {
-      const draft = res?.data;
+      const payload = res?.data ?? res;
+      const draft = payload?.draft ?? payload;
+      const savedStep = payload?.step ?? 0;
       if (!draft) return;
       // Prefer backend draft (multi-device resume)
       setStudentData((prev: any) => ({ ...defaultData(), ...prev, ...draft }));
       try { localStorage.setItem('onboarding_data', JSON.stringify({ ...draft })); } catch {}
+      // Resume from the last completed step. Step 7 is the reveal screen — never auto-skip to it.
+      if (savedStep >= 1 && savedStep <= 6) {
+        setStep(savedStep);
+      }
     }).catch(() => { /* silent */ });
   }, [user?.id]);
 
@@ -686,12 +692,19 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
       progressDebounceRef.current = setTimeout(async () => {
         if (user?.id) {
-          try { await api.saveOnboardingDraft(user.id, { ...next, onboarding_step: step }); } catch { /* silent */ }
+          try { await api.saveOnboardingDraft(user.id, { draft: next, step }); } catch { /* silent */ }
         }
       }, 1500);
       return next;
     });
   }, [user?.id, step]);
+
+  // Save current step's profile data to student_profiles before navigating forward.
+  const saveStepData = useCallback(async (currentData: any, currentStep: number): Promise<void> => {
+    try {
+      await api.saveExtendedProfile({ ...currentData, onboarding_step: currentStep });
+    } catch { /* non-critical: draft is already being persisted via saveOnboardingDraft */ }
+  }, []);
 
   const theme = STEP_THEMES[step - 1];
   const { accent, bg, surface } = theme;
@@ -723,6 +736,10 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   };
 
   const doNextStep = () => {
+    // Fire-and-forget per-step profile save. Data is already in localStorage and
+    // the debounced draft save also runs. The final save before routing is the
+    // authoritative write; this is an opportunistic checkpoint.
+    void saveStepData(studentData, step);
     setTransitioning(true);
     setTimeout(() => { setStep(s => Math.min(s + 1, 7)); setTransitioning(false); }, 280);
   };
@@ -1292,7 +1309,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       {showLoading && <LoadingSequence name={studentData.name} onDone={async () => {
         try {
           // 1. Save full extended profile to student_profiles table
-          await api.saveExtendedProfile({ ...studentData });
+          await api.saveExtendedProfile({ ...studentData, onboarding_step: 7 });
 
           // 2. Mark onboarding complete in users table
           await completeOnboarding({
@@ -1321,7 +1338,22 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             } catch { /* non-critical — values_vector will be computed on next profile update */ }
           }
 
-          // 3. Pre-compute instant recommendations and store in localStorage
+          // 3. Verify fresh DB state — if required fields are missing, show a recovery prompt
+          let freshProfile: any = null;
+          try {
+            const profileRes = await api.getExtendedProfile();
+            freshProfile = (profileRes as any)?.data ?? profileRes;
+          } catch { /* non-critical */ }
+
+          const hasGpa = freshProfile?.gpa_unweighted || freshProfile?.board_exam_percentage || freshProfile?.gpa_weighted;
+          if (!hasGpa) {
+            // Required data not yet in DB — surface a recovery prompt before routing
+            toast.error('Profile save incomplete. Please try again or continue to dashboard.', { duration: 6000 });
+            setShowLoading(false);
+            return;
+          }
+
+          // 4. Pre-compute instant recommendations and store in localStorage
           try {
             const recRes = await api.automation.getInstantRecommendations({
               gpa: studentData.currentGPA,
@@ -1343,6 +1375,9 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           } catch {
             // non-blocking
           }
+
+          // Clear localStorage draft
+          try { localStorage.removeItem('onboarding_data'); } catch {}
 
           await onComplete(studentData);
 
