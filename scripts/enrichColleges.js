@@ -164,10 +164,15 @@ async function enrichFromCollegeScorecard(collegeName) {
 }
 
 async function enrichFromWikidata(collegeName) {
+  const escapedCollegeName = String(collegeName)
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, ' ')
+    .replace(/\r/g, ' ');
   const query = `
     SELECT ?college ?collegeLabel ?website ?enrollment ?country ?countryLabel WHERE {
       ?college wdt:P31 wd:Q3918.
-      ?college rdfs:label "${collegeName.replace(/"/g, '\\"')}"@en.
+      ?college rdfs:label "${escapedCollegeName}"@en.
       OPTIONAL { ?college wdt:P856 ?website. }
       OPTIONAL { ?college wdt:P1082 ?enrollment. }
       OPTIONAL { ?college wdt:P17 ?country. }
@@ -376,4 +381,3 @@ main().catch((err) => {
   console.error('Enrichment failed:', err.message);
   process.exit(1);
 });
-
