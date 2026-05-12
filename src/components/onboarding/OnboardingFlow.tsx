@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, GraduationCap, BookOpen, Target, Trophy, FileText, Heart, Sparkles, Save, Check } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
+import { useUserProfile } from '../../hooks/useUserProfile';
 import IBOnboarding from './IBOnboarding';
 import ALevelOnboarding from './ALevelOnboarding';
 import CBSEOnboarding from './CBSEOnboarding';
@@ -51,6 +52,7 @@ interface OnboardingFlowProps {
 const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
+  const { saveProfile } = useUserProfile();
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -174,16 +176,28 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   };
 
   // Handle curriculum-specific completion
-  const handleCurriculumComplete = (data: any) => {
+  const handleCurriculumComplete = async (data: any) => {
     setFormData(prev => ({
       ...prev,
       curriculumData: data
     }));
-    nextStep();
+    // Step 3 save (curriculum-specific fields) before moving forward
+    await saveProfile({
+      curriculum_type: data?.curriculum_type || formData.curriculum_type,
+      streams: data?.stream ? [data.stream] : (formData.curriculum_type ? [formData.curriculum_type] : []),
+      gpa: data?.overall_percentage ?? null,
+      sat_score: formData.sat_total ?? null,
+      activities: formData.activities || [],
+      preferred_majors: formData.intended_majors || [],
+      target_countries: formData.preferred_countries || [],
+      budget_inr: formData.budget_max != null ? Math.round(formData.budget_max * 83) : null,
+      traits: [],
+    });
+    await nextStep();
   };
 
   // Navigation
-  const nextStep = () => {
+  const nextStep = async () => {
     setErrors([]);
     
     if (currentStep === 1 && !validateStep1()) return;
@@ -194,11 +208,86 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     if (currentStep === 2) {
       const skipCurriculumStep = !['IB', 'A-Level', 'CBSE'].includes(formData.curriculum_type);
       if (skipCurriculumStep) {
+        await saveProfile({
+          curriculum_type: formData.curriculum_type,
+          streams: formData.curriculum_type ? [formData.curriculum_type] : [],
+          gpa: formData.curriculumData?.overall_percentage ?? null,
+          sat_score: formData.sat_total ?? null,
+          activities: formData.activities || [],
+          preferred_majors: formData.intended_majors || [],
+          target_countries: formData.preferred_countries || [],
+          budget_inr: formData.budget_max != null ? Math.round(formData.budget_max * 83) : null,
+          traits: [],
+        });
         setCurrentStep(4); // Skip to test scores
         return;
       }
     }
-    
+
+    // Incremental save before each forward step transition
+    if (currentStep === 1) {
+      await saveProfile({
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        country: formData.country,
+        streams: [],
+        gpa: null,
+        sat_score: null,
+        preferred_majors: [],
+        target_countries: [],
+        budget_inr: null,
+        traits: [],
+        activities: [],
+      });
+    } else if (currentStep === 2) {
+      await saveProfile({
+        curriculum_type: formData.curriculum_type,
+        streams: formData.curriculum_type ? [formData.curriculum_type] : [],
+        gpa: formData.curriculumData?.overall_percentage ?? null,
+        sat_score: formData.sat_total ?? null,
+        activities: formData.activities || [],
+        preferred_majors: formData.intended_majors || [],
+        target_countries: formData.preferred_countries || [],
+        budget_inr: formData.budget_max != null ? Math.round(formData.budget_max * 83) : null,
+        traits: [],
+      });
+    } else if (currentStep === 4) {
+      await saveProfile({
+        sat_score: formData.sat_total ?? null,
+        act_score: formData.act_composite ?? null,
+        activities: formData.activities || [],
+        preferred_majors: formData.intended_majors || [],
+        target_countries: formData.preferred_countries || [],
+        budget_inr: formData.budget_max != null ? Math.round(formData.budget_max * 83) : null,
+        streams: formData.curriculum_type ? [formData.curriculum_type] : [],
+        gpa: formData.curriculumData?.overall_percentage ?? null,
+        traits: [],
+      });
+    } else if (currentStep === 5) {
+      await saveProfile({
+        activities: formData.activities || [],
+        preferred_majors: formData.intended_majors || [],
+        target_countries: formData.preferred_countries || [],
+        budget_inr: formData.budget_max != null ? Math.round(formData.budget_max * 83) : null,
+        streams: formData.curriculum_type ? [formData.curriculum_type] : [],
+        gpa: formData.curriculumData?.overall_percentage ?? null,
+        sat_score: formData.sat_total ?? null,
+        traits: [],
+      });
+    } else if (currentStep === 6) {
+      await saveProfile({
+        preferred_majors: formData.intended_majors || [],
+        target_countries: formData.preferred_countries || [],
+        budget_inr: formData.budget_max != null ? Math.round(formData.budget_max * 83) : null,
+        streams: formData.curriculum_type ? [formData.curriculum_type] : [],
+        gpa: formData.curriculumData?.overall_percentage ?? null,
+        sat_score: formData.sat_total ?? null,
+        traits: [],
+        activities: formData.activities || [],
+      });
+    }
+
     setCurrentStep(prev => Math.min(prev + 1, 7));
     saveDraft();
   };
@@ -494,6 +583,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                   initialData={formData.curriculumData}
                   onComplete={handleCurriculumComplete}
                   onBack={prevStep}
+                  saveProfile={saveProfile}
                 />
               )}
               {formData.curriculum_type === 'A-Level' && (
@@ -501,6 +591,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                   initialData={formData.curriculumData}
                   onComplete={handleCurriculumComplete}
                   onBack={prevStep}
+                  saveProfile={saveProfile}
                 />
               )}
               {formData.curriculum_type === 'CBSE' && (
@@ -508,6 +599,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                   initialData={formData.curriculumData}
                   onComplete={handleCurriculumComplete}
                   onBack={prevStep}
+                  saveProfile={saveProfile}
                 />
               )}
             </>

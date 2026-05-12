@@ -37,9 +37,10 @@ interface CBSEOnboardingProps {
   initialData?: any;
   onComplete: (data: any) => void;
   onBack: () => void;
+  saveProfile?: (data: any) => Promise<any>;
 }
 
-const CBSEOnboarding: React.FC<CBSEOnboardingProps> = ({ initialData, onComplete, onBack }) => {
+const CBSEOnboarding: React.FC<CBSEOnboardingProps> = ({ initialData, onComplete, onBack, saveProfile }) => {
   const [step, setStep] = useState(1);
   const [cbseData, setCBSEData] = useState({
     stream: initialData?.stream || '',
@@ -145,16 +146,54 @@ const CBSEOnboarding: React.FC<CBSEOnboardingProps> = ({ initialData, onComplete
     return newErrors.length === 0;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1 && validateStep1()) {
+      if (saveProfile) {
+        await saveProfile({
+          streams: [cbseData.stream || 'CBSE'],
+          gpa: null,
+          sat_score: null,
+          preferred_majors: [],
+          target_countries: [],
+          budget_inr: null,
+          traits: [],
+          activities: [],
+        });
+      }
       setStep(2);
     } else if (step === 2 && validateStep2()) {
+      if (saveProfile) {
+        await saveProfile({
+          streams: [cbseData.stream || 'CBSE'],
+          gpa: null,
+          sat_score: null,
+          preferred_majors: [],
+          target_countries: [],
+          budget_inr: null,
+          traits: [],
+          activities: [],
+          cbse_subjects: cbseData.subjects,
+        });
+      }
       setStep(3);
     } else if (step === 3 && validateStep3()) {
       const finalData = {
         ...cbseData,
         curriculum_type: 'CBSE'
       };
+      if (saveProfile) {
+        await saveProfile({
+          streams: [cbseData.stream || 'CBSE'],
+          gpa: cbseData.overall_percentage ?? null,
+          sat_score: null,
+          preferred_majors: [],
+          target_countries: [],
+          budget_inr: null,
+          traits: [],
+          activities: [],
+          ...finalData,
+        });
+      }
       onComplete(finalData);
     }
   };

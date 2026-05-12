@@ -1,8 +1,9 @@
 // src/pages/Recommendations.tsx — Dark Editorial Redesign
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../services/api';
 import { toast } from 'sonner';
 import ConfirmModal from '@/components/common/ConfirmModal';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 interface Recommender {
@@ -201,6 +202,8 @@ const RequestRow: React.FC<{
 
 /* ─── Main ────────────────────────────────────────────────────────────── */
 const Recommendations = () => {
+  const { profileLastFetched, fetchProfile } = useUserProfile();
+  const initRanRef = useRef(false);
   const [recommenders, setRecommenders] = useState<Recommender[]>([]);
   const [requests, setRequests] = useState<RecommendationRequest[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -214,7 +217,22 @@ const Recommendations = () => {
   const [form, setForm] = useState({ name:'', email:'', phone:'', type:'teacher', relationship:'', subject:'', institution:'', yearsKnown:'', notes:'' });
   const [reqForm, setReqForm] = useState({ collegeName:'', applicationSystem:'CommonApp', deadline:'', notes:'' });
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    if (initRanRef.current) return;
+    initRanRef.current = true;
+    (async () => {
+      const staleMs = 30 * 1000;
+      const isStale =
+        profileLastFetched == null ||
+        (Date.now() - profileLastFetched.getTime()) > staleMs;
+
+      if (isStale) {
+        await fetchProfile();
+      }
+
+      await loadData();
+    })();
+  }, [profileLastFetched, fetchProfile]);
 
   const loadData = async () => {
     try {

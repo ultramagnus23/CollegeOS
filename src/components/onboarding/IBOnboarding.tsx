@@ -94,9 +94,10 @@ interface IBOnboardingProps {
   initialData?: any;
   onComplete: (data: any) => void;
   onBack: () => void;
+  saveProfile?: (data: any) => Promise<any>;
 }
 
-const IBOnboarding: React.FC<IBOnboardingProps> = ({ initialData, onComplete, onBack }) => {
+const IBOnboarding: React.FC<IBOnboardingProps> = ({ initialData, onComplete, onBack, saveProfile }) => {
   const [step, setStep] = useState(1);
   const [ibData, setIBData] = useState({
     ib_program_type: initialData?.ib_program_type || '',
@@ -187,10 +188,36 @@ const IBOnboarding: React.FC<IBOnboardingProps> = ({ initialData, onComplete, on
     return newErrors.length === 0;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1 && validateStep1()) {
+      if (saveProfile) {
+        await saveProfile({
+          streams: ['IB'],
+          gpa: null,
+          sat_score: null,
+          preferred_majors: [],
+          target_countries: [],
+          budget_inr: null,
+          traits: [],
+          activities: [],
+          ib_program_type: ibData.ib_program_type,
+        });
+      }
       setStep(2);
     } else if (step === 2 && validateStep2()) {
+      if (saveProfile) {
+        await saveProfile({
+          streams: ['IB'],
+          gpa: null,
+          sat_score: null,
+          preferred_majors: [],
+          target_countries: [],
+          budget_inr: null,
+          traits: [],
+          activities: [],
+          ib_subjects: ibData.subjects,
+        });
+      }
       setStep(3);
     } else if (step === 3 && validateStep3()) {
       const finalData = {
@@ -198,6 +225,19 @@ const IBOnboarding: React.FC<IBOnboardingProps> = ({ initialData, onComplete, on
         curriculum_type: 'IB',
         predicted_total: calculatePredictedTotal()
       };
+      if (saveProfile) {
+        await saveProfile({
+          streams: ['IB'],
+          gpa: finalData.predicted_total || null,
+          sat_score: null,
+          preferred_majors: [],
+          target_countries: [],
+          budget_inr: null,
+          traits: [],
+          activities: [],
+          ...finalData,
+        });
+      }
       onComplete(finalData);
     }
   };

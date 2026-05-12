@@ -789,7 +789,18 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
     return num >= 1000 ? `${(num / 1000).toFixed(1)}K` : num?.toString() ?? '';
   };
 
+  const formatProvenanceDate = (dateLike: string | null | undefined): string | null => {
+    if (!dateLike) return null;
+    const d = new Date(dateLike);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+  };
+
   const acceptanceRate = college?.acceptanceRate ?? college?.acceptance_rate;
+  const dataSource = (college as any)?.data_source as string | undefined;
+  const dataSourceUrl = (college as any)?.data_source_url as string | undefined;
+  const lastUpdatedAt = (college as any)?.last_updated_at as string | undefined;
+  const dataQualityScore = Number((college as any)?.data_quality_score ?? 0);
   const countryAccent = COUNTRY_COLORS[college?.country ?? ''] ?? '#3B9EFF';
   const S = {
     surface: 'var(--color-bg-surface)',
@@ -879,6 +890,38 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
           SAT range: {college.testScores.satRange.percentile25}–{college.testScores.satRange.percentile75}
         </div>
       )}
+
+      {/* Data provenance footer */}
+      <div style={{ padding: '0 18px 12px', fontSize: 11, color: S.dim, fontFamily: S.font }}>
+        {dataSource ? (
+          <>
+            Data from{' '}
+            {dataSourceUrl ? (
+              <a
+                href={dataSourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: countryAccent, textDecoration: 'underline' }}
+              >
+                {dataSource}
+              </a>
+            ) : (
+              <span>{dataSource}</span>
+            )}
+            {' · '}
+            {formatProvenanceDate(lastUpdatedAt)
+              ? `Last updated ${formatProvenanceDate(lastUpdatedAt)}`
+              : 'Data not yet verified'}
+          </>
+        ) : (
+          <span>Data not yet verified</span>
+        )}
+        {dataQualityScore < 50 && (
+          <div style={{ marginTop: 4, color: '#f59e0b' }}>
+            ⚠ Incomplete data — some fields may be missing.
+          </div>
+        )}
+      </div>
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: 10, padding: '14px 18px', borderTop: `1px solid ${S.border}`, marginTop: 'auto' }}>
