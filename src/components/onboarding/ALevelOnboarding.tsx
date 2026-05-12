@@ -59,9 +59,10 @@ interface ALevelOnboardingProps {
   initialData?: any;
   onComplete: (data: any) => void;
   onBack: () => void;
+  saveProfile?: (data: any) => Promise<any>;
 }
 
-const ALevelOnboarding: React.FC<ALevelOnboardingProps> = ({ initialData, onComplete, onBack }) => {
+const ALevelOnboarding: React.FC<ALevelOnboardingProps> = ({ initialData, onComplete, onBack, saveProfile }) => {
   const [step, setStep] = useState(1);
   const [aLevelData, setALevelData] = useState({
     exam_board: initialData?.exam_board || '',
@@ -165,16 +166,55 @@ const ALevelOnboarding: React.FC<ALevelOnboardingProps> = ({ initialData, onComp
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1 && validateStep1()) {
+      if (saveProfile) {
+        await saveProfile({
+          streams: ['A-Level'],
+          gpa: null,
+          sat_score: null,
+          preferred_majors: [],
+          target_countries: [],
+          budget_inr: null,
+          traits: [],
+          activities: [],
+          exam_board: aLevelData.exam_board,
+        });
+      }
       setStep(2);
     } else if (step === 2 && validateStep2()) {
+      if (saveProfile) {
+        await saveProfile({
+          streams: ['A-Level'],
+          gpa: null,
+          sat_score: null,
+          preferred_majors: [],
+          target_countries: [],
+          budget_inr: null,
+          traits: [],
+          activities: [],
+          a_level_subjects: aLevelData.subjects,
+        });
+      }
       setStep(3);
     } else if (step === 3) {
       const finalData = {
         ...aLevelData,
         curriculum_type: 'A-Level'
       };
+      if (saveProfile) {
+        await saveProfile({
+          streams: ['A-Level'],
+          gpa: null,
+          sat_score: null,
+          preferred_majors: [],
+          target_countries: [],
+          budget_inr: null,
+          traits: [],
+          activities: [],
+          ...finalData,
+        });
+      }
       onComplete(finalData);
     }
   };

@@ -219,6 +219,11 @@ interface College {
     netPriceHighIncome?: number | null;
     source?: string;
   };
+  data_source?: string | null;
+  data_source_url?: string | null;
+  last_updated_at?: string | null;
+  data_quality_score?: number | null;
+  needs_enrichment?: boolean | null;
   academicOutcomes?: {
     year?: number;
     graduationRate4yr?: number | null;
@@ -657,6 +662,13 @@ const CollegeDetail: React.FC = () => {
   // Get dynamic gradient based on country
   const heroGradient = getCountryGradient(college.country);
 
+  const formatProvenanceDate = (dateLike: string | null | undefined): string | null => {
+    if (!dateLike) return null;
+    const d = new Date(dateLike);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+  };
+
   const tabs: { id: TabName; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <Building className="w-4 h-4" /> },
     { id: 'admissions', label: 'Admissions', icon: <FileText className="w-4 h-4" /> },
@@ -823,6 +835,34 @@ const CollegeDetail: React.FC = () => {
           sourceUrl={college.official_website}
           collegeName={college.name}
         />
+        <div className="mt-3 text-xs text-muted-foreground">
+          {college.data_source ? (
+            <>
+              Data from{' '}
+              {college.data_source_url ? (
+                <a
+                  href={college.data_source_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline text-primary"
+                >
+                  {college.data_source}
+                </a>
+              ) : (
+                <span>{college.data_source}</span>
+              )}
+              {' · '}
+              {formatProvenanceDate(college.last_updated_at)
+                ? `Last updated ${formatProvenanceDate(college.last_updated_at)}`
+                : 'Data not yet verified'}
+            </>
+          ) : (
+            <span>Data not yet verified</span>
+          )}
+          {(college.data_quality_score ?? 0) < 50 && (
+            <span className="ml-2 text-amber-600">⚠ Incomplete data — some fields may be missing.</span>
+          )}
+        </div>
       </div>
 
       {/* Tabs Navigation */}
