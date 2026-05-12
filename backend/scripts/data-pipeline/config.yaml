@@ -1,0 +1,42 @@
+# CollegeOS Data Pipeline Configuration
+# ──────────────────────────────────────
+# Environment variables (set in .env or GitHub Secrets) take precedence over
+# the defaults listed here.
+
+pipeline:
+  # College Scorecard / IPEDS
+  scorecard_base_url: "https://api.data.gov/ed/collegescorecard/v1/schools"
+  scorecard_per_page: 100
+  scorecard_year: 2023          # Academic year to pull (override with ADMISSIONS_YEAR)
+  request_delay_sec: 0.5        # Polite delay between paginated API calls
+
+  # CDS web scraper
+  cds_timeout_sec: 15
+  cds_max_retries: 3
+  cds_user_agent: "CollegeOS-DataPipeline/1.0 (research; contact@collegeos.app)"
+
+  # GitHub / NCES CSV downloader
+  # Uses the official NCES IPEDS data portal CSV exports hosted on GitHub
+  ipeds_github_owner: "RTICWDT"
+  ipeds_github_repo: "college-scorecard"
+  ipeds_csv_branch: "gh-pages"
+
+  # RMP sentiment
+  rmp_base_url: "https://www.ratemyprofessors.com"
+  rmp_request_delay_sec: 2.0
+
+# Columns written to colleges_comprehensive
+db_target_table: "colleges_comprehensive"
+
+# Acceptance rate sanity bounds (percent)
+acceptance_rate_min: 0.5
+acceptance_rate_max: 100.0
+
+# Minimum acceptance-rate coverage to avoid a warning (percent of staged records)
+min_acceptance_rate_coverage: 50.0
+
+# Fuzzy-match threshold for name matching (0.0–1.0)
+fuzzy_match_threshold: 0.85
+
+# Log level (DEBUG | INFO | WARNING | ERROR)
+log_level: "INFO"
