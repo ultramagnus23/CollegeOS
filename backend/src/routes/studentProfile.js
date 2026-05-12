@@ -486,7 +486,108 @@ router.patch('/academic', authenticate, async (req, res, next) => {
 // Create or update extended student profile
 router.post('/extended', authenticate, async (req, res, next) => {
   try {
-    const profile = await StudentProfile.upsert(req.user.userId, req.body);
+    const data = req.body;
+
+    // Map onboarding field names → student_profiles column names so that
+    // GPA, SAT scores, activities, etc. are actually persisted.
+    const mapped = { ...data };
+
+    // Name: split into first/last
+    if (data.name && !data.first_name) {
+      const parts = data.name.trim().split(/\s+/);
+      mapped.first_name = parts[0];
+      mapped.last_name  = parts.slice(1).join(' ') || null;
+    }
+
+    // GPA: 4.0-scale goes to gpa_unweighted; percentage goes to board_exam_percentage
+    if (data.currentGPA !== undefined) {
+      const gpaVal = parseFloat(String(data.currentGPA).replace(/[^0-9.]/g, ''));
+      if (!isNaN(gpaVal)) {
+        if (data.gpaType === 'percentage' || gpaVal > 4.0) {
+          mapped.board_exam_percentage = gpaVal;
+        } else {
+          mapped.gpa_unweighted = gpaVal;
+        }
+      }
+    }
+
+    // SAT
+    if (data.satScore !== undefined && data.satScore !== '') {
+      const sat = parseInt(String(data.satScore), 10);
+      if (!isNaN(sat)) mapped.sat_total = sat;
+    }
+
+    // ACT
+    if (data.actScore !== undefined && data.actScore !== '') {
+      const act = parseInt(String(data.actScore), 10);
+      if (!isNaN(act)) mapped.act_composite = act;
+    }
+
+    // IB Predicted
+    if (data.ibPredicted !== undefined && data.ibPredicted !== '') {
+      const ib = parseInt(String(data.ibPredicted), 10);
+      if (!isNaN(ib)) mapped.ib_predicted_score = ib;
+    }
+
+    // Majors
+    if (data.potentialMajors !== undefined) {
+      mapped.intended_majors = data.potentialMajors;
+    }
+
+    // Preferred countries
+    if (data.preferredCountries !== undefined) {
+      mapped.preferred_countries = data.preferredCountries;
+    }
+
+    // Campus size
+    if (data.campusSize !== undefined) {
+      mapped.preferred_college_size = data.campusSize;
+    }
+
+    // Location preference
+    if (data.locationPreference !== undefined) {
+      mapped.preferred_setting = data.locationPreference;
+    }
+
+    // Career goals
+    if (data.careerGoals !== undefined) {
+      mapped.career_goals = data.careerGoals;
+    }
+
+    // Why college
+    if (data.whyCollege !== undefined) {
+      mapped.why_college = data.whyCollege;
+    }
+
+    // Activities → extracurriculars JSONB
+    if (Array.isArray(data.activities) && data.activities.length > 0) {
+      const validActivities = data.activities.filter(a => a?.name?.trim());
+      mapped.extracurriculars = validActivities.map(a => {
+        // Derive tier if not explicitly set: national/varsity = 1, club/local = 2, default = 3
+        let tier = 3;
+        if (a.tier != null) {
+          tier = a.tier;
+        } else if (a.type === 'varsity' || a.type === 'national') {
+          tier = 1;
+        } else if (a.type === 'club' || a.type === 'local') {
+          tier = 2;
+        }
+        return {
+          name: a.name,
+          type: a.type || '',
+          tier,
+          yearsInvolved: a.yearsInvolved || 0,
+          hoursPerWeek: a.hoursPerWeek || 0,
+          leadership: a.leadership || '',
+          achievements: a.achievements || '',
+        };
+      });
+    }
+
+    // Subjects / current_grade / gender stay in users table (handled by completeOnboarding)
+    // but we keep them here so they don't break the profile upsert
+
+    const profile = await StudentProfile.upsert(req.user.userId, mapped);
     res.json({ success: true, data: profile, message: 'Extended profile saved successfully' });
   } catch (error) {
     logger.error('Save extended profile failed:', error);
