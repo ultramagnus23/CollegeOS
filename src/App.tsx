@@ -13,6 +13,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import { profileService } from "./services/profileService";
 import { api } from "./services/api";
 import { TutorialProvider, TutorialOverlay } from "./components/tutorial/TutorialOverlay";
+import { OnboardingProvider } from "./contexts/OnboardingContext";
 
 // Pages
 import AuthPage from "./pages/Auth";
@@ -38,7 +39,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import Landing from "./pages/Landing";
 import Chancing from "./pages/Chancing";
-import SuggestedColleges from "./pages/SuggestedColleges";
+import SuggestionsPage from "./pages/Suggestions";
 // FinancialAid import removed — page merged into Scholarships; /financial-aid redirects to /scholarships
 
 import { StudentProfile } from "./types/index";
@@ -144,6 +145,15 @@ const AppContent = () => {
           />
 
           <Route
+            path="/suggestions"
+            element={
+              <ProtectedRoute requireOnboarding={false}>
+                <SuggestionsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             element={
               <ProtectedRoute>
                 <DashboardLayout />
@@ -185,10 +195,12 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <AuthProvider>
-            <TutorialProvider>
-              <AppContent />
-              <TutorialOverlay />
-            </TutorialProvider>
+            <OnboardingProvider>
+              <TutorialProvider>
+                <AppContent />
+                <TutorialOverlay />
+              </TutorialProvider>
+            </OnboardingProvider>
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>

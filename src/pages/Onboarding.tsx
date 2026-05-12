@@ -1380,8 +1380,22 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           try { localStorage.removeItem('onboarding_data'); } catch {}
 
           await onComplete(studentData);
-          // Route to suggested colleges page — not the dashboard
-          navigate('/suggested-colleges');
+
+          // 4. Attempt to pre-fetch ML chances so the suggestions page loads instantly.
+          // Fire-and-forget: if HF is cold/down, the user can refresh on the suggestions page.
+          try {
+            const chancesRes = await (api as any).chances.get() as { success: boolean; data: any[]; isFallback: boolean; source: string };
+            if (chancesRes?.data && chancesRes.data.length > 0) {
+              localStorage.setItem('collegeos_suggestions', JSON.stringify({
+                ...chancesRes,
+                generatedAt: new Date().toISOString(),
+              }));
+              navigate('/suggestions');
+              return;
+            }
+          } catch { /* non-critical — fall through to dashboard */ }
+
+          navigate('/dashboard');
         } catch (err) {
           console.error('Failed to save profile:', err);
           toast.error('Failed to save profile. Please try again.');

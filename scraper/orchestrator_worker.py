@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
-# CollegeOS Auto-generated scraper/orchestrator_worker.py — do not edit manually
 """
 Python APScheduler Orchestrator Worker
 ────────────────────────────────────────
-Runs as a standalone Railway/Render service (separate from the Node backend).
-Schedules all Python scrapers and the ML training pipeline.
+Runs as a standalone background service (e.g. on Railway/Render or a VPS).
+Schedules the ML data pipeline and training pipeline as an alternative to
+the GitHub Actions workflow (.github/workflows/daily-data-refresh.yml).
+Use whichever scheduling approach fits your deployment.
 
 Schedule
 ────────
-    reddit_scraper           every 6 hours
-    admissions_scraper       every 24 hours (02:00 UTC)
-    financial_scraper        every 24 hours (03:00 UTC)
-    college_profile_scraper  every Sunday at 04:00 UTC
-    training_pipeline        every 1 hour (internal threshold check skips if not needed)
+    fetch_ipeds        every Monday at 02:00 UTC
+    fetch_nces_csv     every Monday at 02:30 UTC
+    fetch_cds          1st of each month at 03:00 UTC
+    validate_and_load  every Monday at 04:00 UTC (after fetch jobs complete)
+    training_pipeline  every 1 hour (internal threshold check skips if not needed)
 
 After each run, writes a row to scraper_run_logs in Postgres so the
 Node health endpoint can read it.
@@ -24,6 +25,9 @@ Required environment variables
 Optional
 ────────
     DATA_GOV_API_KEY
+    GITHUB_TOKEN
+    GOOGLE_CSE_API_KEY
+    GOOGLE_CSE_CX
     RETRAIN_THRESHOLD   (default: 100)
 """
 
@@ -50,6 +54,7 @@ log = logging.getLogger("orchestrator_worker")
 DATABASE_URL = os.environ["DATABASE_URL"]
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
+PIPELINE_DIR = REPO_ROOT / "backend" / "scripts" / "data-pipeline"
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
@@ -134,20 +139,41 @@ def run_script(job_name: str, cmd: list[str], cwd: Path | None = None) -> None:
 # ── Individual job functions ──────────────────────────────────────────────────
 
 
-def job_reddit():
-    run_script("reddit", ["python3", str(SCRIPT_DIR / "reddit_scraper.py")])
+def job_fetch_ipeds():
+    run_script(
+        "fetch_ipeds",
+        ["python3", str(PIPELINE_DIR / "fetch-ipeds.py")],
+        cwd=PIPELINE_DIR,
+    )
 
 
-def job_admissions():
-    run_script("admissions", ["python3", str(SCRIPT_DIR / "admissions_scraper.py")])
+def job_fetch_nces_csv():
+    run_script(
+        "fetch_nces_csv",
+        ["python3", str(PIPELINE_DIR / "fetch-collegedata-org.py")],
+        cwd=PIPELINE_DIR,
+    )
 
 
-def job_financial():
-    run_script("financial_aid", ["python3", str(SCRIPT_DIR / "financial_scraper.py")])
+def job_fetch_cds():
+    run_script(
+        "fetch_cds",
+        ["python3", str(PIPELINE_DIR / "fetch-cds-web.py")],
+        cwd=PIPELINE_DIR,
+    )
 
 
-def job_college_profiles():
-    run_script("college_profiles", ["python3", str(SCRIPT_DIR / "college_profile_scraper.py")])
+def job_validate_and_load():
+    run_script(
+        "validate_data",
+        ["python3", str(PIPELINE_DIR / "validate-data.py")],
+        cwd=PIPELINE_DIR,
+    )
+    run_script(
+        "load_to_postgres",
+        ["python3", str(PIPELINE_DIR / "load-to-postgres.py")],
+        cwd=PIPELINE_DIR,
+    )
 
 
 def job_ml_retrain():
@@ -165,29 +191,29 @@ def job_ml_retrain():
 def main() -> None:
     log.info("CollegeOS orchestrator_worker starting…")
     log.info("Schedules:")
-    log.info("  reddit_scraper         — every 6 hours")
-    log.info("  admissions_scraper     — daily at 02:00 UTC")
-    log.info("  financial_scraper      — daily at 03:00 UTC")
-    log.info("  college_profile_scraper— every Sunday at 04:00 UTC")
-    log.info("  training_pipeline      — every 1 hour (with internal threshold)")
+    log.info("  fetch_ipeds        — every Monday at 02:00 UTC")
+    log.info("  fetch_nces_csv     — every Monday at 02:30 UTC")
+    log.info("  fetch_cds          — 1st of each month at 03:00 UTC")
+    log.info("  validate_and_load  — every Monday at 04:00 UTC")
+    log.info("  training_pipeline  — every 1 hour (with internal threshold)")
 
     scheduler = BlockingScheduler(timezone="UTC")
 
-    # Reddit — every 6 hours
-    scheduler.add_job(job_reddit, CronTrigger(hour="*/6"), id="reddit",
-                      misfire_grace_time=300)
+    # IPEDS fetch — every Monday at 02:00 UTC
+    scheduler.add_job(job_fetch_ipeds, CronTrigger(day_of_week="mon", hour=2, minute=0),
+                      id="fetch_ipeds", misfire_grace_time=600)
 
-    # Admissions — daily at 02:00 UTC
-    scheduler.add_job(job_admissions, CronTrigger(hour=2, minute=0), id="admissions",
-                      misfire_grace_time=600)
+    # NCES CSV fetch — every Monday at 02:30 UTC
+    scheduler.add_job(job_fetch_nces_csv, CronTrigger(day_of_week="mon", hour=2, minute=30),
+                      id="fetch_nces_csv", misfire_grace_time=600)
 
-    # Financial aid — daily at 03:00 UTC
-    scheduler.add_job(job_financial, CronTrigger(hour=3, minute=0), id="financial_aid",
-                      misfire_grace_time=600)
+    # CDS scrape — 1st of each month at 03:00 UTC
+    scheduler.add_job(job_fetch_cds, CronTrigger(day=1, hour=3, minute=0),
+                      id="fetch_cds", misfire_grace_time=1800)
 
-    # College profiles — every Sunday at 04:00 UTC
-    scheduler.add_job(job_college_profiles, CronTrigger(day_of_week="sun", hour=4, minute=0),
-                      id="college_profiles", misfire_grace_time=1800)
+    # Validate + Load — every Monday at 04:00 UTC (after fetch jobs)
+    scheduler.add_job(job_validate_and_load, CronTrigger(day_of_week="mon", hour=4, minute=0),
+                      id="validate_and_load", misfire_grace_time=600)
 
     # ML retrain check — every hour
     scheduler.add_job(job_ml_retrain, CronTrigger(minute=0), id="ml_retrain",
