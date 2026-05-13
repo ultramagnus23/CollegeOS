@@ -227,9 +227,9 @@ def merge_sources(
 
     # Applied in ascending priority: NCES sets baseline, Scorecard fills earnings/
     # completion, IPEDS overwrites admission/enrollment (highest priority, last applied).
-    _apply(nces, priority=1)
-    _apply(scorecard, priority=2)
-    _apply(ipeds, priority=3)
+    _apply(nces, source_priority=1)
+    _apply(scorecard, source_priority=2)
+    _apply(ipeds, source_priority=3)
 
     return merged
 

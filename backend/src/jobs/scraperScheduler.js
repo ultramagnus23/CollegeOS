@@ -19,6 +19,7 @@
 'use strict';
 
 const path = require('path');
+const fs = require('fs');
 const { spawn } = require('child_process');
 const cron = require('node-cron');
 const dbManager = require('../config/database');
@@ -113,7 +114,13 @@ function runProcess(scraperName, command, args, env = {}) {
 // ── Individual scraper runners ────────────────────────────────────────────────
 
 async function runRedditScraper() {
-  // node scraper/index.js incremental
+  // Python-only mode: legacy JS reddit scraper is deprecated.
+  const legacyIndex = path.join(SCRAPER_DIR, 'index.js');
+  if (!fs.existsSync(legacyIndex)) {
+    logger.info('scraperScheduler: skipping reddit scraper (legacy scraper/index.js not present)');
+    return;
+  }
+
   await runProcess(
     'reddit_incremental',
     'node',
@@ -123,21 +130,44 @@ async function runRedditScraper() {
 }
 
 async function runScholarshipScraper() {
-  // node scraper/index.js scholarship
-  await runProcess(
-    'scholarship',
-    'node',
-    ['index.js', 'scholarship'],
-    {}
-  );
+  // Prefer maintained Python scholarship scraper; fallback to legacy Node entrypoint if present.
+  const pythonScholarship = path.join(SCRAPER_DIR, 'scholarship_scraper.py');
+  if (fs.existsSync(pythonScholarship)) {
+    await runProcess(
+      'scholarship',
+      'python3',
+      [pythonScholarship],
+      {}
+    );
+    return;
+  }
+
+  const legacyIndex = path.join(SCRAPER_DIR, 'index.js');
+  if (fs.existsSync(legacyIndex)) {
+    await runProcess(
+      'scholarship',
+      'node',
+      ['index.js', 'scholarship'],
+      {}
+    );
+    return;
+  }
+
+  logger.info('scraperScheduler: skipping scholarship scraper (no supported entrypoint found)');
 }
 
 async function runAdmissionsScraper() {
-  // python3 scraper/funding_scraper.py (admissions data / financial aid)
+  // Python-only: funding_scraper.py is the maintained entrypoint in this repo.
+  const fundingScript = path.join(SCRAPER_DIR, 'funding_scraper.py');
+  if (!fs.existsSync(fundingScript)) {
+    logger.info('scraperScheduler: skipping admissions/funding scraper (funding_scraper.py not present)');
+    return;
+  }
+
   await runProcess(
     'admissions_funding',
     'python3',
-    [path.join(SCRAPER_DIR, 'funding_scraper.py')],
+    [fundingScript],
     {}
   );
 }
