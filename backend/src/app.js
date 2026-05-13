@@ -297,8 +297,12 @@ async function startServer() {
         }
       }
 
-      // Start data refresh cron jobs
-      if (config.nodeEnv === 'production' || process.env.ENABLE_SCRAPING_JOBS === 'true') {
+      // Scraper scheduling policy:
+      // - Source of truth: GitHub Actions (Python pipeline)
+      // - Legacy in-process JS schedulers are disabled by default
+      // - Opt in only with ENABLE_LEGACY_SCRAPERS=true
+      const legacyScrapersEnabled = process.env.ENABLE_LEGACY_SCRAPERS === 'true';
+      if (legacyScrapersEnabled) {
         try {
           const dataRefreshJob = require('./jobs/dataRefresh');
           dataRefreshJob.start();
@@ -308,10 +312,17 @@ async function startServer() {
         }
 
         try {
-          const DeadlineScrapingScheduler = require('./jobs/deadlineScrapingScheduler');
-          deadlineSchedulerInstance = new DeadlineScrapingScheduler();
-          deadlineSchedulerInstance.setupCronJobs();
-          logger.info('Deadline scraping scheduler started');
+          const deadlineScrapingSchedulerModule = require('./jobs/deadlineScrapingScheduler');
+          deadlineSchedulerInstance = typeof deadlineScrapingSchedulerModule === 'function'
+            ? new deadlineScrapingSchedulerModule()
+            : deadlineScrapingSchedulerModule;
+
+          if (deadlineSchedulerInstance && typeof deadlineSchedulerInstance.setupCronJobs === 'function') {
+            deadlineSchedulerInstance.setupCronJobs();
+            logger.info('Deadline scraping scheduler started');
+          } else {
+            logger.warn('Deadline scraping scheduler module does not expose setupCronJobs()');
+          }
         } catch (error) {
           logger.warn('Deadline scraping scheduler failed to start:', { error: error.message });
         }
@@ -333,6 +344,8 @@ async function startServer() {
         } catch (error) {
           logger.warn('Scraper scheduler failed to start:', { error: error.message });
         }
+      } else {
+        logger.info('Scraper schedulers disabled in app runtime. Using GitHub Actions Python pipeline as source of truth.');
       }
     });
   } catch (err) {

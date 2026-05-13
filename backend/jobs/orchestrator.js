@@ -32,6 +32,7 @@
  */
 
 const path = require('path');
+const fs = require('fs');
 const { spawn } = require('child_process');
 const cron = require('node-cron');
 
@@ -57,6 +58,7 @@ try {
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCRAPER_DIR = process.env.SCRAPER_DIR || path.join(REPO_ROOT, 'scraper');
+const DATA_PIPELINE_DIR = path.join(REPO_ROOT, 'backend', 'scripts', 'data-pipeline');
 const RETRAIN_THRESHOLD = parseInt(process.env.FEEDBACK_RETRAIN_THRESHOLD || '100', 10);
 
 const jobs = [];
@@ -135,22 +137,54 @@ function runProcess(jobName, command, args, env = {}) {
 // ── Individual job runners ────────────────────────────────────────────────────
 
 function runRedditScraper() {
+  const legacyIndex = path.join(SCRAPER_DIR, 'index.js');
+  if (!fs.existsSync(legacyIndex)) {
+    logger.info('[ORCHESTRATOR] Skipping reddit job: legacy scraper/index.js not present');
+    return Promise.resolve({ exitCode: 0, rowsUpserted: 0 });
+  }
   return runProcess('reddit', 'node', ['index.js', 'incremental']);
 }
 
 function runAdmissionsScraper() {
+  const scriptCandidates = [
+    path.join(DATA_PIPELINE_DIR, 'fetch-ipeds.py'),
+    path.join(SCRAPER_DIR, 'admissions_scraper.py'),
+  ];
+  const script = scriptCandidates.find((p) => fs.existsSync(p));
+  if (!script) {
+    logger.info('[ORCHESTRATOR] Skipping admissions job: no supported admissions script found');
+    return Promise.resolve({ exitCode: 0, rowsUpserted: 0 });
+  }
   return runProcess('admissions', 'python3',
-    [path.join(SCRAPER_DIR, 'admissions_scraper.py')]);
+    [script]);
 }
 
 function runFinancialScraper() {
+  const scriptCandidates = [
+    path.join(DATA_PIPELINE_DIR, 'fetch-collegedata-org.py'),
+    path.join(SCRAPER_DIR, 'financial_scraper.py'),
+  ];
+  const script = scriptCandidates.find((p) => fs.existsSync(p));
+  if (!script) {
+    logger.info('[ORCHESTRATOR] Skipping financial aid job: no supported financial script found');
+    return Promise.resolve({ exitCode: 0, rowsUpserted: 0 });
+  }
   return runProcess('financial_aid', 'python3',
-    [path.join(SCRAPER_DIR, 'financial_scraper.py')]);
+    [script]);
 }
 
 function runCollegeProfileScraper() {
+  const scriptCandidates = [
+    path.join(DATA_PIPELINE_DIR, 'fetch-cds-web.py'),
+    path.join(SCRAPER_DIR, 'college_profile_scraper.py'),
+  ];
+  const script = scriptCandidates.find((p) => fs.existsSync(p));
+  if (!script) {
+    logger.info('[ORCHESTRATOR] Skipping college profile job: no supported profile script found');
+    return Promise.resolve({ exitCode: 0, rowsUpserted: 0 });
+  }
   return runProcess('college_profiles', 'python3',
-    [path.join(SCRAPER_DIR, 'college_profile_scraper.py')]);
+    [script]);
 }
 
 function runMlRetrain() {
