@@ -28,30 +28,23 @@ returns `{ tier, probability, confidence, explanation }`.
 
 CollegeOS includes a fully automated, zero-touch data pipeline that keeps all college data and ML models fresh without manual intervention.
 
-### Architecture
+### Architecture (quick-stabilization ownership split)
 
 ```
-Railway Service 1 (Node backend)          Railway Service 2 (Python worker)
-───────────────────────────────────        ──────────────────────────────────
-backend/src/app.js                         scraper/orchestrator_worker.py
-  └─ backend/jobs/orchestrator.js            ├─ scraper/reddit_scraper.py
-       (node-cron, spawns Python)            ├─ scraper/admissions_scraper.py
-                                             ├─ scraper/financial_scraper.py
-                                             ├─ scraper/college_profile_scraper.py
-                                             └─ scraper/training_pipeline.py
+GitHub Actions (source of truth)          Optional fallback/manual (Python-only)
+───────────────────────────────────       ──────────────────────────────────────
+.github/workflows/daily-data-refresh.yml  scraper/orchestrator_worker.py
+  └─ scraper/pipeline.py                    └─ backend/scripts/data-pipeline/*
 ```
 
-Both services write run results to `scraper_run_logs` in Postgres, which is served by `GET /api/admin/health`.
+The official admissions data refresh path is **GitHub Actions + `scraper/pipeline.py`**.
+`backend/scripts/data-pipeline/*` + `scraper/orchestrator_worker.py` is retained as Python fallback/manual path.
 
 ### Schedules
 
 | Job | Schedule | Table written |
 |-----|----------|---------------|
-| Reddit chance-me scraper | Every 6h | `chance_me_posts` |
-| Admissions stats | Daily 02:00 UTC | `college_admissions_stats` |
-| Financial aid | Daily 03:00 UTC | `college_financial_aid` |
-| College profiles | Every Sunday 04:00 UTC | `colleges` |
-| ML retrain check | Every 1h (triggers if 100+ new rows) | `ml_metadata` |
+| Daily data refresh | Daily 03:00 UTC | `colleges_comprehensive` |
 
 ### Health Dashboard
 
@@ -78,18 +71,15 @@ NODE_ENV=production
 ### Running Locally
 
 ```bash
-# Node orchestrator starts automatically when ENABLE_SCRAPING_JOBS=true
-ENABLE_SCRAPING_JOBS=true node backend/src/app.js
+# Backend app (scraper scheduling is NOT source-of-truth here)
+node backend/src/app.js
 
-# Python worker (separate terminal or process)
+# Optional Python fallback worker
 pip install -r scraper/requirements.txt
 python scraper/orchestrator_worker.py
 
-# Run a single scraper manually
-python scraper/reddit_scraper.py
-python scraper/admissions_scraper.py
-python scraper/financial_scraper.py
-python scraper/college_profile_scraper.py
+# Run official GitHub Actions pipeline entrypoint locally
+python scraper/pipeline.py
 
 # Run ML training manually
 python scraper/training_pipeline.py
@@ -108,19 +98,15 @@ The new tables are created by migration `049_automation_schema.sql`, which runs 
 
 ## Scraper Setup
 
-The Python scrapers run automatically via GitHub Actions (`.github/workflows/scrapers.yml`). No always-on server is required.
+The Python data pipeline runs automatically via GitHub Actions (`.github/workflows/daily-data-refresh.yml`). No always-on scraper server is required.
 
 ### Schedule
 
 | Job | Trigger |
 |---|---|
-| `reddit-scraper` | Every 6 hours |
-| `admissions-scraper` | Daily at 02:00 UTC |
-| `financial-scraper` | Daily at 03:00 UTC |
-| `college-profile-scraper` | Every Sunday at 04:00 UTC |
-| `ml-retrain` | Manual only (`workflow_dispatch`) |
+| `refresh` (`daily-data-refresh.yml`) | Daily at 03:00 UTC + manual dispatch |
 
-Any job can also be triggered manually from the GitHub UI: **Actions → CollegeOS Python Scrapers → Run workflow**.
+The job can also be triggered manually from the GitHub UI: **Actions → Daily College Data Refresh → Run workflow**.
 
 ### Required GitHub Secrets
 
