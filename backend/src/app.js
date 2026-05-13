@@ -312,10 +312,17 @@ async function startServer() {
         }
 
         try {
-          const deadlineScrapingScheduler = require('./jobs/deadlineScrapingScheduler');
-          deadlineSchedulerInstance = deadlineScrapingScheduler;
-          deadlineSchedulerInstance.setupCronJobs();
-          logger.info('Deadline scraping scheduler started');
+          const deadlineScrapingSchedulerModule = require('./jobs/deadlineScrapingScheduler');
+          deadlineSchedulerInstance = typeof deadlineScrapingSchedulerModule === 'function'
+            ? new deadlineScrapingSchedulerModule()
+            : deadlineScrapingSchedulerModule;
+
+          if (deadlineSchedulerInstance && typeof deadlineSchedulerInstance.setupCronJobs === 'function') {
+            deadlineSchedulerInstance.setupCronJobs();
+            logger.info('Deadline scraping scheduler started');
+          } else {
+            logger.warn('Deadline scraping scheduler module does not expose setupCronJobs()');
+          }
         } catch (error) {
           logger.warn('Deadline scraping scheduler failed to start:', { error: error.message });
         }
