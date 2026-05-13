@@ -1,7 +1,7 @@
 name: Daily College Data Refresh
 on:
   schedule:
-    - cron: '0 3 * * *'   # 3am UTC daily
+    - cron: '0 3 * * *'
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,29 +12,19 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-      
+
       - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
         with:
           python-version: '3.11'
-      
+
       - name: Install dependencies
         run: |
           pip install psycopg2-binary requests pandas python-dotenv tenacity
-      
+
       - name: Run data pipeline
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           IPEDS_API_KEY: ${{ secrets.IPEDS_API_KEY }}
           COLLEGE_SCORECARD_API_KEY: ${{ secrets.COLLEGE_SCORECARD_API_KEY }}
+          PYTHONPATH: ${{ github.workspace }}
         run: python scraper/pipeline.py
-      
-      - name: Notify Slack on failure
-        if: failure()
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a  # v2.1.1
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK }}
-          webhook-type: incoming-webhook
-          payload: |
-            {
-              "text": "⚠️ CollegeOS daily data refresh failed — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
-            }
