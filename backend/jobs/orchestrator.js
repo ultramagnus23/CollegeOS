@@ -146,9 +146,13 @@ function runRedditScraper() {
 }
 
 function runAdmissionsScraper() {
-  const script = path.join(DATA_PIPELINE_DIR, 'fetch-ipeds.py');
-  if (!fs.existsSync(script)) {
-    logger.info('[ORCHESTRATOR] Skipping admissions job: fetch-ipeds.py not present');
+  const scriptCandidates = [
+    path.join(DATA_PIPELINE_DIR, 'fetch-ipeds.py'),
+    path.join(SCRAPER_DIR, 'admissions_scraper.py'),
+  ];
+  const script = scriptCandidates.find((p) => fs.existsSync(p));
+  if (!script) {
+    logger.info('[ORCHESTRATOR] Skipping admissions job: no supported admissions script found');
     return Promise.resolve({ exitCode: 0, rowsUpserted: 0 });
   }
   return runProcess('admissions', 'python3',
@@ -156,9 +160,13 @@ function runAdmissionsScraper() {
 }
 
 function runFinancialScraper() {
-  const script = path.join(DATA_PIPELINE_DIR, 'fetch-collegedata-org.py');
-  if (!fs.existsSync(script)) {
-    logger.info('[ORCHESTRATOR] Skipping financial aid job: fetch-collegedata-org.py not present');
+  const scriptCandidates = [
+    path.join(DATA_PIPELINE_DIR, 'fetch-collegedata-org.py'),
+    path.join(SCRAPER_DIR, 'financial_scraper.py'),
+  ];
+  const script = scriptCandidates.find((p) => fs.existsSync(p));
+  if (!script) {
+    logger.info('[ORCHESTRATOR] Skipping financial aid job: no supported financial script found');
     return Promise.resolve({ exitCode: 0, rowsUpserted: 0 });
   }
   return runProcess('financial_aid', 'python3',
@@ -166,9 +174,13 @@ function runFinancialScraper() {
 }
 
 function runCollegeProfileScraper() {
-  const script = path.join(DATA_PIPELINE_DIR, 'fetch-cds-web.py');
-  if (!fs.existsSync(script)) {
-    logger.info('[ORCHESTRATOR] Skipping college profile job: fetch-cds-web.py not present');
+  const scriptCandidates = [
+    path.join(DATA_PIPELINE_DIR, 'fetch-cds-web.py'),
+    path.join(SCRAPER_DIR, 'college_profile_scraper.py'),
+  ];
+  const script = scriptCandidates.find((p) => fs.existsSync(p));
+  if (!script) {
+    logger.info('[ORCHESTRATOR] Skipping college profile job: no supported profile script found');
     return Promise.resolve({ exitCode: 0, rowsUpserted: 0 });
   }
   return runProcess('college_profiles', 'python3',
