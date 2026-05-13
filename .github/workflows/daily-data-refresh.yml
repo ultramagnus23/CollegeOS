@@ -3,10 +3,8 @@ on:
   schedule:
     - cron: '0 3 * * *'   # 3am UTC daily
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   refresh:
     name: Refresh College Data
@@ -31,7 +29,7 @@ jobs:
         run: python scraper/pipeline.py
       
       - name: Notify Slack on failure
-        if: failure() && secrets.SLACK_WEBHOOK
+        if: failure()
         uses: slackapi/slack-github-action@6927a59d5838f19b6e3cbb2ffe9dbc8dae80cae2  # v2.1.0
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK }}
