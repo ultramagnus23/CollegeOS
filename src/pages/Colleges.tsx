@@ -40,6 +40,7 @@ const GLOBAL_COLLEGES = `
   select option{background:var(--color-bg-surface);color:var(--color-text-primary);}
   ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
 `;
+const COLLEGE_SYNC_DEBUG = import.meta.env.DEV;
 
 /* ==================== TYPES ==================== */
 
@@ -187,6 +188,29 @@ const Colleges: React.FC = () => {
         });
 
         const normalized: any[] = result.data.map(normalizeToCard);
+        if (COLLEGE_SYNC_DEBUG) {
+          console.debug(
+            '[CollegeSync] colleges.raw-supabase',
+            result.data.slice(0, 3).map((college: any) => ({
+              id: college.id,
+              name: college.name,
+              acceptance_rate: college.acceptance_rate ?? college.college_admissions?.[0]?.acceptance_rate ?? null,
+              ranking_qs: college.ranking_qs ?? null,
+              data_source: college.data_source ?? null,
+            }))
+          );
+          console.debug(
+            '[CollegeSync] colleges.normalized-cards',
+            normalized.slice(0, 3).map((college: any) => ({
+              id: college.id,
+              name: college.name,
+              acceptanceRate: college.acceptanceRate ?? null,
+              tuition_cost: college.tuition_cost ?? null,
+              ranking: college.ranking ?? null,
+              data_source: college.data_source ?? null,
+            }))
+          );
+        }
 
         // Client-side deduplication by ID — guards against duplicate rows
         // that survived the DB seed phase.
@@ -340,6 +364,21 @@ const Colleges: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!COLLEGE_SYNC_DEBUG) return;
+    console.debug(
+      '[CollegeSync] colleges.state',
+      colleges.slice(0, 3).map((college: any) => ({
+        id: college.id,
+        name: college.name,
+        acceptanceRate: college.acceptanceRate ?? college.acceptance_rate ?? null,
+        tuition_cost: college.tuition_cost ?? null,
+        ranking: college.ranking ?? null,
+        data_source: college.data_source ?? null,
+      }))
+    );
+  }, [colleges]);
 
   /* ==================== RECOMMENDATIONS ==================== */
 
@@ -761,6 +800,18 @@ const COUNTRY_COLORS: Record<string, string> = {
 };
 
 const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onViewDetails, isAdding, fit }) => {
+  useEffect(() => {
+    if (!COLLEGE_SYNC_DEBUG || !college || index > 1) return;
+    console.debug('[CollegeSync] college-card.render', {
+      id: college.id,
+      name: college.name,
+      acceptanceRate: college.acceptanceRate ?? college.acceptance_rate ?? null,
+      tuition_cost: college.tuition_cost ?? null,
+      ranking: college.ranking ?? null,
+      data_source: (college as any).data_source ?? null,
+    });
+  }, [college, index]);
+
   if (!college) return null;
 
   const h2r = (hex: string, a: number) => {
