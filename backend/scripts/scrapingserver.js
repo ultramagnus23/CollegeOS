@@ -50,6 +50,17 @@ const state = {
 
 const orch = new Orchestrator();
 
+function hasOrchestratorMethod(name) {
+  return orch && typeof orch[name] === 'function';
+}
+
+async function callOrchestratorOrSkip(methodName, ...args) {
+  if (!hasOrchestratorMethod(methodName)) {
+    return { skipped: true, reason: `Method not implemented on scrapeOrchestrator: ${methodName}` };
+  }
+  return orch[methodName](...args);
+}
+
 // ── Job runner with lock ────────────────────────────────────────────────
 
 async function runJob(jobName, fn) {
@@ -93,7 +104,7 @@ function setupSchedules() {
    * This is the workhorse — scrapes today's batch of college admission pages
    */
   const dailyAdmissions = cron.schedule('0 2 * * *', async () => {
-    await runJob('daily_admissions', () => orch.runAdmissionsScraping());
+    await runJob('daily_admissions', () => callOrchestratorOrSkip('runAdmissionsScraping'));
   }, { timezone: 'America/New_York' });
   jobs.push({ name: 'daily_admissions', schedule: '0 2 * * *', job: dailyAdmissions });
 
@@ -102,7 +113,7 @@ function setupSchedules() {
    * New data drops from Dept of Education, this catches it
    */
   const monthlyScorecardJob = cron.schedule('0 1 1 * *', async () => {
-    await runJob('monthly_scorecard', () => orch.runScorecard());
+    await runJob('monthly_scorecard', () => callOrchestratorOrSkip('runScorecard'));
   }, { timezone: 'America/New_York' });
   jobs.push({ name: 'monthly_scorecard', schedule: '0 1 1 * *', job: monthlyScorecardJob });
 
@@ -110,7 +121,7 @@ function setupSchedules() {
    * 15th of every month at 1:00 AM: International rankings + UK/India/Germany
    */
   const monthlyIntlJob = cron.schedule('0 1 15 * *', async () => {
-    await runJob('monthly_international', () => orch.runInternational());
+    await runJob('monthly_international', () => callOrchestratorOrSkip('runInternational'));
   }, { timezone: 'America/New_York' });
   jobs.push({ name: 'monthly_international', schedule: '0 1 15 * *', job: monthlyIntlJob });
 
@@ -119,7 +130,7 @@ function setupSchedules() {
    * IPEDS releases new data annually but re-checking quarterly is cheap
    */
   const quarterlyIPEDS = cron.schedule('0 3 1 1,4,7,10 *', async () => {
-    await runJob('quarterly_ipeds', () => orch.runIPEDS());
+    await runJob('quarterly_ipeds', () => callOrchestratorOrSkip('runIPEDS'));
   }, { timezone: 'America/New_York' });
   jobs.push({ name: 'quarterly_ipeds', schedule: '0 3 1 1,4,7,10 *', job: quarterlyIPEDS });
 
@@ -162,7 +173,9 @@ function setupServer(jobs) {
    * Returns current scraper status — useful for monitoring dashboards
    */
   app.get('/scraper/health', (req, res) => {
-    const dbStatus = orch.status();
+    const dbStatus = hasOrchestratorMethod('status')
+      ? orch.status()
+      : { tableStats: null, queueStats: null, note: 'scrapeOrchestrator.status() not implemented' };
     res.json({
       status: state.isRunning ? 'running' : 'idle',
       currentJob: state.currentJob,
@@ -183,6 +196,9 @@ function setupServer(jobs) {
    * Detailed fill-rate report for all tables
    */
   app.get('/scraper/status', (req, res) => {
+    if (!hasOrchestratorMethod('status')) {
+      return res.status(501).json({ error: 'scrapeOrchestrator.status() not implemented' });
+    }
     res.json(orch.status());
   });
 
@@ -196,12 +212,12 @@ function setupServer(jobs) {
     const { job } = req.params;
 
     const jobMap = {
-      daily:      () => orch.runDailyBatch(),
-      scorecard:  () => orch.runScorecard(),
-      ipeds:      () => orch.runIPEDS(),
-      admissions: () => orch.runAdmissionsScraping(),
-      intl:       () => orch.runInternational(),
-      full:       () => orch.runFull(),
+      daily:      () => callOrchestratorOrSkip('runDailyBatch'),
+      scorecard:  () => callOrchestratorOrSkip('runScorecard'),
+      ipeds:      () => callOrchestratorOrSkip('runIPEDS'),
+      admissions: () => callOrchestratorOrSkip('runAdmissionsScraping'),
+      intl:       () => callOrchestratorOrSkip('runInternational'),
+      full:       () => callOrchestratorOrSkip('runFull'),
     };
 
     if (!jobMap[job]) {
@@ -291,7 +307,7 @@ async function start() {
   const { rows: scorecardRows } = await orch.pool.query(`SELECT COUNT(*) as n FROM college_admissions WHERE acceptance_rate IS NOT NULL`);
   if (parseInt(scorecardRows[0].n) < 100) {
     console.log('\n[scraper] Scorecard data is sparse — running initial Scorecard pull...');
-    await runJob('boot_scorecard', () => orch.runScorecard());
+    await runJob('boot_scorecard', () => callOrchestratorOrSkip('runScorecard'));
   }
 
   // 5. Run today's daily batch immediately on boot (in case server was down overnight)
@@ -303,7 +319,7 @@ async function start() {
   if (lastDailyRun !== today) {
     console.log('[scraper] Daily batch not yet run today — starting...');
     // Small delay to not block startup
-    setTimeout(() => runJob('boot_daily', () => orch.runDailyBatch()), 5000);
+    setTimeout(() => runJob('boot_daily', () => callOrchestratorOrSkip('runDailyBatch')), 5000);
   }
 
   // ── Graceful shutdown ──
