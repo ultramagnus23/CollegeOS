@@ -7,6 +7,7 @@ import {
   normalizeApiProfileToCanonical,
 } from '@/types/profile';
 import { logProfileTelemetry } from '@/lib/profileTelemetry';
+import { canonicalizeProfile, normalizeProfile, sanitizeProfile } from '@/utils/onboarding';
 
 interface SaveOptions {
   userId?: number | null;
@@ -42,7 +43,10 @@ export const saveCanonicalProfile = async (
   patch: Partial<CanonicalProfile>,
   options: SaveOptions = {},
 ): Promise<CanonicalProfile> => {
-  const validatedPatch = canonicalPartialProfileSchema.parse(patch);
+  const normalizedPatch = normalizeProfile(patch as Record<string, unknown>);
+  const sanitizedPatch = sanitizeProfile(normalizedPatch);
+  const canonicalizedPatch = canonicalizeProfile(sanitizedPatch);
+  const validatedPatch = canonicalPartialProfileSchema.parse(canonicalizedPatch);
 
   const base = canonicalCache ?? (await fetchCanonicalProfile());
   const candidate = canonicalProfileSchema.parse({
