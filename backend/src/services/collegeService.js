@@ -93,7 +93,7 @@ class CollegeService {
     try {
       const dbManager = require('../config/database');
       const pool = dbManager.getDatabase();
-      const rows = (await pool.query('SELECT DISTINCT country FROM colleges ORDER BY country')).rows;
+      const rows = (await pool.query('SELECT DISTINCT country FROM public.clean_colleges WHERE country IS NOT NULL ORDER BY country')).rows;
       return rows.map(row => row.country);
     } catch (error) {
       logger.error('Failed to get countries:', error);
@@ -136,7 +136,7 @@ class CollegeService {
         stats.database = v2Stats;
       } catch (e) {
         const oldStats = (await pool.query(`
-          SELECT COUNT(*) as total, COUNT(DISTINCT country) as countries FROM colleges
+          SELECT COUNT(*) as total, COUNT(DISTINCT country) as countries FROM public.clean_colleges
         `)).rows[0];
         stats.database = oldStats;
       }

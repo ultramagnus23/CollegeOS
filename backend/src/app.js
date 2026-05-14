@@ -214,7 +214,7 @@ async function startServer() {
     // Log college count so Render cold-start logs confirm data is available
     try {
       const pool = dbManager.getDatabase();
-      const { rows: colRows } = await pool.query('SELECT COUNT(*) AS count FROM colleges');
+      const { rows: colRows } = await pool.query('SELECT COUNT(*) AS count FROM public.clean_colleges');
       logger.info(`Colleges table: ${colRows[0].count} rows`);
     } catch (_) {
       logger.warn('Could not read college row count');

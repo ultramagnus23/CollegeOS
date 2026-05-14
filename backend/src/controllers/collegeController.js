@@ -519,7 +519,7 @@ class CollegeController {
       const pool = dbManager.getDatabase();
       
       // Get college name for context
-      const college = (await pool.query('SELECT name FROM colleges WHERE id = $1', [collegeId])).rows[0];
+      const college = (await pool.query('SELECT name FROM public.clean_colleges WHERE id = $1', [collegeId])).rows[0];
       if (!college) {
         return res.status(404).json({
           success: false,
