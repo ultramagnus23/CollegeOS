@@ -80,7 +80,13 @@ class RequirementService {
     const pool = dbManager.getDatabase();
     
     // Get college info to determine application system
-    const college = (await pool.query('SELECT * FROM colleges WHERE id = $1', [collegeId])).rows[0];
+    const college = (await pool.query(
+      `SELECT cc.id, cc.name, cc.country, cd.application_platforms
+       FROM public.clean_colleges cc
+       LEFT JOIN public.college_deadlines cd ON cc.id = cd.college_id
+       WHERE cc.id = $1`,
+      [collegeId]
+    )).rows[0];
     if (!college) {
       throw new Error('College not found');
     }
@@ -552,7 +558,7 @@ class RequirementService {
     const reusableEssays = (await pool.query(`
       SELECT t.*, c.name as college_name
       FROM tasks t
-      JOIN colleges c ON c.id = t.college_id
+      JOIN public.clean_colleges c ON c.id = t.college_id
       WHERE t.user_id = $1 AND t.is_reusable = true AND t.status = 'complete' AND t.task_type = 'essay'
     `, [userId])).rows;
     

@@ -141,20 +141,31 @@ async function computeFinancialProfile(user, college, pool) {
 
   const cfd = cfdRows[0] || {};
 
-  // Also pull summary columns from colleges table
+  // Pull summary columns from clean_colleges + detail joins
   const { rows: colRows } = await pool.query(
     `SELECT
-       avg_net_price_0_30k, avg_net_price_30_48k, avg_net_price_48_75k,
-       avg_net_price_75_110k, avg_net_price_110k_plus,
-       avg_institutional_grant, avg_merit_aid, pct_receiving_merit_aid,
-       need_blind_domestic, need_blind_international, meets_full_need,
-       median_earnings_6yr, median_earnings_10yr,
-       loan_default_rate, avg_total_debt_at_graduation,
-       css_profile_required, international_aid_available, international_aid_avg,
-       pct_students_receiving_aid,
-       -- admissions metrics for merit prediction
-       median_sat, median_act
-     FROM colleges WHERE id = $1`,
+       cfd.avg_net_price_0_30k, cfd.avg_net_price_30_48k, cfd.avg_net_price_48_75k,
+       cfd.avg_net_price_75_110k, cfd.avg_net_price_110k_plus,
+       NULL::numeric AS avg_institutional_grant,
+       NULL::numeric AS avg_merit_aid,
+       NULL::numeric AS pct_receiving_merit_aid,
+       NULL::boolean AS need_blind_domestic,
+       cc.need_aware_intl AS need_blind_international,
+       cc.meets_full_need,
+       NULL::numeric AS median_earnings_6yr,
+       NULL::numeric AS median_earnings_10yr,
+       cfd.loan_default_rate_3yr AS loan_default_rate,
+       cfd.median_debt_at_graduation AS avg_total_debt_at_graduation,
+       NULL::boolean AS css_profile_required,
+       NULL::boolean AS international_aid_available,
+       NULL::numeric AS international_aid_avg,
+       cfd.pct_receiving_pell AS pct_students_receiving_aid,
+       ca.sat_avg AS median_sat,
+       ca.act_avg AS median_act
+     FROM public.clean_colleges cc
+     LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
+     LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
+     WHERE cc.id = $1`,
     [college.id]
   );
 

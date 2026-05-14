@@ -60,7 +60,23 @@ router.post('/', authenticate, async (req, res, next) => {
       college = await College.findById(parseInt(college_id, 10));
     } else if (college_name) {
       const { rows } = await pool.query(
-        `SELECT * FROM colleges WHERE name ILIKE $1 LIMIT 1`,
+        `SELECT
+           cc.*,
+           ca.acceptance_rate,
+           ca.sat_25,
+           ca.sat_75,
+           ca.sat_avg,
+           ca.act_25,
+           ca.act_75,
+           ca.act_avg,
+           ca.gpa_25,
+           ca.gpa_75,
+           ca.gpa_50
+         FROM public.clean_colleges cc
+         LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
+         WHERE cc.name ILIKE $1
+         ORDER BY CASE WHEN ca.acceptance_rate IS NOT NULL THEN 1 ELSE 2 END, cc.name ASC
+         LIMIT 1`,
         [college_name]
       );
       college = rows[0] || null;
