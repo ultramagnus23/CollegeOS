@@ -487,6 +487,22 @@ router.patch('/academic', authenticate, async (req, res, next) => {
 router.post('/extended', authenticate, async (req, res, next) => {
   try {
     const data = req.body;
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+    const normalizeArray = (values) => {
+      if (!Array.isArray(values)) return [];
+      const seen = new Set();
+      const normalized = [];
+      for (const raw of values) {
+        const value = String(raw || '').trim().replace(/\s+/g, ' ');
+        if (!value) continue;
+        const title = value.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+        const key = title.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        normalized.push(title);
+      }
+      return normalized;
+    };
 
     // Map onboarding field names → student_profiles column names so that
     // GPA, SAT scores, activities, etc. are actually persisted.
@@ -533,6 +549,12 @@ router.post('/extended', authenticate, async (req, res, next) => {
     if (data.potentialMajors !== undefined) {
       mapped.intended_majors = data.potentialMajors;
     }
+    if (Array.isArray(data.intended_majors)) {
+      mapped.intended_majors = normalizeArray(data.intended_majors);
+    }
+    if (Array.isArray(data.customMajors) || Array.isArray(data.custom_majors)) {
+      mapped.custom_majors = normalizeArray(data.customMajors || data.custom_majors);
+    }
 
     // Preferred countries
     if (data.preferredCountries !== undefined) {
@@ -558,9 +580,33 @@ router.post('/extended', authenticate, async (req, res, next) => {
     if (data.whyCollege !== undefined) {
       mapped.why_college = data.whyCollege;
     }
+    if (data.curriculum_type !== undefined) {
+      mapped.curriculum_type = data.curriculum_type;
+    }
+    if (data.curriculum_other !== undefined || data.curriculum_type_other !== undefined) {
+      mapped.curriculum_type_other = data.curriculum_other || data.curriculum_type_other;
+    }
+    if (data.school_name !== undefined || data.high_school_name !== undefined) {
+      mapped.high_school_name = data.school_name || data.high_school_name;
+    }
+    if (data.phone !== undefined) mapped.phone = data.phone;
+    if (data.date_of_birth !== undefined) mapped.date_of_birth = data.date_of_birth;
+    if (data.graduation_year !== undefined && data.graduation_year !== '') {
+      const gradYear = parseInt(String(data.graduation_year), 10);
+      if (!Number.isNaN(gradYear)) mapped.graduation_year = gradYear;
+    }
+    if (Array.isArray(data.subjects)) mapped.subjects = normalizeArray(data.subjects);
+    if (Array.isArray(data.customSubjects) || Array.isArray(data.custom_subjects)) {
+      mapped.custom_subjects = normalizeArray(data.customSubjects || data.custom_subjects);
+    }
+    if (Array.isArray(data.skillsStrengths) || Array.isArray(data.traits)) {
+      mapped.interest_tags = normalizeArray(data.skillsStrengths || data.traits);
+    }
+    if (data.traitWeights || data.trait_weights) mapped.trait_weights = data.traitWeights || data.trait_weights;
+    if (data.traitProfile || data.trait_profile) mapped.trait_profile = data.traitProfile || data.trait_profile;
 
     // Activities → extracurriculars JSONB
-    if (Array.isArray(data.activities) && data.activities.length > 0) {
+    if (Array.isArray(data.activities)) {
       const validActivities = data.activities.filter(a => a?.name?.trim());
       mapped.extracurriculars = validActivities.map(a => {
         // Derive tier if not explicitly set: national/varsity = 1, club/local = 2, default = 3
@@ -576,8 +622,9 @@ router.post('/extended', authenticate, async (req, res, next) => {
           name: a.name,
           type: a.type || '',
           tier,
-          yearsInvolved: a.yearsInvolved || 0,
-          hoursPerWeek: a.hoursPerWeek || 0,
+          yearsInvolved: clamp(parseInt(String(a.yearsInvolved || 0), 10) || 0, 0, 20),
+          hoursPerWeek: clamp(parseInt(String(a.hoursPerWeek || 0), 10) || 0, 0, 80),
+          weeksPerYear: clamp(parseInt(String(a.weeksPerYear || 0), 10) || 0, 0, 52),
           leadership: a.leadership || '',
           achievements: a.achievements || '',
         };
@@ -695,7 +742,7 @@ router.get('/completion', authenticate, async (req, res, next) => {
     const allFields = [
       'First Name', 'Email', 'Curriculum Type', 'Country', 'Graduation Year', 'Subjects',
       'Phone Number', 'Date of Birth', 'GPA (Weighted)', 'GPA (Unweighted)', 'SAT Score',
-      'ACT Score', 'IELTS Score', 'TOEFL Score', 'School Name',
+      'ACT Score', 'IELTS Score', 'TOEFL Score', 'Duolingo Score', 'School Name', 'Traits',
       'College Size Preference', 'Campus Setting Preference', 'Activities',
     ];
     const missingFields = [

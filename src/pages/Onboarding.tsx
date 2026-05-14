@@ -9,6 +9,20 @@ import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { StudentProfile } from '../types';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
+import {
+  ACTIVITY_LIMITS,
+  buildTraitProfile,
+  dedupeNormalized,
+  parseBoundedInteger,
+  sanitizeIntegerInput,
+} from '@/utils/onboarding';
+import {
+  CURRICULUM_OPTIONS,
+  MAJOR_OPTIONS,
+  SCHOOL_SUGGESTIONS,
+  SUBJECT_OPTIONS,
+  TRAIT_OPTIONS,
+} from '@/constants/onboardingOptions';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface StructuredActivity {
@@ -17,6 +31,7 @@ interface StructuredActivity {
   tier: number;
   yearsInvolved: number;
   hoursPerWeek: number;
+  weeksPerYear: number;
   leadership: string;
   achievements: string;
 }
@@ -325,7 +340,16 @@ const TIER_DATA = {
   4: { name: 'Participation', desc: 'Club member, general participation, personal hobbies', color: '#666' },
 };
 
-const emptyActivity: StructuredActivity = { name: '', type: '', tier: 4, yearsInvolved: 1, hoursPerWeek: 2, leadership: '', achievements: '' };
+const emptyActivity: StructuredActivity = {
+  name: '',
+  type: '',
+  tier: 4,
+  yearsInvolved: 1,
+  hoursPerWeek: 2,
+  weeksPerYear: 40,
+  leadership: '',
+  achievements: '',
+};
 
 // ── Radar Visualization ────────────────────────────────────────────────────
 const RADAR_AXES = ['Academic', 'Athletic', 'Arts', 'Service', 'Leadership', 'Research'];
@@ -454,7 +478,7 @@ const ActivitiesOnboardingStep: React.FC<{
               <div>
                 <div style={{ fontWeight: 700, color: '#fff', fontSize: 14, fontFamily: "'Inter', system-ui, sans-serif" }}>{act.name}</div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2, fontFamily: "'Inter', system-ui, sans-serif" }}>
-                  {act.type} · {act.yearsInvolved}yr · {act.hoursPerWeek}h/wk
+                  {act.type} · {act.yearsInvolved}yr · {act.hoursPerWeek}h/wk · {act.weeksPerYear}wk/yr
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -511,8 +535,45 @@ const ActivitiesOnboardingStep: React.FC<{
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
-              <input type="number" value={current.yearsInvolved} onChange={e => setCurrent({ ...current, yearsInvolved: +e.target.value })} style={inputStyle(accent)} min={1} max={4} placeholder="Years" />
-              <input type="number" value={current.hoursPerWeek} onChange={e => setCurrent({ ...current, hoursPerWeek: +e.target.value })} style={inputStyle(accent)} min={1} max={40} placeholder="Hrs/week" />
+              <input
+                type="text"
+                inputMode="numeric"
+                value={String(current.yearsInvolved)}
+                onChange={(e) => {
+                  const clean = sanitizeIntegerInput(e.target.value, 2);
+                  const bounded = parseBoundedInteger(clean, ACTIVITY_LIMITS.years.min, ACTIVITY_LIMITS.years.max);
+                  setCurrent({ ...current, yearsInvolved: bounded ?? 0 });
+                }}
+                style={inputStyle(accent)}
+                placeholder="Years participated (Example: 4 years)"
+              />
+              <input
+                type="text"
+                inputMode="numeric"
+                value={String(current.hoursPerWeek)}
+                onChange={(e) => {
+                  const clean = sanitizeIntegerInput(e.target.value, 3);
+                  const bounded = parseBoundedInteger(clean, ACTIVITY_LIMITS.hoursPerWeek.min, ACTIVITY_LIMITS.hoursPerWeek.max);
+                  setCurrent({ ...current, hoursPerWeek: bounded ?? 0 });
+                }}
+                style={inputStyle(accent)}
+                placeholder="Average hours spent weekly"
+              />
+              <input
+                type="text"
+                inputMode="numeric"
+                value={String(current.weeksPerYear)}
+                onChange={(e) => {
+                  const clean = sanitizeIntegerInput(e.target.value, 2);
+                  const bounded = parseBoundedInteger(clean, ACTIVITY_LIMITS.weeksPerYear.min, ACTIVITY_LIMITS.weeksPerYear.max);
+                  setCurrent({ ...current, weeksPerYear: bounded ?? 0 });
+                }}
+                style={inputStyle(accent)}
+                placeholder="Weeks/year (Example: 40)"
+              />
+            </div>
+            <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>
+              Allowed ranges: {ACTIVITY_LIMITS.years.min}-{ACTIVITY_LIMITS.years.max} years, {ACTIVITY_LIMITS.hoursPerWeek.min}-{ACTIVITY_LIMITS.hoursPerWeek.max} hours/week, {ACTIVITY_LIMITS.weeksPerYear.min}-{ACTIVITY_LIMITS.weeksPerYear.max} weeks/year.
             </div>
             <input value={current.leadership} onChange={e => setCurrent({ ...current, leadership: e.target.value })} placeholder="Role/position" style={{ ...inputStyle(accent), marginTop: 10 }} />
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
@@ -657,9 +718,12 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   function defaultData() {
     return {
       name: '', grade: '', currentBoard: '', country: '', dreamSchool: '',
-      current_grade: '', gender: '',
+      current_grade: '', gender: '', phone: '', date_of_birth: '', graduation_year: '',
+      school_name: '', curriculum_type: '', curriculum_other: '',
       currentGPA: '', gpaType: 'percentage', satScore: '', actScore: '', ibPredicted: '', subjects: [],
-      careerInterests: [], majorCertain: false, potentialMajors: [], skillsStrengths: [],
+      customSubjects: [], customMajorInput: '', customSubjectInput: '',
+      careerInterests: [], majorCertain: false, potentialMajors: [], customMajors: [], skillsStrengths: [],
+      traitWeights: {} as Record<string, number>,
       preferredCountries: [], budgetRange: '', campusSize: '', locationPreference: '',
       activities: [], leadership: [], awards: [],
       careerGoals: '', whyCollege: '',
@@ -699,12 +763,69 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     });
   }, [user?.id, step]);
 
+  const normalizedMajors = dedupeNormalized([
+    ...(studentData.potentialMajors || []),
+    ...(studentData.customMajors || []),
+  ]);
+  const normalizedSubjects = dedupeNormalized([
+    ...(studentData.subjects || []),
+    ...(studentData.customSubjects || []),
+  ]);
+  const normalizedTraits = dedupeNormalized(studentData.skillsStrengths || []);
+
+  const persistWithRetry = useCallback(async (payload: Record<string, unknown>, attempts = 3) => {
+    let lastError: unknown = null;
+    for (let i = 0; i < attempts; i += 1) {
+      try {
+        await api.saveExtendedProfile(payload);
+        return;
+      } catch (error) {
+        lastError = error;
+        if (i < attempts - 1) await new Promise((r) => setTimeout(r, (i + 1) * 400));
+      }
+    }
+    throw lastError;
+  }, []);
+
+  const buildExtendedPayload = useCallback((currentData: any, currentStep: number) => {
+    const traitProfile = buildTraitProfile(
+      dedupeNormalized(currentData.skillsStrengths || []),
+      currentData.traitWeights || {},
+    );
+    return {
+      ...currentData,
+      onboarding_step: currentStep,
+      high_school_name: currentData.school_name || currentData.dreamSchool || '',
+      curriculum_type: currentData.curriculum_type || currentData.currentBoard || '',
+      curriculum_type_other:
+        (currentData.curriculum_type === 'Other' || currentData.currentBoard === 'Other')
+          ? (currentData.curriculum_other || '')
+          : null,
+      graduation_year: currentData.graduation_year ? Number(currentData.graduation_year) : null,
+      phone: currentData.phone || null,
+      date_of_birth: currentData.date_of_birth || null,
+      intended_majors: dedupeNormalized([
+        ...(currentData.potentialMajors || []),
+        ...(currentData.customMajors || []),
+      ]),
+      subjects: dedupeNormalized([
+        ...(currentData.subjects || []),
+        ...(currentData.customSubjects || []),
+      ]),
+      custom_majors: dedupeNormalized(currentData.customMajors || []),
+      custom_subjects: dedupeNormalized(currentData.customSubjects || []),
+      traits: dedupeNormalized(currentData.skillsStrengths || []),
+      trait_weights: currentData.traitWeights || {},
+      trait_profile: traitProfile,
+    };
+  }, []);
+
   // Save current step's profile data to student_profiles before navigating forward.
   const saveStepData = useCallback(async (currentData: any, currentStep: number): Promise<void> => {
     try {
-      await api.saveExtendedProfile({ ...currentData, onboarding_step: currentStep });
+      await persistWithRetry(buildExtendedPayload(currentData, currentStep), 2);
     } catch { /* non-critical: draft is already being persisted via saveOnboardingDraft */ }
-  }, []);
+  }, [buildExtendedPayload, persistWithRetry]);
 
   const theme = STEP_THEMES[step - 1];
   const { accent, bg, surface } = theme;
@@ -751,9 +872,15 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
 
   const isStepComplete = (): boolean => {
     switch(step) {
-      case 1: return !!(studentData.name && studentData.country);
-      case 2: return !!(studentData.currentGPA && studentData.subjects.length > 0);
-      case 3: return studentData.majorCertain !== null && studentData.potentialMajors.length > 0;
+      case 1: return !!(studentData.name && studentData.country && studentData.phone && studentData.date_of_birth);
+      case 2:
+        return !!(
+          studentData.currentGPA &&
+          normalizedSubjects.length > 0 &&
+          (studentData.curriculum_type || studentData.currentBoard) &&
+          ((studentData.curriculum_type || studentData.currentBoard) !== 'Other' || studentData.curriculum_other)
+        );
+      case 3: return studentData.majorCertain !== null && normalizedMajors.length > 0 && normalizedTraits.length > 0;
       case 4: return studentData.preferredCountries.length > 0 && !!studentData.budgetRange;
       case 5: {
         const valid = Array.isArray(studentData.activities)
@@ -771,15 +898,21 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     switch(step) {
       case 1: {
         if (!studentData.name && !studentData.country) return 'Please enter your name and select your country to continue.';
+        if (!studentData.phone) return 'Please enter your phone number with country code.';
+        if (!studentData.date_of_birth) return 'Please add your date of birth to continue.';
         if (!studentData.name) return 'Please enter your name to continue.';
         return 'Please select your country to continue.';
       }
       case 2: {
-        if (!studentData.currentGPA && studentData.subjects.length === 0) return 'Please enter your GPA and select at least one subject.';
+        if (!studentData.curriculum_type && !studentData.currentBoard) return 'Please select your curriculum or board.';
+        if ((studentData.curriculum_type || studentData.currentBoard) === 'Other' && !studentData.curriculum_other) {
+          return 'Please specify your curriculum.';
+        }
+        if (!studentData.currentGPA && normalizedSubjects.length === 0) return 'Please enter your GPA and select at least one subject.';
         if (!studentData.currentGPA) return 'Please enter your GPA to continue.';
         return 'Please select at least one subject to continue.';
       }
-      case 3: return 'Please select at least one major or area of interest to continue.';
+      case 3: return 'Please select at least one major and at least one trait to continue.';
       case 4: {
         if (studentData.preferredCountries.length === 0 && !studentData.budgetRange) return 'Please select a preferred country and a budget range to continue.';
         if (studentData.preferredCountries.length === 0) return 'Please select at least one preferred country to continue.';
@@ -803,8 +936,9 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     let score = 0;
     if (studentData.name) score += 10;
     if (studentData.currentGPA) score += 15;
-    if (studentData.subjects.length > 0) score += 10;
-    if (studentData.potentialMajors.length > 0) score += 10;
+    if (normalizedSubjects.length > 0) score += 10;
+    if (normalizedMajors.length > 0) score += 10;
+    if (normalizedTraits.length > 0) score += 10;
     if (studentData.preferredCountries.length > 0) score += 10;
     if (studentData.activities.filter((a: any) => a?.name?.trim()).length >= 2) score += 20;
     if (studentData.careerGoals.length > 50) score += 15;
@@ -812,16 +946,9 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     return Math.min(Math.max(score, 60), 97);
   };
 
-  const majors = ['Computer Science','Engineering','Business / Management','Medicine','Psychology','Economics','Data Science','Biology','Mathematics','Physics','Chemistry','Arts & Design','Political Science','Law','Architecture','Environmental Science','Communications','Undecided'];
-  const skills = ['Problem Solving','Creativity','Analytical Thinking','Leadership','Communication','Research','Programming','Writing','Mathematics','Science','Languages','Public Speaking','Teamwork','Design'];
-  const subjects = [
-    'Mathematics','Further Mathematics','Physics','Chemistry','Biology','Computer Science',
-    'Environmental Science','Statistics','Data Science','History','Geography','Economics',
-    'Psychology','Sociology','Philosophy','Political Science','English Language','English Literature',
-    'French','Spanish','German','Mandarin Chinese','Hindi','Arabic','Business Studies','Accounting',
-    'Information Technology','Art & Design','Music','Theatre Studies','Film Studies',
-    'Physical Education','Health Science','Environmental Systems & Societies','Global Politics',
-  ];
+  const majors = MAJOR_OPTIONS;
+  const skills = TRAIT_OPTIONS;
+  const subjects = SUBJECT_OPTIONS;
   const BUDGETS = [
     { val: 'under-20k', label: 'Under $20,000 / yr', note: '~$800 universities globally' },
     { val: '20-40k', label: '$20,000 – $40,000 / yr', note: '~1,200 universities globally' },
@@ -854,11 +981,45 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                   placeholder="e.g., MIT, Harvard, anywhere with good CS" style={{ ...inputFieldStyle(accent), marginTop: 6 }} />
               </div>
               <div>
+                <label style={labelStyle}>School Name</label>
+                <input
+                  value={studentData.school_name}
+                  onChange={(e) => updateData('school_name', e.target.value)}
+                  list="school-suggestions"
+                  placeholder="Search or type your school"
+                  style={{ ...inputFieldStyle(accent), marginTop: 6 }}
+                />
+                <datalist id="school-suggestions">
+                  {SCHOOL_SUGGESTIONS.map((school) => <option key={school} value={school} />)}
+                </datalist>
+              </div>
+              <div>
                 <label style={labelStyle}>Country</label>
                 <select value={studentData.country} onChange={e => updateData('country', e.target.value)} style={{ ...inputFieldStyle(accent), marginTop: 6 }}>
                   <option value="">Select your country</option>
                   {['India','USA','UK','Canada','Singapore','UAE','Pakistan','Bangladesh','Sri Lanka','Nepal','Other'].map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={labelStyle}>Phone Number</label>
+                  <input
+                    value={studentData.phone}
+                    onChange={(e) => updateData('phone', e.target.value)}
+                    placeholder="+1 555 123 4567"
+                    inputMode="tel"
+                    style={{ ...inputFieldStyle(accent), marginTop: 6 }}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Date of Birth</label>
+                  <input
+                    type="date"
+                    value={studentData.date_of_birth}
+                    onChange={(e) => updateData('date_of_birth', e.target.value)}
+                    style={{ ...inputFieldStyle(accent), marginTop: 6 }}
+                  />
+                </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
@@ -872,6 +1033,18 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                     <option value="Gap Year">Gap Year</option>
                     <option value="Transfer Student">Already in College (Transfer)</option>
                   </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Graduation Year</label>
+                  <input
+                    type="number"
+                    value={studentData.graduation_year}
+                    onChange={(e) => updateData('graduation_year', sanitizeIntegerInput(e.target.value, 4))}
+                    placeholder="2028"
+                    min={2020}
+                    max={2040}
+                    style={{ ...inputFieldStyle(accent), marginTop: 6 }}
+                  />
                 </div>
                 <div>
                   <label style={labelStyle}>
@@ -903,6 +1076,30 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
         <div>
           <h1 style={headlineStyle(accent)}>Academic<br /><span style={{ color: accent }}>Profile.</span></h1>
           <p style={subStyle(accent)}>Your numbers tell part of the story.</p>
+          <div style={{ marginTop: 24 }}>
+            <label style={labelStyle}>Curriculum / Board</label>
+            <select
+              value={studentData.curriculum_type || studentData.currentBoard}
+              onChange={(e) => {
+                updateData('curriculum_type', e.target.value);
+                updateData('currentBoard', e.target.value);
+              }}
+              style={{ ...inputFieldStyle(accent), marginTop: 8 }}
+            >
+              <option value="">Select curriculum</option>
+              {CURRICULUM_OPTIONS.map((curriculum) => (
+                <option key={curriculum} value={curriculum}>{curriculum}</option>
+              ))}
+            </select>
+            {(studentData.curriculum_type === 'Other' || studentData.currentBoard === 'Other') && (
+              <input
+                value={studentData.curriculum_other}
+                onChange={(e) => updateData('curriculum_other', e.target.value)}
+                placeholder="Enter your curriculum"
+                style={{ ...inputFieldStyle(accent), marginTop: 10 }}
+              />
+            )}
+          </div>
           <div style={{ marginTop: 32 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <label style={labelStyle}>GPA / Percentage</label>
@@ -989,6 +1186,38 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                   }} />
               ))}
             </div>
+            <div style={{ marginTop: 12 }}>
+              <input
+                value={studentData.customSubjectInput}
+                onChange={(e) => updateData('customSubjectInput', e.target.value)}
+                placeholder="Add custom subject"
+                style={inputFieldStyle(accent)}
+              />
+              <button
+                onClick={() => {
+                  const value = (studentData.customSubjectInput || '').trim();
+                  if (!value) return;
+                  updateData('customSubjects', dedupeNormalized([...(studentData.customSubjects || []), value]));
+                  updateData('customSubjectInput', '');
+                }}
+                style={{ marginTop: 8, ...inputFieldStyle(accent), cursor: 'pointer', textAlign: 'center' }}
+              >
+                Add custom subject
+              </button>
+              {(studentData.customSubjects || []).length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                  {studentData.customSubjects.map((subject: string) => (
+                    <Chip
+                      key={subject}
+                      label={`${subject} ×`}
+                      selected
+                      accent={accent}
+                      onClick={() => updateData('customSubjects', (studentData.customSubjects || []).filter((s: string) => s !== subject))}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       );
@@ -1035,10 +1264,42 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                 );
               })}
             </div>
+            <div style={{ marginTop: 12 }}>
+              <input
+                value={studentData.customMajorInput}
+                onChange={(e) => updateData('customMajorInput', e.target.value)}
+                placeholder="Add custom major"
+                style={inputFieldStyle(accent)}
+              />
+              <button
+                onClick={() => {
+                  const value = (studentData.customMajorInput || '').trim();
+                  if (!value) return;
+                  updateData('customMajors', dedupeNormalized([...(studentData.customMajors || []), value]));
+                  updateData('customMajorInput', '');
+                }}
+                style={{ marginTop: 8, ...inputFieldStyle(accent), cursor: 'pointer', textAlign: 'center' }}
+              >
+                Add custom major
+              </button>
+              {(studentData.customMajors || []).length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                  {studentData.customMajors.map((major: string) => (
+                    <Chip
+                      key={major}
+                      label={`${major} ×`}
+                      selected
+                      accent={accent}
+                      onClick={() => updateData('customMajors', (studentData.customMajors || []).filter((s: string) => s !== major))}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, marginTop: 68, fontFamily: "'Inter', system-ui, sans-serif" }}>Skills &amp; Strengths</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, marginTop: 68, fontFamily: "'Inter', system-ui, sans-serif" }}>Traits &amp; Working Style</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {skills.map(sk => (
                 <Chip key={sk} label={sk} selected={studentData.skillsStrengths.includes(sk)} accent={accent}
@@ -1050,15 +1311,42 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                   }} />
               ))}
             </div>
+            {normalizedTraits.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>Optional weighting</div>
+                {normalizedTraits.slice(0, 8).map((trait) => (
+                  <div key={trait} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <span style={{ width: 180, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>{trait}</span>
+                    <input
+                      type="range"
+                      min={1}
+                      max={5}
+                      value={studentData.traitWeights?.[trait] || 3}
+                      onChange={(e) => updateData('traitWeights', {
+                        ...(studentData.traitWeights || {}),
+                        [trait]: Number(e.target.value),
+                      })}
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ width: 14, fontSize: 12, color: accent }}>{studentData.traitWeights?.[trait] || 3}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             {/* Archetype */}
-            {getArchetype(studentData.skillsStrengths) && (
+            {normalizedTraits.length > 0 && (
               <div style={{
                 marginTop: 24, padding: '16px 20px',
                 background: hexToRgba(accent, 0.12), border: `1px solid ${hexToRgba(accent, 0.4)}`,
                 borderRadius: 12, transition: 'all 0.3s ease',
               }}>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontFamily: "'Inter', system-ui, sans-serif" }}>Your Archetype</div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: accent, fontFamily: "'Inter', system-ui, sans-serif" }}>{getArchetype(studentData.skillsStrengths)}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: accent, fontFamily: "'Inter', system-ui, sans-serif" }}>
+                  {getArchetype(normalizedTraits) || 'Multidimensional Profile'}
+                </div>
+                <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>
+                  {(buildTraitProfile(normalizedTraits, studentData.traitWeights || {}).pairings || []).slice(0, 2).join(' · ')}
+                </div>
               </div>
             )}
           </div>
@@ -1308,13 +1596,23 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
 
       {showLoading && <LoadingSequence name={studentData.name} onDone={async () => {
         try {
+          const extendedPayload = buildExtendedPayload(studentData, 7);
+          const cleanedActivities = (studentData.activities || [])
+            .filter((a: any) => a?.name?.trim())
+            .map((a: any) => ({
+              ...a,
+              yearsInvolved: parseBoundedInteger(String(a?.yearsInvolved ?? ''), ACTIVITY_LIMITS.years.min, ACTIVITY_LIMITS.years.max) ?? 0,
+              hoursPerWeek: parseBoundedInteger(String(a?.hoursPerWeek ?? ''), ACTIVITY_LIMITS.hoursPerWeek.min, ACTIVITY_LIMITS.hoursPerWeek.max) ?? 0,
+              weeksPerYear: parseBoundedInteger(String(a?.weeksPerYear ?? ''), ACTIVITY_LIMITS.weeksPerYear.min, ACTIVITY_LIMITS.weeksPerYear.max) ?? 0,
+            }));
+
           // 1. Save full extended profile to student_profiles table
-          await api.saveExtendedProfile({ ...studentData, onboarding_step: 7 });
+          await persistWithRetry({ ...extendedPayload, activities: cleanedActivities });
 
           // 2. Mark onboarding complete in users table
           await completeOnboarding({
             target_countries: studentData.preferredCountries,
-            intended_majors: studentData.potentialMajors,
+            intended_majors: normalizedMajors,
             test_status: {
               sat_score: studentData.satScore
                 ? Number(studentData.satScore) : null,
@@ -1325,8 +1623,8 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             },
             gpa: parseFloat(String(studentData.currentGPA).replace(/[^0-9.]/g, '')) || null,
             gpa_type: studentData.gpaType || 'percentage',
-            subjects: studentData.subjects || [],
-            activities: (studentData.activities || []).filter((a: any) => a?.name?.trim()),
+            subjects: normalizedSubjects,
+            activities: cleanedActivities,
             current_grade: studentData.current_grade || null,
             gender: studentData.gender || null,
           });
@@ -1359,9 +1657,9 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
               gpa: studentData.currentGPA,
               satScore: studentData.satScore,
               preferredCountries: studentData.preferredCountries,
-              potentialMajors: studentData.potentialMajors,
+              potentialMajors: normalizedMajors,
               budgetRange: studentData.budgetRange,
-              activities: studentData.activities,
+              activities: cleanedActivities,
               careerGoals: studentData.careerGoals,
               whyCollege: studentData.whyCollege,
             });

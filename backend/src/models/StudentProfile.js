@@ -124,6 +124,25 @@ class StudentProfile {
       careerGoals: 'career_goals',
       whyCollege: 'why_college',
       interestTags: 'interest_tags',
+      phone: 'phone',
+      dateOfBirth: 'date_of_birth',
+      date_of_birth: 'date_of_birth',
+      gradeLevel: 'grade_level',
+      grade_level: 'grade_level',
+      stream: 'stream',
+      subjects: 'subjects',
+      customSubjects: 'custom_subjects',
+      custom_subjects: 'custom_subjects',
+      customMajors: 'custom_majors',
+      custom_majors: 'custom_majors',
+      curriculumTypeOther: 'curriculum_type_other',
+      curriculum_type_other: 'curriculum_type_other',
+      traitWeights: 'trait_weights',
+      trait_weights: 'trait_weights',
+      traitProfile: 'trait_profile',
+      trait_profile: 'trait_profile',
+      schoolName: 'high_school_name',
+      school_name: 'high_school_name',
       // Chancing / migration-066 fields
       extracurriculars: 'extracurriculars',
       awards: 'awards',
@@ -140,6 +159,7 @@ class StudentProfile {
       if (data[camelKey] !== undefined || data[snakeKey] !== undefined) {
         let value = data[camelKey] !== undefined ? data[camelKey] : data[snakeKey];
         if (Array.isArray(value)) value = JSON.stringify(value);
+        if (value && typeof value === 'object' && !Array.isArray(value)) value = JSON.stringify(value);
         if (typeof value === 'boolean') value = value;
         fields.push(`${snakeKey} = $${idx++}`);
         values.push(value);
@@ -169,6 +189,11 @@ class StudentProfile {
       profile.preferredCountries = this._parseJson(profile.preferred_countries, []);
       profile.hooks = this._parseJson(profile.hooks, []);
       profile.interestTags = this._parseJson(profile.interest_tags, []);
+      profile.subjects = this._parseJson(profile.subjects, []);
+      profile.custom_subjects = this._parseJson(profile.custom_subjects, []);
+      profile.custom_majors = this._parseJson(profile.custom_majors, []);
+      profile.trait_weights = this._parseJson(profile.trait_weights, {});
+      profile.trait_profile = this._parseJson(profile.trait_profile, null);
     }
     return profile || null;
   }
@@ -184,6 +209,11 @@ class StudentProfile {
       profile.preferredCountries = this._parseJson(profile.preferred_countries, []);
       profile.hooks = this._parseJson(profile.hooks, []);
       profile.interestTags = this._parseJson(profile.interest_tags, []);
+      profile.subjects = this._parseJson(profile.subjects, []);
+      profile.custom_subjects = this._parseJson(profile.custom_subjects, []);
+      profile.custom_majors = this._parseJson(profile.custom_majors, []);
+      profile.trait_weights = this._parseJson(profile.trait_weights, {});
+      profile.trait_profile = this._parseJson(profile.trait_profile, null);
     }
     return profile || null;
   }
