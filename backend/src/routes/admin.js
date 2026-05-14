@@ -129,7 +129,7 @@ async function buildHealthPayload() {
     pool.query("SELECT COUNT(*) FROM chance_me_posts").catch(() => ({ rows: [{ count: 0 }] })),
     pool.query("SELECT COUNT(*) FROM chance_me_posts WHERE outcome IS NOT NULL AND outcome != 'pending'")
       .catch(() => ({ rows: [{ count: 0 }] })),
-    pool.query("SELECT COUNT(*) FROM colleges").catch(() => ({ rows: [{ count: 0 }] })),
+    pool.query("SELECT COUNT(*) FROM public.clean_colleges").catch(() => ({ rows: [{ count: 0 }] })),
     pool.query("SELECT COUNT(*) FROM college_admissions_stats WHERE data_freshness = 'fresh'")
       .catch(() => ({ rows: [{ count: 0 }] })),
     pool.query("SELECT COUNT(*) FROM college_admissions_stats WHERE data_freshness = 'stale'")

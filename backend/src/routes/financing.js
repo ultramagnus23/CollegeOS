@@ -158,7 +158,7 @@ router.get('/for-college/:collegeId', async (req, res, next) => {
 
     // Look up the college country first
     const { rows: collegeRows } = await pool.query(
-      'SELECT country FROM colleges WHERE id = $1',
+      'SELECT country FROM public.clean_colleges WHERE id = $1',
       [collegeId]
     );
 
