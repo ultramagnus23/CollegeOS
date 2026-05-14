@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { DataFreshnessIndicator } from '@/components/DataFreshnessIndicator';
 import { getCollegeById, isSupabaseConfigured, normalizeToDetail } from '../lib/collegeService';
 import { useAuth } from '../contexts/AuthContext';
+const COLLEGE_SYNC_DEBUG = import.meta.env.DEV;
 
 /* =========================
    Country-based Gradient Mapping
@@ -222,6 +223,8 @@ interface College {
   data_source?: string | null;
   data_source_url?: string | null;
   last_updated_at?: string | null;
+  updated_at?: string | null;
+  last_scraped?: string | null;
   data_quality_score?: number | null;
   needs_enrichment?: boolean | null;
   academicOutcomes?: {
@@ -342,7 +345,29 @@ const CollegeDetail: React.FC = () => {
         // ── Supabase path: fetch from colleges_comprehensive with all child tables ──
         const raw = await getCollegeById(collegeId);
         if (raw) {
+          if (COLLEGE_SYNC_DEBUG) {
+            console.debug('[CollegeSync] detail.raw-supabase', {
+              id: raw.id,
+              name: raw.name,
+              admissionsRows: raw.college_admissions?.length ?? 0,
+              financialRows: raw.college_financial_data?.length ?? 0,
+              rankingRows: raw.college_rankings?.length ?? 0,
+              deadlineRows: raw.college_deadlines?.length ?? 0,
+              data_source: (raw as any).data_source ?? null,
+            });
+          }
           collegeData = normalizeToDetail(raw) as College;
+          if (COLLEGE_SYNC_DEBUG) {
+            console.debug('[CollegeSync] detail.normalized', {
+              id: collegeData.id,
+              name: collegeData.name,
+              acceptanceRate: collegeData.acceptanceRate ?? collegeData.acceptance_rate ?? null,
+              tuition_cost: collegeData.tuition_cost ?? null,
+              ranking: collegeData.ranking ?? null,
+              deadlines: collegeData.deadlineTemplates ?? null,
+              data_source: collegeData.data_source ?? null,
+            });
+          }
         }
       } else {
         // ── Legacy backend path ────────────────────────────────────────────────
@@ -375,6 +400,19 @@ const CollegeDetail: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!COLLEGE_SYNC_DEBUG || !college) return;
+    console.debug('[CollegeSync] detail.state', {
+      id: college.id,
+      name: college.name,
+      acceptanceRate: college.acceptanceRate ?? college.acceptance_rate ?? null,
+      tuition_cost: college.tuition_cost ?? null,
+      ranking: college.ranking ?? null,
+      deadlines: college.deadlineTemplates ?? null,
+      data_source: college.data_source ?? null,
+    });
+  }, [college]);
 
   const handleAddCollege = async (): Promise<void> => {
     if (!college) return;
