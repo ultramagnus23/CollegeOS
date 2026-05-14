@@ -62,9 +62,10 @@ class EssayAutoLoadingService {
   static async _getCollegeData(collegeId) {
     const pool = dbManager.getDatabase();
     return (await pool.query(`
-      SELECT id, name, country, application_platforms
-      FROM colleges 
-      WHERE id = $1
+      SELECT cc.id, cc.name, cc.country, cd.application_platforms
+      FROM public.clean_colleges cc
+      LEFT JOIN public.college_deadlines cd ON cc.id = cd.college_id
+      WHERE cc.id = $1
     `, [collegeId])).rows[0];
   }
 

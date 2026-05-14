@@ -190,13 +190,11 @@ router.post('/contributions', authenticate, CollegeController.contributeData);
 router.get('/contributions/:collegeId', CollegeController.getContributions);
 
 // ─── colleges endpoints ────────────────────────────────────────────────────────
-// These routes query the `colleges_canonical` view (Supabase-seeded, ~6,322 rows)
-// which joins colleges_comprehensive with college_admissions, college_financial_data,
-// and academic_details so each college is a single denormalized row.
+// These routes query `clean_colleges` + detail tables for enriched college data.
 
 /**
  * GET /api/colleges/comprehensive
- * List + search colleges_comprehensive with optional filters.
+  * List + search clean_colleges with optional filters.
  *
  * Query params:
  *   query     — name ILIKE search
@@ -216,10 +214,10 @@ router.get('/comprehensive', async (req, res, next) => {
 
     // Allowlist sort expressions to prevent SQL injection
     const SORT_EXPRESSIONS = {
-      popularity:      '(1 - COALESCE(cc.adm_acceptance_rate, 0.5)) * COALESCE(cc.total_enrollment, 0) DESC',
+      popularity:      '(1 - COALESCE(ca.acceptance_rate, 0.5)) * COALESCE(cc.total_enrollment, 0) DESC',
       name:            'cc.name ASC',
-      acceptance_rate: 'cc.adm_acceptance_rate ASC NULLS LAST',
-      tuition:         'COALESCE(cc.tuition_out_state, cc.fin_tuition_intl) ASC NULLS LAST',
+      acceptance_rate: 'ca.acceptance_rate ASC NULLS LAST',
+      tuition:         'COALESCE(cfd.tuition_in_state, cfd.tuition_international) ASC NULLS LAST',
       ranking:         'best_rank ASC NULLS LAST',
     };
     const sortKey = SORT_EXPRESSIONS[req.query.sortBy] ? req.query.sortBy : 'popularity';
@@ -238,18 +236,16 @@ router.get('/comprehensive', async (req, res, next) => {
       params.push(req.query.state);
     }
     if (req.query.type) {
-      conditions.push(`cc.type = $${idx++}`);
+      conditions.push(`cc.institution_type = $${idx++}`);
       params.push(req.query.type);
-    }
-    if (req.query.setting) {
-      conditions.push(`cc.setting = $${idx++}`);
-      params.push(req.query.setting);
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const countSql = `
-      SELECT COUNT(*) FROM colleges_canonical cc
+      SELECT COUNT(*) FROM public.clean_colleges cc
+      LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
+      LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
       ${where}
     `;
     const { rows: countRows } = await pool.query(countSql, params);
@@ -258,14 +254,42 @@ router.get('/comprehensive', async (req, res, next) => {
     const listParams = [...params, PAGE_SIZE, offset];
     const dataSql = `
       SELECT
-        cc.*,
+        cc.id,
+        cc.name,
+        LOWER(REGEXP_REPLACE(cc.name, '\\s+', '-', 'g')) || '-' || cc.id AS slug,
+        cc.country,
+        cc.state,
+        cc.city,
+        cc.institution_type,
+        cc.latitude,
+        cc.longitude,
+        cc.logo_url,
+        cc.total_enrollment,
+        cc.undergraduate_enrollment,
+        cc.description,
+        ca.acceptance_rate,
+        ca.sat_25,
+        ca.sat_75,
+        ca.gpa_25,
+        ca.gpa_75,
+        cfd.tuition_in_state,
+        cfd.tuition_international,
+        ad.graduation_rate_4yr,
+        COUNT(DISTINCT cm.id) as major_count,
+        COUNT(DISTINCT cp.id) as program_count,
         (
           SELECT MIN(CAST(cr.ranking_value AS INTEGER))
           FROM college_rankings cr
           WHERE cr.college_id = cc.id AND cr.ranking_value ~ '^[0-9]+$'
         ) AS best_rank
-      FROM colleges_canonical cc
+      FROM public.clean_colleges cc
+      LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
+      LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
+      LEFT JOIN public.academic_details ad ON cc.id = ad.college_id
+      LEFT JOIN public.college_majors cm ON cc.id = cm.college_id
+      LEFT JOIN public.college_programs cp ON cc.id = cp.college_id
       ${where}
+      GROUP BY cc.id, ca.id, cfd.id, ad.id
       ORDER BY ${orderExpr}
       LIMIT $${idx++} OFFSET $${idx++}
     `;
@@ -290,7 +314,7 @@ router.get('/comprehensive', async (req, res, next) => {
 
 /**
  * GET /api/colleges/comprehensive/:id
- * Fetch a single college from colleges_comprehensive with ALL related data.
+  * Fetch a single college from clean_colleges with ALL related data.
  */
 router.get('/comprehensive/:id', async (req, res, next) => {
   try {
@@ -300,38 +324,56 @@ router.get('/comprehensive/:id', async (req, res, next) => {
     if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid college ID' });
 
     const { rows: college } = await pool.query(
-      'SELECT * FROM colleges_comprehensive WHERE id = $1',
+      `SELECT
+         cc.*,
+         LOWER(REGEXP_REPLACE(cc.name, '\\s+', '-', 'g')) || '-' || cc.id AS slug,
+         ca.acceptance_rate,
+         ca.sat_25,
+         ca.sat_75,
+         ca.act_25,
+         ca.act_75,
+         ca.gpa_25,
+         ca.gpa_75,
+         cfd.tuition_in_state,
+         cfd.tuition_international,
+         ad.graduation_rate_4yr,
+         ad.graduation_rate_6yr,
+         ad.student_faculty_ratio,
+         COALESCE(
+           JSON_AGG(DISTINCT JSONB_BUILD_OBJECT('name', cm.major_name, 'code', cm.major_code))
+             FILTER (WHERE cm.id IS NOT NULL),
+           '[]'::json
+         ) as majors,
+         COALESCE(
+           JSON_AGG(DISTINCT JSONB_BUILD_OBJECT('name', cp.program_name, 'description', cp.program_description))
+             FILTER (WHERE cp.id IS NOT NULL),
+           '[]'::json
+         ) as programs,
+         COALESCE(
+           JSON_AGG(DISTINCT JSONB_BUILD_OBJECT(
+             'rd_deadline', cd.rd_deadline,
+             'ed_deadline', cd.ed_deadline,
+             'ea_deadline', cd.ea_deadline,
+             'application_platforms', cd.application_platforms
+           )) FILTER (WHERE cd.id IS NOT NULL),
+           '[]'::json
+         ) as deadlines
+       FROM public.clean_colleges cc
+       LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
+       LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
+       LEFT JOIN public.academic_details ad ON cc.id = ad.college_id
+       LEFT JOIN public.college_majors cm ON cc.id = cm.college_id
+       LEFT JOIN public.college_programs cp ON cc.id = cp.college_id
+       LEFT JOIN public.college_deadlines cd ON cc.id = cd.college_id
+       WHERE cc.id = $1
+       GROUP BY cc.id, ca.id, cfd.id, ad.id`,
       [id]
     );
     if (!college.length) return res.status(404).json({ success: false, message: 'College not found' });
 
-    const [admissions, financials, academics, programs, demographics, campusLife, rankings, deadlines, contact] =
-      await Promise.all([
-        pool.query('SELECT * FROM college_admissions WHERE college_id = $1', [id]),
-        pool.query('SELECT * FROM college_financial_data WHERE college_id = $1', [id]),
-        pool.query('SELECT * FROM academic_details WHERE college_id = $1', [id]),
-        pool.query('SELECT * FROM college_programs WHERE college_id = $1 ORDER BY degree_type, program_name', [id]),
-        pool.query('SELECT * FROM student_demographics WHERE college_id = $1', [id]),
-        pool.query('SELECT * FROM campus_life WHERE college_id = $1', [id]),
-        pool.query('SELECT * FROM college_rankings WHERE college_id = $1', [id]),
-        pool.query('SELECT * FROM college_deadlines WHERE college_id = $1', [id]).catch((err) => { logger.warn('college_deadlines query failed for id %d: %s', id, err.message); return { rows: [] }; }),
-        pool.query('SELECT * FROM college_contact WHERE college_id = $1', [id]).catch((err) => { logger.warn('college_contact query failed for id %d: %s', id, err.message); return { rows: [] }; }),
-      ]);
-
     res.json({
       success: true,
-      data: {
-        ...college[0],
-        college_admissions: admissions.rows,
-        college_financial_data: financials.rows,
-        academic_details: academics.rows,
-        college_programs: programs.rows,
-        student_demographics: demographics.rows,
-        campus_life: campusLife.rows,
-        college_rankings: rankings.rows,
-        college_deadlines: deadlines.rows,
-        college_contact: contact.rows,
-      },
+      data: college[0],
     });
   } catch (err) {
     next(err);
@@ -381,9 +423,22 @@ router.post('/comprehensive/compare', async (req, res, next) => {
     if (!ids.length) return res.status(400).json({ success: false, message: 'Provide at least one college ID' });
 
     const { rows } = await pool.query(
-      `SELECT cc.*
-      FROM colleges_canonical cc
-      WHERE cc.id = ANY($1)`,
+      `SELECT DISTINCT ON (cc.id)
+        cc.*,
+        ca.acceptance_rate,
+        ca.sat_25,
+        ca.sat_75,
+        ca.gpa_25,
+        ca.gpa_75,
+        cfd.tuition_in_state,
+        cfd.tuition_international,
+        ad.graduation_rate_4yr
+      FROM public.clean_colleges cc
+      LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
+      LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
+      LEFT JOIN public.academic_details ad ON cc.id = ad.college_id
+      WHERE cc.id = ANY($1)
+      ORDER BY cc.id`,
       [ids]
     );
 
@@ -403,9 +458,9 @@ router.get('/comprehensive/stats', async (req, res, next) => {
     const pool = db.getDatabase();
 
     const [total, countries, states] = await Promise.all([
-      pool.query('SELECT COUNT(*) AS total FROM colleges_comprehensive'),
-      pool.query('SELECT country, COUNT(*) AS count FROM colleges_comprehensive WHERE country IS NOT NULL GROUP BY country ORDER BY count DESC LIMIT 20'),
-      pool.query("SELECT state, COUNT(*) AS count FROM colleges_comprehensive WHERE state IS NOT NULL AND country = 'United States' GROUP BY state ORDER BY count DESC"),
+      pool.query('SELECT COUNT(*) AS total FROM public.clean_colleges'),
+      pool.query('SELECT country, COUNT(*) AS count FROM public.clean_colleges WHERE country IS NOT NULL GROUP BY country ORDER BY count DESC LIMIT 20'),
+      pool.query("SELECT state, COUNT(*) AS count FROM public.clean_colleges WHERE state IS NOT NULL AND country = 'United States' GROUP BY state ORDER BY count DESC"),
     ]);
 
     res.json({
@@ -452,15 +507,16 @@ router.get('/suggested', authenticate, async (req, res, next) => {
 
     // Fetch all colleges that have acceptance_rate and enough data for scoring
     const { rows: colleges } = await pool.query(
-      `SELECT id, name, city, state, country,
-              acceptance_rate,
-              gpa_50    AS median_gpa,
-              sat_avg   AS median_sat,
-              popularity_score
-       FROM   colleges_comprehensive
-       WHERE  acceptance_rate IS NOT NULL
-         AND  acceptance_rate > 0
-       LIMIT  500`
+       `SELECT cc.id, cc.name, cc.city, cc.state, cc.country,
+               ca.acceptance_rate,
+               ca.gpa_50    AS median_gpa,
+               ca.sat_avg   AS median_sat,
+               cc.popularity_score
+        FROM   public.clean_colleges cc
+        LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
+        WHERE  ca.acceptance_rate IS NOT NULL
+          AND  ca.acceptance_rate > 0
+        LIMIT  500`
     );
 
     if (!colleges || colleges.length === 0) {
