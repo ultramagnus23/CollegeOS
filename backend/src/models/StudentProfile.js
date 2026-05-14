@@ -141,6 +141,8 @@ class StudentProfile {
       trait_weights: 'trait_weights',
       traitProfile: 'trait_profile',
       trait_profile: 'trait_profile',
+      traitInterpretation: 'trait_interpretation',
+      trait_interpretation: 'trait_interpretation',
       schoolName: 'high_school_name',
       school_name: 'high_school_name',
       // Chancing / migration-066 fields
@@ -194,6 +196,7 @@ class StudentProfile {
       profile.custom_majors = this._parseJson(profile.custom_majors, []);
       profile.trait_weights = this._parseJson(profile.trait_weights, {});
       profile.trait_profile = this._parseJson(profile.trait_profile, null);
+      profile.trait_interpretation = this._parseJson(profile.trait_interpretation, null);
     }
     return profile || null;
   }
@@ -214,6 +217,7 @@ class StudentProfile {
       profile.custom_majors = this._parseJson(profile.custom_majors, []);
       profile.trait_weights = this._parseJson(profile.trait_weights, {});
       profile.trait_profile = this._parseJson(profile.trait_profile, null);
+      profile.trait_interpretation = this._parseJson(profile.trait_interpretation, null);
     }
     return profile || null;
   }

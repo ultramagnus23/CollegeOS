@@ -17,6 +17,7 @@ import { useAutosave, DraftRestoreBanner } from '@/hooks/useAutosave';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import { CURRICULUM_OPTIONS, MAJOR_OPTIONS, SUBJECT_OPTIONS } from '@/constants/onboardingOptions';
+import { logProfileTelemetry } from '@/lib/profileTelemetry';
 
 // Section configuration for navigation
 const SECTIONS = [
@@ -137,6 +138,15 @@ const SCROLL_DELAY_MS = 100;
     }
   }, [user?.id]);
 
+  useEffect(() => {
+    const onProfileUpdated = () => {
+      if (!user?.id) return;
+      void loadProfile();
+    };
+    window.addEventListener('profile:updated', onProfileUpdated);
+    return () => window.removeEventListener('profile:updated', onProfileUpdated);
+  }, [user?.id]);
+
   const loadProfile = async () => {
     if (!user?.id) return;
     
@@ -169,6 +179,11 @@ const SCROLL_DELAY_MS = 100;
       }
     } catch (error) {
       console.error('Failed to load profile:', error);
+      logProfileTelemetry({
+        event: 'profile_hydration_mismatch',
+        userId: user?.id ?? null,
+        message: error instanceof Error ? error.message : 'Failed to load settings profile',
+      });
       showMessage('error', 'Failed to load profile');
     }
     setLoading(false);

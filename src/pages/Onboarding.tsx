@@ -23,6 +23,8 @@ import {
   SUBJECT_OPTIONS,
   TRAIT_OPTIONS,
 } from '@/constants/onboardingOptions';
+import { saveCanonicalProfile } from '@/services/profilePipeline';
+import { logProfileTelemetry } from '@/lib/profileTelemetry';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface StructuredActivity {
@@ -727,6 +729,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       preferredCountries: [], budgetRange: '', campusSize: '', locationPreference: '',
       activities: [], leadership: [], awards: [],
       careerGoals: '', whyCollege: '',
+      draft_updated_at: 0,
     };
   }
 
@@ -738,9 +741,14 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       const draft = payload?.draft ?? payload;
       const savedStep = payload?.step ?? 0;
       if (!draft) return;
-      // Prefer backend draft (multi-device resume)
-      setStudentData((prev: any) => ({ ...defaultData(), ...prev, ...draft }));
-      try { localStorage.setItem('onboarding_data', JSON.stringify({ ...draft })); } catch {}
+      const localDraftRaw = localStorage.getItem('onboarding_data');
+      const localDraft = localDraftRaw ? JSON.parse(localDraftRaw) : null;
+      const localTs = Number(localDraft?.draft_updated_at || 0);
+      const serverTs = Number(draft?.draft_updated_at || 0);
+      const winner = serverTs >= localTs ? draft : localDraft;
+
+      setStudentData((prev: any) => ({ ...defaultData(), ...prev, ...(winner || draft) }));
+      try { localStorage.setItem('onboarding_data', JSON.stringify({ ...(winner || draft) })); } catch {}
       // Resume from the last completed step. Step 7 is the reveal screen — never auto-skip to it.
       if (savedStep >= 1 && savedStep <= 6) {
         setStep(savedStep);
@@ -748,9 +756,23 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     }).catch(() => { /* silent */ });
   }, [user?.id]);
 
+  useEffect(() => {
+    const onBeforeUnload = () => {
+      if (step >= 7) return;
+      logProfileTelemetry({
+        event: 'onboarding_abandoned',
+        userId: user?.id ?? null,
+        metadata: { step, hasName: !!studentData?.name, hasCurriculum: !!studentData?.curriculum_type },
+      });
+    };
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [step, user?.id, studentData?.name, studentData?.curriculum_type]);
+
   const updateData = useCallback((field: string, value: any) => {
     setStudentData((prev: any) => {
-      const next = { ...prev, [field]: value };
+      const next = { ...prev, [field]: value, draft_updated_at: Date.now() };
       try { localStorage.setItem('onboarding_data', JSON.stringify(next)); } catch {}
       // Debounced server-side draft save
       if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
@@ -773,19 +795,13 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   ]);
   const normalizedTraits = dedupeNormalized(studentData.skillsStrengths || []);
 
-  const persistWithRetry = useCallback(async (payload: Record<string, unknown>, attempts = 3) => {
-    let lastError: unknown = null;
-    for (let i = 0; i < attempts; i += 1) {
-      try {
-        await api.saveExtendedProfile(payload);
-        return;
-      } catch (error) {
-        lastError = error;
-        if (i < attempts - 1) await new Promise((r) => setTimeout(r, (i + 1) * 400));
-      }
-    }
-    throw lastError;
-  }, []);
+  const persistWithRetry = useCallback(async (payload: Record<string, unknown>) => {
+    await saveCanonicalProfile(payload, {
+      userId: user?.id ?? null,
+      maxRetries: 3,
+      abortPrevious: false,
+    });
+  }, [user?.id]);
 
   const buildExtendedPayload = useCallback((currentData: any, currentStep: number) => {
     const traitProfile = buildTraitProfile(
@@ -793,18 +809,27 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       currentData.traitWeights || {},
     );
     return {
-      ...currentData,
-      onboarding_step: currentStep,
-      high_school_name: currentData.school_name || currentData.dreamSchool || '',
-      curriculum_type: currentData.curriculum_type || currentData.currentBoard || '',
-      curriculum_type_other:
+      firstName: currentData.name ? String(currentData.name).trim().split(/\s+/)[0] : '',
+      lastName: currentData.name ? String(currentData.name).trim().split(/\s+/).slice(1).join(' ') : '',
+      email: currentData.email || '',
+      country: currentData.country || '',
+      schoolName: currentData.school_name || currentData.dreamSchool || '',
+      curriculumType: currentData.curriculum_type || currentData.currentBoard || '',
+      curriculumTypeOther:
         (currentData.curriculum_type === 'Other' || currentData.currentBoard === 'Other')
           ? (currentData.curriculum_other || '')
           : null,
-      graduation_year: currentData.graduation_year ? Number(currentData.graduation_year) : null,
+      onboardingStep: currentStep,
+      graduationYear: currentData.graduation_year ? Number(currentData.graduation_year) : null,
       phone: currentData.phone || null,
-      date_of_birth: currentData.date_of_birth || null,
-      intended_majors: dedupeNormalized([
+      dateOfBirth: currentData.date_of_birth || null,
+      gpaWeighted: currentData.gpaType === 'gpa' ? (Number(currentData.currentGPA) || null) : null,
+      boardExamPercentage: currentData.gpaType === 'percentage' ? (Number(currentData.currentGPA) || null) : null,
+      satTotal: currentData.satScore ? Number(currentData.satScore) : null,
+      actComposite: currentData.actScore ? Number(currentData.actScore) : null,
+      ieltsScore: currentData.ieltsScore ? Number(currentData.ieltsScore) : null,
+      toeflScore: currentData.toeflScore ? Number(currentData.toeflScore) : null,
+      intendedMajors: dedupeNormalized([
         ...(currentData.potentialMajors || []),
         ...(currentData.customMajors || []),
       ]),
@@ -812,18 +837,26 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
         ...(currentData.subjects || []),
         ...(currentData.customSubjects || []),
       ]),
-      custom_majors: dedupeNormalized(currentData.customMajors || []),
-      custom_subjects: dedupeNormalized(currentData.customSubjects || []),
+      customMajors: dedupeNormalized(currentData.customMajors || []),
+      customSubjects: dedupeNormalized(currentData.customSubjects || []),
+      preferredCountries: dedupeNormalized(currentData.preferredCountries || []),
+      budgetMin: currentData.budgetRange === 'aid' ? 0 : null,
+      budgetMax: currentData.budgetRange === 'aid' ? 0 : null,
+      preferredCollegeSize: currentData.campusSize || '',
+      preferredSetting: currentData.locationPreference || '',
+      activities: (currentData.activities || []).filter((a: any) => a?.name?.trim()),
       traits: dedupeNormalized(currentData.skillsStrengths || []),
-      trait_weights: currentData.traitWeights || {},
-      trait_profile: traitProfile,
+      traitWeights: currentData.traitWeights || {},
+      traitProfile: traitProfile,
+      careerGoals: currentData.careerGoals || '',
+      whyCollege: currentData.whyCollege || '',
     };
   }, []);
 
   // Save current step's profile data to student_profiles before navigating forward.
   const saveStepData = useCallback(async (currentData: any, currentStep: number): Promise<void> => {
     try {
-      await persistWithRetry(buildExtendedPayload(currentData, currentStep), 2);
+      await persistWithRetry(buildExtendedPayload(currentData, currentStep));
     } catch { /* non-critical: draft is already being persisted via saveOnboardingDraft */ }
   }, [buildExtendedPayload, persistWithRetry]);
 

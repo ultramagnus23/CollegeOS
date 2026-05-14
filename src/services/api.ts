@@ -303,12 +303,24 @@ class ApiService {
   }
 
   // Extended student profile
-  async getExtendedProfile() {
-    return this.request('/profile/extended');
+  async getExtendedProfile(options: RequestInit = {}) {
+    return this.request('/profile/extended', options);
   }
 
-  async saveExtendedProfile(data: any) {
+  async saveExtendedProfile(data: any, options: RequestInit = {}) {
     return this.request('/profile/extended', {
+      ...options,
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async canonicalSyncProfile(
+    data: { profile: Record<string, unknown>; expectedVersion?: number; requestId?: string },
+    options: RequestInit = {},
+  ) {
+    return this.request('/profile/canonical-sync', {
+      ...options,
       method: 'POST',
       body: JSON.stringify(data),
     });
