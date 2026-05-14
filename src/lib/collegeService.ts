@@ -1,8 +1,13 @@
 /**
  * src/lib/collegeService.ts
  *
- * Service layer for querying the `colleges_comprehensive` Supabase table and its
- * related child tables.  All functions return typed results and throw on error.
+ * Service layer for querying the unified `colleges` Supabase table and its
+ * allowed child tables (college_financial_data, college_programs, campus_life,
+ * college_rankings, college_deadlines, college_contact).
+ *
+ * DO NOT query: college_admissions, colleges_comprehensive, academic_details,
+ * student_demographics.  Those are legacy tables superseded by the unified
+ * `colleges` schema.  SAT/ACT/GPA data is read directly from `colleges`.
  *
  * Usage:
  *   import { searchColleges, getCollegeById } from '@/lib/collegeService';
@@ -12,30 +17,69 @@ import {
   isSupabaseConfigured,
   CollegeWithRelations,
 } from './supabase';
+import { mapCollegeRow, normalizeBestRanking } from '../utils/collegeMapper';
 
 const PAGE_SIZE = 20;
 const COLLEGE_SYNC_DEBUG = import.meta.env.DEV;
 
-/** Full nested-select string used when fetching a college with all related data. */
+// ---------------------------------------------------------------------------
+// Explicit column lists — NO SELECT * allowed
+// ---------------------------------------------------------------------------
+
+/**
+ * Explicit columns selected from the unified `colleges` table.
+ * SAT/ACT/GPA and outcome data are read directly from this table (not via
+ * legacy child-table JOINs).
+ *
+ * TODO: REMOVE LEGACY SCHEMA — remove ranking_the if migrated to college_rankings only
+ */
+const COLLEGES_COLUMNS = [
+  'id', 'name', 'slug', 'country', 'state', 'city', 'location',
+  'type', 'size_category', 'total_enrollment',
+  'website', 'official_website', 'logo_url', 'description',
+  'religious_affiliation', 'setting', 'founded_year',
+  // Admissions — unified directly on colleges (TODO: REMOVE LEGACY SCHEMA if sourced from college_admissions)
+  'acceptance_rate', 'sat_25', 'sat_75', 'act_25', 'act_75', 'act_avg',
+  'gpa_25', 'gpa_75', 'test_optional',
+  // Tuition & financial — flat columns
+  'tuition_domestic', 'tuition_international',
+  'avg_institutional_grant', 'avg_merit_aid',
+  'pct_receiving_merit_aid', 'pct_students_receiving_aid',
+  'international_aid_available', 'international_aid_avg',
+  'meets_full_need', 'css_profile_required',
+  // Academic outcomes — unified on colleges (TODO: REMOVE LEGACY SCHEMA if sourced from academic_details)
+  'median_earnings_6yr', 'median_earnings_10yr',
+  // Rankings — flat columns
+  'ranking_qs', 'ranking_us_news', 'ranking_the',
+  // Deadlines — flat columns
+  'application_deadline', 'rd_deadline', 'ed_deadline', 'ea_deadline',
+  // Data quality
+  'data_source', 'data_source_url', 'data_quality_score',
+  'needs_enrichment', 'last_data_refresh', 'last_updated_at', 'updated_at',
+].join(', ');
+
+/**
+ * Full select string for detail pages: explicit colleges columns +
+ * allowed child-table joins (no college_admissions / academic_details /
+ * student_demographics).
+ */
 const FULL_SELECT = `
-  *,
-  college_admissions(*),
-  college_financial_data(*),
-  academic_details(*),
-  college_programs(*),
-  student_demographics(*),
-  campus_life(*),
-  college_rankings(*),
-  college_deadlines(*),
-  college_contact(*)
+  ${COLLEGES_COLUMNS},
+  college_financial_data(tuition_in_state, tuition_out_state, tuition_international, avg_net_price),
+  college_programs(program_name, degree_type),
+  campus_life(housing_guarantee, distance_only),
+  college_rankings(ranking_source, ranking_value, ranking_year),
+  college_deadlines(deadline_type, deadline_date, notification_date, is_binding),
+  college_contact(admissions_email, admissions_phone, admissions_url, financial_aid_url, common_app, coalition_app, application_fee)
 ` as const;
 
-/** Lighter select string for list/search pages (omits large child tables). */
+/**
+ * Lighter select for list/search pages — omits large program/deadline/contact
+ * arrays.
+ */
 const LIST_SELECT = `
-  *,
-  college_admissions(acceptance_rate, test_optional, sat_avg, sat_range, act_range, gpa_50),
+  ${COLLEGES_COLUMNS},
   college_financial_data(tuition_in_state, tuition_out_state, tuition_international, avg_net_price),
-  academic_details(graduation_rate_4yr, median_salary_6yr),
   college_rankings(ranking_source, ranking_value, ranking_year)
 ` as const;
 
@@ -61,118 +105,12 @@ function firstDefined<T>(...values: Array<T | null | undefined>): T | null {
   return null;
 }
 
-function toBoolean(value: unknown): boolean | null {
-  if (value === null || value === undefined) return null;
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'number') return value !== 0;
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-    if (['true', '1', 'yes'].includes(normalized)) return true;
-    if (['false', '0', 'no'].includes(normalized)) return false;
-  }
-  return null;
-}
-
-type LegacyCollegeRow = Record<string, any>;
-
-function mergeCollegeRow(
-  row: Record<string, any>,
-  legacy: LegacyCollegeRow | undefined
-): Record<string, any> {
-  if (!legacy) {
-    return {
-      ...row,
-      last_updated_at: firstDefined(row.last_updated_at, row.last_data_refresh, row.updated_at),
-    };
-  }
-
-  return {
-    ...legacy,
-    ...row,
-    official_website: firstDefined(row.official_website, legacy.official_website),
-    website: firstDefined(row.website, legacy.website, legacy.official_website),
-    website_url: firstDefined(row.website_url, legacy.website_url, legacy.official_website),
-    description: firstDefined(row.description, legacy.description),
-    type: firstDefined(row.type, legacy.type),
-    size_category: firstDefined(row.size_category, legacy.size_category),
-    acceptance_rate: firstDefined(row.acceptance_rate, legacy.acceptance_rate),
-    tuition_domestic: firstDefined(row.tuition_domestic, legacy.tuition_domestic),
-    tuition_international: firstDefined(row.tuition_international, legacy.tuition_international),
-    ranking_qs: firstDefined(row.ranking_qs, legacy.ranking_qs),
-    ranking_us_news: firstDefined(row.ranking_us_news, legacy.ranking_us_news),
-    ranking_the: firstDefined(row.ranking_the, legacy.ranking_the),
-    application_deadline: firstDefined(row.application_deadline, legacy.application_deadline),
-    rd_deadline: firstDefined(row.rd_deadline, legacy.rd_deadline, legacy.application_deadline_rd),
-    ed_deadline: firstDefined(row.ed_deadline, legacy.ed_deadline, legacy.application_deadline_ed),
-    ea_deadline: firstDefined(row.ea_deadline, legacy.ea_deadline, legacy.application_deadline_ea),
-    avg_institutional_grant: firstDefined(row.avg_institutional_grant, legacy.avg_institutional_grant),
-    avg_merit_aid: firstDefined(row.avg_merit_aid, legacy.avg_merit_aid),
-    pct_receiving_merit_aid: firstDefined(row.pct_receiving_merit_aid, legacy.pct_receiving_merit_aid),
-    pct_students_receiving_aid: firstDefined(row.pct_students_receiving_aid, legacy.pct_students_receiving_aid),
-    international_aid_available: firstDefined(
-      toBoolean(row.international_aid_available),
-      toBoolean(legacy.international_aid_available)
-    ),
-    international_aid_avg: firstDefined(row.international_aid_avg, legacy.international_aid_avg),
-    meets_full_need: firstDefined(toBoolean(row.meets_full_need), toBoolean(legacy.meets_full_need)),
-    css_profile_required: firstDefined(
-      toBoolean(row.css_profile_required),
-      toBoolean(legacy.css_profile_required)
-    ),
-    data_source: firstDefined(row.data_source, legacy.data_source),
-    data_source_url: firstDefined(row.data_source_url, legacy.data_source_url),
-    data_quality_score: firstDefined(row.data_quality_score, legacy.data_quality_score),
-    needs_enrichment: firstDefined(row.needs_enrichment, legacy.needs_enrichment),
-    last_data_refresh: firstDefined(row.last_data_refresh, legacy.last_data_refresh),
-    updated_at: firstDefined(row.updated_at, legacy.updated_at),
-    last_updated_at: firstDefined(
-      row.last_updated_at,
-      legacy.last_updated_at,
-      row.last_data_refresh,
-      legacy.last_data_refresh,
-      row.updated_at,
-      legacy.updated_at
-    ),
-  };
-}
-
-async function fetchLegacyCollegeRows(ids: number[]): Promise<Map<number, LegacyCollegeRow>> {
-  const uniqueIds = [...new Set(ids.filter((id) => Number.isFinite(id)))];
-  if (uniqueIds.length === 0) return new Map();
-
-  const client = requireClient();
-  const { data, error } = await client.from('colleges').select('*').in('id', uniqueIds);
-
-  if (error) {
-    debugCollegeSync('legacy.fetch.error', {
-      idsRequested: uniqueIds.length,
-      code: (error as { code?: string }).code,
-      message: error.message,
-    });
-    return new Map();
-  }
-
-  const rows = (data as LegacyCollegeRow[] | null) ?? [];
-  debugCollegeSync('legacy.fetch.success', {
-    idsRequested: uniqueIds.length,
-    rowsReturned: rows.length,
-  });
-
-  return new Map(rows.map((row) => [row.id, row]));
-}
-
-async function hydrateRowsWithLegacyData<T extends Record<string, any>>(rows: T[]): Promise<T[]> {
-  if (rows.length === 0) return rows;
-  const legacyById = await fetchLegacyCollegeRows(rows.map((row) => row.id));
-  return rows.map((row) => mergeCollegeRow(row, legacyById.get(row.id)) as T);
-}
-
 // ─── Filters ──────────────────────────────────────────────────────────────────
 
 export interface CollegeFilters {
   /** Full-text search on college name (case-insensitive). */
   query?: string;
-  /** Country name as stored in colleges_comprehensive.country. */
+  /** Country name as stored in the unified colleges table. */
   country?: string;
   /** Two-letter US state abbreviation or full state name. */
   state?: string;
@@ -188,7 +126,7 @@ export interface CollegeFilters {
   maxTuition?: number;
   /** Sort field: 'name' | 'acceptance_rate' | 'tuition' | 'ranking' */
   sortBy?: string;
-  /** 1-based page number (20 results per page). */
+  /** 1-based page number (default: 1, page size: 20). */
   page?: number;
 }
 
@@ -204,15 +142,19 @@ export interface SearchResult {
 // ─── Search / List ────────────────────────────────────────────────────────────
 
 /**
- * Direct fallback query used when search_colleges_filtered RPC is unavailable
- * (e.g. the table is missing expected columns before migration 056 is run).
- * Supports name search and country filter only; uses PostgREST count for totals.
+ * Direct fallback query against the unified `colleges` table, used when the
+ * search_colleges_filtered RPC is unavailable.  Supports name search and
+ * country filter only.
+ *
+ * TODO: REMOVE LEGACY SCHEMA — update RPC search_colleges_filtered to target
+ * the `colleges` table instead of colleges_comprehensive.
  */
 async function searchCollegesDirect(
   client: NonNullable<typeof supabase>,
   filters: CollegeFilters
 ): Promise<SearchResult> {
-  const { query, country, sortBy = 'name', page = 1 } = filters;
+  const { query, country, page = 1 } = filters;
+  const t0 = Date.now();
 
   let q = client
     .from('colleges_comprehensive')
