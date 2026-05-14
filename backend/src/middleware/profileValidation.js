@@ -225,8 +225,8 @@ const activitySchema = Joi.object({
   organization_name: Joi.string().max(200).optional(),
   organizationName: Joi.string().max(200).optional(),
   description: Joi.string().max(150).optional(), // Common App limit
-  hours_per_week: Joi.number().min(0).max(168).optional(), // Max hours in a week
-  hoursPerWeek: Joi.number().min(0).max(168).optional(),
+  hours_per_week: Joi.number().min(0).max(80).optional(),
+  hoursPerWeek: Joi.number().min(0).max(80).optional(),
   weeks_per_year: Joi.number().min(0).max(52).optional(),
   weeksPerYear: Joi.number().min(0).max(52).optional(),
   grade_9: Joi.boolean().optional(),
@@ -238,12 +238,15 @@ const activitySchema = Joi.object({
   awards_recognition: Joi.string().max(500).optional(),
   awardsRecognition: Joi.string().max(500).optional()
 }).custom((value, helpers) => {
-  // Validate hours_per_week * weeks_per_year <= 8760 (hours in a year)
+  // Validate bounded realistic yearly commitment
   const hoursPerWeek = value.hours_per_week || value.hoursPerWeek || 0;
   const weeksPerYear = value.weeks_per_year || value.weeksPerYear || 0;
   
-  if (hoursPerWeek * weeksPerYear > 8760) {
-    return helpers.error('any.custom', { message: 'Total hours per year cannot exceed 8760' });
+  if (hoursPerWeek > 80) {
+    return helpers.error('any.custom', { message: 'Hours per week cannot exceed 80' });
+  }
+  if (weeksPerYear > 52) {
+    return helpers.error('any.custom', { message: 'Weeks per year cannot exceed 52' });
   }
   
   return value;
@@ -265,6 +268,12 @@ const preferencesSchema = Joi.object({
   preferredStates: Joi.array().items(Joi.string()).optional(),
   preferred_countries: Joi.array().items(Joi.string()).optional(),
   preferredCountries: Joi.array().items(Joi.string()).optional(),
+  custom_majors: Joi.array().items(Joi.string().max(100)).max(20).optional(),
+  customMajors: Joi.array().items(Joi.string().max(100)).max(20).optional(),
+  custom_subjects: Joi.array().items(Joi.string().max(100)).max(40).optional(),
+  customSubjects: Joi.array().items(Joi.string().max(100)).max(40).optional(),
+  interest_tags: Joi.array().items(Joi.string().max(100)).max(40).optional(),
+  trait_weights: Joi.object().pattern(Joi.string(), Joi.number().min(1).max(5)).optional(),
   budget_min: Joi.number().integer().min(0).optional().allow(null),
   budgetMin: Joi.number().integer().min(0).optional().allow(null),
   budget_max: Joi.number().integer().min(0).optional().allow(null),
