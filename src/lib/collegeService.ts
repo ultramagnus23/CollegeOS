@@ -11,10 +11,10 @@ import {
   supabase,
   isSupabaseConfigured,
   CollegeWithRelations,
-  CollegeRow,
 } from './supabase';
 
 const PAGE_SIZE = 20;
+const COLLEGE_SYNC_DEBUG = import.meta.env.DEV;
 
 /** Full nested-select string used when fetching a college with all related data. */
 const FULL_SELECT = `
@@ -47,6 +47,124 @@ function requireClient() {
     );
   }
   return supabase;
+}
+
+function debugCollegeSync(stage: string, payload: unknown) {
+  if (!COLLEGE_SYNC_DEBUG) return;
+  console.debug(`[CollegeSync] ${stage}`, payload);
+}
+
+function firstDefined<T>(...values: Array<T | null | undefined>): T | null {
+  for (const value of values) {
+    if (value !== null && value !== undefined) return value;
+  }
+  return null;
+}
+
+function toBoolean(value: unknown): boolean | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes'].includes(normalized)) return true;
+    if (['false', '0', 'no'].includes(normalized)) return false;
+  }
+  return null;
+}
+
+type LegacyCollegeRow = Record<string, any>;
+
+function mergeCollegeRow(
+  row: Record<string, any>,
+  legacy: LegacyCollegeRow | undefined
+): Record<string, any> {
+  if (!legacy) {
+    return {
+      ...row,
+      last_updated_at: firstDefined(row.last_updated_at, row.last_data_refresh, row.updated_at),
+    };
+  }
+
+  return {
+    ...legacy,
+    ...row,
+    official_website: firstDefined(row.official_website, legacy.official_website),
+    website: firstDefined(row.website, legacy.website, legacy.official_website),
+    website_url: firstDefined(row.website_url, legacy.website_url, legacy.official_website),
+    description: firstDefined(row.description, legacy.description),
+    type: firstDefined(row.type, legacy.type),
+    size_category: firstDefined(row.size_category, legacy.size_category),
+    acceptance_rate: firstDefined(row.acceptance_rate, legacy.acceptance_rate),
+    tuition_domestic: firstDefined(row.tuition_domestic, legacy.tuition_domestic),
+    tuition_international: firstDefined(row.tuition_international, legacy.tuition_international),
+    ranking_qs: firstDefined(row.ranking_qs, legacy.ranking_qs),
+    ranking_us_news: firstDefined(row.ranking_us_news, legacy.ranking_us_news),
+    ranking_the: firstDefined(row.ranking_the, legacy.ranking_the),
+    application_deadline: firstDefined(row.application_deadline, legacy.application_deadline),
+    rd_deadline: firstDefined(row.rd_deadline, legacy.rd_deadline, legacy.application_deadline_rd),
+    ed_deadline: firstDefined(row.ed_deadline, legacy.ed_deadline, legacy.application_deadline_ed),
+    ea_deadline: firstDefined(row.ea_deadline, legacy.ea_deadline, legacy.application_deadline_ea),
+    avg_institutional_grant: firstDefined(row.avg_institutional_grant, legacy.avg_institutional_grant),
+    avg_merit_aid: firstDefined(row.avg_merit_aid, legacy.avg_merit_aid),
+    pct_receiving_merit_aid: firstDefined(row.pct_receiving_merit_aid, legacy.pct_receiving_merit_aid),
+    pct_students_receiving_aid: firstDefined(row.pct_students_receiving_aid, legacy.pct_students_receiving_aid),
+    international_aid_available: firstDefined(
+      toBoolean(row.international_aid_available),
+      toBoolean(legacy.international_aid_available)
+    ),
+    international_aid_avg: firstDefined(row.international_aid_avg, legacy.international_aid_avg),
+    meets_full_need: firstDefined(toBoolean(row.meets_full_need), toBoolean(legacy.meets_full_need)),
+    css_profile_required: firstDefined(
+      toBoolean(row.css_profile_required),
+      toBoolean(legacy.css_profile_required)
+    ),
+    data_source: firstDefined(row.data_source, legacy.data_source),
+    data_source_url: firstDefined(row.data_source_url, legacy.data_source_url),
+    data_quality_score: firstDefined(row.data_quality_score, legacy.data_quality_score),
+    needs_enrichment: firstDefined(row.needs_enrichment, legacy.needs_enrichment),
+    last_data_refresh: firstDefined(row.last_data_refresh, legacy.last_data_refresh),
+    updated_at: firstDefined(row.updated_at, legacy.updated_at),
+    last_updated_at: firstDefined(
+      row.last_updated_at,
+      legacy.last_updated_at,
+      row.last_data_refresh,
+      legacy.last_data_refresh,
+      row.updated_at,
+      legacy.updated_at
+    ),
+  };
+}
+
+async function fetchLegacyCollegeRows(ids: number[]): Promise<Map<number, LegacyCollegeRow>> {
+  const uniqueIds = [...new Set(ids.filter((id) => Number.isFinite(id)))];
+  if (uniqueIds.length === 0) return new Map();
+
+  const client = requireClient();
+  const { data, error } = await client.from('colleges').select('*').in('id', uniqueIds);
+
+  if (error) {
+    debugCollegeSync('legacy.fetch.error', {
+      idsRequested: uniqueIds.length,
+      code: (error as { code?: string }).code,
+      message: error.message,
+    });
+    return new Map();
+  }
+
+  const rows = (data as LegacyCollegeRow[] | null) ?? [];
+  debugCollegeSync('legacy.fetch.success', {
+    idsRequested: uniqueIds.length,
+    rowsReturned: rows.length,
+  });
+
+  return new Map(rows.map((row) => [row.id, row]));
+}
+
+async function hydrateRowsWithLegacyData<T extends Record<string, any>>(rows: T[]): Promise<T[]> {
+  if (rows.length === 0) return rows;
+  const legacyById = await fetchLegacyCollegeRows(rows.map((row) => row.id));
+  return rows.map((row) => mergeCollegeRow(row, legacyById.get(row.id)) as T);
 }
 
 // ─── Filters ──────────────────────────────────────────────────────────────────
@@ -114,8 +232,14 @@ async function searchCollegesDirect(
   if (error) throw error;
 
   const total = count ?? 0;
+  const hydrated = await hydrateRowsWithLegacyData((data as CollegeWithRelations[]) ?? []);
+  debugCollegeSync('search.direct', {
+    filters,
+    total,
+    rows: hydrated.length,
+  });
   return {
-    data: (data as CollegeWithRelations[]) ?? [],
+    data: hydrated,
     count: total,
     page,
     pageSize: PAGE_SIZE,
@@ -229,7 +353,12 @@ export async function searchColleges(
   const total: number     = rpcRow?.total ?? 0;
   const safeIds: number[] = (rpcRow?.ids ?? []) as number[];
 
-  console.log('[searchColleges] total:', total, 'ids:', safeIds.length);
+  debugCollegeSync('search.rpc', {
+    filters,
+    total,
+    idsReturned: safeIds.length,
+    sampleIds: safeIds.slice(0, 5),
+  });
 
   if (safeIds.length === 0) {
     return {
@@ -268,9 +397,20 @@ export async function searchColleges(
   const ordered = safeIds
     .map((id) => byId.get(id))
     .filter((c): c is CollegeWithRelations => c !== undefined);
+  const hydrated = await hydrateRowsWithLegacyData(ordered);
+  debugCollegeSync('search.rows', {
+    rows: hydrated.length,
+    sample: hydrated.slice(0, 3).map((row) => ({
+      id: row.id,
+      name: row.name,
+      acceptance_rate: row.acceptance_rate ?? row.college_admissions?.[0]?.acceptance_rate ?? null,
+      ranking_qs: (row as Record<string, any>).ranking_qs ?? null,
+      data_source: (row as Record<string, any>).data_source ?? null,
+    })),
+  });
 
   return {
-    data: ordered,
+    data: hydrated,
     count: total,
     page,
     pageSize: PAGE_SIZE,
@@ -297,7 +437,19 @@ export async function getCollegeById(
     .maybeSingle();
 
   if (error) throw error;
-  return data as CollegeWithRelations | null;
+
+  if (!data) return null;
+
+  const [hydrated] = await hydrateRowsWithLegacyData([data as CollegeWithRelations]);
+  debugCollegeSync('detail.raw', {
+    id,
+    name: hydrated.name,
+    admissionsRows: hydrated.college_admissions?.length ?? 0,
+    financialRows: hydrated.college_financial_data?.length ?? 0,
+    rankingRows: hydrated.college_rankings?.length ?? 0,
+    hasLegacySupplement: Boolean((hydrated as Record<string, any>).official_website),
+  });
+  return hydrated;
 }
 
 /**
@@ -317,7 +469,9 @@ export async function getCollegeByName(
     .maybeSingle();
 
   if (error) throw error;
-  return data as CollegeWithRelations | null;
+  if (!data) return null;
+  const [hydrated] = await hydrateRowsWithLegacyData([data as CollegeWithRelations]);
+  return hydrated;
 }
 
 // ─── Compare ──────────────────────────────────────────────────────────────────
@@ -478,6 +632,32 @@ function parseRangeString(
   return !isNaN(lo) && !isNaN(hi) ? { percentile25: lo, percentile75: hi } : null;
 }
 
+function buildDeadlineTemplates(c: Record<string, any>) {
+  const templates: Record<string, { date: string; type: string }> = {};
+
+  const add = (key: string, type: string, date: unknown) => {
+    if (typeof date !== 'string' || !date.trim() || templates[key]) return;
+    templates[key] = { date, type };
+  };
+
+  const normalizedDeadlines = Array.isArray(c.college_deadlines) ? c.college_deadlines : [];
+  for (const deadline of normalizedDeadlines) {
+    const rawType = String(deadline?.deadline_type ?? '').toLowerCase();
+    const date = deadline?.deadline_date;
+    if (rawType.includes('regular')) add('regularDecision', 'Regular Decision', date);
+    else if (rawType.includes('early decision')) add('earlyDecision', 'Early Decision', date);
+    else if (rawType.includes('early action')) add('earlyAction', 'Early Action', date);
+    else if (rawType.includes('priority')) add('priority', 'Priority', date);
+    else if (rawType.includes('financial')) add('financialAid', 'Financial Aid', date);
+  }
+
+  add('regularDecision', 'Regular Decision', c.rd_deadline ?? c.application_deadline);
+  add('earlyDecision', 'Early Decision', c.ed_deadline);
+  add('earlyAction', 'Early Action', c.ea_deadline);
+
+  return Object.keys(templates).length > 0 ? templates : undefined;
+}
+
 /**
  * Convert a `CollegeWithRelations` row into the flat shape expected by
  * the `Colleges.tsx` card list.
@@ -493,17 +673,18 @@ export function normalizeToCard(c: any): any {
 
   // Acceptance rate: flat RPC column first, then nested fallback
   const acceptanceRate =
-    c.acceptance_rate ??
-    admissions?.acceptance_rate ??
-    null;
+    firstDefined(c.acceptance_rate, admissions?.acceptance_rate);
 
   // Tuition: flat RPC columns first, then nested fallback
   const tuitionCost =
-    c.tuition_international ??
-    c.tuition_domestic ??
-    financial?.tuition_out_state ??
-    financial?.tuition_international ??
-    null;
+    firstDefined(
+      c.tuition_out_state,
+      c.tuition_domestic,
+      c.tuition_international,
+      financial?.tuition_out_state,
+      financial?.tuition_international,
+      financial?.tuition_in_state
+    );
 
   // Ranking: flat RPC columns first, then nested fallback
   const rankings = c.college_rankings ?? [];
@@ -512,10 +693,7 @@ export function normalizeToCard(c: any): any {
     .filter((n: number) => !isNaN(n) && n > 0)
     .sort((a: number, b: number) => a - b)[0] ?? null;
   const bestRank =
-    c.ranking_qs ??
-    c.ranking_us_news ??
-    nestedRank ??
-    null;
+    firstDefined(c.ranking_qs, c.ranking_us_news, c.ranking_the, nestedRank);
 
   // Programs: only available from nested SELECT, not from RPC
   const programs = c.college_programs ?? [];
@@ -539,6 +717,11 @@ export function normalizeToCard(c: any): any {
     programs:           programNames,
     majorCategories:    programNames.slice(0, 6),
     academicStrengths:  [],
+    data_source:        c.data_source ?? null,
+    data_source_url:    c.data_source_url ?? null,
+    last_updated_at:    firstDefined(c.last_updated_at, c.last_data_refresh, c.updated_at),
+    data_quality_score: c.data_quality_score ?? null,
+    needs_enrichment:   c.needs_enrichment ?? null,
     testScores:         admissions
       ? {
           satRange:   parseRangeString(admissions.sat_range) ?? undefined,
@@ -565,34 +748,56 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
   const campusLife   = c.campus_life?.[0]            ?? null;
   const contact      = c.college_contact?.[0]        ?? null;
   const programs     = c.college_programs            ?? [];
-  const rankings     = c.college_rankings            ?? [];
+  const rawRankings  = c.college_rankings            ?? [];
+  const rankings     = rawRankings.length > 0
+    ? rawRankings
+    : [
+        c.ranking_qs != null ? { ranking_source: 'QS', ranking_value: String(c.ranking_qs), ranking_year: new Date().getFullYear() } : null,
+        c.ranking_us_news != null ? { ranking_source: 'US News', ranking_value: String(c.ranking_us_news), ranking_year: new Date().getFullYear() } : null,
+        c.ranking_the != null ? { ranking_source: 'Times Higher Education', ranking_value: String(c.ranking_the), ranking_year: new Date().getFullYear() } : null,
+      ].filter(Boolean) as Array<{ ranking_source: string; ranking_value: string; ranking_year: number }>;
 
   const bestRank = rankings
     .map((r) => (r.ranking_value ? parseInt(r.ranking_value, 10) : NaN))
     .filter((n) => !isNaN(n) && n > 0)
     .sort((a, b) => a - b)[0] ?? null;
 
-  const satRange = parseRangeString(admissions?.sat_range);
-  const actRange = parseRangeString(admissions?.act_range);
+  const satRange = parseRangeString(admissions?.sat_range)
+    ?? ((c.sat_25 != null && c.sat_75 != null)
+      ? { percentile25: c.sat_25, percentile75: c.sat_75 }
+      : null);
+  const actRange = parseRangeString(admissions?.act_range)
+    ?? ((c.act_25 != null && c.act_75 != null)
+      ? { percentile25: c.act_25, percentile75: c.act_75 }
+      : null);
 
   const programNames = programs.map((p) => p.program_name).filter(Boolean);
   const degreeTypes  = [...new Set(programs.map((p) => p.degree_type ?? '').filter(Boolean))];
+  const deadlineTemplates = buildDeadlineTemplates(c as Record<string, any>);
+  const acceptanceRate = firstDefined(admissions?.acceptance_rate, c.acceptance_rate);
+  const tuitionCost = firstDefined(
+    financial?.tuition_out_state,
+    financial?.tuition_international,
+    financial?.tuition_in_state,
+    c.tuition_domestic,
+    c.tuition_international
+  );
 
   return {
     id:                    c.id,
     name:                  c.name,
     country:               c.country ?? '',
     location:              [c.city, c.state ?? c.state_region].filter(Boolean).join(', '),
-    official_website:      c.website ?? c.website_url ?? '',
+    official_website:      c.website ?? c.website_url ?? (c as Record<string, any>).official_website ?? '',
     admissions_url:        contact?.admissions_url ?? undefined,
     type:                  c.type ?? c.institution_type ?? null,
     description:           c.description ?? null,
     ranking:               bestRank,
     enrollment:            c.total_enrollment ?? null,
     religious_affiliation: c.religious_affiliation ?? null,
-    acceptance_rate:       admissions?.acceptance_rate ?? null,
-    acceptanceRate:        admissions?.acceptance_rate ?? null,
-    tuition_cost:          financial?.tuition_out_state ?? financial?.tuition_international ?? null,
+    acceptance_rate:       acceptanceRate,
+    acceptanceRate:        acceptanceRate,
+    tuition_cost:          tuitionCost,
     avg_net_price:         financial?.avg_net_price ?? null,
     median_debt:           academics?.median_debt        ?? null,
     median_salary_6yr:     academics?.median_salary_6yr  ?? null,
@@ -618,22 +823,51 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
             : undefined,
           averageGPA: admissions.gpa_50 ?? undefined,
         }
-      : null,
-    studentStats: admissions
-      ? {
-          gpa50:     admissions.gpa_50   ?? null,
-          sat_range: admissions.sat_range ?? null,
-          act_range: admissions.act_range ?? null,
-        }
-      : undefined,
+      : satRange || actRange || c.gpa_25 != null || c.gpa_75 != null
+        ? {
+            satRange: satRange
+              ? { percentile25: satRange.percentile25, percentile75: satRange.percentile75 }
+              : undefined,
+            actRange: actRange
+              ? { percentile25: actRange.percentile25, percentile75: actRange.percentile75 }
+              : undefined,
+          }
+        : null,
+    studentStats: {
+      gpa25:     c.gpa_25 ?? null,
+      gpa50:     admissions?.gpa_50 ?? null,
+      gpa75:     c.gpa_75 ?? null,
+      sat25:     c.sat_25 ?? null,
+      sat75:     c.sat_75 ?? null,
+      sat_range: admissions?.sat_range ?? null,
+      act25:     c.act_25 ?? null,
+      act75:     c.act_75 ?? null,
+      act_range: admissions?.act_range ?? null,
+    },
     financialData: financial
       ? {
           tuitionInState:        financial.tuition_in_state        ?? null,
           tuitionOutState:       financial.tuition_out_state       ?? null,
           tuitionInternational:  financial.tuition_international   ?? null,
           avgNetPrice:           financial.avg_net_price           ?? null,
+          avgFinancialAid:       (financial as Record<string, any>).institutional_grant_average
+            ?? (c as Record<string, any>).avg_institutional_grant
+            ?? (c as Record<string, any>).international_aid_avg
+            ?? null,
+          percentReceivingAid:   (financial as Record<string, any>).international_aid_percentage
+            ?? (c as Record<string, any>).pct_students_receiving_aid
+            ?? null,
         }
-      : undefined,
+      : {
+          tuitionInState:        (c as Record<string, any>).tuition_domestic ?? null,
+          tuitionOutState:       null,
+          tuitionInternational:  (c as Record<string, any>).tuition_international ?? null,
+          avgNetPrice:           null,
+          avgFinancialAid:       (c as Record<string, any>).avg_institutional_grant
+            ?? (c as Record<string, any>).international_aid_avg
+            ?? null,
+          percentReceivingAid:   (c as Record<string, any>).pct_students_receiving_aid ?? null,
+        },
     academicOutcomes: academics
       ? {
           graduationRate4yr:     academics.graduation_rate_4yr  ?? null,
@@ -672,6 +906,17 @@ export function normalizeToDetail(c: CollegeWithRelations): any {
               : null,
         }
       : undefined,
+    deadlineTemplates,
+    data_source:          (c as Record<string, any>).data_source ?? null,
+    data_source_url:      (c as Record<string, any>).data_source_url ?? null,
+    last_updated_at:      firstDefined(
+      (c as Record<string, any>).last_updated_at,
+      (c as Record<string, any>).last_data_refresh,
+      (c as Record<string, any>).updated_at
+    ),
+    updated_at:           (c as Record<string, any>).updated_at ?? null,
+    needs_enrichment:     (c as Record<string, any>).needs_enrichment ?? null,
+    data_quality_score:   (c as Record<string, any>).data_quality_score ?? null,
     rankings: rankings.map((r) => ({
       year:         r.ranking_year ?? new Date().getFullYear(),
       rankingBody:  r.ranking_source,
