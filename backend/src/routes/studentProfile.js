@@ -19,6 +19,36 @@ const {
   validatePreferences
 } = require('../middleware/profileValidation');
 
+const clampInt = (value, min, max) => {
+  const n = parseInt(String(value ?? ''), 10);
+  if (Number.isNaN(n)) return min;
+  return Math.min(max, Math.max(min, n));
+};
+
+const normalizeText = (value, max = 500) =>
+  String(value ?? '')
+    .normalize('NFKC')
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    .replace(/[<>]/g, '')
+    .trim()
+    .slice(0, max);
+
+const normalizeStringArray = (value, maxItems = 100) => {
+  const arr = Array.isArray(value) ? value : [];
+  const seen = new Set();
+  const out = [];
+  for (const raw of arr) {
+    const cleaned = normalizeText(raw, 100);
+    if (!cleaned) continue;
+    const key = cleaned.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(cleaned);
+    if (out.length >= maxItems) break;
+  }
+  return out;
+};
+
 /**
  * GET /api/profile
  * Get the current user's complete profile
@@ -487,6 +517,22 @@ router.patch('/academic', authenticate, async (req, res, next) => {
 router.post('/extended', authenticate, async (req, res, next) => {
   try {
     const data = req.body;
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+    const normalizeArray = (values) => {
+      if (!Array.isArray(values)) return [];
+      const seen = new Set();
+      const normalized = [];
+      for (const raw of values) {
+        const value = String(raw || '').trim().replace(/\s+/g, ' ');
+        if (!value) continue;
+        const title = value.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+        const key = title.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        normalized.push(title);
+      }
+      return normalized;
+    };
 
     // Map onboarding field names → student_profiles column names so that
     // GPA, SAT scores, activities, etc. are actually persisted.
@@ -533,6 +579,12 @@ router.post('/extended', authenticate, async (req, res, next) => {
     if (data.potentialMajors !== undefined) {
       mapped.intended_majors = data.potentialMajors;
     }
+    if (Array.isArray(data.intended_majors)) {
+      mapped.intended_majors = normalizeArray(data.intended_majors);
+    }
+    if (Array.isArray(data.customMajors) || Array.isArray(data.custom_majors)) {
+      mapped.custom_majors = normalizeArray(data.customMajors || data.custom_majors);
+    }
 
     // Preferred countries
     if (data.preferredCountries !== undefined) {
@@ -558,9 +610,33 @@ router.post('/extended', authenticate, async (req, res, next) => {
     if (data.whyCollege !== undefined) {
       mapped.why_college = data.whyCollege;
     }
+    if (data.curriculum_type !== undefined) {
+      mapped.curriculum_type = data.curriculum_type;
+    }
+    if (data.curriculum_other !== undefined || data.curriculum_type_other !== undefined) {
+      mapped.curriculum_type_other = data.curriculum_other || data.curriculum_type_other;
+    }
+    if (data.school_name !== undefined || data.high_school_name !== undefined) {
+      mapped.high_school_name = data.school_name || data.high_school_name;
+    }
+    if (data.phone !== undefined) mapped.phone = data.phone;
+    if (data.date_of_birth !== undefined) mapped.date_of_birth = data.date_of_birth;
+    if (data.graduation_year !== undefined && data.graduation_year !== '') {
+      const gradYear = parseInt(String(data.graduation_year), 10);
+      if (!Number.isNaN(gradYear)) mapped.graduation_year = gradYear;
+    }
+    if (Array.isArray(data.subjects)) mapped.subjects = normalizeArray(data.subjects);
+    if (Array.isArray(data.customSubjects) || Array.isArray(data.custom_subjects)) {
+      mapped.custom_subjects = normalizeArray(data.customSubjects || data.custom_subjects);
+    }
+    if (Array.isArray(data.skillsStrengths) || Array.isArray(data.traits)) {
+      mapped.interest_tags = normalizeArray(data.skillsStrengths || data.traits);
+    }
+    if (data.traitWeights || data.trait_weights) mapped.trait_weights = data.traitWeights || data.trait_weights;
+    if (data.traitProfile || data.trait_profile) mapped.trait_profile = data.traitProfile || data.trait_profile;
 
     // Activities → extracurriculars JSONB
-    if (Array.isArray(data.activities) && data.activities.length > 0) {
+    if (Array.isArray(data.activities)) {
       const validActivities = data.activities.filter(a => a?.name?.trim());
       mapped.extracurriculars = validActivities.map(a => {
         // Derive tier if not explicitly set: national/varsity = 1, club/local = 2, default = 3
@@ -576,8 +652,9 @@ router.post('/extended', authenticate, async (req, res, next) => {
           name: a.name,
           type: a.type || '',
           tier,
-          yearsInvolved: a.yearsInvolved || 0,
-          hoursPerWeek: a.hoursPerWeek || 0,
+          yearsInvolved: clamp(parseInt(String(a.yearsInvolved || 0), 10) || 0, 0, 20),
+          hoursPerWeek: clamp(parseInt(String(a.hoursPerWeek || 0), 10) || 0, 0, 80),
+          weeksPerYear: clamp(parseInt(String(a.weeksPerYear || 0), 10) || 0, 0, 52),
           leadership: a.leadership || '',
           achievements: a.achievements || '',
         };
@@ -603,6 +680,222 @@ router.get('/extended', authenticate, async (req, res, next) => {
   } catch (error) {
     logger.error('Get extended profile failed:', error);
     next(error);
+  }
+});
+
+// Canonical sync endpoint: transactional save with optimistic version checks.
+router.post('/canonical-sync', authenticate, async (req, res, next) => {
+  const dbManager = require('../config/database');
+  const { computeTraitIntelligence } = require('../services/traitIntelligenceService');
+  const pool = dbManager.getDatabase();
+  const client = await pool.connect();
+
+  try {
+    const userId = req.user.userId;
+    const { profile = {}, expectedVersion = null, requestId = null } = req.body || {};
+    const p = profile || {};
+
+    await client.query('BEGIN');
+
+    const existing = (await client.query(
+      'SELECT id, profile_version FROM student_profiles WHERE user_id = $1 FOR UPDATE',
+      [userId],
+    )).rows[0];
+
+    const currentVersion = parseInt(existing?.profile_version || 0, 10);
+    if (expectedVersion !== null && expectedVersion !== undefined && Number(expectedVersion) !== currentVersion) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        success: false,
+        message: 'Profile version conflict. Please refresh and retry.',
+        data: { currentVersion },
+      });
+    }
+
+    const activities = Array.isArray(p.extracurriculars) ? p.extracurriculars : [];
+    const cleanActivities = activities
+      .filter((a) => normalizeText(a?.name, 120))
+      .slice(0, 20)
+      .map((a) => ({
+        name: normalizeText(a?.name, 120),
+        type: normalizeText(a?.type, 120),
+        tier: clampInt(a?.tier ?? a?.tier_rating ?? 4, 1, 4),
+        yearsInvolved: clampInt(a?.yearsInvolved ?? 0, 0, 20),
+        hoursPerWeek: clampInt(a?.hoursPerWeek ?? 0, 0, 80),
+        weeksPerYear: clampInt(a?.weeksPerYear ?? 0, 0, 52),
+        leadership: normalizeText(a?.leadership, 200),
+        achievements: normalizeText(a?.achievements, 500),
+      }));
+
+    const nextVersion = currentVersion + 1;
+    const normalizedTraits = normalizeStringArray(p.interest_tags, 40);
+    const traitInterpretation = computeTraitIntelligence(
+      normalizedTraits,
+      p.trait_weights || {},
+      Array.isArray(p?.trait_profile?.pairings) ? p.trait_profile.pairings : [],
+    );
+    const upsert = await client.query(
+      `INSERT INTO student_profiles (
+        user_id, first_name, last_name, email, country, phone, date_of_birth,
+        grade_level, graduation_year, high_school_name, curriculum_type, curriculum_type_other,
+        stream, gpa_weighted, gpa_unweighted, board_exam_percentage, sat_total, sat_math, sat_ebrw,
+        act_composite, ielts_score, toefl_score, duolingo_score, intended_majors, custom_majors,
+        subjects, custom_subjects, preferred_countries, budget_min, budget_max, preferred_college_size,
+        preferred_setting, interest_tags, trait_weights, trait_profile, trait_interpretation, extracurriculars, awards,
+        career_goals, why_college, onboarding_step, profile_completion_percentage, profile_version,
+        last_profile_request_id, updated_at
+      ) VALUES (
+        $1,$2,$3,$4,$5,$6,$7,
+        $8,$9,$10,$11,$12,
+        $13,$14,$15,$16,$17,$18,$19,
+        $20,$21,$22,$23,$24,$25,
+        $26,$27,$28,$29,$30,$31,
+        $32,$33,$34,$35,$36,$37,$38,
+        $39,$40,$41,$42,$43,
+        $44,NOW()
+      )
+      ON CONFLICT (user_id) DO UPDATE SET
+        first_name = EXCLUDED.first_name,
+        last_name = EXCLUDED.last_name,
+        email = EXCLUDED.email,
+        country = EXCLUDED.country,
+        phone = EXCLUDED.phone,
+        date_of_birth = EXCLUDED.date_of_birth,
+        grade_level = EXCLUDED.grade_level,
+        graduation_year = EXCLUDED.graduation_year,
+        high_school_name = EXCLUDED.high_school_name,
+        curriculum_type = EXCLUDED.curriculum_type,
+        curriculum_type_other = EXCLUDED.curriculum_type_other,
+        stream = EXCLUDED.stream,
+        gpa_weighted = EXCLUDED.gpa_weighted,
+        gpa_unweighted = EXCLUDED.gpa_unweighted,
+        board_exam_percentage = EXCLUDED.board_exam_percentage,
+        sat_total = EXCLUDED.sat_total,
+        sat_math = EXCLUDED.sat_math,
+        sat_ebrw = EXCLUDED.sat_ebrw,
+        act_composite = EXCLUDED.act_composite,
+        ielts_score = EXCLUDED.ielts_score,
+        toefl_score = EXCLUDED.toefl_score,
+        duolingo_score = EXCLUDED.duolingo_score,
+        intended_majors = EXCLUDED.intended_majors,
+        custom_majors = EXCLUDED.custom_majors,
+        subjects = EXCLUDED.subjects,
+        custom_subjects = EXCLUDED.custom_subjects,
+        preferred_countries = EXCLUDED.preferred_countries,
+        budget_min = EXCLUDED.budget_min,
+        budget_max = EXCLUDED.budget_max,
+        preferred_college_size = EXCLUDED.preferred_college_size,
+        preferred_setting = EXCLUDED.preferred_setting,
+        interest_tags = EXCLUDED.interest_tags,
+        trait_weights = EXCLUDED.trait_weights,
+        trait_profile = EXCLUDED.trait_profile,
+        trait_interpretation = EXCLUDED.trait_interpretation,
+        extracurriculars = EXCLUDED.extracurriculars,
+        awards = EXCLUDED.awards,
+        career_goals = EXCLUDED.career_goals,
+        why_college = EXCLUDED.why_college,
+        onboarding_step = EXCLUDED.onboarding_step,
+        profile_completion_percentage = EXCLUDED.profile_completion_percentage,
+        profile_version = EXCLUDED.profile_version,
+        last_profile_request_id = EXCLUDED.last_profile_request_id,
+        updated_at = NOW()
+      RETURNING id, profile_version`,
+      [
+        userId,
+        normalizeText(p.first_name, 100) || null,
+        normalizeText(p.last_name, 100) || null,
+        normalizeText(p.email, 255) || null,
+        normalizeText(p.country, 100) || null,
+        normalizeText(p.phone, 30) || null,
+        normalizeText(p.date_of_birth, 20) || null,
+        normalizeText(p.grade_level, 60) || null,
+        p.graduation_year ? parseInt(String(p.graduation_year), 10) : null,
+        normalizeText(p.high_school_name, 255) || null,
+        normalizeText(p.curriculum_type, 100) || null,
+        normalizeText(p.curriculum_type_other, 100) || null,
+        normalizeText(p.stream, 100) || null,
+        p.gpa_weighted ?? null,
+        p.gpa_unweighted ?? null,
+        p.board_exam_percentage ?? null,
+        p.sat_total ?? null,
+        p.sat_math ?? null,
+        p.sat_ebrw ?? null,
+        p.act_composite ?? null,
+        p.ielts_score ?? null,
+        p.toefl_score ?? null,
+        p.duolingo_score ?? null,
+        JSON.stringify(normalizeStringArray(p.intended_majors, 20)),
+        JSON.stringify(normalizeStringArray(p.custom_majors, 20)),
+        JSON.stringify(normalizeStringArray(p.subjects, 40)),
+        JSON.stringify(normalizeStringArray(p.custom_subjects, 40)),
+        JSON.stringify(normalizeStringArray(p.preferred_countries, 20)),
+        p.budget_min ?? null,
+        p.budget_max ?? null,
+        normalizeText(p.preferred_college_size, 40) || null,
+        normalizeText(p.preferred_setting, 40) || null,
+        JSON.stringify(normalizedTraits),
+        JSON.stringify(p.trait_weights || {}),
+        JSON.stringify(p.trait_profile || null),
+        JSON.stringify(traitInterpretation),
+        JSON.stringify(cleanActivities),
+        JSON.stringify(normalizeStringArray(p.awards, 40)),
+        normalizeText(p.career_goals, 2000) || null,
+        normalizeText(p.why_college, 2000) || null,
+        p.onboarding_step ?? 0,
+        p.profile_completion_percentage ?? 0,
+        nextVersion,
+        normalizeText(requestId, 120) || null,
+      ],
+    );
+
+    const profileId = upsert.rows[0]?.id;
+    await client.query('UPDATE users SET updated_at = NOW() WHERE id = $1', [userId]);
+    await client.query(
+      'UPDATE users SET target_countries = $1, intended_majors = $2, updated_at = NOW() WHERE id = $3',
+      [
+        JSON.stringify(normalizeStringArray(p.preferred_countries, 20)),
+        JSON.stringify(normalizeStringArray(p.intended_majors, 20)),
+        userId,
+      ],
+    );
+
+    if (profileId) {
+      await client.query('DELETE FROM student_activities WHERE student_id = $1', [profileId]);
+      for (const [idx, a] of cleanActivities.entries()) {
+        await client.query(
+          `INSERT INTO student_activities (
+            student_id, activity_name, activity_type, position_title, description,
+            hours_per_week, weeks_per_year, total_hours, tier_rating, display_order
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+          [
+            profileId,
+            a.name,
+            a.type || 'Other',
+            a.leadership || null,
+            a.achievements || null,
+            a.hoursPerWeek,
+            a.weeksPerYear,
+            a.hoursPerWeek * a.weeksPerYear * Math.max(a.yearsInvolved, 1),
+            a.tier,
+            idx + 1,
+          ],
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+    const fullProfile = await StudentProfile.getCompleteProfile(userId);
+    return res.json({
+      success: true,
+      data: fullProfile,
+      message: 'Canonical profile synced successfully',
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Canonical profile sync failed:', error);
+    return next(error);
+  } finally {
+    client.release();
   }
 });
 
@@ -695,7 +988,7 @@ router.get('/completion', authenticate, async (req, res, next) => {
     const allFields = [
       'First Name', 'Email', 'Curriculum Type', 'Country', 'Graduation Year', 'Subjects',
       'Phone Number', 'Date of Birth', 'GPA (Weighted)', 'GPA (Unweighted)', 'SAT Score',
-      'ACT Score', 'IELTS Score', 'TOEFL Score', 'School Name',
+      'ACT Score', 'IELTS Score', 'TOEFL Score', 'Duolingo Score', 'School Name', 'Traits',
       'College Size Preference', 'Campus Setting Preference', 'Activities',
     ];
     const missingFields = [

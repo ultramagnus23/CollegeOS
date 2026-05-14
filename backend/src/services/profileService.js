@@ -32,13 +32,16 @@ const OPTIONAL_FIELDS = [
   { key: 'date_of_birth', label: 'Date of Birth' },
   { key: 'gpa_weighted', label: 'GPA (Weighted)' },
   { key: 'gpa_unweighted', label: 'GPA (Unweighted)' },
+  { key: 'board_exam_percentage', label: 'Board Exam Percentage' },
   { key: 'sat_total', label: 'SAT Score' },
   { key: 'act_composite', label: 'ACT Score' },
   { key: 'ielts_score', label: 'IELTS Score' },
   { key: 'toefl_score', label: 'TOEFL Score' },
+  { key: 'duolingo_score', label: 'Duolingo Score' },
   { key: 'high_school_name', label: 'School Name' },
   { key: 'preferred_college_size', label: 'College Size Preference' },
-  { key: 'preferred_setting', label: 'Campus Setting Preference' }
+  { key: 'preferred_setting', label: 'Campus Setting Preference' },
+  { key: 'interest_tags', label: 'Traits' },
 ];
 
 class ProfileService {
@@ -658,59 +661,53 @@ class ProfileService {
         has_activities: false
       };
     }
-    
-    // Check critical fields
-    const missingCritical = [];
-    let filledCritical = 0;
-    
-    for (const field of CRITICAL_FIELDS) {
-      if (profile[field.key] && profile[field.key] !== '' && profile[field.key] !== null) {
-        filledCritical++;
-      } else {
-        missingCritical.push(field.label);
-      }
-    }
-    
-    // Check subjects (counts as critical)
+
     const subjects = this.safeParseJSON(profile.subjects, []);
+    const intendedMajors = this.safeParseJSON(profile.intended_majors, []);
+    const traits = this.safeParseJSON(profile.interest_tags, []);
+    const awards = this.safeParseJSON(profile.awards, []);
+    const activitiesCountRow = (await pool.query(
+      'SELECT COUNT(*) as count FROM student_activities WHERE student_id = $1',
+      [profile.id],
+    )).rows[0];
+    const activitiesCount = parseInt(activitiesCountRow?.count || 0, 10);
+    const extracurriculars = this.safeParseJSON(profile.extracurriculars, []);
+    const hasActivities = activitiesCount > 0 || extracurriculars.length > 0;
     const hasSubjects = subjects.length > 0;
-    if (hasSubjects) {
-      filledCritical++;
-    } else {
-      missingCritical.push('Subjects');
-    }
-    
-    const totalCritical = CRITICAL_FIELDS.length + 1; // +1 for subjects
-    
-    // Check optional fields
-    const missingOptional = [];
-    let filledOptional = 0;
-    
-    for (const field of OPTIONAL_FIELDS) {
-      if (profile[field.key] && profile[field.key] !== '' && profile[field.key] !== null) {
-        filledOptional++;
-      } else {
-        missingOptional.push(field.label);
-      }
-    }
-    
-    // Check activities (counts as optional)
-    const activities = (await pool.query('SELECT COUNT(*) as count FROM student_activities WHERE student_id = $1',
-      [profile.id])).rows[0];
-    const hasActivities = parseInt(activities.count) > 0;
-    if (hasActivities) {
-      filledOptional++;
-    } else {
-      missingOptional.push('Activities');
-    }
-    
-    const totalOptional = OPTIONAL_FIELDS.length + 1; // +1 for activities
-    
-    // Calculate percentage using defined weights
-    const criticalPercentage = (filledCritical / totalCritical) * CRITICAL_WEIGHT;
-    const optionalPercentage = (filledOptional / totalOptional) * OPTIONAL_WEIGHT;
-    const percentage = Math.round(criticalPercentage + optionalPercentage);
-    
+
+    const weightedFields = [
+      { label: 'Curriculum Type', weight: 8, filled: !!profile.curriculum_type },
+      { label: 'Graduation Year', weight: 6, filled: !!profile.graduation_year },
+      { label: 'Subjects', weight: 12, filled: hasSubjects },
+      { label: 'Intended Major', weight: 12, filled: intendedMajors.length > 0 || !!profile.intended_major },
+      { label: 'GPA', weight: 12, filled: !!profile.gpa_unweighted || !!profile.gpa_weighted || !!profile.board_exam_percentage },
+      { label: 'Test Scores', weight: 10, filled: !!profile.sat_total || !!profile.act_composite || !!profile.ielts_score || !!profile.toefl_score || !!profile.duolingo_score },
+      { label: 'Activities', weight: 14, filled: hasActivities },
+      { label: 'Awards', weight: 8, filled: awards.length > 0 },
+      { label: 'Traits', weight: 10, filled: traits.length > 0 },
+      { label: 'Career Goals', weight: 5, filled: !!profile.career_goals },
+      { label: 'Why College', weight: 3, filled: !!profile.why_college || !!profile.why_college_matters },
+    ];
+
+    const lowValueFields = [
+      { label: 'Phone Number', weight: 1, filled: !!profile.phone },
+      { label: 'Date of Birth', weight: 1, filled: !!profile.date_of_birth },
+      { label: 'School Name', weight: 2, filled: !!profile.high_school_name },
+      { label: 'Country', weight: 2, filled: !!profile.country },
+    ];
+
+    const allWeighted = [...weightedFields, ...lowValueFields];
+    const totalWeight = allWeighted.reduce((sum, field) => sum + field.weight, 0);
+    const achievedWeight = allWeighted.reduce((sum, field) => sum + (field.filled ? field.weight : 0), 0);
+    const percentage = Math.round((achievedWeight / Math.max(totalWeight, 1)) * 100);
+
+    const missingCritical = weightedFields.filter((f) => !f.filled).map((f) => f.label);
+    const missingOptional = lowValueFields.filter((f) => !f.filled).map((f) => f.label);
+    const filledCritical = weightedFields.filter((f) => f.filled).length;
+    const totalCritical = weightedFields.length;
+    const filledOptional = lowValueFields.filter((f) => f.filled).length;
+    const totalOptional = lowValueFields.length;
+
     return {
       percentage,
       missing_critical: missingCritical,

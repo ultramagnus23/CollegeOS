@@ -40,5 +40,20 @@ export function useProfileCompletion(): ProfileCompletionResult {
     fetch();
   }, [fetch]);
 
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    const onProfileUpdated = () => {
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        fetch();
+      }, 250);
+    };
+    window.addEventListener('profile:updated', onProfileUpdated);
+    return () => {
+      if (timeout) clearTimeout(timeout);
+      window.removeEventListener('profile:updated', onProfileUpdated);
+    };
+  }, [fetch]);
+
   return { completionPercent, completedFields, missingFields, loading, refetch: fetch };
 }

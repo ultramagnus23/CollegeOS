@@ -16,6 +16,8 @@ import { ValidationMessage, useFormValidation, ValidationRules } from '@/hooks/u
 import { useAutosave, DraftRestoreBanner } from '@/hooks/useAutosave';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
+import { CURRICULUM_OPTIONS, MAJOR_OPTIONS, SUBJECT_OPTIONS } from '@/constants/onboardingOptions';
+import { logProfileTelemetry } from '@/lib/profileTelemetry';
 
 // Section configuration for navigation
 const SECTIONS = [
@@ -35,14 +37,8 @@ const COUNTRIES = [
   'Singapore', 'UAE', 'Germany', 'France', 'Netherlands', 'Other'
 ];
 
-const CURRICULUM_TYPES = ['IB', 'A-Level', 'CBSE', 'ICSE', 'ISC', 'AP', 'US', 'Other'];
-
-const MAJORS = [
-  'Computer Science', 'Engineering', 'Business/Management', 'Medicine',
-  'Psychology', 'Economics', 'Data Science', 'Biology', 'Mathematics',
-  'Physics', 'Chemistry', 'Arts/Design', 'Political Science', 'Law',
-  'Architecture', 'Environmental Science', 'Communications', 'Undecided'
-];
+const CURRICULUM_TYPES = [...CURRICULUM_OPTIONS];
+const MAJORS = [...MAJOR_OPTIONS];
 
 const ACTIVITY_TYPES = [
   'Sports', 'Arts', 'Academic', 'Community Service', 'Work Experience',
@@ -142,6 +138,15 @@ const SCROLL_DELAY_MS = 100;
     }
   }, [user?.id]);
 
+  useEffect(() => {
+    const onProfileUpdated = () => {
+      if (!user?.id) return;
+      void loadProfile();
+    };
+    window.addEventListener('profile:updated', onProfileUpdated);
+    return () => window.removeEventListener('profile:updated', onProfileUpdated);
+  }, [user?.id]);
+
   const loadProfile = async () => {
     if (!user?.id) return;
     
@@ -174,6 +179,11 @@ const SCROLL_DELAY_MS = 100;
       }
     } catch (error) {
       console.error('Failed to load profile:', error);
+      logProfileTelemetry({
+        event: 'profile_hydration_mismatch',
+        userId: user?.id ?? null,
+        message: error instanceof Error ? error.message : 'Failed to load settings profile',
+      });
       showMessage('error', 'Failed to load profile');
     }
     setLoading(false);
@@ -917,13 +927,7 @@ const SCROLL_DELAY_MS = 100;
             <div>
               <p className="text-sm text-muted-foreground mb-3">Select your subjects</p>
               <div className="flex flex-wrap gap-2">
-                {['Mathematics','Further Mathematics','Physics','Chemistry','Biology','Computer Science',
-                  'Environmental Science','Statistics','Data Science','History','Geography','Economics',
-                  'Psychology','Sociology','Philosophy','Political Science','English Language','English Literature',
-                  'French','Spanish','German','Mandarin Chinese','Hindi','Arabic','Business Studies','Accounting',
-                  'Information Technology','Art & Design','Music','Theatre Studies','Film Studies',
-                  'Physical Education','Health Science','Environmental Systems & Societies','Global Politics',
-                ].map(s => {
+                {SUBJECT_OPTIONS.map(s => {
                   const selected = (formData.subjects || []).includes(s);
                   return (
                     <button key={s} onClick={() => {
@@ -1359,7 +1363,7 @@ const SCROLL_DELAY_MS = 100;
                   <Input 
                     type="number"
                     min="0"
-                    max="40"
+                    max="80"
                     value={newActivity.hours_per_week} 
                     onChange={(e) => setNewActivity((prev: typeof newActivity) => ({ ...prev, hours_per_week: e.target.value }))}
                     className="mt-1" 
