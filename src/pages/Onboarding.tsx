@@ -12,9 +12,14 @@ import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import {
   ACTIVITY_LIMITS,
   buildTraitProfile,
+  canonicalizeProfile,
   dedupeNormalized,
+  inferTraitIntelligence,
+  normalizeProfile,
   parseBoundedInteger,
+  sanitizeActivities,
   sanitizeIntegerInput,
+  sanitizeProfile,
 } from '@/utils/onboarding';
 import {
   CURRICULUM_OPTIONS,
@@ -44,13 +49,13 @@ interface StudentOnboardingProps {
 
 // ── Color System ───────────────────────────────────────────────────────────
 const STEP_THEMES = [
-  { bg: '#0A0A1A', accent: '#6C63FF', surface: '#12122A', label: 'Identity',    glow: 'rgba(108,99,255,0.4)'  },
-  { bg: '#0A1628', accent: '#3B9EFF', surface: '#0F1E38', label: 'Academics',   glow: 'rgba(59,158,255,0.4)'  },
-  { bg: '#130A28', accent: '#A855F7', surface: '#1A0F35', label: 'Interests',   glow: 'rgba(168,85,247,0.4)'  },
-  { bg: '#1A0A0A', accent: '#F97316', surface: '#2A1210', label: 'Preferences', glow: 'rgba(249,115,22,0.4)'  },
-  { bg: '#0A1A14', accent: '#10B981', surface: '#0F2219', label: 'Activities',  glow: 'rgba(16,185,129,0.4)'  },
-  { bg: '#1A130A', accent: '#F59E0B', surface: '#2A1E0F', label: 'Goals',       glow: 'rgba(245,158,11,0.4)'  },
-  { bg: '#050508', accent: '#FFD700', surface: '#0D0D14', label: 'Reveal',      glow: 'rgba(255,215,0,0.4)'   },
+  { bg: '#0C0C1B', accent: '#7A73F0', surface: '#15152B', label: 'Identity',    glow: 'rgba(122,115,240,0.24)' },
+  { bg: '#0C1728', accent: '#5BA9F8', surface: '#13203A', label: 'Academics',   glow: 'rgba(91,169,248,0.22)'  },
+  { bg: '#150D28', accent: '#B06CF0', surface: '#1E1237', label: 'Interests',   glow: 'rgba(176,108,240,0.22)' },
+  { bg: '#1B0D0D', accent: '#F38A42', surface: '#2B1512', label: 'Preferences', glow: 'rgba(243,138,66,0.2)'   },
+  { bg: '#0C1A15', accent: '#3FC495', surface: '#12251C', label: 'Activities',  glow: 'rgba(63,196,149,0.22)'  },
+  { bg: '#1B150D', accent: '#F1B84E', surface: '#2C210F', label: 'Goals',       glow: 'rgba(241,184,78,0.22)'  },
+  { bg: '#07070B', accent: '#E3C66A', surface: '#101018', label: 'Reveal',      glow: 'rgba(227,198,106,0.24)' },
 ];
 
 const CONTINUE_LABELS = [
@@ -96,8 +101,8 @@ const Constellation: React.FC<{ step: number }> = ({ step }) => {
               <div style={{
                 width: size, height: size, borderRadius: '50%',
                 background: isDone || isActive ? n.accent : 'rgba(255,255,255,0.2)',
-                boxShadow: isDone ? `0 0 12px ${n.accent}, 0 0 24px ${hexToRgba(n.accent, 0.4)}` :
-                           isActive ? `0 0 20px ${n.accent}, 0 0 40px ${hexToRgba(n.accent, 0.5)}` : 'none',
+                boxShadow: isDone ? `0 0 8px ${hexToRgba(n.accent, 0.45)}` :
+                           isActive ? `0 0 14px ${hexToRgba(n.accent, 0.5)}` : 'none',
                 animation: isActive ? 'pulse 2s ease-in-out infinite' : 'none',
                 transition: 'all 0.3s ease',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -127,8 +132,8 @@ const Chip: React.FC<{ label: string; selected: boolean; accent: string; onClick
     color: selected ? accent : 'rgba(255,255,255,0.7)',
     fontSize: 13, fontWeight: selected ? 600 : 400,
     cursor: 'pointer', transition: 'all 0.12s ease',
-    transform: selected ? 'scale(1.05)' : 'scale(1)',
-    boxShadow: selected ? `0 0 12px ${hexToRgba(accent, 0.3)}` : 'none',
+    transform: selected ? 'scale(1.02)' : 'scale(1)',
+    boxShadow: selected ? `0 0 8px ${hexToRgba(accent, 0.22)}` : 'none',
     fontFamily: "'Inter', system-ui, sans-serif",
     whiteSpace: 'nowrap',
   }}>{label}</button>
@@ -193,7 +198,7 @@ const ProfileCard: React.FC<{ name: string; country: string; dreamSchool: string
     background: 'linear-gradient(135deg, #12122A 0%, #1A1A3E 100%)',
     border: '1px solid rgba(108,99,255,0.3)',
     borderRadius: 20, padding: '32px 28px', position: 'relative', overflow: 'hidden',
-    boxShadow: '0 0 40px rgba(108,99,255,0.15)',
+    boxShadow: '0 0 22px rgba(108,99,255,0.1)',
   }}>
     {/* Mesh gradient bg */}
     <div style={{
@@ -220,7 +225,7 @@ const ProfileCard: React.FC<{ name: string; country: string; dreamSchool: string
       transition: 'all 0.2s ease',
     }}>{name || 'Your Name'}</div>
     {country && <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 4, fontFamily: "'Inter', system-ui, sans-serif" }}>📍 {country}</div>}
-    {dreamSchool && <div style={{ fontSize: 13, color: 'rgba(108,99,255,0.8)', marginBottom: 20, fontFamily: "'Inter', system-ui, sans-serif" }}>🎯 {dreamSchool}</div>}
+    {dreamSchool && <div style={{ fontSize: 13, color: 'rgba(122,115,240,0.72)', marginBottom: 20, fontFamily: "'Inter', system-ui, sans-serif" }}>🎯 {dreamSchool}</div>}
     <div style={{ marginTop: 24 }}>
       <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginBottom: 8, fontFamily: "'Inter', system-ui, sans-serif" }}>PROFILE STRENGTH</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -290,23 +295,51 @@ const ScoreBar: React.FC<{ value: number; min: number; max: number; accent: stri
   const pct = Math.min(Math.max((value - min) / (max - min), 0), 1) * 100;
   return (
     <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 4, marginTop: 8 }}>
-      <div style={{ width: `${pct}%`, height: '100%', background: accent, borderRadius: 4, transition: 'width 0.3s ease', boxShadow: `0 0 8px ${hexToRgba(accent, 0.5)}` }} />
+      <div style={{ width: `${pct}%`, height: '100%', background: accent, borderRadius: 4, transition: 'width 0.3s ease', boxShadow: `0 0 6px ${hexToRgba(accent, 0.32)}` }} />
     </div>
   );
 };
 
-// ── Archetype Engine ───────────────────────────────────────────────────────
-const getArchetype = (skills: string[]): string => {
-  const s = new Set(skills);
-  if (s.has('Programming') && s.has('Mathematics') && s.has('Analytical Thinking')) return 'The Builder 🔧';
-  if (s.has('Leadership') && s.has('Communication') && s.has('Public Speaking')) return 'The Catalyst 🚀';
-  if (s.has('Creativity') && s.has('Design')) return 'The Visionary 🎨';
-  if (s.has('Research') && s.has('Science')) return 'The Explorer 🔭';
-  if (s.has('Writing') && s.has('Languages')) return 'The Storyteller ✍️';
-  if (s.has('Teamwork') && s.has('Leadership')) return 'The Organizer 🎯';
-  if (skills.length >= 4) return 'The Renaissance Mind 🌟';
-  if (skills.length >= 2) return 'The Specialist ⚡';
-  return '';
+const ONBOARDING_RECENT_MAJORS_KEY = 'collegeos_onboarding_recent_majors';
+
+const categorizeMajor = (major: string): string => {
+  if (/computer|data|artificial intelligence|cyber|robotics|information|hci|game/i.test(major)) return 'Computing & AI';
+  if (/engineering|physics|mathematics|statistics|biology|chemistry|biotech/i.test(major)) return 'Engineering & Science';
+  if (/business|finance|accounting|economics|marketing|supply chain|management|entrepreneur/i.test(major)) return 'Business & Economics';
+  if (/psychology|sociology|political|policy|international|legal|philosophy|liberal/i.test(major)) return 'Social Impact & Humanities';
+  if (/design|architecture|film|music|media|communications|arts/i.test(major)) return 'Design & Media';
+  if (/environment|urban/i.test(major)) return 'Environment & Built World';
+  return 'General';
+};
+
+const POPULAR_MAJORS = [
+  'Computer Science',
+  'Artificial Intelligence',
+  'Data Science',
+  'Engineering',
+  'Business Administration',
+  'Psychology',
+  'Economics',
+  'Biology',
+];
+
+const fuzzyScore = (query: string, value: string): number => {
+  const q = query.trim().toLowerCase();
+  const v = value.toLowerCase();
+  if (!q) return 1;
+  if (v === q) return 1000;
+  if (v.startsWith(q)) return 800 - (v.length - q.length);
+  if (v.includes(q)) return 500 - v.indexOf(q);
+
+  let qi = 0;
+  let score = 0;
+  for (let i = 0; i < v.length && qi < q.length; i += 1) {
+    if (v[i] === q[qi]) {
+      score += 6;
+      qi += 1;
+    }
+  }
+  return qi === q.length ? score : -1;
 };
 
 // ── Sentiment Engine ───────────────────────────────────────────────────────
@@ -331,6 +364,267 @@ const COUNTRIES_DATA = [
   { name: 'Singapore', flag: '🇸🇬', desc: 'Asia Gateway' },
   { name: 'Ireland', flag: '🇮🇪', desc: 'Tech & Culture' },
 ];
+
+interface MajorSelectorProps {
+  majors: string[];
+  selectedMajors: string[];
+  customMajors: string[];
+  majorCertain: boolean;
+  onSelectMajor: (major: string) => void;
+  onAddCustomMajor: (major: string) => void;
+  onRemoveCustomMajor: (major: string) => void;
+  accent: string;
+}
+
+const MajorSelector: React.FC<MajorSelectorProps> = ({
+  majors,
+  selectedMajors,
+  customMajors,
+  majorCertain,
+  onSelectMajor,
+  onAddCustomMajor,
+  onRemoveCustomMajor,
+  accent,
+}) => {
+  const [query, setQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [recents, setRecents] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(ONBOARDING_RECENT_MAJORS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) {
+        setRecents(dedupeNormalized(parsed.filter((x): x is string => typeof x === 'string')).slice(0, 6));
+      }
+    } catch {
+      setRecents([]);
+    }
+  }, []);
+
+  const registerRecent = useCallback((major: string) => {
+    setRecents((prev) => {
+      const next = dedupeNormalized([major, ...prev]).slice(0, 6);
+      try {
+        localStorage.setItem(ONBOARDING_RECENT_MAJORS_KEY, JSON.stringify(next));
+      } catch {
+        // ignore localStorage failures
+      }
+      return next;
+    });
+  }, []);
+
+  const filteredMajors = majors
+    .map((major) => ({ major, score: fuzzyScore(query, major) }))
+    .filter((entry) => entry.score >= 0)
+    .sort((a, b) => b.score - a.score || a.major.localeCompare(b.major))
+    .map((entry) => entry.major)
+    .slice(0, 36);
+
+  const grouped = filteredMajors.reduce<Record<string, string[]>>((acc, major) => {
+    const cat = categorizeMajor(major);
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(major);
+    return acc;
+  }, {});
+
+  const flattened = Object.values(grouped).flat();
+  const normalizedQuery = query.trim();
+  const canQuickAdd =
+    normalizedQuery.length > 1 &&
+    !majors.some((m) => m.toLowerCase() === normalizedQuery.toLowerCase()) &&
+    !customMajors.some((m) => m.toLowerCase() === normalizedQuery.toLowerCase());
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [query]);
+
+  const commitMajorSelection = (major: string) => {
+    onSelectMajor(major);
+    registerRecent(major);
+  };
+
+  const onPaletteKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex((idx) => (flattened.length ? (idx + 1) % flattened.length : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((idx) => (flattened.length ? (idx - 1 + flattened.length) % flattened.length : 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (flattened[activeIndex]) {
+        commitMajorSelection(flattened[activeIndex]);
+      } else if (canQuickAdd) {
+        onAddCustomMajor(normalizedQuery);
+        setQuery('');
+      }
+    }
+  };
+
+  return (
+    <div style={{
+      marginTop: 10,
+      borderRadius: 14,
+      border: `1px solid ${hexToRgba(accent, 0.24)}`,
+      background: 'rgba(255,255,255,0.04)',
+      overflow: 'hidden',
+    }}>
+      <div style={{ padding: '12px 12px 10px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={onPaletteKeyDown}
+          placeholder="Search majors (e.g., data, design, policy)..."
+          aria-label="Search majors"
+          role="combobox"
+          aria-expanded
+          aria-controls="major-palette-list"
+          style={{
+            width: '100%',
+            background: 'rgba(255,255,255,0.03)',
+            border: `1px solid ${hexToRgba(accent, 0.3)}`,
+            color: '#fff',
+            borderRadius: 10,
+            padding: '11px 12px',
+            fontSize: 13,
+            outline: 'none',
+            fontFamily: "'Inter', system-ui, sans-serif",
+          }}
+        />
+      </div>
+
+      {(recents.length > 0 || POPULAR_MAJORS.length > 0) && (
+        <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          {recents.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Recent</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {recents.map((major) => (
+                  <button
+                    key={`recent-${major}`}
+                    onClick={() => commitMajorSelection(major)}
+                    style={{
+                      borderRadius: 999,
+                      border: `1px solid ${hexToRgba(accent, 0.25)}`,
+                      background: 'rgba(255,255,255,0.03)',
+                      color: 'rgba(255,255,255,0.82)',
+                      fontSize: 12,
+                      padding: '6px 10px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {major}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Popular</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {POPULAR_MAJORS.map((major) => (
+                <button
+                  key={`popular-${major}`}
+                  onClick={() => commitMajorSelection(major)}
+                  style={{
+                    borderRadius: 999,
+                    border: `1px solid ${hexToRgba(accent, 0.2)}`,
+                    background: selectedMajors.includes(major) ? hexToRgba(accent, 0.22) : 'rgba(255,255,255,0.03)',
+                    color: selectedMajors.includes(major) ? accent : 'rgba(255,255,255,0.75)',
+                    fontSize: 12,
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {major}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div id="major-palette-list" style={{ maxHeight: 250, overflowY: 'auto', padding: '8px 0' }}>
+        {Object.entries(grouped).map(([group, items]) => (
+          <div key={group}>
+            <div style={{ padding: '6px 12px', fontSize: 11, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              {group}
+            </div>
+            {items.map((major) => {
+              const idx = flattened.indexOf(major);
+              const selected = selectedMajors.includes(major);
+              const active = idx === activeIndex;
+              return (
+                <button
+                  key={major}
+                  onClick={() => commitMajorSelection(major)}
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '10px 12px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: selected ? '#fff' : 'rgba(255,255,255,0.82)',
+                    background: selected ? hexToRgba(accent, 0.3) : active ? 'rgba(255,255,255,0.08)' : 'transparent',
+                    borderLeft: selected ? `2px solid ${accent}` : '2px solid transparent',
+                    fontSize: 13,
+                    transition: 'background 120ms ease',
+                  }}
+                >
+                  {major}
+                  {selected && <span style={{ marginLeft: 8, color: accent }}>✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+
+        {canQuickAdd && (
+          <button
+            onClick={() => {
+              onAddCustomMajor(normalizedQuery);
+              setQuery('');
+            }}
+            style={{
+              width: '100%',
+              textAlign: 'left',
+              padding: '12px',
+              border: 'none',
+              cursor: 'pointer',
+              color: accent,
+              background: 'rgba(255,255,255,0.03)',
+              borderTop: '1px solid rgba(255,255,255,0.08)',
+              fontSize: 13,
+            }}
+          >
+            + Quick add “{normalizedQuery}” as a custom major
+          </button>
+        )}
+      </div>
+
+      {customMajors.length > 0 && (
+        <div style={{ padding: '10px 12px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {customMajors.map((major) => (
+            <Chip
+              key={major}
+              label={`${major} ×`}
+              selected
+              accent={accent}
+              onClick={() => onRemoveCustomMajor(major)}
+            />
+          ))}
+        </div>
+      )}
+
+      <div style={{ padding: '10px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>
+        {majorCertain
+          ? 'Decided mode: selecting a major replaces your previous major.'
+          : 'Exploring mode: select up to 3 majors to compare fit.'}
+      </div>
+    </div>
+  );
+};
 
 // ── Activities Step ────────────────────────────────────────────────────────
 const ACTIVITY_TYPES = ['Academic Club','Athletics/Sports','Arts/Music/Drama','Community Service','Research/Science','Student Government','Debate/Speech','Journalism/Publication','Religious/Cultural','Work Experience','Internship','Entrepreneurship','Other'];
@@ -402,7 +696,7 @@ const RadarChart: React.FC<{ activities: StructuredActivity[]; accent: string }>
         <>
           <polygon points={polyStr} fill={hexToRgba(accent, 0.2)} stroke={accent} strokeWidth="2" />
           {polyPoints.map((p, i) => scores[i] > 0 && (
-            <circle key={i} cx={p.x} cy={p.y} r="4" fill={accent} style={{ filter: `drop-shadow(0 0 6px ${accent})` }} />
+            <circle key={i} cx={p.x} cy={p.y} r="4" fill={accent} style={{ filter: `drop-shadow(0 0 4px ${hexToRgba(accent, 0.55)})` }} />
           ))}
         </>
       )}
@@ -536,7 +830,18 @@ const ActivitiesOnboardingStep: React.FC<{
                 {TIER_DATA[current.tier as keyof typeof TIER_DATA]?.desc}
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
+            <div style={{ marginTop: 12, marginBottom: 6, display: 'grid', gap: 4 }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.56)' }}>
+                <strong style={{ color: '#fff' }}>Years:</strong> How many years did you participate in this activity?
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.56)' }}>
+                <strong style={{ color: '#fff' }}>Hours/week:</strong> Average weekly time commitment.
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.56)' }}>
+                <strong style={{ color: '#fff' }}>Weeks/year:</strong> How many weeks each year did you actively participate?
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
               <input
                 type="text"
                 inputMode="numeric"
@@ -674,7 +979,7 @@ const ProfileRing: React.FC<{ score: number }> = ({ score }) => {
       <circle cx="100" cy="100" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
       <circle cx="100" cy="100" r={r} fill="none" stroke="#FFD700" strokeWidth="10"
         strokeDasharray={`${pct} ${c}`} strokeLinecap="round"
-        style={{ transform: 'rotate(-90deg)', transformOrigin: '100px 100px', filter: 'drop-shadow(0 0 12px rgba(255,215,0,0.6))' }}
+        style={{ transform: 'rotate(-90deg)', transformOrigin: '100px 100px', filter: 'drop-shadow(0 0 7px rgba(227,198,106,0.45))' }}
       />
       <text x="100" y="95" textAnchor="middle" dominantBaseline="middle" fill="#FFD700" fontSize="36" fontWeight="800" fontFamily="'Inter', system-ui, sans-serif">{displayed}</text>
       <text x="100" y="125" textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.4)" fontSize="12" fontFamily="'Inter', system-ui, sans-serif">Profile Score</text>
@@ -687,8 +992,8 @@ const Insight: React.FC<{ message: string; onDone: () => void }> = ({ message, o
   useEffect(() => { const t = setTimeout(onDone, 2000); return () => clearTimeout(t); }, []);
   return (
     <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 999,
-      display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)',
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 999,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)',
     }}>
       <div style={{ fontSize: 22, fontWeight: 600, color: '#fff', textAlign: 'center', maxWidth: 500, lineHeight: 1.6, fontFamily: "'Inter', system-ui, sans-serif", padding: '0 24px' }}>
         {message}
@@ -706,6 +1011,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   const [insightMsg, setInsightMsg] = useState('');
   const [showLoading, setShowLoading] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
+  const [showTraitRefine, setShowTraitRefine] = useState(false);
   const progressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { completionPercent: backendCompletionPercent, refetch: refetchCompletion } = useProfileCompletion();
@@ -794,6 +1100,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     ...(studentData.customSubjects || []),
   ]);
   const normalizedTraits = dedupeNormalized(studentData.skillsStrengths || []);
+  const liveTraitIntelligence = inferTraitIntelligence(normalizedTraits, studentData.traitWeights || {});
 
   const persistWithRetry = useCallback(async (payload: Record<string, unknown>) => {
     await saveCanonicalProfile(payload, {
@@ -808,7 +1115,11 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       dedupeNormalized(currentData.skillsStrengths || []),
       currentData.traitWeights || {},
     );
-    return {
+    const traitInterpretation = inferTraitIntelligence(
+      dedupeNormalized(currentData.skillsStrengths || []),
+      currentData.traitWeights || {},
+    );
+    const rawPayload = {
       firstName: currentData.name ? String(currentData.name).trim().split(/\s+/)[0] : '',
       lastName: currentData.name ? String(currentData.name).trim().split(/\s+/).slice(1).join(' ') : '',
       email: currentData.email || '',
@@ -818,11 +1129,11 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       curriculumTypeOther:
         (currentData.curriculum_type === 'Other' || currentData.currentBoard === 'Other')
           ? (currentData.curriculum_other || '')
-          : null,
+          : undefined,
       onboardingStep: currentStep,
       graduationYear: currentData.graduation_year ? Number(currentData.graduation_year) : null,
-      phone: currentData.phone || null,
-      dateOfBirth: currentData.date_of_birth || null,
+      phone: currentData.phone || '',
+      dateOfBirth: currentData.date_of_birth || '',
       gpaWeighted: currentData.gpaType === 'gpa' ? (Number(currentData.currentGPA) || null) : null,
       boardExamPercentage: currentData.gpaType === 'percentage' ? (Number(currentData.currentGPA) || null) : null,
       satTotal: currentData.satScore ? Number(currentData.satScore) : null,
@@ -844,13 +1155,15 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       budgetMax: currentData.budgetRange === 'aid' ? 0 : null,
       preferredCollegeSize: currentData.campusSize || '',
       preferredSetting: currentData.locationPreference || '',
-      activities: (currentData.activities || []).filter((a: any) => a?.name?.trim()),
+      activities: sanitizeActivities(currentData.activities || []),
       traits: dedupeNormalized(currentData.skillsStrengths || []),
       traitWeights: currentData.traitWeights || {},
       traitProfile: traitProfile,
+      traitInterpretation: traitInterpretation,
       careerGoals: currentData.careerGoals || '',
       whyCollege: currentData.whyCollege || '',
     };
+    return canonicalizeProfile(sanitizeProfile(normalizeProfile(rawPayload)));
   }, []);
 
   // Save current step's profile data to student_profiles before navigating forward.
@@ -1284,51 +1597,32 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                 {studentData.majorCertain ? "Great — select your intended major." : "No worries — pick a few you're curious about."}
               </p>
             </div>
-            {/* Major list */}
-            <div style={{ maxHeight: 280, overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: 8, paddingRight: 8 }}>
-              {majors.map(m => {
-                const selected = studentData.potentialMajors.includes(m);
-                return (
-                  <Chip key={m} label={m} selected={selected} accent={accent} onClick={() => {
-                    if (studentData.majorCertain) { updateData('potentialMajors', [m]); return; }
-                    if (selected) updateData('potentialMajors', studentData.potentialMajors.filter((x: string) => x !== m));
-                    else if (studentData.potentialMajors.length < 3) updateData('potentialMajors', [...studentData.potentialMajors, m]);
-                  }} />
-                );
-              })}
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <input
-                value={studentData.customMajorInput}
-                onChange={(e) => updateData('customMajorInput', e.target.value)}
-                placeholder="Add custom major"
-                style={inputFieldStyle(accent)}
-              />
-              <button
-                onClick={() => {
-                  const value = (studentData.customMajorInput || '').trim();
-                  if (!value) return;
-                  updateData('customMajors', dedupeNormalized([...(studentData.customMajors || []), value]));
-                  updateData('customMajorInput', '');
-                }}
-                style={{ marginTop: 8, ...inputFieldStyle(accent), cursor: 'pointer', textAlign: 'center' }}
-              >
-                Add custom major
-              </button>
-              {(studentData.customMajors || []).length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-                  {studentData.customMajors.map((major: string) => (
-                    <Chip
-                      key={major}
-                      label={`${major} ×`}
-                      selected
-                      accent={accent}
-                      onClick={() => updateData('customMajors', (studentData.customMajors || []).filter((s: string) => s !== major))}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            <MajorSelector
+              majors={majors}
+              selectedMajors={studentData.potentialMajors}
+              customMajors={studentData.customMajors || []}
+              majorCertain={studentData.majorCertain}
+              onSelectMajor={(major) => {
+                if (studentData.majorCertain) {
+                  updateData('potentialMajors', [major]);
+                  return;
+                }
+                if (studentData.potentialMajors.includes(major)) {
+                  updateData('potentialMajors', studentData.potentialMajors.filter((x: string) => x !== major));
+                  return;
+                }
+                if (studentData.potentialMajors.length < 3) {
+                  updateData('potentialMajors', [...studentData.potentialMajors, major]);
+                }
+              }}
+              onAddCustomMajor={(major) => {
+                updateData('customMajors', dedupeNormalized([...(studentData.customMajors || []), major]));
+              }}
+              onRemoveCustomMajor={(major) => {
+                updateData('customMajors', (studentData.customMajors || []).filter((s: string) => s !== major));
+              }}
+              accent={accent}
+            />
           </div>
 
           <div>
@@ -1345,40 +1639,75 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
               ))}
             </div>
             {normalizedTraits.length > 0 && (
-              <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>Optional weighting</div>
-                {normalizedTraits.slice(0, 8).map((trait) => (
-                  <div key={trait} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <span style={{ width: 180, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>{trait}</span>
-                    <input
-                      type="range"
-                      min={1}
-                      max={5}
-                      value={studentData.traitWeights?.[trait] || 3}
-                      onChange={(e) => updateData('traitWeights', {
-                        ...(studentData.traitWeights || {}),
-                        [trait]: Number(e.target.value),
-                      })}
-                      style={{ flex: 1 }}
-                    />
-                    <span style={{ width: 14, fontSize: 12, color: accent }}>{studentData.traitWeights?.[trait] || 3}</span>
+              <div style={{
+                marginTop: 16,
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 12,
+                background: 'rgba(255,255,255,0.03)',
+                overflow: 'hidden',
+              }}>
+                <button
+                  onClick={() => setShowTraitRefine((v) => !v)}
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'rgba(255,255,255,0.86)',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    padding: '12px 14px',
+                  }}
+                >
+                  {showTraitRefine ? '▾' : '▸'} Advanced personalization (optional)
+                </button>
+                {showTraitRefine && (
+                  <div style={{ padding: '0 14px 12px' }}>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>
+                      Refine trait intensity subtly to improve recommendation quality.
+                    </div>
+                    {normalizedTraits.slice(0, 8).map((trait) => (
+                      <div key={trait} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                        <span style={{ width: 170, fontSize: 12, color: 'rgba(255,255,255,0.76)' }}>{trait}</span>
+                        <input
+                          type="range"
+                          min={1}
+                          max={5}
+                          value={studentData.traitWeights?.[trait] || 3}
+                          onChange={(e) => updateData('traitWeights', {
+                            ...(studentData.traitWeights || {}),
+                            [trait]: Number(e.target.value),
+                          })}
+                          style={{ flex: 1, accentColor: accent, opacity: 0.9 }}
+                        />
+                        <span style={{ width: 16, fontSize: 12, color: accent }}>{studentData.traitWeights?.[trait] || 3}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             )}
             {/* Archetype */}
             {normalizedTraits.length > 0 && (
               <div style={{
                 marginTop: 24, padding: '16px 20px',
-                background: hexToRgba(accent, 0.12), border: `1px solid ${hexToRgba(accent, 0.4)}`,
+                background: hexToRgba(accent, 0.1), border: `1px solid ${hexToRgba(accent, 0.28)}`,
                 borderRadius: 12, transition: 'all 0.3s ease',
               }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontFamily: "'Inter', system-ui, sans-serif" }}>Your Archetype</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontFamily: "'Inter', system-ui, sans-serif" }}>Trait Intelligence</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: accent, fontFamily: "'Inter', system-ui, sans-serif" }}>
-                  {getArchetype(normalizedTraits) || 'Multidimensional Profile'}
+                  {liveTraitIntelligence.primaryArchetype}
                 </div>
-                <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>
-                  {(buildTraitProfile(normalizedTraits, studentData.traitWeights || {}).pairings || []).slice(0, 2).join(' · ')}
+                <div style={{ marginTop: 5, fontSize: 12, color: 'rgba(255,255,255,0.68)' }}>
+                  Hybrid: {liveTraitIntelligence.hybridArchetype}
+                </div>
+                <div style={{ marginTop: 5, fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
+                  Confidence {liveTraitIntelligence.confidence}% · {liveTraitIntelligence.dominantClusters.slice(0, 2).join(' + ')}
+                </div>
+                <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(255,255,255,0.62)' }}>
+                  {liveTraitIntelligence.synergies[0]?.label
+                    ? `${liveTraitIntelligence.synergies[0].label}: ${liveTraitIntelligence.synergies[0].description}`
+                    : (buildTraitProfile(normalizedTraits, studentData.traitWeights || {}).pairings || []).slice(0, 2).join(' · ')}
                 </div>
               </div>
             )}
@@ -1406,7 +1735,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                     background: sel ? hexToRgba(accent, 0.2) : surface,
                     border: `1px solid ${sel ? accent : 'rgba(255,255,255,0.1)'}`,
                     textAlign: 'left', transition: 'all 0.15s ease',
-                    boxShadow: sel ? `0 0 16px ${hexToRgba(accent, 0.3)}` : 'none',
+                    boxShadow: sel ? `0 0 8px ${hexToRgba(accent, 0.2)}` : 'none',
                     position: 'relative',
                   }}>
                     <div style={{ fontSize: 24, marginBottom: 6 }}>{c.flag}</div>
@@ -1432,7 +1761,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                     color: sel ? accent : 'rgba(255,255,255,0.7)',
                     fontWeight: sel ? 700 : 400, fontSize: 13,
                     fontFamily: "'Inter', system-ui, sans-serif", transition: 'all 0.15s',
-                    boxShadow: sel ? `0 0 12px ${hexToRgba(accent, 0.25)}` : 'none',
+                    boxShadow: sel ? `0 0 6px ${hexToRgba(accent, 0.18)}` : 'none',
                   }}>
                     <div>{b.label}</div>
                     {sel && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>{b.note}</div>}
@@ -1614,14 +1943,14 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     <>
       {/* Global styles */}
       <style>{`
-        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.16); } }
         @keyframes float { 0%,100% { transform: translateY(0); opacity: 0; } 50% { transform: translateY(-200px); opacity: 0.6; } 0% { opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.4; } }
         @keyframes shimmer { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
-        @keyframes glow-pulse { 0%,100% { box-shadow: 0 0 20px rgba(255,215,0,0.3); } 50% { box-shadow: 0 0 40px rgba(255,215,0,0.7); } }
+        @keyframes glow-pulse { 0%,100% { box-shadow: 0 0 12px rgba(227,198,106,0.2); } 50% { box-shadow: 0 0 20px rgba(227,198,106,0.36); } }
         @keyframes slide-in { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes slide-out { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-60px); } }
         input::placeholder, textarea::placeholder { color: var(--color-text-disabled); }
-        input:focus, textarea:focus, select:focus { border-color: ${accent} !important; outline: none; }
+        input:focus, textarea:focus, select:focus { border-color: ${accent} !important; box-shadow: 0 0 0 2px ${hexToRgba(accent, 0.18)}; outline: none; }
         select option { background: var(--color-bg-surface); color: var(--color-text-primary); }
         textarea { font-family: 'Inter', system-ui, sans-serif; }
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: var(--color-surface-subtle); } ::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 4px; }
@@ -1630,14 +1959,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       {showLoading && <LoadingSequence name={studentData.name} onDone={async () => {
         try {
           const extendedPayload = buildExtendedPayload(studentData, 7);
-          const cleanedActivities = (studentData.activities || [])
-            .filter((a: any) => a?.name?.trim())
-            .map((a: any) => ({
-              ...a,
-              yearsInvolved: parseBoundedInteger(String(a?.yearsInvolved ?? ''), ACTIVITY_LIMITS.years.min, ACTIVITY_LIMITS.years.max) ?? 0,
-              hoursPerWeek: parseBoundedInteger(String(a?.hoursPerWeek ?? ''), ACTIVITY_LIMITS.hoursPerWeek.min, ACTIVITY_LIMITS.hoursPerWeek.max) ?? 0,
-              weeksPerYear: parseBoundedInteger(String(a?.weeksPerYear ?? ''), ACTIVITY_LIMITS.weeksPerYear.min, ACTIVITY_LIMITS.weeksPerYear.max) ?? 0,
-            }));
+          const cleanedActivities = sanitizeActivities(studentData.activities || [], { strict: true });
 
           // 1. Save full extended profile to student_profiles table
           await persistWithRetry({ ...extendedPayload, activities: cleanedActivities });
@@ -1757,7 +2079,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
         {/* Footer nav — fixed bottom bar */}
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
-          background: hexToRgba(bg, 0.9), backdropFilter: 'blur(20px)',
+          background: hexToRgba(bg, 0.88), backdropFilter: 'blur(12px)',
           borderTop: '1px solid var(--color-border)',
           padding: '20px 48px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -1782,7 +2104,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
               color: isStepComplete() ? '#000' : 'var(--color-text-disabled)',
               fontSize: 15, fontWeight: 700, fontFamily: "'Inter', system-ui, sans-serif",
               transition: 'all 0.2s ease',
-              boxShadow: isStepComplete() ? `0 0 20px ${hexToRgba(accent, 0.4)}` : 'none',
+              boxShadow: isStepComplete() ? `0 0 10px ${hexToRgba(accent, 0.25)}` : 'none',
             }}>
               {CONTINUE_LABELS[step - 1]}
             </button>
