@@ -32,13 +32,16 @@ const OPTIONAL_FIELDS = [
   { key: 'date_of_birth', label: 'Date of Birth' },
   { key: 'gpa_weighted', label: 'GPA (Weighted)' },
   { key: 'gpa_unweighted', label: 'GPA (Unweighted)' },
+  { key: 'board_exam_percentage', label: 'Board Exam Percentage' },
   { key: 'sat_total', label: 'SAT Score' },
   { key: 'act_composite', label: 'ACT Score' },
   { key: 'ielts_score', label: 'IELTS Score' },
   { key: 'toefl_score', label: 'TOEFL Score' },
+  { key: 'duolingo_score', label: 'Duolingo Score' },
   { key: 'high_school_name', label: 'School Name' },
   { key: 'preferred_college_size', label: 'College Size Preference' },
-  { key: 'preferred_setting', label: 'Campus Setting Preference' }
+  { key: 'preferred_setting', label: 'Campus Setting Preference' },
+  { key: 'interest_tags', label: 'Traits' },
 ];
 
 class ProfileService {
