@@ -11,7 +11,9 @@ function normalizePct(value: unknown): number | null {
   if (value === null || value === undefined) return null;
   const n = Number(value);
   if (!Number.isFinite(n)) return null;
-  if (n > 1) return Math.min(1, Math.max(0, n / 100));
+  if (n > 1 && n < 2) return null;
+  if (n > 1 && n <= 100) return Math.min(1, Math.max(0, n / 100));
+  if (n > 100) return null;
   return Math.min(1, Math.max(0, n));
 }
 
