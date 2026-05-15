@@ -94,6 +94,8 @@ const AppCard: React.FC<{
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [detailsLoaded, setDetailsLoaded] = useState(false);
   const detailsSeqRef = useRef(0);
+  const deadlineMutationSeqRef = useRef(new Map<number, number>());
+  const taskMutationSeqRef = useRef(new Map<number, number>());
   const mountedRef = useRef(true);
 
   useEffect(() => () => { mountedRef.current = false; }, []);
@@ -133,26 +135,44 @@ const AppCard: React.FC<{
   };
 
   const toggleDeadline = async (dl: Deadline) => {
+    const mutationSeq = (deadlineMutationSeqRef.current.get(dl.id) ?? 0) + 1;
+    deadlineMutationSeqRef.current.set(dl.id, mutationSeq);
     const prevDeadlines = deadlines;
     const optimistic = prevDeadlines.map(d => d.id === dl.id ? { ...d, completed: !d.completed } : d);
     setDeadlines(optimistic);
     try {
       await (api as any).applications.toggleDeadline(app.id, dl.id, !dl.completed);
     } catch {
-      setDeadlines(prevDeadlines); // revert
-      toast.error('Failed to update deadline');
+      const currentSeq = deadlineMutationSeqRef.current.get(dl.id);
+      if (currentSeq === mutationSeq) {
+        setDeadlines(prevDeadlines); // revert only latest mutation
+        toast.error('Failed to update deadline');
+      }
+    } finally {
+      if (deadlineMutationSeqRef.current.get(dl.id) === mutationSeq) {
+        deadlineMutationSeqRef.current.delete(dl.id);
+      }
     }
   };
 
   const toggleTask = async (task: Task) => {
+    const mutationSeq = (taskMutationSeqRef.current.get(task.id) ?? 0) + 1;
+    taskMutationSeqRef.current.set(task.id, mutationSeq);
     const prevTasks = tasks;
     const optimistic = prevTasks.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t);
     setTasks(optimistic);
     try {
       await (api as any).applications.toggleTask(app.id, task.id, !task.completed);
     } catch {
-      setTasks(prevTasks); // revert
-      toast.error('Failed to update task');
+      const currentSeq = taskMutationSeqRef.current.get(task.id);
+      if (currentSeq === mutationSeq) {
+        setTasks(prevTasks); // revert only latest mutation
+        toast.error('Failed to update task');
+      }
+    } finally {
+      if (taskMutationSeqRef.current.get(task.id) === mutationSeq) {
+        taskMutationSeqRef.current.delete(task.id);
+      }
     }
   };
 
@@ -291,6 +311,7 @@ const Applications = () => {
   const loadSeqRef = useRef(0);
   const searchSeqRef = useRef(0);
   const statusMutationRef = useRef(new Map<number, string>());
+  const pendingCreateCollegeIdsRef = useRef(new Set<number>());
   const mountedRef = useRef(true);
 
   useEffect(() => () => { mountedRef.current = false; }, []);
@@ -346,12 +367,15 @@ const Applications = () => {
 
   const handleSubmitAdd = async () => {
     if (!selectedCollege) { toast.error('Please select a college'); return; }
+    if (pendingCreateCollegeIdsRef.current.has(selectedCollege.id)) return;
     if (submitting) return;
+    pendingCreateCollegeIdsRef.current.add(selectedCollege.id);
     setSubmitting(true);
     try {
       await api.applications.create({ college_id: selectedCollege.id, college_name: selectedCollege.name, application_type: form.appType, priority: form.priority, notes: form.notes || undefined });
       toast.success('Application added! Deadlines and tasks auto-generated.');
-      closeModal(); loadApplications();
+      closeModal();
+      await loadApplications();
     } catch (err: any) {
       const message = err?.message || 'Failed to add application';
       if (typeof message === 'string' && message.toLowerCase().includes('already')) {
@@ -359,7 +383,10 @@ const Applications = () => {
       } else {
         toast.error(message);
       }
-    } finally { setSubmitting(false); }
+    } finally {
+      pendingCreateCollegeIdsRef.current.delete(selectedCollege.id);
+      setSubmitting(false);
+    }
   };
 
   const closeModal = useCallback(() => {
