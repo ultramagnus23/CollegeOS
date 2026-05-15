@@ -111,7 +111,11 @@ class Application {
               c.id AS canonical_institution_id,
               c.name AS college_name,
               c.country AS country,
-              c.official_website AS official_website
+              COALESCE(
+                to_jsonb(c) ->> 'official_website',
+                to_jsonb(c) ->> 'website_url',
+                to_jsonb(c) ->> 'website'
+              ) AS official_website
        FROM applications a
        LEFT JOIN colleges c ON a.college_id = c.id
        WHERE a.user_id = $1 AND a.college_id = $2`,
@@ -127,7 +131,11 @@ class Application {
               c.id AS canonical_institution_id,
               c.name AS college_name,
               c.country AS country,
-              c.official_website AS official_website
+              COALESCE(
+                to_jsonb(c) ->> 'official_website',
+                to_jsonb(c) ->> 'website_url',
+                to_jsonb(c) ->> 'website'
+              ) AS official_website
        FROM applications a
        LEFT JOIN colleges c ON a.college_id = c.id
        WHERE a.id = $1`,
@@ -143,7 +151,11 @@ class Application {
               c.id AS canonical_institution_id,
               c.name AS college_name,
               c.country AS country,
-              c.official_website AS official_website
+              COALESCE(
+                to_jsonb(c) ->> 'official_website',
+                to_jsonb(c) ->> 'website_url',
+                to_jsonb(c) ->> 'website'
+              ) AS official_website
        FROM applications a
        LEFT JOIN colleges c ON a.college_id = c.id
        WHERE a.user_id = $1
