@@ -110,7 +110,7 @@ interface College {
   name: string;
   country: string;
   location?: string;
-  official_website: string;
+  official_website?: string;
   admissions_url?: string;
   programs_url?: string;
   application_portal_url?: string;

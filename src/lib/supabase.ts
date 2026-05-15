@@ -43,6 +43,7 @@ export interface CollegeRow {
   size_category: string | null;
   total_enrollment: number | null;
   website: string | null;
+  official_website?: string | null;
   logo_url: string | null;
   description: string | null;
   religious_affiliation: string | null;
