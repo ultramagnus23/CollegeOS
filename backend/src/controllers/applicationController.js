@@ -388,6 +388,7 @@ class ApplicationController {
         );
         rows = result.rows;
       } catch {
+        // TODO: REMOVE LEGACY SCHEMA — application_deadlines should be the only source.
         // application_deadlines table may not exist yet — fall back to deadlines table
         try {
           const result = await pool.query(
@@ -546,6 +547,7 @@ class ApplicationController {
           [!!completed, parseInt(deadlineId), parseInt(id)]
         );
       } catch {
+        // TODO: REMOVE LEGACY SCHEMA — remove fallback to legacy deadlines table.
         // Fall back to deadlines table
         await pool.query(
           `UPDATE deadlines SET is_completed = $1 WHERE id = $2`,
@@ -578,6 +580,7 @@ class ApplicationController {
           [!!completed, parseInt(taskId), parseInt(id)]
         );
       } catch {
+        // TODO: REMOVE LEGACY SCHEMA — remove fallback to legacy tasks table.
         // Fall back to tasks table
         await pool.query(
           `UPDATE tasks SET status = $1 WHERE id = $2`,
