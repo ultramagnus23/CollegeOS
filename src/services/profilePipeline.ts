@@ -14,6 +14,7 @@ interface SaveOptions {
   expectedVersion?: number;
   maxRetries?: number;
   abortPrevious?: boolean;
+  signal?: AbortSignal;
 }
 
 let canonicalCache: CanonicalProfile | null = null;
@@ -32,8 +33,8 @@ export const setCanonicalProfileCache = (profile: CanonicalProfile | null) => {
   canonicalCache = profile;
 };
 
-export const fetchCanonicalProfile = async (): Promise<CanonicalProfile> => {
-  const response = await api.getExtendedProfile();
+export const fetchCanonicalProfile = async (options: { signal?: AbortSignal } = {}): Promise<CanonicalProfile> => {
+  const response = await api.getExtendedProfile({ signal: options.signal });
   const normalized = normalizeApiProfileToCanonical((response as { data?: unknown })?.data ?? response);
   canonicalCache = normalized;
   return normalized;
@@ -48,7 +49,7 @@ export const saveCanonicalProfile = async (
   const canonicalizedPatch = canonicalizeProfile(sanitizedPatch);
   const validatedPatch = canonicalPartialProfileSchema.parse(canonicalizedPatch);
 
-  const base = canonicalCache ?? (await fetchCanonicalProfile());
+  const base = canonicalCache ?? (await fetchCanonicalProfile({ signal: options.signal }));
   const candidate = canonicalProfileSchema.parse({
     ...base,
     ...validatedPatch,
@@ -85,13 +86,17 @@ export const saveCanonicalProfile = async (
     let lastError: unknown;
     for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
       try {
+        if (options.signal?.aborted) {
+          throw new DOMException('Aborted', 'AbortError');
+        }
+
         await api.canonicalSyncProfile({
           profile: payload,
           expectedVersion: options.expectedVersion ?? base.version,
           requestId,
-        }, { signal: controller?.signal });
+        }, { signal: options.signal ?? controller?.signal });
 
-        const refreshed = await fetchCanonicalProfile();
+        const refreshed = await fetchCanonicalProfile({ signal: options.signal ?? controller?.signal });
 
         if (seq < latestSeq) {
           return canonicalCache ?? refreshed;
@@ -110,6 +115,9 @@ export const saveCanonicalProfile = async (
 
         return refreshed;
       } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          throw error;
+        }
         lastError = error;
         if (attempt < maxRetries) {
           logProfileTelemetry({

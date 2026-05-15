@@ -251,12 +251,13 @@ class ApiService {
     return { success: true };
   }
 
-  async getCurrentUser() {
-    return this.request('/auth/me');
+  async getCurrentUser(options: RequestInit = {}) {
+    return this.request('/auth/me', options);
   }
 
-  async completeOnboarding(data: any) {
+  async completeOnboarding(data: any, options: RequestInit = {}) {
     return this.request('/auth/onboarding', {
+      ...options,
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -399,16 +400,17 @@ class ApiService {
   }
 
   // Save onboarding draft
-  async saveOnboardingDraft(userId: number, data: any) {
+  async saveOnboardingDraft(userId: number, data: any, options: RequestInit = {}) {
     return this.request(`/profile/${userId}/onboarding-draft`, {
+      ...options,
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   // Get onboarding draft
-  async getOnboardingDraft(userId: number) {
-    return this.request(`/profile/${userId}/onboarding-draft`);
+  async getOnboardingDraft(userId: number, options: RequestInit = {}) {
+    return this.request(`/profile/${userId}/onboarding-draft`, options);
   }
 
   // Activities
