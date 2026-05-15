@@ -74,6 +74,20 @@ const CLASS_CFG: Record<string, { label: string; color: string; bg: string }> = 
   'Long Shot': { label: 'Long Shot',    color: '#A78BFA', bg: 'rgba(167,139,250,0.12)' },
 };
 
+const ML_TIER_LABELS: Record<string, string> = {
+  safety: 'Safety',
+  target: 'Target',
+  reach: 'Reach',
+  long_shot: 'Long Shot',
+};
+
+const ML_TIER_COLORS: Record<string, string> = {
+  safety: '#22c55e',
+  target: '#f59e0b',
+  reach: '#ef4444',
+  long_shot: '#ef4444',
+};
+
 /* ─── Score Bar ───────────────────────────────────────────────────────────── */
 const ScoreBar: React.FC<{ label: string; value: number; max: number; color: string }> = ({ label, value, max, color }) => {
   const pct = Math.round((value / max) * 100);
@@ -305,8 +319,8 @@ const CollegeRecommendations: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {visibleMLRecs.map((rec, idx) => {
                 const tier = String(rec.tier || '').toLowerCase();
-                const tierLabel = tier === 'safety' ? 'Safety' : tier === 'target' ? 'Target' : tier === 'reach' ? 'Reach' : tier === 'long_shot' ? 'Long Shot' : 'Target';
-                const tierColor = tier === 'safety' ? '#22c55e' : tier === 'target' ? '#f59e0b' : '#ef4444';
+                const tierLabel = ML_TIER_LABELS[tier] ?? 'Target';
+                const tierColor = ML_TIER_COLORS[tier] ?? '#ef4444';
                 const isOpen = mlExpanded[rec.id] ?? false;
                 return (
                   <div
