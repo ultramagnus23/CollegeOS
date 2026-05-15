@@ -7,8 +7,8 @@ class ApplicationService {
   // Get dashboard summary for user
   static async getDashboardSummary(userId) {
     try {
-      const applications = Application.findByUser(userId);
-      const upcomingDeadlines = Deadline.findUpcoming(userId, 30);
+      const applications = await Application.findByUser(userId);
+      const upcomingDeadlines = await Deadline.findUpcoming(userId, 30);
       
       // Calculate statistics
       const stats = {
@@ -41,11 +41,11 @@ class ApplicationService {
   }
   
   // Check application completeness
-  static checkCompleteness(applicationId) {
+  static async checkCompleteness(applicationId) {
     try {
-      const application = Application.findById(applicationId);
-      const deadlines = Deadline.findByApplication(applicationId);
-      const essays = Essay.findByApplication(applicationId);
+      const application = await Application.findById(applicationId);
+      const deadlines = await Deadline.findByApplication(applicationId);
+      const essays = await Essay.findByApplication(applicationId);
       
       const checklist = {
         hasApplication: !!application,

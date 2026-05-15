@@ -44,7 +44,7 @@ router.post('/', authenticate, async (req, res, next) => {
 
     // Verify the college exists
     const { rows: colRows } = await pool.query(
-      'SELECT id FROM colleges_comprehensive WHERE id = $1',
+      'SELECT id FROM colleges WHERE id = $1',
       [colId]
     );
     if (!colRows.length) {
@@ -76,10 +76,10 @@ router.get('/', authenticate, async (req, res, next) => {
     const pool   = db.getDatabase();
 
     const { rows } = await pool.query(
-      `SELECT us.id, us.college_id, cc.name AS college_name,
+      `SELECT us.id, us.college_id, c.name AS college_name,
               us.signal_type, us.created_at
        FROM   user_signals us
-       JOIN   colleges_comprehensive cc ON cc.id = us.college_id
+       JOIN   colleges c ON c.id = us.college_id
        WHERE  us.user_id = $1
        ORDER  BY us.created_at DESC
        LIMIT  50`,

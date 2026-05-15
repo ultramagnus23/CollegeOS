@@ -41,7 +41,7 @@ function parseIntParam(val, fallback) {
 
 async function getCollegeCountry(pool, collegeId) {
   const { rows } = await pool.query(
-    'SELECT country FROM public.clean_colleges WHERE id = $1',
+    'SELECT country FROM public.colleges WHERE id = $1',
     [collegeId]
   );
   return rows.length ? rows[0].country : null;
@@ -166,7 +166,7 @@ router.get('/compare', async (req, res, next) => {
 
     const pool = dbManager.getDatabase();
     const { rows: collegeRows } = await pool.query(
-      `SELECT id, name, country FROM public.clean_colleges WHERE id = ANY($1::int[])`,
+      `SELECT id, name, country FROM public.colleges WHERE id = ANY($1::int[])`,
       [ids]
     );
 
@@ -320,22 +320,12 @@ router.get('/college/:collegeId', authenticate, async (req, res, next) => {
     const pool = dbManager.getDatabase();
     const { rows: colRows } = await pool.query(
       `SELECT
-         cc.*,
-         ca.acceptance_rate,
-         ca.sat_25,
-         ca.sat_75,
-         ca.act_25,
-         ca.act_75,
-         ca.gpa_25,
-         ca.gpa_75,
-         ca.gpa_50,
-         cfd.tuition_in_state,
-         cfd.tuition_out_state,
-         cfd.tuition_international
-       FROM public.clean_colleges cc
-       LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
-       LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
-       WHERE cc.id = $1`,
+         c.id, c.name, c.country, c.state, c.city, c.type,
+         c.acceptance_rate, c.sat_25, c.sat_75, c.act_25, c.act_75, c.gpa_25, c.gpa_75,
+         c.tuition_domestic AS tuition_in_state,
+         c.tuition_international
+       FROM public.colleges c
+       WHERE c.id = $1`,
       [collegeId]
     );
     if (!colRows.length) {

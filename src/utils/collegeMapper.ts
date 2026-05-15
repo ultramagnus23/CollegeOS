@@ -17,6 +17,11 @@
 
 import type { CollegeWithRelations } from '../lib/supabase';
 import type { CollegeSearchResult, CollegeStats } from '../types/college';
+import {
+  CollegeSearchResultSchema,
+  CollegeStatsSchema,
+  CollegeSchema,
+} from '../types/college';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -351,7 +356,7 @@ export function mapCollegeRow(
  * Returns a strongly-typed object suitable for chancing/recommendation math.
  */
 export function extractStats(mapped: ReturnType<typeof mapCollegeRow>): CollegeStats {
-  return {
+  const rawStats = {
     acceptanceRate: (mapped.acceptanceRate as number | null) ?? null,
     sat25: (mapped.sat25 as number | null) ?? null,
     sat75: (mapped.sat75 as number | null) ?? null,
@@ -371,6 +376,32 @@ export function extractStats(mapped: ReturnType<typeof mapCollegeRow>): CollegeS
     avgInstitutionalGrant: (mapped.avgInstitutionalGrant as number | null) ?? null,
     pctStudentsReceivingAid: (mapped.pctStudentsReceivingAid as number | null) ?? null,
   };
+
+  const parsed = CollegeStatsSchema.safeParse(rawStats);
+  if (!parsed.success) {
+    console.warn('[collegeMapper] Invalid CollegeStats row, applying null-safe defaults', parsed.error.flatten());
+    return CollegeStatsSchema.parse({
+      acceptanceRate: null,
+      sat25: null,
+      sat75: null,
+      act25: null,
+      act75: null,
+      actAvg: null,
+      gpa25: null,
+      gpa75: null,
+      tuitionDomestic: null,
+      tuitionInternational: null,
+      bestRanking: null,
+      rankingQs: null,
+      rankingUsNews: null,
+      rankingThe: null,
+      medianEarnings6yr: null,
+      medianEarnings10yr: null,
+      avgInstitutionalGrant: null,
+      pctStudentsReceivingAid: null,
+    });
+  }
+  return parsed.data;
 }
 
 /**
@@ -379,7 +410,7 @@ export function extractStats(mapped: ReturnType<typeof mapCollegeRow>): CollegeS
  */
 export function toSearchResult(c: CollegeWithRelations): CollegeSearchResult {
   const m = mapCollegeRow(c, 'toSearchResult');
-  return {
+  const rawResult = {
     id: c.id,
     name: c.name,
     country: (m.country as string | null) ?? null,
@@ -405,4 +436,52 @@ export function toSearchResult(c: CollegeWithRelations): CollegeSearchResult {
     dataQualityScore: (m.dataQualityScore as number | null) ?? null,
     lastUpdatedAt: (m.lastUpdatedAt as string | null) ?? null,
   };
+
+  const parsed = CollegeSearchResultSchema.safeParse(rawResult);
+  if (!parsed.success) {
+    console.warn(
+      `[collegeMapper] Invalid CollegeSearchResult for college id=${c.id}, dropping row`,
+      parsed.error.flatten()
+    );
+    return CollegeSearchResultSchema.parse({
+      id: c.id,
+      name: c.name || 'Unknown College',
+      majors: [],
+      testScores: null,
+    });
+  }
+  return parsed.data;
+}
+
+/**
+ * Validate and normalize a mapped row against the canonical College schema.
+ * Invalid rows are logged and transformed with null-safe defaults.
+ */
+export function normalizeCollege(mapped: ReturnType<typeof mapCollegeRow>) {
+  const parsed = CollegeSchema.safeParse(mapped);
+  if (!parsed.success) {
+    console.warn('[collegeMapper] Invalid College row', parsed.error.flatten());
+    return null;
+  }
+  return parsed.data;
+}
+
+export function normalizeCollegeSearchResult(c: CollegeWithRelations) {
+  return toSearchResult(c);
+}
+
+export function normalizeRecommendation<T extends Record<string, unknown>>(row: T): T {
+  if (!row || typeof row !== 'object') {
+    console.warn('[collegeMapper] Invalid recommendation row');
+    return {} as T;
+  }
+  return row;
+}
+
+export function normalizeCollegeApplication<T extends Record<string, unknown>>(row: T): T {
+  if (!row || typeof row !== 'object') {
+    console.warn('[collegeMapper] Invalid college application row');
+    return {} as T;
+  }
+  return row;
 }

@@ -32,7 +32,7 @@ router.get('/colleges', async (req, res) => {
     const params = [];
     let paramIndex = 1;
 
-    // Full-text search using PostgreSQL tsvector (GIN index on idx_colleges_fts)
+    // Full-text search using canonical colleges table.
     if (q) {
       conditions.push(
         `to_tsvector('english',
@@ -41,7 +41,7 @@ router.get('/colleges', async (req, res) => {
           coalesce(state,'') || ' ' ||
           coalesce(country,'') || ' ' ||
           coalesce(description,'') || ' ' ||
-          coalesce((SELECT string_agg(cp.program_name, ' ') FROM college_programs cp WHERE cp.college_id=cc.id),'')
+          coalesce((SELECT string_agg(cp.program_name, ' ') FROM college_programs cp WHERE cp.college_id=c.id),'')
         ) @@ websearch_to_tsquery('english', $${paramIndex})`
       );
       params.push(q);
@@ -66,24 +66,24 @@ router.get('/colleges', async (req, res) => {
 
     // Acceptance rate range
     if (min_rate) {
-      conditions.push(`ca.acceptance_rate >= $${paramIndex}`);
+      conditions.push(`c.acceptance_rate >= $${paramIndex}`);
       params.push(parseFloat(min_rate));
       paramIndex++;
     }
     if (max_rate) {
-      conditions.push(`ca.acceptance_rate <= $${paramIndex}`);
+      conditions.push(`c.acceptance_rate <= $${paramIndex}`);
       params.push(parseFloat(max_rate));
       paramIndex++;
     }
 
     // Cost range
     if (min_cost) {
-      conditions.push(`cfd.tuition_international >= $${paramIndex}`);
+      conditions.push(`c.tuition_international >= $${paramIndex}`);
       params.push(parseInt(min_cost));
       paramIndex++;
     }
     if (max_cost) {
-      conditions.push(`cfd.tuition_international <= $${paramIndex}`);
+      conditions.push(`c.tuition_international <= $${paramIndex}`);
       params.push(parseInt(max_cost));
       paramIndex++;
     }
@@ -92,7 +92,7 @@ router.get('/colleges', async (req, res) => {
     if (programs) {
       const programList = programs.split(',');
       const programConditions = programList.map(() => {
-        const cond = `EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=cc.id AND LOWER(cp.program_name) LIKE LOWER($${paramIndex}))`;
+        const cond = `EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=c.id AND LOWER(cp.program_name) LIKE LOWER($${paramIndex}))`;
         paramIndex++;
         return cond;
       }).join(' OR ');
@@ -105,10 +105,10 @@ router.get('/colleges', async (req, res) => {
     // Valid sort fields
     const validSorts = {
       name: 'name',
-      rate: 'ca.acceptance_rate',
-      cost: 'cfd.tuition_international',
-      students: 'cc.total_enrollment',
-      ranking: 'cc.name'
+      rate: 'c.acceptance_rate',
+      cost: 'c.tuition_international',
+      students: 'c.total_enrollment',
+      ranking: 'COALESCE(c.ranking_us_news, c.ranking_qs, c.ranking_the, 999999)'
     };
 
     const sortField = validSorts[sort] || 'name';
@@ -122,9 +122,7 @@ router.get('/colleges', async (req, res) => {
     // Get total count
     const countQuery = `
       SELECT COUNT(*) as total
-      FROM public.clean_colleges cc
-      LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
-      LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
+      FROM public.colleges c
       ${whereClause}
     `;
     const countResult = (await pool.query(countQuery, params)).rows[0];
@@ -133,25 +131,26 @@ router.get('/colleges', async (req, res) => {
     const queryParams = [...params, limitNum, offset];
     const query = `
       SELECT
-        cc.*,
-        LOWER(REGEXP_REPLACE(cc.name, '\\s+', '-', 'g')) || '-' || cc.id AS slug,
-        ca.acceptance_rate,
-        ca.sat_25,
-        ca.sat_75,
-        ca.act_25,
-        ca.act_75,
-        ca.gpa_25,
-        ca.gpa_75,
-        cfd.tuition_in_state,
-        cfd.tuition_international,
-        ad.graduation_rate_4yr,
-        ad.graduation_rate_6yr,
-        ad.student_faculty_ratio,
-        (SELECT ARRAY_AGG(cp.program_name) FROM college_programs cp WHERE cp.college_id=cc.id) as program_names
-      FROM public.clean_colleges cc
-      LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
-      LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
-      LEFT JOIN public.academic_details ad ON cc.id = ad.college_id
+        c.id,
+        c.name,
+        c.country,
+        c.state,
+        c.city,
+        c.description,
+        c.official_website,
+        LOWER(REGEXP_REPLACE(c.name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
+        c.acceptance_rate,
+        c.sat_25,
+        c.sat_75,
+        c.act_25,
+        c.act_75,
+        c.gpa_25,
+        c.gpa_75,
+        c.tuition_domestic AS tuition_in_state,
+        c.tuition_international,
+        c.total_enrollment,
+        (SELECT ARRAY_AGG(cp.program_name) FROM college_programs cp WHERE cp.college_id=c.id) as program_names
+      FROM public.colleges c
       ${whereClause}
       ORDER BY ${sortField} ${sortOrder}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -182,9 +181,9 @@ router.get('/colleges', async (req, res) => {
         tuitionDomestic: college.tuition_in_state ?? null,
         tuitionInternational: college.tuition_international ?? null,
         studentPopulation: college.total_enrollment ?? null,
-        graduationRate4yr: college.graduation_rate_4yr ?? null,
-        graduationRate6yr: college.graduation_rate_6yr ?? null,
-        studentFacultyRatio: college.student_faculty_ratio ?? null,
+        graduationRate4yr: null,
+        graduationRate6yr: null,
+        studentFacultyRatio: null,
         majorCategories,
         programs: majorCategories
       };
@@ -230,16 +229,16 @@ router.get('/filters', async (req, res) => {
     for (const filter of countryFilters) {
       let result;
       if (filter.value === 'Europe') {
-        result = (await pool.query(`SELECT COUNT(*) as count FROM public.clean_colleges WHERE country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`)).rows[0];
+        result = (await pool.query(`SELECT COUNT(*) as count FROM public.colleges WHERE country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`)).rows[0];
       } else if (filter.value === 'United States') {
-        result = (await pool.query(`SELECT COUNT(*) as count FROM public.clean_colleges WHERE country IN ('United States', 'USA')`)).rows[0];
+        result = (await pool.query(`SELECT COUNT(*) as count FROM public.colleges WHERE country IN ('United States', 'USA')`)).rows[0];
       } else if (filter.value === 'United Kingdom') {
-        result = (await pool.query(`SELECT COUNT(*) as count FROM public.clean_colleges WHERE country IN ('United Kingdom', 'UK')`)).rows[0];
+        result = (await pool.query(`SELECT COUNT(*) as count FROM public.colleges WHERE country IN ('United Kingdom', 'UK')`)).rows[0];
       } else if (filter.value === 'India') {
-        result = (await pool.query(`SELECT COUNT(*) as count FROM public.clean_colleges WHERE country = 'India'`)).rows[0];
+        result = (await pool.query(`SELECT COUNT(*) as count FROM public.colleges WHERE country = 'India'`)).rows[0];
       } else {
         // Use parameterized query for any other value
-        result = (await pool.query(`SELECT COUNT(*) as count FROM public.clean_colleges WHERE country = $1`, [filter.value])).rows[0];
+        result = (await pool.query(`SELECT COUNT(*) as count FROM public.colleges WHERE country = $1`, [filter.value])).rows[0];
       }
       filter.count = parseInt(result.count);
     }
@@ -251,13 +250,11 @@ router.get('/filters', async (req, res) => {
     // Get acceptance rate and cost ranges
     const ranges = (await pool.query(`
       SELECT 
-        MIN(ca.acceptance_rate) as min_rate,
-        MAX(ca.acceptance_rate) as max_rate,
-        MIN(cfd.tuition_international) as min_cost,
-        MAX(cfd.tuition_international) as max_cost
-      FROM public.clean_colleges cc
-      LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
-      LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
+        MIN(c.acceptance_rate) as min_rate,
+        MAX(c.acceptance_rate) as max_rate,
+        MIN(c.tuition_international) as min_cost,
+        MAX(c.tuition_international) as max_cost
+      FROM public.colleges c
     `)).rows[0];
 
     res.json({
@@ -406,7 +403,7 @@ router.get('/suggestions', async (req, res, next) => {
     // Get college name suggestions using FTS
     const colleges = (await pool.query(`
       SELECT DISTINCT name, country
-      FROM public.clean_colleges
+      FROM public.colleges
       WHERE to_tsvector('english', coalesce(name,'')) @@ websearch_to_tsquery('english', $1)
       ORDER BY name ASC
       LIMIT 10

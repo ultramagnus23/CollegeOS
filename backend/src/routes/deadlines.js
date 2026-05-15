@@ -100,7 +100,7 @@ router.get('/intelligence/history/:collegeId', async (req, res, next) => {
 /**
  * POST /api/deadlines/intelligence/refresh/:collegeId
  * Trigger a live re-scrape for one college.
- * Requires the college to exist in colleges_comprehensive.
+ * Requires the college to exist in canonical colleges table.
  */
 router.post('/intelligence/refresh/:collegeId', async (req, res, next) => {
   try {
@@ -111,7 +111,7 @@ router.post('/intelligence/refresh/:collegeId', async (req, res, next) => {
 
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
-      `SELECT id, name, official_website AS deadlines_page_url FROM colleges_comprehensive WHERE id = $1`,
+      `SELECT id, name, official_website AS deadlines_page_url FROM colleges WHERE id = $1`,
       [collegeId]
     );
     if (rows.length === 0) {

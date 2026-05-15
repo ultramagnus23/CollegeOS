@@ -194,7 +194,7 @@ const Colleges: React.FC = () => {
             result.data.slice(0, 3).map((college: any) => ({
               id: college.id,
               name: college.name,
-              acceptance_rate: college.acceptance_rate ?? college.college_admissions?.[0]?.acceptance_rate ?? null,
+              acceptance_rate: college.acceptance_rate ?? null,
               ranking_qs: college.ranking_qs ?? null,
               data_source: college.data_source ?? null,
             }))
@@ -406,19 +406,30 @@ const Colleges: React.FC = () => {
     }
     try {
       setAddingCollegeId(collegeId);
-
-      await api.applications.create({
+      const payload = {
         college_id: collegeId,
-        application_type: 'regular'
-      });
+        canonical_institution_id: collegeId,
+        application_type: 'regular',
+      };
+
+      try {
+        await api.applications.create(payload);
+      } catch (firstErr: any) {
+        // Retry once for transient failures.
+        if (String(firstErr?.message ?? '').toLowerCase().includes('network')) {
+          await api.applications.create(payload);
+        } else {
+          throw firstErr;
+        }
+      }
 
       toast.success('Added to your list!');
       navigate('/applications');
     } catch (err: any) {
       console.error('Add college error:', err);
       
-      // Check for duplicate error
-      if (err.message && err.message.includes('already added')) {
+      // Duplicate-safe UX
+      if (err?.message && String(err.message).toLowerCase().includes('already')) {
         toast.info('Already in your list');
       } else {
         toast.error('Failed to add college');
