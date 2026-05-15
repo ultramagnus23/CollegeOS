@@ -85,7 +85,7 @@ class College {
       location: [c.city, c.state, c.country].filter(Boolean).join(', ') || c.country,
       officialWebsite: website,
       official_website: website,
-      type: c.type || null,
+      type: c.type || c.institution_type || null,
       size_category: c.size_category || null,
       description: c.description || null,
       acceptanceRate,
@@ -125,8 +125,23 @@ class College {
     const { rows } = await pool.query(
       `SELECT
          c.id, c.name, c.country, c.state, c.city,
-         c.official_website, c.website, c.website_url,
-         c.type, c.size_category, c.description,
+         COALESCE(
+           to_jsonb(c) ->> 'official_website',
+           to_jsonb(c) ->> 'website_url',
+           to_jsonb(c) ->> 'website'
+         ) AS official_website,
+         COALESCE(
+           to_jsonb(c) ->> 'website',
+           to_jsonb(c) ->> 'website_url',
+           to_jsonb(c) ->> 'official_website'
+         ) AS website,
+         to_jsonb(c) ->> 'website_url' AS website_url,
+         COALESCE(
+           to_jsonb(c) ->> 'type',
+           to_jsonb(c) ->> 'institution_type'
+         ) AS type,
+         to_jsonb(c) ->> 'institution_type' AS institution_type,
+         c.size_category, c.description,
          c.acceptance_rate, c.sat_25, c.sat_75, c.act_25, c.act_75, c.gpa_25, c.gpa_75,
          c.tuition_domestic, c.tuition_international,
          c.total_enrollment,
@@ -152,8 +167,23 @@ class College {
     let query = `
       SELECT
         c.id, c.name, c.country, c.state, c.city,
-        c.official_website, c.website, c.website_url,
-        c.type, c.size_category, c.description,
+        COALESCE(
+          to_jsonb(c) ->> 'official_website',
+          to_jsonb(c) ->> 'website_url',
+          to_jsonb(c) ->> 'website'
+        ) AS official_website,
+        COALESCE(
+          to_jsonb(c) ->> 'website',
+          to_jsonb(c) ->> 'website_url',
+          to_jsonb(c) ->> 'official_website'
+        ) AS website,
+        to_jsonb(c) ->> 'website_url' AS website_url,
+        COALESCE(
+          to_jsonb(c) ->> 'type',
+          to_jsonb(c) ->> 'institution_type'
+        ) AS type,
+        to_jsonb(c) ->> 'institution_type' AS institution_type,
+        c.size_category, c.description,
         c.acceptance_rate, c.sat_25, c.sat_75, c.act_25, c.act_75, c.gpa_25, c.gpa_75,
         c.tuition_domestic, c.tuition_international,
         c.total_enrollment,

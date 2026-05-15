@@ -201,7 +201,11 @@ router.get('/colleges', async (req, res) => {
         c.state,
         c.city,
         c.description,
-        c.official_website,
+        COALESCE(
+          to_jsonb(c) ->> 'official_website',
+          to_jsonb(c) ->> 'website_url',
+          to_jsonb(c) ->> 'website'
+        ) AS official_website,
         LOWER(REGEXP_REPLACE(c.name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
         c.acceptance_rate,
         c.sat_25,

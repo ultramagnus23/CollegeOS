@@ -320,7 +320,8 @@ router.get('/college/:collegeId', authenticate, async (req, res, next) => {
     const pool = dbManager.getDatabase();
     const { rows: colRows } = await pool.query(
       `SELECT
-         c.id, c.name, c.country, c.state, c.city, c.type,
+         c.id, c.name, c.country, c.state, c.city,
+         COALESCE(to_jsonb(c) ->> 'type', to_jsonb(c) ->> 'institution_type') AS type,
          c.acceptance_rate, c.sat_25, c.sat_75, c.act_25, c.act_75, c.gpa_25, c.gpa_75,
          c.tuition_domestic AS tuition_in_state,
          c.tuition_international
