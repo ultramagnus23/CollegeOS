@@ -1,5 +1,5 @@
 // src/pages/Recommendations.tsx — Dark Editorial Redesign
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../services/api';
 import { toast } from 'sonner';
 import ConfirmModal from '@/components/common/ConfirmModal';
@@ -204,6 +204,8 @@ const RequestRow: React.FC<{
 const Recommendations = () => {
   const { profileLastFetched, fetchProfile } = useUserProfile();
   const initRanRef = useRef(false);
+  const mountedRef = useRef(true);
+  const loadSeqRef = useRef(0);
   const [recommenders, setRecommenders] = useState<Recommender[]>([]);
   const [requests, setRequests] = useState<RecommendationRequest[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -216,6 +218,38 @@ const Recommendations = () => {
   const [confirmDeleteRecId, setConfirmDeleteRecId] = useState<number|null>(null);
   const [form, setForm] = useState({ name:'', email:'', phone:'', type:'teacher', relationship:'', subject:'', institution:'', yearsKnown:'', notes:'' });
   const [reqForm, setReqForm] = useState({ collegeName:'', applicationSystem:'CommonApp', deadline:'', notes:'' });
+
+  const loadData = useCallback(async () => {
+    const seq = ++loadSeqRef.current;
+    try {
+      if (mountedRef.current) setLoading(true);
+      const [rr, reqR, sr] = await Promise.all([
+        api.recommenders.getAll(),
+        api.recommenders.requests.getAll(),
+        api.recommenders.getSummary(),
+      ]) as [any, any, any];
+
+      if (!mountedRef.current || seq !== loadSeqRef.current) return;
+      setRecommenders(Array.isArray(rr.data) ? rr.data : []);
+      setRequests(Array.isArray(reqR.data) ? reqR.data : []);
+      setSummary(sr.data || null);
+    } catch {
+      if (mountedRef.current && seq === loadSeqRef.current) {
+        toast.error('Failed to load');
+      }
+    } finally {
+      if (mountedRef.current && seq === loadSeqRef.current) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (initRanRef.current) return;
@@ -232,21 +266,7 @@ const Recommendations = () => {
 
       await loadData();
     })();
-  }, [profileLastFetched, fetchProfile]);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [rr, reqR, sr] = await Promise.all([
-        api.recommenders.getAll(),
-        api.recommenders.requests.getAll(),
-        api.recommenders.getSummary(),
-      ]) as [any,any,any];
-      setRecommenders(rr.data||[]);
-      setRequests(reqR.data||[]);
-      setSummary(sr.data||null);
-    } catch { toast.error('Failed to load'); } finally { setLoading(false); }
-  };
+  }, [profileLastFetched, fetchProfile, loadData]);
 
   const handleAddRecommender = async () => {
     if (!form.name) { toast.error('Name required'); return; }
@@ -255,7 +275,7 @@ const Recommendations = () => {
       toast.success('Recommender added');
       setShowAddForm(false);
       setForm({ name:'', email:'', phone:'', type:'teacher', relationship:'', subject:'', institution:'', yearsKnown:'', notes:'' });
-      loadData();
+      await loadData();
     } catch { toast.error('Failed'); }
   };
 
@@ -267,7 +287,7 @@ const Recommendations = () => {
       setShowRequestForm(false);
       setSelectedRecommender(null);
       setReqForm({ collegeName:'', applicationSystem:'CommonApp', deadline:'', notes:'' });
-      loadData();
+      await loadData();
     } catch { toast.error('Failed'); }
   };
 
@@ -299,7 +319,16 @@ const Recommendations = () => {
         title="Delete Recommender"
         message="Delete recommender and all their requests?"
         confirmLabel="Delete"
-        onConfirm={() => { const id = confirmDeleteRecId!; setConfirmDeleteRecId(null); api.recommenders.delete(id).then(()=>{toast.success('Deleted');loadData();}).catch(()=>toast.error('Failed')); }}
+        onConfirm={() => {
+          const id = confirmDeleteRecId!;
+          setConfirmDeleteRecId(null);
+          void api.recommenders.delete(id)
+            .then(async () => {
+              toast.success('Deleted');
+              await loadData();
+            })
+            .catch(() => toast.error('Failed'));
+        }}
         onCancel={() => setConfirmDeleteRecId(null)}
       />
       <div style={{ minHeight:'100vh', background:S.bg, color:'var(--color-text-primary)', fontFamily:S.font }}>
@@ -430,7 +459,7 @@ const Recommendations = () => {
               <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                 {requests.map((req,i)=>(
                   <RequestRow key={req.id} req={req} index={i}
-                    onStatusChange={(id,s)=>api.recommenders.requests.update(id,{status:s}).then(()=>{toast.success('Updated');loadData();}).catch(()=>toast.error('Failed'))}
+                    onStatusChange={(id,s)=>api.recommenders.requests.update(id,{status:s}).then(async ()=>{toast.success('Updated');await loadData();}).catch(()=>toast.error('Failed'))}
                     onReminder={req=>handleGenerateEmail('reminder',req)}
                     onThankYou={req=>handleGenerateEmail('thank_you',req)}
                   />

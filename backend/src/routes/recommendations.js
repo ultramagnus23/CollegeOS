@@ -8,9 +8,17 @@ const College = require('../models/College');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 
+function createRequestId() {
+  return `reco_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 // Get recommendations for user - uses recommendationEngine service
 router.get('/', authenticate, async (req, res, next) => {
+  const requestId = createRequestId();
+  const startedAt = Date.now();
   try {
+    const requestedLimit = Number.parseInt(String(req.query.limit ?? 250), 10);
+    const safeLimit = Number.isFinite(requestedLimit) ? Math.min(500, Math.max(25, requestedLimit)) : 250;
     const user = await User.findById(req.user.userId);
     
     if (!user) {
@@ -33,7 +41,7 @@ router.get('/', authenticate, async (req, res, next) => {
 
     // Get all colleges
     const College = require('../models/College');
-    const allColleges = await College.findAll({ limit: 1000 }); // Get all for recommendations
+    const allColleges = await College.findAll({ limit: safeLimit });
 
     // Attach institutional funding to each college so the engine can use it
     const dbManager = require('../config/database');
@@ -63,21 +71,37 @@ router.get('/', authenticate, async (req, res, next) => {
     // Use recommendation engine service
     const { generateRecommendations } = require('../services/recommendationEngine');
     const result = await generateRecommendations(userProfile, allColleges);
+    const recs = Array.isArray(result?.recommendations) ? result.recommendations : [];
+    const missingRankings = recs.filter((r) => r.acceptance_rate_pct == null).length;
+    const malformedMajors = recs.filter((r) => Array.isArray(r.why_values) && r.why_values.some((v) => !v?.dimension)).length;
 
     res.json({
       success: true,
-      count: (result.recommendations || []).length,
+      count: recs.length,
+      meta: { requestId, durationMs: Date.now() - startedAt, evaluated: allColleges.length },
       ...result,
     });
+    logger.info('recommendations.generated', {
+      requestId,
+      durationMs: Date.now() - startedAt,
+      evaluated: allColleges.length,
+      returned: recs.length,
+      missingRankings,
+      malformedMajors,
+    });
   } catch (error) {
-    logger.error('Get recommendations failed:', error);
+    logger.error('Get recommendations failed:', { requestId, message: error?.message, stack: error?.stack });
     next(error);
   }
 });
 
 // Generate new recommendations - same as GET but forces refresh
 router.post('/generate', authenticate, async (req, res, next) => {
+  const requestId = createRequestId();
+  const startedAt = Date.now();
   try {
+    const requestedLimit = Number.parseInt(String(req.query.limit ?? 250), 10);
+    const safeLimit = Number.isFinite(requestedLimit) ? Math.min(500, Math.max(25, requestedLimit)) : 250;
     const user = await User.findById(req.user.userId);
     
     if (!user) {
@@ -97,7 +121,7 @@ router.post('/generate', authenticate, async (req, res, next) => {
     }
 
     const College = require('../models/College');
-    const allColleges = await College.findAll({ limit: 1000 });
+    const allColleges = await College.findAll({ limit: safeLimit });
 
     // Attach institutional funding
     const dbManager = require('../config/database');
@@ -123,15 +147,23 @@ router.post('/generate', authenticate, async (req, res, next) => {
 
     const { generateRecommendations } = require('../services/recommendationEngine');
     const result = await generateRecommendations(userProfile, allColleges);
+    const recs = Array.isArray(result?.recommendations) ? result.recommendations : [];
 
     res.json({
       success: true,
-      message: `Generated ${(result.recommendations || []).length} personalized recommendations`,
-      count: (result.recommendations || []).length,
+      message: `Generated ${recs.length} personalized recommendations`,
+      count: recs.length,
+      meta: { requestId, durationMs: Date.now() - startedAt, evaluated: allColleges.length },
       ...result,
     });
+    logger.info('recommendations.regenerated', {
+      requestId,
+      durationMs: Date.now() - startedAt,
+      evaluated: allColleges.length,
+      returned: recs.length,
+    });
   } catch (error) {
-    logger.error('Generate recommendations failed:', error);
+    logger.error('Generate recommendations failed:', { requestId, message: error?.message, stack: error?.stack });
     next(error);
   }
 });

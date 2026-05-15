@@ -1013,6 +1013,10 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   const [transitioning, setTransitioning] = useState(false);
   const [showTraitRefine, setShowTraitRefine] = useState(false);
   const progressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const draftLoadSeqRef = useRef(0);
+  const draftLoadControllerRef = useRef<AbortController | null>(null);
+  const draftSaveControllerRef = useRef<AbortController | null>(null);
+  const completionSeqRef = useRef(0);
 
   const { completionPercent: backendCompletionPercent, refetch: refetchCompletion } = useProfileCompletion();
 
@@ -1042,7 +1046,11 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   // On mount: restore draft from backend if newer than localStorage, and resume step
   useEffect(() => {
     if (!user?.id) return;
-    api.getOnboardingDraft(user.id).then((res: any) => {
+    const seq = ++draftLoadSeqRef.current;
+    draftLoadControllerRef.current?.abort();
+    draftLoadControllerRef.current = new AbortController();
+    api.getOnboardingDraft(user.id, { signal: draftLoadControllerRef.current.signal }).then((res: any) => {
+      if (seq !== draftLoadSeqRef.current) return;
       const payload = res?.data ?? res;
       const draft = payload?.draft ?? payload;
       const savedStep = payload?.step ?? 0;
@@ -1059,7 +1067,10 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       if (savedStep >= 1 && savedStep <= 6) {
         setStep(savedStep);
       }
-    }).catch(() => { /* silent */ });
+    }).catch((error: unknown) => {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      /* silent */
+    });
   }, [user?.id]);
 
   useEffect(() => {
@@ -1084,12 +1095,28 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
       progressDebounceRef.current = setTimeout(async () => {
         if (user?.id) {
-          try { await api.saveOnboardingDraft(user.id, { draft: next, step }); } catch { /* silent */ }
+          draftSaveControllerRef.current?.abort();
+          draftSaveControllerRef.current = new AbortController();
+          try {
+            await api.saveOnboardingDraft(user.id, { draft: next, step }, { signal: draftSaveControllerRef.current.signal });
+          } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') return;
+            /* silent */
+          }
         }
       }, 1500);
       return next;
     });
   }, [user?.id, step]);
+
+  useEffect(() => {
+    return () => {
+      if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
+      draftLoadControllerRef.current?.abort();
+      draftSaveControllerRef.current?.abort();
+      completionSeqRef.current += 1;
+    };
+  }, []);
 
   const normalizedMajors = dedupeNormalized([
     ...(studentData.potentialMajors || []),
@@ -1894,6 +1921,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
 
           {/* Big CTA */}
           <button onClick={async () => {
+            if (showLoading) return;
             setShowLoading(true);
           }} style={{
             width: 280, height: 64, borderRadius: 16,
@@ -1957,6 +1985,8 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
       `}</style>
 
       {showLoading && <LoadingSequence name={studentData.name} onDone={async () => {
+        const completionSeq = ++completionSeqRef.current;
+        const isStaleCompletion = () => completionSeq !== completionSeqRef.current;
         try {
           const extendedPayload = buildExtendedPayload(studentData, 7);
           const cleanedActivities = sanitizeActivities(studentData.activities || [], { strict: true });
@@ -2002,7 +2032,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           if (!hasGpa) {
             // Required data not yet in DB — surface a recovery prompt before routing
             toast.error('Profile save incomplete. Please try again or continue to dashboard.', { duration: 6000 });
-            setShowLoading(false);
+            if (!isStaleCompletion()) setShowLoading(false);
             return;
           }
 
@@ -2043,13 +2073,16 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                 ...chancesRes,
                 generatedAt: new Date().toISOString(),
               }));
+              if (isStaleCompletion()) return;
               navigate('/suggestions');
               return;
             }
           } catch { /* non-critical — fall through to dashboard */ }
 
+          if (isStaleCompletion()) return;
           navigate('/dashboard');
         } catch (err) {
+          if (isStaleCompletion()) return;
           console.error('Failed to save profile:', err);
           toast.error('Failed to save profile. Please try again.');
           setShowLoading(false);

@@ -34,7 +34,11 @@ router.get('/colleges', async (req, res) => {
     } = req.query;
 
     const pool = dbManager.getDatabase();
-    const conditions = [];
+    const conditions = [
+      `c.id IS NOT NULL`,
+      `c.name IS NOT NULL`,
+      `LENGTH(TRIM(c.name)) > 1`
+    ];
     const params = [];
     let paramIndex = 1;
 
@@ -45,8 +49,32 @@ router.get('/colleges', async (req, res) => {
     const safeQuery = typeof q === 'string' ? q.trim() : '';
     const qAcronym = safeQuery.replace(/[^A-Za-z]/g, '').toUpperCase();
 
-    // Full-text search using canonical colleges table.
+    const relevanceParams = {
+      qIdx: null,
+      ilikeIdx: null,
+      acronymIdx: null,
+      prefixIdx: null,
+      trigramIdx: null,
+    };
+
+    // Full-text + trigram search using canonical colleges table.
     if (safeQuery) {
+      relevanceParams.qIdx = paramIndex;
+      params.push(safeQuery);
+      paramIndex += 1;
+      relevanceParams.ilikeIdx = paramIndex;
+      params.push(`%${safeQuery}%`);
+      paramIndex += 1;
+      relevanceParams.acronymIdx = paramIndex;
+      params.push(qAcronym);
+      paramIndex += 1;
+      relevanceParams.prefixIdx = paramIndex;
+      params.push(`${safeQuery}%`);
+      paramIndex += 1;
+      relevanceParams.trigramIdx = paramIndex;
+      params.push(safeQuery);
+      paramIndex += 1;
+
       conditions.push(
         `(
           to_tsvector('english',
@@ -56,16 +84,21 @@ router.get('/colleges', async (req, res) => {
           coalesce(country,'') || ' ' ||
           coalesce(description,'') || ' ' ||
           coalesce((SELECT string_agg(cp.program_name, ' ') FROM college_programs cp WHERE cp.college_id=c.id),'')
-        ) @@ websearch_to_tsquery('english', $${paramIndex})
-        OR c.name ILIKE $${paramIndex + 1}
+        ) @@ websearch_to_tsquery('english', $${relevanceParams.qIdx})
+        OR c.name ILIKE $${relevanceParams.ilikeIdx}
         OR (
-          $${paramIndex + 2} <> ''
-          AND REGEXP_REPLACE(UPPER(c.name), '[^A-Z]', '', 'g') = $${paramIndex + 2}
+          $${relevanceParams.acronymIdx} <> ''
+          AND REGEXP_REPLACE(UPPER(c.name), '[^A-Z]', '', 'g') = $${relevanceParams.acronymIdx}
+        )
+        OR (
+          $${relevanceParams.trigramIdx} <> ''
+          AND GREATEST(
+            COALESCE(similarity(LOWER(c.name), LOWER($${relevanceParams.trigramIdx})), 0),
+            COALESCE(word_similarity(LOWER($${relevanceParams.trigramIdx}), LOWER(c.name)), 0)
+          ) >= 0.24
         )
         )`
       );
-      params.push(safeQuery, `%${safeQuery}%`, qAcronym);
-      paramIndex += 3;
     }
 
     // Country filter - support region grouping
@@ -144,15 +177,20 @@ router.get('/colleges', async (req, res) => {
 
     // Get results
     const queryParams = [...params, limitNum, offset];
-    const escapedQuery = safeQuery.replace(/'/g, "''");
     const relevanceOrder = safeQuery
       ? `
         CASE
-          WHEN LOWER(c.name) = LOWER('${escapedQuery}') THEN 1000
-          WHEN LOWER(c.name) LIKE LOWER('${escapedQuery}%') THEN 700
+          WHEN LOWER(c.name) = LOWER($${relevanceParams.qIdx}) THEN 1200
+          WHEN LOWER(c.name) LIKE LOWER($${relevanceParams.prefixIdx}) THEN 950
+          WHEN $${relevanceParams.acronymIdx} <> ''
+            AND REGEXP_REPLACE(UPPER(c.name), '[^A-Z]', '', 'g') = $${relevanceParams.acronymIdx}
+            THEN 900
           ELSE 0
         END DESC,
-        COALESCE(similarity(LOWER(c.name), LOWER('${escapedQuery}')), 0) DESC,`
+        GREATEST(
+          COALESCE(similarity(LOWER(c.name), LOWER($${relevanceParams.trigramIdx})), 0),
+          COALESCE(word_similarity(LOWER($${relevanceParams.trigramIdx}), LOWER(c.name)), 0)
+        ) DESC,`
       : '';
 
     const query = `
@@ -180,8 +218,13 @@ router.get('/colleges', async (req, res) => {
       ${whereClause}
       ORDER BY
         ${relevanceOrder}
+        COALESCE(c.popularity_score, 0) DESC,
         ${sortField} ${sortOrder},
         COALESCE(c.ranking_us_news, c.ranking_qs, c.ranking_the, 999999) ASC,
+        CASE
+          WHEN c.acceptance_rate BETWEEN 0.01 AND 0.99 THEN 0
+          ELSE 1
+        END ASC,
         COALESCE(c.total_enrollment, 0) DESC,
         c.name ASC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -234,6 +277,8 @@ router.get('/colleges', async (req, res) => {
 
     if (Date.now() - startedAt > 600) {
       logger.warn('search.slow_query', { requestId, durationMs: Date.now() - startedAt, query: safeQuery, rows: formattedResults.length });
+    } else if (formattedResults.length === 0 && safeQuery) {
+      logger.warn('search.empty_results', { requestId, durationMs: Date.now() - startedAt, query: safeQuery });
     } else {
       logger.info('search.query', { requestId, durationMs: Date.now() - startedAt, query: safeQuery, rows: formattedResults.length });
     }

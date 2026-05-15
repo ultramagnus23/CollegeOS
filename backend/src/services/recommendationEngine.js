@@ -531,18 +531,31 @@ async function generateRecommendations(studentProfile, allColleges) {
   }
 
   const now = new Date().toISOString();
-  const recs = [];
+  const sourceColleges = Array.isArray(allColleges) ? allColleges : [];
+  const scoredRecs = [];
 
-  for (const college of allColleges) {
+  for (const college of sourceColleges) {
+    if (!college || !college.id || !college.name) continue;
     const academic  = _scoreAcademic(studentProfile, college);
     const financial = _scoreFinancial(studentProfile, college, usdToInr);
     const values    = _scoreValues(studentProfile, college);
     const location  = _scoreLocation(studentProfile, college);
 
+    const missingSignals = [
+      college.acceptance_rate == null,
+      college.country == null,
+      (college.tuitionInternational ?? college.tuition_international ?? null) == null,
+      (college.gpa50 ?? college.averageGPA ?? college.average_gpa ?? null) == null,
+      (college.satAvg ?? college.sat_avg ?? null) == null,
+      !Array.isArray(college.programs) && !Array.isArray(college.majorCategories),
+    ].filter(Boolean).length;
+    const missingDataPenalty = Math.min(12, missingSignals * 2);
+
     // Sum all four components; location can be 0–10 (no negative in this spec)
     const finalScore = Math.max(0, Math.min(100,
-      academic.pts + financial.pts + values.pts + location.pts
+      academic.pts + financial.pts + values.pts + location.pts - missingDataPenalty
     ));
+    const confidenceScore = Math.max(30, Math.min(99, 100 - (missingSignals * 12) - (rateEstimated ? 5 : 0)));
 
     const chanceLabel = _chanceLabel(studentProfile, college, academic.pts);
     const watchOuts   = _watchOuts(studentProfile, college, financial, academic);
@@ -550,7 +563,7 @@ async function generateRecommendations(studentProfile, allColleges) {
       ? parseFloat((college.acceptance_rate * 100).toFixed(1))
       : null;
 
-    recs.push({
+    scoredRecs.push({
       college_id:            college.id,
       college_name:          college.name,
       country:               college.country,
@@ -560,6 +573,7 @@ async function generateRecommendations(studentProfile, allColleges) {
         financial_fit:        financial.pts,
         values_resonance:     values.pts,
         location_preference:  location.pts,
+        missing_data_penalty: missingDataPenalty,
       },
       gross_cost_usd_per_year: financial.grossCostUsd,
       known_aid_usd_per_year:  financial.knownAidUsd,
@@ -568,15 +582,82 @@ async function generateRecommendations(studentProfile, allColleges) {
       affordable:              financial.affordable,
       acceptance_rate_pct:     arPct,
       chance_label:            chanceLabel,
+      confidence_score:        confidenceScore,
       why_academic:            academic.reasons.slice(0, 2).join('. '),
       why_financial:           financial.reasons.slice(0, 2).join('. '),
       why_values:              values.whyValues,
       watch_outs:              watchOuts,
+      explainability: {
+        missing_signals: missingSignals,
+        diversity_key: `${(college.country || 'unknown').toLowerCase()}::${chanceLabel.toLowerCase()}`,
+        model_inputs_sparse: missingSignals >= 3,
+      },
       apply_by:                college.applicationDeadline || college.application_deadline || null,
     });
   }
 
-  recs.sort((a, b) => b.overall_score - a.overall_score);
+  scoredRecs.sort((a, b) => b.overall_score - a.overall_score);
+
+  const countryCounts = new Map();
+  const chanceCounts = new Map();
+  const seenCollegeIds = new Set();
+  const recs = scoredRecs
+    .map((rec) => {
+      const countryKey = String(rec.country || 'unknown').toLowerCase();
+      const chanceKey = String(rec.chance_label || 'unknown').toLowerCase();
+      const countrySeen = countryCounts.get(countryKey) || 0;
+      const chanceSeen = chanceCounts.get(chanceKey) || 0;
+      countryCounts.set(countryKey, countrySeen + 1);
+      chanceCounts.set(chanceKey, chanceSeen + 1);
+      const repetitionPenalty = Math.min(12, (countrySeen * 2) + (chanceSeen * 1.5));
+      return {
+        ...rec,
+        overall_score: Math.max(0, Math.min(100, Math.round(rec.overall_score - repetitionPenalty))),
+      };
+    })
+    .sort((a, b) => b.overall_score - a.overall_score)
+    .filter((rec) => {
+      if (seenCollegeIds.has(rec.college_id)) return false;
+      seenCollegeIds.add(rec.college_id);
+      return true;
+    });
+
+  if (recs.length === 0) {
+    for (const college of sourceColleges.slice(0, 20)) {
+      if (!college || !college.id || !college.name) continue;
+      recs.push({
+        college_id: college.id,
+        college_name: college.name,
+        country: college.country || null,
+        overall_score: 40,
+        score_breakdown: {
+          academic_fit: 10,
+          financial_fit: 10,
+          values_resonance: 10,
+          location_preference: 10,
+          missing_data_penalty: 0,
+        },
+        gross_cost_usd_per_year: null,
+        known_aid_usd_per_year: null,
+        net_cost_usd_per_year: null,
+        net_cost_inr_per_year: null,
+        affordable: false,
+        acceptance_rate_pct: null,
+        chance_label: 'Match',
+        confidence_score: 30,
+        why_academic: 'Sparse profile data; showing fallback recommendation.',
+        why_financial: 'Cost data unavailable in fallback mode.',
+        why_values: [],
+        watch_outs: ['Limited profile data reduced recommendation precision.'],
+        explainability: {
+          missing_signals: 5,
+          diversity_key: `${(college.country || 'unknown').toLowerCase()}::fallback`,
+          model_inputs_sparse: true,
+        },
+        apply_by: college.applicationDeadline || college.application_deadline || null,
+      });
+    }
+  }
 
   const affordable = recs.filter(r => r.affordable);
   const byValues = recs.slice().sort(
@@ -593,7 +674,7 @@ async function generateRecommendations(studentProfile, allColleges) {
     student_id:         studentProfile.id,
     recommendations:    recs,
     summary: {
-      total_colleges_evaluated: allColleges.length,
+      total_colleges_evaluated: sourceColleges.length,
       total_affordable:         affordable.length,
       best_values_match:        byValues[0]?.college_name || null,
       most_affordable_match:    byNetCost[0]?.college_name || null,
