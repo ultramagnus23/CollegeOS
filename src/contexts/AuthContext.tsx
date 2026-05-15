@@ -38,23 +38,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
   const authSeqRef = useRef(0);
-
-  useEffect(() => {
-    // Migrate old data on first load
-    profileService.migrateOldData();
-    void checkAuth();
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [checkAuth]);
+  const authControllerRef = useRef<AbortController | null>(null);
 
   const checkAuth = useCallback(async () => {
     const seq = ++authSeqRef.current;
+    authControllerRef.current?.abort();
+    authControllerRef.current = new AbortController();
     try {
       const token = localStorage.getItem('accessToken');
       if (token) {
         // First, try to get user from backend
-        const response = await api.getCurrentUser();
+        const response = await api.getCurrentUser({ signal: authControllerRef.current.signal });
         const backendUser = response.data;
         if (!mountedRef.current || seq !== authSeqRef.current) return;
         
@@ -73,6 +67,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       if (!mountedRef.current || seq !== authSeqRef.current) return;
       console.error('Auth check failed:', error);
       localStorage.removeItem('accessToken');
@@ -83,6 +78,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
   }, []);
+
+  useEffect(() => {
+    // Migrate old data on first load
+    profileService.migrateOldData();
+    void checkAuth();
+    return () => {
+      mountedRef.current = false;
+      authControllerRef.current?.abort();
+    };
+  }, [checkAuth]);
 
   const login = async (email: string, password: string) => {
     const response = await api.login(email, password);
@@ -171,13 +176,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const refreshUser = async () => {
     const seq = ++authSeqRef.current;
+    authControllerRef.current?.abort();
+    authControllerRef.current = new AbortController();
     try {
-      const response = await api.getCurrentUser();
+      const response = await api.getCurrentUser({ signal: authControllerRef.current.signal });
       const backendUser = response.data;
       if (!mountedRef.current || seq !== authSeqRef.current) return;
       setUser(backendUser);
       profileService.syncFromBackend(backendUser);
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       if (!mountedRef.current || seq !== authSeqRef.current) return;
       console.error('Failed to refresh user:', error);
       throw error;
