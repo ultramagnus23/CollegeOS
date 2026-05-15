@@ -32,6 +32,9 @@ const {
 const { computeAdmitChance } = require('../services/chancingService');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+function createRequestId() {
+  return `rec_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
 
 /**
  * Fetch the user's onboarding / profile data from the DB.
@@ -54,11 +57,11 @@ async function fetchUserProfile(userId, pool) {
  */
 async function fetchSignals(userId, pool) {
   const { rows } = await pool.query(
-    `SELECT us.signal_type, cc.feature_vector
+    `SELECT us.signal_type, c.feature_vector
      FROM   user_signals us
-     JOIN   colleges_comprehensive cc ON cc.id = us.college_id
+     JOIN   colleges c ON c.id = us.college_id
      WHERE  us.user_id = $1
-       AND  cc.feature_vector IS NOT NULL
+       AND  c.feature_vector IS NOT NULL
      ORDER  BY us.created_at DESC
      LIMIT  20`,
     [userId]
@@ -98,6 +101,8 @@ async function buildAdjustedUserVector(userProfile, userId, pool) {
  * each augmented with an admit chance calculation.
  */
 router.post('/', authenticate, async (req, res, next) => {
+  const requestId = createRequestId();
+  const requestStarted = Date.now();
   try {
     const userId  = req.user.userId;
     const filters = req.body?.filters || {};
@@ -118,6 +123,9 @@ router.post('/', authenticate, async (req, res, next) => {
 
     // ── 2. Build user vector (with signal adjustments) ────────────────────
     const userVector = await buildAdjustedUserVector(userProfile, userId, pool);
+    if (!Array.isArray(userVector) || userVector.length === 0) {
+      logger.warn('recommend.empty_user_vector', { requestId, userId });
+    }
 
     // ── 3. Fetch college candidates ───────────────────────────────────────
     // Two modes:
@@ -130,47 +138,59 @@ router.post('/', authenticate, async (req, res, next) => {
     let   idx        = 1;
 
     if (filters.country) {
-      conditions.push(`cc.country = $${idx++}`);
+      conditions.push(`c.country = $${idx++}`);
       params.push(filters.country);
     }
     if (filters.maxCostUsd) {
-      conditions.push(`(cfd.avg_net_price IS NULL OR cfd.avg_net_price <= $${idx++})`);
+      conditions.push(`(c.tuition_international IS NULL OR c.tuition_international <= $${idx++})`);
       params.push(parseFloat(filters.maxCostUsd));
     }
     if (filters.size) {
       // Map 'small' | 'medium' | 'large' to enrollment ranges
       const sizeMap = { small: [0, 5000], medium: [5000, 15000], large: [15001, 9999999] };
       const [lo, hi] = sizeMap[filters.size] || [0, 9999999];
-      conditions.push(`(cc.enrollment IS NULL OR (cc.enrollment >= $${idx++} AND cc.enrollment <= $${idx++}))`);
+      conditions.push(`(c.total_enrollment IS NULL OR (c.total_enrollment >= $${idx++} AND c.total_enrollment <= $${idx++}))`);
       params.push(lo, hi);
     }
 
     const where = conditions.join(' AND ');
 
+    const queryStarted = Date.now();
     const { rows: colleges } = await pool.query(
       `SELECT
-         cc.*,
-         ca.acceptance_rate,
-         ca.sat_avg,
-         ca.act_avg,
-         ca.gpa_50,
-         ca.sat_25,
-         ca.sat_75,
-         cfd.avg_net_price,
-         cfd.avg_financial_aid,
-         cfd.tuition_international,
-         ad.graduation_rate_4yr,
-         ad.retention_rate,
-         ad.median_salary_6yr,
-         cc.feature_vector
-       FROM   colleges_comprehensive cc
-       LEFT   JOIN college_admissions ca  ON ca.college_id  = cc.id
-       LEFT   JOIN college_financial_data cfd ON cfd.college_id = cc.id
-       LEFT   JOIN academic_details ad       ON ad.college_id   = cc.id
+         c.id,
+         c.name,
+         c.country,
+         c.state,
+         c.city,
+         c.type,
+         c.size_category,
+         c.acceptance_rate,
+         c.sat_25,
+         c.sat_75,
+         c.act_25,
+         c.act_75,
+         c.act_avg,
+         c.gpa_25,
+         c.gpa_75,
+         c.tuition_domestic,
+         c.tuition_international,
+         c.ranking_qs,
+         c.ranking_us_news,
+         c.ranking_the,
+         c.total_enrollment,
+         c.description,
+         c.feature_vector
+       FROM   colleges c
        WHERE  ${where}
        LIMIT  2000`,
       params
     );
+    const queryDuration = Date.now() - queryStarted;
+    logger.info('recommend.query_timing', { requestId, ms: queryDuration, rows: colleges.length });
+    if (queryDuration > 800) {
+      logger.warn('recommend.slow_query', { requestId, ms: queryDuration, rows: colleges.length });
+    }
 
     if (!colleges.length) {
       return res.json({ success: true, colleges: [], vectors_used: false });
@@ -179,6 +199,7 @@ router.post('/', authenticate, async (req, res, next) => {
     // ── 4. Score each college ─────────────────────────────────────────────
     const scored = [];
     let vectorsUsed = 0;
+    let missingRankingCount = 0;
 
     for (const college of colleges) {
       let colVec;
@@ -200,6 +221,9 @@ router.post('/', authenticate, async (req, res, next) => {
       }
 
       const overallFit = cosineSimilarity(userVector, colVec);
+      if (college.ranking_qs == null && college.ranking_us_news == null && college.ranking_the == null) {
+        missingRankingCount++;
+      }
 
       scored.push({
         college,
@@ -232,8 +256,13 @@ router.post('/', authenticate, async (req, res, next) => {
       count:         results.length,
       vectors_used:  vectorsUsed > 0,
       colleges:      results,
+      meta: {
+        requestId,
+        durationMs: Date.now() - requestStarted,
+        missingRankingCount,
+      },
     });  } catch (err) {
-    logger.error('POST /api/recommend error: %s', err.message);
+    logger.error('POST /api/recommend error', { requestId, message: err.message, stack: err.stack });
     next(err);
   }
 });

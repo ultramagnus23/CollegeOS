@@ -90,6 +90,10 @@ export interface CollegeRow {
   founding_year?: number | null;
 }
 
+// TODO: REMOVE LEGACY SCHEMA — CollegeAdmissions is the legacy child table.
+// SAT/ACT/GPA data is now read directly from the `colleges` table columns
+// (sat_25, sat_75, act_25, act_75, gpa_25, gpa_75).
+/** @deprecated Use sat_25/sat_75/act_25/act_75/gpa_25/gpa_75 from CollegeRow directly. */
 export interface CollegeAdmissions {
   id: number;
   college_id: number;
@@ -114,6 +118,10 @@ export interface CollegeFinancialData {
   confidence_score: number | null;
 }
 
+// TODO: REMOVE LEGACY SCHEMA — AcademicDetails is the legacy child table.
+// Academic outcomes are now read from median_earnings_6yr/median_earnings_10yr
+// on the `colleges` table directly.
+/** @deprecated Use median_earnings_6yr/median_earnings_10yr from CollegeRow directly. */
 export interface AcademicDetails {
   id: number;
   college_id: number;
@@ -133,6 +141,9 @@ export interface CollegeProgram {
   degree_type: string | null;
 }
 
+// TODO: REMOVE LEGACY SCHEMA — StudentDemographics is the legacy child table.
+// Demographics data is not present in the unified `colleges` table.
+/** @deprecated Demographics fields are not available from the unified colleges table. */
 export interface StudentDemographics {
   id: number;
   college_id: number;
@@ -183,13 +194,17 @@ export interface CollegeContact {
   application_fee: number | null;
 }
 
-/** A college row joined with all related child-table arrays. */
+/**
+ * A `colleges` table row joined with the allowed child-table arrays.
+ *
+ * NOTE: college_admissions, academic_details, and student_demographics are
+ * intentionally excluded — their data is now read directly from the `colleges`
+ * table columns (sat_25/75, act_25/75, gpa_25/75, median_earnings_6yr, etc.).
+ */
 export interface CollegeWithRelations extends CollegeRow {
-  college_admissions: CollegeAdmissions[];
+  // TODO: REMOVE LEGACY SCHEMA — college_admissions join removed; use sat_25/75, act_25/75, gpa_25/75 from CollegeRow
   college_financial_data: CollegeFinancialData[];
-  academic_details: AcademicDetails[];
   college_programs: CollegeProgram[];
-  student_demographics: StudentDemographics[];
   campus_life: CampusLife[];
   college_rankings: CollegeRanking[];
   college_deadlines?: CollegeDeadline[];

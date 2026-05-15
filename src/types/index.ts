@@ -187,3 +187,28 @@ export interface DashboardStats {
 
 // Re-export CollegeOS specific types
 export * from './collegeos.types';
+
+// Re-export canonical college types (Zod-backed)
+export * from './college';
+
+// ---------------------------------------------------------------------------
+// UI convenience types for college cards / detail pages
+// ---------------------------------------------------------------------------
+
+/** SAT / ACT percentile ranges displayed on college cards and detail pages. */
+export interface TestScores {
+  satRange?: { percentile25: number; percentile75: number };
+  actRange?: { percentile25: number; percentile75: number };
+  averageGPA?: number;
+  sat25?: number | null;
+  sat75?: number | null;
+  act25?: number | null;
+  act75?: number | null;
+}
+
+/** Graduation and retention rates displayed on college detail pages. */
+export interface GraduationRates {
+  fourYear?: number | null;
+  sixYear?: number | null;
+  retentionRate?: number | null;
+}

@@ -195,17 +195,26 @@ const CollegeRecommendations: React.FC = () => {
   const [mlLoading, setMlLoading]     = useState(false);
   const [mlExpanded, setMlExpanded]   = useState<Record<number, boolean>>({});
   const [dismissed, setDismissed]     = useState<Set<number>>(new Set());
+  const loadSeqRef = React.useRef(0);
+  const mlSeqRef = React.useRef(0);
+  const mountedRef = React.useRef(true);
+
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   const loadML = useCallback(async () => {
+    const seq = ++mlSeqRef.current;
     try {
       setMlLoading(true);
       const res = await (api as any).recommend.getColleges({});
       const colleges: MLRecommendation[] = (res?.colleges ?? res?.data?.colleges ?? []).slice(0, 20);
+      if (!mountedRef.current || seq !== mlSeqRef.current) return;
       setMlRecs(colleges);
     } catch {
       // Non-critical — ML recommendations may not be available yet
     } finally {
-      setMlLoading(false);
+      if (mountedRef.current && seq === mlSeqRef.current) {
+        setMlLoading(false);
+      }
     }
   }, []);
 
@@ -215,10 +224,12 @@ const CollegeRecommendations: React.FC = () => {
   }, []);
 
   const load = async () => {
+    const seq = ++loadSeqRef.current;
     try {
       setLoading(true);
       setError('');
       const res = await (api as any).recommendations.get();
+      if (!mountedRef.current || seq !== loadSeqRef.current) return;
       if (res?.success && res.recommendations) {
         setData(res);
       } else if (res?.recommendations) {
@@ -227,9 +238,13 @@ const CollegeRecommendations: React.FC = () => {
         setError(res?.message || 'No recommendations yet.');
       }
     } catch (err: any) {
-      setError(err?.message || 'Failed to load recommendations.');
+      if (mountedRef.current && seq === loadSeqRef.current) {
+        setError(err?.message || 'Failed to load recommendations.');
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current && seq === loadSeqRef.current) {
+        setLoading(false);
+      }
     }
   };
 

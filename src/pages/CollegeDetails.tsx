@@ -342,14 +342,13 @@ const CollegeDetail: React.FC = () => {
       let collegeData: College | null = null;
 
       if (isSupabaseConfigured) {
-        // ── Supabase path: fetch from colleges_comprehensive with all child tables ──
+        // ── Supabase path: fetch from canonical colleges table (+ allowed child tables) ──
         const raw = await getCollegeById(collegeId);
         if (raw) {
           if (COLLEGE_SYNC_DEBUG) {
             console.debug('[CollegeSync] detail.raw-supabase', {
               id: raw.id,
               name: raw.name,
-              admissionsRows: raw.college_admissions?.length ?? 0,
               financialRows: raw.college_financial_data?.length ?? 0,
               rankingRows: raw.college_rankings?.length ?? 0,
               deadlineRows: raw.college_deadlines?.length ?? 0,
@@ -424,14 +423,29 @@ const CollegeDetail: React.FC = () => {
 
     try {
       setAdding(true);
-      await api.applications.create({
+      const payload = {
         college_id: college.id,
-        application_type: 'regular'
-      });
+        canonical_institution_id: college.id,
+        application_type: 'regular',
+      };
+      try {
+        await api.applications.create(payload);
+      } catch (firstErr: any) {
+        if (String(firstErr?.message ?? '').toLowerCase().includes('network')) {
+          await api.applications.create(payload);
+        } else {
+          throw firstErr;
+        }
+      }
       toast.success('College added to your list!');
       navigate('/applications');
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Failed to add college');
+      const msg = error instanceof Error ? error.message : 'Failed to add college';
+      if (msg.toLowerCase().includes('already')) {
+        toast.info('College is already in your list.');
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setAdding(false);
     }

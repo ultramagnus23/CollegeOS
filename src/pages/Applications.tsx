@@ -93,6 +93,10 @@ const AppCard: React.FC<{
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [detailsLoaded, setDetailsLoaded] = useState(false);
+  const detailsSeqRef = useRef(0);
+  const mountedRef = useRef(true);
+
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   const tierKey = app.priority && ['reach','target','safety'].includes(app.priority) ? app.priority : 'default';
   const tier = TIER_CFG[tierKey];
@@ -105,6 +109,7 @@ const AppCard: React.FC<{
 
   const loadDetails = async () => {
     if (detailsLoaded) { setExpanded(e => !e); return; }
+    const seq = ++detailsSeqRef.current;
     setExpanded(true);
     setLoadingDetails(true);
     try {
@@ -112,33 +117,42 @@ const AppCard: React.FC<{
         (api as any).applications.getDeadlines(app.id),
         (api as any).applications.getTasks(app.id),
       ]);
+      if (!mountedRef.current || seq !== detailsSeqRef.current) return;
       setDeadlines(dlRes?.data || []);
       setTasks(tskRes?.data || []);
       setDetailsLoaded(true);
     } catch {
-      toast.error('Failed to load details');
+      if (mountedRef.current && seq === detailsSeqRef.current) {
+        toast.error('Failed to load details');
+      }
     } finally {
-      setLoadingDetails(false);
+      if (mountedRef.current && seq === detailsSeqRef.current) {
+        setLoadingDetails(false);
+      }
     }
   };
 
   const toggleDeadline = async (dl: Deadline) => {
-    const optimistic = deadlines.map(d => d.id === dl.id ? { ...d, completed: !d.completed } : d);
+    const prevDeadlines = deadlines;
+    const optimistic = prevDeadlines.map(d => d.id === dl.id ? { ...d, completed: !d.completed } : d);
     setDeadlines(optimistic);
     try {
       await (api as any).applications.toggleDeadline(app.id, dl.id, !dl.completed);
     } catch {
-      setDeadlines(deadlines); // revert
+      setDeadlines(prevDeadlines); // revert
+      toast.error('Failed to update deadline');
     }
   };
 
   const toggleTask = async (task: Task) => {
-    const optimistic = tasks.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t);
+    const prevTasks = tasks;
+    const optimistic = prevTasks.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t);
     setTasks(optimistic);
     try {
       await (api as any).applications.toggleTask(app.id, task.id, !task.completed);
     } catch {
-      setTasks(tasks); // revert
+      setTasks(prevTasks); // revert
+      toast.error('Failed to update task');
     }
   };
 
@@ -274,26 +288,51 @@ const Applications = () => {
   const [searching, setSearching] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadSeqRef = useRef(0);
+  const searchSeqRef = useRef(0);
+  const statusMutationRef = useRef(new Map<number, string>());
+  const mountedRef = useRef(true);
+
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   useEffect(() => { loadApplications(); }, []);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!form.collegeSearch.trim() || selectedCollege) { setSearchResults([]); return; }
+    if (!form.collegeSearch.trim() || selectedCollege) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    const seq = ++searchSeqRef.current;
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
         const res = await api.colleges.search({ q: form.collegeSearch });
+        if (!mountedRef.current || seq !== searchSeqRef.current) return;
         setSearchResults((res.data || []).slice(0, 6));
-      } catch { /* ignore */ } finally { setSearching(false); }
+      } catch {
+        if (mountedRef.current && seq === searchSeqRef.current) setSearchResults([]);
+      } finally {
+        if (mountedRef.current && seq === searchSeqRef.current) setSearching(false);
+      }
     }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [form.collegeSearch, selectedCollege]);
 
   const loadApplications = async () => {
+    const seq = ++loadSeqRef.current;
     try {
       const res = await api.applications.get();
+      if (!mountedRef.current || seq !== loadSeqRef.current) return;
       setApplications(res.data || []);
-    } catch { toast.error('Failed to load applications'); } finally { setLoading(false); }
+    } catch {
+      if (mountedRef.current && seq === loadSeqRef.current) toast.error('Failed to load applications');
+    } finally {
+      if (mountedRef.current && seq === loadSeqRef.current) setLoading(false);
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -307,12 +346,20 @@ const Applications = () => {
 
   const handleSubmitAdd = async () => {
     if (!selectedCollege) { toast.error('Please select a college'); return; }
+    if (submitting) return;
     setSubmitting(true);
     try {
       await api.applications.create({ college_id: selectedCollege.id, college_name: selectedCollege.name, application_type: form.appType, priority: form.priority, notes: form.notes || undefined });
       toast.success('Application added! Deadlines and tasks auto-generated.');
       closeModal(); loadApplications();
-    } catch { toast.error('Failed to add application'); } finally { setSubmitting(false); }
+    } catch (err: any) {
+      const message = err?.message || 'Failed to add application';
+      if (typeof message === 'string' && message.toLowerCase().includes('already')) {
+        toast.error('College is already in your tracker');
+      } else {
+        toast.error(message);
+      }
+    } finally { setSubmitting(false); }
   };
 
   const closeModal = useCallback(() => {
@@ -322,10 +369,25 @@ const Applications = () => {
   }, []);
 
   const handleStatusChange = async (id: number, status: string) => {
+    const previous = applications.find((a) => a.id === id)?.status;
+    statusMutationRef.current.set(id, status);
+    setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a));
     try {
       await api.applications.update(id, { status });
-      setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a));
-    } catch { toast.error('Failed to update status'); }
+      const latest = statusMutationRef.current.get(id);
+      if (latest === status) {
+        statusMutationRef.current.delete(id);
+      }
+    } catch {
+      const latest = statusMutationRef.current.get(id);
+      if (latest === status) {
+        statusMutationRef.current.delete(id);
+        if (previous) {
+          setApplications(prev => prev.map(a => a.id === id ? { ...a, status: previous } : a));
+        }
+      }
+      toast.error('Failed to update status');
+    }
   };
 
   // Stats
@@ -499,4 +561,3 @@ const Applications = () => {
 };
 
 export default Applications;
-
