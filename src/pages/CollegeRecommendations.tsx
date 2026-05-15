@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../services/api';
 import { toast } from 'sonner';
+import { normalizeLegacyRecommendation } from '@/utils/legacyCompatibility';
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 interface ScoreBreakdown {
@@ -206,7 +207,10 @@ const CollegeRecommendations: React.FC = () => {
     try {
       setMlLoading(true);
       const res = await (api as any).recommend.getColleges({});
-      const colleges: MLRecommendation[] = (res?.colleges ?? res?.data?.colleges ?? []).slice(0, 20);
+      const colleges: MLRecommendation[] = (res?.colleges ?? res?.data?.colleges ?? [])
+        .map((row: any) => normalizeLegacyRecommendation(row))
+        .filter((row: any) => row.id > 0 && typeof row.name === 'string')
+        .slice(0, 20);
       if (!mountedRef.current || seq !== mlSeqRef.current) return;
       setMlRecs(colleges);
     } catch {
@@ -300,7 +304,9 @@ const CollegeRecommendations: React.FC = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {visibleMLRecs.map((rec, idx) => {
-                const tierColor = rec.tier === 'Safety' ? '#22c55e' : rec.tier === 'Target' ? '#f59e0b' : '#ef4444';
+                const tier = String(rec.tier || '').toLowerCase();
+                const tierLabel = tier === 'safety' ? 'Safety' : tier === 'target' ? 'Target' : tier === 'reach' ? 'Reach' : tier === 'long_shot' ? 'Long Shot' : 'Target';
+                const tierColor = tier === 'safety' ? '#22c55e' : tier === 'target' ? '#f59e0b' : '#ef4444';
                 const isOpen = mlExpanded[rec.id] ?? false;
                 return (
                   <div
@@ -337,7 +343,7 @@ const CollegeRecommendations: React.FC = () => {
                         {/* Admit chance */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <span style={{ fontSize: 12, color: tierColor, fontWeight: 700 }}>
-                            {rec.tier} · {rec.admit_chance}% admit chance
+                            {tierLabel} · {rec.admit_chance}% admit chance
                           </span>
                           <div style={{ display: 'flex', gap: 8 }}>
                             <button
