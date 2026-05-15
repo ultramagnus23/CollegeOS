@@ -136,12 +136,13 @@ class College {
            to_jsonb(c) ->> 'official_website'
          ) AS website,
          to_jsonb(c) ->> 'website_url' AS website_url,
-         COALESCE(
-           to_jsonb(c) ->> 'type',
-           to_jsonb(c) ->> 'institution_type'
-         ) AS type,
-         to_jsonb(c) ->> 'institution_type' AS institution_type,
-         c.size_category, c.description,
+          COALESCE(
+            to_jsonb(c) ->> 'type',
+            to_jsonb(c) ->> 'institution_type'
+          ) AS type,
+          to_jsonb(c) ->> 'institution_type' AS institution_type,
+          to_jsonb(c) ->> 'size_category' AS size_category,
+          c.description,
          c.acceptance_rate, c.sat_25, c.sat_75, c.act_25, c.act_75, c.gpa_25, c.gpa_75,
          c.tuition_domestic, c.tuition_international,
          c.total_enrollment,
@@ -178,12 +179,13 @@ class College {
           to_jsonb(c) ->> 'official_website'
         ) AS website,
         to_jsonb(c) ->> 'website_url' AS website_url,
-        COALESCE(
-          to_jsonb(c) ->> 'type',
-          to_jsonb(c) ->> 'institution_type'
-        ) AS type,
-        to_jsonb(c) ->> 'institution_type' AS institution_type,
-        c.size_category, c.description,
+         COALESCE(
+           to_jsonb(c) ->> 'type',
+           to_jsonb(c) ->> 'institution_type'
+         ) AS type,
+         to_jsonb(c) ->> 'institution_type' AS institution_type,
+         to_jsonb(c) ->> 'size_category' AS size_category,
+         c.description,
         c.acceptance_rate, c.sat_25, c.sat_75, c.act_25, c.act_75, c.gpa_25, c.gpa_75,
         c.tuition_domestic, c.tuition_international,
         c.total_enrollment,

@@ -79,6 +79,9 @@ const LEGACY_LIST_SELECT = `
   college_rankings(ranking_source, ranking_value, ranking_year)
 ` as const;
 
+const FLAT_LIST_SELECT = `${CANONICAL_COLLEGES_COLUMNS}` as const;
+const LEGACY_FLAT_LIST_SELECT = `${LEGACY_COLLEGES_COLUMNS}` as const;
+
 const FULL_SELECT = `
   ${CANONICAL_COLLEGES_COLUMNS},
   college_financial_data(tuition_in_state, tuition_out_state, tuition_international, avg_net_price),
@@ -98,6 +101,9 @@ const LEGACY_FULL_SELECT = `
   college_deadlines(deadline_type, deadline_date, notification_date, is_binding),
   college_contact(admissions_email, admissions_phone, admissions_url, financial_aid_url, common_app, coalition_app, application_fee)
 ` as const;
+
+const FLAT_FULL_SELECT = `${CANONICAL_COLLEGES_COLUMNS}` as const;
+const LEGACY_FLAT_FULL_SELECT = `${LEGACY_COLLEGES_COLUMNS}` as const;
 
 function debugCollegeSync(stage: string, payload: unknown) {
   if (!COLLEGE_SYNC_DEBUG) return;
@@ -131,28 +137,60 @@ function isMissingColumnError(error: unknown): boolean {
   return msg.includes('column') && msg.includes('does not exist');
 }
 
+function isMissingRelationshipError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const e = error as Record<string, unknown>;
+  const code = typeof e.code === 'string' ? e.code.toUpperCase() : '';
+  const msg = [e.message, e.details, e.hint]
+    .filter((part) => typeof part === 'string')
+    .join(' ')
+    .toLowerCase();
+  return code === 'PGRST200'
+    || msg.includes('could not find a relationship')
+    || msg.includes('no relationship found')
+    || msg.includes('pgrst200');
+}
+
 async function withCollegeSchemaFallback<T>(
   operation: string,
-  run: (mode: CollegeSchemaMode) => Promise<T>
+  run: (mode: CollegeSchemaMode, shape: 'relational' | 'flat') => Promise<T>
 ): Promise<T> {
-  try {
-    return await run('canonical');
-  } catch (error) {
-    if (!isMissingColumnError(error)) throw error;
-    debugCollegeSync(`${operation}.fallback_legacy`, { reason: (error as any)?.message ?? 'missing column' });
-    return run('legacy');
+  const attempts: Array<{ mode: CollegeSchemaMode; shape: 'relational' | 'flat' }> = [
+    { mode: 'canonical', shape: 'relational' },
+    { mode: 'legacy', shape: 'relational' },
+    { mode: 'canonical', shape: 'flat' },
+    { mode: 'legacy', shape: 'flat' },
+  ];
+
+  let lastError: unknown;
+  for (const attempt of attempts) {
+    try {
+      return await run(attempt.mode, attempt.shape);
+    } catch (error) {
+      lastError = error;
+      const compatibilityError = isMissingColumnError(error) || isMissingRelationshipError(error);
+      if (!compatibilityError) throw error;
+      debugCollegeSync(`${operation}.fallback`, {
+        mode: attempt.mode,
+        shape: attempt.shape,
+        reason: (error as any)?.message ?? 'compatibility fallback',
+      });
+    }
   }
+  throw lastError;
 }
 
 function getTypeColumn(mode: CollegeSchemaMode): 'type' | 'institution_type' {
   return mode === 'legacy' ? 'institution_type' : 'type';
 }
 
-function getListSelect(mode: CollegeSchemaMode): string {
+function getListSelect(mode: CollegeSchemaMode, shape: 'relational' | 'flat'): string {
+  if (shape === 'flat') return mode === 'legacy' ? LEGACY_FLAT_LIST_SELECT : FLAT_LIST_SELECT;
   return mode === 'legacy' ? LEGACY_LIST_SELECT : LIST_SELECT;
 }
 
-function getFullSelect(mode: CollegeSchemaMode): string {
+function getFullSelect(mode: CollegeSchemaMode, shape: 'relational' | 'flat'): string {
+  if (shape === 'flat') return mode === 'legacy' ? LEGACY_FLAT_FULL_SELECT : FLAT_FULL_SELECT;
   return mode === 'legacy' ? LEGACY_FULL_SELECT : FULL_SELECT;
 }
 
@@ -245,8 +283,8 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
   const { column, ascending } = normalizeOrder(sortBy);
 
   return timed('searchColleges', async () =>
-    withCollegeSchemaFallback('searchColleges', async (mode) => {
-      let q = client.from('colleges').select(getListSelect(mode), { count: 'estimated' });
+    withCollegeSchemaFallback('searchColleges', async (mode, shape) => {
+      let q = client.from('colleges').select(getListSelect(mode, shape), { count: 'estimated' });
 
       if (query) q = q.ilike('name', `%${query}%`);
       if (country) q = q.eq('country', country);
@@ -281,10 +319,10 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
 export async function getCollegeById(id: number): Promise<CollegeWithRelations | null> {
   const client = requireClient();
   return timed('getCollegeById', async () =>
-    withCollegeSchemaFallback('getCollegeById', async (mode) => {
+    withCollegeSchemaFallback('getCollegeById', async (mode, shape) => {
       const { data, error } = await client
         .from('colleges')
-        .select(getFullSelect(mode))
+        .select(getFullSelect(mode, shape))
         .eq('id', id)
         .maybeSingle();
 
@@ -300,10 +338,10 @@ export async function getCollegeById(id: number): Promise<CollegeWithRelations |
 export async function getCollegeByName(name: string): Promise<CollegeWithRelations | null> {
   const client = requireClient();
   return timed('getCollegeByName', async () =>
-    withCollegeSchemaFallback('getCollegeByName', async (mode) => {
+    withCollegeSchemaFallback('getCollegeByName', async (mode, shape) => {
       const { data, error } = await client
         .from('colleges')
-        .select(getFullSelect(mode))
+        .select(getFullSelect(mode, shape))
         .ilike('name', name)
         .limit(1)
         .maybeSingle();
@@ -323,10 +361,10 @@ export async function compareColleges(ids: number[]): Promise<CollegeWithRelatio
   const safeIds = ids.slice(0, 4);
 
   return timed('compareColleges', async () =>
-    withCollegeSchemaFallback('compareColleges', async (mode) => {
+    withCollegeSchemaFallback('compareColleges', async (mode, shape) => {
       const { data, error } = await client
         .from('colleges')
-        .select(getFullSelect(mode))
+        .select(getFullSelect(mode, shape))
         .in('id', safeIds);
 
       if (error) throw error;
@@ -340,10 +378,10 @@ export async function compareColleges(ids: number[]): Promise<CollegeWithRelatio
 export async function getFeaturedColleges(limit = 12): Promise<CollegeWithRelations[]> {
   const client = requireClient();
   return timed('getFeaturedColleges', async () =>
-    withCollegeSchemaFallback('getFeaturedColleges', async (mode) => {
+    withCollegeSchemaFallback('getFeaturedColleges', async (mode, shape) => {
       const { data, error } = await client
         .from('colleges')
-        .select(getListSelect(mode))
+        .select(getListSelect(mode, shape))
         .order('name', { ascending: true })
         .limit(Math.min(50, Math.max(1, limit)));
 
