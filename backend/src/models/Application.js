@@ -30,6 +30,24 @@ class Application {
 
     // Resolve collegeId from either camelCase or snake_case input
     const collegeId = data.collegeId || data.college_id;
+    if (!collegeId || Number.isNaN(Number(collegeId))) {
+      const err = new Error('Valid college_id is required');
+      err.statusCode = 400;
+      err.code = 'INVALID_COLLEGE_ID';
+      throw err;
+    }
+
+    // Ensure referenced college exists in canonical table.
+    const { rows: collegeRows } = await pool.query(
+      'SELECT id FROM colleges WHERE id = $1 LIMIT 1',
+      [Number(collegeId)]
+    );
+    if (!collegeRows.length) {
+      const err = new Error('College does not exist in canonical colleges table');
+      err.statusCode = 400;
+      err.code = 'COLLEGE_NOT_FOUND';
+      throw err;
+    }
     let rows;
     try {
       ({ rows } = await pool.query(
@@ -38,7 +56,7 @@ class Application {
          RETURNING id`,
         [
           userId,
-          collegeId,
+          Number(collegeId),
           safeData.status || data.status || 'researching',
           safeData.application_type || data.application_type || data.applicationType || null,
           safeData.priority || data.priority || null,
@@ -84,11 +102,11 @@ class Application {
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
       `SELECT a.*,
-              COALESCE(cc.name, c.name) AS college_name,
-              COALESCE(cc.country, c.country) AS country,
-              COALESCE(cc.website_url, c.official_website) AS official_website
+              c.id AS canonical_institution_id,
+              c.name AS college_name,
+              c.country AS country,
+              c.official_website AS official_website
        FROM applications a
-       LEFT JOIN colleges_comprehensive cc ON a.college_id = cc.id
        LEFT JOIN colleges c ON a.college_id = c.id
        WHERE a.user_id = $1 AND a.college_id = $2`,
       [userId, collegeId]
@@ -100,11 +118,11 @@ class Application {
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
       `SELECT a.*,
-              COALESCE(cc.name, c.name) AS college_name,
-              COALESCE(cc.country, c.country) AS country,
-              COALESCE(cc.website_url, c.official_website) AS official_website
+              c.id AS canonical_institution_id,
+              c.name AS college_name,
+              c.country AS country,
+              c.official_website AS official_website
        FROM applications a
-       LEFT JOIN colleges_comprehensive cc ON a.college_id = cc.id
        LEFT JOIN colleges c ON a.college_id = c.id
        WHERE a.id = $1`,
       [id]
@@ -115,15 +133,15 @@ class Application {
   static async findByUser(userId, filters = {}) {
     const pool = dbManager.getDatabase();
     let query = `
-      SELECT a.*,
-             COALESCE(cc.name, c.name) AS college_name,
-             COALESCE(cc.country, c.country) AS country,
-             COALESCE(cc.website_url, c.official_website) AS official_website
-      FROM applications a
-      LEFT JOIN colleges_comprehensive cc ON a.college_id = cc.id
-      LEFT JOIN colleges c ON a.college_id = c.id
-      WHERE a.user_id = $1
-    `;
+       SELECT a.*,
+              c.id AS canonical_institution_id,
+              c.name AS college_name,
+              c.country AS country,
+              c.official_website AS official_website
+       FROM applications a
+       LEFT JOIN colleges c ON a.college_id = c.id
+       WHERE a.user_id = $1
+     `;
     const params = [userId];
     let idx = 2;
 

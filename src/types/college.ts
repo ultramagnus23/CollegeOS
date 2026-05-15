@@ -209,3 +209,37 @@ export const CollegeRecommendationSchema = z.object({
 });
 
 export type CollegeRecommendation = z.infer<typeof CollegeRecommendationSchema>;
+
+// ---------------------------------------------------------------------------
+// Application tracking canonical types
+// ---------------------------------------------------------------------------
+
+export const UserApplicationSchema = z.object({
+  id: z.number().int().positive(),
+  userId: z.number().int().positive(),
+  collegeId: z.number().int().positive(),
+  canonicalInstitutionId: z.number().int().positive().nullable().default(null),
+  collegeName: z.string().min(1),
+  country: z.string().nullable().default(null),
+  officialWebsite: z.string().nullable().default(null),
+  status: z.string().min(1),
+  applicationType: z.string().nullable().default(null),
+  priority: z.string().nullable().default(null),
+  notes: z.string().nullable().default(null),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable().default(null),
+});
+
+export type UserApplication = z.infer<typeof UserApplicationSchema>;
+
+export const CollegeTrackerEntrySchema = z.object({
+  applicationId: z.number().int().positive(),
+  collegeId: z.number().int().positive(),
+  canonicalInstitutionId: z.number().int().positive().nullable().default(null),
+  collegeName: z.string().min(1),
+  status: z.string().min(1),
+  priority: z.string().nullable().default(null),
+  addedAt: z.string(),
+});
+
+export type CollegeTrackerEntry = z.infer<typeof CollegeTrackerEntrySchema>;
