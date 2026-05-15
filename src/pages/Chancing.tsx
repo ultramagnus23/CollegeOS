@@ -278,19 +278,29 @@ export default function Chancing() {
   const [summary, setSummary] = useState<CollegeSummary>({ total: 0, safetyCount: 0, targetCount: 0, reachCount: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const loadSeqRef = React.useRef(0);
+  const mountedRef = React.useRef(true);
+
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   const load = async () => {
+    const seq = ++loadSeqRef.current;
     try {
       setLoading(true);
       setError('');
       const res = await api.chancing.getForStudent();
       const data = res.data ?? res;
+      if (!mountedRef.current || seq !== loadSeqRef.current) return;
       setResults(data?.results || []);
       if (data?.summary) setSummary(data.summary);
     } catch (err: any) {
-      setError(err?.message || 'Failed to load chancing data');
+      if (mountedRef.current && seq === loadSeqRef.current) {
+        setError(err?.message || 'Failed to load chancing data');
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current && seq === loadSeqRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -374,4 +384,3 @@ export default function Chancing() {
     </>
   );
 }
-

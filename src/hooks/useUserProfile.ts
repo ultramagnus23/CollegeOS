@@ -11,6 +11,7 @@ import {
   saveCanonicalProfile,
   setCanonicalProfileCache,
 } from '@/services/profilePipeline';
+import { clearRecommendationCache } from '@/services/recommendationService';
 import { logProfileTelemetry } from '@/lib/profileTelemetry';
 
 export type UserProfileData = CanonicalProfile;
@@ -33,21 +34,33 @@ export function useUserProfile(): UseUserProfileResult {
   const [error, setError] = useState<string | null>(null);
   const [profileLastFetched, setProfileLastFetched] = useState<Date | null>(null);
   const fetchSeqRef = useRef(0);
+  const saveSeqRef = useRef(0);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const fetchProfile = useCallback(async () => {
     if (!user?.id) {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
       return;
     }
 
     const seq = ++fetchSeqRef.current;
-    setLoading(true);
-    setError(null);
+    if (mountedRef.current) {
+      setLoading(true);
+      setError(null);
+    }
 
     try {
       const canonical = await fetchCanonicalProfile();
 
-      if (seq !== fetchSeqRef.current) {
+      if (!mountedRef.current || seq !== fetchSeqRef.current) {
         logProfileTelemetry({
           event: 'profile_hydration_mismatch',
           userId: user.id,
@@ -59,11 +72,14 @@ export function useUserProfile(): UseUserProfileResult {
       setCanonicalProfileCache(canonical);
       setProfile(canonical);
       setProfileLastFetched(new Date());
+      clearRecommendationCache();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load profile';
-      setError(message);
+      if (mountedRef.current && seq === fetchSeqRef.current) {
+        setError(message);
+      }
     } finally {
-      if (seq === fetchSeqRef.current) {
+      if (mountedRef.current && seq === fetchSeqRef.current) {
         setLoading(false);
       }
     }
@@ -80,6 +96,7 @@ export function useUserProfile(): UseUserProfileResult {
       const normalized = normalizeApiProfileToCanonical(detail.profile);
       setProfile(normalized);
       setProfileLastFetched(new Date());
+      clearRecommendationCache();
     };
 
     window.addEventListener('profile:updated', onProfileUpdated);
@@ -89,19 +106,26 @@ export function useUserProfile(): UseUserProfileResult {
   const saveProfile = useCallback(async (data: Partial<UserProfileData>): Promise<UserProfileData | null> => {
     if (!user?.id) return null;
 
+    const saveSeq = ++saveSeqRef.current;
     try {
       const validated = canonicalPartialProfileSchema.parse(data);
       const saved = await saveCanonicalProfile(validated, {
         userId: user.id,
         expectedVersion: profile?.version,
       });
+      if (!mountedRef.current || saveSeq !== saveSeqRef.current) {
+        return null;
+      }
       setProfile(saved);
       setProfileLastFetched(new Date());
+      clearRecommendationCache();
       setError(null);
       return saved;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update profile';
-      setError(message);
+      if (mountedRef.current && saveSeq === saveSeqRef.current) {
+        setError(message);
+      }
       return null;
     }
   }, [user?.id, profile?.version]);

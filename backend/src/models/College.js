@@ -163,9 +163,11 @@ class College {
         c.last_data_refresh, c.last_updated_at, c.updated_at, c.created_at,
         c.application_deadline, c.rd_deadline, c.ed_deadline, c.ea_deadline,
         LOWER(REGEXP_REPLACE(c.name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
+        0::numeric AS relevance_score,
         (SELECT ARRAY_AGG(cp.program_name) FROM college_programs cp WHERE cp.college_id = c.id) AS program_names
       FROM public.colleges c
       WHERE c.name IS NOT NULL
+        AND LENGTH(TRIM(c.name)) > 1
     `;
 
     const params = [];
@@ -180,10 +182,36 @@ class College {
     }
 
     if (filters.search) {
-      const p = `%${filters.search}%`;
-      query += ` AND (c.name ILIKE $${idx} OR c.city ILIKE $${idx} OR c.state ILIKE $${idx} OR c.country ILIKE $${idx} OR EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=c.id AND cp.program_name ILIKE $${idx}))`;
-      params.push(p);
-      idx++;
+      const rawSearch = String(filters.search).trim();
+      const p = `%${rawSearch}%`;
+      const lowerSearch = rawSearch.toLowerCase();
+      query = query.replace(
+        '0::numeric AS relevance_score,',
+        `(CASE
+          WHEN LOWER(c.name) = LOWER($${idx + 1}) THEN 400
+          WHEN LOWER(c.name) LIKE LOWER($${idx + 2}) THEN 250
+          WHEN REGEXP_REPLACE(UPPER(c.name), '[^A-Z]', '', 'g') = UPPER($${idx + 3}) THEN 220
+          WHEN c.name ILIKE $${idx} THEN 150
+          WHEN EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=c.id AND cp.program_name ILIKE $${idx}) THEN 110
+          WHEN c.city ILIKE $${idx} OR c.state ILIKE $${idx} OR c.country ILIKE $${idx} THEN 90
+          ELSE 0
+        END
+        + COALESCE((1000 - LEAST(COALESCE(c.ranking_us_news, c.ranking_qs, c.ranking_the, 1000), 1000)) * 0.03, 0)
+        + COALESCE(c.total_enrollment, 0) * 0.0001
+        + COALESCE((1 - COALESCE(c.acceptance_rate, 0.5)) * 10, 0)
+        )::numeric AS relevance_score,`
+      );
+      query += ` AND (
+        c.name ILIKE $${idx}
+        OR c.city ILIKE $${idx}
+        OR c.state ILIKE $${idx}
+        OR c.country ILIKE $${idx}
+        OR REGEXP_REPLACE(UPPER(c.name), '[^A-Z]', '', 'g') = UPPER($${idx + 3})
+        OR to_tsvector('simple', COALESCE(c.name,'')) @@ plainto_tsquery('simple', $${idx + 1})
+        OR EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=c.id AND cp.program_name ILIKE $${idx})
+      )`;
+      params.push(p, rawSearch, `${lowerSearch}%`, rawSearch.replace(/[^A-Za-z]/g, ''));
+      idx += 4;
     }
 
     if (filters.minAcceptanceRate !== undefined) {
@@ -205,7 +233,11 @@ class College {
 
     const sortField = sortable[filters.sortBy] || 'c.name';
     const sortDir = filters.sortDir === 'desc' ? 'DESC' : 'ASC';
-    query += ` ORDER BY ${sortField} ${sortDir}`;
+    if (filters.search && !filters.sortBy) {
+      query += ' ORDER BY relevance_score DESC, c.name ASC';
+    } else {
+      query += ` ORDER BY ${sortField} ${sortDir}, c.name ASC`;
+    }
 
     const limit = Math.min(filters.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
     const offset = Number(filters.offset || 0);
@@ -218,7 +250,7 @@ class College {
 
   static async getCount(filters = {}) {
     const pool = dbManager.getDatabase();
-    let query = 'SELECT COUNT(*) AS count FROM public.colleges c WHERE c.name IS NOT NULL';
+    let query = 'SELECT COUNT(*) AS count FROM public.colleges c WHERE c.name IS NOT NULL AND LENGTH(TRIM(c.name)) > 1';
     const params = [];
     let idx = 1;
 
@@ -231,10 +263,19 @@ class College {
     }
 
     if (filters.search) {
-      const p = `%${filters.search}%`;
-      query += ` AND (c.name ILIKE $${idx} OR c.city ILIKE $${idx} OR c.state ILIKE $${idx} OR c.country ILIKE $${idx} OR EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=c.id AND cp.program_name ILIKE $${idx}))`;
-      params.push(p);
-      idx++;
+      const rawSearch = String(filters.search).trim();
+      const p = `%${rawSearch}%`;
+      query += ` AND (
+        c.name ILIKE $${idx}
+        OR c.city ILIKE $${idx}
+        OR c.state ILIKE $${idx}
+        OR c.country ILIKE $${idx}
+        OR REGEXP_REPLACE(UPPER(c.name), '[^A-Z]', '', 'g') = UPPER($${idx + 2})
+        OR to_tsvector('simple', COALESCE(c.name,'')) @@ plainto_tsquery('simple', $${idx + 1})
+        OR EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=c.id AND cp.program_name ILIKE $${idx})
+      )`;
+      params.push(p, rawSearch, rawSearch.replace(/[^A-Za-z]/g, ''));
+      idx += 3;
     }
 
     const { rows } = await pool.query(query, params);
