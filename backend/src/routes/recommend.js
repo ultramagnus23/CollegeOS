@@ -32,6 +32,9 @@ const {
 const { computeAdmitChance } = require('../services/chancingService');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+function createRequestId() {
+  return `rec_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
 
 /**
  * Fetch the user's onboarding / profile data from the DB.
@@ -98,6 +101,8 @@ async function buildAdjustedUserVector(userProfile, userId, pool) {
  * each augmented with an admit chance calculation.
  */
 router.post('/', authenticate, async (req, res, next) => {
+  const requestId = createRequestId();
+  const requestStarted = Date.now();
   try {
     const userId  = req.user.userId;
     const filters = req.body?.filters || {};
@@ -118,6 +123,9 @@ router.post('/', authenticate, async (req, res, next) => {
 
     // ── 2. Build user vector (with signal adjustments) ────────────────────
     const userVector = await buildAdjustedUserVector(userProfile, userId, pool);
+    if (!Array.isArray(userVector) || userVector.length === 0) {
+      logger.warn('recommend.empty_user_vector', { requestId, userId });
+    }
 
     // ── 3. Fetch college candidates ───────────────────────────────────────
     // Two modes:
@@ -178,7 +186,11 @@ router.post('/', authenticate, async (req, res, next) => {
        LIMIT  2000`,
       params
     );
-    logger.info('recommend.query_timing', { ms: Date.now() - queryStarted, rows: colleges.length });
+    const queryDuration = Date.now() - queryStarted;
+    logger.info('recommend.query_timing', { requestId, ms: queryDuration, rows: colleges.length });
+    if (queryDuration > 800) {
+      logger.warn('recommend.slow_query', { requestId, ms: queryDuration, rows: colleges.length });
+    }
 
     if (!colleges.length) {
       return res.json({ success: true, colleges: [], vectors_used: false });
@@ -187,6 +199,7 @@ router.post('/', authenticate, async (req, res, next) => {
     // ── 4. Score each college ─────────────────────────────────────────────
     const scored = [];
     let vectorsUsed = 0;
+    let missingRankingCount = 0;
 
     for (const college of colleges) {
       let colVec;
@@ -208,6 +221,9 @@ router.post('/', authenticate, async (req, res, next) => {
       }
 
       const overallFit = cosineSimilarity(userVector, colVec);
+      if (college.ranking_qs == null && college.ranking_us_news == null && college.ranking_the == null) {
+        missingRankingCount++;
+      }
 
       scored.push({
         college,
@@ -240,8 +256,13 @@ router.post('/', authenticate, async (req, res, next) => {
       count:         results.length,
       vectors_used:  vectorsUsed > 0,
       colleges:      results,
+      meta: {
+        requestId,
+        durationMs: Date.now() - requestStarted,
+        missingRankingCount,
+      },
     });  } catch (err) {
-    logger.error('POST /api/recommend error: %s', err.message);
+    logger.error('POST /api/recommend error', { requestId, message: err.message, stack: err.stack });
     next(err);
   }
 });

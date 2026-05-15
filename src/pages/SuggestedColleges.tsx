@@ -132,17 +132,30 @@ export default function SuggestedColleges() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
+  const loadSeqRef = React.useRef(0);
+  const mountedRef = React.useRef(true);
 
   useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const seq = ++loadSeqRef.current;
     (async () => {
       try {
         const res = await api.getSuggestedColleges();
         const data = (res as any)?.data ?? res ?? [];
+        if (!mountedRef.current || seq !== loadSeqRef.current) return;
         setColleges(Array.isArray(data) ? data : []);
       } catch (err: any) {
+        if (!mountedRef.current || seq !== loadSeqRef.current) return;
         setError(err?.message || 'Failed to load suggestions');
       } finally {
-        setLoading(false);
+        if (mountedRef.current && seq === loadSeqRef.current) {
+          setLoading(false);
+        }
       }
     })();
   }, []);
@@ -152,7 +165,13 @@ export default function SuggestedColleges() {
       await api.createApplication({ college_id: collegeId, status: 'Considering', application_type: 'Regular Decision' });
       setAddedIds(prev => new Set([...prev, collegeId]));
       toast.success('Added to your college list');
-    } catch {
+    } catch (err: any) {
+      const message = err?.message || '';
+      if (message.toLowerCase().includes('already')) {
+        setAddedIds(prev => new Set([...prev, collegeId]));
+        toast.error('Already in your college list');
+        return;
+      }
       toast.error('Failed to add college — please try again');
     }
   }, []);

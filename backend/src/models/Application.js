@@ -65,6 +65,12 @@ class Application {
       ));
     } catch (dbErr) {
       logger.error('DB error in Application.create:', dbErr);
+      if (dbErr?.code === '23505') {
+        const duplicateErr = new Error('College already added to your list');
+        duplicateErr.statusCode = 400;
+        duplicateErr.code = 'DUPLICATE_APPLICATION';
+        throw duplicateErr;
+      }
       const err = new Error(dbErr.message || 'Database error while creating application');
       err.detail = dbErr.detail;
       err.code = dbErr.code;

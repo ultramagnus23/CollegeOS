@@ -16,13 +16,13 @@ import { z } from 'zod';
 
 /** Coerce a value to a finite number, or return null. */
 const numericNullable = z.preprocess(
-  (v) => (v === '' || v === undefined ? null : Number(v)),
+  (v) => (v === '' || v === undefined || v === null ? null : Number(v)),
   z.number().finite().nullable()
 );
 
 /** Coerce a value to a non-negative finite number, or return null. */
 const numericNonNegNullable = z.preprocess(
-  (v) => (v === '' || v === undefined ? null : Number(v)),
+  (v) => (v === '' || v === undefined || v === null ? null : Number(v)),
   z.number().finite().nonnegative().nullable()
 );
 
@@ -31,7 +31,13 @@ const stringArrayNullable = z.preprocess((v) => {
   if (v === null || v === undefined) return [];
   if (Array.isArray(v)) return v.map(String);
   if (typeof v === 'string') {
-    try { return JSON.parse(v) as string[]; } catch { return v.split(',').map((s) => s.trim()).filter(Boolean); }
+    try {
+      const parsed = JSON.parse(v) as unknown;
+      if (Array.isArray(parsed)) return parsed.map(String);
+      return [];
+    } catch {
+      return v.split(',').map((s) => s.trim()).filter(Boolean);
+    }
   }
   return [];
 }, z.array(z.string()).default([]));
@@ -203,6 +209,16 @@ export const CollegeRecommendationSchema = z.object({
       financialFit: z.number().min(0).max(100).nullable().default(null),
       locationFit: z.number().min(0).max(100).nullable().default(null),
       valuesMatch: z.number().min(0).max(100).nullable().default(null),
+    })
+    .nullable()
+    .default(null),
+  confidence: z.number().min(0).max(100).nullable().default(null),
+  explainability: z
+    .object({
+      missingSignals: z.number().int().nonnegative().nullable().default(null),
+      selectivityFit: z.number().min(0).max(100).nullable().default(null),
+      rankingSignal: z.number().min(0).max(100).nullable().default(null),
+      diversityKey: z.string().nullable().default(null),
     })
     .nullable()
     .default(null),

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import { api } from '../services/api';
 import { profileService, UserProfile } from '../services/profileService';
 
@@ -36,20 +36,27 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
+  const authSeqRef = useRef(0);
 
   useEffect(() => {
     // Migrate old data on first load
     profileService.migrateOldData();
-    checkAuth();
-  }, []);
+    void checkAuth();
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [checkAuth]);
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
+    const seq = ++authSeqRef.current;
     try {
       const token = localStorage.getItem('accessToken');
       if (token) {
         // First, try to get user from backend
         const response = await api.getCurrentUser();
         const backendUser = response.data;
+        if (!mountedRef.current || seq !== authSeqRef.current) return;
         
         // Sync backend data to ProfileService
         profileService.syncFromBackend(backendUser);
@@ -66,13 +73,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
     } catch (error) {
+      if (!mountedRef.current || seq !== authSeqRef.current) return;
       console.error('Auth check failed:', error);
       localStorage.removeItem('accessToken');
       profileService.clearProfile();
     } finally {
-      setLoading(false);
+      if (mountedRef.current && seq === authSeqRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
   const login = async (email: string, password: string) => {
     const response = await api.login(email, password);
@@ -160,12 +170,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const refreshUser = async () => {
+    const seq = ++authSeqRef.current;
     try {
       const response = await api.getCurrentUser();
       const backendUser = response.data;
+      if (!mountedRef.current || seq !== authSeqRef.current) return;
       setUser(backendUser);
       profileService.syncFromBackend(backendUser);
     } catch (error) {
+      if (!mountedRef.current || seq !== authSeqRef.current) return;
       console.error('Failed to refresh user:', error);
       throw error;
     }
