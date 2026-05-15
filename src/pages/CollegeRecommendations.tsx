@@ -79,6 +79,7 @@ const ML_TIER_LABELS: Record<string, string> = {
   target: 'Target',
   reach: 'Reach',
   long_shot: 'Long Shot',
+  unknown: 'Unknown',
 };
 
 const ML_TIER_COLORS: Record<string, string> = {
@@ -86,6 +87,7 @@ const ML_TIER_COLORS: Record<string, string> = {
   target: '#f59e0b',
   reach: '#ef4444',
   long_shot: '#ef4444',
+  unknown: '#64748b',
 };
 
 /* ─── Score Bar ───────────────────────────────────────────────────────────── */
@@ -319,8 +321,8 @@ const CollegeRecommendations: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {visibleMLRecs.map((rec, idx) => {
                 const tier = String(rec.tier || '').toLowerCase();
-                const tierLabel = ML_TIER_LABELS[tier] ?? 'Target';
-                const tierColor = ML_TIER_COLORS[tier] ?? '#ef4444';
+                const tierLabel = ML_TIER_LABELS[tier] ?? ML_TIER_LABELS.unknown;
+                const tierColor = ML_TIER_COLORS[tier] ?? ML_TIER_COLORS.unknown;
                 const isOpen = mlExpanded[rec.id] ?? false;
                 return (
                   <div
