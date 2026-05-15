@@ -269,7 +269,7 @@ export function mapCollegeRow(
     city: c.city ?? null,
     location,
     // Institution metadata
-    type: c.type ?? null,
+    type: pick(raw.type as string | null, raw.institution_type as string | null),
     sizeCategory: c.size_category ?? null,
     totalEnrollment: toNum(raw.total_enrollment),
     website,

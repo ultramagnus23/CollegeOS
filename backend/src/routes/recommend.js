@@ -163,7 +163,10 @@ router.post('/', authenticate, async (req, res, next) => {
          c.country,
          c.state,
          c.city,
-         COALESCE(c.type, c.institution_type) AS type,
+         COALESCE(
+           to_jsonb(c) ->> 'type',
+           to_jsonb(c) ->> 'institution_type'
+         ) AS type,
          c.size_category,
          c.acceptance_rate,
          c.sat_25,

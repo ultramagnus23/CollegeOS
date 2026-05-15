@@ -111,7 +111,16 @@ router.post('/intelligence/refresh/:collegeId', async (req, res, next) => {
 
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
-      `SELECT id, name, official_website AS deadlines_page_url FROM colleges WHERE id = $1`,
+      `SELECT
+         id,
+         name,
+         COALESCE(
+           to_jsonb(colleges) ->> 'official_website',
+           to_jsonb(colleges) ->> 'website_url',
+           to_jsonb(colleges) ->> 'website'
+         ) AS deadlines_page_url
+       FROM colleges
+       WHERE id = $1`,
       [collegeId]
     );
     if (rows.length === 0) {
