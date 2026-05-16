@@ -257,7 +257,7 @@ async function startServer() {
                           ad.graduation_rate_4yr, ad.sat_avg, ad.act_avg
                    FROM colleges cc
                    LEFT JOIN college_admissions ca   ON ca.college_id  = cc.id
-                   LEFT JOIN college_financial_data cfd ON cfd.college_id = cc.id
+                   LEFT JOIN colleges cfd ON cfd.college_id = cc.id
                    LEFT JOIN academic_details ad       ON ad.college_id   = cc.id
                    WHERE cc.id = $1`,
                   [id]

@@ -245,7 +245,7 @@ router.get('/comprehensive', async (req, res, next) => {
     const countSql = `
       SELECT COUNT(*) FROM public.clean_colleges cc
       LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
-      LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
+      LEFT JOIN public.colleges cfd ON cc.id = cfd.college_id
       ${where}
     `;
     const { rows: countRows } = await pool.query(countSql, params);
@@ -284,7 +284,7 @@ router.get('/comprehensive', async (req, res, next) => {
         ) AS best_rank
       FROM public.clean_colleges cc
       LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
-      LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
+      LEFT JOIN public.colleges cfd ON cc.id = cfd.college_id
       LEFT JOIN public.academic_details ad ON cc.id = ad.college_id
       LEFT JOIN public.college_majors cm ON cc.id = cm.college_id
       LEFT JOIN public.college_programs cp ON cc.id = cp.college_id
@@ -360,7 +360,7 @@ router.get('/comprehensive/:id', async (req, res, next) => {
          ) as deadlines
        FROM public.clean_colleges cc
        LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
-       LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
+       LEFT JOIN public.colleges cfd ON cc.id = cfd.college_id
        LEFT JOIN public.academic_details ad ON cc.id = ad.college_id
        LEFT JOIN public.college_majors cm ON cc.id = cm.college_id
        LEFT JOIN public.college_programs cp ON cc.id = cp.college_id
@@ -435,7 +435,7 @@ router.post('/comprehensive/compare', async (req, res, next) => {
         ad.graduation_rate_4yr
       FROM public.clean_colleges cc
       LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
-      LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
+      LEFT JOIN public.colleges cfd ON cc.id = cfd.college_id
       LEFT JOIN public.academic_details ad ON cc.id = ad.college_id
       WHERE cc.id = ANY($1)
       ORDER BY cc.id`,
