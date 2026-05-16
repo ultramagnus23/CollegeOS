@@ -14,7 +14,7 @@ export function rankSearchResults(rows: CollegeSearchResult[], input: SearchRank
       if (!q) score += 10;
 
       const name = row.name.toLowerCase();
-      const location = (row.location ?? '').toLowerCase();
+      const location = ([((row as any).city ?? ''), ((row as any).state ?? ''), (row.country ?? '')].filter(Boolean).join(' ') || '').toLowerCase();
       const majors = (row.majors ?? []).join(' ').toLowerCase();
 
       if (q && name === q) score += 80;

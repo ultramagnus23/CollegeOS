@@ -6,7 +6,7 @@
  *
  * Use these types throughout the frontend instead of ad-hoc inline shapes or
  * references to legacy tables (college_admissions, academic_details,
- * student_demographics, colleges_comprehensive).
+ * student_demographics, colleges).
  */
 import { z } from 'zod';
 

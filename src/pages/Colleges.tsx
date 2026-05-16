@@ -14,7 +14,6 @@ import {
   isSupabaseConfigured,
   normalizeToCard,
 } from '../lib/collegeService';
-import { normalizeLegacyCollege, normalizeLegacyRecommendation } from '@/utils/legacyCompatibility';
 
 /* ─── Design tokens ──────────────────────────────────────────────── */
 const h2r = (hex: string, a: number) => {
@@ -42,6 +41,35 @@ const GLOBAL_COLLEGES = `
   ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;}
 `;
 const COLLEGE_SYNC_DEBUG = import.meta.env.DEV;
+
+const normalizeLegacyCollege = (row: any) => ({
+  ...row,
+  id: Number(row?.id) || 0,
+  name: String(row?.name || row?.college_name || 'Unknown College'),
+  country: row?.country ?? null,
+  city: row?.city ?? null,
+  state: row?.state ?? null,
+  acceptance_rate: row?.acceptance_rate ?? null,
+  ranking_us_news: row?.ranking_us_news ?? null,
+  qs_rank: row?.qs_rank ?? null,
+  the_rank: row?.the_rank ?? null,
+  tuition_international: row?.tuition_international ?? null,
+  tuition_domestic: row?.tuition_domestic ?? null,
+  total_enrollment: row?.total_enrollment ?? null,
+});
+
+const normalizeLegacyRecommendation = (row: any) => ({
+  ...row,
+  id: Number(row?.id || row?.college_id || row?.college?.id) || 0,
+  name: String(row?.name || row?.college_name || row?.college?.name || 'Unknown College'),
+  country: row?.country ?? row?.college?.country ?? null,
+  state: row?.state ?? row?.college?.state ?? row?.college?.state_region ?? null,
+  city: row?.city ?? row?.college?.city ?? null,
+  overall_fit: Number(row?.overall_fit ?? row?.overall_score ?? 0) || 0,
+  admit_chance: Number(row?.admit_chance ?? 0) || 0,
+  tier: String(row?.tier || row?.classification || 'target'),
+  reasoning: Array.isArray(row?.reasoning) ? row.reasoning : [],
+});
 
 /* ==================== TYPES ==================== */
 
@@ -196,7 +224,7 @@ const Colleges: React.FC = () => {
               id: college.id,
               name: college.name,
               acceptance_rate: college.acceptance_rate ?? null,
-              ranking_qs: college.ranking_qs ?? null,
+              qs_rank: college.qs_rank ?? null,
               data_source: college.data_source ?? null,
             }))
           );
@@ -300,7 +328,7 @@ const Colleges: React.FC = () => {
           return {
             id: c.id,
             name: c.name,
-            location: c.location || '',
+            location: [c.city, c.state, c.country].filter(Boolean).join(', '),
             country: c.country,
             type: c.type || c.trust_tier || 'Unknown',
             acceptance_rate: c.acceptanceRate ?? c.acceptance_rate ?? null,
@@ -900,7 +928,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
             <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 4, lineHeight: 1.3 }}>{college.name}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: S.muted, fontSize: 12, fontFamily: S.font }}>
               <MapPin style={{ width: 12, height: 12, flexShrink: 0 }} />
-              {college?.location || college?.country}
+              {[college?.city, college?.state, college?.country].filter(Boolean).join(', ') || college?.country}
             </div>
           </div>
           {college?.ranking && (

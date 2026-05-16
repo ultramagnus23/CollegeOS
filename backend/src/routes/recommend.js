@@ -154,7 +154,8 @@ router.post('/', authenticate, async (req, res, next) => {
          c.id,
          c.name,
          c.country,
-         c.location,
+         c.city,
+         c.state,
          COALESCE(
            to_jsonb(c) ->> 'type',
            to_jsonb(c) ->> 'institution_type'

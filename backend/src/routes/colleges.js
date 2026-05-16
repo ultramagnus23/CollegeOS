@@ -382,7 +382,7 @@ router.get('/comprehensive/:id', async (req, res, next) => {
 
 /**
  * GET /api/colleges/comprehensive/:id/programs
- * Programs list for a college from colleges_comprehensive, grouped by degree_type.
+ * Programs list for a college from colleges, grouped by degree_type.
  */
 router.get('/comprehensive/:id/programs', async (req, res, next) => {
   try {

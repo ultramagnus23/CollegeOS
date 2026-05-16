@@ -54,9 +54,9 @@ export interface CollegeRow {
   acceptance_rate?: number | null;
   tuition_domestic?: number | null;
   tuition_international?: number | null;
-  ranking_qs?: number | null;
+  qs_rank?: number | null;
   ranking_us_news?: number | null;
-  ranking_the?: number | null;
+  the_rank?: number | null;
   application_deadline?: string | null;
   rd_deadline?: string | null;
   ed_deadline?: string | null;
