@@ -161,7 +161,7 @@ router.get('/colleges', async (req, res) => {
       rate: 'c.acceptance_rate',
       cost: 'c.tuition_international',
       students: 'c.total_enrollment',
-      ranking: 'COALESCE(c.ranking_us_news, c.ranking_qs, c.ranking_the, 999999)'
+      ranking: 'COALESCE(c.ranking_us_news, c.qs_rank, c.the_rank, 999999)'
     };
 
     const sortField = validSorts[sort] || 'name';
@@ -224,7 +224,7 @@ router.get('/colleges', async (req, res) => {
         ${relevanceOrder}
         COALESCE(c.popularity_score, 0) DESC,
         ${sortField} ${sortOrder},
-        COALESCE(c.ranking_us_news, c.ranking_qs, c.ranking_the, 999999) ASC,
+        COALESCE(c.ranking_us_news, c.qs_rank, c.the_rank, 999999) ASC,
         CASE
           WHEN c.acceptance_rate BETWEEN 0.01 AND 0.99 THEN 0
           ELSE 1

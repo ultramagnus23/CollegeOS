@@ -291,7 +291,7 @@ function buildUserVector(onboardingData) {
 /**
  * Build a 28-dim college characteristic vector.
  *
- * @param {object} college  Row from colleges_comprehensive with joined data,
+ * @param {object} college  Row from colleges with joined data,
  *   expected fields:
  *     admission_rate (0–1), sat_avg, act_avg,
  *     pct_top10_hs_class, graduation_rate_4yr, us_news_rank,

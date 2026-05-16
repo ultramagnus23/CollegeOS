@@ -244,7 +244,7 @@ async function startServer() {
           const { buildCollegeVector } = require('./services/vectorService');
           const pool = dbManager.getDatabase();
           const { rows: missing } = await pool.query(
-            `SELECT id FROM colleges_comprehensive WHERE feature_vector IS NULL LIMIT 5000`
+            `SELECT id FROM colleges WHERE feature_vector IS NULL LIMIT 5000`
           );
           if (missing.length > 0) {
             logger.info(`Precomputing feature vectors for ${missing.length} colleges…`);
@@ -255,7 +255,7 @@ async function startServer() {
                   `SELECT cc.*, ca.admission_rate, ca.acceptance_rate,
                           cfd.avg_net_price, cfd.avg_financial_aid,
                           ad.graduation_rate_4yr, ad.sat_avg, ad.act_avg
-                   FROM colleges_comprehensive cc
+                   FROM colleges cc
                    LEFT JOIN college_admissions ca   ON ca.college_id  = cc.id
                    LEFT JOIN college_financial_data cfd ON cfd.college_id = cc.id
                    LEFT JOIN academic_details ad       ON ad.college_id   = cc.id
@@ -265,7 +265,7 @@ async function startServer() {
                 if (rows[0]) {
                   const vec = buildCollegeVector(rows[0]);
                   await pool.query(
-                    `UPDATE colleges_comprehensive
+                    `UPDATE colleges
                      SET feature_vector = $1, vector_updated_at = NOW()
                      WHERE id = $2`,
                     [JSON.stringify(vec), id]

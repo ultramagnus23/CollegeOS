@@ -175,8 +175,10 @@ function ChancingCard({ result, index }: { result: ChancingResult; index: number
           <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 3 }}>
             {result.college.name}
           </h3>
-          {result.college.location && (
-            <p style={{ fontSize: 12, color: S.muted, marginBottom: 2 }}>{result.college.location}</p>
+          {([result.college.city, result.college.state, result.college.country].filter(Boolean).join(', ')) && (
+            <p style={{ fontSize: 12, color: S.muted, marginBottom: 2 }}>
+              {[result.college.city, result.college.state, result.college.country].filter(Boolean).join(', ')}
+            </p>
           )}
           {result.college.acceptanceRate != null && (
             <p style={{ fontSize: 12, color: S.dim }}>

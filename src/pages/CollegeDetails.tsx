@@ -762,7 +762,7 @@ const CollegeDetail: React.FC = () => {
               <div className="flex items-center gap-4 text-blue-100">
                 <div className="flex items-center gap-1">
                   <MapPin className="w-4 h-4" />
-                  {college.location || 'Location not specified'}, {college.country}
+                  {[college.city, college.state, college.country].filter(Boolean).join(', ') || 'Location not specified'}
                 </div>
                 <span className="px-2 py-0.5 bg-white/20 rounded text-sm">
                   {college.type || 'University'}
@@ -1169,7 +1169,7 @@ const CollegeDetail: React.FC = () => {
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-muted-foreground/50 mt-0.5" />
                   <div>
-                    <p className="font-medium">{college.location || college.country}</p>
+                    <p className="font-medium">{[college.city, college.state, college.country].filter(Boolean).join(', ') || college.country}</p>
                     <p className="text-sm text-muted-foreground">{college.country}</p>
                   </div>
                 </div>
@@ -1748,7 +1748,7 @@ const CollegeDetail: React.FC = () => {
               <Card title="Campus Overview">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <StatItem label="Total Students" value={formatEnrollment(college.enrollment)} icon={<Users />} />
-                  <StatItem label="Location" value={college.location || college.country} icon={<MapPin />} />
+                  <StatItem label="Location" value={[college.city, college.state, college.country].filter(Boolean).join(', ') || college.country} icon={<MapPin />} />
                   <StatItem label="Type" value={college.type || 'University'} icon={<Building />} />
                 </div>
               </Card>
@@ -1855,7 +1855,7 @@ const CollegeDetail: React.FC = () => {
                     )}
                     
                     {/* Location */}
-                    {(college.comprehensiveData?.city || college.location) && (
+                    {(college.comprehensiveData?.city || college.city || college.state || college.country) && (
                       <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-primary" />
@@ -1864,7 +1864,7 @@ const CollegeDetail: React.FC = () => {
                         <span className="font-semibold text-foreground">
                           {college.comprehensiveData?.city && college.comprehensiveData?.stateRegion
                             ? `${college.comprehensiveData.city}, ${college.comprehensiveData.stateRegion}`
-                            : college.location}
+                            : [college.city, college.state, college.country].filter(Boolean).join(', ')}
                         </span>
                       </div>
                     )}

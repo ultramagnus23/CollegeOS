@@ -195,7 +195,7 @@ async function getUpcomingForUser(userId, daysAhead = 90) {
        cd.data_year
      FROM applications a
      JOIN college_deadlines cd ON cd.college_id = a.college_id
-     JOIN colleges_comprehensive c ON c.id = cd.college_id
+     JOIN colleges c ON c.id = cd.college_id
      WHERE a.user_id = $1
        AND (cd.deadline_date IS NULL OR cd.deadline_date BETWEEN NOW() AND (NOW() + ($2 || ' days')::INTERVAL))
      ORDER BY cd.deadline_date ASC NULLS LAST`,
@@ -235,7 +235,7 @@ async function getByCountry(country) {
        cd.source_count,
        cd.source_type,
        cd.data_year
-     FROM colleges_comprehensive c
+     FROM colleges c
      JOIN college_deadlines cd ON cd.college_id = c.id
      WHERE LOWER(c.country) = LOWER($1)
        AND (cd.deadline_date IS NULL OR cd.deadline_date >= NOW() - ($2 || ' days')::INTERVAL)
@@ -400,7 +400,7 @@ async function getForCollege(collegeId) {
 
   const [collegeRes, deadlinesRes, historyRes, missingData] = await Promise.all([
     pool.query(
-      `SELECT id, name, country, state, official_website FROM colleges_comprehensive WHERE id = $1`,
+      `SELECT id, name, country, state, official_website FROM colleges WHERE id = $1`,
       [collegeId]
     ),
     pool.query(
