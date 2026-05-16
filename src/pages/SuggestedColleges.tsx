@@ -89,9 +89,9 @@ function CollegeCard({
             }}>
               {college.name}
             </h3>
-            {college.location && (
+            {([college.city, college.state, college.country].filter(Boolean).join(', ')) && (
               <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', margin: '2px 0 0', fontFamily: "'Inter', system-ui, sans-serif" }}>
-                📍 {college.location}
+                📍 {[college.city, college.state, college.country].filter(Boolean).join(', ')}
               </p>
             )}
           </div>

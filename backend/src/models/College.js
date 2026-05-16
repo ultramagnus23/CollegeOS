@@ -38,7 +38,7 @@ class College {
       `INSERT INTO colleges (
          name, country, state, city, official_website,
          acceptance_rate, tuition_domestic, tuition_international,
-         ranking_qs, ranking_us_news, type, size_category,
+         qs_rank, ranking_us_news, type, size_category,
          application_deadline, rd_deadline, ed_deadline, ea_deadline
        ) VALUES (
          $1,$2,$3,$4,$5,
@@ -55,7 +55,7 @@ class College {
         acceptanceRate,
         data.tuitionDomestic || data.tuition_domestic || null,
         data.tuitionInternational || data.tuition_international || null,
-        data.ranking_qs || null,
+        data.qs_rank || null,
         data.ranking_us_news || null,
         data.type || null,
         data.size_category || null,
@@ -101,9 +101,9 @@ class College {
       tuition_cost: pick(c.tuition_domestic, c.tuition_international),
       totalEnrollment: c.total_enrollment ?? null,
       enrollment: c.total_enrollment ?? null,
-      ranking_qs: c.ranking_qs ?? null,
+      qs_rank: c.qs_rank ?? null,
       ranking_us_news: c.ranking_us_news ?? null,
-      ranking_the: c.ranking_the ?? null,
+      the_rank: c.the_rank ?? null,
       majorCategories,
       programs: majorCategories,
       programCount: majorCategories.length,
@@ -146,7 +146,7 @@ class College {
          c.acceptance_rate, c.sat_25, c.sat_75, c.act_25, c.act_75, c.gpa_25, c.gpa_75,
          c.tuition_domestic, c.tuition_international,
          c.total_enrollment,
-         c.ranking_qs, c.ranking_us_news, c.ranking_the,
+         c.qs_rank, c.ranking_us_news, c.the_rank,
          c.top_majors,
          c.data_source, c.data_source_url, c.data_quality_score,
          c.last_data_refresh, c.last_updated_at, c.updated_at, c.created_at,
@@ -189,7 +189,7 @@ class College {
         c.acceptance_rate, c.sat_25, c.sat_75, c.act_25, c.act_75, c.gpa_25, c.gpa_75,
         c.tuition_domestic, c.tuition_international,
         c.total_enrollment,
-        c.ranking_qs, c.ranking_us_news, c.ranking_the,
+        c.qs_rank, c.ranking_us_news, c.the_rank,
         c.top_majors,
         c.data_source, c.data_source_url, c.data_quality_score,
         c.last_data_refresh, c.last_updated_at, c.updated_at, c.created_at,
@@ -228,7 +228,7 @@ class College {
           WHEN c.city ILIKE $${idx} OR c.state ILIKE $${idx} OR c.country ILIKE $${idx} THEN 90
           ELSE 0
         END
-        + COALESCE((1000 - LEAST(COALESCE(c.ranking_us_news, c.ranking_qs, c.ranking_the, 1000), 1000)) * 0.03, 0)
+        + COALESCE((1000 - LEAST(COALESCE(c.ranking_us_news, c.qs_rank, c.the_rank, 1000), 1000)) * 0.03, 0)
         + COALESCE(c.total_enrollment, 0) * 0.0001
         + COALESCE((1 - COALESCE(c.acceptance_rate, 0.5)) * 10, 0)
         )::numeric AS relevance_score,`
@@ -260,7 +260,7 @@ class College {
       name: 'c.name',
       acceptance_rate: 'c.acceptance_rate',
       total_enrollment: 'c.total_enrollment',
-      ranking: 'COALESCE(c.ranking_us_news, c.ranking_qs, c.ranking_the, 999999)',
+      ranking: 'COALESCE(c.ranking_us_news, c.qs_rank, c.the_rank, 999999)',
     };
 
     const sortField = sortable[filters.sortBy] || 'c.name';
@@ -365,9 +365,9 @@ class College {
       acceptanceRate: 'acceptance_rate',
       tuitionDomestic: 'tuition_domestic',
       tuitionInternational: 'tuition_international',
-      rankingQs: 'ranking_qs',
+      rankingQs: 'qs_rank',
       rankingUsNews: 'ranking_us_news',
-      rankingThe: 'ranking_the',
+      rankingThe: 'the_rank',
       type: 'type',
       sizeCategory: 'size_category',
       description: 'description',

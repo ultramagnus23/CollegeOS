@@ -34,7 +34,7 @@ function unavailable(reason) {
 // ── Component fetchers ────────────────────────────────────────────────────────
 
 /**
- * Tuition: read from the most recent college_financial_data row for the college.
+ * Tuition: read from the most recent colleges row for the college.
  * Returns the international figure when available, then domestic.
  */
 async function fetchTuition(pool, collegeId, isInternational = true) {
@@ -42,7 +42,7 @@ async function fetchTuition(pool, collegeId, isInternational = true) {
     const { rows } = await pool.query(
       `SELECT tuition_international, tuition_in_state, tuition_out_state,
               cost_of_attendance, source, confidence_score
-       FROM   college_financial_data
+       FROM   colleges
        WHERE  college_id = $1
        ORDER  BY year DESC, confidence_score DESC NULLS LAST
        LIMIT  1`,
@@ -60,7 +60,7 @@ async function fetchTuition(pool, collegeId, isInternational = true) {
     return makeComponent(
       Number(value),
       row.source || null,
-      'college_financial_data',
+      'colleges',
       isInternational ? 'International tuition' : 'In-state tuition'
     );
   } catch (err) {
@@ -71,14 +71,14 @@ async function fetchTuition(pool, collegeId, isInternational = true) {
 
 /**
  * Living / housing costs: read from campus_life (cost_of_living_index) or
- * college_financial_data (cost_of_attendance minus tuition).
+ * colleges (cost_of_attendance minus tuition).
  */
 async function fetchLivingCosts(pool, collegeId) {
   try {
     // Attempt 1: use cost_of_attendance minus tuition from financial data
     const { rows: finRows } = await pool.query(
       `SELECT cost_of_attendance, tuition_international, tuition_out_state, source
-       FROM   college_financial_data
+       FROM   colleges
        WHERE  college_id = $1
        ORDER  BY year DESC
        LIMIT  1`,
@@ -92,7 +92,7 @@ async function fetchLivingCosts(pool, collegeId) {
         return makeComponent(
           coa - tuition,
           row.source || null,
-          'college_financial_data',
+          'colleges',
           'Living cost derived from published cost-of-attendance minus tuition'
         );
       }
@@ -129,7 +129,7 @@ async function fetchLivingCosts(pool, collegeId) {
 }
 
 /**
- * Health insurance: pulled from application_requirements or college_financial_data notes.
+ * Health insurance: pulled from application_requirements or colleges notes.
  * Returns unavailable if not recorded — never fabricates a figure.
  */
 async function fetchInsurance(pool, collegeId) {

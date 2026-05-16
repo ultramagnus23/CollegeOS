@@ -21,7 +21,7 @@ const { cosineSimilarity } = require('./vectorService');
  *
  * @param {number[]} userVector     28-dim user vector (from buildUserVector)
  * @param {number[]} collegeVector  28-dim college vector (from buildCollegeVector)
- * @param {object}   college        Raw college row (from colleges_comprehensive)
+ * @param {object}   college        Raw college row (from colleges)
  * @param {object}   userRaw        Raw user / profile data (for human-readable reasoning)
  *
  * @returns {{

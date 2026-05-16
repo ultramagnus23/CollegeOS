@@ -3,7 +3,6 @@ import { api } from '../services/api';
 import { Loader2, X, Search, ExternalLink, Trash2, ChevronDown, ChevronUp, Plus, CheckCircle2, Circle } from 'lucide-react';
 import { toast } from 'sonner';
 import ConfirmModal from '@/components/common/ConfirmModal';
-import { normalizeLegacyApplication, normalizeLegacyCollege } from '@/utils/legacyCompatibility';
 
 /* ─── Design tokens ──────────────────────────────────────────────── */
 const h2r = (hex: string, a: number) => {
@@ -46,6 +45,29 @@ interface Application {
 interface CollegeResult { id: number; name: string; country?: string; location?: string; }
 interface Deadline { id: number; deadline_type: string; deadline_date?: string; completed: boolean; notes?: string; }
 interface Task { id: number; task_type: string; title: string; completed: boolean; due_date?: string; }
+
+const normalizeLegacyCollege = (row: any) => ({
+  ...row,
+  id: Number(row?.id) || 0,
+  name: String(row?.name || row?.college_name || 'Unknown College'),
+  country: row?.country ?? null,
+  city: row?.city ?? null,
+  state: row?.state ?? null,
+});
+
+const normalizeLegacyApplication = (row: any) => ({
+  ...row,
+  id: Number(row?.id) || 0,
+  college_id: Number(row?.college_id || row?.canonical_institution_id || row?.id) || 0,
+  college_name: String(row?.college_name || row?.name || 'Unknown College'),
+  country: row?.country ?? null,
+  official_website: row?.official_website ?? row?.website_url ?? row?.website ?? null,
+  status: String(row?.status || 'researching'),
+  application_type: row?.application_type ?? null,
+  priority: row?.priority ?? 'medium',
+  notes: row?.notes ?? null,
+  created_at: String(row?.created_at || new Date(0).toISOString()),
+});
 
 /* ─── Kanban column config ───────────────────────────────────────── */
 const COLUMNS: { key: string; label: string; statuses: string[]; accent: string; emoji: string }[] = [
@@ -335,7 +357,12 @@ const Applications = () => {
         const normalized = (res.data || [])
           .map((row: any) => normalizeLegacyCollege(row))
           .filter((row: any) => row.id > 0 && typeof row.name === 'string')
-          .map((row: any) => ({ id: row.id, name: row.name, country: row.country, location: row.location }));
+          .map((row: any) => ({
+            id: row.id,
+            name: row.name,
+            country: row.country,
+            location: [row.city, row.state, row.country].filter(Boolean).join(', '),
+          }));
         setSearchResults(normalized.slice(0, 6));
       } catch {
         if (mountedRef.current && seq === searchSeqRef.current) setSearchResults([]);
@@ -479,7 +506,11 @@ const Applications = () => {
                       {searchResults.map(c => (
                         <button key={c.id} onClick={() => { setSelectedCollege(c); setSearchResults([]); }} style={{ width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', borderBottom: `1px solid ${S.border}`, cursor: 'pointer', fontFamily: S.font }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: S.text }}>{c.name}</div>
-                          {(c.location || c.country) && <div style={{ fontSize: 11, color: S.dim }}>{c.location || c.country}</div>}
+                          {(([c.city, c.state, c.country].filter(Boolean).join(', ')) || c.country) && (
+                            <div style={{ fontSize: 11, color: S.dim }}>
+                              {[c.city, c.state, c.country].filter(Boolean).join(', ') || c.country}
+                            </div>
+                          )}
                         </button>
                       ))}
                     </div>

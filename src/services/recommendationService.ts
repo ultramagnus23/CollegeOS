@@ -1,6 +1,6 @@
 import { searchColleges } from '@/lib/collegeService';
 import { CollegeRecommendationSchema, type CollegeRecommendation } from '@/types/college';
-import { normalizeCollegeSearchResult } from '@/utils/collegeMapper';
+import { normalizeToCard } from '@/lib/collegeService';
 
 const cache = new Map<string, { at: number; value: CollegeRecommendation[] }>();
 const TTL_MS = 2 * 60 * 1000;
@@ -29,7 +29,7 @@ export async function getRecommendations(input: RecommendationInput = {}): Promi
 
   const scored = result.data
     .map((row) => {
-      const c = normalizeCollegeSearchResult(row);
+      const c = normalizeToCard(row);
       const normalizePct = (v: number | null | undefined) => {
         if (v == null || Number.isNaN(v)) return null;
         const pct = v <= 1 ? v * 100 : v;

@@ -6,7 +6,7 @@
  * Routes
  * ──────
  *   POST /api/recommend
- *     Body: { filters?: { maxCostUsd, country, size } }
+ *     Body: { filters?: { maxCostUsd, country } }
  *     → Top 50 colleges ranked by cosine similarity + admit chance
  *
  *   GET  /api/recommend/majors
@@ -95,7 +95,7 @@ async function buildAdjustedUserVector(userProfile, userId, pool) {
 /**
  * @route  POST /api/recommend
  * @access Authenticated
- * @body   { filters?: { maxCostUsd, country, size } }
+ * @body   { filters?: { maxCostUsd, country } }
  *
  * Returns top 50 colleges ordered by overall fit (cosine similarity),
  * each augmented with an admit chance calculation.
@@ -142,15 +142,8 @@ router.post('/', authenticate, async (req, res, next) => {
       params.push(filters.country);
     }
     if (filters.maxCostUsd) {
-      conditions.push(`(c.tuition_international IS NULL OR c.tuition_international <= $${idx++})`);
+      conditions.push(`(c.tuition_cost IS NULL OR c.tuition_cost <= $${idx++})`);
       params.push(parseFloat(filters.maxCostUsd));
-    }
-    if (filters.size) {
-      // Map 'small' | 'medium' | 'large' to enrollment ranges
-      const sizeMap = { small: [0, 5000], medium: [5000, 15000], large: [15001, 9999999] };
-      const [lo, hi] = sizeMap[filters.size] || [0, 9999999];
-      conditions.push(`(c.total_enrollment IS NULL OR (c.total_enrollment >= $${idx++} AND c.total_enrollment <= $${idx++}))`);
-      params.push(lo, hi);
     }
 
     const where = conditions.join(' AND ');
@@ -161,30 +154,20 @@ router.post('/', authenticate, async (req, res, next) => {
          c.id,
          c.name,
          c.country,
-         c.state,
          c.city,
+         c.state,
          COALESCE(
            to_jsonb(c) ->> 'type',
            to_jsonb(c) ->> 'institution_type'
          ) AS type,
-         to_jsonb(c) ->> 'size_category' AS size_category,
          c.acceptance_rate,
-         c.sat_25,
-         c.sat_75,
-         c.act_25,
-         c.act_75,
          c.act_avg,
-         c.gpa_25,
-         c.gpa_75,
-         c.tuition_domestic,
-         c.tuition_international,
-         c.ranking_qs,
-         c.ranking_us_news,
-         c.ranking_the,
-         c.total_enrollment,
+         c.tuition_cost,
+         c.popularity_score,
+         c.median_earnings_6yr,
          c.description,
          c.feature_vector
-       FROM   colleges c
+        FROM   colleges c
        WHERE  ${where}
        LIMIT  2000`,
       params
@@ -202,7 +185,7 @@ router.post('/', authenticate, async (req, res, next) => {
     // ── 4. Score each college ─────────────────────────────────────────────
     const scored = [];
     let vectorsUsed = 0;
-    let missingRankingCount = 0;
+    let missingPopularityCount = 0;
 
     for (const college of colleges) {
       let colVec;
@@ -224,8 +207,8 @@ router.post('/', authenticate, async (req, res, next) => {
       }
 
       const overallFit = cosineSimilarity(userVector, colVec);
-      if (college.ranking_qs == null && college.ranking_us_news == null && college.ranking_the == null) {
-        missingRankingCount++;
+      if (college.popularity_score == null) {
+        missingPopularityCount++;
       }
 
       scored.push({
@@ -262,7 +245,7 @@ router.post('/', authenticate, async (req, res, next) => {
       meta: {
         requestId,
         durationMs: Date.now() - requestStarted,
-        missingRankingCount,
+        missingPopularityCount,
       },
     });  } catch (err) {
     logger.error('POST /api/recommend error', { requestId, message: err.message, stack: err.stack });
