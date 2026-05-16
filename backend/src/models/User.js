@@ -51,10 +51,17 @@ class User {
       if (typeof value !== 'string') return null;
       switch (value) {
         case '20k': return 20000;
+        case 'under-20k':
+        case 'under_20k': return 20000;
         case '40k': return 40000;
+        case '20-40k':
+        case '20k_40k': return 40000;
         case '40-60k': return 60000;
+        case '40k_60k': return 60000;
         case '60k+': return 60000;
+        case 'over_60k': return 60000;
         case 'aid': return 0;
+        case 'need_aid': return 0;
         default: return null;
       }
     };
@@ -65,6 +72,10 @@ class User {
     const maxBudgetPerYear = Number.isFinite(parsedBudget) ? parsedBudget : null;
     const intendedMajors = Array.isArray(data?.intended_majors) ? data.intended_majors : [];
     const intendedMajor = data?.intended_major ?? intendedMajors[0] ?? null;
+    const gradeLevel = data?.grade_level ?? data?.current_grade ?? null;
+    const graduationYear = data?.graduation_year != null ? Number(data.graduation_year) : null;
+    const parsedGraduationYear = Number.isFinite(graduationYear) ? graduationYear : null;
+    const preferredLocation = data?.preferred_location ?? data?.locationPreference ?? null;
 
     await pool.query(
       `UPDATE users
@@ -80,13 +91,16 @@ class User {
            budget              = COALESCE($9, budget),
            max_budget_per_year = COALESCE($10, max_budget_per_year),
            intended_major      = COALESCE($11, intended_major),
-           career_goals        = COALESCE($12, career_goals),
-           country             = COALESCE($13, country),
-           need_financial_aid  = COALESCE($14, need_financial_aid),
-           can_take_loan       = COALESCE($15, can_take_loan),
-           family_income_usd   = COALESCE($16, family_income_usd),
-           updated_at          = NOW()
-       WHERE id = $5`,
+            career_goals        = COALESCE($12, career_goals),
+            country             = COALESCE($13, country),
+            need_financial_aid  = COALESCE($14, need_financial_aid),
+            can_take_loan       = COALESCE($15, can_take_loan),
+            family_income_usd   = COALESCE($16, family_income_usd),
+            grade_level         = COALESCE($17, grade_level),
+            graduation_year     = COALESCE($18, graduation_year),
+            preferred_location  = COALESCE($19, preferred_location),
+            updated_at          = NOW()
+        WHERE id = $5`,
       [
         JSON.stringify(data.target_countries || []),
         JSON.stringify(intendedMajors),
@@ -104,6 +118,9 @@ class User {
         data?.need_financial_aid ?? (maxBudgetPerYear === 0 ? true : null),
         data?.can_take_loan ?? null,
         data?.family_income_usd != null ? Number(data.family_income_usd) : null,
+        gradeLevel,
+        parsedGraduationYear,
+        preferredLocation,
       ]
     );
     return this.findById(userId);
