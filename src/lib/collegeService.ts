@@ -26,57 +26,43 @@ const COLLEGE_SYNC_DEBUG = import.meta.env.DEV;
 type CollegeSchemaMode = 'canonical' | 'legacy';
 
 const CANONICAL_COLLEGES_COLUMNS = [
-  'id', 'name', 'slug', 'country', 'state', 'city', 'location',
-  'type', 'size_category', 'total_enrollment',
-  'website', 'official_website', 'logo_url', 'description',
-  'religious_affiliation', 'setting', 'founded_year',
-  'acceptance_rate', 'sat_25', 'sat_75', 'act_25', 'act_75', 'act_avg',
-  'gpa_25', 'gpa_75', 'test_optional',
-  'tuition_domestic', 'tuition_international',
+  'id', 'name', 'slug', 'country', 'location',
+  'type', 'institution_type',
+  'website:website_url', 'website_url', 'official_website', 'logo_url', 'description',
+  'acceptance_rate', 'act_avg',
+  'tuition_cost',
   'avg_institutional_grant', 'avg_merit_aid',
   'pct_receiving_merit_aid', 'pct_students_receiving_aid',
   'international_aid_available', 'international_aid_avg',
   'meets_full_need', 'css_profile_required',
   'median_earnings_6yr', 'median_earnings_10yr',
-  'ranking_qs', 'ranking_us_news', 'ranking_the',
-  'application_deadline', 'rd_deadline', 'ed_deadline', 'ea_deadline',
-  'top_majors',
-  'latitude', 'longitude',
-  'data_source', 'data_source_url', 'data_quality_score', 'needs_enrichment',
-  'last_data_refresh', 'last_updated_at', 'updated_at',
+  'rd_deadline', 'ed_deadline', 'ea_deadline',
+  'popularity_score', 'updated_at',
 ].join(', ');
 
 const LEGACY_COLLEGES_COLUMNS = [
-  'id', 'name', 'slug', 'country', 'state', 'city', 'location',
-  'institution_type', 'size_category', 'total_enrollment',
-  'website', 'website_url', 'logo_url', 'description',
-  'religious_affiliation', 'setting', 'founded_year',
-  'acceptance_rate', 'sat_25', 'sat_75', 'act_25', 'act_75', 'act_avg',
-  'gpa_25', 'gpa_75', 'test_optional',
-  'tuition_domestic', 'tuition_international',
+  'id', 'name', 'slug', 'country', 'location',
+  'institution_type', 'type',
+  'website:website_url', 'website_url', 'official_website', 'logo_url', 'description',
+  'acceptance_rate', 'act_avg',
+  'tuition_cost',
   'avg_institutional_grant', 'avg_merit_aid',
   'pct_receiving_merit_aid', 'pct_students_receiving_aid',
   'international_aid_available', 'international_aid_avg',
   'meets_full_need', 'css_profile_required',
   'median_earnings_6yr', 'median_earnings_10yr',
-  'ranking_qs', 'ranking_us_news', 'ranking_the',
-  'application_deadline', 'rd_deadline', 'ed_deadline', 'ea_deadline',
-  'top_majors',
-  'latitude', 'longitude',
-  'data_source', 'data_source_url', 'data_quality_score', 'needs_enrichment',
-  'last_data_refresh', 'last_updated_at', 'updated_at',
+  'rd_deadline', 'ed_deadline', 'ea_deadline',
+  'popularity_score', 'updated_at',
 ].join(', ');
 
 const LIST_SELECT = `
   ${CANONICAL_COLLEGES_COLUMNS},
-  college_financial_data(tuition_in_state, tuition_out_state, tuition_international, avg_net_price),
-  college_rankings(ranking_source, ranking_value, ranking_year)
+  college_stats(*)
 ` as const;
 
 const LEGACY_LIST_SELECT = `
   ${LEGACY_COLLEGES_COLUMNS},
-  college_financial_data(tuition_in_state, tuition_out_state, tuition_international, avg_net_price),
-  college_rankings(ranking_source, ranking_value, ranking_year)
+  college_stats(*)
 ` as const;
 
 const FLAT_LIST_SELECT = `${CANONICAL_COLLEGES_COLUMNS}` as const;
@@ -84,22 +70,12 @@ const LEGACY_FLAT_LIST_SELECT = `${LEGACY_COLLEGES_COLUMNS}` as const;
 
 const FULL_SELECT = `
   ${CANONICAL_COLLEGES_COLUMNS},
-  college_financial_data(tuition_in_state, tuition_out_state, tuition_international, avg_net_price),
-  college_programs(program_name, degree_type),
-  campus_life(housing_guarantee, distance_only),
-  college_rankings(ranking_source, ranking_value, ranking_year),
-  college_deadlines(deadline_type, deadline_date, notification_date, is_binding),
-  college_contact(admissions_email, admissions_phone, admissions_url, financial_aid_url, common_app, coalition_app, application_fee)
+  college_stats(*)
 ` as const;
 
 const LEGACY_FULL_SELECT = `
   ${LEGACY_COLLEGES_COLUMNS},
-  college_financial_data(tuition_in_state, tuition_out_state, tuition_international, avg_net_price),
-  college_programs(program_name, degree_type),
-  campus_life(housing_guarantee, distance_only),
-  college_rankings(ranking_source, ranking_value, ranking_year),
-  college_deadlines(deadline_type, deadline_date, notification_date, is_binding),
-  college_contact(admissions_email, admissions_phone, admissions_url, financial_aid_url, common_app, coalition_app, application_fee)
+  college_stats(*)
 ` as const;
 
 const FLAT_FULL_SELECT = `${CANONICAL_COLLEGES_COLUMNS}` as const;
@@ -199,9 +175,9 @@ function normalizeOrder(sortBy?: string): { column: string; ascending: boolean }
     case 'acceptance_rate':
       return { column: 'acceptance_rate', ascending: true };
     case 'tuition':
-      return { column: 'tuition_international', ascending: true };
+      return { column: 'tuition_cost', ascending: true };
     case 'ranking':
-      return { column: 'ranking_us_news', ascending: true };
+      return { column: 'popularity_score', ascending: false };
     case 'name':
     default:
       return { column: 'name', ascending: true };
@@ -288,12 +264,11 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
 
       if (query) q = q.ilike('name', `%${query}%`);
       if (country) q = q.eq('country', country);
-      if (state) q = q.eq('state', state);
+      if (state) q = q.ilike('location', `%${state}%`);
       if (type) q = q.eq(getTypeColumn(mode), type);
-      if (setting) q = q.eq('setting', setting);
       if (minAcceptance !== undefined) q = q.gte('acceptance_rate', minAcceptance);
       if (maxAcceptance !== undefined) q = q.lte('acceptance_rate', maxAcceptance);
-      if (maxTuition !== undefined) q = q.lte('tuition_international', maxTuition);
+      if (maxTuition !== undefined) q = q.lte('tuition_cost', maxTuition);
 
       const from = (safePage - 1) * safePageSize;
       const to = from + safePageSize - 1;
@@ -415,9 +390,9 @@ export async function getCollegePrograms(collegeId: number): Promise<Map<string,
 
 export async function getDistinctStates(): Promise<string[]> {
   const client = requireClient();
-  const { data, error } = await client.from('colleges').select('state').not('state', 'is', null).limit(1000);
+  const { data, error } = await client.from('colleges').select('location').not('location', 'is', null).limit(1000);
   if (error) throw error;
-  return [...new Set((data ?? []).map((r: { state: string | null }) => r.state).filter(Boolean) as string[])].sort();
+  return [...new Set((data ?? []).map((r: { location: string | null }) => r.location).filter(Boolean) as string[])].sort();
 }
 
 export async function getDistinctCountries(): Promise<string[]> {
@@ -431,7 +406,9 @@ export { isSupabaseConfigured };
 
 // TODO: REMOVE LEGACY SCHEMA — legacy nested tables removed from canonical flow.
 export function getAdmissions(_college: CollegeWithRelations) { return null; }
-export function getFinancials(college: CollegeWithRelations) { return college.college_financial_data?.[0] ?? null; }
+export function getFinancials(college: CollegeWithRelations) {
+  return (college as any).college_stats?.[0] ?? college.college_financial_data?.[0] ?? null;
+}
 export function getAcademics(_college: CollegeWithRelations) { return null; }
 export function getCampusLife(college: CollegeWithRelations) { return college.campus_life?.[0] ?? null; }
 export function getDemographics(_college: CollegeWithRelations) { return null; }
