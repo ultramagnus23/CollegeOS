@@ -1877,10 +1877,17 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           const cleanedActivities = sanitizeActivities(studentData.activities || [], { strict: true });
           const budgetMap: Record<string, number> = {
             '20k': 20000,
+            'under-20k': 20000,
+            'under_20k': 20000,
             '40k': 40000,
+            '20-40k': 40000,
+            '20k_40k': 40000,
             '40-60k': 60000,
+            '40k_60k': 60000,
             '60k+': 60000,
+            'over_60k': 60000,
             'aid': 0,
+            'need_aid': 0,
           };
           const maxBudgetPerYear = budgetMap[String(studentData.budgetRange || '')] ?? null;
           const gpaRaw = parseFloat(String(studentData.currentGPA).replace(/[^0-9.]/g, '')) || null;
@@ -1912,14 +1919,14 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             gpa_type: studentData.gpaType || 'percentage',
             grade_level: studentData.current_grade || null,
             graduation_year: studentData.graduation_year ? Number(studentData.graduation_year) : null,
+            preferred_location: studentData.locationPreference || null,
           });
 
-          // 2b. Send why_college_matters to trigger values_vector computation via valuesEngine.js
-          if (studentData.whyCollege && studentData.whyCollege.trim().length > 0) {
-            try {
-              await api.updateProfile({ why_college_matters: studentData.whyCollege.trim() });
-            } catch { /* non-critical — values_vector will be computed on next profile update */ }
-          }
+          setStudentData((prev: any) => ({
+            ...prev,
+            onboarding_complete: 1,
+            onboarding_completed: true,
+          }));
 
           // 2. Pre-compute instant recommendations and store in localStorage
           try {
@@ -1934,14 +1941,16 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
               whyCollege: studentData.whyCollege,
             });
             localStorage.setItem('instant_recommendations', JSON.stringify(recRes?.data || recRes || []));
-          } catch { /* non-critical */ }
+          } catch (recommendationError) {
+            console.error('Failed to pre-compute onboarding recommendations:', recommendationError);
+          }
 
           try {
             await api.completeTour();
             await refreshUser();
             refetchCompletion();
-          } catch {
-            // non-blocking
+          } catch (refreshError) {
+            console.error('Failed to refresh onboarding completion state:', refreshError);
           }
 
           // Clear localStorage draft

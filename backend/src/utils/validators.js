@@ -61,7 +61,11 @@ const validators = {
     act_score: Joi.number().options({ convert: true }).min(1).max(36).optional().allow(null),
     budget: Joi.number().options({ convert: true }).min(0).optional().allow(null),
     max_budget_per_year: Joi.number().options({ convert: true }).min(0).optional().allow(null),
-    budgetRange: Joi.string().trim().valid('20k', '40k', '40-60k', '60k+', 'aid').optional().allow(null, ''),
+    budgetRange: Joi.string().trim().valid(
+      '20k', '40k', '40-60k', '60k+', 'aid',
+      'under-20k', '20-40k',
+      'under_20k', '20k_40k', '40k_60k', 'over_60k', 'need_aid'
+    ).optional().allow(null, ''),
     intended_major: Joi.string().trim().max(255).optional().allow(null, ''),
     career_goals: Joi.string().trim().max(4000).optional().allow(null, ''),
     country: Joi.string().trim().max(100).optional().allow(null, ''),
@@ -72,6 +76,9 @@ const validators = {
     activities: Joi.array().items(Joi.any()).optional(),
     language_preferences: Joi.array().items(Joi.string().trim()).optional(),
     current_grade: Joi.string().trim().max(100).optional().allow(null, ''),
+    grade_level: Joi.string().trim().max(100).optional().allow(null, ''),
+    graduation_year: Joi.number().options({ convert: true }).integer().min(2020).max(2100).optional().allow(null),
+    preferred_location: Joi.string().trim().max(100).optional().allow(null, ''),
     gender: Joi.string().trim().max(100).optional().allow(null, '')
   }),
   
