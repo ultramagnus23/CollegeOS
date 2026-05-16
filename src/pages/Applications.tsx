@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { Loader2, X, Search, ExternalLink, Trash2, ChevronDown, ChevronUp, Plus, CheckCircle2, Circle } from 'lucide-react';
 import { toast } from 'sonner';
 import ConfirmModal from '@/components/common/ConfirmModal';
+import { normalizeLegacyApplication, normalizeLegacyCollege } from '@/utils/legacyCompatibility';
 
 /* ─── Design tokens ──────────────────────────────────────────────── */
 const h2r = (hex: string, a: number) => {
@@ -331,7 +332,11 @@ const Applications = () => {
       try {
         const res = await api.colleges.search({ q: form.collegeSearch });
         if (!mountedRef.current || seq !== searchSeqRef.current) return;
-        setSearchResults((res.data || []).slice(0, 6));
+        const normalized = (res.data || [])
+          .map((row: any) => normalizeLegacyCollege(row))
+          .filter((row: any) => row.id > 0 && typeof row.name === 'string')
+          .map((row: any) => ({ id: row.id, name: row.name, country: row.country, location: row.location }));
+        setSearchResults(normalized.slice(0, 6));
       } catch {
         if (mountedRef.current && seq === searchSeqRef.current) setSearchResults([]);
       } finally {
@@ -348,7 +353,11 @@ const Applications = () => {
     try {
       const res = await api.applications.get();
       if (!mountedRef.current || seq !== loadSeqRef.current) return;
-      setApplications(res.data || []);
+      const rows = Array.isArray(res?.data) ? res.data : [];
+      const normalized = rows
+        .map((row: any) => normalizeLegacyApplication(row))
+        .filter((row: any) => row.id > 0 && row.college_id > 0);
+      setApplications(normalized);
     } catch {
       if (mountedRef.current && seq === loadSeqRef.current) toast.error('Failed to load applications');
     } finally {

@@ -83,19 +83,19 @@ async function _fallbackColleges() {
   const queries = [
     // Attempt 1: colleges with popularity_score
     `SELECT id, name, acceptance_rate
-       FROM colleges_comprehensive
+       FROM colleges
       WHERE acceptance_rate IS NOT NULL
       ORDER BY COALESCE(popularity_score, 0) DESC NULLS LAST
       LIMIT 10`,
     // Attempt 2: colleges by US News ranking
     `SELECT id, name, acceptance_rate
-       FROM colleges_comprehensive
+       FROM colleges
       WHERE acceptance_rate IS NOT NULL
       ORDER BY ranking_us_news ASC NULLS LAST
       LIMIT 10`,
     // Attempt 3: any 10 colleges
     `SELECT id, name, acceptance_rate
-       FROM colleges_comprehensive
+       FROM colleges
       LIMIT 10`,
   ];
 

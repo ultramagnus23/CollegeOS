@@ -14,6 +14,7 @@ import {
   isSupabaseConfigured,
   normalizeToCard,
 } from '../lib/collegeService';
+import { normalizeLegacyCollege, normalizeLegacyRecommendation } from '@/utils/legacyCompatibility';
 
 /* ─── Design tokens ──────────────────────────────────────────────── */
 const h2r = (hex: string, a: number) => {
@@ -272,7 +273,8 @@ const Colleges: React.FC = () => {
         }
 
         // Normalize backend payload to UI shape
-        const normalized: College[] = raw.map((c: any) => {
+        const normalized: College[] = raw.map((input: any) => {
+          const c = normalizeLegacyCollege(input);
           let majorCategories: string[] = [];
           let programs: string[] = [];
           let academicStrengths: string[] = [];
@@ -388,7 +390,10 @@ const Colleges: React.FC = () => {
     api.recommend.getColleges({})
       .then((res: any) => {
         const data = res?.data ?? res;
-        const colleges: RecommendedCollege[] = (data?.colleges ?? []).slice(0, 10);
+        const colleges: RecommendedCollege[] = (data?.colleges ?? [])
+          .map((row: any) => normalizeLegacyRecommendation(row))
+          .filter((row: any) => row.id > 0 && typeof row.name === 'string')
+          .slice(0, 10);
         setRecommendations(colleges);
         setRecsLoaded(true);
       })

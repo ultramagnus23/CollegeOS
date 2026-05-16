@@ -167,7 +167,7 @@ router.post('/', authenticate, async (req, res, next) => {
            to_jsonb(c) ->> 'type',
            to_jsonb(c) ->> 'institution_type'
          ) AS type,
-         c.size_category,
+         to_jsonb(c) ->> 'size_category' AS size_category,
          c.acceptance_rate,
          c.sat_25,
          c.sat_75,

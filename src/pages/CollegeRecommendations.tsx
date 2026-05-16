@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../services/api';
 import { toast } from 'sonner';
+import { normalizeLegacyRecommendation } from '@/utils/legacyCompatibility';
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 interface ScoreBreakdown {
@@ -71,6 +72,22 @@ const CLASS_CFG: Record<string, { label: string; color: string; bg: string }> = 
   target:      { label: 'Target',       color: '#FBBF24', bg: 'rgba(251,191,36,0.12)'  },
   safety:      { label: 'Safety',       color: '#34D399', bg: 'rgba(52,211,153,0.12)'  },
   'Long Shot': { label: 'Long Shot',    color: '#A78BFA', bg: 'rgba(167,139,250,0.12)' },
+};
+
+const ML_TIER_LABELS: Record<string, string> = {
+  safety: 'Safety',
+  target: 'Target',
+  reach: 'Reach',
+  long_shot: 'Long Shot',
+  unknown: 'Unknown',
+};
+
+const ML_TIER_COLORS: Record<string, string> = {
+  safety: '#22c55e',
+  target: '#f59e0b',
+  reach: '#ef4444',
+  long_shot: '#ef4444',
+  unknown: '#64748b',
 };
 
 /* ─── Score Bar ───────────────────────────────────────────────────────────── */
@@ -206,7 +223,10 @@ const CollegeRecommendations: React.FC = () => {
     try {
       setMlLoading(true);
       const res = await (api as any).recommend.getColleges({});
-      const colleges: MLRecommendation[] = (res?.colleges ?? res?.data?.colleges ?? []).slice(0, 20);
+      const colleges: MLRecommendation[] = (res?.colleges ?? res?.data?.colleges ?? [])
+        .map((row: any) => normalizeLegacyRecommendation(row))
+        .filter((row: any) => row.id > 0 && typeof row.name === 'string')
+        .slice(0, 20);
       if (!mountedRef.current || seq !== mlSeqRef.current) return;
       setMlRecs(colleges);
     } catch {
@@ -300,7 +320,9 @@ const CollegeRecommendations: React.FC = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {visibleMLRecs.map((rec, idx) => {
-                const tierColor = rec.tier === 'Safety' ? '#22c55e' : rec.tier === 'Target' ? '#f59e0b' : '#ef4444';
+                const tier = String(rec.tier || '').toLowerCase();
+                const tierLabel = ML_TIER_LABELS[tier] ?? ML_TIER_LABELS.unknown;
+                const tierColor = ML_TIER_COLORS[tier] ?? ML_TIER_COLORS.unknown;
                 const isOpen = mlExpanded[rec.id] ?? false;
                 return (
                   <div
@@ -337,7 +359,7 @@ const CollegeRecommendations: React.FC = () => {
                         {/* Admit chance */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <span style={{ fontSize: 12, color: tierColor, fontWeight: 700 }}>
-                            {rec.tier} · {rec.admit_chance}% admit chance
+                            {tierLabel} · {rec.admit_chance}% admit chance
                           </span>
                           <div style={{ display: 'flex', gap: 8 }}>
                             <button
