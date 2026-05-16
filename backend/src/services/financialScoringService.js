@@ -20,7 +20,7 @@ const { getUSDtoINR } = require('./exchangeRateService');
 
 /**
  * Map a user's annual family income (USD) to the correct net-price bracket
- * column stored in college_financial_data / colleges.
+ * column stored in colleges / colleges.
  */
 function _incomeBracket(incomeUSD) {
   if (!incomeUSD || incomeUSD <= 0) return null;
@@ -132,7 +132,7 @@ async function computeFinancialProfile(user, college, pool) {
        net_price_75_110k, net_price_110k_plus,
        pct_receiving_pell, median_debt_at_graduation,
        loan_default_rate_3yr, median_earnings_6yr, median_earnings_10yr
-     FROM college_financial_data
+     FROM colleges
      WHERE college_id = $1
      ORDER BY year DESC
      LIMIT 1`,
@@ -163,7 +163,7 @@ async function computeFinancialProfile(user, college, pool) {
        ca.sat_avg AS median_sat,
        ca.act_avg AS median_act
      FROM public.clean_colleges cc
-     LEFT JOIN public.college_financial_data cfd ON cc.id = cfd.college_id
+     LEFT JOIN public.colleges cfd ON cc.id = cfd.college_id
      LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
      WHERE cc.id = $1`,
     [college.id]
@@ -171,7 +171,7 @@ async function computeFinancialProfile(user, college, pool) {
 
   const colData = colRows[0] || {};
 
-  // Merge: prefer college_financial_data (more recent) over colleges summary
+  // Merge: prefer colleges (more recent) over colleges summary
   const merged = {
     net_price_0_30k:    cfd.net_price_0_30k    || colData.avg_net_price_0_30k,
     net_price_30_48k:   cfd.net_price_30_48k   || colData.avg_net_price_30_48k,

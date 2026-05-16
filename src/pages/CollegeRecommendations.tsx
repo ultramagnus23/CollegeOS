@@ -2,7 +2,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../services/api';
 import { toast } from 'sonner';
-import { normalizeLegacyRecommendation } from '@/utils/legacyCompatibility';
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 interface ScoreBreakdown {
@@ -45,6 +44,19 @@ interface MLRecommendation {
   reasoning:           string[];
   academic_similarity: number;
 }
+
+const normalizeLegacyRecommendation = (row: any) => ({
+  ...row,
+  id: Number(row?.id || row?.college_id || row?.college?.id) || 0,
+  name: String(row?.name || row?.college_name || row?.college?.name || 'Unknown College'),
+  country: row?.country ?? row?.college?.country ?? null,
+  state: row?.state ?? row?.college?.state ?? null,
+  overall_fit: Number(row?.overall_fit ?? row?.overall_score ?? 0) || 0,
+  admit_chance: Number(row?.admit_chance ?? 0) || 0,
+  tier: String(row?.tier || row?.classification || 'target'),
+  reasoning: Array.isArray(row?.reasoning) ? row.reasoning : [],
+  academic_similarity: Number(row?.academic_similarity ?? 0) || 0,
+});
 
 /* ─── Design tokens ───────────────────────────────────────────────────────── */
 const ACCENT = '#6366F1';

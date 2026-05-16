@@ -40,6 +40,43 @@ class User {
 
   static async updateOnboarding(userId, data) {
     const pool = dbManager.getDatabase();
+    const satScore = data?.sat_score ?? data?.test_status?.sat_score ?? null;
+    const actScore = data?.act_score ?? data?.test_status?.act_score ?? null;
+    const rawGpa = data?.gpa != null ? parseFloat(data.gpa) : null;
+    const normalizedGpa = rawGpa == null || Number.isNaN(rawGpa)
+      ? null
+      : (rawGpa > 10 ? (rawGpa / 100) * 4.0 : rawGpa);
+
+    const parseBudgetRange = (value) => {
+      if (typeof value !== 'string') return null;
+      switch (value) {
+        case '20k': return 20000;
+        case 'under-20k':
+        case 'under_20k': return 20000;
+        case '40k': return 40000;
+        case '20-40k':
+        case '20k_40k': return 40000;
+        case '40-60k': return 60000;
+        case '40k_60k': return 60000;
+        case '60k+': return 60000;
+        case 'over_60k': return 60000;
+        case 'aid': return 0;
+        case 'need_aid': return 0;
+        default: return null;
+      }
+    };
+
+    const parsedBudget = data?.max_budget_per_year != null
+      ? Number(data.max_budget_per_year)
+      : (data?.budget != null ? Number(data.budget) : parseBudgetRange(data?.budgetRange));
+    const maxBudgetPerYear = Number.isFinite(parsedBudget) ? parsedBudget : null;
+    const intendedMajors = Array.isArray(data?.intended_majors) ? data.intended_majors : [];
+    const intendedMajor = data?.intended_major ?? intendedMajors[0] ?? null;
+    const gradeLevel = data?.grade_level ?? data?.current_grade ?? null;
+    const graduationYear = data?.graduation_year != null ? Number(data.graduation_year) : null;
+    const parsedGraduationYear = Number.isFinite(graduationYear) ? graduationYear : null;
+    const preferredLocation = data?.preferred_location ?? data?.locationPreference ?? null;
+
     await pool.query(
       `UPDATE users
        SET target_countries    = $1,
@@ -47,20 +84,43 @@ class User {
            test_status         = $3,
            language_preferences = $4,
            onboarding_complete = 1,
+           onboarding_completed = TRUE,
            gpa                 = COALESCE($6, gpa),
-           current_grade       = COALESCE($7, current_grade),
-           gender              = COALESCE($8, gender),
-           updated_at          = NOW()
-       WHERE id = $5`,
+           sat_score           = COALESCE($7, sat_score),
+           act_score           = COALESCE($8, act_score),
+           budget              = COALESCE($9, budget),
+           max_budget_per_year = COALESCE($10, max_budget_per_year),
+           intended_major      = COALESCE($11, intended_major),
+            career_goals        = COALESCE($12, career_goals),
+            country             = COALESCE($13, country),
+            need_financial_aid  = COALESCE($14, need_financial_aid),
+            can_take_loan       = COALESCE($15, can_take_loan),
+            family_income_usd   = COALESCE($16, family_income_usd),
+            grade_level         = COALESCE($17, grade_level),
+            graduation_year     = COALESCE($18, graduation_year),
+            preferred_location  = COALESCE($19, preferred_location),
+            updated_at          = NOW()
+        WHERE id = $5`,
       [
-        JSON.stringify(data.target_countries),
-        JSON.stringify(data.intended_majors),
-        JSON.stringify(data.test_status),
-        JSON.stringify(data.language_preferences),
+        JSON.stringify(data.target_countries || []),
+        JSON.stringify(intendedMajors),
+        JSON.stringify(data.test_status || {}),
+        JSON.stringify(data.language_preferences || []),
         userId,
-        data.gpa != null ? parseFloat(data.gpa) : null,
-        data.current_grade || null,
-        data.gender || null,
+        normalizedGpa,
+        satScore != null ? Number(satScore) : null,
+        actScore != null ? Number(actScore) : null,
+        maxBudgetPerYear,
+        maxBudgetPerYear,
+        intendedMajor,
+        data?.career_goals ?? data?.careerGoals ?? null,
+        data?.country ?? null,
+        data?.need_financial_aid ?? (maxBudgetPerYear === 0 ? true : null),
+        data?.can_take_loan ?? null,
+        data?.family_income_usd != null ? Number(data.family_income_usd) : null,
+        gradeLevel,
+        parsedGraduationYear,
+        preferredLocation,
       ]
     );
     return this.findById(userId);
