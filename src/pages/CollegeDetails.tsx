@@ -349,7 +349,7 @@ const CollegeDetail: React.FC = () => {
             console.debug('[CollegeSync] detail.raw-supabase', {
               id: raw.id,
               name: raw.name,
-              financialRows: raw.college_financial_data?.length ?? 0,
+              financialRows: raw.colleges?.length ?? 0,
               rankingRows: raw.college_rankings?.length ?? 0,
               deadlineRows: raw.college_deadlines?.length ?? 0,
               data_source: (raw as any).data_source ?? null,

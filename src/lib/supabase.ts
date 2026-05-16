@@ -204,7 +204,7 @@ export interface CollegeContact {
  */
 export interface CollegeWithRelations extends CollegeRow {
   // TODO: REMOVE LEGACY SCHEMA — college_admissions join removed; use sat_25/75, act_25/75, gpa_25/75 from CollegeRow
-  college_financial_data: CollegeFinancialData[];
+  colleges: CollegeFinancialData[];
   college_programs: CollegeProgram[];
   campus_life: CampusLife[];
   college_rankings: CollegeRanking[];
