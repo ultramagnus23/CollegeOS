@@ -12,14 +12,11 @@ import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import {
   ACTIVITY_LIMITS,
   buildTraitProfile,
-  canonicalizeProfile,
   dedupeNormalized,
   inferTraitIntelligence,
-  normalizeProfile,
   parseBoundedInteger,
   sanitizeActivities,
   sanitizeIntegerInput,
-  sanitizeProfile,
 } from '@/utils/onboarding';
 import {
   CURRICULUM_OPTIONS,
@@ -28,7 +25,6 @@ import {
   SUBJECT_OPTIONS,
   TRAIT_OPTIONS,
 } from '@/constants/onboardingOptions';
-import { saveCanonicalProfile } from '@/services/profilePipeline';
 import { logProfileTelemetry } from '@/lib/profileTelemetry';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -1013,9 +1009,6 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   const [transitioning, setTransitioning] = useState(false);
   const [showTraitRefine, setShowTraitRefine] = useState(false);
   const progressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const draftLoadSeqRef = useRef(0);
-  const draftLoadControllerRef = useRef<AbortController | null>(null);
-  const draftSaveControllerRef = useRef<AbortController | null>(null);
   const completionSeqRef = useRef(0);
 
   const { completionPercent: backendCompletionPercent, refetch: refetchCompletion } = useProfileCompletion();
@@ -1043,35 +1036,17 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     };
   }
 
-  // On mount: restore draft from backend if newer than localStorage, and resume step
+  // On mount: restore draft from localStorage
   useEffect(() => {
-    if (!user?.id) return;
-    const seq = ++draftLoadSeqRef.current;
-    draftLoadControllerRef.current?.abort();
-    draftLoadControllerRef.current = new AbortController();
-    api.getOnboardingDraft(user.id, { signal: draftLoadControllerRef.current.signal }).then((res: any) => {
-      if (seq !== draftLoadSeqRef.current) return;
-      const payload = res?.data ?? res;
-      const draft = payload?.draft ?? payload;
-      const savedStep = payload?.step ?? 0;
-      if (!draft) return;
-      const localDraftRaw = localStorage.getItem('onboarding_data');
-      const localDraft = localDraftRaw ? JSON.parse(localDraftRaw) : null;
-      const localTs = Number(localDraft?.draft_updated_at || 0);
-      const serverTs = Number(draft?.draft_updated_at || 0);
-      const winner = serverTs >= localTs ? draft : localDraft;
-
-      setStudentData((prev: any) => ({ ...defaultData(), ...prev, ...(winner || draft) }));
-      try { localStorage.setItem('onboarding_data', JSON.stringify({ ...(winner || draft) })); } catch {}
-      // Resume from the last completed step. Step 7 is the reveal screen — never auto-skip to it.
-      if (savedStep >= 1 && savedStep <= 6) {
-        setStep(savedStep);
-      }
-    }).catch((error: unknown) => {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
-      /* silent */
-    });
-  }, [user?.id]);
+    const localDraftRaw = localStorage.getItem('onboarding_data');
+    if (!localDraftRaw) return;
+    try {
+      const localDraft = JSON.parse(localDraftRaw);
+      setStudentData((prev: any) => ({ ...defaultData(), ...prev, ...localDraft }));
+    } catch {
+      // ignore malformed local draft
+    }
+  }, []);
 
   useEffect(() => {
     const onBeforeUnload = () => {
@@ -1091,29 +1066,15 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     setStudentData((prev: any) => {
       const next = { ...prev, [field]: value, draft_updated_at: Date.now() };
       try { localStorage.setItem('onboarding_data', JSON.stringify(next)); } catch {}
-      // Debounced server-side draft save
       if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
-      progressDebounceRef.current = setTimeout(async () => {
-        if (user?.id) {
-          draftSaveControllerRef.current?.abort();
-          draftSaveControllerRef.current = new AbortController();
-          try {
-            await api.saveOnboardingDraft(user.id, { draft: next, step }, { signal: draftSaveControllerRef.current.signal });
-          } catch (error) {
-            if (error instanceof DOMException && error.name === 'AbortError') return;
-            /* silent */
-          }
-        }
-      }, 1500);
+      progressDebounceRef.current = setTimeout(() => {}, 1500);
       return next;
     });
-  }, [user?.id, step]);
+  }, []);
 
   useEffect(() => {
     return () => {
       if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
-      draftLoadControllerRef.current?.abort();
-      draftSaveControllerRef.current?.abort();
       completionSeqRef.current += 1;
     };
   }, []);
@@ -1128,77 +1089,6 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   ]);
   const normalizedTraits = dedupeNormalized(studentData.skillsStrengths || []);
   const liveTraitIntelligence = inferTraitIntelligence(normalizedTraits, studentData.traitWeights || {});
-
-  const persistWithRetry = useCallback(async (payload: Record<string, unknown>) => {
-    await saveCanonicalProfile(payload, {
-      userId: user?.id ?? null,
-      maxRetries: 3,
-      abortPrevious: false,
-    });
-  }, [user?.id]);
-
-  const buildExtendedPayload = useCallback((currentData: any, currentStep: number) => {
-    const traitProfile = buildTraitProfile(
-      dedupeNormalized(currentData.skillsStrengths || []),
-      currentData.traitWeights || {},
-    );
-    const traitInterpretation = inferTraitIntelligence(
-      dedupeNormalized(currentData.skillsStrengths || []),
-      currentData.traitWeights || {},
-    );
-    const rawPayload = {
-      firstName: currentData.name ? String(currentData.name).trim().split(/\s+/)[0] : '',
-      lastName: currentData.name ? String(currentData.name).trim().split(/\s+/).slice(1).join(' ') : '',
-      email: currentData.email || '',
-      country: currentData.country || '',
-      schoolName: currentData.school_name || currentData.dreamSchool || '',
-      curriculumType: currentData.curriculum_type || currentData.currentBoard || '',
-      curriculumTypeOther:
-        (currentData.curriculum_type === 'Other' || currentData.currentBoard === 'Other')
-          ? (currentData.curriculum_other || '')
-          : undefined,
-      onboardingStep: currentStep,
-      graduationYear: currentData.graduation_year ? Number(currentData.graduation_year) : null,
-      phone: currentData.phone || '',
-      dateOfBirth: currentData.date_of_birth || '',
-      gpaWeighted: currentData.gpaType === 'gpa' ? (Number(currentData.currentGPA) || null) : null,
-      boardExamPercentage: currentData.gpaType === 'percentage' ? (Number(currentData.currentGPA) || null) : null,
-      satTotal: currentData.satScore ? Number(currentData.satScore) : null,
-      actComposite: currentData.actScore ? Number(currentData.actScore) : null,
-      ieltsScore: currentData.ieltsScore ? Number(currentData.ieltsScore) : null,
-      toeflScore: currentData.toeflScore ? Number(currentData.toeflScore) : null,
-      intendedMajors: dedupeNormalized([
-        ...(currentData.potentialMajors || []),
-        ...(currentData.customMajors || []),
-      ]),
-      subjects: dedupeNormalized([
-        ...(currentData.subjects || []),
-        ...(currentData.customSubjects || []),
-      ]),
-      customMajors: dedupeNormalized(currentData.customMajors || []),
-      customSubjects: dedupeNormalized(currentData.customSubjects || []),
-      preferredCountries: dedupeNormalized(currentData.preferredCountries || []),
-      budgetMin: currentData.budgetRange === 'aid' ? 0 : null,
-      budgetMax: currentData.budgetRange === 'aid' ? 0 : null,
-      preferredCollegeSize: currentData.campusSize || '',
-      preferredSetting: currentData.locationPreference || '',
-      activities: sanitizeActivities(currentData.activities || []),
-      traits: dedupeNormalized(currentData.skillsStrengths || []),
-      traitWeights: currentData.traitWeights || {},
-      traitProfile: traitProfile,
-      traitInterpretation: traitInterpretation,
-      careerGoals: currentData.careerGoals || '',
-      whyCollege: currentData.whyCollege || '',
-    };
-    return canonicalizeProfile(sanitizeProfile(normalizeProfile(rawPayload)));
-  }, []);
-
-  // Save current step's profile data to student_profiles before navigating forward.
-  const saveStepData = useCallback(async (currentData: any, currentStep: number): Promise<void> => {
-    try {
-      await persistWithRetry(buildExtendedPayload(currentData, currentStep));
-    } catch { /* non-critical: draft is already being persisted via saveOnboardingDraft */ }
-  }, [buildExtendedPayload, persistWithRetry]);
 
   const theme = STEP_THEMES[step - 1];
   const { accent, bg, surface } = theme;
@@ -1230,10 +1120,6 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   };
 
   const doNextStep = () => {
-    // Fire-and-forget per-step profile save. Data is already in localStorage and
-    // the debounced draft save also runs. The final save before routing is the
-    // authoritative write; this is an opportunistic checkpoint.
-    void saveStepData(studentData, step);
     setTransitioning(true);
     setTimeout(() => { setStep(s => Math.min(s + 1, 7)); setTransitioning(false); }, 280);
   };
@@ -1988,16 +1874,30 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
         const completionSeq = ++completionSeqRef.current;
         const isStaleCompletion = () => completionSeq !== completionSeqRef.current;
         try {
-          const extendedPayload = buildExtendedPayload(studentData, 7);
           const cleanedActivities = sanitizeActivities(studentData.activities || [], { strict: true });
+          const budgetMap: Record<string, number> = {
+            '20k': 20000,
+            '40k': 40000,
+            '40-60k': 60000,
+            '60k+': 60000,
+            'aid': 0,
+          };
+          const maxBudgetPerYear = budgetMap[String(studentData.budgetRange || '')] ?? null;
+          const gpaRaw = parseFloat(String(studentData.currentGPA).replace(/[^0-9.]/g, '')) || null;
+          const intendedMajor = normalizedMajors[0] ?? null;
 
-          // 1. Save full extended profile to student_profiles table
-          await persistWithRetry({ ...extendedPayload, activities: cleanedActivities });
-
-          // 2. Mark onboarding complete in users table
+          // 1. Save onboarding payload to users table and mark onboarding complete
           await completeOnboarding({
             target_countries: studentData.preferredCountries,
             intended_majors: normalizedMajors,
+            intended_major: intendedMajor,
+            country: studentData.country || null,
+            career_goals: studentData.careerGoals || null,
+            budget: maxBudgetPerYear,
+            max_budget_per_year: maxBudgetPerYear,
+            need_financial_aid: studentData.budgetRange === 'aid',
+            can_take_loan: null,
+            family_income_usd: null,
             test_status: {
               sat_score: studentData.satScore
                 ? Number(studentData.satScore) : null,
@@ -2006,12 +1906,12 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
               ib_predicted: studentData.ibPredicted
                 ? Number(studentData.ibPredicted) : null,
             },
-            gpa: parseFloat(String(studentData.currentGPA).replace(/[^0-9.]/g, '')) || null,
+            sat_score: studentData.satScore ? Number(studentData.satScore) : null,
+            act_score: studentData.actScore ? Number(studentData.actScore) : null,
+            gpa: gpaRaw,
             gpa_type: studentData.gpaType || 'percentage',
-            subjects: normalizedSubjects,
-            activities: cleanedActivities,
-            current_grade: studentData.current_grade || null,
-            gender: studentData.gender || null,
+            grade_level: studentData.current_grade || null,
+            graduation_year: studentData.graduation_year ? Number(studentData.graduation_year) : null,
           });
 
           // 2b. Send why_college_matters to trigger values_vector computation via valuesEngine.js
@@ -2021,22 +1921,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             } catch { /* non-critical — values_vector will be computed on next profile update */ }
           }
 
-          // 3. Verify fresh DB state — if required fields are missing, show a recovery prompt
-          let freshProfile: any = null;
-          try {
-            const profileRes = await api.getExtendedProfile();
-            freshProfile = (profileRes as any)?.data ?? profileRes;
-          } catch { /* non-critical */ }
-
-          const hasGpa = freshProfile?.gpa_unweighted || freshProfile?.board_exam_percentage || freshProfile?.gpa_weighted;
-          if (!hasGpa) {
-            // Required data not yet in DB — surface a recovery prompt before routing
-            toast.error('Profile save incomplete. Please try again or continue to dashboard.', { duration: 6000 });
-            if (!isStaleCompletion()) setShowLoading(false);
-            return;
-          }
-
-          // 4. Pre-compute instant recommendations and store in localStorage
+          // 2. Pre-compute instant recommendations and store in localStorage
           try {
             const recRes = await api.automation.getInstantRecommendations({
               gpa: studentData.currentGPA,
@@ -2064,7 +1949,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
 
           await onComplete(studentData);
 
-          // 4. Attempt to pre-fetch ML chances so the suggestions page loads instantly.
+          // 3. Attempt to pre-fetch ML chances so the suggestions page loads instantly.
           // Fire-and-forget: if HF is cold/down, the user can refresh on the suggestions page.
           try {
             const chancesRes = await (api as any).chances.get() as { success: boolean; data: any[]; isFallback: boolean; source: string };
