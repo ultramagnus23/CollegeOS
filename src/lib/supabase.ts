@@ -34,20 +34,21 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
 export interface CollegeRow {
   id: number;
   name: string;
+  slug?: string | null;
   city: string | null;
-  // ── Preferred column names (migration 056 adds these) ──────────────────────
   state: string | null;
   country: string | null;
-  type: string | null;           // 'public' | 'private' | 'for-profit'
+  institution_type: string | null;
+  campus_setting: string | null;
+  website_url: string | null;
+  normalized_website?: string | null;
   control: string | null;
   size_category: string | null;
   total_enrollment: number | null;
-  website: string | null;
   official_website?: string | null;
   logo_url: string | null;
   description: string | null;
   religious_affiliation: string | null;
-  setting: string | null;        // 'urban' | 'suburban' | 'rural'
   founded_year: number | null;
   latitude: number | null;
   longitude: number | null;
@@ -83,11 +84,35 @@ export interface CollegeRow {
   act_avg?: number | null;
   gpa_25?: number | null;
   gpa_75?: number | null;
-  // ── Legacy column names (migration 011 originals, may still exist) ─────────
+  annual_cost_usd?: number | null;
+  annual_cost_inr?: number | null;
+  avg_net_price_usd?: number | null;
+  avg_sat?: number | null;
+  avg_act?: number | null;
+  avg_gpa?: number | null;
+  graduation_rate?: number | null;
+  retention_rate?: number | null;
+  international_student_pct?: number | null;
+  first_gen_pct?: number | null;
+  pct_receiving_aid?: number | null;
+  enrollment?: number | null;
+  college_type?: string | null;
+  overall_ranking?: number | null;
+  ranking_source?: string | null;
+  majors_offered?: string[] | string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  needs_enrichment?: boolean | null;
+  data_quality_score?: number | null;
+  data_source?: string | null;
+  data_source_url?: string | null;
+  last_updated_at?: string | null;
+  // legacy compatibility fallbacks
+  type?: string | null;
+  website?: string | null;
+  setting?: string | null;
   state_region?: string | null;
-  institution_type?: string | null;
   urban_classification?: string | null;
-  website_url?: string | null;
   founding_year?: number | null;
 }
 
