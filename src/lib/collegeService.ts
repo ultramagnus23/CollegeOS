@@ -10,10 +10,10 @@ const MAX_PAGE_SIZE = 100;
 const COLLEGES_COLUMNS = [
   'id', 'name', 'slug', 'country',
   'city', 'state', 'latitude', 'longitude',
-  'type', 'institution_type',
+  'institution_type',
   'size_category', 'campus_setting',
   'total_enrollment', 'undergraduate_enrollment', 'graduate_enrollment',
-  'website', 'website_url', 'official_website', 'logo_url', 'description',
+  'website_url', 'official_website', 'logo_url', 'description',
   'acceptance_rate', 'sat_25', 'sat_75', 'act_25', 'act_75', 'gpa_25', 'gpa_75', 'act_avg',
   'tuition_domestic', 'tuition_international',
   'qs_rank', 'the_rank', 'ranking_us_news',
@@ -22,6 +22,11 @@ const COLLEGES_COLUMNS = [
   'pct_receiving_merit_aid', 'pct_students_receiving_aid',
   'international_aid_available', 'international_aid_avg',
   'meets_full_need', 'css_profile_required',
+  'data_quality_score', 'needs_enrichment', 'data_source', 'data_source_url', 'last_updated_at',
+  'annual_cost_usd', 'annual_cost_inr', 'avg_net_price_usd', 'avg_sat', 'avg_act',
+  'graduation_rate', 'retention_rate', 'international_student_pct', 'first_gen_pct',
+  'pct_receiving_aid', 'enrollment', 'college_type', 'overall_ranking', 'ranking_source',
+  'avg_gpa', 'majors_offered',
   'median_earnings_6yr', 'median_earnings_10yr',
   'updated_at', 'popularity_score',
 ].join(', ');
@@ -126,7 +131,7 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
     if (query) q = q.ilike('name', `%${query}%`);
     if (country) q = q.eq('country', country);
     if (state) q = q.eq('state', state);
-    if (type) q = q.eq('type', type);
+    if (type) q = q.eq('institution_type', type);
     if (setting) q = q.eq('campus_setting', setting);
     if (minAcceptance !== undefined) q = q.gte('acceptance_rate', minAcceptance);
     if (maxAcceptance !== undefined) q = q.lte('acceptance_rate', maxAcceptance);
