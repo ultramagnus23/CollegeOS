@@ -51,6 +51,7 @@ log = logging.getLogger("pipeline")
 
 # Minimum successful upserts before the pipeline declares failure
 MIN_SUCCESS_ROWS = int(os.environ.get("MIN_SUCCESS_ROWS", "500"))
+DEFAULT_IPEDS_CONFIDENCE_SCORE = 0.7
 
 # Fuzzy-match threshold for name matching (0–1)
 FUZZY_THRESHOLD = 0.85
@@ -268,7 +269,7 @@ def log_run_start(conn, job_name: str) -> int:
         )
         row = cur.fetchone()
         if row is None:
-            raise RuntimeError("Failed to create scraper_run_logs row")
+            raise RuntimeError(f"Failed to create scraper_run_logs row for job: {job_name}")
         return int(row[0])
 
 
@@ -431,7 +432,7 @@ def upsert_college_admissions(conn, college_id: int, data: dict, year: int) -> b
         data.get("median_act_25"),
         data.get("median_act_75"),
         data.get("data_source", "IPEDS"),
-        0.7,
+        DEFAULT_IPEDS_CONFIDENCE_SCORE,
     )
     with conn.cursor() as cur:
         cur.execute(_ADMISSIONS_UPSERT_SQL, params)
