@@ -269,7 +269,10 @@ def log_run_start(conn, job_name: str) -> int:
         )
         row = cur.fetchone()
         if row is None:
-            raise RuntimeError(f"Failed to create scraper_run_logs row for job: {job_name}")
+            raise RuntimeError(
+                f"Failed to create scraper_run_logs row for job: {job_name}. "
+                "Check database connectivity and scraper_run_logs constraints."
+            )
         return int(row[0])
 
 
@@ -538,6 +541,7 @@ def main() -> int:
                 "acceptance_rate", "total_enrollment", "applications_received",
                 "median_sat_25", "median_act_25", "completion_rate", "yield_rate",
                 "applicants_total", "admitted_total", "enrolled_total",
+                "sat_verbal_25", "sat_verbal_75", "sat_math_25", "sat_math_75",
                 "median_earnings_post_grad",
             )
             if not any(record.get(f) is not None for f in useful_fields):
@@ -548,8 +552,12 @@ def main() -> int:
             try:
                 ok = upsert_college(conn, college_id, record)
                 if ok:
-                    rows_updated += 1
-                    upsert_college_admissions(conn, college_id, record, current_year)
+                    admissions_ok = upsert_college_admissions(conn, college_id, record, current_year)
+                    if admissions_ok:
+                        rows_updated += 1
+                    else:
+                        rows_skipped_error += 1
+                        log.debug(f"[SKIP admissions-upsert-empty] {name}")
                 else:
                     rows_skipped_error += 1
                     log.debug(f"[SKIP upsert-empty] {name}")
