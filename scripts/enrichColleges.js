@@ -43,6 +43,7 @@ const SCORED_FIELDS = [
   'overall_ranking',
 ];
 
+// Fallback used when currency_rates has no USD→INR row.
 let USD_TO_INR_RATE = Number(process.env.USD_TO_INR_RATE || 84);
 const DELAY_MS = 500;
 
