@@ -58,7 +58,7 @@ class CollegeController {
       
       logger.info(`[${requestId}] GET /colleges/${sanitizeForLog(id)}`);
       
-      if (!id || isNaN(parseInt(id))) {
+      if (!id || String(id).trim().length === 0) {
         logger.warn(`[${requestId}] Invalid college ID: ${sanitizeForLog(id)}`);
         return res.status(400).json({
           success: false,
@@ -67,7 +67,7 @@ class CollegeController {
         });
       }
       
-      const college = await CollegeService.getCollegeById(parseInt(id));
+      const college = await CollegeService.getCollegeById(String(id).trim());
       
       if (!college) {
         logger.warn(`[${requestId}] College ${sanitizeForLog(id)} not found`);
