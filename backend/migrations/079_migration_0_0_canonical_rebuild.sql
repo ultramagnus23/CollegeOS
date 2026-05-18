@@ -1239,7 +1239,7 @@ BEGIN
         v_institution_id,
         rec.canonical_name,
         coalesce(rec.normalized_name, canonical.normalize_institution_name(rec.canonical_name), canonical.normalize_text(rec.canonical_name)),
-        v_slug_base || '-' || left(v_institution_id::text, 8),
+        v_slug_base || '-' || replace(v_institution_id::text, '-', ''),
         coalesce(rec.aliases, '[]'::jsonb),
         rec.short_name,
         coalesce(rec.country_code, 'US'),
