@@ -1039,7 +1039,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
         )}
         {(completenessScore > 0 || freshnessScore > 0) && (
           <div style={{ marginTop: 4 }}>
-            Completeness: {Math.round(completenessScore)} · Freshness: {Math.round(freshnessScore)}
+            Completeness: {Math.round(completenessScore)}% · Freshness: {Math.round(freshnessScore)}%
           </div>
         )}
       </div>

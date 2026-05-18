@@ -86,7 +86,8 @@ function normalizeOrder(sortBy?: string): { column: string; ascending: boolean }
     case 'tuition':
       return { column: 'tuition_international', ascending: true };
     case 'ranking':
-      return { column: 'median_start_salary', ascending: false };
+      // Ranking is sorted client-side from metadata.ranking_us_news after enrichment.
+      return { column: 'canonical_name', ascending: true };
     case 'name':
     default:
       return { column: 'canonical_name', ascending: true };
@@ -233,7 +234,7 @@ async function enrichCardRows(baseRows: CanonicalCardRow[]): Promise<Array<Recor
       cost_of_attendance: num(firstDefined(financials.cost_of_attendance, row.cost_of_attendance)),
       merit_scholarship_flag: bool(financials.merit_scholarship_flag),
       need_blind_flag: bool(financials.need_blind_flag),
-      international_aid_available: num(financials.percent_receiving_aid) != null,
+      international_aid_available: bool(asRecord(row.metadata).international_aid_available),
       graduation_rate_6yr: num(outcomes.graduation_rate_6yr),
       median_start_salary: num(firstDefined(outcomes.median_start_salary, row.median_start_salary)),
       completeness_score: num(completeness.overall_score),
@@ -324,10 +325,18 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
       .map((r) => r.data);
 
     const enrichedRows = await enrichCardRows(parsedRows);
+    const sortedRows =
+      sortBy === 'ranking'
+        ? [...enrichedRows].sort((a, b) => {
+            const ra = num(asRecord(a.metadata).ranking_us_news) ?? 999999;
+            const rb = num(asRecord(b.metadata).ranking_us_news) ?? 999999;
+            return ra - rb;
+          })
+        : enrichedRows;
 
     const total = count ?? 0;
     return {
-      data: enrichedRows as CollegeRecord[],
+      data: sortedRows as CollegeRecord[],
       count: total,
       page: safePage,
       pageSize: safePageSize,
@@ -410,7 +419,15 @@ export async function getCollegePrograms(collegeId: CanonicalId): Promise<Map<st
 }
 
 export async function getDistinctStates(): Promise<string[]> {
-  return [];
+  const client = requireClient();
+  const { data, error } = await client
+    .schema('canonical')
+    .from('institutions')
+    .select('state_region')
+    .not('state_region', 'is', null)
+    .limit(1000);
+  if (error) throw error;
+  return [...new Set((data ?? []).map((r: { state_region: string | null }) => r.state_region).filter(Boolean) as string[])].sort();
 }
 
 export async function getDistinctCountries(): Promise<string[]> {
@@ -467,7 +484,7 @@ export function formatUSD(amount: number | null | undefined): string {
 
 export function normalizeToCard(c: Record<string, unknown>): Record<string, unknown> {
   const meta = asRecord(c.metadata);
-  const ranking = firstDefined(num(c.national_rank), num(meta.ranking_us_news), num(meta.qs_rank));
+  const ranking = firstDefined(num(meta.ranking_us_news), num(meta.qs_rank));
   const city = str(c.city) ?? str(meta.city);
   const state = str(meta.state_region) ?? str(meta.state);
   const country = str(c.country_code) ?? str(meta.country) ?? '';
@@ -509,10 +526,10 @@ export function normalizeToCard(c: Record<string, unknown>): Record<string, unkn
     test_optional: bool(c.test_optional),
     need_blind_flag: bool(c.need_blind_flag),
     merit_scholarship_flag: bool(c.merit_scholarship_flag),
-    international_aid_available: Boolean(c.international_aid_available),
-    completeness_score: num(c.completeness_score),
-    freshness_score: num(c.freshness_score),
-    data_quality_score: num(c.data_quality_score),
+    international_aid_available: bool(c.international_aid_available) ?? false,
+    completeness_score: num(c.completeness_score) ?? 0,
+    freshness_score: num(c.freshness_score) ?? 0,
+    data_quality_score: num(c.data_quality_score) ?? 0,
     official_website: str(c.website),
     logo_url: str(c.logo_url),
   };
@@ -571,7 +588,7 @@ export function normalizeToDetail(input: CollegeRecord): Record<string, unknown>
         costOfAttendance: num(financials.cost_of_attendance),
         avgFinancialAid: num(financials.avg_financial_aid),
         avgDebt: num(financials.avg_debt),
-        medianDebt: num(financials.avg_debt),
+        medianDebt: null,
         percentReceivingAid: num(financials.percent_receiving_aid),
         netPriceLowIncome: num(financials.net_price_low_income),
         netPriceMidIncome: num(financials.net_price_mid_income),
