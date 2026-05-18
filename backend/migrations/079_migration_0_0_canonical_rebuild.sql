@@ -552,6 +552,8 @@ CREATE TABLE IF NOT EXISTS canonical.institution_deadlines (
   cycle_year_key TEXT GENERATED ALWAYS AS (coalesce(cycle_year, '')) STORED,
   deadline_type TEXT NOT NULL,
   deadline_date DATE,
+  -- Sentinel date is used only for deterministic UNIQUE conflict keys when
+  -- source rows have NULL deadline_date; it is not treated as a real deadline.
   deadline_date_key DATE GENERATED ALWAYS AS (coalesce(deadline_date, DATE '1900-01-01')) STORED,
   notification_date DATE,
   is_binding BOOLEAN,
