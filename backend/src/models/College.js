@@ -153,7 +153,7 @@ class College {
          c.application_deadline, c.rd_deadline, c.ed_deadline, c.ea_deadline,
          LOWER(REGEXP_REPLACE(c.name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
          (SELECT ARRAY_AGG(cp.program_name) FROM college_programs cp WHERE cp.college_id = c.id) AS program_names
-       FROM public.colleges c
+       FROM public.colleges_full c
        WHERE c.id = $1`,
       [id]
     );
@@ -197,7 +197,7 @@ class College {
         LOWER(REGEXP_REPLACE(c.name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
         0::numeric AS relevance_score,
         (SELECT ARRAY_AGG(cp.program_name) FROM college_programs cp WHERE cp.college_id = c.id) AS program_names
-      FROM public.colleges c
+      FROM public.colleges_full c
       WHERE c.name IS NOT NULL
         AND LENGTH(TRIM(c.name)) > 1
     `;
@@ -282,7 +282,7 @@ class College {
 
   static async getCount(filters = {}) {
     const pool = dbManager.getDatabase();
-    let query = 'SELECT COUNT(*) AS count FROM public.colleges c WHERE c.name IS NOT NULL AND LENGTH(TRIM(c.name)) > 1';
+    let query = 'SELECT COUNT(*) AS count FROM public.colleges_full c WHERE c.name IS NOT NULL AND LENGTH(TRIM(c.name)) > 1';
     const params = [];
     let idx = 1;
 

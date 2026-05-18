@@ -119,7 +119,7 @@ async function writeRankings(db, rankingsData, rankingBody) {
   let count = 0;
   for (const item of rankingsData) {
     let row = (await db.query(`SELECT id FROM colleges WHERE name = $1 LIMIT 1`, [item.name])).rows[0];
-    if (!row) row = (await db.query(`SELECT c.id FROM colleges c JOIN college_aliases ca ON ca.college_id = c.id WHERE ca.alias = $1 LIMIT 1`, [item.name])).rows[0];
+    if (!row) row = (await db.query(`SELECT c.id FROM colleges_full c JOIN college_aliases ca ON ca.college_id = c.id WHERE ca.alias = $1 LIMIT 1`, [item.name])).rows[0];
     if (!row) continue;
     const globalRank = item.qs_rank || item.the_rank;
     const score = item.qs_score || item.the_score;

@@ -59,7 +59,7 @@ async function fetchSignals(userId, pool) {
   const { rows } = await pool.query(
     `SELECT us.signal_type, c.feature_vector
      FROM   user_signals us
-     JOIN   colleges c ON c.id = us.college_id
+     JOIN colleges_full c ON c.id = us.college_id
      WHERE  us.user_id = $1
        AND  c.feature_vector IS NOT NULL
      ORDER  BY us.created_at DESC
@@ -167,7 +167,7 @@ router.post('/', authenticate, async (req, res, next) => {
          c.median_earnings_6yr,
          c.description,
          c.feature_vector
-        FROM   colleges c
+        FROM colleges_full c
        WHERE  ${where}
        LIMIT  2000`,
       params

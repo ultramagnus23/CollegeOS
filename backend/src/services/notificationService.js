@@ -129,7 +129,7 @@ class NotificationService {
                 EXTRACT(EPOCH FROM (d.deadline_date::timestamptz - NOW())) / 86400 AS days_until
          FROM deadlines d
          JOIN applications a ON d.application_id = a.id
-         JOIN colleges c ON a.college_id = c.id
+         JOIN colleges_full c ON a.college_id = c.id
          WHERE d.status != 'submitted'
            AND d.deadline_date >= CURRENT_DATE
            AND d.deadline_date <= CURRENT_DATE + INTERVAL '7 days'`
@@ -159,7 +159,7 @@ class NotificationService {
                 ad.notification_date,
                 EXTRACT(EPOCH FROM (ad.notification_date::timestamptz - NOW())) / 86400 AS days_until
          FROM applications a
-         JOIN colleges c ON a.college_id = c.id
+         JOIN colleges_full c ON a.college_id = c.id
          JOIN application_deadlines ad ON c.id = ad.college_id
          WHERE a.status = 'submitted'
            AND ad.notification_date IS NOT NULL
