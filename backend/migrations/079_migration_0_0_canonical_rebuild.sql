@@ -365,6 +365,7 @@ CREATE TABLE IF NOT EXISTS canonical.institutions (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK (established_year IS NULL OR established_year BETWEEN 1000 AND 2100),
   CONSTRAINT uq_institutions_slug UNIQUE (slug),
   CONSTRAINT uq_institutions_country_normalized UNIQUE (country_code, normalized_name)
 );
@@ -1007,7 +1008,7 @@ BEGIN
       nullif(trim(coalesce(j.payload->>'institution_type', j.payload->>'type')), ''),
       nullif(trim(coalesce(j.payload->>'control_type', j.payload->>'control')), ''),
       CASE
-        WHEN coalesce(j.payload->>'established_year', '') ~ '^[0-9]{3,4}$'
+        WHEN coalesce(j.payload->>'established_year', '') ~ '^[0-9]{4}$'
           THEN (j.payload->>'established_year')::integer
         ELSE NULL
       END,
@@ -2157,8 +2158,27 @@ BEGIN
   )
   SELECT
     i.id,
-    TRUE,
-    'Bologna',
+    CASE
+      WHEN EXISTS (
+        SELECT 1
+        FROM canonical.institution_requirements r
+        WHERE r.institution_id = i.id
+          AND (
+            lower(r.requirement_name) LIKE '%ects%'
+            OR lower(r.requirement_value) LIKE '%ects%'
+          )
+      ) THEN TRUE
+      ELSE NULL
+    END,
+    (
+      SELECT max(r.requirement_value)
+      FROM canonical.institution_requirements r
+      WHERE r.institution_id = i.id
+        AND (
+          lower(r.requirement_name) LIKE '%bologna%'
+          OR lower(r.requirement_name) LIKE '%cycle%'
+        )
+    ),
     coalesce(
       (
         SELECT jsonb_object_agg(r.requirement_name, r.requirement_value)
@@ -2202,7 +2222,27 @@ BEGIN
       WHERE d.institution_id = i.id
         AND lower(d.deadline_type) LIKE '%css%'
     ),
-    TRUE,
+    CASE
+      WHEN EXISTS (
+        SELECT 1
+        FROM canonical.institution_deadlines d
+        WHERE d.institution_id = i.id
+          AND (
+            lower(d.deadline_type) LIKE '%fafsa%'
+            OR lower(d.deadline_type) LIKE '%css%'
+          )
+      ) THEN TRUE
+      WHEN EXISTS (
+        SELECT 1
+        FROM canonical.institution_requirements r
+        WHERE r.institution_id = i.id
+          AND (
+            lower(r.requirement_name) LIKE '%fafsa%'
+            OR lower(r.requirement_name) LIKE '%federal aid%'
+          )
+      ) THEN TRUE
+      ELSE NULL
+    END,
     NULL,
     jsonb_build_object('derived', true),
     NOW()
@@ -2259,9 +2299,43 @@ BEGIN
   )
   SELECT
     i.id,
-    TRUE,
-    TRUE,
-    TRUE,
+    CASE
+      WHEN EXISTS (
+        SELECT 1
+        FROM canonical.institution_requirements r
+        WHERE r.institution_id = i.id
+          AND (
+            lower(r.requirement_name) LIKE '%student finance%'
+            OR lower(r.requirement_value) LIKE '%student finance%'
+          )
+      ) THEN TRUE
+      ELSE NULL
+    END,
+    CASE
+      WHEN EXISTS (
+        SELECT 1
+        FROM canonical.institution_requirements r
+        WHERE r.institution_id = i.id
+          AND (
+            lower(r.requirement_name) LIKE '%bursar%'
+            OR lower(r.requirement_name) LIKE '%bursary%'
+            OR lower(r.requirement_value) LIKE '%bursary%'
+          )
+      ) THEN TRUE
+      ELSE NULL
+    END,
+    CASE
+      WHEN EXISTS (
+        SELECT 1
+        FROM canonical.institution_requirements r
+        WHERE r.institution_id = i.id
+          AND (
+            lower(r.requirement_name) LIKE '%international scholarship%'
+            OR lower(r.requirement_value) LIKE '%international scholarship%'
+          )
+      ) THEN TRUE
+      ELSE NULL
+    END,
     jsonb_build_object('derived', true),
     NOW()
   FROM canonical.institutions i
