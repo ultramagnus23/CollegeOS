@@ -71,7 +71,7 @@ class ScrapingMonitor {
         MAX(fm.data_freshness_days) as max_freshness,
         COUNT(DISTINCT fm.college_id) as colleges_tracked
       FROM field_metadata fm
-      JOIN colleges c ON c.id = fm.college_id
+      JOIN colleges_full c ON c.id = fm.college_id
       WHERE c.ranking <= 1000
     `);
 
@@ -190,7 +190,7 @@ class ScrapingMonitor {
 
     const { rows: staleRows } = await this.pool.query(`
       SELECT COUNT(DISTINCT c.id) as count
-      FROM colleges c
+      FROM colleges_full c
       LEFT JOIN field_metadata fm ON fm.college_id = c.id
       WHERE c.ranking <= 100
         AND (fm.data_freshness_days > 21 OR fm.data_freshness_days IS NULL)
@@ -217,7 +217,7 @@ class ScrapingMonitor {
         sal.confidence_score,
         sal.source
       FROM scrape_audit_log sal
-      JOIN colleges c ON c.id = sal.college_id
+      JOIN colleges_full c ON c.id = sal.college_id
       ORDER BY sal.scraped_at DESC
       LIMIT $1
     `, [limit]);
@@ -240,7 +240,7 @@ class ScrapingMonitor {
         c.*,
         (SELECT AVG(confidence_score) FROM field_metadata WHERE college_id = c.id) as overall_confidence,
         (SELECT COUNT(DISTINCT field_name) FROM field_metadata WHERE college_id = c.id) as fields_populated_count
-      FROM colleges c
+      FROM colleges_full c
     `);
 
     const filename = `${today}.json`;

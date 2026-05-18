@@ -164,7 +164,7 @@ router.get('/', async (req, res, next) => {
               ci.content_snippet, ci.sentiment, ci.sentiment_score,
               ci.scraped_at, c.name AS college_name
        FROM   college_insights ci
-       LEFT JOIN colleges c ON c.id = ci.college_id
+       LEFT JOIN colleges_full c ON c.id = ci.college_id
        WHERE  ${conditions.join(' AND ')}
        ORDER  BY ci.posted_at DESC NULLS LAST
        LIMIT  $${params.length - 1}

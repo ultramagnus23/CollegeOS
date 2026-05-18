@@ -325,7 +325,7 @@ router.get('/college/:collegeId', authenticate, async (req, res, next) => {
          c.acceptance_rate, c.sat_25, c.sat_75, c.act_25, c.act_75, c.gpa_25, c.gpa_75,
          c.tuition_domestic AS tuition_in_state,
          c.tuition_international
-       FROM public.colleges c
+       FROM public.colleges_full c
        WHERE c.id = $1`,
       [collegeId]
     );
@@ -352,7 +352,7 @@ router.get('/summary', authenticate, async (req, res, next) => {
     const { rows: appRows } = await pool.query(
       `SELECT a.college_id, c.name, c.country
        FROM applications a
-       JOIN colleges c ON c.id = a.college_id
+       JOIN colleges_full c ON c.id = a.college_id
        WHERE a.user_id = $1 AND a.status NOT IN ('rejected')`,
       [userId]
     );

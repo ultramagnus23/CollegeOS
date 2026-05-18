@@ -117,7 +117,7 @@ class Application {
                 to_jsonb(c) ->> 'website'
               ) AS official_website
        FROM applications a
-       LEFT JOIN colleges c ON a.college_id = c.id
+       LEFT JOIN colleges_full c ON a.college_id = c.id
        WHERE a.user_id = $1 AND a.college_id = $2`,
       [userId, collegeId]
     );
@@ -137,7 +137,7 @@ class Application {
                 to_jsonb(c) ->> 'website'
               ) AS official_website
        FROM applications a
-       LEFT JOIN colleges c ON a.college_id = c.id
+       LEFT JOIN colleges_full c ON a.college_id = c.id
        WHERE a.id = $1`,
       [id]
     );
@@ -157,7 +157,7 @@ class Application {
                 to_jsonb(c) ->> 'website'
               ) AS official_website
        FROM applications a
-       LEFT JOIN colleges c ON a.college_id = c.id
+       LEFT JOIN colleges_full c ON a.college_id = c.id
        WHERE a.user_id = $1
      `;
     const params = [userId];

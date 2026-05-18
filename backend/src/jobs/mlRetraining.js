@@ -285,7 +285,7 @@ class MLRetrainingJob {
           SUM(CASE WHEN t.decision = 'accepted' THEN 1 ELSE 0 END) as accepted_count,
           SUM(CASE WHEN t.decision = 'rejected' THEN 1 ELSE 0 END) as rejected_count
         FROM ml_training_data t
-        LEFT JOIN colleges c ON t.college_id = c.id
+        LEFT JOIN colleges_full c ON t.college_id = c.id
         WHERE t.decision IN ('accepted', 'rejected')
         GROUP BY t.college_id, c.name
         HAVING COUNT(*) >= 30

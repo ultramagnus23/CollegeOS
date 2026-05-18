@@ -129,7 +129,7 @@ async function populateMajorsMapping() {
     const programs = (await pool.query(`
       SELECT DISTINCT cp.college_id, cp.program_name
       FROM college_programs cp
-      INNER JOIN colleges c ON cp.college_id = c.id
+      INNER JOIN colleges_full c ON cp.college_id = c.id
       WHERE cp.program_name IS NOT NULL AND cp.program_name != ''
     `)).rows;
     console.log(`🏫 Found ${programs.length} college program entries\n`);

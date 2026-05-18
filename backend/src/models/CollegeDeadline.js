@@ -79,7 +79,7 @@ class CollegeDeadline {
     const { rows } = await pool.query(
       `SELECT ad.*, c.name as college_name
        FROM application_deadlines ad
-       JOIN colleges c ON ad.college_id = c.id
+       JOIN colleges_full c ON ad.college_id = c.id
        WHERE ad.application_year = $1
        ORDER BY c.name ASC`,
       [year]

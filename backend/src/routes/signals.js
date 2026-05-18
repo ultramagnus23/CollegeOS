@@ -79,7 +79,7 @@ router.get('/', authenticate, async (req, res, next) => {
       `SELECT us.id, us.college_id, c.name AS college_name,
               us.signal_type, us.created_at
        FROM   user_signals us
-       JOIN   colleges c ON c.id = us.college_id
+       JOIN colleges_full c ON c.id = us.college_id
        WHERE  us.user_id = $1
        ORDER  BY us.created_at DESC
        LIMIT  50`,

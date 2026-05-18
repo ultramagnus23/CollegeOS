@@ -37,7 +37,7 @@ class Essay {
       `SELECT e.*, a.college_id, c.name as college_name
        FROM essays e
        JOIN applications a ON e.application_id = a.id
-       JOIN colleges c ON a.college_id = c.id
+       JOIN colleges_full c ON a.college_id = c.id
        WHERE a.user_id = $1
        ORDER BY e.created_at DESC`,
       [userId]

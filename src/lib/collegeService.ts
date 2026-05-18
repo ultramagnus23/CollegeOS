@@ -126,7 +126,7 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
   const { column, ascending } = normalizeOrder(sortBy);
 
   return timed('searchColleges', async () => {
-    let q = client.from('colleges').select(COLLEGES_COLUMNS, { count: 'estimated' });
+    let q = client.from('colleges_full').select(COLLEGES_COLUMNS, { count: 'estimated' });
 
     if (query) q = q.ilike('name', `%${query}%`);
     if (country) q = q.eq('country', country);
@@ -159,7 +159,7 @@ export async function getCollegeById(id: number): Promise<CollegeWithRelations |
   const client = requireClient();
   return timed('getCollegeById', async () => {
     const { data, error } = await client
-      .from('colleges')
+      .from('colleges_full')
       .select(COLLEGES_COLUMNS)
       .eq('id', id)
       .maybeSingle();
@@ -174,7 +174,7 @@ export async function getCollegeByName(name: string): Promise<CollegeWithRelatio
   const client = requireClient();
   return timed('getCollegeByName', async () => {
     const { data, error } = await client
-      .from('colleges')
+      .from('colleges_full')
       .select(COLLEGES_COLUMNS)
       .ilike('name', name)
       .limit(1)
@@ -193,7 +193,7 @@ export async function compareColleges(ids: number[]): Promise<CollegeWithRelatio
 
   return timed('compareColleges', async () => {
     const { data, error } = await client
-      .from('colleges')
+      .from('colleges_full')
       .select(COLLEGES_COLUMNS)
       .in('id', safeIds);
 
@@ -206,7 +206,7 @@ export async function getFeaturedColleges(limit = 12): Promise<CollegeWithRelati
   const client = requireClient();
   return timed('getFeaturedColleges', async () => {
     const { data, error } = await client
-      .from('colleges')
+      .from('colleges_full')
       .select(COLLEGES_COLUMNS)
       .order('name', { ascending: true })
       .limit(Math.min(50, Math.max(1, limit)));
@@ -238,14 +238,14 @@ export async function getCollegePrograms(collegeId: number): Promise<Map<string,
 
 export async function getDistinctStates(): Promise<string[]> {
   const client = requireClient();
-  const { data, error } = await client.from('colleges').select('state').not('state', 'is', null).limit(1000);
+  const { data, error } = await client.from('colleges_full').select('state').not('state', 'is', null).limit(1000);
   if (error) throw error;
   return [...new Set((data ?? []).map((r: { state: string | null }) => r.state).filter(Boolean) as string[])].sort();
 }
 
 export async function getDistinctCountries(): Promise<string[]> {
   const client = requireClient();
-  const { data, error } = await client.from('colleges').select('country').not('country', 'is', null).limit(1000);
+  const { data, error } = await client.from('colleges_full').select('country').not('country', 'is', null).limit(1000);
   if (error) throw error;
   return [...new Set((data ?? []).map((r: { country: string | null }) => r.country).filter(Boolean) as string[])].sort();
 }
