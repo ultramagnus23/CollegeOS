@@ -554,7 +554,7 @@ CREATE TABLE IF NOT EXISTS canonical.institution_deadlines (
   deadline_date DATE,
   -- Sentinel date is used only for deterministic UNIQUE conflict keys when
   -- source rows have NULL deadline_date; it is not treated as a real deadline.
-  deadline_date_key DATE GENERATED ALWAYS AS (coalesce(deadline_date, DATE '1900-01-01')) STORED,
+  deadline_date_key DATE GENERATED ALWAYS AS (coalesce(deadline_date, DATE '9999-12-31')) STORED,
   notification_date DATE,
   is_binding BOOLEAN,
   is_rolling BOOLEAN,
@@ -1245,7 +1245,7 @@ BEGIN
         v_slug_base || '-' || replace(v_institution_id::text, '-', ''),
         coalesce(rec.aliases, '[]'::jsonb),
         rec.short_name,
-        coalesce(rec.country_code, 'US'),
+        coalesce(rec.country_code, 'ZZ'),
         rec.region_code,
         rec.state_region,
         rec.city,
