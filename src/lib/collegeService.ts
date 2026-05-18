@@ -10,10 +10,10 @@ const MAX_PAGE_SIZE = 100;
 const COLLEGES_COLUMNS = [
   'id', 'name', 'slug', 'country',
   'city', 'state', 'latitude', 'longitude',
-  'type', 'institution_type',
+  'institution_type',
   'size_category', 'campus_setting',
   'total_enrollment', 'undergraduate_enrollment', 'graduate_enrollment',
-  'website', 'website_url', 'official_website', 'logo_url', 'description',
+  'website_url', 'official_website', 'logo_url', 'description',
   'acceptance_rate', 'sat_25', 'sat_75', 'act_25', 'act_75', 'gpa_25', 'gpa_75', 'act_avg',
   'tuition_domestic', 'tuition_international',
   'qs_rank', 'the_rank', 'ranking_us_news',
@@ -22,6 +22,11 @@ const COLLEGES_COLUMNS = [
   'pct_receiving_merit_aid', 'pct_students_receiving_aid',
   'international_aid_available', 'international_aid_avg',
   'meets_full_need', 'css_profile_required',
+  'data_quality_score', 'needs_enrichment', 'data_source', 'data_source_url', 'last_updated_at',
+  'annual_cost_usd', 'annual_cost_inr', 'avg_net_price_usd', 'avg_sat', 'avg_act',
+  'graduation_rate', 'retention_rate', 'international_student_pct', 'first_gen_pct',
+  'pct_receiving_aid', 'enrollment', 'college_type', 'overall_ranking', 'ranking_source',
+  'avg_gpa', 'majors_offered',
   'median_earnings_6yr', 'median_earnings_10yr',
   'updated_at', 'popularity_score',
 ].join(', ');
@@ -121,12 +126,12 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
   const { column, ascending } = normalizeOrder(sortBy);
 
   return timed('searchColleges', async () => {
-    let q = client.from('colleges').select(COLLEGES_COLUMNS, { count: 'estimated' });
+    let q = client.from('colleges_full').select(COLLEGES_COLUMNS, { count: 'estimated' });
 
     if (query) q = q.ilike('name', `%${query}%`);
     if (country) q = q.eq('country', country);
     if (state) q = q.eq('state', state);
-    if (type) q = q.eq('type', type);
+    if (type) q = q.eq('institution_type', type);
     if (setting) q = q.eq('campus_setting', setting);
     if (minAcceptance !== undefined) q = q.gte('acceptance_rate', minAcceptance);
     if (maxAcceptance !== undefined) q = q.lte('acceptance_rate', maxAcceptance);
@@ -154,7 +159,7 @@ export async function getCollegeById(id: number): Promise<CollegeWithRelations |
   const client = requireClient();
   return timed('getCollegeById', async () => {
     const { data, error } = await client
-      .from('colleges')
+      .from('colleges_full')
       .select(COLLEGES_COLUMNS)
       .eq('id', id)
       .maybeSingle();
@@ -169,7 +174,7 @@ export async function getCollegeByName(name: string): Promise<CollegeWithRelatio
   const client = requireClient();
   return timed('getCollegeByName', async () => {
     const { data, error } = await client
-      .from('colleges')
+      .from('colleges_full')
       .select(COLLEGES_COLUMNS)
       .ilike('name', name)
       .limit(1)
@@ -188,7 +193,7 @@ export async function compareColleges(ids: number[]): Promise<CollegeWithRelatio
 
   return timed('compareColleges', async () => {
     const { data, error } = await client
-      .from('colleges')
+      .from('colleges_full')
       .select(COLLEGES_COLUMNS)
       .in('id', safeIds);
 
@@ -201,7 +206,7 @@ export async function getFeaturedColleges(limit = 12): Promise<CollegeWithRelati
   const client = requireClient();
   return timed('getFeaturedColleges', async () => {
     const { data, error } = await client
-      .from('colleges')
+      .from('colleges_full')
       .select(COLLEGES_COLUMNS)
       .order('name', { ascending: true })
       .limit(Math.min(50, Math.max(1, limit)));
@@ -233,14 +238,14 @@ export async function getCollegePrograms(collegeId: number): Promise<Map<string,
 
 export async function getDistinctStates(): Promise<string[]> {
   const client = requireClient();
-  const { data, error } = await client.from('colleges').select('state').not('state', 'is', null).limit(1000);
+  const { data, error } = await client.from('colleges_full').select('state').not('state', 'is', null).limit(1000);
   if (error) throw error;
   return [...new Set((data ?? []).map((r: { state: string | null }) => r.state).filter(Boolean) as string[])].sort();
 }
 
 export async function getDistinctCountries(): Promise<string[]> {
   const client = requireClient();
-  const { data, error } = await client.from('colleges').select('country').not('country', 'is', null).limit(1000);
+  const { data, error } = await client.from('colleges_full').select('country').not('country', 'is', null).limit(1000);
   if (error) throw error;
   return [...new Set((data ?? []).map((r: { country: string | null }) => r.country).filter(Boolean) as string[])].sort();
 }

@@ -170,7 +170,7 @@ router.get('/colleges', async (req, res) => {
     // Get total count
     const countQuery = `
       SELECT COUNT(*) as total
-      FROM public.colleges c
+      FROM public.colleges_full c
       ${whereClause}
     `;
     const countResult = (await pool.query(countQuery, params)).rows[0];
@@ -218,7 +218,7 @@ router.get('/colleges', async (req, res) => {
         c.tuition_international,
         c.total_enrollment,
         (SELECT ARRAY_AGG(cp.program_name) FROM college_programs cp WHERE cp.college_id=c.id) as program_names
-      FROM public.colleges c
+      FROM public.colleges_full c
       ${whereClause}
       ORDER BY
         ${relevanceOrder}
@@ -342,7 +342,7 @@ router.get('/filters', async (req, res) => {
         MAX(c.acceptance_rate) as max_rate,
         MIN(c.tuition_international) as min_cost,
         MAX(c.tuition_international) as max_cost
-      FROM public.colleges c
+      FROM public.colleges_full c
     `)).rows[0];
 
     res.json({

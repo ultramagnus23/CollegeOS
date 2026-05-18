@@ -30,7 +30,7 @@ let _client: SupabaseClient | null = null;
  * Usage:
  *   import { createClient } from '@/utils/supabase/client';
  *   const supabase = createClient();
- *   const { data, error } = await supabase.from('colleges').select('*');
+ *   const { data, error } = await supabase.from('colleges_full').select('*');
  */
 export const createClient = (): SupabaseClient => {
   if (!_client) {

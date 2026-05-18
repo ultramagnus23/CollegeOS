@@ -140,10 +140,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const response = await api.completeOnboarding(data);
     const updatedUser = response.data;
     setUser(updatedUser);
-    
-    // Mark onboarding as complete in ProfileService
-    profileService.completeOnboarding(data);
-    
+
     // Sync full user data from backend
     profileService.syncFromBackend(updatedUser);
     

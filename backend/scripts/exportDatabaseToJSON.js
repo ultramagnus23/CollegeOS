@@ -49,7 +49,7 @@ async function exportDatabaseToJSON() {
         sd.percent_hispanic, sd.percent_asian, sd.percent_international,
         cl.housing_guarantee, cl.distance_only,
         (SELECT STRING_AGG(program_name, '|') FROM college_programs WHERE college_id = c.id) as programs
-      FROM colleges c
+      FROM colleges_full c
       LEFT JOIN colleges_comprehensive cc ON c.id = cc.college_id
       LEFT JOIN college_admissions ca ON c.id = ca.college_id
       LEFT JOIN admitted_student_stats ass ON c.id = ass.college_id

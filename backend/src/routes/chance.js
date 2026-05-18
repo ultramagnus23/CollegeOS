@@ -71,7 +71,7 @@ router.post('/', authenticate, async (req, res, next) => {
            c.act_avg,
            c.gpa_25,
            c.gpa_75
-         FROM public.colleges c
+         FROM public.colleges_full c
          WHERE c.name ILIKE $1
          ORDER BY CASE WHEN c.acceptance_rate IS NOT NULL THEN 1 ELSE 2 END, c.name ASC
          LIMIT 1`,

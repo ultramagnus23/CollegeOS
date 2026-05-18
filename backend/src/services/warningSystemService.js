@@ -69,7 +69,7 @@ class WarningSystemService {
       const deadlines = (await pool.query(`
         SELECT ud.*, c.name as college_name
         FROM user_deadlines ud
-        LEFT JOIN colleges c ON c.id = ud.college_id
+        LEFT JOIN colleges_full c ON c.id = ud.college_id
         WHERE ud.user_id = $1 AND ud.is_active = 1 AND ud.is_completed = 0
         ORDER BY ud.deadline_date ASC
       `, [userId])).rows;
@@ -135,7 +135,7 @@ class WarningSystemService {
       const tasks = (await pool.query(`
         SELECT t.*, c.name as college_name
         FROM tasks t
-        LEFT JOIN colleges c ON c.id = t.college_id
+        LEFT JOIN colleges_full c ON c.id = t.college_id
         WHERE t.user_id = $1 AND t.status NOT IN ('complete', 'skipped') AND t.deadline IS NOT NULL
         ORDER BY t.deadline ASC
       `, [userId])).rows;

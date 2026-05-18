@@ -340,7 +340,7 @@ async function getUserApplications(userId) {
   const rows = (await pool.query(`
       SELECT a.*, c.name, c.country, c.deadline_templates
       FROM applications a
-      JOIN colleges c ON a.college_id = c.id
+      JOIN colleges_full c ON a.college_id = c.id
       WHERE a.user_id = $1
     `, [userId])).rows;
   return rows.map(row => ({

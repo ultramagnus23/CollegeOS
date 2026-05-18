@@ -1,5 +1,5 @@
 // src/pages/Chancing.tsx — Rich Chancing Dashboard
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import ProfileCompleteness from '../components/ProfileCompleteness';
@@ -280,8 +280,8 @@ export default function Chancing() {
   const [summary, setSummary] = useState<CollegeSummary>({ total: 0, safetyCount: 0, targetCount: 0, reachCount: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const loadSeqRef = React.useRef(0);
-  const mountedRef = React.useRef(true);
+  const loadSeqRef = useRef(0);
+  const mountedRef = useRef(true);
 
   useEffect(() => () => { mountedRef.current = false; }, []);
 

@@ -36,7 +36,7 @@ class DeadlineScrapingScheduler {
       // Get Tier 1 colleges and colleges with approaching deadlines
       const pool = dbManager.getDatabase();
       const colleges = (await pool.query(`
-        SELECT c.* FROM colleges c
+        SELECT c.* FROM colleges_full c
         LEFT JOIN application_deadlines ad ON c.id = ad.college_id
         WHERE c.priority_tier = 1
           OR (ad.early_decision_1_date >= NOW() AND ad.early_decision_1_date <= NOW() + INTERVAL '90 days')

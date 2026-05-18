@@ -53,7 +53,7 @@ class DataRefreshJob {
       
       const colleges = (await pool.query(`
         SELECT DISTINCT c.id, c.admissions_url
-        FROM colleges c
+        FROM colleges_full c
         JOIN applications a ON c.id = a.college_id
         WHERE a.status IN ('researching', 'preparing')
           AND c.admissions_url IS NOT NULL
