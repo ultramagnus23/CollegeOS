@@ -345,7 +345,7 @@ CREATE TABLE IF NOT EXISTS canonical.institutions (
   slug TEXT NOT NULL,
   aliases JSONB NOT NULL DEFAULT '[]'::jsonb,
   short_name TEXT,
-  country_code TEXT NOT NULL,
+  country_code TEXT,
   region_code TEXT,
   state_region TEXT,
   city TEXT,
@@ -1245,7 +1245,7 @@ BEGIN
         v_slug_base || '-' || replace(v_institution_id::text, '-', ''),
         coalesce(rec.aliases, '[]'::jsonb),
         rec.short_name,
-        coalesce(rec.country_code, 'ZZ'),
+        rec.country_code,
         rec.region_code,
         rec.state_region,
         rec.city,
@@ -2320,7 +2320,6 @@ BEGIN
         WHERE r.institution_id = i.id
           AND (
             lower(r.requirement_name) LIKE '%bursar%'
-            OR lower(r.requirement_name) LIKE '%bursary%'
             OR lower(r.requirement_value) LIKE '%bursary%'
           )
       ) THEN TRUE
