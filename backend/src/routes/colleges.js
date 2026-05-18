@@ -216,7 +216,10 @@ router.get('/comprehensive', async (req, res, next) => {
       name: 'canonical_name ASC',
       acceptance_rate: 'acceptance_rate ASC NULLS LAST',
       tuition: 'tuition_international ASC NULLS LAST',
-      ranking: 'median_start_salary DESC NULLS LAST',
+      ranking: `CASE
+        WHEN (metadata->>'ranking_us_news') ~ '^[0-9]+$' THEN (metadata->>'ranking_us_news')::INTEGER
+        ELSE NULL
+      END ASC NULLS LAST`,
     };
     const sortKey = SORT_EXPRESSIONS[req.query.sortBy] ? req.query.sortBy : 'popularity';
     const orderExpr = SORT_EXPRESSIONS[sortKey];
@@ -226,7 +229,7 @@ router.get('/comprehensive', async (req, res, next) => {
     let idx = 1;
 
     if (req.query.query) {
-      conditions.push(`cc.name ILIKE $${idx++}`);
+      conditions.push(`canonical_name ILIKE $${idx++}`);
       params.push(`%${req.query.query}%`);
     }
     if (req.query.country) {
@@ -449,11 +452,21 @@ router.get('/suggested', authenticate, async (req, res, next) => {
       const csat = parseFloat(c.median_sat) || null;
       const pop  = parseFloat(c.popularity_score) || 0;
 
-      // GPA alignment: 1 - |student_gpa - college_median_gpa| / 4.0
+      // GPA alignment uses an acceptance-rate-based expectation curve:
+      // selective (<20%) -> 3.8, mid-selective (20-40%) -> 3.4, broad access -> 3.0.
+      const REACH_ACCEPT_RATE_THRESHOLD = 0.2;
+      const MATCH_ACCEPT_RATE_THRESHOLD = 0.4;
+      const REACH_GPA_EXPECTATION = 3.8;
+      const MATCH_GPA_EXPECTATION = 3.4;
+      const SAFETY_GPA_EXPECTATION = 3.0;
       let gpaAlignment = 0.5;
       if (effectiveGPA != null) {
-        const targetGpa = ar < 0.2 ? 3.8 : ar < 0.4 ? 3.4 : 3.0;
-        gpaAlignment = Math.max(0, 1 - Math.abs(effectiveGPA - targetGpa) / 4.0);
+        const targetGPA = ar < REACH_ACCEPT_RATE_THRESHOLD
+          ? REACH_GPA_EXPECTATION
+          : ar < MATCH_ACCEPT_RATE_THRESHOLD
+            ? MATCH_GPA_EXPECTATION
+            : SAFETY_GPA_EXPECTATION;
+        gpaAlignment = Math.max(0, 1 - Math.abs(effectiveGPA - targetGPA) / 4.0);
       }
 
       // Test score alignment: 1 - |student_sat - college_median_sat| / 1600
@@ -526,6 +539,7 @@ router.get('/suggested', authenticate, async (req, res, next) => {
   }
 });
 
+// Keep this dynamic route last so it doesn't shadow literal paths (e.g. /comprehensive).
 router.get('/:id', CollegeController.getCollegeById);
 
 module.exports = router;
