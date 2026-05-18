@@ -51,6 +51,7 @@ log = logging.getLogger("pipeline")
 
 # Minimum successful upserts before the pipeline declares failure
 MIN_SUCCESS_ROWS = int(os.environ.get("MIN_SUCCESS_ROWS", "500"))
+DEFAULT_IPEDS_CONFIDENCE_SCORE = 0.7
 
 # Fuzzy-match threshold for name matching (0–1)
 FUZZY_THRESHOLD = 0.85
@@ -255,6 +256,42 @@ def load_db_colleges(conn) -> dict[str, int]:
     return {_normalise_name(row["name"]): row["id"] for row in rows}
 
 
+def log_run_start(conn, job_name: str) -> int:
+    """Insert scraper_run_logs start row and return run id."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO scraper_run_logs (job_name, started_at)
+            VALUES (%s, NOW())
+            RETURNING id
+            """,
+            (job_name,),
+        )
+        row = cur.fetchone()
+        if row is None:
+            raise RuntimeError(
+                f"Failed to create scraper_run_logs row for job: {job_name}. "
+                "Check database connectivity and scraper_run_logs constraints."
+            )
+        return int(row[0])
+
+
+def log_run_end(conn, run_id: int, rows_upserted: int, status: str, error: Optional[str] = None) -> None:
+    """Finalize scraper_run_logs row."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE scraper_run_logs
+            SET finished_at = NOW(),
+                rows_upserted = %s,
+                status = %s,
+                error_message = %s
+            WHERE id = %s
+            """,
+            (rows_upserted, status, error, run_id),
+        )
+
+
 def find_college_id(name: str, db_lookup: dict[str, int]) -> Optional[int]:
     """
     Find the DB id for a college by normalised name.
@@ -317,6 +354,35 @@ _UPSERT_SQL = """
     RETURNING id;
 """
 
+_ADMISSIONS_UPSERT_SQL = """
+    INSERT INTO college_admissions (
+        college_id, year, acceptance_rate, yield_rate,
+        application_volume, admit_volume, enrollment_volume,
+        sat_verbal_25, sat_verbal_75, sat_math_25, sat_math_75,
+        act_25, act_75, source, confidence_score
+    ) VALUES (
+        %s, %s, %s, %s,
+        %s, %s, %s,
+        %s, %s, %s, %s,
+        %s, %s, %s, %s
+    )
+    ON CONFLICT (college_id, year) DO UPDATE SET
+        acceptance_rate   = COALESCE(EXCLUDED.acceptance_rate, college_admissions.acceptance_rate),
+        yield_rate        = COALESCE(EXCLUDED.yield_rate, college_admissions.yield_rate),
+        application_volume = COALESCE(EXCLUDED.application_volume, college_admissions.application_volume),
+        admit_volume      = COALESCE(EXCLUDED.admit_volume, college_admissions.admit_volume),
+        enrollment_volume = COALESCE(EXCLUDED.enrollment_volume, college_admissions.enrollment_volume),
+        sat_verbal_25     = COALESCE(EXCLUDED.sat_verbal_25, college_admissions.sat_verbal_25),
+        sat_verbal_75     = COALESCE(EXCLUDED.sat_verbal_75, college_admissions.sat_verbal_75),
+        sat_math_25       = COALESCE(EXCLUDED.sat_math_25, college_admissions.sat_math_25),
+        sat_math_75       = COALESCE(EXCLUDED.sat_math_75, college_admissions.sat_math_75),
+        act_25            = COALESCE(EXCLUDED.act_25, college_admissions.act_25),
+        act_75            = COALESCE(EXCLUDED.act_75, college_admissions.act_75),
+        source            = EXCLUDED.source,
+        confidence_score  = EXCLUDED.confidence_score
+    RETURNING id;
+"""
+
 
 def upsert_college(conn, college_id: int, data: dict) -> bool:
     """
@@ -342,6 +408,37 @@ def upsert_college(conn, college_id: int, data: dict) -> bool:
     )
     with conn.cursor() as cur:
         cur.execute(_UPSERT_SQL, params)
+        return cur.fetchone() is not None
+
+
+def upsert_college_admissions(conn, college_id: int, data: dict, year: int) -> bool:
+    """Upsert admissions-level metrics for a college/year."""
+    applicants_total = data.get("applicants_total")
+    if applicants_total is None:
+        applicants_total = data.get("applications_received")
+    admitted_total = data.get("admitted_total")
+    enrolled_total = data.get("enrolled_total")
+    if enrolled_total is None:
+        enrolled_total = data.get("total_enrollment")
+    params = (
+        college_id,
+        year,
+        data.get("acceptance_rate"),
+        data.get("yield_rate"),
+        applicants_total,
+        admitted_total,
+        enrolled_total,
+        data.get("sat_verbal_25"),
+        data.get("sat_verbal_75"),
+        data.get("sat_math_25"),
+        data.get("sat_math_75"),
+        data.get("median_act_25"),
+        data.get("median_act_75"),
+        data.get("data_source", "IPEDS"),
+        DEFAULT_IPEDS_CONFIDENCE_SCORE,
+    )
+    with conn.cursor() as cur:
+        cur.execute(_ADMISSIONS_UPSERT_SQL, params)
         return cur.fetchone() is not None
 
 
@@ -416,9 +513,13 @@ def main() -> int:
     rows_skipped_no_match = 0
     rows_skipped_no_data = 0
     rows_skipped_error = 0
+    run_id: Optional[int] = None
+    current_year = int(os.environ.get("PIPELINE_YEAR", "2025"))
 
     try:
         conn = _get_connection(db_url)
+        run_id = log_run_start(conn, "daily-data-refresh")
+        conn.commit()
         db_colleges = load_db_colleges(conn)
         log.info(f"DB has {len(db_colleges)} colleges to match against")
 
@@ -438,7 +539,9 @@ def main() -> int:
             # Skip if there is genuinely nothing useful to write
             useful_fields = (
                 "acceptance_rate", "total_enrollment", "applications_received",
-                "median_sat_25", "median_act_25", "completion_rate",
+                "median_sat_25", "median_act_25", "completion_rate", "yield_rate",
+                "applicants_total", "admitted_total", "enrolled_total",
+                "sat_verbal_25", "sat_verbal_75", "sat_math_25", "sat_math_75",
                 "median_earnings_post_grad",
             )
             if not any(record.get(f) is not None for f in useful_fields):
@@ -449,7 +552,12 @@ def main() -> int:
             try:
                 ok = upsert_college(conn, college_id, record)
                 if ok:
-                    rows_updated += 1
+                    admissions_ok = upsert_college_admissions(conn, college_id, record, current_year)
+                    if admissions_ok:
+                        rows_updated += 1
+                    else:
+                        rows_skipped_error += 1
+                        log.debug(f"[SKIP admissions-upsert-empty] {name}")
                 else:
                     rows_skipped_error += 1
                     log.debug(f"[SKIP upsert-empty] {name}")
@@ -464,11 +572,21 @@ def main() -> int:
                 conn.commit()
 
         conn.commit()
+        if run_id is not None:
+            status = "success" if rows_updated >= MIN_SUCCESS_ROWS else "partial"
+            log_run_end(conn, run_id, rows_updated, status)
+            conn.commit()
 
     except Exception as exc:
         log.error(f"Fatal DB error: {exc}", exc_info=True)
         if conn:
             conn.rollback()
+            if run_id is not None:
+                try:
+                    log_run_end(conn, run_id, rows_updated, "failed", str(exc))
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
         return 1
     finally:
         if conn:

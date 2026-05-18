@@ -166,7 +166,7 @@ class DeadlineDependencyService {
       let query = `
         SELECT t.*, c.name as college_name
         FROM tasks t
-        LEFT JOIN colleges c ON c.id = t.college_id
+        LEFT JOIN colleges_full c ON c.id = t.college_id
         WHERE t.user_id = $1
       `;
       const params = [userId];

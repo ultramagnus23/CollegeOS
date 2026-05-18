@@ -8,7 +8,7 @@ export default defineConfig({
     host: "::",
     port: 8080,
   },
-  plugins: [react()],
+  plugins: [react({ jsxRuntime: "automatic" })],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

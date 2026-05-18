@@ -43,7 +43,8 @@ const SCORED_FIELDS = [
   'overall_ranking',
 ];
 
-const USD_TO_INR_RATE = Number(process.env.USD_TO_INR_RATE || 83);
+// Fallback used when currency_rates has no USD→INR row.
+let USD_TO_INR_RATE = Number(process.env.USD_TO_INR_RATE || 84);
 const DELAY_MS = 500;
 
 function requireEnv(name) {
@@ -103,6 +104,20 @@ async function fetchText(url, options = {}) {
   const res = await fetch(url, options);
   if (!res.ok) throw new Error(`HTTP ${res.status} ${url}`);
   return res.text();
+}
+
+async function loadUsdToInrRate(supabase) {
+  const { data, error } = await supabase
+    .from('currency_rates')
+    .select('rate')
+    .eq('base_currency', 'USD')
+    .eq('quote_currency', 'INR')
+    .order('fetched_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  const rate = Number(data?.rate);
+  return Number.isFinite(rate) && rate > 0 ? rate : null;
 }
 
 function containsName(rowText, collegeName) {
@@ -289,6 +304,14 @@ async function main() {
   const supabaseUrl = requireEnv('SUPABASE_URL');
   const serviceRoleKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
   const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
+  try {
+    const dbRate = await loadUsdToInrRate(supabase);
+    if (dbRate) {
+      USD_TO_INR_RATE = dbRate;
+    }
+  } catch (err) {
+    console.warn(`Failed to load USD→INR rate from currency_rates, using fallback ${USD_TO_INR_RATE}: ${err.message}`);
+  }
 
   const { data: colleges, error } = await supabase
     .from('colleges')

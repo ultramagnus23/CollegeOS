@@ -33,7 +33,7 @@ class Deadline {
       `SELECT d.*, a.college_id, c.name as college_name
        FROM deadlines d
        JOIN applications a ON d.application_id = a.id
-       JOIN colleges c ON a.college_id = c.id
+       JOIN colleges_full c ON a.college_id = c.id
        WHERE a.user_id = $1
          AND (d.is_completed IS NULL OR d.is_completed = false)
          AND d.deadline_date BETWEEN NOW() AND NOW() + ($2 || ' days')::INTERVAL

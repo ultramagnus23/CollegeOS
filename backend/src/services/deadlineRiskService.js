@@ -47,7 +47,7 @@ class DeadlineService {
     const { rows: applications } = await pool.query(
       `SELECT DISTINCT a.college_id, c.name AS college_name
        FROM applications a
-       JOIN colleges c ON c.id = a.college_id
+       JOIN colleges_full c ON c.id = a.college_id
        WHERE a.user_id = $1 AND a.status NOT IN ('submitted','withdrawn','accepted','rejected')`,
       [userId]
     );
@@ -102,7 +102,7 @@ class DeadlineService {
     const { rows: deadlines } = await pool.query(
       `SELECT ud.*, c.name AS college_name
        FROM user_deadlines ud
-       LEFT JOIN colleges c ON c.id = ud.college_id
+       LEFT JOIN colleges_full c ON c.id = ud.college_id
        WHERE ud.user_id = $1
          AND ud.is_active = 1
          AND ud.is_completed = 0
@@ -243,7 +243,7 @@ class DeadlineService {
         `SELECT da.*, ud.title AS deadline_title, ud.deadline_date, c.name AS college_name
          FROM deadline_alerts da
          JOIN user_deadlines ud ON ud.id = da.deadline_id
-         LEFT JOIN colleges c ON c.id = ud.college_id
+         LEFT JOIN colleges_full c ON c.id = ud.college_id
          WHERE da.user_id = $1 AND da.is_read = false AND da.is_dismissed = false
          ORDER BY da.created_at DESC`,
         [userId]
@@ -268,7 +268,7 @@ class DeadlineService {
     let query = `
       SELECT ud.*, c.name AS college_name
       FROM user_deadlines ud
-      LEFT JOIN colleges c ON c.id = ud.college_id
+      LEFT JOIN colleges_full c ON c.id = ud.college_id
       WHERE ud.user_id = $1`;
     const params = [userId];
     let idx = 2;

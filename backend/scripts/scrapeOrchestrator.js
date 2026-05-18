@@ -120,7 +120,7 @@ class ScrapingOrchestrator {
       SELECT sq.id as queue_id, sq.college_id, sq.priority, sq.attempts,
              c.name, c.official_website
       FROM scrape_queue sq
-      JOIN colleges c ON c.id = sq.college_id
+      JOIN colleges_full c ON c.id = sq.college_id
       WHERE sq.status = 'pending'
         AND sq.scheduled_for::date <= $1
       ORDER BY sq.priority ASC, sq.scheduled_for ASC

@@ -38,7 +38,7 @@ async function viewRecentChanges(limit = DEFAULT_LIMIT) {
         sal.extraction_method,
         sal.scraped_at
       FROM scrape_audit_log sal
-      JOIN colleges c ON sal.college_id = c.id
+      JOIN colleges_full c ON sal.college_id = c.id
       ORDER BY sal.scraped_at DESC
       LIMIT $1
     `, [limit]);

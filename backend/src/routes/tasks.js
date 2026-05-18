@@ -19,7 +19,7 @@ router.get('/', authenticate, async (req, res) => {
     const userId = req.user.userId || req.user.id;
     const { collegeId, status, type } = req.query;
     const pool = dbManager.getDatabase();
-    let query = 'SELECT t.*, c.name as college_name FROM tasks t LEFT JOIN colleges c ON c.id=t.college_id WHERE t.user_id=$1';
+    let query = 'SELECT t.*, c.name as college_name FROM tasks t LEFT JOIN colleges_full c ON c.id=t.college_id WHERE t.user_id=$1';
     const params = [userId];
     let idx = 2;
     if (collegeId) { query += ` AND t.college_id=$${idx++}`; params.push(parseInt(collegeId)); }
@@ -94,7 +94,7 @@ router.get('/blocked', authenticate, async (req, res) => {
     const userId = req.user.userId || req.user.id;
     const { collegeId } = req.query;
     const pool = dbManager.getDatabase();
-    let query = `SELECT t.*, c.name as college_name FROM tasks t LEFT JOIN colleges c ON c.id=t.college_id WHERE t.user_id=$1 AND t.status='blocked'`;
+    let query = `SELECT t.*, c.name as college_name FROM tasks t LEFT JOIN colleges_full c ON c.id=t.college_id WHERE t.user_id=$1 AND t.status='blocked'`;
     const params = [userId];
     let idx = 2;
     if (collegeId) { query += ` AND t.college_id=$${idx++}`; params.push(parseInt(collegeId)); }
