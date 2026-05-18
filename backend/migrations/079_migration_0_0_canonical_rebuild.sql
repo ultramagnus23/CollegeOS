@@ -365,7 +365,13 @@ CREATE TABLE IF NOT EXISTS canonical.institutions (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CHECK (established_year IS NULL OR established_year BETWEEN 1000 AND 2100),
+  CHECK (
+    established_year IS NULL
+    OR (
+      established_year >= 1000
+      AND established_year <= (extract(year from current_date)::INTEGER + 10)
+    )
+  ),
   CONSTRAINT uq_institutions_slug UNIQUE (slug),
   CONSTRAINT uq_institutions_country_normalized UNIQUE (country_code, normalized_name)
 );
