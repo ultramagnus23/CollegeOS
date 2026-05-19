@@ -683,24 +683,11 @@ class ApiService {
     generate: () => this.generateRecommendations(),
   };
 
-  // Vector-based ML recommendations namespace
+  // Backward-compatible recommendation namespace (now unified to canonical quality engine)
   recommend = {
-    /**
-     * POST /api/recommend
-     * Returns top 50 colleges by cosine similarity + admit chance.
-     */
-    getColleges: (filters: Record<string, any> = {}) =>
-      this.request('/recommend', {
-        method: 'POST',
-        body: JSON.stringify({ filters }),
-      }),
+    getColleges: (_filters: Record<string, any> = {}) => this.getRecommendations(),
 
-    /**
-     * GET /api/recommend/majors
-     * Returns top major categories and specific majors that match the user's
-     * interest vector dimensions.
-     */
-    getMajors: () => this.request('/recommend/majors'),
+    getMajors: () => Promise.resolve({ success: true, top_interest_categories: [], recommended_majors: [] }),
   };
 
   // Signals namespace — fire interaction signals for online learning

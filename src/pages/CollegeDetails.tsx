@@ -29,60 +29,8 @@ import { toast } from 'sonner';
 import { DataFreshnessIndicator } from '@/components/DataFreshnessIndicator';
 import { getCollegeById, isSupabaseConfigured, normalizeToDetail } from '../lib/collegeService';
 import { useAuth } from '../contexts/AuthContext';
+import { formatCountryName, getCountryTheme, normalizeCountryCode } from '../lib/country';
 const COLLEGE_SYNC_DEBUG = import.meta.env.DEV;
-
-/* =========================
-   Country-based Gradient Mapping
-========================= */
-const getCountryGradient = (country: string): string => {
-  const countryLower = country?.toLowerCase() || '';
-  
-  // US colleges - Blue gradient
-  if (countryLower.includes('united states') || countryLower === 'usa' || countryLower === 'us') {
-    return 'from-blue-600 to-blue-900';
-  }
-  
-  // UK colleges - Red gradient
-  if (countryLower.includes('united kingdom') || countryLower === 'uk' || countryLower.includes('england') || 
-      countryLower.includes('scotland') || countryLower.includes('wales')) {
-    return 'from-red-600 to-red-900';
-  }
-  
-  // EU colleges - Green gradient
-  if (countryLower.includes('germany') || countryLower.includes('france') || countryLower.includes('netherlands') ||
-      countryLower.includes('spain') || countryLower.includes('italy') || countryLower.includes('sweden') ||
-      countryLower.includes('denmark') || countryLower.includes('belgium') || countryLower.includes('austria') ||
-      countryLower.includes('switzerland') || countryLower.includes('ireland') || countryLower.includes('finland') ||
-      countryLower.includes('norway') || countryLower.includes('portugal') || countryLower.includes('poland')) {
-    return 'from-emerald-600 to-emerald-900';
-  }
-  
-  // India colleges - Orange gradient
-  if (countryLower.includes('india')) {
-    return 'from-orange-500 to-orange-800';
-  }
-  
-  // China/Asia colleges - Purple gradient
-  if (countryLower.includes('china') || countryLower.includes('japan') || countryLower.includes('korea') ||
-      countryLower.includes('singapore') || countryLower.includes('hong kong') || countryLower.includes('taiwan') ||
-      countryLower.includes('malaysia') || countryLower.includes('thailand') || countryLower.includes('vietnam') ||
-      countryLower.includes('indonesia') || countryLower.includes('philippines')) {
-    return 'from-purple-600 to-purple-900';
-  }
-  
-  // Canada - Red and white inspired gradient
-  if (countryLower.includes('canada')) {
-    return 'from-red-500 to-rose-800';
-  }
-  
-  // Australia/NZ - Teal gradient
-  if (countryLower.includes('australia') || countryLower.includes('new zealand')) {
-    return 'from-teal-600 to-teal-900';
-  }
-  
-  // Default - Blue gradient
-  return 'from-blue-600 to-blue-800';
-};
 
 /* =========================
    Types
@@ -311,6 +259,7 @@ const CollegeDetail: React.FC = () => {
 
   const [college, setCollege] = useState<College | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [adding, setAdding] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabName>('overview');
   const [chancingResult, setChancingResult] = useState<{
@@ -339,6 +288,7 @@ const CollegeDetail: React.FC = () => {
   const loadCollegeDetails = async (collegeId: string): Promise<void> => {
     try {
       setLoading(true);
+      setLoadError(null);
       let collegeData: College | null = null;
 
       if (isSupabaseConfigured) {
@@ -403,6 +353,7 @@ const CollegeDetail: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load college:', error);
+      setLoadError(error instanceof Error ? error.message : 'Failed to load college');
     } finally {
       setLoading(false);
     }
@@ -500,7 +451,16 @@ const CollegeDetail: React.FC = () => {
   if (!college) {
     return (
       <div className="p-6 text-center">
-        <h1 className="text-2xl font-bold mb-4">College Not Found</h1>
+        <h1 className="text-2xl font-bold mb-4">{loadError ? 'Failed to load college' : 'College Not Found'}</h1>
+        {loadError && <p className="text-muted-foreground mb-4">{loadError}</p>}
+        {id && loadError && (
+          <button
+            onClick={() => loadCollegeDetails(id)}
+            className="px-6 py-2 bg-primary text-primary-foreground rounded-lg mr-3"
+          >
+            Retry
+          </button>
+        )}
         <button
           onClick={() => navigate('/colleges')}
           className="px-6 py-2 bg-blue-600 text-white rounded-lg"
@@ -536,13 +496,13 @@ const CollegeDetail: React.FC = () => {
     return `${percentage.toFixed(1)}%`;
   };
 
-  const formatCurrency = (amount: number | null | undefined, country: string): string | null => {
+  const formatCurrency = (amount: number | null | undefined, countryCode: string | null): string | null => {
     if (amount === null || amount === undefined) return null;
-    if (country === 'India') {
+    if (countryCode === 'IN') {
       return `₹${amount.toLocaleString('en-IN')}`;
-    } else if (country === 'United Kingdom') {
+    } else if (countryCode === 'GB') {
       return `£${amount.toLocaleString('en-GB')}`;
-    } else if (country === 'Germany') {
+    } else if (countryCode === 'DE') {
       return amount === 0 ? 'Free (Public)' : `€${amount.toLocaleString('de-DE')}`;
     }
     return `$${amount.toLocaleString('en-US')}`;
@@ -719,8 +679,10 @@ const CollegeDetail: React.FC = () => {
   // Determine if we have ethnicity data
   const hasEthnicityData = Object.keys(resolvedEthnicDistribution).length > 0;
 
-  // Get dynamic gradient based on country
-  const heroGradient = getCountryGradient(college.country);
+  const countryCode = normalizeCountryCode(college.country);
+  const countryName = formatCountryName(college.country);
+  const countryTheme = getCountryTheme(countryCode ?? college.country);
+  const heroGradient = countryTheme.gradient;
 
   const formatProvenanceDate = (dateLike: string | null | undefined): string | null => {
     if (!dateLike) return null;
@@ -770,7 +732,7 @@ const CollegeDetail: React.FC = () => {
               <div className="flex items-center gap-4 text-blue-100">
                 <div className="flex items-center gap-1">
                   <MapPin className="w-4 h-4" />
-                  {[college.city, college.state, college.country].filter(Boolean).join(', ') || 'Location not specified'}
+                  {[college.city, college.state, countryName].filter(Boolean).join(', ') || 'Location not specified'}
                 </div>
                 <span className="px-2 py-0.5 bg-white/20 rounded text-sm">
                   {college.type || 'University'}
@@ -866,7 +828,7 @@ const CollegeDetail: React.FC = () => {
                 return <QuickStat label="Avg Net Price" value={`$${resolvedAvgNetPrice?.toLocaleString() ?? ''}`} />;
               }
               // Fallback to tuition
-              const tuitionStr = formatCurrency(college.tuition_cost, college.country);
+               const tuitionStr = formatCurrency(college.tuition_cost, countryCode);
               return tuitionStr && <QuickStat label="Tuition" value={tuitionStr} />;
             })()}
             
@@ -1184,8 +1146,8 @@ const CollegeDetail: React.FC = () => {
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-muted-foreground/50 mt-0.5" />
                   <div>
-                    <p className="font-medium">{[college.city, college.state, college.country].filter(Boolean).join(', ') || college.country}</p>
-                    <p className="text-sm text-muted-foreground">{college.country}</p>
+                    <p className="font-medium">{[college.city, college.state, countryName].filter(Boolean).join(', ') || countryName}</p>
+                    <p className="text-sm text-muted-foreground">{countryName}</p>
                   </div>
                 </div>
               </Card>
@@ -1341,7 +1303,7 @@ const CollegeDetail: React.FC = () => {
               )}
 
               {/* Country-Specific: India */}
-              {college.country === 'India' && (
+              {countryCode === 'IN' && (
                 <>
                   {college.entranceExam && (
                     <Card title="Entrance Exam">
@@ -1362,7 +1324,7 @@ const CollegeDetail: React.FC = () => {
               )}
 
               {/* Country-Specific: UK */}
-              {college.country === 'United Kingdom' && (
+              {countryCode === 'GB' && (
                 <Card title="Entry Requirements">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {college.aLevelRequirements && (
@@ -1382,7 +1344,7 @@ const CollegeDetail: React.FC = () => {
               )}
 
               {/* Country-Specific: Germany */}
-              {college.country === 'Germany' && (
+              {countryCode === 'DE' && (
                 <Card title="Entry Requirements">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {college.abiturRequirement && (
@@ -1621,17 +1583,17 @@ const CollegeDetail: React.FC = () => {
               )}
 
               {/* Fallback to basic tuition if comprehensive data not available */}
-              {!college.financialData && formatCurrency(college.tuition_cost, college.country) && (
+              {!college.financialData && formatCurrency(college.tuition_cost, countryCode) && (
                 <Card title="Tuition & Costs">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-6 bg-primary/5 rounded-xl text-center">
                       <DollarSign className="w-8 h-8 text-primary mx-auto mb-2" />
                       <div className="text-3xl font-bold text-primary">
-                        {formatCurrency(college.tuition_cost, college.country)}
+                        {formatCurrency(college.tuition_cost, countryCode)}
                       </div>
                       <p className="text-primary/80 mt-1">Annual Tuition</p>
                     </div>
-                    {college.country === 'Germany' && college.tuition_cost === 0 && (
+                    {countryCode === 'DE' && college.tuition_cost === 0 && (
                       <div className="p-6 bg-emerald-500/10 rounded-xl text-center">
                         <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
                         <div className="text-3xl font-bold text-emerald-500">Free</div>
@@ -1704,7 +1666,7 @@ const CollegeDetail: React.FC = () => {
               )}
 
               {/* India-specific: Placements */}
-              {college.country === 'India' && college.placements && (
+              {countryCode === 'IN' && college.placements && (
                 <Card title="Placement Statistics">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {college.placements.averagePackage && (
@@ -1763,7 +1725,7 @@ const CollegeDetail: React.FC = () => {
               <Card title="Campus Overview">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <StatItem label="Total Students" value={formatEnrollment(college.enrollment)} icon={<Users />} />
-                  <StatItem label="Location" value={[college.city, college.state, college.country].filter(Boolean).join(', ') || college.country} icon={<MapPin />} />
+                  <StatItem label="Location" value={[college.city, college.state, countryName].filter(Boolean).join(', ') || countryName} icon={<MapPin />} />
                   <StatItem label="Type" value={college.type || 'University'} icon={<Building />} />
                 </div>
               </Card>
@@ -1870,7 +1832,7 @@ const CollegeDetail: React.FC = () => {
                     )}
                     
                     {/* Location */}
-                    {(college.comprehensiveData?.city || college.city || college.state || college.country) && (
+                    {(college.comprehensiveData?.city || college.city || college.state || countryName) && (
                       <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-primary" />
@@ -1879,7 +1841,7 @@ const CollegeDetail: React.FC = () => {
                         <span className="font-semibold text-foreground">
                           {college.comprehensiveData?.city && college.comprehensiveData?.stateRegion
                             ? `${college.comprehensiveData.city}, ${college.comprehensiveData.stateRegion}`
-                            : [college.city, college.state, college.country].filter(Boolean).join(', ')}
+                            : [college.city, college.state, countryName].filter(Boolean).join(', ')}
                         </span>
                       </div>
                     )}
@@ -1957,7 +1919,7 @@ const CollegeDetail: React.FC = () => {
                 </Card>
               )}
 
-              {college.country === 'United Kingdom' && college.russellGroup && (
+              {countryCode === 'GB' && college.russellGroup && (
                 <Card title="Affiliations">
                   <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg">
                     <Award className="w-6 h-6 text-purple-600" />
@@ -2187,7 +2149,7 @@ const CollegeDetail: React.FC = () => {
               )}
 
               {/* India-specific: Placements in Outcomes */}
-              {college.country === 'India' && college.placements && (
+              {countryCode === 'IN' && college.placements && (
                 <Card title="Career Outcomes">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
