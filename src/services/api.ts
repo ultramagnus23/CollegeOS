@@ -1415,6 +1415,19 @@ class ApiService {
         body: JSON.stringify({ studentProfile }),
       }),
   };
+
+  discovery = {
+    popular: (limit = 24) => this.request(`/discovery/popular?limit=${limit}`),
+    trending: (limit = 24) => this.request(`/discovery/trending?limit=${limit}`),
+    topByMajor: (major: string, limit = 20) =>
+      this.request(`/discovery/top-by-major?major=${encodeURIComponent(major)}&limit=${limit}`),
+    topByCountry: (country: string, limit = 20) =>
+      this.request(`/discovery/top-by-country?country=${encodeURIComponent(country)}&limit=${limit}`),
+    topGlobal: (limit = 20) => this.request(`/discovery/top-global?limit=${limit}`),
+    topCS: (limit = 20) => this.request(`/discovery/top-cs?limit=${limit}`),
+    topBusiness: (limit = 20) => this.request(`/discovery/top-business?limit=${limit}`),
+    topEngineering: (limit = 20) => this.request(`/discovery/top-engineering?limit=${limit}`),
+  };
 }
 
 // Export singleton instance
