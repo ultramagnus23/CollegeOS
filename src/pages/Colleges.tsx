@@ -883,6 +883,11 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
     if (!num) return NOT_AVAILABLE;
     return num >= 1000 ? `${(num / 1000).toFixed(1)}K` : num?.toString() ?? '';
   };
+  const formatRate = (rate: number | null | undefined): string => {
+    if (rate == null) return NOT_AVAILABLE;
+    const pct = rate <= 1 ? rate * 100 : rate;
+    return `${pct.toFixed(1)}%`;
+  };
 
   const formatProvenanceDate = (dateLike: string | null | undefined): string | null => {
     if (!dateLike) return null;
@@ -896,6 +901,8 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
   const dataSourceUrl = (college as any)?.data_source_url as string | undefined;
   const lastUpdatedAt = (college as any)?.last_updated_at as string | undefined;
   const dataQualityScore = Number((college as any)?.data_quality_score ?? 0);
+  const completenessScore = Number((college as any)?.completeness_score ?? 0);
+  const freshnessScore = Number((college as any)?.freshness_score ?? 0);
   const countryAccent = COUNTRY_COLORS[college?.country ?? ''] ?? '#3B9EFF';
   const S = {
     surface: 'var(--color-bg-surface)',
@@ -940,6 +947,18 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
           <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(countryAccent,0.12), color: countryAccent, fontWeight: 600, fontFamily: S.font }}>{safeString(college?.type)}</span>
           <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(255,255,255,0.07)', color: S.muted, fontFamily: S.font }}>{college?.country}</span>
+          {(college as any)?.test_optional ? (
+            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(16,185,129,0.18)', color: '#10B981', fontWeight: 600, fontFamily: S.font }}>Test Optional</span>
+          ) : null}
+          {(college as any)?.need_blind_flag ? (
+            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(59,158,255,0.18)', color: '#3B9EFF', fontWeight: 600, fontFamily: S.font }}>Need Blind</span>
+          ) : null}
+          {(college as any)?.merit_scholarship_flag ? (
+            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(245,158,11,0.18)', color: '#F59E0B', fontWeight: 600, fontFamily: S.font }}>Merit Scholarships</span>
+          ) : null}
+          {(college as any)?.international_aid_available ? (
+            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(168,85,247,0.18)', color: '#A855F7', fontWeight: 600, fontFamily: S.font }}>International Aid</span>
+          ) : null}
           <FitBadge fitData={fit} className="ml-auto" />
         </div>
       </div>
@@ -949,8 +968,10 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
         {[
           { icon: '📈', label: 'Acceptance', value: formatAcceptanceRate(acceptanceRate), color: '#10B981' },
           { icon: '💰', label: 'Tuition', value: formatCurrency(college?.tuition_cost, college?.country ?? ''), color: '#3B9EFF' },
-          { icon: '🎓', label: 'Avg GPA', value: college?.averageGPA != null ? college.averageGPA.toFixed(2) : NOT_AVAILABLE, color: '#A855F7' },
-          { icon: '👥', label: 'Students', value: formatEnrollment(college?.enrollment), color: '#F59E0B' },
+          { icon: '🧠', label: 'SAT Median', value: (college as any)?.sat_median != null ? String((college as any).sat_median) : NOT_AVAILABLE, color: '#8B5CF6' },
+          { icon: '📝', label: 'ACT Median', value: (college as any)?.act_median != null ? String((college as any).act_median) : NOT_AVAILABLE, color: '#A855F7' },
+          { icon: '💼', label: 'Start Salary', value: (college as any)?.median_start_salary != null ? `$${Number((college as any).median_start_salary).toLocaleString()}` : NOT_AVAILABLE, color: '#22C55E' },
+          { icon: '🎓', label: 'Grad Rate', value: formatRate((college as any)?.graduation_rate_6yr), color: '#F59E0B' },
         ].map((stat, i) => (
           <div key={i} style={{ padding: '12px 16px', background: S.surface }}>
             <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font, marginBottom: 3 }}>{stat.label}</div>
@@ -1014,6 +1035,11 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
         {dataQualityScore < 50 && (
           <div style={{ marginTop: 4, color: '#f59e0b' }}>
             ⚠ Incomplete data — some fields may be missing.
+          </div>
+        )}
+        {(completenessScore > 0 || freshnessScore > 0) && (
+          <div style={{ marginTop: 4 }}>
+            Completeness: {Math.round(completenessScore)}% · Freshness: {Math.round(freshnessScore)}%
           </div>
         )}
       </div>

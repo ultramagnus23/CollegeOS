@@ -502,7 +502,7 @@ class ApiService {
     return this.request(`/colleges/search?${params.toString()}`);
   }
 
-  async getCollegeById(id: number) {
+  async getCollegeById(id: number | string) {
     return this.request(`/colleges/${id}`);
   }
 
@@ -755,7 +755,7 @@ class ApiService {
       return this.getColleges(normalized);
     },
 
-    getById: (id: number) => this.getCollegeById(id),
+    getById: (id: number | string) => this.getCollegeById(id),
     
     getCollegeData: (id: number, type: string) => this.getCollegeData(id, type),
 
