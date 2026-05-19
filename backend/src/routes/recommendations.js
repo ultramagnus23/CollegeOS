@@ -4,7 +4,6 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
-const College = require('../models/College');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 
@@ -39,52 +38,26 @@ router.get('/', authenticate, async (req, res, next) => {
       });
     }
 
-    // Get all colleges
-    const College = require('../models/College');
-    const allColleges = await College.findAll({ limit: safeLimit });
-
-    // Attach institutional funding to each college so the engine can use it
-    const dbManager = require('../config/database');
-    const pool = dbManager.getDatabase();
-    try {
-      const { rows: fundingRows } = await pool.query(
-        `SELECT * FROM college_funding
-          WHERE international_students_eligible = TRUE`
-      );
-      // Build a map by college_id
-      const fundingMap = {};
-      for (const row of fundingRows) {
-        const cid = row.college_id;
-        if (!fundingMap[cid]) fundingMap[cid] = [];
-        fundingMap[cid].push(row);
-      }
-      for (const college of allColleges) {
-        college.funding = fundingMap[college.id] || [];
-      }
-    } catch (_fundingErr) {
-      // college_funding table may not exist in all environments — non-fatal
-      for (const college of allColleges) {
-        college.funding = college.funding || [];
-      }
-    }
-
-    // Use recommendation engine service
-    const { generateRecommendations } = require('../services/recommendationEngine');
-    const result = await generateRecommendations(userProfile, allColleges);
-    const recs = Array.isArray(result?.recommendations) ? result.recommendations : [];
-    const missingRankings = recs.filter((r) => r.acceptance_rate_pct == null).length;
-    const malformedMajors = recs.filter((r) => Array.isArray(r.why_values) && r.why_values.some((v) => !v?.dimension)).length;
+    const { generateRecommendationsV2 } = require('../services/recommendation/recommendationPipelineService');
+    const recs = await generateRecommendationsV2(userProfile, { limit: safeLimit, candidateLimit: 220 });
+    const missingRankings = recs.filter((r) => r?.score_breakdown?.ranking_fit == null).length;
+    const malformedMajors = recs.filter((r) => Array.isArray(r.why_values) && r.why_values.some((v) => !v)).length;
 
     res.json({
       success: true,
       count: recs.length,
-      meta: { requestId, durationMs: Date.now() - startedAt, evaluated: allColleges.length },
-      ...result,
+      generated_at: new Date().toISOString(),
+      recommendations: recs,
+      summary: {
+        total_colleges_evaluated: Math.max(recs.length, safeLimit),
+        exchange_rate_note: 'Recommendation pipeline v2 (embedding retrieval + LTR reranking + MMR diversification)',
+      },
+      meta: { requestId, durationMs: Date.now() - startedAt, evaluated: safeLimit, pipeline: 'v2' },
     });
     logger.info('recommendations.generated', {
       requestId,
       durationMs: Date.now() - startedAt,
-      evaluated: allColleges.length,
+      evaluated: safeLimit,
       returned: recs.length,
       missingRankings,
       malformedMajors,
@@ -120,46 +93,25 @@ router.post('/generate', authenticate, async (req, res, next) => {
       });
     }
 
-    const College = require('../models/College');
-    const allColleges = await College.findAll({ limit: safeLimit });
-
-    // Attach institutional funding
-    const dbManager = require('../config/database');
-    const pool = dbManager.getDatabase();
-    try {
-      const { rows: fundingRows } = await pool.query(
-        `SELECT * FROM college_funding WHERE international_students_eligible = TRUE`
-      );
-      const fundingMap = {};
-      for (const row of fundingRows) {
-        const cid = row.college_id;
-        if (!fundingMap[cid]) fundingMap[cid] = [];
-        fundingMap[cid].push(row);
-      }
-      for (const college of allColleges) {
-        college.funding = fundingMap[college.id] || [];
-      }
-    } catch (_fundingErr) {
-      for (const college of allColleges) {
-        college.funding = college.funding || [];
-      }
-    }
-
-    const { generateRecommendations } = require('../services/recommendationEngine');
-    const result = await generateRecommendations(userProfile, allColleges);
-    const recs = Array.isArray(result?.recommendations) ? result.recommendations : [];
+    const { generateRecommendationsV2 } = require('../services/recommendation/recommendationPipelineService');
+    const recs = await generateRecommendationsV2(userProfile, { limit: safeLimit, candidateLimit: 260 });
 
     res.json({
       success: true,
       message: `Generated ${recs.length} personalized recommendations`,
       count: recs.length,
-      meta: { requestId, durationMs: Date.now() - startedAt, evaluated: allColleges.length },
-      ...result,
+      generated_at: new Date().toISOString(),
+      recommendations: recs,
+      summary: {
+        total_colleges_evaluated: Math.max(recs.length, safeLimit),
+        exchange_rate_note: 'Recommendation pipeline v2 (embedding retrieval + LTR reranking + MMR diversification)',
+      },
+      meta: { requestId, durationMs: Date.now() - startedAt, evaluated: safeLimit, pipeline: 'v2' },
     });
     logger.info('recommendations.regenerated', {
       requestId,
       durationMs: Date.now() - startedAt,
-      evaluated: allColleges.length,
+      evaluated: safeLimit,
       returned: recs.length,
     });
   } catch (error) {
