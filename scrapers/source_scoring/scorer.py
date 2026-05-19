@@ -1,18 +1,29 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 from typing import Dict
 
 
+def _host(url: str) -> str:
+    parsed = urlparse(url if "://" in url else f"https://{url}")
+    return (parsed.hostname or "").lower().strip(".")
+
+
+def _host_matches(host: str, domain: str) -> bool:
+    d = domain.lower()
+    return host == d or host.endswith(f".{d}")
+
+
 def compute_source_score(source_url: str, parser_confidence: float, extracted_at_iso: str | None = None) -> Dict:
-    url = (source_url or "").lower()
-    if ".edu" in url or "ac.uk" in url:
+    host = _host(source_url or "")
+    if host.endswith(".edu") or _host_matches(host, "ac.uk"):
         trust = 1.0
         source_type = "official"
-    elif ".gov" in url:
+    elif host.endswith(".gov"):
         trust = 0.9
         source_type = "government"
-    elif "commonapp.org" in url or "ucas.com" in url:
+    elif _host_matches(host, "commonapp.org") or _host_matches(host, "ucas.com"):
         trust = 0.82
         source_type = "aggregator"
     else:
@@ -37,4 +48,3 @@ def compute_source_score(source_url: str, parser_confidence: float, extracted_at
         "confidence_score": round(confidence, 4),
         "stale": age_days > 180,
     }
-
