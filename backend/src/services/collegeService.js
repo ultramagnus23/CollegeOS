@@ -1,6 +1,7 @@
 const College = require('../models/College');
 const logger = require('../utils/logger');
 const { sanitizeForLog } = require('../utils/security');
+const CANONICAL_DEBUG = process.env.CANONICAL_DEBUG === '1' || process.env.NODE_ENV !== 'production';
 
 function normalizeId(input) {
   return String(input ?? '').trim();
@@ -66,7 +67,12 @@ class CollegeService {
 
     const lookup = await pool.query(lookupSql, params);
     const institutionId = lookup.rows[0]?.id;
-    if (!institutionId) return null;
+    if (!institutionId) {
+      if (CANONICAL_DEBUG) {
+        logger.info('canonical.lookup.miss', { requested_id: normalizedId });
+      }
+      return null;
+    }
 
     const institutionPromise = pool.query(
       `
@@ -258,6 +264,20 @@ class CollegeService {
 
     const institutionRow = institution.rows[0];
     if (!institutionRow) return null;
+
+    if (CANONICAL_DEBUG) {
+      logger.info('canonical.hydration.summary', {
+        institution_id: institutionRow.id,
+        country_code: institutionRow.country_code,
+        admissions_present: Boolean(admissions.rows[0]),
+        financials_present: Boolean(financials.rows[0]),
+        outcomes_present: Boolean(outcomes.rows[0]),
+        rankings_count: rankings.rows.length,
+        programs_count: programs.rows.length,
+        completeness_score: completeness.rows[0]?.overall_score ?? null,
+        quality_score: qualityScores.rows[0]?.final_quality_score ?? null,
+      });
+    }
 
     return {
       institution: institutionRow,
