@@ -45,6 +45,9 @@ const ACTIVITY_TYPES = [
   'Family Responsibilities', 'Clubs', 'Leadership', 'Research', 'Other'
 ];
 
+const SELECT_CLASS =
+  'w-full mt-1 px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+
 interface ProfileData {
   user: any;
   profile: any;
@@ -260,6 +263,17 @@ const SCROLL_DELAY_MS = 100;
     setTimeout(() => setSaveMessage(null), 3000);
   };
 
+  const parseErrorMessage = (error: any): string => {
+    return error?.response?.data?.message
+      || error?.data?.message
+      || error?.message
+      || 'Failed to save';
+  };
+
+  const syncCanonicalSection = async (profile: Record<string, unknown>) => {
+    await api.canonicalSyncProfile({ profile });
+  };
+
   const syncChancing = async () => {
     setSyncing(true);
     try {
@@ -326,8 +340,24 @@ const SCROLL_DELAY_MS = 100;
       showMessage('success', 'Basic info saved successfully');
       refetchCompletion();
     } catch (error: any) {
-      console.error('Failed to save basic info:', error);
-      showMessage('error', error.message || 'Failed to save');
+      try {
+        await syncCanonicalSection({
+          first_name: formData.first_name || null,
+          last_name: formData.last_name || null,
+          email: formData.email || null,
+          phone: formData.phone || null,
+          country: formData.country || null,
+          grade_level: formData.grade_level || null,
+          graduation_year: formData.graduation_year ? parseInt(formData.graduation_year, 10) : null,
+        });
+        await loadProfile();
+        await refreshUser?.();
+        setEditMode(prev => ({ ...prev, basic: false }));
+        showMessage('success', 'Basic info saved successfully');
+      } catch (fallbackError: any) {
+        console.error('Failed to save basic info:', error, fallbackError);
+        showMessage('error', parseErrorMessage(fallbackError));
+      }
     }
     setSaving(false);
   };
@@ -360,8 +390,23 @@ const SCROLL_DELAY_MS = 100;
       showMessage('success', 'Academic info saved successfully');
       refetchCompletion();
     } catch (error: any) {
-      console.error('Failed to save academic info:', error);
-      showMessage('error', error.message || 'Failed to save');
+      try {
+        await syncCanonicalSection({
+          curriculum_type: formData.curriculum_type || null,
+          stream: formData.stream || null,
+          gpa_weighted: formData.gpa_weighted ? parseFloat(formData.gpa_weighted) : null,
+          gpa_unweighted: formData.gpa_unweighted ? parseFloat(formData.gpa_unweighted) : null,
+          class_rank: formData.class_rank ? parseInt(formData.class_rank, 10) : null,
+          class_size: formData.class_size ? parseInt(formData.class_size, 10) : null,
+          high_school_name: formData.high_school_name || null,
+        });
+        await loadProfile();
+        setEditMode(prev => ({ ...prev, academic: false }));
+        showMessage('success', 'Academic info saved successfully');
+      } catch (fallbackError: any) {
+        console.error('Failed to save academic info:', error, fallbackError);
+        showMessage('error', parseErrorMessage(fallbackError));
+      }
     }
     setSaving(false);
   };
@@ -396,8 +441,22 @@ const SCROLL_DELAY_MS = 100;
       showMessage('success', 'Test scores saved successfully');
       refetchCompletion();
     } catch (error: any) {
-      console.error('Failed to save test scores:', error);
-      showMessage('error', error.message || 'Failed to save');
+      try {
+        await syncCanonicalSection({
+          sat_total: formData.sat_total ? parseInt(formData.sat_total, 10) : null,
+          sat_math: formData.sat_math ? parseInt(formData.sat_math, 10) : null,
+          sat_ebrw: formData.sat_ebrw ? parseInt(formData.sat_ebrw, 10) : null,
+          act_composite: formData.act_composite ? parseInt(formData.act_composite, 10) : null,
+          ielts_score: formData.ielts_score ? parseFloat(formData.ielts_score) : null,
+          toefl_score: formData.toefl_score ? parseInt(formData.toefl_score, 10) : null,
+        });
+        await loadProfile();
+        setEditMode(prev => ({ ...prev, testScores: false }));
+        showMessage('success', 'Test scores saved successfully');
+      } catch (fallbackError: any) {
+        console.error('Failed to save test scores:', error, fallbackError);
+        showMessage('error', parseErrorMessage(fallbackError));
+      }
     }
     setSaving(false);
   };
@@ -433,8 +492,22 @@ const SCROLL_DELAY_MS = 100;
       showMessage('success', 'Preferences saved successfully');
       refetchCompletion();
     } catch (error: any) {
-      console.error('Failed to save preferences:', error);
-      showMessage('error', error.message || 'Failed to save');
+      try {
+        await syncCanonicalSection({
+          intended_majors: formData.intended_majors || [],
+          preferred_countries: formData.preferred_countries || [],
+          budget_min: formData.budget_min ? parseInt(formData.budget_min, 10) : null,
+          budget_max: formData.budget_max ? parseInt(formData.budget_max, 10) : null,
+          preferred_college_size: formData.preferred_college_size || null,
+          preferred_setting: formData.preferred_setting || null,
+        });
+        await loadProfile();
+        setEditMode(prev => ({ ...prev, preferences: false }));
+        showMessage('success', 'Preferences saved successfully');
+      } catch (fallbackError: any) {
+        console.error('Failed to save preferences:', error, fallbackError);
+        showMessage('error', parseErrorMessage(fallbackError));
+      }
     }
     setSaving(false);
   };
@@ -699,7 +772,7 @@ const SCROLL_DELAY_MS = 100;
                   <select
                     value={formData.country}
                     onChange={(e) => updateFormField('country', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-border rounded-md"
+                    className={SELECT_CLASS}
                   >
                     <option value="">Select country</option>
                     {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -710,7 +783,7 @@ const SCROLL_DELAY_MS = 100;
                   <select
                     value={formData.grade_level}
                     onChange={(e) => updateFormField('grade_level', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-border rounded-md"
+                    className={SELECT_CLASS}
                   >
                     <option value="">Select grade</option>
                     {['Grade 9', 'Grade 10', 'Grade 11', 'Grade 12', 'Gap Year'].map(g => 
@@ -792,7 +865,7 @@ const SCROLL_DELAY_MS = 100;
                   <select
                     value={formData.curriculum_type}
                     onChange={(e) => updateFormField('curriculum_type', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-border rounded-md"
+                    className={SELECT_CLASS}
                   >
                     <option value="">Select curriculum</option>
                     {CURRICULUM_TYPES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -804,7 +877,7 @@ const SCROLL_DELAY_MS = 100;
                     <select
                       value={formData.stream}
                       onChange={(e) => updateFormField('stream', e.target.value)}
-                      className="w-full mt-1 px-3 py-2 border border-border rounded-md"
+                      className={SELECT_CLASS}
                     >
                       <option value="">Select stream</option>
                       {['Science with Medical', 'Science without Medical', 'Commerce', 'Humanities/Arts'].map(s => 
@@ -1197,7 +1270,7 @@ const SCROLL_DELAY_MS = 100;
                   <select
                     value={formData.preferred_college_size}
                     onChange={(e) => updateFormField('preferred_college_size', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-border rounded-md"
+                    className={SELECT_CLASS}
                   >
                     <option value="">Any</option>
                     {['Small', 'Medium', 'Large'].map(s => <option key={s} value={s}>{s}</option>)}
@@ -1208,7 +1281,7 @@ const SCROLL_DELAY_MS = 100;
                   <select
                     value={formData.preferred_setting}
                     onChange={(e) => updateFormField('preferred_setting', e.target.value)}
-                    className="w-full mt-1 px-3 py-2 border border-border rounded-md"
+                    className={SELECT_CLASS}
                   >
                     <option value="">Any</option>
                     {['Urban', 'Suburban', 'Rural'].map(s => <option key={s} value={s}>{s}</option>)}
@@ -1331,7 +1404,7 @@ const SCROLL_DELAY_MS = 100;
                   <select
                     value={newActivity.activity_type}
                     onChange={(e) => setNewActivity((prev: typeof newActivity) => ({ ...prev, activity_type: e.target.value }))}
-                    className="w-full mt-1 px-3 py-2 border border-border rounded-md"
+                    className={SELECT_CLASS}
                   >
                     <option value="">Select type</option>
                     {ACTIVITY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}

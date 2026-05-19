@@ -4,6 +4,7 @@ const CollegeController = require('../controllers/collegeController');
 const CollegeDeadlineController = require('../controllers/collegeDeadlineController');
 const { authenticate } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const CANONICAL_DEBUG = process.env.CANONICAL_DEBUG === '1' || process.env.NODE_ENV !== 'production';
 
 // Public routes - no authentication required for browsing
 
@@ -269,6 +270,20 @@ router.get('/comprehensive', async (req, res, next) => {
     `;
 
     const { rows } = await pool.query(dataSql, listParams);
+    if (CANONICAL_DEBUG) {
+      logger.info('canonical.cards.query.summary', {
+        request_country: req.query.country || null,
+        request_query: req.query.query || null,
+        total,
+        returned: rows.length,
+        sample: rows.slice(0, 5).map((r) => ({
+          institution_id: r.id,
+          country_code: r.country_code,
+          admissions_present: r.acceptance_rate != null || r.sat_50 != null || r.act_50 != null,
+          financials_present: r.tuition_international != null || r.cost_of_attendance != null,
+        })),
+      });
+    }
 
     res.json({
       success: true,
@@ -295,6 +310,15 @@ router.get('/comprehensive/:id', async (req, res, next) => {
     const CollegeService = require('../services/collegeService');
     const college = await CollegeService.getCanonicalCollegeById(String(req.params.id).trim());
     if (!college) return res.status(404).json({ success: false, message: 'College not found' });
+    if (CANONICAL_DEBUG) {
+      logger.info('canonical.detail.route.summary', {
+        institution_id: college?.institution?.id ?? null,
+        country_code: college?.institution?.country_code ?? null,
+        admissions_present: Object.keys(college?.admissions ?? {}).length > 0,
+        financials_present: Object.keys(college?.financials ?? {}).length > 0,
+        rankings_count: Array.isArray(college?.rankings) ? college.rankings.length : 0,
+      });
+    }
 
     res.json({
       success: true,

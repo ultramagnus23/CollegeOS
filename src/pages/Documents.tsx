@@ -34,7 +34,7 @@ const lbl: React.CSSProperties = { fontSize:11, color:S.dim, textTransform:'uppe
 
 const CATS: Record<string,{label:string;emoji:string;color:string}> = {
   transcript:     { label:'Transcripts',    emoji:'📋', color:'#3B9EFF' },
-  test_score:     { label:'Test Scores',    emoji:'📊', color:'#10B981' },
+  test_score:     { label:'Test Scores',    emoji:'📊', color:'#3B9EFF' },
   essay:          { label:'Essays',         emoji:'✍️',  color:'#A855F7' },
   recommendation: { label:'Recs',           emoji:'👤', color:'#F59E0B' },
   financial:      { label:'Financial',      emoji:'💰', color:'#F97316' },
