@@ -14,6 +14,8 @@ import {
   isSupabaseConfigured,
   normalizeToCard,
 } from '../lib/collegeService';
+import { formatCountryName, getCountryTheme } from '../lib/country';
+import { getRecommendations as getQualityRecommendations } from '../services/recommendationService';
 
 /* ─── Design tokens ──────────────────────────────────────────────── */
 const h2r = (hex: string, a: number) => {
@@ -137,11 +139,14 @@ const Colleges: React.FC = () => {
         if (isSupabaseConfigured) {
           // Fetch countries from Supabase (avoids PostgREST 1,000-row cap)
           const countryList = await getDistinctCountries();
-          setCountries(countryList);
+          setCountries([...countryList].sort((a, b) => formatCountryName(a).localeCompare(formatCountryName(b))));
         } else {
           // Fallback to backend API when Supabase is not configured
           const countriesRes = await api.colleges.getCountries();
-          setCountries(normalizeCountryData(countriesRes.data || []));
+          setCountries(
+            normalizeCountryData(countriesRes.data || [])
+              .sort((a, b) => formatCountryName(a).localeCompare(formatCountryName(b)))
+          );
         }
         const programsRes = await api.colleges.getPrograms();
         setPrograms(programsRes.data || []);
@@ -415,19 +420,27 @@ const Colleges: React.FC = () => {
   useEffect(() => {
     if (!user?.onboarding_complete || recsLoaded) return;
     setRecsLoading(true);
-    api.recommend.getColleges({})
-      .then((res: any) => {
-        const data = res?.data ?? res;
-        const colleges: RecommendedCollege[] = (data?.colleges ?? [])
-          .map((row: any) => normalizeLegacyRecommendation(row))
-          .filter((row: any) => row.id > 0 && typeof row.name === 'string')
+    getQualityRecommendations()
+      .then((rows) => {
+        const colleges: RecommendedCollege[] = rows
+          .map((row) => ({
+            id: Number(row.college.id) || 0,
+            name: String(row.college.name || 'Unknown College'),
+            country: row.college.country ?? undefined,
+            state: row.college.state ?? undefined,
+            overall_fit: Math.round(row.overallScore ?? 0),
+            admit_chance: Math.round(row.admitChance ?? 0),
+            tier: String(row.tier ?? 'target'),
+            reasoning: row.reasoning ?? [],
+          }))
+          .filter((row) => row.id > 0 && typeof row.name === 'string')
           .slice(0, 10);
         setRecommendations(colleges);
         setRecsLoaded(true);
       })
       .catch(() => setRecsError('Could not load recommendations'))
       .finally(() => setRecsLoading(false));
-  }, [user?.onboarding_complete]);
+  }, [user?.onboarding_complete, recsLoaded]);
 
 /* ==================== ACTIONS ==================== */
 
@@ -578,7 +591,11 @@ const Colleges: React.FC = () => {
                   <label style={{ fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font }}>Country</label>
                   <select value={selectedCountry} onChange={(e) => { setSelectedCountry(e.target.value); setCurrentPage(1); }} style={sel}>
                     <option value="">All Countries</option>
-                    {countries.map((c, i) => { const label = safeString(c); return <option key={label || i} value={label}>{label}</option>; })}
+                    {countries.map((c, i) => {
+                      const value = safeString(c);
+                      const label = formatCountryName(value);
+                      return <option key={value || i} value={value}>{label}</option>;
+                    })}
                   </select>
                 </div>
                 <div>
@@ -615,7 +632,7 @@ const Colleges: React.FC = () => {
             <div style={{ marginBottom: 36 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: h2r(ACCENT,0.9), textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: S.font }}>✨ Recommended for You</span>
-                <span style={{ fontSize: 11, color: S.muted, fontFamily: S.font }}>Based on your profile — cosine similarity fit engine</span>
+                <span style={{ fontSize: 11, color: S.muted, fontFamily: S.font }}>Based on your profile — canonical quality recommendation engine</span>
               </div>
 
               {recsLoading && (
@@ -629,7 +646,8 @@ const Colleges: React.FC = () => {
               {!recsLoading && recommendations.length > 0 && (
                 <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
                   {recommendations.map(rec => {
-                    const tierColor = rec.tier === 'Safety' ? '#22c55e' : rec.tier === 'Target' ? '#f59e0b' : '#ef4444';
+                    const tierKey = String(rec.tier || '').toLowerCase();
+                    const tierColor = tierKey === 'safety' ? '#22c55e' : tierKey === 'target' ? '#f59e0b' : '#ef4444';
                     const isOpen = whyExpanded[rec.id] ?? false;
                     return (
                       <div
@@ -659,7 +677,7 @@ const Colleges: React.FC = () => {
                         <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 4, paddingRight: 20, lineHeight: 1.3 }}>
                           {rec.name}
                         </div>
-                        {rec.state && <div style={{ fontSize: 11, color: S.muted, marginBottom: 10, fontFamily: S.font }}>{rec.state}{rec.country && rec.country !== 'United States' ? `, ${rec.country}` : ''}</div>}
+                        {rec.state && <div style={{ fontSize: 11, color: S.muted, marginBottom: 10, fontFamily: S.font }}>{rec.state}{rec.country ? `, ${formatCountryName(rec.country)}` : ''}</div>}
 
                         {/* Fit bar */}
                         <div style={{ marginBottom: 8 }}>
@@ -675,7 +693,7 @@ const Colleges: React.FC = () => {
                         {/* Admit chance + tier */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                           <span style={{ fontSize: 12, color: tierColor, fontWeight: 700, fontFamily: S.font }}>
-                            {rec.tier} · {rec.admit_chance}% chance
+                            {tierKey === 'long_shot' ? 'Long Shot' : tierKey.charAt(0).toUpperCase() + tierKey.slice(1)} · {rec.admit_chance}% chance
                           </span>
                           <button
                             style={{ fontSize: 10, color: S.muted, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontFamily: S.font }}
@@ -830,19 +848,6 @@ const Colleges: React.FC = () => {
 
 /* ==================== DARK COLLEGE CARD ==================== */
 
-const COUNTRY_COLORS: Record<string, string> = {
-  'United States': '#3B82F6',
-  'United Kingdom': '#EF4444',
-  'India': '#10B981',
-  'Canada': '#8B5CF6',
-  'Australia': '#F59E0B',
-  'Germany': '#06B6D4',
-  'France': '#8B5CF6',
-  'Singapore': '#EC4899',
-  'China': '#F97316',
-  'Japan': '#E11D48',
-};
-
 const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onViewDetails, isAdding, fit }) => {
   useEffect(() => {
     if (!COLLEGE_SYNC_DEBUG || !college || index > 1) return;
@@ -903,7 +908,9 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
   const dataQualityScore = Number((college as any)?.data_quality_score ?? 0);
   const completenessScore = Number((college as any)?.completeness_score ?? 0);
   const freshnessScore = Number((college as any)?.freshness_score ?? 0);
-  const countryAccent = COUNTRY_COLORS[college?.country ?? ''] ?? '#3B9EFF';
+  const countryTheme = getCountryTheme(college?.country);
+  const countryAccent = countryTheme.accent;
+  const countryName = formatCountryName(college?.country ?? '');
   const S = {
     surface: 'var(--color-bg-surface)',
     surface2: 'var(--color-surface-subtle)',
@@ -935,7 +942,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
             <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 4, lineHeight: 1.3 }}>{college.name}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: S.muted, fontSize: 12, fontFamily: S.font }}>
               <MapPin style={{ width: 12, height: 12, flexShrink: 0 }} />
-              {[college?.city, college?.state, college?.country].filter(Boolean).join(', ') || college?.country}
+              {[college?.city, college?.state, countryName].filter(Boolean).join(', ') || countryName}
             </div>
           </div>
           {college?.ranking && (
@@ -945,8 +952,8 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(countryAccent,0.12), color: countryAccent, fontWeight: 600, fontFamily: S.font }}>{safeString(college?.type)}</span>
-          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(255,255,255,0.07)', color: S.muted, fontFamily: S.font }}>{college?.country}</span>
+          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: countryTheme.chipBg, color: countryAccent, fontWeight: 600, fontFamily: S.font }}>{safeString(college?.type)}</span>
+          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: countryTheme.chipBg, color: S.muted, fontFamily: S.font }}>{countryName}</span>
           {(college as any)?.test_optional ? (
             <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(16,185,129,0.18)', color: '#10B981', fontWeight: 600, fontFamily: S.font }}>Test Optional</span>
           ) : null}
@@ -967,7 +974,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: S.border, padding: 0 }}>
         {[
           { icon: '📈', label: 'Acceptance', value: formatAcceptanceRate(acceptanceRate), color: '#10B981' },
-          { icon: '💰', label: 'Tuition', value: formatCurrency(college?.tuition_cost, college?.country ?? ''), color: '#3B9EFF' },
+          { icon: '💰', label: 'Tuition', value: formatCurrency(college?.tuition_cost, countryName), color: '#3B9EFF' },
           { icon: '🧠', label: 'SAT Median', value: (college as any)?.sat_median != null ? String((college as any).sat_median) : NOT_AVAILABLE, color: '#8B5CF6' },
           { icon: '📝', label: 'ACT Median', value: (college as any)?.act_median != null ? String((college as any).act_median) : NOT_AVAILABLE, color: '#A855F7' },
           { icon: '💼', label: 'Start Salary', value: (college as any)?.median_start_salary != null ? `$${Number((college as any).median_start_salary).toLocaleString()}` : NOT_AVAILABLE, color: '#22C55E' },

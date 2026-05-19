@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { supabase, isSupabaseConfigured, CollegeWithRelations } from './supabase';
+import { formatCountryName, normalizeCountryCode } from './country';
 
 type CanonicalId = string | number;
 
 const PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
+const CANONICAL_DEBUG = import.meta.env.DEV || import.meta.env.VITE_CANONICAL_DEBUG === '1';
 
 const CARD_COLUMNS = [
   'id',
@@ -77,6 +79,11 @@ function timed<T>(label: string, fn: () => Promise<T>): Promise<T> {
     const ms = Math.round(performance.now() - started);
     console.info(`[collegeService] ${label} ${ms}ms`);
   });
+}
+
+function debugCanonical(label: string, payload: Record<string, unknown>) {
+  if (!CANONICAL_DEBUG) return;
+  console.debug(`[collegeService][debug] ${label}`, payload);
 }
 
 function normalizeOrder(sortBy?: string): { column: string; ascending: boolean } {
@@ -218,13 +225,20 @@ async function enrichCardRows(baseRows: CanonicalCardRow[]): Promise<Array<Recor
   const completenessMap = new Map((completenessRes.data ?? []).map((r: { institution_id: CanonicalId; overall_score?: number | null }) => [String(r.institution_id), r]));
   const qualityMap = new Map((qualityRes.data ?? []).map((r: { institution_id: CanonicalId; freshness_score?: number | null; final_quality_score?: number | null }) => [String(r.institution_id), r]));
 
-  return baseRows.map((row) => {
+  const byCountry = new Map<string, { total: number; missingAdmissions: number; missingFinancials: number }>();
+  const rows = baseRows.map((row) => {
     const key = String(row.id);
+    const countryCode = String(row.country_code ?? '').toUpperCase() || 'UNKNOWN';
+    const acc = byCountry.get(countryCode) ?? { total: 0, missingAdmissions: 0, missingFinancials: 0 };
+    acc.total += 1;
     const admissions = asRecord(admissionsLatest.get(key));
     const financials = asRecord(financialsLatest.get(key));
     const outcomes = asRecord(outcomesLatest.get(key));
     const completeness = asRecord(completenessMap.get(key));
     const quality = asRecord(qualityMap.get(key));
+    if (Object.keys(admissions).length === 0) acc.missingAdmissions += 1;
+    if (Object.keys(financials).length === 0) acc.missingFinancials += 1;
+    byCountry.set(countryCode, acc);
     return {
       ...row,
       sat_50: num(firstDefined(admissions.sat_50, row.sat_50)),
@@ -242,6 +256,10 @@ async function enrichCardRows(baseRows: CanonicalCardRow[]): Promise<Array<Recor
       data_quality_score: num(quality.final_quality_score),
     };
   });
+  debugCanonical('card_hydration_summary', {
+    countries: [...byCountry.entries()].map(([country_code, stat]) => ({ country_code, ...stat })),
+  });
+  return rows;
 }
 
 function buildDeadlineTemplates(deadlines: Array<Record<string, unknown>>): Record<string, { date: string; type: string }> | undefined {
@@ -362,14 +380,14 @@ export async function getCollegeById(id: CanonicalId): Promise<CollegeRecord | n
       client.schema('canonical').from('institution_demographics').select('institution_id, data_year, percent_international, gender_ratio, ethnic_distribution, percent_first_gen').eq('institution_id', institutionId as string).order('data_year', { ascending: false, nullsFirst: false }).limit(1),
       client.schema('canonical').from('institution_campus_life').select('institution_id, housing_guarantee, campus_safety_score, athletics_division, club_count').eq('institution_id', institutionId as string).limit(1),
       client.schema('canonical').from('institution_programs').select('program_name, degree_type, field_category, enrollment, acceptance_rate').eq('institution_id', institutionId as string).order('program_name', { ascending: true }),
-      client.schema('canonical').from('institution_completeness').select('*').eq('institution_id', institutionId as string).maybeSingle(),
-      client.schema('canonical').from('institution_quality_scores').select('*').eq('institution_id', institutionId as string).maybeSingle(),
+      client.schema('canonical').from('institution_completeness').select('institution_id, overall_score, section_scores, missing_required_fields').eq('institution_id', institutionId as string).maybeSingle(),
+      client.schema('canonical').from('institution_quality_scores').select('institution_id, freshness_score, final_quality_score, confidence_penalty').eq('institution_id', institutionId as string).maybeSingle(),
     ]);
 
     if (institutionRes.error) throw institutionRes.error;
     if (!institutionRes.data) return null;
 
-    return {
+    const detail = {
       institution: institutionRes.data as Record<string, unknown>,
       admissions: (admissionsRes.data?.[0] ?? {}) as Record<string, unknown>,
       financials: (financialsRes.data?.[0] ?? {}) as Record<string, unknown>,
@@ -383,6 +401,19 @@ export async function getCollegeById(id: CanonicalId): Promise<CollegeRecord | n
       completeness: (completenessRes.data ?? {}) as Record<string, unknown>,
       quality_scores: (qualityRes.data ?? {}) as Record<string, unknown>,
     } satisfies CanonicalCollegeDetail;
+
+    const institution = detail.institution as Record<string, unknown>;
+    debugCanonical('detail_hydration', {
+      institution_id: institution.id ?? institutionId,
+      country_code: institution.country_code ?? null,
+      admissions_present: Object.keys(detail.admissions ?? {}).length > 0,
+      financials_present: Object.keys(detail.financials ?? {}).length > 0,
+      rankings_count: Array.isArray(detail.rankings) ? detail.rankings.length : 0,
+      completeness_score: (detail.completeness as Record<string, unknown>)?.overall_score ?? null,
+      quality_score: (detail.quality_scores as Record<string, unknown>)?.final_quality_score ?? null,
+    });
+
+    return detail;
   });
 }
 
@@ -487,8 +518,18 @@ export function normalizeToCard(c: Record<string, unknown>): Record<string, unkn
   const ranking = firstDefined(num(meta.ranking_us_news), num(meta.qs_rank));
   const city = str(c.city) ?? str(meta.city);
   const state = str(meta.state_region) ?? str(meta.state);
-  const country = str(c.country_code) ?? str(meta.country) ?? '';
+  const rawCountryCode = str(c.country_code) ?? str(meta.country_code) ?? null;
+  const countryCode = normalizeCountryCode(rawCountryCode ?? str(meta.country) ?? '');
+  const country = formatCountryName(rawCountryCode ?? str(meta.country));
   const location = [city, state, country].filter(Boolean).join(', ');
+  debugCanonical('card_normalization', {
+    institution_id: c.id ?? null,
+    country_code: countryCode,
+    country_display: country,
+    admissions_present: num(c.acceptance_rate) != null || num(c.sat_50) != null || num(c.act_50) != null,
+    financials_present: num(c.tuition_international) != null || num(c.cost_of_attendance) != null,
+    completeness_score: num(c.completeness_score),
+  });
 
   return {
     id: c.id,
@@ -497,6 +538,7 @@ export function normalizeToCard(c: Record<string, unknown>): Record<string, unkn
     state,
     location,
     country,
+    countryCode: countryCode ?? undefined,
     type: str(meta.institution_type) ?? 'Unknown',
     ranking,
     acceptance_rate: num(c.acceptance_rate),
@@ -548,13 +590,17 @@ export function normalizeToDetail(input: CollegeRecord): Record<string, unknown>
     const programs = Array.isArray(input.programs) ? input.programs : [];
     const meta = asRecord(i.metadata);
 
+    const countryCode = normalizeCountryCode(str(i.country_code) ?? str(meta.country_code) ?? str(meta.country));
+    const countryName = formatCountryName(str(i.country_code) ?? str(meta.country));
     return {
       id: i.id,
       name: str(i.canonical_name),
       city: str(i.city),
       state: str(i.state_region),
-      country: str(i.country_code),
-      location: [str(i.city), str(i.state_region), str(i.country_code)].filter(Boolean).join(', '),
+      country: countryName,
+      country_code: countryCode,
+      countryCode: countryCode,
+      location: [str(i.city), str(i.state_region), countryName].filter(Boolean).join(', '),
       official_website: str(i.website) ?? '',
       logo_url: str(i.logo_url),
       type: str(i.institution_type),
