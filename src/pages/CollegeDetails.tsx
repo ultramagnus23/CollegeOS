@@ -106,7 +106,7 @@ interface Placements {
 }
 
 interface College {
-  id: number;
+  id: string | number;
   name: string;
   country: string;
   location?: string;
@@ -332,11 +332,11 @@ const CollegeDetail: React.FC = () => {
 
   useEffect(() => {
     if (id) {
-      loadCollegeDetails(Number(id));
+      loadCollegeDetails(id);
     }
   }, [id, user]);
 
-  const loadCollegeDetails = async (collegeId: number): Promise<void> => {
+  const loadCollegeDetails = async (collegeId: string): Promise<void> => {
     try {
       setLoading(true);
       let collegeData: College | null = null;
@@ -378,14 +378,22 @@ const CollegeDetail: React.FC = () => {
 
       // ── Fire 'viewed' signal for online-learning vector adjustment ──────────
       if (user) {
-        api.signals.fire(collegeId, 'viewed').catch(() => {/* non-critical */});
+        const numericCollegeId = Number(collegeId);
+        if (Number.isFinite(numericCollegeId)) {
+          api.signals.fire(numericCollegeId, 'viewed').catch(() => {/* non-critical */});
+        }
       }
 
       if (user) {
         try {
           setChancingLoading(true);
-          const chancingResponse = await api.chancing.calculate({ collegeId });
-          setChancingResult(chancingResponse.data?.chancing ?? chancingResponse.data);
+          const numericCollegeId = Number(collegeId);
+          if (Number.isFinite(numericCollegeId)) {
+            const chancingResponse = await api.chancing.calculate({ collegeId: numericCollegeId });
+            setChancingResult(chancingResponse.data?.chancing ?? chancingResponse.data);
+          } else {
+            setChancingResult(null);
+          }
         } catch (chancingError) {
           console.warn('Chancing calculation failed (non-critical):', chancingError);
         } finally { setChancingLoading(false); }
@@ -887,6 +895,13 @@ const CollegeDetail: React.FC = () => {
           sourceUrl={college.official_website}
           collegeName={college.name}
         />
+        {((college as any).completeness_score != null || (college as any).freshness_score != null || (college as any).data_quality_score != null) && (
+          <div className="mt-2 text-xs text-muted-foreground">
+            Completeness: {Math.round(Number((college as any).completeness_score ?? 0))}% ·
+            Freshness: {Math.round(Number((college as any).freshness_score ?? 0))}% ·
+            Confidence: {Math.round(Number((college as any).data_quality_score ?? 0))}%
+          </div>
+        )}
         <div className="mt-3 text-xs text-muted-foreground">
           {college.data_source ? (
             <>

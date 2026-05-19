@@ -2,6 +2,14 @@ const College = require('../models/College');
 const logger = require('../utils/logger');
 const { sanitizeForLog } = require('../utils/security');
 
+function normalizeId(input) {
+  return String(input ?? '').trim();
+}
+
+function isUuid(id) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+}
+
 class CollegeService {
   static async getColleges(filters = {}) {
     try {
@@ -16,13 +24,255 @@ class CollegeService {
 
   static async getCollegeById(id) {
     try {
-      const college = await College.findById(id);
-      if (!college) throw new Error('College not found');
-      return college;
+      const normalizedId = normalizeId(id);
+      const canonicalCollege = await CollegeService.getCanonicalCollegeById(normalizedId);
+      if (canonicalCollege) return canonicalCollege;
+
+      const numericId = Number.parseInt(normalizedId, 10);
+      if (!Number.isNaN(numericId)) {
+        const college = await College.findById(numericId);
+        if (college) return college;
+      }
+
+      throw new Error('College not found');
     } catch (error) {
       logger.error(`Failed to get college ${id}:`, error);
       throw error;
     }
+  }
+
+  static async getCanonicalCollegeById(id) {
+    const normalizedId = normalizeId(id);
+    if (!normalizedId) return null;
+
+    const dbManager = require('../config/database');
+    const pool = dbManager.getDatabase();
+
+    const params = [normalizedId];
+    const lookupSql = isUuid(normalizedId)
+      ? `
+        SELECT i.id
+        FROM canonical.institutions i
+        WHERE i.id = $1::uuid
+        LIMIT 1
+      `
+      : `
+        SELECT DISTINCT i.id
+        FROM canonical.institutions i
+        JOIN canonical.institution_identity_map m ON m.institution_id = i.id
+        WHERE m.source_pk = $1
+        LIMIT 1
+      `;
+
+    const lookup = await pool.query(lookupSql, params);
+    const institutionId = lookup.rows[0]?.id;
+    if (!institutionId) return null;
+
+    const institutionPromise = pool.query(
+      `
+      SELECT
+        i.id,
+        i.canonical_name,
+        i.normalized_name,
+        i.slug,
+        i.aliases,
+        i.country_code,
+        i.region_code,
+        i.state_region,
+        i.city,
+        i.latitude,
+        i.longitude,
+        i.institution_type,
+        i.control_type,
+        i.established_year,
+        i.website,
+        i.logo_url,
+        i.canonical_external_ids,
+        i.metadata,
+        i.updated_at
+      FROM canonical.institutions i
+      WHERE i.id = $1::uuid
+      LIMIT 1
+      `,
+      [institutionId]
+    );
+
+    const admissionsPromise = pool.query(
+      `
+      SELECT
+        institution_id, data_year, acceptance_rate, yield_rate,
+        sat_25, sat_50, sat_75, act_25, act_50, act_75, test_optional,
+        application_volume, admit_volume, enrollment_volume
+      FROM canonical.institution_admissions
+      WHERE institution_id = $1::uuid
+      ORDER BY data_year DESC NULLS LAST, updated_at DESC
+      LIMIT 1
+      `,
+      [institutionId]
+    );
+
+    const financialsPromise = pool.query(
+      `
+      SELECT
+        institution_id, data_year, tuition_in_state, tuition_out_state,
+        tuition_international, cost_of_attendance, avg_financial_aid, avg_debt,
+        percent_receiving_aid, merit_scholarship_flag, need_blind_flag,
+        net_price_low_income, net_price_mid_income, net_price_high_income
+      FROM canonical.institution_financials
+      WHERE institution_id = $1::uuid
+      ORDER BY data_year DESC NULLS LAST, updated_at DESC
+      LIMIT 1
+      `,
+      [institutionId]
+    );
+
+    const outcomesPromise = pool.query(
+      `
+      SELECT
+        institution_id, data_year, graduation_rate_4yr, graduation_rate_6yr,
+        retention_rate, employment_rate, median_start_salary,
+        median_mid_career_salary, grad_school_rate
+      FROM canonical.institution_outcomes
+      WHERE institution_id = $1::uuid
+      ORDER BY data_year DESC NULLS LAST, updated_at DESC
+      LIMIT 1
+      `,
+      [institutionId]
+    );
+
+    const deadlinesPromise = pool.query(
+      `
+      SELECT
+        deadline_type, deadline_date, notification_date, is_binding, cycle_year
+      FROM canonical.institution_deadlines
+      WHERE institution_id = $1::uuid
+      ORDER BY cycle_year DESC NULLS LAST, deadline_date ASC NULLS LAST, updated_at DESC
+      `,
+      [institutionId]
+    );
+
+    const requirementsPromise = pool.query(
+      `
+      SELECT
+        requirement_category, requirement_name, requirement_value, requirement_payload
+      FROM canonical.institution_requirements
+      WHERE institution_id = $1::uuid
+      ORDER BY requirement_category ASC, requirement_name ASC
+      `,
+      [institutionId]
+    );
+
+    const rankingsPromise = pool.query(
+      `
+      SELECT
+        ranking_year, ranking_body, national_rank, global_rank, subject_rank, ranking_score
+      FROM canonical.institution_rankings
+      WHERE institution_id = $1::uuid
+      ORDER BY ranking_year DESC NULLS LAST, ranking_body ASC
+      `,
+      [institutionId]
+    );
+
+    const demographicsPromise = pool.query(
+      `
+      SELECT
+        institution_id, data_year, percent_international, gender_ratio,
+        ethnic_distribution, percent_first_gen
+      FROM canonical.institution_demographics
+      WHERE institution_id = $1::uuid
+      ORDER BY data_year DESC NULLS LAST, updated_at DESC
+      LIMIT 1
+      `,
+      [institutionId]
+    );
+
+    const campusLifePromise = pool.query(
+      `
+      SELECT
+        institution_id, housing_guarantee, campus_safety_score, athletics_division, club_count
+      FROM canonical.institution_campus_life
+      WHERE institution_id = $1::uuid
+      LIMIT 1
+      `,
+      [institutionId]
+    );
+
+    const programsPromise = pool.query(
+      `
+      SELECT
+        program_name, degree_type, field_category, enrollment, acceptance_rate
+      FROM canonical.institution_programs
+      WHERE institution_id = $1::uuid
+      ORDER BY field_category ASC NULLS LAST, degree_type ASC NULLS LAST, program_name ASC
+      `,
+      [institutionId]
+    );
+
+    const completenessPromise = pool.query(
+      `
+      SELECT *
+      FROM canonical.institution_completeness
+      WHERE institution_id = $1::uuid
+      LIMIT 1
+      `,
+      [institutionId]
+    );
+
+    const qualityScoresPromise = pool.query(
+      `
+      SELECT *
+      FROM canonical.institution_quality_scores
+      WHERE institution_id = $1::uuid
+      LIMIT 1
+      `,
+      [institutionId]
+    );
+
+    const [
+      institution,
+      admissions,
+      financials,
+      outcomes,
+      deadlines,
+      requirements,
+      rankings,
+      demographics,
+      campusLife,
+      programs,
+      completeness,
+      qualityScores,
+    ] = await Promise.all([
+      institutionPromise,
+      admissionsPromise,
+      financialsPromise,
+      outcomesPromise,
+      deadlinesPromise,
+      requirementsPromise,
+      rankingsPromise,
+      demographicsPromise,
+      campusLifePromise,
+      programsPromise,
+      completenessPromise,
+      qualityScoresPromise,
+    ]);
+
+    const institutionRow = institution.rows[0];
+    if (!institutionRow) return null;
+
+    return {
+      institution: institutionRow,
+      admissions: admissions.rows[0] || {},
+      financials: financials.rows[0] || {},
+      outcomes: outcomes.rows[0] || {},
+      deadlines: deadlines.rows || [],
+      requirements: requirements.rows || [],
+      rankings: rankings.rows || [],
+      demographics: demographics.rows[0] || {},
+      campus_life: campusLife.rows[0] || {},
+      programs: programs.rows || [],
+      completeness: completeness.rows[0] || {},
+      quality_scores: qualityScores.rows[0] || {},
+    };
   }
 
   static async searchColleges(searchTerm, filters = {}) {
