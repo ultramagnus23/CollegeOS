@@ -9,7 +9,7 @@ function clamp01(v) {
 
 function lexicalMatchScore(terms = [], row = {}) {
   if (!terms.length) return 0;
-  const text = [row.name, row.description, ...(row.programs || []), ...(row.tags || [])]
+  const text = [row.name, row.description, ...(row.programs || []), ...(row.semantic_tags || [])]
     .join(' ')
     .toLowerCase();
   const hits = terms.filter((term) => term && text.includes(term.toLowerCase())).length;
@@ -25,14 +25,19 @@ function passesMetadataFilters(row = {}, filters = {}) {
 async function retrieveHybridCandidates({ embeddingLiteral, terms = [], subjectTargets = [], metadataFilters = {}, limit = 220 }) {
   const pool = dbManager.getDatabase();
   const safeLimit = Math.max(50, Math.min(450, Number(limit) || 220));
-
-  const { rows } = await pool.query(
-    `SELECT
+  const query = `SELECT
        i.id,
        i.canonical_name AS name,
        i.country_code AS country,
        i.description,
-       i.tags,
+       COALESCE(
+         ARRAY(
+           SELECT jsonb_array_elements_text(
+             COALESCE(i.metadata->'tags', '[]'::jsonb)
+           )
+         ),
+         ARRAY[]::text[]
+       ) AS semantic_tags,
        p.programs,
        ie.embedding,
        (1 - (ie.embedding <=> $1::vector))::numeric AS embedding_similarity,
@@ -56,16 +61,24 @@ async function retrieveHybridCandidates({ embeddingLiteral, terms = [], subjectT
        GROUP BY institution_id
      ) p ON p.institution_id = i.id
      ORDER BY ie.embedding <=> $1::vector
-     LIMIT $2`,
-    [embeddingLiteral, safeLimit]
-  );
+     LIMIT $2`;
+  const payload = [embeddingLiteral, safeLimit];
+  let rows = [];
+
+  try {
+    ({ rows } = await pool.query(query, payload));
+  } catch (error) {
+    console.error('Recommendation SQL failed', query);
+    console.error('Payload:', payload);
+    throw error;
+  }
 
   return rows
     .filter((row) => passesMetadataFilters(row, metadataFilters))
     .map((row) => {
       const lexical = lexicalMatchScore(terms, row);
       const subjectRelevance = subjectTargets.length
-        ? lexicalMatchScore(subjectTargets, { ...row, tags: [...(row.tags || []), ...(row.programs || [])] })
+        ? lexicalMatchScore(subjectTargets, { ...row, semantic_tags: [...(row.semantic_tags || []), ...(row.programs || [])] })
         : 0;
       const subjectScore = row.subject_rank ? clamp01((300 - Math.min(300, Number(row.subject_rank))) / 300) : 0;
       const hybridScore = clamp01(

@@ -47,7 +47,8 @@ function textToEmbedding(text) {
 
 function institutionTextPayload(institution) {
   const programs = Array.isArray(institution.programs) ? institution.programs.join(' ') : '';
-  const tags = Array.isArray(institution.tags) ? institution.tags.join(' ') : '';
+  const metadata = institution && typeof institution.metadata === 'object' ? institution.metadata : {};
+  const semanticTags = Array.isArray(metadata.tags) ? metadata.tags.join(' ') : '';
   const demographics = Array.isArray(institution.demographics) ? institution.demographics.join(' ') : '';
   return [
     institution.name,
@@ -60,7 +61,7 @@ function institutionTextPayload(institution) {
     institution.outcomes_summary,
     institution.rankings_summary,
     programs,
-    tags,
+    semanticTags,
     demographics,
   ].filter(Boolean).join(' | ');
 }
