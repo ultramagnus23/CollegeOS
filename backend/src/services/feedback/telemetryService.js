@@ -98,7 +98,7 @@ async function createSession({ userId, requestContext = {}, profileSnapshot = {}
 
 async function trackEvent({ sessionId = null, userId, institutionId = null, eventType, eventValue = null, dwellMs = null, position = null, metadata = {} }) {
   if (!ALLOWED_EVENTS.has(eventType)) {
-    throw new Error(`Unsupported recommendation event type: ${eventType}`);
+    throw new Error('Unsupported recommendation event type');
   }
 
   const pool = dbManager.getDatabase();
