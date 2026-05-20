@@ -1,0 +1,11 @@
+{
+  "dashboard": "scraper_health",
+  "metrics": [
+    "extraction_accuracy",
+    "parse_failure_rate",
+    "stale_coverage_percent",
+    "source_reliability_score",
+    "freshness_decay_index",
+    "throughput_pages_per_minute"
+  ]
+}

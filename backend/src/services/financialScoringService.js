@@ -15,6 +15,7 @@
 
 const logger    = require('../utils/logger');
 const { getUSDtoINR } = require('./exchangeRateService');
+const { normalizeFinancialProfile } = require('./financials/financialNormalizationService');
 
 // ── Income bracket mapping ────────────────────────────────────────────────────
 
@@ -274,7 +275,7 @@ async function computeFinancialProfile(user, college, pool) {
   // ── 9. Data freshness flag ────────────────────────────────────────────────
   const dataFreshness = cfdRows.length ? 'verified' : (colRows.length ? 'estimated' : 'unavailable');
 
-  return {
+  const raw = {
     college_id:                   college.id,
     college_name:                 college.name,
     data_freshness:               dataFreshness,
@@ -324,6 +325,7 @@ async function computeFinancialProfile(user, college, pool) {
     usd_to_inr:                   usdToInr,
     exchange_rate_note:           'Live USD/INR rate from exchangeRateService',
   };
+  return normalizeFinancialProfile(raw, college.country);
 }
 
 // ── Scholarship matching ──────────────────────────────────────────────────────

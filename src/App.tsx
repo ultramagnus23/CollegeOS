@@ -41,6 +41,7 @@ import Landing from "./pages/Landing";
 import Chancing from "./pages/Chancing";
 import SuggestionsPage from "./pages/Suggestions";
 import SuggestedColleges from "./pages/SuggestedColleges";
+import Rankings from "./pages/Rankings";
 // FinancialAid import removed — page merged into Scholarships; /financial-aid redirects to /scholarships
 
 import { StudentProfile } from "./types/index";
@@ -174,6 +175,7 @@ const AppContent = () => {
             <Route path="/recommenders" element={<Recommendations />} />
             <Route path="/recommendations" element={<Recommendations />} />
             <Route path="/college-recommendations" element={<CollegeRecommendations />} />
+            <Route path="/rankings" element={<Rankings />} />
             <Route path="/chancing" element={<Chancing />} />
             <Route path="/suggested-colleges" element={<SuggestedColleges />} />
             <Route path="/timeline" element={<Timeline />} />
