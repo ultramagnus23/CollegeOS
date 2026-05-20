@@ -36,8 +36,8 @@ router.get('/colleges', async (req, res) => {
     const pool = dbManager.getDatabase();
     const conditions = [
       `c.id IS NOT NULL`,
-      `c.name IS NOT NULL`,
-      `LENGTH(TRIM(c.name)) > 1`
+      `c.canonical_name IS NOT NULL`,
+      `LENGTH(TRIM(c.canonical_name)) > 1`
     ];
     const params = [];
     let paramIndex = 1;
@@ -78,23 +78,23 @@ router.get('/colleges', async (req, res) => {
       conditions.push(
         `(
           to_tsvector('english',
-          coalesce(c.name,'') || ' ' ||
+          coalesce(c.canonical_name,'') || ' ' ||
           coalesce(city,'') || ' ' ||
-          coalesce(state,'') || ' ' ||
-          coalesce(country,'') || ' ' ||
+          coalesce(state_region,'') || ' ' ||
+          coalesce(country_code,'') || ' ' ||
           coalesce(description,'') || ' ' ||
-          coalesce((SELECT string_agg(cp.program_name, ' ') FROM college_programs cp WHERE cp.college_id=c.id),'')
+          coalesce((SELECT string_agg(cp.program_name, ' ') FROM canonical.institution_programs cp WHERE cp.institution_id=c.id),'')
         ) @@ websearch_to_tsquery('english', $${relevanceParams.qIdx})
-        OR c.name ILIKE $${relevanceParams.ilikeIdx}
+        OR c.canonical_name ILIKE $${relevanceParams.ilikeIdx}
         OR (
           $${relevanceParams.acronymIdx} <> ''
-          AND REGEXP_REPLACE(UPPER(c.name), '[^A-Z]', '', 'g') = $${relevanceParams.acronymIdx}
+          AND REGEXP_REPLACE(UPPER(c.canonical_name), '[^A-Z]', '', 'g') = $${relevanceParams.acronymIdx}
         )
         OR (
           $${relevanceParams.trigramIdx} <> ''
           AND GREATEST(
-            COALESCE(similarity(LOWER(c.name), LOWER($${relevanceParams.trigramIdx})), 0),
-            COALESCE(word_similarity(LOWER($${relevanceParams.trigramIdx}), LOWER(c.name)), 0)
+            COALESCE(similarity(LOWER(c.canonical_name), LOWER($${relevanceParams.trigramIdx})), 0),
+            COALESCE(word_similarity(LOWER($${relevanceParams.trigramIdx}), LOWER(c.canonical_name)), 0)
           ) >= 0.24
         )
         )`
@@ -105,13 +105,15 @@ router.get('/colleges', async (req, res) => {
     if (country) {
       const countryLower = country.toLowerCase();
       if (countryLower === 'europe') {
-        conditions.push(`country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`);
+        conditions.push(`UPPER(c.country_code) NOT IN ('US', 'USA', 'GB', 'UK', 'IN')`);
       } else if (countryLower === 'united states' || countryLower === 'usa') {
-        conditions.push(`(country = 'United States' OR country = 'USA')`);
+        conditions.push(`UPPER(c.country_code) IN ('US', 'USA')`);
       } else if (countryLower === 'united kingdom' || countryLower === 'uk') {
-        conditions.push(`(country = 'United Kingdom' OR country = 'UK')`);
+        conditions.push(`UPPER(c.country_code) IN ('GB', 'UK')`);
+      } else if (countryLower === 'india' || countryLower === 'in') {
+        conditions.push(`UPPER(c.country_code) = 'IN'`);
       } else {
-        conditions.push(`country = $${paramIndex}`);
+        conditions.push(`UPPER(c.country_code) = UPPER($${paramIndex})`);
         params.push(country);
         paramIndex++;
       }
@@ -131,12 +133,12 @@ router.get('/colleges', async (req, res) => {
 
     // Cost range
     if (min_cost) {
-      conditions.push(`c.tuition_international >= $${paramIndex}`);
+      conditions.push(`c.cost_of_attendance >= $${paramIndex}`);
       params.push(parseInt(min_cost));
       paramIndex++;
     }
     if (max_cost) {
-      conditions.push(`c.tuition_international <= $${paramIndex}`);
+      conditions.push(`c.cost_of_attendance <= $${paramIndex}`);
       params.push(parseInt(max_cost));
       paramIndex++;
     }
@@ -145,7 +147,7 @@ router.get('/colleges', async (req, res) => {
     if (programs) {
       const programList = programs.split(',');
       const programConditions = programList.map(() => {
-        const cond = `EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=c.id AND LOWER(cp.program_name) LIKE LOWER($${paramIndex}))`;
+        const cond = `EXISTS (SELECT 1 FROM canonical.institution_programs cp WHERE cp.institution_id=c.id AND LOWER(cp.program_name) LIKE LOWER($${paramIndex}))`;
         paramIndex++;
         return cond;
       }).join(' OR ');
@@ -157,20 +159,20 @@ router.get('/colleges', async (req, res) => {
 
     // Valid sort fields
     const validSorts = {
-      name: 'name',
+      name: 'c.canonical_name',
       rate: 'c.acceptance_rate',
-      cost: 'c.tuition_international',
-      students: 'c.total_enrollment',
-      ranking: 'COALESCE(c.ranking_us_news, c.qs_rank, c.the_rank, 999999)'
+      cost: 'c.cost_of_attendance',
+      students: 'COALESCE(NULLIF((c.metadata->>\'total_enrollment\'), \'\')::numeric, 0)',
+      ranking: 'COALESCE(c.global_rank, 999999)'
     };
 
-    const sortField = validSorts[sort] || 'name';
+    const sortField = validSorts[sort] || 'c.canonical_name';
     const sortOrder = order === 'desc' ? 'DESC' : 'ASC';
 
     // Get total count
     const countQuery = `
       SELECT COUNT(*) as total
-      FROM public.colleges_full c
+      FROM canonical.mv_college_cards c
       ${whereClause}
     `;
     const countResult = (await pool.query(countQuery, params)).rows[0];
@@ -180,57 +182,55 @@ router.get('/colleges', async (req, res) => {
     const relevanceOrder = safeQuery
       ? `
         CASE
-          WHEN LOWER(c.name) = LOWER($${relevanceParams.qIdx}) THEN 1200
-          WHEN LOWER(c.name) LIKE LOWER($${relevanceParams.prefixIdx}) THEN 950
+          WHEN LOWER(c.canonical_name) = LOWER($${relevanceParams.qIdx}) THEN 1200
+          WHEN LOWER(c.canonical_name) LIKE LOWER($${relevanceParams.prefixIdx}) THEN 950
           WHEN $${relevanceParams.acronymIdx} <> ''
-            AND REGEXP_REPLACE(UPPER(c.name), '[^A-Z]', '', 'g') = $${relevanceParams.acronymIdx}
+            AND REGEXP_REPLACE(UPPER(c.canonical_name), '[^A-Z]', '', 'g') = $${relevanceParams.acronymIdx}
             THEN 900
           ELSE 0
         END DESC,
         GREATEST(
-          COALESCE(similarity(LOWER(c.name), LOWER($${relevanceParams.trigramIdx})), 0),
-          COALESCE(word_similarity(LOWER($${relevanceParams.trigramIdx}), LOWER(c.name)), 0)
+          COALESCE(similarity(LOWER(c.canonical_name), LOWER($${relevanceParams.trigramIdx})), 0),
+          COALESCE(word_similarity(LOWER($${relevanceParams.trigramIdx}), LOWER(c.canonical_name)), 0)
         ) DESC,`
       : '';
 
     const query = `
       SELECT
         c.id,
-        c.name,
-        c.country,
-        c.state,
+        c.canonical_name AS name,
+        c.country_code AS country,
+        c.state_region AS state,
         c.city,
         c.description,
-        COALESCE(
-          to_jsonb(c) ->> 'official_website',
-          to_jsonb(c) ->> 'website_url',
-          to_jsonb(c) ->> 'website'
-        ) AS official_website,
-        LOWER(REGEXP_REPLACE(c.name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
+        c.website AS official_website,
+        LOWER(REGEXP_REPLACE(c.canonical_name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
         c.acceptance_rate,
-        c.sat_25,
-        c.sat_75,
-        c.act_25,
-        c.act_75,
-        c.gpa_25,
-        c.gpa_75,
-        c.tuition_domestic AS tuition_in_state,
-        c.tuition_international,
-        c.total_enrollment,
-        (SELECT ARRAY_AGG(cp.program_name) FROM college_programs cp WHERE cp.college_id=c.id) as program_names
-      FROM public.colleges_full c
+        c.sat_50 AS sat_25,
+        c.sat_50 AS sat_75,
+        c.act_50 AS act_25,
+        c.act_50 AS act_75,
+        NULL::numeric AS gpa_25,
+        NULL::numeric AS gpa_75,
+        NULL::numeric AS tuition_in_state,
+        c.cost_of_attendance AS tuition_international,
+        NULLIF((c.metadata->>'total_enrollment'),'')::numeric AS total_enrollment,
+        c.global_rank,
+        c.popularity_score,
+        (SELECT ARRAY_AGG(cp.program_name) FROM canonical.institution_programs cp WHERE cp.institution_id=c.id) as program_names
+      FROM canonical.mv_college_cards c
       ${whereClause}
       ORDER BY
         ${relevanceOrder}
         COALESCE(c.popularity_score, 0) DESC,
         ${sortField} ${sortOrder},
-        COALESCE(c.ranking_us_news, c.qs_rank, c.the_rank, 999999) ASC,
+        COALESCE(c.global_rank, 999999) ASC,
         CASE
           WHEN c.acceptance_rate BETWEEN 0.01 AND 0.99 THEN 0
           ELSE 1
         END ASC,
         COALESCE(c.total_enrollment, 0) DESC,
-        c.name ASC
+        c.canonical_name ASC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
 
@@ -317,22 +317,22 @@ router.get('/filters', async (req, res) => {
     for (const filter of countryFilters) {
       let result;
       if (filter.value === 'Europe') {
-        result = (await pool.query(`SELECT COUNT(*) as count FROM public.colleges WHERE country NOT IN ('United States', 'USA', 'United Kingdom', 'UK', 'India')`)).rows[0];
+        result = (await pool.query(`SELECT COUNT(*) as count FROM canonical.mv_college_cards WHERE UPPER(country_code) NOT IN ('US', 'USA', 'GB', 'UK', 'IN')`)).rows[0];
       } else if (filter.value === 'United States') {
-        result = (await pool.query(`SELECT COUNT(*) as count FROM public.colleges WHERE country IN ('United States', 'USA')`)).rows[0];
+        result = (await pool.query(`SELECT COUNT(*) as count FROM canonical.mv_college_cards WHERE UPPER(country_code) IN ('US', 'USA')`)).rows[0];
       } else if (filter.value === 'United Kingdom') {
-        result = (await pool.query(`SELECT COUNT(*) as count FROM public.colleges WHERE country IN ('United Kingdom', 'UK')`)).rows[0];
+        result = (await pool.query(`SELECT COUNT(*) as count FROM canonical.mv_college_cards WHERE UPPER(country_code) IN ('GB', 'UK')`)).rows[0];
       } else if (filter.value === 'India') {
-        result = (await pool.query(`SELECT COUNT(*) as count FROM public.colleges WHERE country = 'India'`)).rows[0];
+        result = (await pool.query(`SELECT COUNT(*) as count FROM canonical.mv_college_cards WHERE UPPER(country_code) = 'IN'`)).rows[0];
       } else {
         // Use parameterized query for any other value
-        result = (await pool.query(`SELECT COUNT(*) as count FROM public.colleges WHERE country = $1`, [filter.value])).rows[0];
+        result = (await pool.query(`SELECT COUNT(*) as count FROM canonical.mv_college_cards WHERE UPPER(country_code) = UPPER($1)`, [filter.value])).rows[0];
       }
       filter.count = parseInt(result.count);
     }
 
     // Get all unique programs/majors
-    const programRows = (await pool.query('SELECT DISTINCT program_name FROM college_programs WHERE program_name IS NOT NULL ORDER BY program_name')).rows;
+    const programRows = (await pool.query('SELECT DISTINCT program_name FROM canonical.institution_programs WHERE program_name IS NOT NULL ORDER BY program_name')).rows;
     const allPrograms = new Set(programRows.map(r => r.program_name));
 
     // Get acceptance rate and cost ranges
@@ -340,9 +340,9 @@ router.get('/filters', async (req, res) => {
       SELECT 
         MIN(c.acceptance_rate) as min_rate,
         MAX(c.acceptance_rate) as max_rate,
-        MIN(c.tuition_international) as min_cost,
-        MAX(c.tuition_international) as max_cost
-      FROM public.colleges_full c
+        MIN(c.cost_of_attendance) as min_cost,
+        MAX(c.cost_of_attendance) as max_cost
+      FROM canonical.mv_college_cards c
     `)).rows[0];
 
     res.json({
@@ -490,17 +490,17 @@ router.get('/suggestions', async (req, res, next) => {
     
     // Get college name suggestions using FTS
     const colleges = (await pool.query(`
-      SELECT DISTINCT name, country
-      FROM public.colleges
-      WHERE to_tsvector('english', coalesce(name,'')) @@ websearch_to_tsquery('english', $1)
-      ORDER BY name ASC
+      SELECT DISTINCT canonical_name AS name, country_code AS country
+      FROM canonical.mv_college_cards
+      WHERE to_tsvector('english', coalesce(canonical_name,'')) @@ websearch_to_tsquery('english', $1)
+      ORDER BY canonical_name ASC
       LIMIT 10
     `, [q])).rows;
     
     // Get major suggestions using program names from college_programs
     const majorsResult = (await pool.query(`
       SELECT DISTINCT program_name
-      FROM college_programs
+      FROM canonical.institution_programs
       WHERE program_name ILIKE $1
       LIMIT 50
     `, [`%${q}%`])).rows;

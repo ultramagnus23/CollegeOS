@@ -231,7 +231,7 @@ async function startServer() {
     // Log college count so Render cold-start logs confirm data is available
     try {
       const pool = dbManager.getDatabase();
-      const { rows: colRows } = await pool.query('SELECT COUNT(*) AS count FROM public.clean_colleges');
+      const { rows: colRows } = await pool.query('SELECT COUNT(*) AS count FROM canonical.mv_college_cards');
       logger.info(`Colleges table: ${colRows[0].count} rows`);
     } catch (_) {
       logger.warn('Could not read college row count');
@@ -255,49 +255,9 @@ async function startServer() {
       // Start keep-alive pings to prevent Render free-tier connection reaping
       startKeepAlive();
 
-      // Precompute college feature vectors (non-blocking — runs after server starts)
+      // Legacy vector precompute disabled after canonical cutover.
       setImmediate(async () => {
-        try {
-          const { buildCollegeVector } = require('./services/vectorService');
-          const pool = dbManager.getDatabase();
-          const { rows: missing } = await pool.query(
-            `SELECT id FROM colleges WHERE feature_vector IS NULL LIMIT 5000`
-          );
-          if (missing.length > 0) {
-            logger.info(`Precomputing feature vectors for ${missing.length} colleges…`);
-            let computed = 0;
-            for (const { id } of missing) {
-              try {
-                const { rows } = await pool.query(
-                  `SELECT cc.*, ca.admission_rate, ca.acceptance_rate,
-                          cfd.avg_net_price, cfd.avg_financial_aid,
-                          ad.graduation_rate_4yr, ad.sat_avg, ad.act_avg
-                   FROM colleges cc
-                   LEFT JOIN college_admissions ca   ON ca.college_id  = cc.id
-                   LEFT JOIN colleges cfd ON cfd.college_id = cc.id
-                   LEFT JOIN academic_details ad       ON ad.college_id   = cc.id
-                   WHERE cc.id = $1`,
-                  [id]
-                );
-                if (rows[0]) {
-                  const vec = buildCollegeVector(rows[0]);
-                  await pool.query(
-                    `UPDATE colleges
-                     SET feature_vector = $1, vector_updated_at = NOW()
-                     WHERE id = $2`,
-                    [JSON.stringify(vec), id]
-                  );
-                  computed++;
-                }
-              } catch (colErr) {
-                logger.warn(`Vector compute skipped for college ${id}: ${colErr.message}`);
-              }
-            }
-            logger.info(`Precomputed vectors for ${computed} colleges`);
-          }
-        } catch (err) {
-          logger.warn('College vector precompute failed (non-fatal):', { error: err.message });
-        }
+        logger.info('Canonical cutover active: skipped legacy colleges vector precompute.');
       });
 
       // Refresh exchange rates every 6 hours

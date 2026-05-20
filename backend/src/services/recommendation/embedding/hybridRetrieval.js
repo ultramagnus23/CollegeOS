@@ -47,42 +47,35 @@ async function retrieveHybridCandidates({ embeddingLiteral, terms = [], subjectT
   const pool = dbManager.getDatabase();
   const safeLimit = Math.max(50, Math.min(450, Number(limit) || 220));
   const query = `SELECT
-       i.id,
-       i.canonical_name AS name,
-       i.country_code AS country,
-       i.description,
+       c.id,
+       c.canonical_name AS name,
+       c.country_code AS country,
+       c.description,
        COALESCE(
          ARRAY(
-           SELECT jsonb_array_elements_text(
-             COALESCE(i.metadata->'tags', '[]'::jsonb)
-           )
-         ),
-         ARRAY[]::text[]
-       ) AS semantic_tags,
-       p.programs,
-       ie.embedding,
-       (1 - (ie.embedding <=> $1::vector))::numeric AS embedding_similarity,
-       COALESCE(pi.popularity_score, 0)::numeric AS popularity_score,
-       COALESCE(pi.search_volume_score, 0)::numeric AS search_volume_score,
-       COALESCE(ir.subject_rank, NULL) AS subject_rank,
-       COALESCE(f.net_cost_usd, f.tuition_international, NULL) AS net_cost_usd,
-       f.tuition_international
-     FROM canonical.institution_embeddings ie
-     JOIN canonical.institutions i ON i.id = ie.institution_id
-     LEFT JOIN canonical.popularity_index pi ON pi.institution_id = i.id
-     LEFT JOIN canonical.institution_financials f ON f.institution_id = i.id
-     LEFT JOIN (
-       SELECT institution_id, MIN(subject_rank) AS subject_rank
-       FROM canonical.institution_rankings
-       GROUP BY institution_id
-     ) ir ON ir.institution_id = i.id
-     LEFT JOIN (
-       SELECT institution_id, ARRAY_AGG(program_name) AS programs
-       FROM canonical.institution_programs
-       GROUP BY institution_id
-     ) p ON p.institution_id = i.id
-     ORDER BY ie.embedding <=> $1::vector
-     LIMIT $2`;
+            SELECT jsonb_array_elements_text(
+              COALESCE(c.metadata->'tags', '[]'::jsonb)
+            )
+          ),
+          ARRAY[]::text[]
+        ) AS semantic_tags,
+        p.programs,
+        ie.embedding,
+        (1 - (ie.embedding <=> $1::vector))::numeric AS embedding_similarity,
+        COALESCE(c.popularity_score, 0)::numeric AS popularity_score,
+        0::numeric AS search_volume_score,
+        COALESCE(c.global_rank, NULL) AS subject_rank,
+        COALESCE(c.cost_of_attendance, c.tuition_international, NULL) AS net_cost_usd,
+        c.tuition_international
+      FROM canonical.institution_embeddings ie
+      JOIN canonical.mv_college_cards c ON c.id = ie.institution_id
+      LEFT JOIN (
+        SELECT institution_id, ARRAY_AGG(program_name) AS programs
+        FROM canonical.institution_programs
+        GROUP BY institution_id
+      ) p ON p.institution_id = c.id
+      ORDER BY ie.embedding <=> $1::vector
+      LIMIT $2`;
   const payload = [embeddingLiteral, safeLimit];
   let rows = [];
 

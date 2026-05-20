@@ -62,11 +62,17 @@ class EssayAutoLoadingService {
   static async _getCollegeData(collegeId) {
     const pool = dbManager.getDatabase();
     return (await pool.query(`
-      SELECT cc.id, cc.name, cc.country, cd.application_platforms
-      FROM public.clean_colleges cc
-      LEFT JOIN public.college_deadlines cd ON cc.id = cd.college_id
-      WHERE cc.id = $1
-    `, [collegeId])).rows[0];
+      SELECT 
+        m.source_pk::int AS id,
+        i.canonical_name AS name,
+        i.country_code AS country,
+        cd.application_platforms
+      FROM canonical.institution_identity_map m
+      JOIN canonical.institutions i ON i.id = m.institution_id
+      LEFT JOIN public.college_deadlines cd ON cd.college_id = m.source_pk::int
+      WHERE m.source_pk = $1::text
+      LIMIT 1
+    `, [String(collegeId)])).rows[0];
   }
 
   /**

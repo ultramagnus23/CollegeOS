@@ -268,9 +268,9 @@ const Colleges: React.FC = () => {
 
         // Client-side sort for modes the RPC doesn't natively support
         const popularityScore = (c: any) =>
-          (c.enrollment ?? 0) * 0.00001 +
-          (1 - (c.acceptanceRate ?? 0.5)) * 2 +
-          (c.acceptanceRate != null && c.tuition_cost != null && c.enrollment != null ? 1 : 0);
+          (c.popularity_score ?? 0) * 10 +
+          ((c.ranking != null ? Math.max(0, 300 - c.ranking) / 300 : 0) * 3) +
+          ((c.acceptanceRate != null ? (1 - c.acceptanceRate) : 0.3) * 2);
 
         const sorted =
           sortBy === 'ranking'
