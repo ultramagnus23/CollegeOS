@@ -412,10 +412,14 @@ async function generateRecommendationsV2(userProfile, options = {}) {
         },
         limit: Math.max(100, Math.min(350, Number(options?.candidateLimit) || 220)),
       });
+      const candidates = Array.isArray(hybridCandidates) ? hybridCandidates : [];
+      console.log('[1] candidates:', candidates.length);
       retrievalCandidates = crossEncoderRerank(
-        Array.isArray(hybridCandidates) ? hybridCandidates : [],
+        candidates,
         Array.isArray(queryContext?.lexicalTerms) ? queryContext.lexicalTerms : []
       );
+      const retrieved = Array.isArray(retrievalCandidates) ? retrievalCandidates : [];
+      console.log('[2] retrieved:', retrieved.length);
     });
 
     await runStage('[6] ranking feature engineering', 'ranking_feature_engineering_ms', async () => {
@@ -548,6 +552,8 @@ async function generateRecommendationsV2(userProfile, options = {}) {
       }
       return out;
     });
+    const ranked = Array.isArray(enriched) ? enriched : [];
+    console.log('[3] ranked:', ranked.length);
 
     const diversified = await runStage('[8] portfolio diversification', 'portfolio_diversification_ms', async () => {
       let preferenceModel = { preferredCountries: [], preferredTags: [], implicitAffinity: 0 };
@@ -564,8 +570,9 @@ async function generateRecommendationsV2(userProfile, options = {}) {
         targetCount: Math.max(10, Math.min(30, Number(options?.limit) || 20)),
       });
     });
+    console.log('[4] diversified:', diversified?.length);
 
-    const recommendations = await runStage('[9] serialization', 'serialization_ms', async () => {
+    const finalRecommendations = await runStage('[9] serialization', 'serialization_ms', async () => {
       const retrievalEval = evaluateRetrievalBatch({
         candidates: Array.isArray(retrievalCandidates) ? retrievalCandidates : [],
         relevantInstitutionIds: (Array.isArray(diversified) ? diversified : []).slice(0, 20).map((i) => i?.college_id).filter(Boolean),
@@ -635,9 +642,10 @@ async function generateRecommendationsV2(userProfile, options = {}) {
 
       return assertJsonSerializable(payload);
     });
+    console.log('[5] final:', finalRecommendations?.length);
 
     return {
-      recommendations,
+      recommendations: finalRecommendations,
       metadata: {
         pipeline: 'v3',
         fallbackUsed: false,
