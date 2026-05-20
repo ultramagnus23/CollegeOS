@@ -25,19 +25,107 @@ class HttpAdapter(BaseAdapter):
             try:
                 headers = {"User-Agent": random.choice(self.user_agents)}
                 response = requests.get(url, timeout=self.timeout_seconds, headers=headers)
+                if response.status_code == 429:
+                    retry_after = response.headers.get("Retry-After")
+                    wait_seconds = min(20, int(retry_after)) if str(retry_after or "").isdigit() else min(8, 1.5 * attempt)
+                    last_error = f"rate limited (429), retry_after={wait_seconds}"
+                    if attempt < self.retries:
+                        time.sleep(wait_seconds)
+                        continue
+                    return FetchResult(
+                        success=False,
+                        url=url,
+                        status_code=429,
+                        html="",
+                        error=last_error,
+                        headers=dict(response.headers),
+                        error_type="RateLimitError",
+                        retryable=True,
+                        retries_attempted=attempt - 1,
+                    )
                 if response.status_code >= 500:
                     last_error = f"server error {response.status_code}"
-                else:
+                    if attempt < self.retries:
+                        time.sleep(min(6, 1.2 * attempt))
+                        continue
                     return FetchResult(
-                        success=response.ok,
+                        success=False,
                         url=url,
                         status_code=response.status_code,
-                        html=response.text if response.ok else "",
-                        error=None if response.ok else f"http {response.status_code}",
+                        html="",
+                        error=last_error,
                         headers=dict(response.headers),
+                        error_type="NetworkError",
+                        retryable=True,
+                        retries_attempted=attempt - 1,
                     )
+                if response.status_code >= 400:
+                    return FetchResult(
+                        success=False,
+                        url=url,
+                        status_code=response.status_code,
+                        html="",
+                        error=f"http {response.status_code}",
+                        headers=dict(response.headers),
+                        error_type="HttpError",
+                        retryable=False,
+                        retries_attempted=attempt - 1,
+                    )
+                return FetchResult(
+                    success=True,
+                    url=url,
+                    status_code=response.status_code,
+                    html=response.text,
+                    error=None,
+                    headers=dict(response.headers),
+                    retries_attempted=attempt - 1,
+                )
+            except (requests.Timeout, requests.ConnectionError) as exc:  # pragma: no cover - network errors are environment dependent
+                last_error = str(exc)
+                if attempt < self.retries:
+                    time.sleep(min(6, 1.2 * attempt))
+                    continue
+                return FetchResult(
+                    success=False,
+                    url=url,
+                    status_code=None,
+                    html="",
+                    error=last_error,
+                    error_type="NetworkError",
+                    retryable=True,
+                    retries_attempted=attempt - 1,
+                )
+            except requests.RequestException as exc:  # pragma: no cover - network errors are environment dependent
+                last_error = str(exc)
+                return FetchResult(
+                    success=False,
+                    url=url,
+                    status_code=None,
+                    html="",
+                    error=last_error,
+                    error_type="HttpError",
+                    retryable=False,
+                    retries_attempted=attempt - 1,
+                )
             except Exception as exc:  # pragma: no cover - network errors are environment dependent
                 last_error = str(exc)
-            time.sleep(min(6, 1.2 * attempt))
-        return FetchResult(success=False, url=url, status_code=None, html="", error=last_error)
-
+                return FetchResult(
+                    success=False,
+                    url=url,
+                    status_code=None,
+                    html="",
+                    error=last_error,
+                    error_type="UnknownError",
+                    retryable=False,
+                    retries_attempted=attempt - 1,
+                )
+        return FetchResult(
+            success=False,
+            url=url,
+            status_code=None,
+            html="",
+            error=last_error,
+            error_type="NetworkError",
+            retryable=True,
+            retries_attempted=max(0, self.retries - 1),
+        )
