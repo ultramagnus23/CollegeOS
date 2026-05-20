@@ -350,11 +350,6 @@ async function generateRecommendationsV2(userProfile, options = {}) {
   let mergedProfile = { ...(normalizedStudent || {}) };
   let retrievalCandidates = [];
   let rankedInputs = [];
-  let candidates = [];
-  let retrieved = [];
-  let ranked = [];
-  let diversified = [];
-  let finalRecommendations = [];
   let uncertainty = 0;
   let infraDiagnostics = null;
 
@@ -417,14 +412,14 @@ async function generateRecommendationsV2(userProfile, options = {}) {
         },
         limit: Math.max(100, Math.min(350, Number(options?.candidateLimit) || 220)),
       });
-      candidates = Array.isArray(hybridCandidates) ? hybridCandidates : [];
-      console.log('[1] candidates:', candidates?.length);
+      const candidates = Array.isArray(hybridCandidates) ? hybridCandidates : [];
+      console.log('[1] candidates:', candidates.length);
       retrievalCandidates = crossEncoderRerank(
         candidates,
         Array.isArray(queryContext?.lexicalTerms) ? queryContext.lexicalTerms : []
       );
-      retrieved = Array.isArray(retrievalCandidates) ? retrievalCandidates : [];
-      console.log('[2] retrieved:', retrieved?.length);
+      const retrieved = Array.isArray(retrievalCandidates) ? retrievalCandidates : [];
+      console.log('[2] retrieved:', retrieved.length);
     });
 
     await runStage('[6] ranking feature engineering', 'ranking_feature_engineering_ms', async () => {
@@ -557,10 +552,10 @@ async function generateRecommendationsV2(userProfile, options = {}) {
       }
       return out;
     });
-    ranked = Array.isArray(enriched) ? enriched : [];
-    console.log('[3] ranked:', ranked?.length);
+    const ranked = Array.isArray(enriched) ? enriched : [];
+    console.log('[3] ranked:', ranked.length);
 
-    diversified = await runStage('[8] portfolio diversification', 'portfolio_diversification_ms', async () => {
+    const diversified = await runStage('[8] portfolio diversification', 'portfolio_diversification_ms', async () => {
       let preferenceModel = { preferredCountries: [], preferredTags: [], implicitAffinity: 0 };
       if (options?.userId) {
         try {
@@ -577,7 +572,7 @@ async function generateRecommendationsV2(userProfile, options = {}) {
     });
     console.log('[4] diversified:', diversified?.length);
 
-    finalRecommendations = await runStage('[9] serialization', 'serialization_ms', async () => {
+    const finalRecommendations = await runStage('[9] serialization', 'serialization_ms', async () => {
       const retrievalEval = evaluateRetrievalBatch({
         candidates: Array.isArray(retrievalCandidates) ? retrievalCandidates : [],
         relevantInstitutionIds: (Array.isArray(diversified) ? diversified : []).slice(0, 20).map((i) => i?.college_id).filter(Boolean),

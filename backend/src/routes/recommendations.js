@@ -112,6 +112,7 @@ function mergeRecommendationPayloadIntoProfile(profile = {}, payload = {}) {
 router.get('/', authenticate, async (req, res) => {
   const requestId = req.requestId || createRequestId();
   const startedAt = Date.now();
+  const enableTraceLogs = config.nodeEnv !== 'production' || req.query.traceRecommendations === '1';
   try {
     const requestedLimit = Number.parseInt(String(req.query.limit ?? 250), 10);
     const safeLimit = Number.isFinite(requestedLimit) ? Math.min(500, Math.max(25, requestedLimit)) : 250;
@@ -198,9 +199,11 @@ router.get('/', authenticate, async (req, res) => {
       },
       meta: { requestId, durationMs: Date.now() - startedAt, evaluated: safeLimit, pipeline: 'v3', sessionId },
     };
-    console.log('[5] final:', response?.recommendations?.length);
-    console.log('FINAL RECOMMENDATIONS SERIALIZED', JSON.stringify(response?.recommendations || []));
-    console.log('FINAL RESPONSE', JSON.stringify(response, null, 2));
+    if (enableTraceLogs) {
+      console.log('[API] final:', response?.recommendations?.length);
+      console.log('FINAL RECOMMENDATIONS SERIALIZED', JSON.stringify(response?.recommendations || []));
+      console.log('FINAL RESPONSE', JSON.stringify(response, null, 2));
+    }
     res.json(response);
     safeLog('recommendations.generated', {
       requestId,
@@ -226,6 +229,7 @@ router.get('/', authenticate, async (req, res) => {
 router.post('/generate', authenticate, async (req, res) => {
   const requestId = req.requestId || createRequestId();
   const startedAt = nowMs();
+  const enableTraceLogs = config.nodeEnv !== 'production' || req.query.traceRecommendations === '1';
   const stageTimings = {};
   let currentStage = 'request_received';
   try {
@@ -357,9 +361,11 @@ router.post('/generate', authenticate, async (req, res) => {
     stageTimings.serialization_ms = elapsedMs(s9);
     logStageComplete('[9] serialization', s9, { requestId });
 
-    console.log('[5] final:', responsePayload?.recommendations?.length);
-    console.log('FINAL RECOMMENDATIONS SERIALIZED', JSON.stringify(responsePayload?.recommendations || []));
-    console.log('FINAL RESPONSE', JSON.stringify(responsePayload, null, 2));
+    if (enableTraceLogs) {
+      console.log('[API] final:', responsePayload?.recommendations?.length);
+      console.log('FINAL RECOMMENDATIONS SERIALIZED', JSON.stringify(responsePayload?.recommendations || []));
+      console.log('FINAL RESPONSE', JSON.stringify(responsePayload, null, 2));
+    }
     res.json(responsePayload);
     currentStage = 'response_sent';
     const s10 = nowMs();
