@@ -262,7 +262,9 @@ const CollegeRecommendations: React.FC = () => {
   }, []);
 
   const recs = data?.recommendations || [];
-  console.log('Frontend recommendations:', recs);
+  if (import.meta.env.DEV) {
+    console.log('Frontend recommendations:', recs);
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: S.bg, fontFamily: S.font, padding: '40px 24px' }}>
