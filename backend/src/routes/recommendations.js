@@ -112,7 +112,7 @@ function mergeRecommendationPayloadIntoProfile(profile = {}, payload = {}) {
 router.get('/', authenticate, async (req, res) => {
   const requestId = req.requestId || createRequestId();
   const startedAt = Date.now();
-  const enableTraceLogs = config.nodeEnv !== 'production' || req.query.traceRecommendations === '1';
+  const enableTraceLogs = config.nodeEnv !== 'production' || process.env.RECOMMENDATION_TRACE === 'true';
   try {
     const requestedLimit = Number.parseInt(String(req.query.limit ?? 250), 10);
     const safeLimit = Number.isFinite(requestedLimit) ? Math.min(500, Math.max(25, requestedLimit)) : 250;
@@ -229,7 +229,7 @@ router.get('/', authenticate, async (req, res) => {
 router.post('/generate', authenticate, async (req, res) => {
   const requestId = req.requestId || createRequestId();
   const startedAt = nowMs();
-  const enableTraceLogs = config.nodeEnv !== 'production' || req.query.traceRecommendations === '1';
+  const enableTraceLogs = config.nodeEnv !== 'production' || process.env.RECOMMENDATION_TRACE === 'true';
   const stageTimings = {};
   let currentStage = 'request_received';
   try {
