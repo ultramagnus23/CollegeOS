@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import asdict, dataclass
+from collections import Counter
+from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
-from typing import Callable, Dict, List, Sequence
+from pathlib import Path
+from typing import Dict, List, Optional
 
 from scrapers.adapters.http_adapter import HttpAdapter
 from scrapers.conflict_resolution.resolver import resolve_conflicts
@@ -29,259 +31,264 @@ class ScrapeDiagnostic:
     stale: bool
 
 
-def _iso_now() -> str:
+def _timestamp() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _chunked(items: Sequence[Dict], size: int) -> List[List[Dict]]:
-    return [list(items[i : i + size]) for i in range(0, len(items), size)]
+def _log_structured(payload: Dict) -> None:
+    print(json.dumps(payload, ensure_ascii=False, sort_keys=True))
 
 
-def _structured_log(
-    *,
-    institution: str,
-    stage: str,
-    error_type: str,
-    retryable: bool,
-    batch_id: str,
-    column: str | None = None,
-    message: str | None = None,
-) -> None:
-    payload = {
-        "institution": institution,
-        "stage": stage,
-        "error_type": error_type,
-        "retryable": retryable,
-        "column": column,
-        "timestamp": _iso_now(),
-        "batch_id": batch_id,
-        "workflow": "scrape-weekly",
-    }
-    if message:
-        payload["message"] = message
-    print(json.dumps(payload, ensure_ascii=False))
+def _checkpoint_index(checkpoint_path: Optional[str]) -> int:
+    if not checkpoint_path:
+        return 0
+    checkpoint = Path(checkpoint_path)
+    if not checkpoint.exists():
+        return 0
+    try:
+        data = json.loads(checkpoint.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return 0
+    return int(data.get("next_index") or 0)
+
+
+def _write_checkpoint(checkpoint_path: Optional[str], payload: Dict) -> None:
+    if not checkpoint_path:
+        return
+    checkpoint = Path(checkpoint_path)
+    checkpoint.parent.mkdir(parents=True, exist_ok=True)
+    checkpoint.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def _normalize_error_type(error_type: Optional[str], error: str) -> str:
+    if error_type:
+        return error_type
+    lowered = (error or "").lower()
+    if "schema" in lowered or "column" in lowered:
+        return "SchemaError"
+    if "timeout" in lowered or "connection" in lowered:
+        return "NetworkError"
+    if "rate" in lowered or "429" in lowered:
+        return "RateLimitError"
+    return "UnknownError"
 
 
 def run_scrape_cycle(
     targets: List[Dict],
     *,
-    adapter: HttpAdapter | None = None,
-    batch_size: int = 25,
-    checkpoint_callback: Callable[[Dict], None] | None = None,
-    disabled_modules: set[str] | None = None,
+    adapter: Optional[HttpAdapter] = None,
+    batch_size: Optional[int] = None,
+    checkpoint_path: Optional[str] = None,
+    workflow_name: str = "scrape-weekly",
 ) -> Dict:
-    active_adapter = adapter or HttpAdapter()
+    adapter = adapter or HttpAdapter()
+    batch_size = int(batch_size or os.getenv("SCRAPER_BATCH_SIZE", "25"))
+    batch_size = max(1, batch_size)
     diagnostics: List[ScrapeDiagnostic] = []
     deadline_rows = []
     requirement_rows = []
     retry_count = 0
-    schema_errors = 0
-    parser_errors = 0
-    network_errors = 0
-    stale_records_detected = 0
-    disabled = disabled_modules or set()
+    error_type_counts: Counter = Counter()
+    start_time = datetime.now(timezone.utc)
 
-    batches = _chunked(targets, max(1, batch_size))
-    processed = 0
-
-    for batch_index, batch in enumerate(batches, start=1):
-        batch_id = f"batch-{batch_index}"
-        for target in batch:
+    resume_index = min(_checkpoint_index(checkpoint_path), len(targets))
+    batches_completed = 0
+    for batch_start in range(resume_index, len(targets), batch_size):
+        batch_targets = targets[batch_start: batch_start + batch_size]
+        batch_id = f"batch-{(batch_start // batch_size) + 1}"
+        for target in batch_targets:
             institution_id = str(target.get("institution_id"))
             source_url = str(target.get("source_url"))
             errors: List[str] = []
             try:
-                fetch = active_adapter.fetch(source_url)
-                retry_count += fetch.retry_count
+                fetch = adapter.fetch(source_url)
+                retry_count += int(fetch.retries_attempted or 0)
                 if not fetch.success:
-                    error_type = fetch.error_type or "NetworkError"
-                    if fetch.retryable:
-                        network_errors += 1
-                    _structured_log(
-                        institution=institution_id,
-                        stage="fetch",
-                        error_type=error_type,
-                        retryable=fetch.retryable,
-                        batch_id=batch_id,
-                        message=fetch.error or "fetch failed",
+                    error_text = fetch.error or "fetch failed"
+                    error_type = _normalize_error_type(fetch.error_type, error_text)
+                    error_type_counts[error_type] += 1
+                    errors.append(error_text)
+                    _log_structured(
+                        {
+                            "workflow": workflow_name,
+                            "institution": institution_id,
+                            "stage": "fetch",
+                            "error_type": error_type,
+                            "retryable": bool(fetch.retryable),
+                            "column": None,
+                            "timestamp": _timestamp(),
+                            "batch_id": batch_id,
+                            "message": error_text,
+                        }
                     )
                     diagnostics.append(
                         ScrapeDiagnostic(
                             institution_id=institution_id,
                             source_url=source_url,
-                            batch_id=batch_id,
                             success=False,
-                            errors=[fetch.error or "fetch failed"],
-                            error_type=error_type,
-                            retryable=fetch.retryable,
+                            errors=errors,
                             deadline_count=0,
                             requirement_count=0,
                             confidence_score=0.0,
                             stale=True,
                         )
                     )
-                    stale_records_detected += 1
                     continue
 
+                try:
+                    parsed_deadlines = parse_deadlines(fetch.html)
+                    parsed_requirements = parse_requirements(fetch.html)
+                except Exception as parser_exc:
+                    error_text = str(parser_exc)
+                    error_type_counts["ParserError"] += 1
+                    errors.append(error_text)
+                    _log_structured(
+                        {
+                            "workflow": workflow_name,
+                            "institution": institution_id,
+                            "stage": "parsing",
+                            "error_type": "ParserError",
+                            "retryable": False,
+                            "column": None,
+                            "timestamp": _timestamp(),
+                            "batch_id": batch_id,
+                            "message": error_text,
+                        }
+                    )
+                    diagnostics.append(
+                        ScrapeDiagnostic(
+                            institution_id=institution_id,
+                            source_url=source_url,
+                            success=False,
+                            errors=errors,
+                            deadline_count=0,
+                            requirement_count=0,
+                            confidence_score=0.0,
+                            stale=True,
+                        )
+                    )
+                    continue
+
+                valid_deadlines, deadline_errors = validate_deadlines(parsed_deadlines)
+                valid_requirements, requirement_errors = validate_requirements(parsed_requirements)
+                if deadline_errors or requirement_errors:
+                    error_type_counts["ValidationError"] += len(deadline_errors + requirement_errors)
+                for validation_error in deadline_errors + requirement_errors:
+                    errors.append(validation_error)
+                    _log_structured(
+                        {
+                            "workflow": workflow_name,
+                            "institution": institution_id,
+                            "stage": "validation",
+                            "error_type": "ValidationError",
+                            "retryable": False,
+                            "column": None,
+                            "timestamp": _timestamp(),
+                            "batch_id": batch_id,
+                            "message": validation_error,
+                        }
+                    )
+
                 source_meta = compute_source_score(source_url=source_url, parser_confidence=0.9)
-                stale_records_detected += 1 if source_meta["stale"] else 0
-                institution_deadline_count = 0
-                institution_requirement_count = 0
+                now = _timestamp()
+                for row in valid_deadlines:
+                    deadline_rows.append(
+                        {
+                            "institution_id": institution_id,
+                            "source_url": source_url,
+                            "last_verified": now,
+                            "extraction_timestamp": now,
+                            "parser_version": "deadline_parser_v1",
+                            "confidence_score": source_meta["confidence_score"],
+                            "source_type": source_meta["source_type"],
+                            "freshness_score": source_meta["freshness_score"],
+                            **row,
+                        }
+                    )
+                for row in valid_requirements:
+                    requirement_rows.append(
+                        {
+                            "institution_id": institution_id,
+                            "source_url": source_url,
+                            "last_verified": now,
+                            "extraction_timestamp": now,
+                            "parser_version": "requirements_parser_v1",
+                            "confidence_score": source_meta["confidence_score"],
+                            "source_type": source_meta["source_type"],
+                            "freshness_score": source_meta["freshness_score"],
+                            **row,
+                        }
+                    )
 
-                if "deadlines" not in disabled:
-                    try:
-                        parsed_deadlines = parse_deadlines(fetch.html)
-                        valid_deadlines, deadline_errors = validate_deadlines(parsed_deadlines)
-                        for err in deadline_errors:
-                            schema_errors += 1
-                            errors.append(err)
-                            _structured_log(
-                                institution=institution_id,
-                                stage="deadline_validation",
-                                error_type="SchemaError",
-                                retryable=False,
-                                batch_id=batch_id,
-                                message=err,
-                            )
-                        for row in valid_deadlines:
-                            deadline_rows.append(
-                                {
-                                    "institution_id": institution_id,
-                                    "source_url": source_url,
-                                    "last_verified": _iso_now(),
-                                    "extraction_timestamp": _iso_now(),
-                                    "parser_version": "deadline_parser_v1",
-                                    "confidence_score": source_meta["confidence_score"],
-                                    "source_type": source_meta["source_type"],
-                                    "freshness_score": source_meta["freshness_score"],
-                                    **row,
-                                }
-                            )
-                        institution_deadline_count = len(valid_deadlines)
-                    except Exception as exc:
-                        parser_errors += 1
-                        errors.append(str(exc))
-                        _structured_log(
-                            institution=institution_id,
-                            stage="deadline_parse",
-                            error_type="ParserError",
-                            retryable=False,
-                            batch_id=batch_id,
-                            message=str(exc),
-                        )
-                else:
-                    errors.append("deadlines module disabled by schema drift")
-
-                if "requirements" not in disabled:
-                    try:
-                        parsed_requirements = parse_requirements(fetch.html)
-                        valid_requirements, requirement_errors = validate_requirements(parsed_requirements)
-                        for err in requirement_errors:
-                            schema_errors += 1
-                            errors.append(err)
-                            _structured_log(
-                                institution=institution_id,
-                                stage="requirements_validation",
-                                error_type="SchemaError",
-                                retryable=False,
-                                batch_id=batch_id,
-                                message=err,
-                            )
-                        for row in valid_requirements:
-                            requirement_rows.append(
-                                {
-                                    "institution_id": institution_id,
-                                    "source_url": source_url,
-                                    "last_verified": _iso_now(),
-                                    "extraction_timestamp": _iso_now(),
-                                    "parser_version": "requirements_parser_v1",
-                                    "confidence_score": source_meta["confidence_score"],
-                                    "source_type": source_meta["source_type"],
-                                    "freshness_score": source_meta["freshness_score"],
-                                    **row,
-                                }
-                            )
-                        institution_requirement_count = len(valid_requirements)
-                    except Exception as exc:
-                        parser_errors += 1
-                        errors.append(str(exc))
-                        _structured_log(
-                            institution=institution_id,
-                            stage="requirements_parse",
-                            error_type="ParserError",
-                            retryable=False,
-                            batch_id=batch_id,
-                            message=str(exc),
-                        )
-                else:
-                    errors.append("requirements module disabled by schema drift")
-
-                success = bool(institution_deadline_count or institution_requirement_count) or not errors
                 diagnostics.append(
                     ScrapeDiagnostic(
                         institution_id=institution_id,
                         source_url=source_url,
-                        batch_id=batch_id,
-                        success=success,
+                        success=True,
                         errors=errors,
-                        error_type=None if success else "InstitutionScrapeError",
-                        retryable=False,
-                        deadline_count=institution_deadline_count,
-                        requirement_count=institution_requirement_count,
+                        deadline_count=len(valid_deadlines),
+                        requirement_count=len(valid_requirements),
                         confidence_score=source_meta["confidence_score"],
                         stale=source_meta["stale"],
                     )
                 )
             except Exception as exc:
-                parser_errors += 1
-                _structured_log(
-                    institution=institution_id,
-                    stage="institution_scrape",
-                    error_type="InstitutionScrapeError",
-                    retryable=False,
-                    batch_id=batch_id,
-                    message=str(exc),
+                error_text = str(exc)
+                error_type = _normalize_error_type(None, error_text)
+                error_type_counts[error_type] += 1
+                _log_structured(
+                    {
+                        "workflow": workflow_name,
+                        "institution": institution_id,
+                        "stage": "institution_processing",
+                        "error_type": error_type,
+                        "retryable": False,
+                        "column": None,
+                        "timestamp": _timestamp(),
+                        "batch_id": batch_id,
+                        "message": error_text,
+                    }
                 )
                 diagnostics.append(
                     ScrapeDiagnostic(
                         institution_id=institution_id,
                         source_url=source_url,
-                        batch_id=batch_id,
                         success=False,
-                        errors=[str(exc)],
-                        error_type="InstitutionScrapeError",
-                        retryable=False,
+                        errors=[error_text],
                         deadline_count=0,
                         requirement_count=0,
                         confidence_score=0.0,
                         stale=True,
                     )
                 )
-                stale_records_detected += 1
-            finally:
-                processed += 1
 
-        if checkpoint_callback:
-            checkpoint_callback(
-                {
-                    "batch_id": batch_id,
-                    "processed": processed,
-                    "total_targets": len(targets),
-                    "success_count": sum(1 for d in diagnostics if d.success),
-                    "failure_count": sum(1 for d in diagnostics if not d.success),
-                    "timestamp": _iso_now(),
-                }
-            )
+        batches_completed += 1
+        _write_checkpoint(
+            checkpoint_path,
+            {
+                "updated_at": _timestamp(),
+                "batch_id": batch_id,
+                "batches_completed": batches_completed,
+                "next_index": min(len(targets), batch_start + batch_size),
+                "targets_total": len(targets),
+                "processed_total": len(diagnostics),
+                "retry_count": retry_count,
+            },
+        )
+        _log_structured(
+            {
+                "workflow": workflow_name,
+                "stage": "batch_complete",
+                "batch_id": batch_id,
+                "processed_total": len(diagnostics),
+                "targets_total": len(targets),
+                "timestamp": _timestamp(),
+            }
+        )
 
     deduped_deadlines = resolve_conflicts(deadline_rows)
     deduped_requirements = resolve_conflicts(requirement_rows)
-    success_count = sum(1 for d in diagnostics if d.success)
-    failure_count = sum(1 for d in diagnostics if not d.success)
-
-    status = "success"
-    if failure_count > 0 or schema_errors > 0 or parser_errors > 0:
-        status = "degraded"
-
+    duration_seconds = int((datetime.now(timezone.utc) - start_time).total_seconds())
     return {
         "deadlines": deduped_deadlines,
         "requirements": deduped_requirements,
@@ -294,13 +301,12 @@ def run_scrape_cycle(
             "failure_count": failure_count,
             "deadline_records": len(deduped_deadlines),
             "requirement_records": len(deduped_requirements),
-            "stale_records_detected": stale_records_detected,
-            "schema_errors": schema_errors,
-            "network_errors": network_errors,
-            "parser_errors": parser_errors,
+            "stale_sources": sum(1 for d in diagnostics if d.stale),
+            "resume_index": resume_index,
+            "batches_completed": batches_completed,
             "retry_count": retry_count,
-            "status": status,
-            "disabled_modules": sorted(disabled),
+            "error_types": dict(error_type_counts),
+            "duration_seconds": duration_seconds,
         },
     }
 

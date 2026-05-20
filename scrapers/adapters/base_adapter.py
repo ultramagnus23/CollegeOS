@@ -14,7 +14,7 @@ class FetchResult:
     headers: Optional[Dict[str, str]] = None
     error_type: Optional[str] = None
     retryable: bool = False
-    retry_count: int = 0
+    retries_attempted: int = 0
 
 
 class BaseAdapter:
