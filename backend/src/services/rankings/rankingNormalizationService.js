@@ -1,91 +1,113 @@
 'use strict';
 
 const dbManager = require('../../config/database');
-
-const BODY_WEIGHTS = {
-  qs: 1.0,
-  the: 0.95,
-  'us news': 0.9,
-  us_news: 0.9,
-  nirf: 0.8,
-  arwu: 0.9,
-};
+const { calibrateRankingRows } = require('./rankingCalibration');
+const { computeSubjectWeight } = require('./subjectWeighting');
+const { wilsonLikeConfidence } = require('./rankingConfidence');
+const { interpolateMissingRank } = require('./rankingInterpolation');
+const { applyRegionalScaling } = require('./regionalNormalization');
 
 function clamp01(v) {
   if (!Number.isFinite(v)) return 0;
   return Math.min(1, Math.max(0, v));
 }
 
-function rankToScore(rank, cap) {
-  if (!Number.isFinite(rank) || rank <= 0) return 0;
-  return clamp01((cap - Math.min(rank, cap)) / cap);
+function daysSince(dateLike) {
+  if (!dateLike) return 730;
+  const ms = Date.now() - new Date(dateLike).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return 0;
+  return Math.round(ms / 86400000);
 }
 
-function normalizeRankingRow(row) {
-  const body = String(row.ranking_body || '').trim().toLowerCase();
-  const bodyWeight = BODY_WEIGHTS[body] ?? 0.75;
-  const globalScore = rankToScore(Number(row.global_rank), 1000);
-  const nationalScore = rankToScore(Number(row.national_rank), 500);
-  const subjectScore = rankToScore(Number(row.subject_rank), 300);
-  const providedScore = Number(row.ranking_score);
-  const explicitScore = Number.isFinite(providedScore) ? clamp01(providedScore / 100) : null;
-
-  const normalizedRankScore = clamp01(
-    (explicitScore ?? (globalScore * 0.65 + nationalScore * 0.35)) * bodyWeight
-  );
-  const normalizedSubjectRankScore = clamp01(subjectScore * bodyWeight);
-  const confidence = clamp01(
-    (row.global_rank ? 0.45 : 0) +
-    (row.national_rank ? 0.2 : 0) +
-    (row.subject_rank ? 0.25 : 0) +
-    (row.ranking_score ? 0.1 : 0)
-  );
-
-  return {
-    rankingBody: row.ranking_body || null,
-    rankingYear: row.ranking_year || null,
-    normalizedRankScore,
-    subjectRankScore: normalizedSubjectRankScore,
-    rankingConfidence: confidence,
-  };
+function variance(values = []) {
+  if (!values.length) return 0;
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  return values.reduce((acc, value) => acc + ((value - mean) ** 2), 0) / values.length;
 }
 
-async function getInstitutionRankingSignals(institutionId) {
+async function fetchRankingRows(institutionId) {
   const pool = dbManager.getDatabase();
   const { rows } = await pool.query(
-    `SELECT ranking_body, ranking_year, global_rank, national_rank, subject_rank, ranking_score
+    `SELECT ranking_body, ranking_year, global_rank, national_rank, subject_rank, ranking_score, updated_at
        FROM canonical.institution_rankings
       WHERE institution_id = $1`,
     [institutionId]
   );
+  return rows;
+}
+
+function buildSubjectSignalMap(rows = []) {
+  const map = {};
+  for (const row of rows) {
+    const key = String(row.ranking_body || 'general').toLowerCase();
+    map[key] = Math.max(map[key] || 0, Number(row.subject_score) || 0);
+  }
+  return map;
+}
+
+async function getInstitutionRankingSignals(institutionId, options = {}) {
+  const rows = await fetchRankingRows(institutionId);
 
   if (!rows.length) {
     return {
       normalized_rank_score: 0,
       subject_rank_score: 0,
       ranking_confidence: 0,
+      subject_weight: 0.35,
+      calibrated_score: 0,
       sources: [],
+      subject_signal_map: {},
     };
   }
 
-  const normalized = rows.map(normalizeRankingRow);
-  const divisor = normalized.length || 1;
-  const aggregate = normalized.reduce((acc, row) => {
-    acc.rank += row.normalizedRankScore;
-    acc.subject += row.subjectRankScore;
-    acc.conf += row.rankingConfidence;
+  const calibrated = await calibrateRankingRows(rows);
+  const weightedScores = calibrated.map((r) => r.weighted_score);
+  const agg = calibrated.reduce((acc, row) => {
+    acc.global += row.global_score;
+    acc.national += row.national_score;
+    acc.subject += row.subject_score;
+    acc.weighted += row.weighted_score;
     return acc;
-  }, { rank: 0, subject: 0, conf: 0 });
+  }, { global: 0, national: 0, subject: 0, weighted: 0 });
+
+  const divisor = calibrated.length || 1;
+  const avgGlobal = agg.global / divisor;
+  const avgNational = agg.national / divisor;
+  const avgSubject = agg.subject / divisor;
+  const avgWeighted = agg.weighted / divisor;
+  const recencyDays = Math.min(...rows.map((r) => daysSince(r.updated_at || r.ranking_year)));
+  const confidence = wilsonLikeConfidence({
+    sourceCount: calibrated.length,
+    variancePenalty: variance(weightedScores),
+    recencyDays,
+  });
+
+  const interpolatedSubject = interpolateMissingRank({
+    globalScore: avgGlobal,
+    nationalScore: avgNational,
+    subjectScore: avgSubject,
+    confidence,
+  });
+
+  const subjectWeight = computeSubjectWeight({
+    subjectMatch: Number(options.subjectMatch) || 0,
+    rankingConfidence: confidence,
+    hasSubjectRank: avgSubject > 0,
+  });
+
+  const calibratedScore = clamp01((interpolatedSubject * subjectWeight) + (avgWeighted * (1 - subjectWeight)));
 
   return {
-    normalized_rank_score: Number((aggregate.rank / divisor).toFixed(6)),
-    subject_rank_score: Number((aggregate.subject / divisor).toFixed(6)),
-    ranking_confidence: Number((aggregate.conf / divisor).toFixed(6)),
-    sources: normalized,
+    normalized_rank_score: Number(applyRegionalScaling(avgWeighted, options.country).toFixed(6)),
+    subject_rank_score: Number(applyRegionalScaling(interpolatedSubject, options.country).toFixed(6)),
+    ranking_confidence: Number(confidence.toFixed(6)),
+    subject_weight: Number(subjectWeight.toFixed(6)),
+    calibrated_score: Number(calibratedScore.toFixed(6)),
+    sources: calibrated,
+    subject_signal_map: buildSubjectSignalMap(calibrated),
   };
 }
 
 module.exports = {
   getInstitutionRankingSignals,
-  normalizeRankingRow,
 };

@@ -64,7 +64,10 @@ function featureVector(student, college, rankingSignals = {}, popularitySignals 
   const admissions = admissionsFit(student, college);
   const affordability = affordabilityFit(student, college);
   const globalRanking = safeNum(rankingSignals.normalized_rank_score, normalizeRank(college.ranking));
-  const subjectRanking = safeNum(rankingSignals.subject_rank_score, normalizeRank(college.subject_rank, 300));
+  const subjectRankingRaw = safeNum(rankingSignals.subject_rank_score, normalizeRank(college.subject_rank, 300));
+  const subjectWeight = safeNum(rankingSignals.subject_weight, 0.45) || 0.45;
+  const subjectRanking = clamp01((subjectRankingRaw * subjectWeight) + (globalRanking * (1 - subjectWeight) * 0.35));
+  const calibratedRanking = safeNum(rankingSignals.calibrated_score, (subjectRanking + globalRanking) / 2);
   const popularity = safeNum(popularitySignals.popularity_score, safeNum(college.popularity_score, 0)) || 0;
   const outcomeSalary = clamp01((safeNum(college.median_earnings_6yr, 0) || 0) / 180000);
   const graduationRate = clamp01((safeNum(college.graduation_rate_6yr, 0) || 0) / 100);
@@ -78,7 +81,7 @@ function featureVector(student, college, rankingSignals = {}, popularitySignals 
     subject_ranking_alignment: subjectRanking,
     admissions_fit: admissions,
     affordability_fit: affordability,
-    normalized_global_ranking: globalRanking,
+    normalized_global_ranking: calibratedRanking,
     popularity_score: clamp01(popularity),
     outcomes_alignment: clamp01((outcomeSalary * 0.6) + (graduationRate * 0.4)),
     research_intensity_fit: clamp01((safeNum(college.research_intensity_score, 0.4) || 0.4)),
