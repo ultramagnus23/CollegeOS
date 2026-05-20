@@ -18,17 +18,17 @@ function logDebug(requestId: string, stage: string, message: string, data?: any)
   if (!DEBUG_MODE) return;
   const prefix = `[API ${requestId}] [${stage}]`;
   if (data !== undefined) {
-    console.debug(`${prefix} ${message}`, data);
+    console.debug('%s %s', prefix, message, data);
   } else {
-    console.debug(`${prefix} ${message}`);
+    console.debug('%s %s', prefix, message);
   }
 }
 
 function logError(requestId: string, stage: string, message: string, error?: any) {
   const prefix = `[API ${requestId}] [${stage}] ❌`;
-  console.error(`${prefix} ${message}`);
+  console.error('%s %s', prefix, message);
   if (error) {
-    console.error(`${prefix} Error details:`, {
+    console.error('%s %s', prefix, 'Error details:', {
       name: error?.name,
       message: error?.message,
       stack: error?.stack?.split('\n').slice(0, 5).join('\n')
