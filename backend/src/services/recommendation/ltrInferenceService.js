@@ -45,6 +45,11 @@ function fallbackScore(features) {
 }
 
 function inferWithPython(featureRows) {
+  console.log('RUNNING QUERY:', {
+    table: 'python_ranker_subprocess',
+    filters: { script: INFER_SCRIPT },
+    payload: { rows: Array.isArray(featureRows) ? featureRows.length : 0 },
+  });
   const payload = JSON.stringify({ rows: featureRows });
   const run = spawnSync('python3', [INFER_SCRIPT], {
     input: payload,
@@ -52,9 +57,17 @@ function inferWithPython(featureRows) {
     maxBuffer: 8 * 1024 * 1024,
   });
   if (run.status !== 0) {
+    console.log('QUERY RESULT:', {
+      count: null,
+      error: {
+        message: run.stderr || 'python inference failed',
+        code: `PYTHON_EXIT_${run.status}`,
+      },
+    });
     throw new Error(run.stderr || 'python inference failed');
   }
   const parsed = JSON.parse(run.stdout || '{}');
+  console.log('QUERY RESULT:', { count: Array.isArray(parsed?.predictions) ? parsed.predictions.length : 0, error: null });
   return Array.isArray(parsed.predictions) ? parsed.predictions : [];
 }
 
@@ -64,6 +77,15 @@ function rankCandidates(featureRows) {
     try {
       return inferWithPython(featureRows);
     } catch (error) {
+      console.error('==============================');
+      console.error('RECOMMENDATION PIPELINE ERROR');
+      console.error('==============================');
+      console.error('MESSAGE:', error?.message);
+      console.error('STACK:', error?.stack);
+      console.error('FULL ERROR:', error);
+      if (error?.details) console.error('DETAILS:', error.details);
+      if (error?.hint) console.error('HINT:', error.hint);
+      if (error?.code) console.error('CODE:', error.code);
       logger.warn('LTR python inference failed, switching to deterministic fallback', { error: error.message });
     }
   }

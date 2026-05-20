@@ -1,15 +1,17 @@
 // ============================================
 // FILE: backend/src/routes/recommendations.js
 // ============================================
+const crypto = require('crypto');
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const User = require('../models/User');
-const logger = require('../utils/logger');
+const config = require('../config/env');
+const { hashIdentifier, safeError, safeLog, sanitizeForLog } = require('../utils/safeLogger');
 const { createSession, trackEvent, upsertFeedback } = require('../services/feedback/telemetryService');
 
 function createRequestId() {
-  return `reco_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  return crypto.randomUUID();
 }
 
 async function fetchUserProfile(userId) {
@@ -19,9 +21,36 @@ async function fetchUserProfile(userId) {
   return { user, profile };
 }
 
+function logRecommendationPipelineError(err, context = {}) {
+  safeError('recommendations.pipeline_error', {
+    context: sanitizeForLog(context),
+    error: err,
+  });
+}
+
+function recommendationErrorResponse(res, err, context = {}) {
+  logRecommendationPipelineError(err, context);
+  return res.status(500).json({
+    success: false,
+    error: config.nodeEnv === 'production' ? 'Internal server error' : sanitizeForLog(err?.message || 'Internal server error'),
+    recommendations: [],
+    metadata: {
+      requestId: context.requestId || null,
+      endpoint: context.endpoint || null,
+    },
+    diagnostics: config.nodeEnv === 'production'
+      ? {}
+      : {
+        stage: sanitizeForLog(context.stage || 'route_handler'),
+        timestamp: new Date().toISOString(),
+        code: sanitizeForLog(err?.code),
+      },
+  });
+}
+
 // Get recommendations for user - uses recommendationEngine service
-router.get('/', authenticate, async (req, res, next) => {
-  const requestId = createRequestId();
+router.get('/', authenticate, async (req, res) => {
+  const requestId = req.requestId || createRequestId();
   const startedAt = Date.now();
   try {
     const requestedLimit = Number.parseInt(String(req.query.limit ?? 250), 10);
@@ -31,7 +60,10 @@ router.get('/', authenticate, async (req, res, next) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
+        recommendations: [],
+        metadata: { requestId },
+        diagnostics: {},
       });
     }
 
@@ -39,64 +71,96 @@ router.get('/', authenticate, async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Please complete your academic profile first',
-        redirect: '/onboarding'
+        redirect: '/onboarding',
+        recommendations: [],
+        metadata: { requestId },
+        diagnostics: {},
       });
     }
 
     const { generateRecommendationsV2 } = require('../services/recommendation/recommendationPipelineService');
-    const sessionId = await createSession({
-      userId: req.user.userId,
-      requestContext: {
+    let sessionId = null;
+    try {
+      sessionId = await createSession({
+        userId: req.user.userId,
+        requestContext: {
+          endpoint: 'GET /api/recommendations',
+          limit: safeLimit,
+          requestId,
+          pipeline: 'v3',
+        },
+        profileSnapshot: userProfile,
+        modelVersion: 'ranker-v2',
+        retrievalVersion: 'hybrid-v2',
+      });
+    } catch (sessionError) {
+      safeLog('recommendations.session_create_failed', {
+        requestId,
         endpoint: 'GET /api/recommendations',
-        limit: safeLimit,
-      },
-      profileSnapshot: userProfile,
-      modelVersion: 'ranker-v2',
-      retrievalVersion: 'hybrid-v2',
-    });
+        stage: 'create_session',
+        error: sessionError,
+      }, 'warn');
+    }
 
-    const recs = await generateRecommendationsV2(userProfile, { limit: safeLimit, candidateLimit: 220, userId: req.user.userId });
+    const pipelineResult = await generateRecommendationsV2(userProfile, { limit: safeLimit, candidateLimit: 220, userId: req.user.userId });
+    const recs = Array.isArray(pipelineResult?.recommendations) ? pipelineResult.recommendations : [];
     const missingRankings = recs.filter((r) => r?.score_breakdown?.ranking_fit == null).length;
     const malformedMajors = recs.filter((r) => Array.isArray(r.why_values) && r.why_values.some((v) => !v)).length;
 
-    await trackEvent({
-      sessionId,
-      userId: req.user.userId,
-      eventType: 'time_spent',
-      eventValue: recs.length,
-      dwellMs: Date.now() - startedAt,
-      metadata: { requestId, returned: recs.length },
-    });
+    try {
+      await trackEvent({
+        sessionId,
+        userId: req.user.userId,
+        eventType: 'time_spent',
+        eventValue: recs.length,
+        dwellMs: Date.now() - startedAt,
+        metadata: { requestId, returned: recs.length, source: 'GET /api/recommendations' },
+      });
+    } catch (trackError) {
+      safeLog('recommendations.track_event_failed', {
+        requestId,
+        endpoint: 'GET /api/recommendations',
+        stage: 'track_event',
+        error: trackError,
+      }, 'warn');
+    }
 
     res.json({
       success: true,
       count: recs.length,
       generated_at: new Date().toISOString(),
       recommendations: recs,
+      metadata: pipelineResult?.metadata || {},
+      diagnostics: pipelineResult?.diagnostics || {},
       summary: {
         total_colleges_evaluated: Math.max(recs.length, safeLimit),
         exchange_rate_note: 'Recommendation pipeline v3 (hybrid retrieval + cross-encoder reranking + LTR + personalization)',
       },
       meta: { requestId, durationMs: Date.now() - startedAt, evaluated: safeLimit, pipeline: 'v3', sessionId },
     });
-    logger.info('recommendations.generated', {
+    safeLog('recommendations.generated', {
       requestId,
       durationMs: Date.now() - startedAt,
       evaluated: safeLimit,
       returned: recs.length,
       missingRankings,
       malformedMajors,
-      sessionId,
+      sessionId: sessionId ? hashIdentifier(sessionId) : null,
+      userHash: hashIdentifier(req.user.userId),
     });
   } catch (error) {
-    logger.error('Get recommendations failed:', { requestId, message: error?.message, stack: error?.stack });
-    next(error);
+    safeError('recommendations.get_failed', {
+      requestId,
+      endpoint: 'GET /api/recommendations',
+      error,
+    });
+    return recommendationErrorResponse(res, error, { requestId, endpoint: 'GET /api/recommendations', stage: 'route_handler' });
   }
 });
 
 // Generate new recommendations - same as GET but forces refresh
-router.post('/generate', authenticate, async (req, res, next) => {
-  const requestId = createRequestId();
+router.post('/generate', authenticate, async (req, res) => {
+  const requestId = req.requestId || createRequestId();
   const startedAt = Date.now();
   try {
     const requestedLimit = Number.parseInt(String(req.query.limit ?? 250), 10);
@@ -104,35 +168,57 @@ router.post('/generate', authenticate, async (req, res, next) => {
     const { user, profile: userProfile } = await fetchUserProfile(req.user.userId);
 
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res.status(404).json({ success: false, message: 'User not found', recommendations: [], metadata: { requestId }, diagnostics: {} });
     }
 
     if (!userProfile) {
-      return res.status(400).json({ success: false, message: 'Please complete your academic profile first' });
+      return res.status(400).json({ success: false, message: 'Please complete your academic profile first', recommendations: [], metadata: { requestId }, diagnostics: {} });
     }
 
     const { generateRecommendationsV2 } = require('../services/recommendation/recommendationPipelineService');
-    const sessionId = await createSession({
-      userId: req.user.userId,
-      requestContext: {
+    let sessionId = null;
+    try {
+      sessionId = await createSession({
+        userId: req.user.userId,
+        requestContext: {
+          endpoint: 'POST /api/recommendations/generate',
+          limit: safeLimit,
+          requestId,
+          pipeline: 'v3',
+        },
+        profileSnapshot: userProfile,
+        modelVersion: 'ranker-v2',
+        retrievalVersion: 'hybrid-v2',
+      });
+    } catch (sessionError) {
+      safeLog('recommendations.generate_session_create_failed', {
+        requestId,
         endpoint: 'POST /api/recommendations/generate',
-        limit: safeLimit,
-      },
-      profileSnapshot: userProfile,
-      modelVersion: 'ranker-v2',
-      retrievalVersion: 'hybrid-v2',
-    });
+        stage: 'create_session',
+        error: sessionError,
+      }, 'warn');
+    }
 
-    const recs = await generateRecommendationsV2(userProfile, { limit: safeLimit, candidateLimit: 260, userId: req.user.userId });
+    const pipelineResult = await generateRecommendationsV2(userProfile, { limit: safeLimit, candidateLimit: 260, userId: req.user.userId });
+    const recs = Array.isArray(pipelineResult?.recommendations) ? pipelineResult.recommendations : [];
 
-    await trackEvent({
-      sessionId,
-      userId: req.user.userId,
-      eventType: 'time_spent',
-      eventValue: recs.length,
-      dwellMs: Date.now() - startedAt,
-      metadata: { requestId, regenerated: true },
-    });
+    try {
+      await trackEvent({
+        sessionId,
+        userId: req.user.userId,
+        eventType: 'time_spent',
+        eventValue: recs.length,
+        dwellMs: Date.now() - startedAt,
+        metadata: { requestId, regenerated: true, source: 'POST /api/recommendations/generate' },
+      });
+    } catch (trackError) {
+      safeLog('recommendations.generate_track_event_failed', {
+        requestId,
+        endpoint: 'POST /api/recommendations/generate',
+        stage: 'track_event',
+        error: trackError,
+      }, 'warn');
+    }
 
     res.json({
       success: true,
@@ -140,26 +226,34 @@ router.post('/generate', authenticate, async (req, res, next) => {
       count: recs.length,
       generated_at: new Date().toISOString(),
       recommendations: recs,
+      metadata: pipelineResult?.metadata || {},
+      diagnostics: pipelineResult?.diagnostics || {},
       summary: {
         total_colleges_evaluated: Math.max(recs.length, safeLimit),
         exchange_rate_note: 'Recommendation pipeline v3 (hybrid retrieval + cross-encoder reranking + LTR + personalization)',
       },
       meta: { requestId, durationMs: Date.now() - startedAt, evaluated: safeLimit, pipeline: 'v3', sessionId },
     });
-    logger.info('recommendations.regenerated', {
+    safeLog('recommendations.regenerated', {
       requestId,
       durationMs: Date.now() - startedAt,
       evaluated: safeLimit,
       returned: recs.length,
-      sessionId,
+      sessionId: sessionId ? hashIdentifier(sessionId) : null,
+      userHash: hashIdentifier(req.user.userId),
     });
   } catch (error) {
-    logger.error('Generate recommendations failed:', { requestId, message: error?.message, stack: error?.stack });
-    next(error);
+    safeError('recommendations.generate_failed', {
+      requestId,
+      endpoint: 'POST /api/recommendations/generate',
+      error,
+    });
+    return recommendationErrorResponse(res, error, { requestId, endpoint: 'POST /api/recommendations/generate', stage: 'route_handler' });
   }
 });
 
-router.post('/events', authenticate, async (req, res, next) => {
+router.post('/events', authenticate, async (req, res) => {
+  const requestId = req.requestId || createRequestId();
   try {
     const { sessionId = null, institutionId = null, eventType, eventValue = null, dwellMs = null, position = null, metadata = {} } = req.body || {};
     if (!eventType) {
@@ -174,16 +268,22 @@ router.post('/events', authenticate, async (req, res, next) => {
       eventValue,
       dwellMs,
       position,
-      metadata,
+      metadata: { ...metadata, requestId, source: 'POST /api/recommendations/events' },
     });
 
     return res.json({ success: true });
   } catch (error) {
-    return next(error);
+    safeError('recommendations.events_failed', {
+      requestId,
+      endpoint: 'POST /api/recommendations/events',
+      error,
+    });
+    return recommendationErrorResponse(res, error, { requestId, endpoint: 'POST /api/recommendations/events', stage: 'events_handler' });
   }
 });
 
-router.post('/feedback', authenticate, async (req, res, next) => {
+router.post('/feedback', authenticate, async (req, res) => {
+  const requestId = req.requestId || createRequestId();
   try {
     const {
       sessionId = null,
@@ -214,7 +314,12 @@ router.post('/feedback', authenticate, async (req, res, next) => {
 
     return res.json({ success: true });
   } catch (error) {
-    return next(error);
+    safeError('recommendations.feedback_failed', {
+      requestId,
+      endpoint: 'POST /api/recommendations/feedback',
+      error,
+    });
+    return recommendationErrorResponse(res, error, { requestId, endpoint: 'POST /api/recommendations/feedback', stage: 'feedback_handler' });
   }
 });
 

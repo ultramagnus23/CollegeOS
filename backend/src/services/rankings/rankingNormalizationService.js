@@ -27,13 +27,37 @@ function variance(values = []) {
 
 async function fetchRankingRows(institutionId) {
   const pool = dbManager.getDatabase();
-  const { rows } = await pool.query(
-    `SELECT ranking_body, ranking_year, global_rank, national_rank, subject_rank, ranking_score, updated_at
+  const sql = `SELECT ranking_body, ranking_year, global_rank, national_rank, subject_rank, ranking_score, updated_at
        FROM canonical.institution_rankings
-      WHERE institution_id = $1`,
-    [institutionId]
-  );
-  return rows;
+      WHERE institution_id = $1`;
+  const params = [institutionId];
+  try {
+    console.log('SQL:', sql);
+    console.log('PARAMS:', params);
+    const { rows } = await pool.query(sql, params);
+    console.log('QUERY RESULT:', { count: rows?.length || 0, error: null });
+    return rows;
+  } catch (error) {
+    console.log('QUERY RESULT:', {
+      count: null,
+      error: {
+        message: error?.message || null,
+        code: error?.code || null,
+        details: error?.details || null,
+        hint: error?.hint || null,
+      },
+    });
+    console.error('==============================');
+    console.error('RECOMMENDATION PIPELINE ERROR');
+    console.error('==============================');
+    console.error('MESSAGE:', error?.message);
+    console.error('STACK:', error?.stack);
+    console.error('FULL ERROR:', error);
+    if (error?.details) console.error('DETAILS:', error.details);
+    if (error?.hint) console.error('HINT:', error.hint);
+    if (error?.code) console.error('CODE:', error.code);
+    return [];
+  }
 }
 
 function buildSubjectSignalMap(rows = []) {
