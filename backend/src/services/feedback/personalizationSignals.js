@@ -5,14 +5,32 @@ const { scoreImplicitFeedback } = require('./implicitFeedback');
 
 async function userPreferenceSignals(userId, lookbackDays = 60) {
   const pool = dbManager.getDatabase();
-  const { rows } = await pool.query(
-    `SELECT ure.event_type, ure.event_value, ure.dwell_ms, i.country_code, i.tags
-       FROM canonical.user_recommendation_events ure
-       LEFT JOIN canonical.institutions i ON i.id = ure.institution_id
-      WHERE ure.user_id = $1
-        AND ure.created_at >= NOW() - ($2::text || ' days')::interval`,
-    [userId, String(lookbackDays)]
-  );
+  const query = `SELECT
+      ure.event_type,
+      ure.event_value,
+      ure.dwell_ms,
+      i.country_code,
+      COALESCE(
+        ARRAY(
+          SELECT jsonb_array_elements_text(
+            COALESCE(i.metadata->'tags', '[]'::jsonb)
+          )
+        ),
+        ARRAY[]::text[]
+      ) AS semantic_tags
+     FROM canonical.user_recommendation_events ure
+     LEFT JOIN canonical.institutions i ON i.id = ure.institution_id
+    WHERE ure.user_id = $1
+      AND ure.created_at >= NOW() - ($2::text || ' days')::interval`;
+  const payload = [userId, String(lookbackDays)];
+  let rows = [];
+  try {
+    ({ rows } = await pool.query(query, payload));
+  } catch (error) {
+    console.error('Recommendation SQL failed', query);
+    console.error('Payload:', payload);
+    throw error;
+  }
 
   const countryScores = new Map();
   const tagScores = new Map();
@@ -23,7 +41,7 @@ async function userPreferenceSignals(userId, lookbackDays = 60) {
     if (row.country_code) {
       countryScores.set(row.country_code, (countryScores.get(row.country_code) || 0) + score);
     }
-    (row.tags || []).forEach((tag) => {
+    (row.semantic_tags || []).forEach((tag) => {
       const key = String(tag).toLowerCase();
       tagScores.set(key, (tagScores.get(key) || 0) + score);
     });
