@@ -3,12 +3,34 @@
 // ============================================
 const crypto = require('crypto');
 const express = require('express');
+const { z } = require('zod');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const User = require('../models/User');
 const config = require('../config/env');
 const { hashIdentifier, safeError, safeLog, sanitizeForLog } = require('../utils/safeLogger');
 const { createSession, trackEvent, upsertFeedback } = require('../services/feedback/telemetryService');
+const {
+  assertJsonSerializable,
+  elapsedMs,
+  errorSummary,
+  logStageComplete,
+  logStageFailure,
+  logStageStart,
+  nowMs,
+} = require('../services/recommendation/pipelineDiagnostics');
+
+const RecommendationRequestSchema = z.object({
+  major: z.string().trim().min(1).optional(),
+  intendedMajors: z.array(z.string().trim().min(1)).optional(),
+  gpa: z.number().nullable().optional(),
+  satScore: z.number().nullable().optional(),
+  actScore: z.number().nullable().optional(),
+  budget: z.number().nullable().optional(),
+  preferredCountries: z.array(z.string().trim().min(1)).optional(),
+  degreeLevel: z.string().trim().min(1).optional(),
+  countryFilter: z.string().trim().min(1).optional(),
+}).strict();
 
 function createRequestId() {
   return crypto.randomUUID();
@@ -30,9 +52,17 @@ function logRecommendationPipelineError(err, context = {}) {
 
 function recommendationErrorResponse(res, err, context = {}) {
   logRecommendationPipelineError(err, context);
+  const summarized = errorSummary(err);
   return res.status(500).json({
     success: false,
-    error: config.nodeEnv === 'production' ? 'Internal server error' : sanitizeForLog(err?.message || 'Internal server error'),
+    stage: context.stage || 'route_handler',
+    error: sanitizeForLog(err?.message || 'Internal server error'),
+    errorCode: sanitizeForLog(err?.code || null),
+    location: {
+      file: sanitizeForLog(summarized.file),
+      line: summarized.line,
+      column: summarized.column,
+    },
     recommendations: [],
     metadata: {
       requestId: context.requestId || null,
@@ -46,6 +76,36 @@ function recommendationErrorResponse(res, err, context = {}) {
         code: sanitizeForLog(err?.code),
       },
   });
+}
+
+function mergeRecommendationPayloadIntoProfile(profile = {}, payload = {}) {
+  const merged = { ...(profile || {}) };
+  const intendedMajors = Array.isArray(payload.intendedMajors)
+    ? payload.intendedMajors
+    : payload.major ? [payload.major] : null;
+  if (intendedMajors) merged.intended_majors = intendedMajors;
+  if (Object.prototype.hasOwnProperty.call(payload, 'gpa')) merged.gpa = payload.gpa;
+  if (Object.prototype.hasOwnProperty.call(payload, 'satScore')) merged.sat_score = payload.satScore;
+  if (Object.prototype.hasOwnProperty.call(payload, 'actScore')) merged.act_score = payload.actScore;
+  if (Object.prototype.hasOwnProperty.call(payload, 'preferredCountries')) {
+    merged.preferences = {
+      ...(merged.preferences || {}),
+      preferred_countries: payload.preferredCountries || [],
+    };
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'degreeLevel')) {
+    merged.preferences = {
+      ...(merged.preferences || {}),
+      degree_level: payload.degreeLevel || null,
+    };
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'budget')) {
+    merged.financial = {
+      ...(merged.financial || {}),
+      max_budget_per_year_usd: payload.budget,
+    };
+  }
+  return merged;
 }
 
 // Get recommendations for user - uses recommendationEngine service
@@ -161,11 +221,47 @@ router.get('/', authenticate, async (req, res) => {
 // Generate new recommendations - same as GET but forces refresh
 router.post('/generate', authenticate, async (req, res) => {
   const requestId = req.requestId || createRequestId();
-  const startedAt = Date.now();
+  const startedAt = nowMs();
+  const stageTimings = {};
+  let currentStage = 'request_received';
   try {
+    currentStage = 'request_received';
+    const s1 = nowMs();
+    logStageStart('[1] request received', { requestId, endpoint: 'POST /api/recommendations/generate' });
     const requestedLimit = Number.parseInt(String(req.query.limit ?? 250), 10);
     const safeLimit = Number.isFinite(requestedLimit) ? Math.min(500, Math.max(25, requestedLimit)) : 250;
-    const { user, profile: userProfile } = await fetchUserProfile(req.user.userId);
+    stageTimings.request_received_ms = elapsedMs(s1);
+    logStageComplete('[1] request received', s1, { requestId });
+
+    currentStage = 'payload_validation';
+    const s2 = nowMs();
+    logStageStart('[2] validating payload', { requestId });
+    const payloadValidation = RecommendationRequestSchema.safeParse(req.body || {});
+    if (!payloadValidation.success) {
+      stageTimings.payload_validation_ms = elapsedMs(s2);
+      logStageFailure('[2] validating payload', payloadValidation.error, { requestId, endpoint: 'POST /api/recommendations/generate' });
+      return res.status(400).json({
+        success: false,
+        stage: 'payload_validation',
+        error: 'Invalid recommendation request payload',
+        requestId,
+        validationErrors: payloadValidation.error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          code: issue.code,
+          message: issue.message,
+        })),
+      });
+    }
+    stageTimings.payload_validation_ms = elapsedMs(s2);
+    logStageComplete('[2] validating payload', s2, { requestId });
+
+    currentStage = 'loading_student_profile';
+    const s3 = nowMs();
+    logStageStart('[3] loading student profile', { requestId });
+    const { user, profile: persistedProfile } = await fetchUserProfile(req.user.userId);
+    const userProfile = mergeRecommendationPayloadIntoProfile(persistedProfile || {}, payloadValidation.data || {});
+    stageTimings.loading_student_profile_ms = elapsedMs(s3);
+    logStageComplete('[3] loading student profile', s3, { requestId, userFound: Boolean(user) });
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found', recommendations: [], metadata: { requestId }, diagnostics: {} });
@@ -199,7 +295,14 @@ router.post('/generate', authenticate, async (req, res) => {
       }, 'warn');
     }
 
-    const pipelineResult = await generateRecommendationsV2(userProfile, { limit: safeLimit, candidateLimit: 260, userId: req.user.userId });
+    const pipelineResult = await generateRecommendationsV2(userProfile, {
+      limit: safeLimit,
+      candidateLimit: 260,
+      userId: req.user.userId,
+      requestId,
+      countryFilter: payloadValidation.data.countryFilter || null,
+      runInfraDiagnostics: true,
+    });
     const recs = Array.isArray(pipelineResult?.recommendations) ? pipelineResult.recommendations : [];
 
     try {
@@ -208,7 +311,7 @@ router.post('/generate', authenticate, async (req, res) => {
         userId: req.user.userId,
         eventType: 'time_spent',
         eventValue: recs.length,
-        dwellMs: Date.now() - startedAt,
+        dwellMs: nowMs() - startedAt,
         metadata: { requestId, regenerated: true, source: 'POST /api/recommendations/generate' },
       });
     } catch (trackError) {
@@ -220,7 +323,10 @@ router.post('/generate', authenticate, async (req, res) => {
       }, 'warn');
     }
 
-    res.json({
+    currentStage = 'response_serialization';
+    const s9 = nowMs();
+    logStageStart('[9] serialization', { requestId, recommendationCount: recs.length });
+    const responsePayload = assertJsonSerializable({
       success: true,
       message: `Generated ${recs.length} personalized recommendations`,
       count: recs.length,
@@ -232,23 +338,49 @@ router.post('/generate', authenticate, async (req, res) => {
         total_colleges_evaluated: Math.max(recs.length, safeLimit),
         exchange_rate_note: 'Recommendation pipeline v3 (hybrid retrieval + cross-encoder reranking + LTR + personalization)',
       },
-      meta: { requestId, durationMs: Date.now() - startedAt, evaluated: safeLimit, pipeline: 'v3', sessionId },
+      meta: {
+        requestId,
+        durationMs: nowMs() - startedAt,
+        evaluated: safeLimit,
+        pipeline: 'v3',
+        sessionId,
+        stageTimings: {
+          ...stageTimings,
+          ...(pipelineResult?.metadata?.stageTimings || {}),
+        },
+      },
     });
+    stageTimings.serialization_ms = elapsedMs(s9);
+    logStageComplete('[9] serialization', s9, { requestId });
+
+    res.json(responsePayload);
+    currentStage = 'response_sent';
+    const s10 = nowMs();
+    logStageStart('[10] response sent', { requestId });
+    stageTimings.response_sent_ms = elapsedMs(s10);
+    logStageComplete('[10] response sent', s10, { requestId, count: recs.length });
     safeLog('recommendations.regenerated', {
       requestId,
-      durationMs: Date.now() - startedAt,
+      durationMs: nowMs() - startedAt,
       evaluated: safeLimit,
       returned: recs.length,
       sessionId: sessionId ? hashIdentifier(sessionId) : null,
       userHash: hashIdentifier(req.user.userId),
+      stageTimings,
     });
   } catch (error) {
+    logStageFailure(currentStage, error, { requestId, endpoint: 'POST /api/recommendations/generate' });
     safeError('recommendations.generate_failed', {
       requestId,
       endpoint: 'POST /api/recommendations/generate',
+      stage: currentStage,
       error,
     });
-    return recommendationErrorResponse(res, error, { requestId, endpoint: 'POST /api/recommendations/generate', stage: 'route_handler' });
+    return recommendationErrorResponse(res, error, {
+      requestId,
+      endpoint: 'POST /api/recommendations/generate',
+      stage: currentStage,
+    });
   }
 });
 

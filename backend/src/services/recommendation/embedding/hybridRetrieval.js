@@ -1,6 +1,7 @@
 'use strict';
 
 const dbManager = require('../../../config/database');
+const { logStageComplete, logStageFailure, logStageStart, nowMs } = require('../pipelineDiagnostics');
 
 function clamp01(v) {
   if (!Number.isFinite(v)) return 0;
@@ -41,6 +42,8 @@ function logRecommendationPipelineError(err, context = {}) {
 }
 
 async function retrieveHybridCandidates({ embeddingLiteral, terms = [], subjectTargets = [], metadataFilters = {}, limit = 220 }) {
+  const stageStartedAt = nowMs();
+  logStageStart('candidate_retrieval', { service: 'embedding_retrieval', limit });
   const pool = dbManager.getDatabase();
   const safeLimit = Math.max(50, Math.min(450, Number(limit) || 220));
   const query = `SELECT
@@ -87,6 +90,7 @@ async function retrieveHybridCandidates({ embeddingLiteral, terms = [], subjectT
     logRawSql(query, payload);
     ({ rows } = await pool.query(query, payload));
     console.log('QUERY RESULT:', { count: rows?.length || 0, error: null });
+    logStageComplete('candidate_retrieval', stageStartedAt, { service: 'embedding_retrieval', rows: rows?.length || 0 });
   } catch (error) {
     console.log('QUERY RESULT:', {
       count: null,
@@ -98,7 +102,8 @@ async function retrieveHybridCandidates({ embeddingLiteral, terms = [], subjectT
       },
     });
     logRecommendationPipelineError(error, { stage: 'retrieveHybridCandidates' });
-    throw error;
+    logStageFailure('candidate_retrieval', error, { service: 'embedding_retrieval', startedAt: stageStartedAt });
+    return [];
   }
 
   return rows

@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const logger = require('../../utils/logger');
+const { logStageComplete, logStageFailure, logStageStart, nowMs } = require('./pipelineDiagnostics');
 
 const MODEL_META_PATH = path.resolve(__dirname, '../../../ml/recommendation_ranker/model_meta.json');
 const INFER_SCRIPT = path.resolve(__dirname, '../../../ml/recommendation_ranker/infer.py');
@@ -45,13 +46,20 @@ function fallbackScore(features) {
 }
 
 function inferWithPython(featureRows) {
+  const startedAt = nowMs();
+  logStageStart('ltr_python_inference', {
+    service: 'ltr_inference',
+    rows: Array.isArray(featureRows) ? featureRows.length : 0,
+    script: INFER_SCRIPT,
+  });
   console.log('RUNNING QUERY:', {
     table: 'python_ranker_subprocess',
     filters: { script: INFER_SCRIPT },
     payload: { rows: Array.isArray(featureRows) ? featureRows.length : 0 },
   });
   const payload = JSON.stringify({ rows: featureRows });
-  const run = spawnSync('python3', [INFER_SCRIPT], {
+  const pythonExecutable = process.env.PYTHON_PATH || 'python3';
+  const run = spawnSync(pythonExecutable, [INFER_SCRIPT], {
     input: payload,
     encoding: 'utf8',
     maxBuffer: 8 * 1024 * 1024,
@@ -64,10 +72,21 @@ function inferWithPython(featureRows) {
         code: `PYTHON_EXIT_${run.status}`,
       },
     });
+    logStageFailure('ltr_python_inference', new Error(run.stderr || 'python inference failed'), {
+      service: 'ltr_inference',
+      startedAt,
+      pythonExecutable,
+      exitCode: run.status,
+    });
     throw new Error(run.stderr || 'python inference failed');
   }
   const parsed = JSON.parse(run.stdout || '{}');
   console.log('QUERY RESULT:', { count: Array.isArray(parsed?.predictions) ? parsed.predictions.length : 0, error: null });
+  logStageComplete('ltr_python_inference', startedAt, {
+    service: 'ltr_inference',
+    predictions: Array.isArray(parsed?.predictions) ? parsed.predictions.length : 0,
+    pythonExecutable,
+  });
   return Array.isArray(parsed.predictions) ? parsed.predictions : [];
 }
 

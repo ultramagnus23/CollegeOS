@@ -57,6 +57,22 @@ const app = express();
 let deadlineSchedulerInstance = null;
 let server = null;
 
+function logRecommendationEnvDiagnostics() {
+  const requiredEnv = [
+    'SUPABASE_URL',
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'OPENAI_API_KEY',
+    'EMBEDDING_MODEL',
+    'PYTHON_PATH',
+  ];
+  const missing = requiredEnv.filter((key) => !process.env[key]);
+  if (missing.length > 0) {
+    logger.warn('Recommendation env vars missing', { missing });
+  } else {
+    logger.info('Recommendation env vars present', { keys: requiredEnv });
+  }
+}
+
 // Trust proxy for proper IP detection behind reverse proxies
 app.set('trust proxy', 1);
 
@@ -202,6 +218,7 @@ async function startServer() {
 
     // Run migrations
     await dbManager.runMigrations();
+    logRecommendationEnvDiagnostics();
 
     // Seed colleges if the table is empty
     try {
