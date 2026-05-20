@@ -12,14 +12,25 @@ const CARD_COLUMNS = [
   'id',
   'canonical_name',
   'country_code',
+  'state_region',
   'city',
   'website',
   'logo_url',
+  'description',
+  'institution_type',
+  'popularity_score',
+  'global_rank',
   'acceptance_rate',
+  'test_optional',
   'sat_50',
   'act_50',
   'tuition_international',
   'cost_of_attendance',
+  'avg_financial_aid',
+  'merit_scholarship_flag',
+  'need_blind_flag',
+  'graduation_rate_4yr',
+  'employment_rate',
   'median_start_salary',
   'metadata',
 ].join(', ');
@@ -28,14 +39,25 @@ const CanonicalCardSchema = z.object({
   id: z.union([z.string(), z.number()]),
   canonical_name: z.string().nullable().default(''),
   country_code: z.string().nullable().default(null),
+  state_region: z.string().nullable().default(null),
   city: z.string().nullable().default(null),
   website: z.string().nullable().default(null),
   logo_url: z.string().nullable().default(null),
+  description: z.string().nullable().default(null),
+  institution_type: z.string().nullable().default(null),
+  popularity_score: z.number().nullable().default(0),
+  global_rank: z.number().nullable().default(null),
   acceptance_rate: z.number().nullable().default(null),
+  test_optional: z.boolean().nullable().default(null),
   sat_50: z.number().nullable().default(null),
   act_50: z.number().nullable().default(null),
   tuition_international: z.number().nullable().default(null),
   cost_of_attendance: z.number().nullable().default(null),
+  avg_financial_aid: z.number().nullable().default(null),
+  merit_scholarship_flag: z.boolean().nullable().default(null),
+  need_blind_flag: z.boolean().nullable().default(null),
+  graduation_rate_4yr: z.number().nullable().default(null),
+  employment_rate: z.number().nullable().default(null),
   median_start_salary: z.number().nullable().default(null),
   metadata: z.record(z.unknown()).nullable().default({}),
 });
@@ -91,10 +113,11 @@ function normalizeOrder(sortBy?: string): { column: string; ascending: boolean }
     case 'acceptance_rate':
       return { column: 'acceptance_rate', ascending: true };
     case 'tuition':
-      return { column: 'tuition_international', ascending: true };
+      return { column: 'cost_of_attendance', ascending: true };
     case 'ranking':
-      // Ranking is sorted client-side from metadata.ranking_us_news after enrichment.
-      return { column: 'canonical_name', ascending: true };
+      return { column: 'global_rank', ascending: true };
+    case 'popularity':
+      return { column: 'popularity_score', ascending: false };
     case 'name':
     default:
       return { column: 'canonical_name', ascending: true };
@@ -329,7 +352,7 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
     if (country) q = q.eq('country_code', country);
     if (minAcceptance !== undefined) q = q.gte('acceptance_rate', minAcceptance);
     if (maxAcceptance !== undefined) q = q.lte('acceptance_rate', maxAcceptance);
-    if (maxTuition !== undefined) q = q.lte('tuition_international', maxTuition);
+    if (maxTuition !== undefined) q = q.lte('cost_of_attendance', maxTuition);
 
     const from = (safePage - 1) * safePageSize;
     const to = from + safePageSize - 1;
@@ -345,11 +368,7 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
     const enrichedRows = await enrichCardRows(parsedRows);
     const sortedRows =
       sortBy === 'ranking'
-        ? [...enrichedRows].sort((a, b) => {
-            const ra = num(asRecord(a.metadata).ranking_us_news) ?? 999999;
-            const rb = num(asRecord(b.metadata).ranking_us_news) ?? 999999;
-            return ra - rb;
-          })
+        ? [...enrichedRows].sort((a, b) => (num(a.global_rank) ?? 999999) - (num(b.global_rank) ?? 999999))
         : enrichedRows;
 
     const total = count ?? 0;
@@ -429,7 +448,7 @@ export async function compareColleges(ids: CanonicalId[]): Promise<CollegeRecord
 }
 
 export async function getFeaturedColleges(limit = 12): Promise<CollegeRecord[]> {
-  const result = await searchColleges({ page: 1, pageSize: Math.min(50, Math.max(1, limit)), sortBy: 'name' });
+  const result = await searchColleges({ page: 1, pageSize: Math.min(50, Math.max(1, limit)), sortBy: 'popularity' });
   return result.data;
 }
 
@@ -515,7 +534,7 @@ export function formatUSD(amount: number | null | undefined): string {
 
 export function normalizeToCard(c: Record<string, unknown>): Record<string, unknown> {
   const meta = asRecord(c.metadata);
-  const ranking = firstDefined(num(meta.ranking_us_news), num(meta.qs_rank));
+  const ranking = firstDefined(num(c.global_rank), num(meta.ranking_us_news), num(meta.qs_rank));
   const city = str(c.city) ?? str(meta.city);
   const state = str(meta.state_region) ?? str(meta.state);
   const rawCountryCode = str(c.country_code) ?? str(meta.country_code) ?? null;
@@ -540,13 +559,15 @@ export function normalizeToCard(c: Record<string, unknown>): Record<string, unkn
     country,
     countryCode: countryCode ?? undefined,
     type: str(meta.institution_type) ?? 'Unknown',
+    popularity_score: num(c.popularity_score) ?? 0,
+    global_rank: num(c.global_rank),
     ranking,
     acceptance_rate: num(c.acceptance_rate),
     acceptanceRate: num(c.acceptance_rate),
-    tuition_cost: firstDefined(num(c.cost_of_attendance), num(c.tuition_international)),
-    tuitionCost: firstDefined(num(c.cost_of_attendance), num(c.tuition_international)),
+    tuition_cost: num(c.cost_of_attendance),
+    tuitionCost: num(c.cost_of_attendance),
     enrollment: firstDefined(num(meta.total_enrollment), num(meta.enrollment)),
-    description: str(meta.description),
+    description: str(c.description) ?? str(meta.description),
     programs: Array.isArray(meta.programs) ? meta.programs : [],
     majorCategories: Array.isArray(meta.major_categories) ? meta.major_categories : [],
     majors: Array.isArray(meta.major_categories) ? meta.major_categories : [],
@@ -564,7 +585,9 @@ export function normalizeToCard(c: Record<string, unknown>): Record<string, unkn
     sat_median: num(c.sat_50),
     act_median: num(c.act_50),
     median_start_salary: num(c.median_start_salary),
+    graduation_rate_4yr: num(c.graduation_rate_4yr),
     graduation_rate_6yr: num(c.graduation_rate_6yr),
+    employment_rate: num(c.employment_rate),
     test_optional: bool(c.test_optional),
     need_blind_flag: bool(c.need_blind_flag),
     merit_scholarship_flag: bool(c.merit_scholarship_flag),

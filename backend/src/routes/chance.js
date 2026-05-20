@@ -62,18 +62,18 @@ router.post('/', authenticate, async (req, res, next) => {
       const { rows } = await pool.query(
         `SELECT
            c.id,
-           c.name,
+           c.canonical_name AS name,
            c.acceptance_rate,
-           c.sat_25,
-           c.sat_75,
-           c.act_25,
-           c.act_75,
-           c.act_avg,
-           c.gpa_25,
-           c.gpa_75
-         FROM public.colleges_full c
-         WHERE c.name ILIKE $1
-         ORDER BY CASE WHEN c.acceptance_rate IS NOT NULL THEN 1 ELSE 2 END, c.name ASC
+           c.sat_50 AS sat_25,
+           c.sat_50 AS sat_75,
+           c.act_50 AS act_25,
+           c.act_50 AS act_75,
+           c.act_50 AS act_avg,
+           NULL::numeric AS gpa_25,
+           NULL::numeric AS gpa_75
+         FROM canonical.mv_college_cards c
+         WHERE c.canonical_name ILIKE $1
+         ORDER BY CASE WHEN c.acceptance_rate IS NOT NULL THEN 1 ELSE 2 END, c.canonical_name ASC
          LIMIT 1`,
         [college_name]
       );
