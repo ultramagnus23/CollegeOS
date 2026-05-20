@@ -41,8 +41,12 @@ function parseIntParam(val, fallback) {
 
 async function getCollegeCountry(pool, collegeId) {
   const { rows } = await pool.query(
-    'SELECT country FROM public.colleges WHERE id = $1',
-    [collegeId]
+    `SELECT i.country_code AS country
+     FROM canonical.institution_identity_map m
+     JOIN canonical.institutions i ON i.id = m.institution_id
+     WHERE m.source_pk = $1::text
+     LIMIT 1`,
+    [String(collegeId)]
   );
   return rows.length ? rows[0].country : null;
 }
@@ -165,13 +169,20 @@ router.get('/compare', async (req, res, next) => {
     const displayCurrency = (req.query.currency || 'USD').toUpperCase() === 'INR' ? 'INR' : 'USD';
 
     const pool = dbManager.getDatabase();
+    const idText = ids.map((id) => String(id));
     const { rows: collegeRows } = await pool.query(
-      `SELECT id, name, country FROM public.colleges WHERE id = ANY($1::int[])`,
-      [ids]
+      `SELECT
+         m.source_pk,
+         i.canonical_name AS name,
+         i.country_code AS country
+       FROM canonical.institution_identity_map m
+       JOIN canonical.institutions i ON i.id = m.institution_id
+       WHERE m.source_pk = ANY($1::text[])`,
+      [idText]
     );
 
     const countryMap = {};
-    collegeRows.forEach(r => { countryMap[r.id] = { country: r.country, name: r.name }; });
+    collegeRows.forEach(r => { countryMap[Number(r.source_pk)] = { country: r.country, name: r.name }; });
 
     const colleges = ids.map(id => ({
       collegeId:      id,
@@ -320,14 +331,25 @@ router.get('/college/:collegeId', authenticate, async (req, res, next) => {
     const pool = dbManager.getDatabase();
     const { rows: colRows } = await pool.query(
       `SELECT
-         c.id, c.name, c.country, c.state, c.city,
-         COALESCE(to_jsonb(c) ->> 'type', to_jsonb(c) ->> 'institution_type') AS type,
-         c.acceptance_rate, c.sat_25, c.sat_75, c.act_25, c.act_75, c.gpa_25, c.gpa_75,
-         c.tuition_domestic AS tuition_in_state,
-         c.tuition_international
-       FROM public.colleges_full c
-       WHERE c.id = $1`,
-      [collegeId]
+         c.id,
+         c.canonical_name AS name,
+         c.country_code AS country,
+         c.state_region AS state,
+         c.city,
+         c.institution_type AS type,
+         c.acceptance_rate,
+         c.sat_50 AS sat_25,
+         c.sat_50 AS sat_75,
+         c.act_50 AS act_25,
+         c.act_50 AS act_75,
+         NULL::numeric AS gpa_25,
+         NULL::numeric AS gpa_75,
+         c.cost_of_attendance AS tuition_in_state,
+         c.cost_of_attendance AS tuition_international
+       FROM canonical.mv_college_cards c
+       JOIN canonical.institution_identity_map m ON m.institution_id = c.id
+       WHERE m.source_pk = $1::text`,
+      [String(collegeId)]
     );
     if (!colRows.length) {
       return res.status(404).json({ success: false, message: 'College not found' });
@@ -352,7 +374,8 @@ router.get('/summary', authenticate, async (req, res, next) => {
     const { rows: appRows } = await pool.query(
       `SELECT a.college_id, c.name, c.country
        FROM applications a
-       JOIN colleges_full c ON c.id = a.college_id
+       JOIN canonical.institution_identity_map m ON m.source_pk = a.college_id::text
+       JOIN canonical.institutions c ON c.id = m.institution_id
        WHERE a.user_id = $1 AND a.status NOT IN ('rejected')`,
       [userId]
     );

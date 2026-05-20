@@ -519,7 +519,14 @@ class CollegeController {
       const pool = dbManager.getDatabase();
       
       // Get college name for context
-      const college = (await pool.query('SELECT name FROM public.clean_colleges WHERE id = $1', [collegeId])).rows[0];
+      const college = (await pool.query(
+        `SELECT i.canonical_name AS name
+         FROM canonical.institution_identity_map m
+         JOIN canonical.institutions i ON i.id = m.institution_id
+         WHERE m.source_pk = $1::text
+         LIMIT 1`,
+        [String(collegeId)]
+      )).rows[0];
       if (!college) {
         return res.status(404).json({
           success: false,

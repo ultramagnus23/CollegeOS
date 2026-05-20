@@ -81,11 +81,17 @@ class RequirementService {
     
     // Get college info to determine application system
     const college = (await pool.query(
-      `SELECT cc.id, cc.name, cc.country, cd.application_platforms
-       FROM public.clean_colleges cc
-       LEFT JOIN public.college_deadlines cd ON cc.id = cd.college_id
-       WHERE cc.id = $1`,
-      [collegeId]
+      `SELECT
+         m.source_pk::int AS id,
+         i.canonical_name AS name,
+         i.country_code AS country,
+         cd.application_platforms
+       FROM canonical.institution_identity_map m
+       JOIN canonical.institutions i ON i.id = m.institution_id
+       LEFT JOIN public.college_deadlines cd ON cd.college_id = m.source_pk::int
+       WHERE m.source_pk = $1::text
+       LIMIT 1`,
+      [String(collegeId)]
     )).rows[0];
     if (!college) {
       throw new Error('College not found');
@@ -556,9 +562,10 @@ class RequirementService {
     
     // Find essays that can be reused
     const reusableEssays = (await pool.query(`
-      SELECT t.*, c.name as college_name
+      SELECT t.*, i.canonical_name as college_name
       FROM tasks t
-      JOIN public.clean_colleges c ON c.id = t.college_id
+      JOIN canonical.institution_identity_map m ON m.source_pk = t.college_id::text
+      JOIN canonical.institutions i ON i.id = m.institution_id
       WHERE t.user_id = $1 AND t.is_reusable = true AND t.status = 'complete' AND t.task_type = 'essay'
     `, [userId])).rows;
     
