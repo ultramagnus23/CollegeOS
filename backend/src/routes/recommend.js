@@ -36,18 +36,51 @@ function createRequestId() {
   return `rec_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function logRecommendationPipelineError(err, context = {}) {
+  console.error('==============================');
+  console.error('RECOMMENDATION PIPELINE ERROR');
+  console.error('==============================');
+  console.error('MESSAGE:', err?.message);
+  console.error('STACK:', err?.stack);
+  console.error('FULL ERROR:', err);
+  if (err?.details) console.error('DETAILS:', err.details);
+  if (err?.hint) console.error('HINT:', err.hint);
+  if (err?.code) console.error('CODE:', err.code);
+  if (Object.keys(context).length > 0) console.error('CONTEXT:', context);
+}
+
+async function runQueryWithLogs(pool, sql, params, context = {}) {
+  console.log('SQL:', sql);
+  console.log('PARAMS:', params);
+  try {
+    const result = await pool.query(sql, params);
+    console.log('QUERY RESULT:', { count: result?.rows?.length || 0, error: null });
+    return result;
+  } catch (error) {
+    console.log('QUERY RESULT:', {
+      count: null,
+      error: {
+        message: error?.message || null,
+        code: error?.code || null,
+        details: error?.details || null,
+        hint: error?.hint || null,
+      },
+    });
+    logRecommendationPipelineError(error, context);
+    throw error;
+  }
+}
+
 /**
  * Fetch the user's onboarding / profile data from the DB.
  * Merges users + student_profiles rows into a flat object.
  */
 async function fetchUserProfile(userId, pool) {
-  const { rows: users } = await pool.query(
-    `SELECT u.*, sp.*
+  const sql = `SELECT u.*, sp.*
      FROM   users u
      LEFT   JOIN student_profiles sp ON sp.user_id = u.id
-     WHERE  u.id = $1`,
-    [userId]
-  );
+     WHERE  u.id = $1`;
+  const { rows: users } = await runQueryWithLogs(pool, sql, [userId], { stage: 'fetch_user_profile', userId });
   return users[0] || null;
 }
 
@@ -56,16 +89,14 @@ async function fetchUserProfile(userId, pool) {
  * feature_vector so we can apply signal adjustments.
  */
 async function fetchSignals(userId, pool) {
-  const { rows } = await pool.query(
-    `SELECT us.signal_type, c.feature_vector
+  const sql = `SELECT us.signal_type, c.feature_vector
      FROM   user_signals us
      JOIN colleges_full c ON c.id = us.college_id
      WHERE  us.user_id = $1
        AND  c.feature_vector IS NOT NULL
      ORDER  BY us.created_at DESC
-     LIMIT  20`,
-    [userId]
-  );
+     LIMIT  20`;
+  const { rows } = await runQueryWithLogs(pool, sql, [userId], { stage: 'fetch_signals', userId });
   return rows.map(r => ({
     signal_type:     r.signal_type,
     college_vector:  Array.isArray(r.feature_vector)
@@ -100,13 +131,14 @@ async function buildAdjustedUserVector(userProfile, userId, pool) {
  * Returns top 50 colleges ordered by overall fit (cosine similarity),
  * each augmented with an admit chance calculation.
  */
-router.post('/', authenticate, async (req, res, next) => {
+router.post('/', authenticate, async (req, res) => {
   const requestId = createRequestId();
   const requestStarted = Date.now();
   try {
     const userId  = req.user.userId;
     const filters = req.body?.filters || {};
     const pool    = db.getDatabase();
+    console.log('[1] Loading student profile');
 
     // ── 1. Fetch user profile ─────────────────────────────────────────────
     const userProfile = await fetchUserProfile(userId, pool);
@@ -122,6 +154,7 @@ router.post('/', authenticate, async (req, res, next) => {
     }
 
     // ── 2. Build user vector (with signal adjustments) ────────────────────
+    console.log('[2] Candidate retrieval');
     const userVector = await buildAdjustedUserVector(userProfile, userId, pool);
     if (!Array.isArray(userVector) || userVector.length === 0) {
       logger.warn('recommend.empty_user_vector', { requestId, userId });
@@ -148,9 +181,9 @@ router.post('/', authenticate, async (req, res, next) => {
 
     const where = conditions.join(' AND ');
 
+    console.log('[3] Embedding search');
     const queryStarted = Date.now();
-    const { rows: colleges } = await pool.query(
-      `SELECT
+    const sql = `SELECT
          c.id,
          c.name,
          c.country,
@@ -169,9 +202,8 @@ router.post('/', authenticate, async (req, res, next) => {
          c.feature_vector
         FROM colleges_full c
        WHERE  ${where}
-       LIMIT  2000`,
-      params
-    );
+       LIMIT  2000`;
+    const { rows: colleges } = await runQueryWithLogs(pool, sql, params, { stage: 'fetch_college_candidates', requestId });
     const queryDuration = Date.now() - queryStarted;
     logger.info('recommend.query_timing', { requestId, ms: queryDuration, rows: colleges.length });
     if (queryDuration > 800) {
@@ -183,6 +215,7 @@ router.post('/', authenticate, async (req, res, next) => {
     }
 
     // ── 4. Score each college ─────────────────────────────────────────────
+    console.log('[4] Ranking feature engineering');
     const scored = [];
     let vectorsUsed = 0;
     let missingPopularityCount = 0;
@@ -219,10 +252,12 @@ router.post('/', authenticate, async (req, res, next) => {
     }
 
     // ── 5. Sort by fit, take top 50 ───────────────────────────────────────
+    console.log('[5] LTR scoring');
     scored.sort((a, b) => b.overallFit - a.overallFit);
     const top50 = scored.slice(0, 50);
 
     // ── 6. Add admit chance to each ───────────────────────────────────────
+    console.log('[6] Portfolio diversification');
     const results = top50.map(({ college, collegeVector, overallFit }) => {
       const chancing = computeAdmitChance(userVector, collegeVector, college, userProfile);
       const { feature_vector: _fv, ...colWithoutVec } = college;
@@ -237,11 +272,15 @@ router.post('/', authenticate, async (req, res, next) => {
       };
     });
 
+    console.log('[7] Final serialization');
     res.json({
       success:       true,
       count:         results.length,
       vectors_used:  vectorsUsed > 0,
       colleges:      results,
+      recommendations: results,
+      metadata: { requestId, durationMs: Date.now() - requestStarted },
+      diagnostics: {},
       meta: {
         requestId,
         durationMs: Date.now() - requestStarted,
@@ -249,7 +288,16 @@ router.post('/', authenticate, async (req, res, next) => {
       },
     });  } catch (err) {
     logger.error('POST /api/recommend error', { requestId, message: err.message, stack: err.stack });
-    next(err);
+    logRecommendationPipelineError(err, { requestId, endpoint: 'POST /api/recommend' });
+    return res.status(500).json({
+      success: false,
+      error: err?.message || 'Internal server error',
+      code: err?.code || null,
+      details: err?.details || null,
+      recommendations: [],
+      metadata: { requestId, endpoint: 'POST /api/recommend' },
+      diagnostics: { stage: 'route_handler' },
+    });
   }
 });
 
@@ -262,7 +310,7 @@ router.post('/', authenticate, async (req, res, next) => {
  * Returns top major categories that match the user's interest dimensions,
  * plus up to 3 specific majors per category drawn from the majors table.
  */
-router.get('/majors', authenticate, async (req, res, next) => {
+router.get('/majors', authenticate, async (req, res) => {
   try {
     const userId = req.user.userId;
     const pool   = db.getDatabase();
@@ -300,8 +348,7 @@ router.get('/majors', authenticate, async (req, res, next) => {
     // ── 3. Fetch specific majors per top category ─────────────────────────
     let recommended_majors = [];
     try {
-      const { rows: majors } = await pool.query(
-        `SELECT
+      const sql = `SELECT
            m.cip_code,
            m.name,
            m.broad_category,
@@ -311,9 +358,8 @@ router.get('/majors', authenticate, async (req, res, next) => {
          LEFT   JOIN college_majors cm ON cm.major_id = m.id AND cm.offered = true
          WHERE  m.broad_category = ANY($1)
          GROUP  BY m.id
-         ORDER  BY m.broad_category, offered_by_count DESC`,
-        [topCategories]
-      );
+         ORDER  BY m.broad_category, offered_by_count DESC`;
+      const { rows: majors } = await runQueryWithLogs(pool, sql, [topCategories], { stage: 'recommend_majors', userId });
 
       // Group by category, take top 3 per category
       const grouped = {};
@@ -343,10 +389,22 @@ router.get('/majors', authenticate, async (req, res, next) => {
       success: true,
       top_interest_categories: topCategories,
       recommended_majors,
+      recommendations: [],
+      metadata: {},
+      diagnostics: {},
     });
   } catch (err) {
     logger.error('GET /api/recommend/majors error: %s', err.message);
-    next(err);
+    logRecommendationPipelineError(err, { endpoint: 'GET /api/recommend/majors' });
+    return res.status(500).json({
+      success: false,
+      error: err?.message || 'Internal server error',
+      code: err?.code || null,
+      details: err?.details || null,
+      recommendations: [],
+      metadata: { endpoint: 'GET /api/recommend/majors' },
+      diagnostics: { stage: 'route_handler' },
+    });
   }
 });
 

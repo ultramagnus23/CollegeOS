@@ -25,10 +25,29 @@ async function userPreferenceSignals(userId, lookbackDays = 60) {
   const payload = [userId, String(lookbackDays)];
   let rows = [];
   try {
+    console.log('SQL:', query);
+    console.log('PARAMS:', payload);
     ({ rows } = await pool.query(query, payload));
+    console.log('QUERY RESULT:', { count: rows?.length || 0, error: null });
   } catch (error) {
-    console.error('Recommendation SQL failed', query);
-    console.error('Payload:', payload);
+    console.log('QUERY RESULT:', {
+      count: null,
+      error: {
+        message: error?.message || null,
+        code: error?.code || null,
+        details: error?.details || null,
+        hint: error?.hint || null,
+      },
+    });
+    console.error('==============================');
+    console.error('RECOMMENDATION PIPELINE ERROR');
+    console.error('==============================');
+    console.error('MESSAGE:', error?.message);
+    console.error('STACK:', error?.stack);
+    console.error('FULL ERROR:', error);
+    if (error?.details) console.error('DETAILS:', error.details);
+    if (error?.hint) console.error('HINT:', error.hint);
+    if (error?.code) console.error('CODE:', error.code);
     throw error;
   }
 
