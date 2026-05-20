@@ -53,7 +53,6 @@ const securityValidation = (req, res, next) => {
     if (req.body) {
       const bodyIssues = detectSuspiciousPatterns(req.body);
       if (bodyIssues.length > 0) {
-        logger.warn('Suspicious request body detected', {
         safeLog('security.suspicious_request_body', {
           requestId: req.requestId,
           ip: sanitizeForLog(req.ip),
@@ -78,7 +77,6 @@ const securityValidation = (req, res, next) => {
     if (req.query && Object.keys(req.query).length > 0) {
       const queryIssues = detectSuspiciousPatterns(req.query);
       if (queryIssues.length > 0) {
-        logger.warn('Suspicious query parameters detected', {
         safeLog('security.suspicious_query_params', {
           requestId: req.requestId,
           ip: sanitizeForLog(req.ip),
@@ -137,8 +135,8 @@ const securityLogger = (req, res, next) => {
     const duration = Date.now() - startTime;
     const logData = {
       requestId: req.requestId,
-      method: req.method,
-      path: req.path,
+      method: sanitizeForLog(req.method),
+      path: sanitizeForLog(req.path),
       statusCode: res.statusCode,
       durationMs: duration,
       ip: sanitizeForLog(req.ip),

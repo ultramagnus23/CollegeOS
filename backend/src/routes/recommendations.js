@@ -1,15 +1,17 @@
 // ============================================
 // FILE: backend/src/routes/recommendations.js
 // ============================================
+const crypto = require('crypto');
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const User = require('../models/User');
-const logger = require('../utils/logger');
+const config = require('../config/env');
+const { hashIdentifier, safeError, safeLog, sanitizeForLog } = require('../utils/safeLogger');
 const { createSession, trackEvent, upsertFeedback } = require('../services/feedback/telemetryService');
 
 function createRequestId() {
-  return `reco_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  return crypto.randomUUID();
 }
 
 async function fetchUserProfile(userId) {
@@ -20,40 +22,35 @@ async function fetchUserProfile(userId) {
 }
 
 function logRecommendationPipelineError(err, context = {}) {
-  console.error('==============================');
-  console.error('RECOMMENDATION PIPELINE ERROR');
-  console.error('==============================');
-  console.error('MESSAGE:', err?.message);
-  console.error('STACK:', err?.stack);
-  console.error('FULL ERROR:', err);
-  if (err?.details) console.error('DETAILS:', err.details);
-  if (err?.hint) console.error('HINT:', err.hint);
-  if (err?.code) console.error('CODE:', err.code);
-  if (Object.keys(context).length > 0) console.error('CONTEXT:', context);
+  safeError('recommendations.pipeline_error', {
+    context: sanitizeForLog(context),
+    error: err,
+  });
 }
 
 function recommendationErrorResponse(res, err, context = {}) {
   logRecommendationPipelineError(err, context);
   return res.status(500).json({
     success: false,
-    error: err?.message || 'Internal server error',
-    code: err?.code || null,
-    details: err?.details || null,
+    error: config.nodeEnv === 'production' ? 'Internal server error' : sanitizeForLog(err?.message || 'Internal server error'),
     recommendations: [],
     metadata: {
       requestId: context.requestId || null,
       endpoint: context.endpoint || null,
     },
-    diagnostics: {
-      stage: context.stage || 'route_handler',
-      timestamp: new Date().toISOString(),
-    },
+    diagnostics: config.nodeEnv === 'production'
+      ? {}
+      : {
+        stage: sanitizeForLog(context.stage || 'route_handler'),
+        timestamp: new Date().toISOString(),
+        code: sanitizeForLog(err?.code),
+      },
   });
 }
 
 // Get recommendations for user - uses recommendationEngine service
 router.get('/', authenticate, async (req, res) => {
-  const requestId = createRequestId();
+  const requestId = req.requestId || createRequestId();
   const startedAt = Date.now();
   try {
     const requestedLimit = Number.parseInt(String(req.query.limit ?? 250), 10);
@@ -89,13 +86,20 @@ router.get('/', authenticate, async (req, res) => {
         requestContext: {
           endpoint: 'GET /api/recommendations',
           limit: safeLimit,
+          requestId,
+          pipeline: 'v3',
         },
         profileSnapshot: userProfile,
         modelVersion: 'ranker-v2',
         retrievalVersion: 'hybrid-v2',
       });
     } catch (sessionError) {
-      logRecommendationPipelineError(sessionError, { requestId, endpoint: 'GET /api/recommendations', stage: 'create_session' });
+      safeLog('recommendations.session_create_failed', {
+        requestId,
+        endpoint: 'GET /api/recommendations',
+        stage: 'create_session',
+        error: sessionError,
+      }, 'warn');
     }
 
     const pipelineResult = await generateRecommendationsV2(userProfile, { limit: safeLimit, candidateLimit: 220, userId: req.user.userId });
@@ -110,10 +114,15 @@ router.get('/', authenticate, async (req, res) => {
         eventType: 'time_spent',
         eventValue: recs.length,
         dwellMs: Date.now() - startedAt,
-        metadata: { requestId, returned: recs.length },
+        metadata: { requestId, returned: recs.length, source: 'GET /api/recommendations' },
       });
     } catch (trackError) {
-      logRecommendationPipelineError(trackError, { requestId, endpoint: 'GET /api/recommendations', stage: 'track_event' });
+      safeLog('recommendations.track_event_failed', {
+        requestId,
+        endpoint: 'GET /api/recommendations',
+        stage: 'track_event',
+        error: trackError,
+      }, 'warn');
     }
 
     res.json({
@@ -129,24 +138,29 @@ router.get('/', authenticate, async (req, res) => {
       },
       meta: { requestId, durationMs: Date.now() - startedAt, evaluated: safeLimit, pipeline: 'v3', sessionId },
     });
-    logger.info('recommendations.generated', {
+    safeLog('recommendations.generated', {
       requestId,
       durationMs: Date.now() - startedAt,
       evaluated: safeLimit,
       returned: recs.length,
       missingRankings,
       malformedMajors,
-      sessionId,
+      sessionId: sessionId ? hashIdentifier(sessionId) : null,
+      userHash: hashIdentifier(req.user.userId),
     });
   } catch (error) {
-    logger.error('Get recommendations failed:', { requestId, message: error?.message, stack: error?.stack });
+    safeError('recommendations.get_failed', {
+      requestId,
+      endpoint: 'GET /api/recommendations',
+      error,
+    });
     return recommendationErrorResponse(res, error, { requestId, endpoint: 'GET /api/recommendations', stage: 'route_handler' });
   }
 });
 
 // Generate new recommendations - same as GET but forces refresh
 router.post('/generate', authenticate, async (req, res) => {
-  const requestId = createRequestId();
+  const requestId = req.requestId || createRequestId();
   const startedAt = Date.now();
   try {
     const requestedLimit = Number.parseInt(String(req.query.limit ?? 250), 10);
@@ -169,13 +183,20 @@ router.post('/generate', authenticate, async (req, res) => {
         requestContext: {
           endpoint: 'POST /api/recommendations/generate',
           limit: safeLimit,
+          requestId,
+          pipeline: 'v3',
         },
         profileSnapshot: userProfile,
         modelVersion: 'ranker-v2',
         retrievalVersion: 'hybrid-v2',
       });
     } catch (sessionError) {
-      logRecommendationPipelineError(sessionError, { requestId, endpoint: 'POST /api/recommendations/generate', stage: 'create_session' });
+      safeLog('recommendations.generate_session_create_failed', {
+        requestId,
+        endpoint: 'POST /api/recommendations/generate',
+        stage: 'create_session',
+        error: sessionError,
+      }, 'warn');
     }
 
     const pipelineResult = await generateRecommendationsV2(userProfile, { limit: safeLimit, candidateLimit: 260, userId: req.user.userId });
@@ -188,10 +209,15 @@ router.post('/generate', authenticate, async (req, res) => {
         eventType: 'time_spent',
         eventValue: recs.length,
         dwellMs: Date.now() - startedAt,
-        metadata: { requestId, regenerated: true },
+        metadata: { requestId, regenerated: true, source: 'POST /api/recommendations/generate' },
       });
     } catch (trackError) {
-      logRecommendationPipelineError(trackError, { requestId, endpoint: 'POST /api/recommendations/generate', stage: 'track_event' });
+      safeLog('recommendations.generate_track_event_failed', {
+        requestId,
+        endpoint: 'POST /api/recommendations/generate',
+        stage: 'track_event',
+        error: trackError,
+      }, 'warn');
     }
 
     res.json({
@@ -208,20 +234,26 @@ router.post('/generate', authenticate, async (req, res) => {
       },
       meta: { requestId, durationMs: Date.now() - startedAt, evaluated: safeLimit, pipeline: 'v3', sessionId },
     });
-    logger.info('recommendations.regenerated', {
+    safeLog('recommendations.regenerated', {
       requestId,
       durationMs: Date.now() - startedAt,
       evaluated: safeLimit,
       returned: recs.length,
-      sessionId,
+      sessionId: sessionId ? hashIdentifier(sessionId) : null,
+      userHash: hashIdentifier(req.user.userId),
     });
   } catch (error) {
-    logger.error('Generate recommendations failed:', { requestId, message: error?.message, stack: error?.stack });
+    safeError('recommendations.generate_failed', {
+      requestId,
+      endpoint: 'POST /api/recommendations/generate',
+      error,
+    });
     return recommendationErrorResponse(res, error, { requestId, endpoint: 'POST /api/recommendations/generate', stage: 'route_handler' });
   }
 });
 
 router.post('/events', authenticate, async (req, res) => {
+  const requestId = req.requestId || createRequestId();
   try {
     const { sessionId = null, institutionId = null, eventType, eventValue = null, dwellMs = null, position = null, metadata = {} } = req.body || {};
     if (!eventType) {
@@ -236,16 +268,22 @@ router.post('/events', authenticate, async (req, res) => {
       eventValue,
       dwellMs,
       position,
-      metadata,
+      metadata: { ...metadata, requestId, source: 'POST /api/recommendations/events' },
     });
 
     return res.json({ success: true });
   } catch (error) {
-    return recommendationErrorResponse(res, error, { endpoint: 'POST /api/recommendations/events', stage: 'events_handler' });
+    safeError('recommendations.events_failed', {
+      requestId,
+      endpoint: 'POST /api/recommendations/events',
+      error,
+    });
+    return recommendationErrorResponse(res, error, { requestId, endpoint: 'POST /api/recommendations/events', stage: 'events_handler' });
   }
 });
 
 router.post('/feedback', authenticate, async (req, res) => {
+  const requestId = req.requestId || createRequestId();
   try {
     const {
       sessionId = null,
@@ -276,7 +314,12 @@ router.post('/feedback', authenticate, async (req, res) => {
 
     return res.json({ success: true });
   } catch (error) {
-    return recommendationErrorResponse(res, error, { endpoint: 'POST /api/recommendations/feedback', stage: 'feedback_handler' });
+    safeError('recommendations.feedback_failed', {
+      requestId,
+      endpoint: 'POST /api/recommendations/feedback',
+      error,
+    });
+    return recommendationErrorResponse(res, error, { requestId, endpoint: 'POST /api/recommendations/feedback', stage: 'feedback_handler' });
   }
 });
 

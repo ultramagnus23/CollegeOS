@@ -18,12 +18,14 @@
 
 'use strict';
 
+const crypto = require('crypto');
 const express = require('express');
 const router  = express.Router();
-const logger  = require('../utils/logger');
+const config = require('../config/env');
 const { authenticate } = require('../middleware/auth');
 const { apiLimiter } = require('../middleware/rateLimiter');
 const db = require('../config/database');
+const { hashIdentifier, safeError, safeLog, sanitizeForLog } = require('../utils/safeLogger');
 const {
   buildUserVector,
   buildCollegeVector,
@@ -36,38 +38,38 @@ router.use(apiLimiter);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function createRequestId() {
-  return `rec_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  return crypto.randomUUID();
 }
 
 function logRecommendationPipelineError(err, context = {}) {
-  console.error('==============================');
-  console.error('RECOMMENDATION PIPELINE ERROR');
-  console.error('==============================');
-  console.error('MESSAGE:', err?.message);
-  console.error('STACK:', err?.stack);
-  console.error('FULL ERROR:', err);
-  if (err?.details) console.error('DETAILS:', err.details);
-  if (err?.hint) console.error('HINT:', err.hint);
-  if (err?.code) console.error('CODE:', err.code);
-  if (Object.keys(context).length > 0) console.error('CONTEXT:', context);
+  safeError('recommend.pipeline_error', {
+    context: sanitizeForLog(context),
+    error: err,
+  });
 }
 
 async function runQueryWithLogs(pool, sql, params, context = {}) {
-  console.log('SQL:', sql);
-  console.log('PARAMS:', params);
+  safeLog('recommend.query.start', {
+    requestId: sanitizeForLog(context?.requestId || null),
+    stage: sanitizeForLog(context?.stage || 'unknown'),
+    queryName: sanitizeForLog(context?.queryName || 'unknown_query'),
+    paramCount: Array.isArray(params) ? params.length : 0,
+  }, 'debug');
   try {
     const result = await pool.query(sql, params);
-    console.log('QUERY RESULT:', { count: result?.rows?.length || 0, error: null });
+    safeLog('recommend.query.success', {
+      requestId: sanitizeForLog(context?.requestId || null),
+      stage: sanitizeForLog(context?.stage || 'unknown'),
+      queryName: sanitizeForLog(context?.queryName || 'unknown_query'),
+      count: result?.rows?.length || 0,
+    }, 'debug');
     return result;
   } catch (error) {
-    console.log('QUERY RESULT:', {
-      count: null,
-      error: {
-        message: error?.message || null,
-        code: error?.code || null,
-        details: error?.details || null,
-        hint: error?.hint || null,
-      },
+    safeError('recommend.query.failed', {
+      requestId: sanitizeForLog(context?.requestId || null),
+      stage: sanitizeForLog(context?.stage || 'unknown'),
+      queryName: sanitizeForLog(context?.queryName || 'unknown_query'),
+      error,
     });
     logRecommendationPipelineError(error, context);
     throw error;
@@ -83,7 +85,11 @@ async function fetchUserProfile(userId, pool) {
      FROM   users u
      LEFT   JOIN student_profiles sp ON sp.user_id = u.id
      WHERE  u.id = $1`;
-  const { rows: users } = await runQueryWithLogs(pool, sql, [userId], { stage: 'fetch_user_profile', userId });
+  const { rows: users } = await runQueryWithLogs(pool, sql, [userId], {
+    stage: 'fetch_user_profile',
+    queryName: 'fetch_user_profile',
+    userHash: hashIdentifier(userId),
+  });
   return users[0] || null;
 }
 
@@ -99,7 +105,11 @@ async function fetchSignals(userId, pool) {
        AND  c.feature_vector IS NOT NULL
      ORDER  BY us.created_at DESC
      LIMIT  20`;
-  const { rows } = await runQueryWithLogs(pool, sql, [userId], { stage: 'fetch_signals', userId });
+  const { rows } = await runQueryWithLogs(pool, sql, [userId], {
+    stage: 'fetch_signals',
+    queryName: 'fetch_signals',
+    userHash: hashIdentifier(userId),
+  });
   return rows.map(r => ({
     signal_type:     r.signal_type,
     college_vector:  Array.isArray(r.feature_vector)
@@ -111,7 +121,7 @@ async function fetchSignals(userId, pool) {
 /**
  * Build and return a user's (optionally signal-adjusted) vector.
  */
-async function buildAdjustedUserVector(userProfile, userId, pool) {
+async function buildAdjustedUserVector(userProfile, userId, pool, requestId) {
   const baseVector = buildUserVector(userProfile);
   try {
     const signals = await fetchSignals(userId, pool);
@@ -119,7 +129,12 @@ async function buildAdjustedUserVector(userProfile, userId, pool) {
       return applySignalAdjustments(baseVector, signals);
     }
   } catch (err) {
-    logger.warn('Signal fetch failed, using base vector: %s', err.message);
+    safeLog('recommend.signal_fetch_failed_base_vector_used', {
+      requestId,
+      userHash: hashIdentifier(userId),
+      message: sanitizeForLog(err?.message),
+      code: sanitizeForLog(err?.code),
+    }, 'warn');
   }
   return baseVector;
 }
@@ -135,13 +150,21 @@ async function buildAdjustedUserVector(userProfile, userId, pool) {
  * each augmented with an admit chance calculation.
  */
 router.post('/', authenticate, async (req, res) => {
-  const requestId = createRequestId();
+  const requestId = req.requestId || createRequestId();
   const requestStarted = Date.now();
   try {
     const userId  = req.user.userId;
     const filters = req.body?.filters || {};
     const pool    = db.getDatabase();
-    console.log('[1] Loading student profile');
+    safeLog('recommend.pipeline_step', {
+      requestId,
+      step: 'loading_student_profile',
+      userHash: hashIdentifier(userId),
+      filters: {
+        hasCountry: Boolean(filters?.country),
+        hasMaxCostUsd: Boolean(filters?.maxCostUsd),
+      },
+    }, 'debug');
 
     // ── 1. Fetch user profile ─────────────────────────────────────────────
     const userProfile = await fetchUserProfile(userId, pool);
@@ -157,10 +180,13 @@ router.post('/', authenticate, async (req, res) => {
     }
 
     // ── 2. Build user vector (with signal adjustments) ────────────────────
-    console.log('[2] Candidate retrieval');
-    const userVector = await buildAdjustedUserVector(userProfile, userId, pool);
+    safeLog('recommend.pipeline_step', { requestId, step: 'candidate_retrieval' }, 'debug');
+    const userVector = await buildAdjustedUserVector(userProfile, userId, pool, requestId);
     if (!Array.isArray(userVector) || userVector.length === 0) {
-      logger.warn('recommend.empty_user_vector', { requestId, userId });
+      safeLog('recommend.empty_user_vector', {
+        requestId,
+        userHash: hashIdentifier(userId),
+      }, 'warn');
     }
 
     // ── 3. Fetch college candidates ───────────────────────────────────────
@@ -184,7 +210,7 @@ router.post('/', authenticate, async (req, res) => {
 
     const where = conditions.join(' AND ');
 
-    console.log('[3] Embedding search');
+    safeLog('recommend.pipeline_step', { requestId, step: 'embedding_search' }, 'debug');
     const queryStarted = Date.now();
     const sql = `SELECT
          c.id,
@@ -206,11 +232,15 @@ router.post('/', authenticate, async (req, res) => {
         FROM colleges_full c
        WHERE  ${where}
        LIMIT  2000`;
-    const { rows: colleges } = await runQueryWithLogs(pool, sql, params, { stage: 'fetch_college_candidates', requestId });
+    const { rows: colleges } = await runQueryWithLogs(pool, sql, params, {
+      stage: 'fetch_college_candidates',
+      queryName: 'fetch_college_candidates',
+      requestId,
+    });
     const queryDuration = Date.now() - queryStarted;
-    logger.info('recommend.query_timing', { requestId, ms: queryDuration, rows: colleges.length });
+    safeLog('recommend.query_timing', { requestId, ms: queryDuration, rows: colleges.length });
     if (queryDuration > 800) {
-      logger.warn('recommend.slow_query', { requestId, ms: queryDuration, rows: colleges.length });
+      safeLog('recommend.slow_query', { requestId, ms: queryDuration, rows: colleges.length }, 'warn');
     }
 
     if (!colleges.length) {
@@ -218,7 +248,7 @@ router.post('/', authenticate, async (req, res) => {
     }
 
     // ── 4. Score each college ─────────────────────────────────────────────
-    console.log('[4] Ranking feature engineering');
+    safeLog('recommend.pipeline_step', { requestId, step: 'ranking_feature_engineering' }, 'debug');
     const scored = [];
     let vectorsUsed = 0;
     let missingPopularityCount = 0;
@@ -255,12 +285,12 @@ router.post('/', authenticate, async (req, res) => {
     }
 
     // ── 5. Sort by fit, take top 50 ───────────────────────────────────────
-    console.log('[5] LTR scoring');
+    safeLog('recommend.pipeline_step', { requestId, step: 'ltr_scoring' }, 'debug');
     scored.sort((a, b) => b.overallFit - a.overallFit);
     const top50 = scored.slice(0, 50);
 
     // ── 6. Add admit chance to each ───────────────────────────────────────
-    console.log('[6] Portfolio diversification');
+    safeLog('recommend.pipeline_step', { requestId, step: 'portfolio_diversification' }, 'debug');
     const results = top50.map(({ college, collegeVector, overallFit }) => {
       const chancing = computeAdmitChance(userVector, collegeVector, college, userProfile);
       const { feature_vector: _fv, ...colWithoutVec } = college;
@@ -275,7 +305,7 @@ router.post('/', authenticate, async (req, res) => {
       };
     });
 
-    console.log('[7] Final serialization');
+    safeLog('recommend.pipeline_step', { requestId, step: 'final_serialization' }, 'debug');
     res.json({
       success:       true,
       count:         results.length,
@@ -289,17 +319,22 @@ router.post('/', authenticate, async (req, res) => {
         durationMs: Date.now() - requestStarted,
         missingPopularityCount,
       },
-    });  } catch (err) {
-    logger.error('POST /api/recommend error', { requestId, message: err.message, stack: err.stack });
+    });
+  } catch (err) {
+    safeError('recommend.post_failed', {
+      requestId,
+      endpoint: 'POST /api/recommend',
+      error: err,
+    });
     logRecommendationPipelineError(err, { requestId, endpoint: 'POST /api/recommend' });
     return res.status(500).json({
       success: false,
-      error: err?.message || 'Internal server error',
-      code: err?.code || null,
-      details: err?.details || null,
+      error: config.nodeEnv === 'production' ? 'Internal server error' : sanitizeForLog(err?.message || 'Internal server error'),
       recommendations: [],
       metadata: { requestId, endpoint: 'POST /api/recommend' },
-      diagnostics: { stage: 'route_handler' },
+      diagnostics: config.nodeEnv === 'production'
+        ? {}
+        : { stage: 'route_handler', code: sanitizeForLog(err?.code), details: sanitizeForLog(err?.details) },
     });
   }
 });
@@ -314,6 +349,7 @@ router.post('/', authenticate, async (req, res) => {
  * plus up to 3 specific majors per category drawn from the majors table.
  */
 router.get('/majors', authenticate, async (req, res) => {
+  const requestId = req.requestId || createRequestId();
   try {
     const userId = req.user.userId;
     const pool   = db.getDatabase();
@@ -362,7 +398,12 @@ router.get('/majors', authenticate, async (req, res) => {
          WHERE  m.broad_category = ANY($1)
          GROUP  BY m.id
          ORDER  BY m.broad_category, offered_by_count DESC`;
-      const { rows: majors } = await runQueryWithLogs(pool, sql, [topCategories], { stage: 'recommend_majors', userId });
+      const { rows: majors } = await runQueryWithLogs(pool, sql, [topCategories], {
+        stage: 'recommend_majors',
+        queryName: 'recommend_majors',
+        userHash: hashIdentifier(userId),
+        requestId,
+      });
 
       // Group by category, take top 3 per category
       const grouped = {};
@@ -385,7 +426,12 @@ router.get('/majors', authenticate, async (req, res) => {
       }
     } catch (majorErr) {
       // majors table may not be populated yet — return empty gracefully
-      logger.warn('Major recommendations query failed: %s', majorErr.message);
+      safeLog('recommend.majors_query_failed', {
+        requestId,
+        userHash: hashIdentifier(userId),
+        message: sanitizeForLog(majorErr?.message),
+        code: sanitizeForLog(majorErr?.code),
+      }, 'warn');
     }
 
     res.json({
@@ -393,20 +439,24 @@ router.get('/majors', authenticate, async (req, res) => {
       top_interest_categories: topCategories,
       recommended_majors,
       recommendations: [],
-      metadata: {},
+      metadata: { requestId },
       diagnostics: {},
     });
   } catch (err) {
-    logger.error('GET /api/recommend/majors error: %s', err.message);
-    logRecommendationPipelineError(err, { endpoint: 'GET /api/recommend/majors' });
+    safeError('recommend.majors_failed', {
+      requestId,
+      endpoint: 'GET /api/recommend/majors',
+      error: err,
+    });
+    logRecommendationPipelineError(err, { requestId, endpoint: 'GET /api/recommend/majors' });
     return res.status(500).json({
       success: false,
-      error: err?.message || 'Internal server error',
-      code: err?.code || null,
-      details: err?.details || null,
+      error: config.nodeEnv === 'production' ? 'Internal server error' : sanitizeForLog(err?.message || 'Internal server error'),
       recommendations: [],
-      metadata: { endpoint: 'GET /api/recommend/majors' },
-      diagnostics: { stage: 'route_handler' },
+      metadata: { requestId, endpoint: 'GET /api/recommend/majors' },
+      diagnostics: config.nodeEnv === 'production'
+        ? {}
+        : { stage: 'route_handler', code: sanitizeForLog(err?.code), details: sanitizeForLog(err?.details) },
     });
   }
 });
