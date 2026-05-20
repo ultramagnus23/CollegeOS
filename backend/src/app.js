@@ -48,6 +48,7 @@ const chanceRoutes = require('./routes/chance');
 const adminRoutes = require('./routes/admin');
 const signalsRoutes = require('./routes/signals');
 const chancesRoutes = require('./routes/chances');
+const discoveryRoutes = require('./routes/discovery');
 
 // Create Express app
 const app = express();
@@ -150,6 +151,7 @@ app.use('/api/chance', chanceRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/signals', signalsRoutes);
 app.use('/api/chances', chancesRoutes);
+app.use('/api/discovery', discoveryRoutes);
 
 // 404 handler
 app.use((req, res) => {

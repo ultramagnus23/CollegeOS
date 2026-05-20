@@ -1,0 +1,11 @@
+{
+  "dashboard": "retrieval_quality",
+  "metrics": [
+    "candidate_recall",
+    "retrieval_precision",
+    "major_relevance",
+    "semantic_relevance",
+    "retrieval_diversity",
+    "retrieval_latency_ms"
+  ]
+}

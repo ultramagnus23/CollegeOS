@@ -1,0 +1,10 @@
+{
+  "dashboard": "financial_confidence",
+  "metrics": [
+    "scholarship_prediction_calibration",
+    "roi_forecast_error",
+    "loan_feasibility_confidence",
+    "inr_affordability_risk",
+    "currency_risk_drift"
+  ]
+}

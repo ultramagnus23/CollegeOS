@@ -1,0 +1,11 @@
+{
+  "dashboard": "recommendation_quality",
+  "metrics": [
+    "recommendation_acceptance_rate",
+    "recommendation_ctr",
+    "save_rate",
+    "portfolio_diversity",
+    "cold_start_success_rate",
+    "recommendation_latency_ms"
+  ]
+}

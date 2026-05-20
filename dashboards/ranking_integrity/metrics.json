@@ -1,0 +1,11 @@
+{
+  "dashboard": "ranking_integrity",
+  "metrics": [
+    "ndcg_at_10",
+    "mrr",
+    "map",
+    "ranking_consistency",
+    "subject_rank_weight",
+    "popularity_bias_index"
+  ]
+}

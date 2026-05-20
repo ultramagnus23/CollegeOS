@@ -6,10 +6,19 @@ import { formatCountryName } from '../lib/country';
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 interface ScoreBreakdown {
-  academic_fit:    number;
-  financial_fit:   number;
-  values_match:    number;
-  location_fit:    number;
+  academic_fit?: number;
+  financial_fit?: number;
+  values_match?: number;
+  location_fit?: number;
+  major_fit?: number;
+  ranking_fit?: number;
+  subject_ranking_fit?: number;
+  admissions_fit?: number;
+  affordability_fit?: number;
+  outcomes_fit?: number;
+  popularity_fit?: number;
+  country_fit?: number;
+  financial_fit_score?: number;
 }
 interface Recommendation {
   college_id:           number;
@@ -19,6 +28,11 @@ interface Recommendation {
   overall_score:        number;
   score_breakdown?:     ScoreBreakdown;
   why_values?:          string[];
+  confidence_score?:    number;
+  explanation?: {
+    reasoning_summary?: string;
+    reasons?: string[];
+  };
   net_cost_inr_per_year?: number;
   classification?:      string;
 }
@@ -83,8 +97,15 @@ const CollegeCard: React.FC<{ rec: Recommendation; rank: number }> = ({ rec, ran
   const [expanded, setExpanded] = useState(false);
   const cls = CLASS_CFG[rec.classification?.toLowerCase()] || CLASS_CFG.target;
   const sb = rec.score_breakdown;
-  const score = Math.round(rec.overall_score);
+  const score = Math.round(rec.overall_score ?? 0);
   const ar = rec.acceptance_rate != null ? `${Math.round(rec.acceptance_rate * 100)}%` : 'N/A';
+  const safe = (v: number | undefined) => Math.max(0, Math.min(100, Math.round(v ?? 0)));
+  const majorFit = safe(sb?.major_fit ?? sb?.academic_fit);
+  const rankingFit = safe(sb?.ranking_fit ?? sb?.subject_ranking_fit);
+  const admissionsFit = safe(sb?.admissions_fit);
+  const affordabilityFit = safe(sb?.affordability_fit ?? sb?.financial_fit);
+  const outcomesFit = safe(sb?.outcomes_fit ?? sb?.values_match);
+  const popularityFit = safe(sb?.popularity_fit ?? sb?.location_fit);
 
   return (
     <div
@@ -141,15 +162,23 @@ const CollegeCard: React.FC<{ rec: Recommendation; rank: number }> = ({ rec, ran
       {/* Score breakdown */}
       {sb && (
         <div style={{ marginBottom: 12 }}>
-          <ScoreBar label="Academic Fit"  value={Math.round(sb.academic_fit)}  max={35} color="#3B9EFF" />
-          <ScoreBar label="Financial Fit" value={Math.round(sb.financial_fit)} max={25} color="#10B981" />
-          <ScoreBar label="Values Match"  value={Math.round(sb.values_match)}  max={30} color={ACCENT}  />
-          <ScoreBar label="Location Fit"  value={Math.round(sb.location_fit)}  max={10} color="#F59E0B" />
+          <ScoreBar label="Major Fit" value={majorFit} max={100} color="#3B9EFF" />
+          <ScoreBar label="Ranking Fit" value={rankingFit} max={100} color={ACCENT} />
+          <ScoreBar label="Admissions Fit" value={admissionsFit} max={100} color="#22C55E" />
+          <ScoreBar label="Affordability Fit" value={affordabilityFit} max={100} color="#10B981" />
+          <ScoreBar label="Outcomes Fit" value={outcomesFit} max={100} color="#F59E0B" />
+          <ScoreBar label="Popularity Fit" value={popularityFit} max={100} color="#8B5CF6" />
+        </div>
+      )}
+
+      {rec.confidence_score != null && (
+        <div style={{ fontSize: 12, color: S.muted, marginBottom: 8 }}>
+          Confidence: {Math.round(rec.confidence_score * 100)}%
         </div>
       )}
 
       {/* Values reasons */}
-      {rec.why_values && rec.why_values.length > 0 && (
+      {((rec.explanation?.reasons?.length || 0) > 0 || (rec.why_values?.length || 0) > 0) && (
         <div>
           <button
             onClick={() => setExpanded(e => !e)}
@@ -159,12 +188,15 @@ const CollegeCard: React.FC<{ rec: Recommendation; rank: number }> = ({ rec, ran
           </button>
           {expanded && (
             <ul style={{ paddingLeft: 16, margin: 0 }}>
-              {rec.why_values.map((w, i) => (
+              {(rec.explanation?.reasons || rec.why_values || []).map((w, i) => (
                 <li key={i} style={{ fontSize: 13, color: S.muted, marginBottom: 4 }}>{w}</li>
               ))}
             </ul>
           )}
         </div>
+      )}
+      {rec.explanation?.reasoning_summary && (
+        <p style={{ fontSize: 12, color: S.muted, marginTop: 8 }}>{rec.explanation.reasoning_summary}</p>
       )}
     </div>
   );

@@ -1,0 +1,10 @@
+{
+  "dashboard": "personalization_quality",
+  "metrics": [
+    "personalized_ctr_lift",
+    "session_adaptation_gain",
+    "collaborative_signal_coverage",
+    "rerank_quality_delta",
+    "experiment_variant_uplift"
+  ]
+}
