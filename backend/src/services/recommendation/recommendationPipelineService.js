@@ -53,8 +53,7 @@ function estimateAdmitChance(features) {
 async function fetchCandidateInstitutionRows(institutionIds) {
   if (!institutionIds.length) return [];
   const pool = dbManager.getDatabase();
-  const { rows } = await pool.query(
-    `SELECT
+  const query = `SELECT
        i.id,
        i.canonical_name AS name,
        i.country_code AS country,
@@ -62,7 +61,14 @@ async function fetchCandidateInstitutionRows(institutionIds) {
        i.institution_type,
        i.description,
        i.research_intensity_score,
-       i.tags,
+       COALESCE(
+         ARRAY(
+           SELECT jsonb_array_elements_text(
+             COALESCE(i.metadata->'tags', '[]'::jsonb)
+           )
+         ),
+         ARRAY[]::text[]
+       ) AS semantic_tags,
        p.programs,
        a.acceptance_rate,
        a.sat_75,
@@ -76,19 +82,26 @@ async function fetchCandidateInstitutionRows(institutionIds) {
        pi.popularity_score,
        pi.search_volume_score,
        pi.trending_delta_30d
-     FROM canonical.institutions i
-     LEFT JOIN canonical.institution_admissions a ON a.institution_id = i.id
-     LEFT JOIN canonical.institution_financials f ON f.institution_id = i.id
-     LEFT JOIN canonical.institution_outcomes o ON o.institution_id = i.id
-     LEFT JOIN canonical.popularity_index pi ON pi.institution_id = i.id
-     LEFT JOIN (
-       SELECT institution_id, ARRAY_AGG(program_name) AS programs
-       FROM canonical.institution_programs
-       GROUP BY institution_id
-     ) p ON p.institution_id = i.id
-     WHERE i.id = ANY($1::uuid[])`,
-    [institutionIds]
-  );
+      FROM canonical.institutions i
+      LEFT JOIN canonical.institution_admissions a ON a.institution_id = i.id
+      LEFT JOIN canonical.institution_financials f ON f.institution_id = i.id
+      LEFT JOIN canonical.institution_outcomes o ON o.institution_id = i.id
+      LEFT JOIN canonical.popularity_index pi ON pi.institution_id = i.id
+      LEFT JOIN (
+        SELECT institution_id, ARRAY_AGG(program_name) AS programs
+        FROM canonical.institution_programs
+        GROUP BY institution_id
+      ) p ON p.institution_id = i.id
+      WHERE i.id = ANY($1::uuid[])`;
+  const payload = [institutionIds];
+  let rows = [];
+  try {
+    ({ rows } = await pool.query(query, payload));
+  } catch (error) {
+    console.error('Recommendation SQL failed', query);
+    console.error('Payload:', payload);
+    throw error;
+  }
   return rows;
 }
 
@@ -205,6 +218,7 @@ async function generateRecommendationsV2(userProfile, options = {}) {
       college_name: entry.row.name,
       country: toCountryName(entry.row.country),
       city: entry.row.city,
+      semantic_tags: Array.isArray(entry.row.semantic_tags) ? entry.row.semantic_tags : [],
       rankScore: adjustedScore,
       confidence: Math.max(0.25, prediction.confidence * (1 - uncertainty * 0.2)),
       admitChance,
