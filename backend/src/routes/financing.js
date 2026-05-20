@@ -158,8 +158,12 @@ router.get('/for-college/:collegeId', async (req, res, next) => {
 
     // Look up the college country first
     const { rows: collegeRows } = await pool.query(
-      'SELECT country FROM public.clean_colleges WHERE id = $1',
-      [collegeId]
+      `SELECT i.country_code AS country
+       FROM canonical.institution_identity_map m
+       JOIN canonical.institutions i ON i.id = m.institution_id
+       WHERE m.source_pk = $1::text
+       LIMIT 1`,
+      [String(collegeId)]
     );
 
     if (!collegeRows.length) {

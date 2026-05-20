@@ -119,45 +119,41 @@ async function fetchCandidateInstitutionRows(institutionIds) {
   if (!institutionIds.length) return [];
   const pool = dbManager.getDatabase();
   const query = `SELECT
-       i.id,
-       i.canonical_name AS name,
-       i.country_code AS country,
-       i.city,
-       i.institution_type,
-       i.description,
-       i.research_intensity_score,
+       c.id,
+       c.canonical_name AS name,
+       c.country_code AS country,
+       c.city,
+       c.institution_type,
+       c.description,
+       COALESCE(NULLIF((c.metadata->>'research_intensity_score'),'')::numeric, 0.4) AS research_intensity_score,
        COALESCE(
          ARRAY(
-           SELECT jsonb_array_elements_text(
-             COALESCE(i.metadata->'tags', '[]'::jsonb)
-           )
-         ),
-         ARRAY[]::text[]
-       ) AS semantic_tags,
-       p.programs,
-       a.acceptance_rate,
-       a.sat_75,
-       a.act_75,
-       a.gpa_75,
-       f.tuition_international,
-       f.net_cost_usd,
-       f.international_aid_available,
-       o.median_earnings_6yr,
-       o.graduation_rate_6yr,
-       pi.popularity_score,
-       pi.search_volume_score,
-       pi.trending_delta_30d
-      FROM canonical.institutions i
-      LEFT JOIN canonical.institution_admissions a ON a.institution_id = i.id
-      LEFT JOIN canonical.institution_financials f ON f.institution_id = i.id
-      LEFT JOIN canonical.institution_outcomes o ON o.institution_id = i.id
-      LEFT JOIN canonical.popularity_index pi ON pi.institution_id = i.id
-      LEFT JOIN (
-        SELECT institution_id, ARRAY_AGG(program_name) AS programs
-        FROM canonical.institution_programs
-        GROUP BY institution_id
-      ) p ON p.institution_id = i.id
-      WHERE i.id = ANY($1::uuid[])`;
+            SELECT jsonb_array_elements_text(
+              COALESCE(c.metadata->'tags', '[]'::jsonb)
+            )
+          ),
+          ARRAY[]::text[]
+        ) AS semantic_tags,
+        p.programs,
+        c.acceptance_rate,
+        c.sat_50 AS sat_75,
+        c.act_50 AS act_75,
+        NULL::numeric AS gpa_75,
+        c.tuition_international,
+        c.cost_of_attendance AS net_cost_usd,
+        TRUE AS international_aid_available,
+        c.median_start_salary AS median_earnings_6yr,
+        c.graduation_rate_4yr AS graduation_rate_6yr,
+        c.popularity_score,
+        0::numeric AS search_volume_score,
+        0::numeric AS trending_delta_30d
+       FROM canonical.mv_college_cards c
+       LEFT JOIN (
+         SELECT institution_id, ARRAY_AGG(program_name) AS programs
+         FROM canonical.institution_programs
+         GROUP BY institution_id
+       ) p ON p.institution_id = c.id
+       WHERE c.id = ANY($1::uuid[])`;
   const payload = [institutionIds];
   let rows = [];
   try {
@@ -199,43 +195,41 @@ async function generateDeterministicFallbackRecommendations(normalizedStudent = 
   const pool = dbManager.getDatabase();
   const safeLimit = Math.max(10, Math.min(30, Number(options.limit) || 20));
   const query = `SELECT
-      i.id,
-      i.canonical_name AS name,
-      i.country_code AS country,
-      i.city,
-      i.description,
+      c.id,
+      c.canonical_name AS name,
+      c.country_code AS country,
+      c.city,
+      c.description,
       COALESCE(
         ARRAY(
           SELECT jsonb_array_elements_text(
-            COALESCE(i.metadata->'tags', '[]'::jsonb)
+            COALESCE(c.metadata->'tags', '[]'::jsonb)
           )
         ),
         ARRAY[]::text[]
       ) AS semantic_tags,
       p.programs,
-      a.acceptance_rate,
-      a.sat_75,
-      a.act_75,
+      c.acceptance_rate,
+      c.sat_50 AS sat_75,
+      c.act_50 AS act_75,
       a.gpa_75,
-      f.tuition_international,
-      f.net_cost_usd,
-      f.international_aid_available,
-      o.median_earnings_6yr,
-      o.graduation_rate_6yr,
+      c.tuition_international,
+      c.cost_of_attendance AS net_cost_usd,
+      TRUE AS international_aid_available,
+      c.median_start_salary AS median_earnings_6yr,
+      c.graduation_rate_4yr AS graduation_rate_6yr,
       (
         SELECT MIN(r.global_rank)
         FROM canonical.institution_rankings r
-        WHERE r.institution_id = i.id
+        WHERE r.institution_id = c.id
       ) AS ranking
-    FROM canonical.institutions i
-    LEFT JOIN canonical.institution_admissions a ON a.institution_id = i.id
-    LEFT JOIN canonical.institution_financials f ON f.institution_id = i.id
-    LEFT JOIN canonical.institution_outcomes o ON o.institution_id = i.id
+    FROM canonical.mv_college_cards c
+    LEFT JOIN canonical.institution_admissions a ON a.institution_id = c.id
     LEFT JOIN (
       SELECT institution_id, ARRAY_AGG(program_name) AS programs
       FROM canonical.institution_programs
       GROUP BY institution_id
-    ) p ON p.institution_id = i.id
+    ) p ON p.institution_id = c.id
     LIMIT $1`;
   const payload = [Math.max(60, safeLimit * 5)];
   try {

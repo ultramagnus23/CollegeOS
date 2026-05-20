@@ -44,7 +44,14 @@ class DeadlineAutoPopulationService {
       }
 
       // Get college name for messages
-      const college = (await pool.query('SELECT name FROM public.clean_colleges WHERE id = $1', [collegeId])).rows[0];
+      const college = (await pool.query(
+        `SELECT i.canonical_name AS name
+         FROM canonical.institution_identity_map m
+         JOIN canonical.institutions i ON i.id = m.institution_id
+         WHERE m.source_pk = $1::text
+         LIMIT 1`,
+        [String(collegeId)]
+      )).rows[0];
       const collegeName = college ? college.name : 'College';
 
       // Insert deadlines only for types that are offered (offered = true)

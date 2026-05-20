@@ -128,16 +128,26 @@ async function computeFinancialProfile(user, college, pool) {
   // ── 1. Fetch financial data ────────────────────────────────────────────────
   const { rows: cfdRows } = await pool.query(
     `SELECT
-       tuition_in_state, tuition_out_state, total_coa, avg_net_price,
-       net_price_0_30k, net_price_30_48k, net_price_48_75k,
-       net_price_75_110k, net_price_110k_plus,
-       pct_receiving_pell, median_debt_at_graduation,
-       loan_default_rate_3yr, median_earnings_6yr, median_earnings_10yr
-     FROM colleges
-     WHERE college_id = $1
-     ORDER BY year DESC
+       f.tuition_in_state, f.tuition_out_state,
+       f.cost_of_attendance AS total_coa,
+       f.avg_financial_aid AS avg_net_price,
+       f.net_price_low_income AS net_price_0_30k,
+       f.net_price_mid_income AS net_price_30_48k,
+       f.net_price_mid_income AS net_price_48_75k,
+       f.net_price_high_income AS net_price_75_110k,
+       f.net_price_high_income AS net_price_110k_plus,
+       f.percent_receiving_aid AS pct_receiving_pell,
+       f.avg_debt AS median_debt_at_graduation,
+       f.loan_default_rate,
+       o.median_start_salary AS median_earnings_6yr,
+       o.median_mid_career_salary AS median_earnings_10yr
+     FROM canonical.institution_identity_map m
+     JOIN canonical.institution_financials f ON f.institution_id = m.institution_id
+     LEFT JOIN canonical.institution_outcomes o ON o.institution_id = m.institution_id
+     WHERE m.source_pk = $1::text
+     ORDER BY f.data_year DESC NULLS LAST, f.updated_at DESC
      LIMIT 1`,
-    [college.id]
+    [String(college.id)]
   );
 
   const cfd = cfdRows[0] || {};
@@ -145,29 +155,35 @@ async function computeFinancialProfile(user, college, pool) {
   // Pull summary columns from clean_colleges + detail joins
   const { rows: colRows } = await pool.query(
     `SELECT
-       cfd.avg_net_price_0_30k, cfd.avg_net_price_30_48k, cfd.avg_net_price_48_75k,
-       cfd.avg_net_price_75_110k, cfd.avg_net_price_110k_plus,
+       f.net_price_low_income AS avg_net_price_0_30k,
+       f.net_price_mid_income AS avg_net_price_30_48k,
+       f.net_price_mid_income AS avg_net_price_48_75k,
+       f.net_price_high_income AS avg_net_price_75_110k,
+       f.net_price_high_income AS avg_net_price_110k_plus,
        NULL::numeric AS avg_institutional_grant,
        NULL::numeric AS avg_merit_aid,
        NULL::numeric AS pct_receiving_merit_aid,
        NULL::boolean AS need_blind_domestic,
-       cc.need_aware_intl AS need_blind_international,
-       cc.meets_full_need,
-       NULL::numeric AS median_earnings_6yr,
-       NULL::numeric AS median_earnings_10yr,
-       cfd.loan_default_rate_3yr AS loan_default_rate,
-       cfd.median_debt_at_graduation AS avg_total_debt_at_graduation,
+       f.need_blind_flag AS need_blind_international,
+       FALSE::boolean AS meets_full_need,
+       o.median_start_salary AS median_earnings_6yr,
+       o.median_mid_career_salary AS median_earnings_10yr,
+       f.loan_default_rate AS loan_default_rate,
+       f.avg_debt AS avg_total_debt_at_graduation,
        NULL::boolean AS css_profile_required,
-       NULL::boolean AS international_aid_available,
+       TRUE::boolean AS international_aid_available,
        NULL::numeric AS international_aid_avg,
-       cfd.pct_receiving_pell AS pct_students_receiving_aid,
-       ca.sat_avg AS median_sat,
-       ca.act_avg AS median_act
-     FROM public.clean_colleges cc
-     LEFT JOIN public.colleges cfd ON cc.id = cfd.college_id
-     LEFT JOIN public.college_admissions ca ON cc.id = ca.college_id
-     WHERE cc.id = $1`,
-    [college.id]
+       f.percent_receiving_aid AS pct_students_receiving_aid,
+       a.sat_50 AS median_sat,
+       a.act_50 AS median_act
+     FROM canonical.institution_identity_map m
+     LEFT JOIN canonical.institution_financials f ON f.institution_id = m.institution_id
+     LEFT JOIN canonical.institution_admissions a ON a.institution_id = m.institution_id
+     LEFT JOIN canonical.institution_outcomes o ON o.institution_id = m.institution_id
+     WHERE m.source_pk = $1::text
+     ORDER BY f.data_year DESC NULLS LAST, f.updated_at DESC
+     LIMIT 1`,
+    [String(college.id)]
   );
 
   const colData = colRows[0] || {};

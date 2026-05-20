@@ -124,36 +124,46 @@ class College {
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
       `SELECT
-         c.id, c.name, c.country, c.state, c.city,
-         COALESCE(
-           to_jsonb(c) ->> 'official_website',
-           to_jsonb(c) ->> 'website_url',
-           to_jsonb(c) ->> 'website'
-         ) AS official_website,
-         COALESCE(
-           to_jsonb(c) ->> 'website',
-           to_jsonb(c) ->> 'website_url',
-           to_jsonb(c) ->> 'official_website'
-         ) AS website,
-         to_jsonb(c) ->> 'website_url' AS website_url,
-          COALESCE(
-            to_jsonb(c) ->> 'type',
-            to_jsonb(c) ->> 'institution_type'
-          ) AS type,
-          to_jsonb(c) ->> 'institution_type' AS institution_type,
-          to_jsonb(c) ->> 'size_category' AS size_category,
-          c.description,
-         c.acceptance_rate, c.sat_25, c.sat_75, c.act_25, c.act_75, c.gpa_25, c.gpa_75,
-         c.tuition_domestic, c.tuition_international,
-         c.total_enrollment,
-         c.qs_rank, c.ranking_us_news, c.the_rank,
-         c.top_majors,
-         c.data_source, c.data_source_url, c.data_quality_score,
-         c.last_data_refresh, c.last_updated_at, c.updated_at, c.created_at,
-         c.application_deadline, c.rd_deadline, c.ed_deadline, c.ea_deadline,
-         LOWER(REGEXP_REPLACE(c.name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
-         (SELECT ARRAY_AGG(cp.program_name) FROM college_programs cp WHERE cp.college_id = c.id) AS program_names
-       FROM public.colleges_full c
+         c.id,
+         c.canonical_name AS name,
+         c.country_code AS country,
+         c.state_region AS state,
+         c.city,
+         c.website AS official_website,
+         c.website,
+         c.website AS website_url,
+         c.institution_type AS type,
+         c.institution_type,
+         NULL::text AS size_category,
+         c.description,
+         c.acceptance_rate,
+         c.sat_50 AS sat_25,
+         c.sat_50 AS sat_75,
+         c.act_50 AS act_25,
+         c.act_50 AS act_75,
+         NULL::numeric AS gpa_25,
+         NULL::numeric AS gpa_75,
+         c.cost_of_attendance AS tuition_domestic,
+         c.cost_of_attendance AS tuition_international,
+         NULLIF((c.metadata->>'total_enrollment'),'')::numeric AS total_enrollment,
+         NULL::int AS qs_rank,
+         c.global_rank AS ranking_us_news,
+         NULL::int AS the_rank,
+         c.metadata->'major_categories' AS top_majors,
+         'canonical.mv_college_cards'::text AS data_source,
+         NULL::text AS data_source_url,
+         1::numeric AS data_quality_score,
+         NULL::timestamptz AS last_data_refresh,
+         c.updated_at AS last_updated_at,
+         c.updated_at,
+         c.updated_at AS created_at,
+         NULL::date AS application_deadline,
+         NULL::date AS rd_deadline,
+         NULL::date AS ed_deadline,
+         NULL::date AS ea_deadline,
+         LOWER(REGEXP_REPLACE(c.canonical_name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
+         (SELECT ARRAY_AGG(cp.program_name) FROM canonical.institution_programs cp WHERE cp.institution_id = c.id) AS program_names
+       FROM canonical.mv_college_cards c
        WHERE c.id = $1`,
       [id]
     );
@@ -164,42 +174,51 @@ class College {
 
   static async findAll(filters = {}) {
     const pool = dbManager.getDatabase();
-
     let query = `
       SELECT
-        c.id, c.name, c.country, c.state, c.city,
-        COALESCE(
-          to_jsonb(c) ->> 'official_website',
-          to_jsonb(c) ->> 'website_url',
-          to_jsonb(c) ->> 'website'
-        ) AS official_website,
-        COALESCE(
-          to_jsonb(c) ->> 'website',
-          to_jsonb(c) ->> 'website_url',
-          to_jsonb(c) ->> 'official_website'
-        ) AS website,
-        to_jsonb(c) ->> 'website_url' AS website_url,
-         COALESCE(
-           to_jsonb(c) ->> 'type',
-           to_jsonb(c) ->> 'institution_type'
-         ) AS type,
-         to_jsonb(c) ->> 'institution_type' AS institution_type,
-         to_jsonb(c) ->> 'size_category' AS size_category,
-         c.description,
-        c.acceptance_rate, c.sat_25, c.sat_75, c.act_25, c.act_75, c.gpa_25, c.gpa_75,
-        c.tuition_domestic, c.tuition_international,
-        c.total_enrollment,
-        c.qs_rank, c.ranking_us_news, c.the_rank,
-        c.top_majors,
-        c.data_source, c.data_source_url, c.data_quality_score,
-        c.last_data_refresh, c.last_updated_at, c.updated_at, c.created_at,
-        c.application_deadline, c.rd_deadline, c.ed_deadline, c.ea_deadline,
-        LOWER(REGEXP_REPLACE(c.name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
-        0::numeric AS relevance_score,
-        (SELECT ARRAY_AGG(cp.program_name) FROM college_programs cp WHERE cp.college_id = c.id) AS program_names
-      FROM public.colleges_full c
-      WHERE c.name IS NOT NULL
-        AND LENGTH(TRIM(c.name)) > 1
+        c.id,
+        c.canonical_name AS name,
+        c.country_code AS country,
+        c.state_region AS state,
+        c.city,
+        c.website AS official_website,
+        c.website,
+        c.website AS website_url,
+        c.institution_type AS type,
+        c.institution_type,
+        NULL::text AS size_category,
+        c.description,
+        c.acceptance_rate,
+        c.sat_50 AS sat_25,
+        c.sat_50 AS sat_75,
+        c.act_50 AS act_25,
+        c.act_50 AS act_75,
+        NULL::numeric AS gpa_25,
+        NULL::numeric AS gpa_75,
+        c.cost_of_attendance AS tuition_domestic,
+        c.cost_of_attendance AS tuition_international,
+        NULLIF((c.metadata->>'total_enrollment'),'')::numeric AS total_enrollment,
+        NULL::int AS qs_rank,
+        c.global_rank AS ranking_us_news,
+        NULL::int AS the_rank,
+        c.metadata->'major_categories' AS top_majors,
+        'canonical.mv_college_cards'::text AS data_source,
+        NULL::text AS data_source_url,
+        1::numeric AS data_quality_score,
+        NULL::timestamptz AS last_data_refresh,
+        c.updated_at AS last_updated_at,
+        c.updated_at,
+        c.updated_at AS created_at,
+        NULL::date AS application_deadline,
+        NULL::date AS rd_deadline,
+        NULL::date AS ed_deadline,
+        NULL::date AS ea_deadline,
+        LOWER(REGEXP_REPLACE(c.canonical_name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
+        COALESCE(c.popularity_score, 0)::numeric AS relevance_score,
+        (SELECT ARRAY_AGG(cp.program_name) FROM canonical.institution_programs cp WHERE cp.institution_id = c.id) AS program_names
+      FROM canonical.mv_college_cards c
+      WHERE c.canonical_name IS NOT NULL
+        AND LENGTH(TRIM(c.canonical_name)) > 1
     `;
 
     const params = [];
@@ -207,10 +226,10 @@ class College {
 
     if (filters.country) {
       const cl = filters.country.toLowerCase();
-      if (cl === 'europe') query += ` AND c.country NOT IN ('United States','USA','United Kingdom','UK','India')`;
-      else if (cl === 'united states' || cl === 'usa') query += ` AND (c.country='United States' OR c.country='USA')`;
-      else if (cl === 'united kingdom' || cl === 'uk') query += ` AND (c.country='United Kingdom' OR c.country='UK')`;
-      else { query += ` AND LOWER(c.country)=LOWER($${idx++})`; params.push(filters.country); }
+      if (cl === 'europe') query += ` AND UPPER(c.country_code) NOT IN ('US','USA','GB','UK','IN')`;
+      else if (cl === 'united states' || cl === 'usa') query += ` AND UPPER(c.country_code) IN ('US','USA')`;
+      else if (cl === 'united kingdom' || cl === 'uk') query += ` AND UPPER(c.country_code) IN ('GB','UK')`;
+      else { query += ` AND UPPER(c.country_code)=UPPER($${idx++})`; params.push(filters.country); }
     }
 
     if (filters.search) {
@@ -220,27 +239,27 @@ class College {
       query = query.replace(
         '0::numeric AS relevance_score,',
         `(CASE
-          WHEN LOWER(c.name) = LOWER($${idx + 1}) THEN 400
-          WHEN LOWER(c.name) LIKE LOWER($${idx + 2}) THEN 250
-          WHEN REGEXP_REPLACE(UPPER(c.name), '[^A-Z]', '', 'g') = UPPER($${idx + 3}) THEN 220
-          WHEN c.name ILIKE $${idx} THEN 150
-          WHEN EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=c.id AND cp.program_name ILIKE $${idx}) THEN 110
-          WHEN c.city ILIKE $${idx} OR c.state ILIKE $${idx} OR c.country ILIKE $${idx} THEN 90
+          WHEN LOWER(c.canonical_name) = LOWER($${idx + 1}) THEN 400
+          WHEN LOWER(c.canonical_name) LIKE LOWER($${idx + 2}) THEN 250
+          WHEN REGEXP_REPLACE(UPPER(c.canonical_name), '[^A-Z]', '', 'g') = UPPER($${idx + 3}) THEN 220
+          WHEN c.canonical_name ILIKE $${idx} THEN 150
+          WHEN EXISTS (SELECT 1 FROM canonical.institution_programs cp WHERE cp.institution_id=c.id AND cp.program_name ILIKE $${idx}) THEN 110
+          WHEN c.city ILIKE $${idx} OR c.state_region ILIKE $${idx} OR c.country_code ILIKE $${idx} THEN 90
           ELSE 0
         END
-        + COALESCE((1000 - LEAST(COALESCE(c.ranking_us_news, c.qs_rank, c.the_rank, 1000), 1000)) * 0.03, 0)
-        + COALESCE(c.total_enrollment, 0) * 0.0001
+        + COALESCE((1000 - LEAST(COALESCE(c.global_rank, 1000), 1000)) * 0.03, 0)
+        + COALESCE(NULLIF((c.metadata->>'total_enrollment'),'')::numeric, 0) * 0.0001
         + COALESCE((1 - COALESCE(c.acceptance_rate, 0.5)) * 10, 0)
         )::numeric AS relevance_score,`
       );
       query += ` AND (
-        c.name ILIKE $${idx}
+        c.canonical_name ILIKE $${idx}
         OR c.city ILIKE $${idx}
-        OR c.state ILIKE $${idx}
-        OR c.country ILIKE $${idx}
-        OR REGEXP_REPLACE(UPPER(c.name), '[^A-Z]', '', 'g') = UPPER($${idx + 3})
-        OR to_tsvector('simple', COALESCE(c.name,'')) @@ plainto_tsquery('simple', $${idx + 1})
-        OR EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=c.id AND cp.program_name ILIKE $${idx})
+        OR c.state_region ILIKE $${idx}
+        OR c.country_code ILIKE $${idx}
+        OR REGEXP_REPLACE(UPPER(c.canonical_name), '[^A-Z]', '', 'g') = UPPER($${idx + 3})
+        OR to_tsvector('simple', COALESCE(c.canonical_name,'')) @@ plainto_tsquery('simple', $${idx + 1})
+        OR EXISTS (SELECT 1 FROM canonical.institution_programs cp WHERE cp.institution_id=c.id AND cp.program_name ILIKE $${idx})
       )`;
       params.push(p, rawSearch, `${lowerSearch}%`, rawSearch.replace(/[^A-Za-z]/g, ''));
       idx += 4;
@@ -260,15 +279,15 @@ class College {
       name: 'c.name',
       acceptance_rate: 'c.acceptance_rate',
       total_enrollment: 'c.total_enrollment',
-      ranking: 'COALESCE(c.ranking_us_news, c.qs_rank, c.the_rank, 999999)',
+      ranking: 'COALESCE(c.global_rank, 999999)',
     };
 
     const sortField = sortable[filters.sortBy] || 'c.name';
     const sortDir = filters.sortDir === 'desc' ? 'DESC' : 'ASC';
     if (filters.search && !filters.sortBy) {
-      query += ' ORDER BY relevance_score DESC, c.name ASC';
+      query += ' ORDER BY relevance_score DESC, c.canonical_name ASC';
     } else {
-      query += ` ORDER BY ${sortField} ${sortDir}, c.name ASC`;
+      query += ` ORDER BY ${sortField} ${sortDir}, c.canonical_name ASC`;
     }
 
     const limit = Math.min(filters.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
@@ -282,29 +301,29 @@ class College {
 
   static async getCount(filters = {}) {
     const pool = dbManager.getDatabase();
-    let query = 'SELECT COUNT(*) AS count FROM public.colleges_full c WHERE c.name IS NOT NULL AND LENGTH(TRIM(c.name)) > 1';
+    let query = 'SELECT COUNT(*) AS count FROM canonical.mv_college_cards c WHERE c.canonical_name IS NOT NULL AND LENGTH(TRIM(c.canonical_name)) > 1';
     const params = [];
     let idx = 1;
 
     if (filters.country) {
       const cl = filters.country.toLowerCase();
-      if (cl === 'europe') query += ` AND c.country NOT IN ('United States','USA','United Kingdom','UK','India')`;
-      else if (cl === 'united states' || cl === 'usa') query += ` AND (c.country='United States' OR c.country='USA')`;
-      else if (cl === 'united kingdom' || cl === 'uk') query += ` AND (c.country='United Kingdom' OR c.country='UK')`;
-      else { query += ` AND LOWER(c.country)=LOWER($${idx++})`; params.push(filters.country); }
+      if (cl === 'europe') query += ` AND UPPER(c.country_code) NOT IN ('US','USA','GB','UK','IN')`;
+      else if (cl === 'united states' || cl === 'usa') query += ` AND UPPER(c.country_code) IN ('US','USA')`;
+      else if (cl === 'united kingdom' || cl === 'uk') query += ` AND UPPER(c.country_code) IN ('GB','UK')`;
+      else { query += ` AND UPPER(c.country_code)=UPPER($${idx++})`; params.push(filters.country); }
     }
 
     if (filters.search) {
       const rawSearch = String(filters.search).trim();
       const p = `%${rawSearch}%`;
       query += ` AND (
-        c.name ILIKE $${idx}
+        c.canonical_name ILIKE $${idx}
         OR c.city ILIKE $${idx}
-        OR c.state ILIKE $${idx}
-        OR c.country ILIKE $${idx}
-        OR REGEXP_REPLACE(UPPER(c.name), '[^A-Z]', '', 'g') = UPPER($${idx + 2})
-        OR to_tsvector('simple', COALESCE(c.name,'')) @@ plainto_tsquery('simple', $${idx + 1})
-        OR EXISTS (SELECT 1 FROM college_programs cp WHERE cp.college_id=c.id AND cp.program_name ILIKE $${idx})
+        OR c.state_region ILIKE $${idx}
+        OR c.country_code ILIKE $${idx}
+        OR REGEXP_REPLACE(UPPER(c.canonical_name), '[^A-Z]', '', 'g') = UPPER($${idx + 2})
+        OR to_tsvector('simple', COALESCE(c.canonical_name,'')) @@ plainto_tsquery('simple', $${idx + 1})
+        OR EXISTS (SELECT 1 FROM canonical.institution_programs cp WHERE cp.institution_id=c.id AND cp.program_name ILIKE $${idx})
       )`;
       params.push(p, rawSearch, rawSearch.replace(/[^A-Za-z]/g, ''));
       idx += 3;
@@ -322,11 +341,11 @@ class College {
     const pool = dbManager.getDatabase();
     let query;
     let params = [];
-    if (region === 'Europe') query = `SELECT COUNT(*) as count FROM public.colleges WHERE country NOT IN ('United States','USA','United Kingdom','UK','India')`;
-    else if (region === 'United States') query = `SELECT COUNT(*) as count FROM public.colleges WHERE country IN ('United States','USA')`;
-    else if (region === 'United Kingdom') query = `SELECT COUNT(*) as count FROM public.colleges WHERE country IN ('United Kingdom','UK')`;
-    else if (region === 'India') query = `SELECT COUNT(*) as count FROM public.colleges WHERE country='India'`;
-    else { query = `SELECT COUNT(*) as count FROM public.colleges WHERE country=$1`; params = [region]; }
+    if (region === 'Europe') query = `SELECT COUNT(*) as count FROM canonical.mv_college_cards WHERE UPPER(country_code) NOT IN ('US','USA','GB','UK','IN')`;
+    else if (region === 'United States') query = `SELECT COUNT(*) as count FROM canonical.mv_college_cards WHERE UPPER(country_code) IN ('US','USA')`;
+    else if (region === 'United Kingdom') query = `SELECT COUNT(*) as count FROM canonical.mv_college_cards WHERE UPPER(country_code) IN ('GB','UK')`;
+    else if (region === 'India') query = `SELECT COUNT(*) as count FROM canonical.mv_college_cards WHERE UPPER(country_code)='IN'`;
+    else { query = `SELECT COUNT(*) as count FROM canonical.mv_college_cards WHERE UPPER(country_code)=UPPER($1)`; params = [region]; }
     const { rows } = await pool.query(query, params);
     return parseInt(rows[0].count, 10);
   }

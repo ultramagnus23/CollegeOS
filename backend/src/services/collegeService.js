@@ -363,8 +363,8 @@ class CollegeService {
     try {
       const dbManager = require('../config/database');
       const pool = dbManager.getDatabase();
-      const rows = (await pool.query('SELECT DISTINCT country FROM public.clean_colleges WHERE country IS NOT NULL ORDER BY country')).rows;
-      return rows.map(row => row.country);
+      const rows = (await pool.query('SELECT DISTINCT country_code FROM canonical.mv_college_cards WHERE country_code IS NOT NULL ORDER BY country_code')).rows;
+      return rows.map(row => row.country_code);
     } catch (error) {
       logger.error('Failed to get countries:', error);
       throw error;
@@ -406,7 +406,7 @@ class CollegeService {
         stats.database = v2Stats;
       } catch (e) {
         const oldStats = (await pool.query(`
-          SELECT COUNT(*) as total, COUNT(DISTINCT country) as countries FROM public.clean_colleges
+          SELECT COUNT(*) as total, COUNT(DISTINCT country_code) as countries FROM canonical.mv_college_cards
         `)).rows[0];
         stats.database = oldStats;
       }
