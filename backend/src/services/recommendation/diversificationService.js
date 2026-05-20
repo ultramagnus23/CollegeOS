@@ -1,5 +1,7 @@
 'use strict';
 
+const { logStageComplete, logStageFailure, logStageStart, nowMs } = require('./pipelineDiagnostics');
+
 function cosine(a = [], b = []) {
   const len = Math.min(a.length, b.length);
   if (!len) return 0;
@@ -23,6 +25,9 @@ function classifyBucket(admitChance) {
 }
 
 function diversifyPortfolio(candidates, opts = {}) {
+  const startedAt = nowMs();
+  logStageStart('portfolio_diversification', { service: 'diversification', inputSize: Array.isArray(candidates) ? candidates.length : 0 });
+  try {
   const {
     targetCount = 20,
     lambda = 0.78,
@@ -96,10 +101,19 @@ function diversifyPortfolio(candidates, opts = {}) {
     take(best);
   }
 
-  return selected.map((item, index) => ({
-    ...item,
-    diversifiedRank: index + 1,
-  }));
+    const output = selected.map((item, index) => ({
+      ...item,
+      diversifiedRank: index + 1,
+    }));
+    logStageComplete('portfolio_diversification', startedAt, { service: 'diversification', outputSize: output.length });
+    return output;
+  } catch (error) {
+    logStageFailure('portfolio_diversification', error, { service: 'diversification', startedAt });
+    return [...(Array.isArray(candidates) ? candidates : [])]
+      .sort((a, b) => (Number(b?.rankScore) || 0) - (Number(a?.rankScore) || 0))
+      .slice(0, Math.max(10, Math.min(30, Number(opts?.targetCount) || 20)))
+      .map((item, index) => ({ ...item, diversifiedRank: index + 1 }));
+  }
 }
 
 module.exports = {
