@@ -2,14 +2,15 @@
  * Security Middleware
  * Input sanitization, suspicious activity detection, and request logging
  */
+const crypto = require('crypto');
 const securityConfig = require('../config/security');
-const logger = require('../utils/logger');
+const { hashIdentifier, safeError, safeLog, sanitizeForLog } = require('../utils/safeLogger');
 
 /**
  * Generate a unique request ID for tracking
  */
 function generateRequestId() {
-  return `req_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  return crypto.randomUUID();
 }
 
 /**
@@ -53,13 +54,17 @@ const securityValidation = (req, res, next) => {
       const bodyIssues = detectSuspiciousPatterns(req.body);
       if (bodyIssues.length > 0) {
         logger.warn('Suspicious request body detected', {
+        safeLog('security.suspicious_request_body', {
           requestId: req.requestId,
-          ip: req.ip,
-          path: req.path,
-          method: req.method,
-          issues: bodyIssues,
-          userAgent: req.get('User-Agent'),
-        });
+          ip: sanitizeForLog(req.ip),
+          path: sanitizeForLog(req.path),
+          method: sanitizeForLog(req.method),
+          issues: bodyIssues.map((issue) => ({
+            path: sanitizeForLog(issue.path),
+            pattern: sanitizeForLog(issue.pattern),
+          })),
+          userAgent: sanitizeForLog(req.get('User-Agent')),
+        }, 'warn');
         
         return res.status(400).json({
           success: false,
@@ -74,13 +79,17 @@ const securityValidation = (req, res, next) => {
       const queryIssues = detectSuspiciousPatterns(req.query);
       if (queryIssues.length > 0) {
         logger.warn('Suspicious query parameters detected', {
+        safeLog('security.suspicious_query_params', {
           requestId: req.requestId,
-          ip: req.ip,
-          path: req.path,
-          method: req.method,
-          issues: queryIssues,
-          userAgent: req.get('User-Agent'),
-        });
+          ip: sanitizeForLog(req.ip),
+          path: sanitizeForLog(req.path),
+          method: sanitizeForLog(req.method),
+          issues: queryIssues.map((issue) => ({
+            path: sanitizeForLog(issue.path),
+            pattern: sanitizeForLog(issue.pattern),
+          })),
+          userAgent: sanitizeForLog(req.get('User-Agent')),
+        }, 'warn');
         
         return res.status(400).json({
           success: false,
@@ -93,11 +102,11 @@ const securityValidation = (req, res, next) => {
     next();
   } catch (error) {
     // SECURITY FIX: Don't silently bypass on errors - reject the request
-    logger.error('Security validation error', { 
-      error: error.message,
+    safeError('security.validation_error', {
+      error,
       requestId: req.requestId,
-      ip: req.ip,
-      path: req.path
+      ip: sanitizeForLog(req.ip),
+      path: sanitizeForLog(req.path),
     });
     return res.status(500).json({
       success: false,
@@ -114,14 +123,14 @@ const securityLogger = (req, res, next) => {
   const startTime = Date.now();
   
   // Log request
-  logger.debug('Incoming request', {
+  safeLog('security.incoming_request', {
     requestId: req.requestId,
-    method: req.method,
-    path: req.path,
-    ip: req.ip,
-    userAgent: req.get('User-Agent'),
-    userId: req.user?.userId,
-  });
+    method: sanitizeForLog(req.method),
+    path: sanitizeForLog(req.path),
+    ip: sanitizeForLog(req.ip),
+    userAgent: sanitizeForLog(req.get('User-Agent')),
+    userId: req.user?.userId ? hashIdentifier(req.user.userId) : null,
+  }, 'debug');
 
   // Log response
   res.on('finish', () => {
@@ -131,21 +140,21 @@ const securityLogger = (req, res, next) => {
       method: req.method,
       path: req.path,
       statusCode: res.statusCode,
-      duration: `${duration}ms`,
-      ip: req.ip,
-      userId: req.user?.userId,
+      durationMs: duration,
+      ip: sanitizeForLog(req.ip),
+      userId: req.user?.userId ? hashIdentifier(req.user.userId) : null,
     };
 
     // Log failed authentication attempts
     if (req.path.includes('/auth') && res.statusCode === 401) {
-      logger.warn('Failed authentication attempt', logData);
+      safeLog('security.failed_authentication', logData, 'warn');
     }
     
     // Log errors
     if (res.statusCode >= 500) {
-      logger.error('Server error response', logData);
+      safeError('security.server_error_response', logData);
     } else if (res.statusCode >= 400) {
-      logger.warn('Client error response', logData);
+      safeLog('security.client_error_response', logData, 'warn');
     }
   });
 
@@ -169,12 +178,12 @@ const validateContentType = (req, res, next) => {
     // Allow JSON and form data
     if (contentType && !contentType.includes('application/json') && 
         !contentType.includes('application/x-www-form-urlencoded')) {
-      logger.warn('Invalid Content-Type', {
+      safeLog('security.invalid_content_type', {
         requestId: req.requestId,
-        contentType,
-        path: req.path,
-        ip: req.ip,
-      });
+        contentType: sanitizeForLog(contentType),
+        path: sanitizeForLog(req.path),
+        ip: sanitizeForLog(req.ip),
+      }, 'warn');
       
       return res.status(415).json({
         success: false,

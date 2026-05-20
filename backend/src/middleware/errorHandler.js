@@ -1,70 +1,65 @@
-const logger = require('../utils/logger');
+const crypto = require('crypto');
 const config = require('../config/env');
-const { sanitizeForLog } = require('../utils/security');
+const { hashIdentifier, safeError, sanitizeForLog } = require('../utils/safeLogger');
 
 // Generate a unique request ID for tracking
 function generateRequestId() {
-  return `err_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  return crypto.randomUUID();
 }
 
 // Determine if error details should be hidden
 const isProduction = () => config.nodeEnv === 'production';
 
 const errorHandler = (err, req, res, next) => {
-  const errorId = req.requestId || generateRequestId();
-  
-  // Log comprehensive error details using structured fields (not template literals with user data)
-  logger.error('Unhandled error caught', {
-    errorId,
-    endpoint: `${req.method} ${sanitizeForLog(req.originalUrl)}`,
-    userId: req.user?.userId || 'Not authenticated',
-    ip: req.ip,
-    errorName: err.name || 'Unknown',
-    errorMessage: err.message || 'No message',
-    errorCode: err.code || 'No code',
+  const requestId = req.requestId || generateRequestId();
+
+  safeError('http.unhandled_error', {
+    requestId,
+    endpoint: {
+      method: sanitizeForLog(req.method),
+      path: sanitizeForLog(req.originalUrl),
+    },
+    userId: req.user?.userId ? hashIdentifier(req.user.userId) : null,
+    ip: sanitizeForLog(req.ip),
+    error: err,
   });
-  
+
   if (req.body && Object.keys(req.body).length > 0) {
-    // Don't log sensitive fields
-    const safeKeys = Object.keys(req.body).filter(k => 
-      !['password', 'token', 'refreshToken', 'secret'].includes(k.toLowerCase())
-    );
-    logger.error('Request body keys', { errorId, keys: safeKeys.join(', ') });
+    safeError('http.request_body_summary', {
+      requestId,
+      keyCount: Object.keys(req.body).length,
+      keys: Object.keys(req.body).map((key) => sanitizeForLog(key)),
+    });
   }
-  
-  if (err.stack) {
-    const stackLines = err.stack.split('\n').slice(0, 8);
-    logger.error('Stack trace', { errorId, stack: stackLines.join('\n') });
-  }
-  
+
   // Default error response
   let status = 500;
   let message = 'Internal server error';
   let errorCode = 'INTERNAL_ERROR';
-  
+
   // Handle specific error types
-  if (err.message === 'User not found') {
+  if (err?.message === 'User not found') {
     status = 404;
     message = err.message;
     errorCode = 'USER_NOT_FOUND';
-  } else if (err.message === 'College not found') {
+  } else if (err?.message === 'College not found') {
     status = 404;
     message = err.message;
     errorCode = 'COLLEGE_NOT_FOUND';
-  } else if (err.message === 'Application not found') {
+  } else if (err?.message === 'Application not found') {
     status = 404;
     message = err.message;
     errorCode = 'APPLICATION_NOT_FOUND';
-  } else if (err.message.includes('already exists')) {
+  } else if (err?.message && err.message.includes('already exists')) {
     status = 400;
     message = 'Resource already exists';
     errorCode = 'DUPLICATE_ENTRY';
-  } else if (err.message.includes('Invalid email or password')) {
+  } else if (err?.message && err.message.includes('Invalid email or password')) {
     // Generic auth error - don't reveal if email exists
     status = 401;
     message = 'Invalid email or password';
     errorCode = 'AUTH_FAILED';
-  } else if (err.message.includes('Invalid')) {
+  } else if (err?.message && err.message.includes('Invalid')) {
     status = 400;
     message = 'Invalid request';
     errorCode = 'VALIDATION_ERROR';
@@ -115,38 +110,37 @@ const errorHandler = (err, req, res, next) => {
     status = 401;
     message = 'Token expired';
     errorCode = 'TOKEN_EXPIRED';
-  } else if (err.message === 'Not allowed by CORS') {
+  } else if (err?.message === 'Not allowed by CORS') {
     status = 403;
     message = 'Origin not allowed';
     errorCode = 'CORS_ERROR';
   }
-  
+
   // Build response object
   const errorResponse = {
     success: false,
-    message,
-    errorCode,
-    errorId, // Include error ID so users can report it
-    timestamp: new Date().toISOString(),
+    error: sanitizeForLog(status >= 500 && isProduction() ? 'Internal server error' : message),
+    requestId,
   };
-  
+
   // Only include additional details in development
   if (!isProduction()) {
-    errorResponse.path = req.originalUrl;
-    errorResponse.method = req.method;
-    errorResponse.stack = err.stack;
     errorResponse.details = {
-      name: err.name,
-      originalMessage: err.message,
-      code: err.code,
+      path: sanitizeForLog(req.originalUrl),
+      method: sanitizeForLog(req.method),
+      errorCode: sanitizeForLog(errorCode),
+      name: sanitizeForLog(err?.name),
+      originalMessage: sanitizeForLog(err?.message),
+      code: sanitizeForLog(err?.code),
       // PostgreSQL-specific diagnostic fields
-      detail: err.detail || undefined,
-      hint:   err.hint   || undefined,
-      column: err.column || undefined,
-      table:  err.table  || undefined,
+      detail: err?.detail ? sanitizeForLog(err.detail) : undefined,
+      hint: err?.hint ? sanitizeForLog(err.hint) : undefined,
+      column: err?.column ? sanitizeForLog(err.column) : undefined,
+      table: err?.table ? sanitizeForLog(err.table) : undefined,
+      stack: err?.stack ? sanitizeForLog(err.stack) : undefined,
     };
   }
-  
+
   res.status(status).json(errorResponse);
 };
 
