@@ -185,7 +185,7 @@ router.get('/', authenticate, async (req, res) => {
       }, 'warn');
     }
 
-    res.json({
+    const response = {
       success: true,
       count: recs.length,
       generated_at: new Date().toISOString(),
@@ -197,7 +197,11 @@ router.get('/', authenticate, async (req, res) => {
         exchange_rate_note: 'Recommendation pipeline v3 (hybrid retrieval + cross-encoder reranking + LTR + personalization)',
       },
       meta: { requestId, durationMs: Date.now() - startedAt, evaluated: safeLimit, pipeline: 'v3', sessionId },
-    });
+    };
+    console.log('[5] final:', response?.recommendations?.length);
+    console.log('FINAL RECOMMENDATIONS SERIALIZED', JSON.stringify(response?.recommendations || []));
+    console.log('FINAL RESPONSE', JSON.stringify(response, null, 2));
+    res.json(response);
     safeLog('recommendations.generated', {
       requestId,
       durationMs: Date.now() - startedAt,
@@ -353,6 +357,9 @@ router.post('/generate', authenticate, async (req, res) => {
     stageTimings.serialization_ms = elapsedMs(s9);
     logStageComplete('[9] serialization', s9, { requestId });
 
+    console.log('[5] final:', responsePayload?.recommendations?.length);
+    console.log('FINAL RECOMMENDATIONS SERIALIZED', JSON.stringify(responsePayload?.recommendations || []));
+    console.log('FINAL RESPONSE', JSON.stringify(responsePayload, null, 2));
     res.json(responsePayload);
     currentStage = 'response_sent';
     const s10 = nowMs();
