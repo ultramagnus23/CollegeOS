@@ -22,6 +22,7 @@ const express = require('express');
 const router  = express.Router();
 const logger  = require('../utils/logger');
 const { authenticate } = require('../middleware/auth');
+const { apiLimiter } = require('../middleware/rateLimiter');
 const db = require('../config/database');
 const {
   buildUserVector,
@@ -30,6 +31,8 @@ const {
   applySignalAdjustments,
 } = require('../services/vectorService');
 const { computeAdmitChance } = require('../services/chancingService');
+
+router.use(apiLimiter);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function createRequestId() {
