@@ -4,6 +4,41 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import sys
+import types
+
+
+def _ensure_psycopg2_stub():
+    if "psycopg2" in sys.modules:
+        return
+    psycopg2_module = types.ModuleType("psycopg2")
+    psycopg2_module.connect = lambda *_args, **_kwargs: None
+    psycopg2_module.extensions = types.SimpleNamespace(connection=object)
+    psycopg2_extras = types.ModuleType("psycopg2.extras")
+    psycopg2_module.extras = psycopg2_extras
+    sys.modules["psycopg2"] = psycopg2_module
+    sys.modules["psycopg2.extras"] = psycopg2_extras
+
+
+_ensure_psycopg2_stub()
+
+if "dotenv" not in sys.modules:
+    dotenv_module = types.ModuleType("dotenv")
+    dotenv_module.load_dotenv = lambda *_args, **_kwargs: None
+    sys.modules["dotenv"] = dotenv_module
+
+if "tenacity" not in sys.modules:
+    tenacity_module = types.ModuleType("tenacity")
+
+    def _identity_decorator(*_args, **_kwargs):
+        def _wrap(func):
+            return func
+        return _wrap
+
+    tenacity_module.retry = _identity_decorator
+    tenacity_module.stop_after_attempt = lambda *_args, **_kwargs: None
+    tenacity_module.wait_exponential = lambda *_args, **_kwargs: None
+    sys.modules["tenacity"] = tenacity_module
 
 from scraper import pipeline
 
