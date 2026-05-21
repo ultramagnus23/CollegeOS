@@ -3,36 +3,56 @@
  * Polls every 30 seconds for updates
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import { api } from '@/services/api';
 
 export const NotificationBadge: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const retryDelayRef = useRef(15000);
+  const mountedRef = useRef(true);
+  const controllerRef = useRef<AbortController | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    fetchUnreadCount();
-    
-    // Poll every 60 seconds
-    const interval = setInterval(fetchUnreadCount, 60000);
-    
-    return () => clearInterval(interval);
-  }, []);
+    mountedRef.current = true;
+    const schedulePoll = (ms: number) => {
+      if (!mountedRef.current) return;
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+      timerRef.current = window.setTimeout(fetchUnreadCount, ms);
+    };
 
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await api.notifications.getUnreadCount();
-      if (response.success || response.data !== undefined) {
-        const count = response.data?.count ?? response.count ?? 0;
-        setUnreadCount(count);
+    const fetchUnreadCount = async () => {
+      if (!mountedRef.current) return;
+      if (!navigator.onLine) {
+        schedulePoll(60000);
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      controllerRef.current?.abort();
+      controllerRef.current = new AbortController();
+      try {
+        const response = await api.notifications.getUnreadCount({ signal: controllerRef.current.signal });
+        const count = response?.data?.count ?? response?.count ?? 0;
+        if (mountedRef.current) setUnreadCount(Number.isFinite(count) ? count : 0);
+        retryDelayRef.current = 15000;
+        schedulePoll(60000);
+      } catch {
+        retryDelayRef.current = Math.min(120000, retryDelayRef.current * 2);
+        schedulePoll(retryDelayRef.current);
+      } finally {
+        if (mountedRef.current) setLoading(false);
+      }
+    };
+
+    void fetchUnreadCount();
+
+    return () => {
+      mountedRef.current = false;
+      controllerRef.current?.abort();
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    };
+  }, []);
 
   return (
     <div className="relative inline-flex">

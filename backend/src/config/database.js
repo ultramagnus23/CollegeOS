@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const logger = require('../utils/logger');
 const config = require('./env');
+const { enableQueryProfiling } = require('../utils/queryProfiler');
 
 class DatabaseManager {
   constructor() {
@@ -50,6 +51,7 @@ class DatabaseManager {
       this.pool.on('error', (err) => {
         logger.error('Unexpected error on idle client', { error: err.message });
       });
+      enableQueryProfiling(this.pool, logger, { thresholdMs: Number(process.env.SLOW_QUERY_THRESHOLD_MS || 500) });
 
       logger.info('PostgreSQL pool created successfully');
       this.initialized = true;

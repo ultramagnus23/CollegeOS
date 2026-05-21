@@ -1,0 +1,18 @@
+version: '3.9'
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: collegeos-postgres-test
+    environment:
+      POSTGRES_DB: collegeos_test
+      POSTGRES_USER: collegeos
+      POSTGRES_PASSWORD: collegeos
+    ports:
+      - "55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U collegeos -d collegeos_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    tmpfs:
+      - /var/lib/postgresql/data

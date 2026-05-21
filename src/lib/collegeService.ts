@@ -1,6 +1,6 @@
-import { z } from 'zod';
 import { supabase, isSupabaseConfigured, CollegeWithRelations } from './supabase';
 import { formatCountryName, normalizeCountryCode } from './country';
+import { COLLEGE_CARD_COLUMNS, CollegeCardContractSchema, type CollegeCardContract } from '../contracts/collegeContracts';
 
 type CanonicalId = string | number;
 
@@ -8,61 +8,7 @@ const PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 const CANONICAL_DEBUG = import.meta.env.DEV || import.meta.env.VITE_CANONICAL_DEBUG === '1';
 
-const CARD_COLUMNS = [
-  'id',
-  'canonical_name',
-  'country_code',
-  'state_region',
-  'city',
-  'website',
-  'logo_url',
-  'description',
-  'institution_type',
-  'popularity_score',
-  'global_rank',
-  'acceptance_rate',
-  'test_optional',
-  'sat_50',
-  'act_50',
-  'tuition_international',
-  'cost_of_attendance',
-  'avg_financial_aid',
-  'merit_scholarship_flag',
-  'need_blind_flag',
-  'graduation_rate_4yr',
-  'employment_rate',
-  'median_start_salary',
-  'metadata',
-].join(', ');
-
-const CanonicalCardSchema = z.object({
-  id: z.union([z.string(), z.number()]),
-  canonical_name: z.string().nullable().default(''),
-  country_code: z.string().nullable().default(null),
-  state_region: z.string().nullable().default(null),
-  city: z.string().nullable().default(null),
-  website: z.string().nullable().default(null),
-  logo_url: z.string().nullable().default(null),
-  description: z.string().nullable().default(null),
-  institution_type: z.string().nullable().default(null),
-  popularity_score: z.number().nullable().default(0),
-  global_rank: z.number().nullable().default(null),
-  acceptance_rate: z.number().nullable().default(null),
-  test_optional: z.boolean().nullable().default(null),
-  sat_50: z.number().nullable().default(null),
-  act_50: z.number().nullable().default(null),
-  tuition_international: z.number().nullable().default(null),
-  cost_of_attendance: z.number().nullable().default(null),
-  avg_financial_aid: z.number().nullable().default(null),
-  merit_scholarship_flag: z.boolean().nullable().default(null),
-  need_blind_flag: z.boolean().nullable().default(null),
-  graduation_rate_4yr: z.number().nullable().default(null),
-  employment_rate: z.number().nullable().default(null),
-  median_start_salary: z.number().nullable().default(null),
-  metadata: z.record(z.unknown()).nullable().default({}),
-});
-
-type CanonicalCardRow = z.infer<typeof CanonicalCardSchema>;
+type CanonicalCardRow = CollegeCardContract;
 
 interface CanonicalCollegeDetail {
   institution: Record<string, unknown>;
@@ -338,7 +284,7 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
   const { column, ascending } = normalizeOrder(sortBy);
 
   return timed('searchColleges', async () => {
-    let q = client.schema('canonical').from('mv_college_cards').select(CARD_COLUMNS, { count: 'estimated' });
+    let q = client.schema('canonical').from('mv_college_cards').select(COLLEGE_CARD_COLUMNS, { count: 'estimated' });
 
     if (query?.trim()) {
       const ids = await getSearchIndexInstitutionIds(query);
@@ -361,7 +307,7 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
     if (error) throw error;
 
     const parsedRows = (data ?? [])
-      .map((raw) => CanonicalCardSchema.safeParse(raw))
+      .map((raw) => CollegeCardContractSchema.safeParse(raw))
       .filter((r): r is { success: true; data: CanonicalCardRow } => r.success)
       .map((r) => r.data);
 

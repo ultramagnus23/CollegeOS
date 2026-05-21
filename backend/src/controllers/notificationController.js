@@ -7,20 +7,27 @@ const NotificationService = require('../services/notificationService');
 const logger = require('../utils/logger');
 
 class NotificationController {
+  static resolveUserId(req) {
+    return req?.user?.userId ?? req?.user?.id ?? null;
+  }
+
   /**
    * Get all notifications for the authenticated user
    * GET /api/notifications
    */
-  static getNotifications(req, res) {
+  static async getNotifications(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = this.resolveUserId(req);
+      if (!userId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized' });
+      }
       const unreadOnly = req.query.unreadOnly === 'true';
       
-      const notifications = NotificationService.getUserNotifications(userId, unreadOnly);
+      const notifications = await NotificationService.getUserNotifications(userId, unreadOnly);
       
       res.json({
         success: true,
-        notifications,
+        data: notifications,
         count: notifications.length
       });
     } catch (error) {
@@ -36,14 +43,18 @@ class NotificationController {
    * Get unread notification count
    * GET /api/notifications/unread-count
    */
-  static getUnreadCount(req, res) {
+  static async getUnreadCount(req, res) {
     try {
-      const userId = req.user.id;
-      const count = NotificationService.getUnreadCount(userId);
+      const userId = this.resolveUserId(req);
+      if (!userId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized' });
+      }
+      const count = await NotificationService.getUnreadCount(userId);
       
       res.json({
         success: true,
-        count
+        data: { count },
+        count,
       });
     } catch (error) {
       logger.error('Error in getUnreadCount:', error);
@@ -58,9 +69,12 @@ class NotificationController {
    * Mark a notification as read
    * PUT /api/notifications/:id/read
    */
-  static markAsRead(req, res) {
+  static async markAsRead(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = this.resolveUserId(req);
+      if (!userId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized' });
+      }
       const notificationId = parseInt(req.params.id);
       
       if (isNaN(notificationId)) {
@@ -70,7 +84,7 @@ class NotificationController {
         });
       }
       
-      NotificationService.markAsRead(notificationId, userId);
+      await NotificationService.markAsRead(notificationId, userId);
       
       res.json({
         success: true,
@@ -89,10 +103,13 @@ class NotificationController {
    * Mark all notifications as read
    * PUT /api/notifications/read-all
    */
-  static markAllAsRead(req, res) {
+  static async markAllAsRead(req, res) {
     try {
-      const userId = req.user.id;
-      const count = NotificationService.markAllAsRead(userId);
+      const userId = this.resolveUserId(req);
+      if (!userId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized' });
+      }
+      const count = await NotificationService.markAllAsRead(userId);
       
       res.json({
         success: true,
@@ -112,12 +129,15 @@ class NotificationController {
    * Create a test notification (for development/testing)
    * POST /api/notifications/test
    */
-  static createTestNotification(req, res) {
+  static async createTestNotification(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = this.resolveUserId(req);
+      if (!userId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized' });
+      }
       const { type = 'test', title = 'Test Notification', message = 'This is a test notification' } = req.body;
       
-      const notification = NotificationService.createNotification(
+      const notification = await NotificationService.createNotification(
         userId,
         type,
         title,
@@ -127,7 +147,8 @@ class NotificationController {
       
       res.json({
         success: true,
-        notification
+        data: notification,
+        notification,
       });
     } catch (error) {
       logger.error('Error in createTestNotification:', error);

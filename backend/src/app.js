@@ -1,4 +1,5 @@
 const express = require('express');
+const { patchExpressAsyncHandling } = require('./middleware/safeAsyncHandler');
 const helmet = require('helmet');
 const cors = require('cors');
 const config = require('./config/env');
@@ -9,12 +10,16 @@ const errorHandler = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { validateStartupSchema } = require('./startup/schemaValidator');
 const { checkSchemaContracts, formatSchemaContractReport } = require('./utils/schemaContractChecker');
+const { requestMetricsMiddleware } = require('./observability');
+const { MaterializedViewManager } = require('./services/materializedViewManager');
 const {
   requestIdMiddleware,
   securityValidation,
   securityLogger,
   validateContentType
 } = require('./middleware/security');
+
+patchExpressAsyncHandling(express);
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -97,6 +102,7 @@ app.use(cors(securityConfig.cors));
 
 // Security logging
 app.use(securityLogger);
+app.use(requestMetricsMiddleware(logger));
 
 // Body parsing with strict size limits
 app.use(express.json({ limit: securityConfig.requestLimits.json }));
@@ -227,6 +233,8 @@ async function startServer() {
     if (!schemaContractReport.ok) {
       throw new Error('Schema drift detected during startup');
     }
+    const mvManager = new MaterializedViewManager({ pool, logger });
+    await mvManager.ensureHealthy();
     logRecommendationEnvDiagnostics();
 
     // Seed colleges if the table is empty
@@ -339,6 +347,8 @@ async function startServer() {
   }
 }
 
-startServer();
+if (process.env.NODE_ENV !== 'test' || process.env.ENABLE_APP_BOOT === 'true') {
+  startServer();
+}
 
 module.exports = app;
