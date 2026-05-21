@@ -73,6 +73,7 @@ jobs:
               'timestamp': now,
             },
             'failed_colleges.json': [],
+            'stale_colleges.json': [],
             'schema_errors.json': [],
           }
           for name, payload in defaults.items():
@@ -136,6 +137,7 @@ jobs:
               'timestamp': now,
             },
             'failed_colleges.json': [],
+            'stale_colleges.json': [],
             'schema_errors.json': [],
           }
           for name, payload in defaults.items():

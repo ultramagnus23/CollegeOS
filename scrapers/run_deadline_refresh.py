@@ -19,6 +19,7 @@ REQUIRED_DIAGNOSTIC_FILES = (
     "run_summary.json",
     "scraper_metrics.json",
     "failed_colleges.json",
+    "stale_colleges.json",
     "schema_errors.json",
 )
 
@@ -109,6 +110,7 @@ def ensure_diagnostics_files(out_dir: Path) -> Dict[str, Any]:
             "timestamp": _iso_now(),
         },
         "failed_colleges.json": [],
+        "stale_colleges.json": [],
         "schema_errors.json": [],
     }
 
@@ -357,6 +359,7 @@ def main() -> int:
         write_json(out_dir / "run_summary.json", summary)
         write_json(out_dir / "scraper_metrics.json", summary)
         write_json(out_dir / "failed_colleges.json", failed_colleges)
+        write_json(out_dir / "stale_colleges.json", [d for d in result["diagnostics"] if d.get("stale")])
         write_json(out_dir / "schema_errors.json", schema_errors)
 
         write_json(out_dir / "summary.json", summary)

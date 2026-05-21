@@ -78,6 +78,7 @@ class ScrapeWeeklySmokeTests(unittest.TestCase):
                 "run_summary.json",
                 "scraper_metrics.json",
                 "failed_colleges.json",
+                "stale_colleges.json",
                 "schema_errors.json",
             }
             self.assertTrue(required.issubset({p.name for p in out_dir.iterdir()}))
@@ -140,6 +141,28 @@ class ScrapeWeeklySmokeTests(unittest.TestCase):
         self.assertIn("actions/setup-python@v6", workflow)
         self.assertIn("actions/upload-artifact@v5", workflow)
         self.assertIn("if: always()", workflow)
+        self.assertNotIn("actions/checkout@v4", workflow)
+        self.assertNotIn("actions/setup-python@v5", workflow)
+        self.assertNotIn("actions/upload-artifact@v4", workflow)
+
+    def test_monthly_and_daily_workflows_hardened(self):
+        monthly = Path("/home/runner/work/CollegeOS/CollegeOS/.github/workflows/scrape-monthly.yml").read_text(encoding="utf-8")
+        daily = Path("/home/runner/work/CollegeOS/CollegeOS/.github/workflows/daily-data-refresh.yml").read_text(encoding="utf-8")
+        enrich = Path("/home/runner/work/CollegeOS/CollegeOS/.github/workflows/enrich-colleges.yml").read_text(encoding="utf-8")
+
+        for workflow in (monthly, daily):
+            self.assertIn("FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true", workflow)
+            self.assertIn("concurrency:", workflow)
+            self.assertIn("timeout-minutes:", workflow)
+            self.assertIn("mkdir -p scraper_diagnostics", workflow)
+            self.assertIn("actions/upload-artifact@v5", workflow)
+            self.assertIn("if: always()", workflow)
+            self.assertNotIn("actions/checkout@v4", workflow)
+            self.assertNotIn("actions/setup-python@v5", workflow)
+            self.assertNotIn("actions/upload-artifact@v4", workflow)
+
+        self.assertIn("actions/checkout@v5", enrich)
+        self.assertIn("actions/setup-node@v5", enrich)
 
     def test_required_diagnostics_can_be_parsed(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -149,6 +172,7 @@ class ScrapeWeeklySmokeTests(unittest.TestCase):
                 "run_summary.json",
                 "scraper_metrics.json",
                 "failed_colleges.json",
+                "stale_colleges.json",
                 "schema_errors.json",
             ):
                 payload = json.loads((out_dir / filename).read_text(encoding="utf-8"))

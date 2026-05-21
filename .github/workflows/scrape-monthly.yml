@@ -1,8 +1,8 @@
-name: Daily College Data Refresh
+name: Rolling Monthly Canonical Deadline Refresh
 
 on:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '0 5 1 * *'
   workflow_dispatch:
 
 permissions:
@@ -12,14 +12,13 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 concurrency:
-  group: daily-data-refresh
+  group: scrape-monthly
   cancel-in-progress: false
 
 jobs:
-  refresh:
-    name: Refresh College Data
+  scrape-monthly:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
 
@@ -27,10 +26,14 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install scraper dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install psycopg2-binary requests pandas python-dotenv tenacity
+          pip install psycopg2-binary requests beautifulsoup4
+
+      - name: Run scrape-weekly smoke tests
+        run: |
+          python -m unittest scrapers.tests.test_scrape_weekly_smoke -v
 
       - name: Bootstrap diagnostics directory
         run: |
@@ -41,8 +44,8 @@ jobs:
           out.mkdir(parents=True, exist_ok=True)
           now = datetime.datetime.now(datetime.timezone.utc).isoformat()
           defaults = {
-            'run_summary.json': {'workflow':'refresh-data','rows_upserted':0,'rows_skipped_error':0,'schema_errors':0,'retry_count':0,'status':'failed','fatal_error':None,'timestamp':now},
-            'scraper_metrics.json': {'workflow':'refresh-data','rows_upserted':0,'rows_skipped_error':0,'schema_errors':0,'retry_count':0,'status':'failed','timestamp':now},
+            'run_summary.json': {'workflow':'scrape-monthly','institutions_processed':0,'success_count':0,'failure_count':0,'schema_errors':0,'network_errors':0,'retry_count':0,'stale_records_detected':0,'duration_seconds':0,'status':'failed','degraded':False,'fatal_error':None,'timestamp':now},
+            'scraper_metrics.json': {'workflow':'scrape-monthly','institutions_processed':0,'success_count':0,'failure_count':0,'schema_errors':0,'network_errors':0,'retry_count':0,'stale_records_detected':0,'duration_seconds':0,'status':'failed','timestamp':now},
             'failed_colleges.json': [],
             'stale_colleges.json': [],
             'schema_errors.json': [],
@@ -53,21 +56,37 @@ jobs:
               p.write_text(json.dumps(payload, indent=2), encoding='utf-8')
           PY
 
-      - name: Run data pipeline
-        id: run_data_pipeline
+      - name: Run monthly rolling refresh
+        id: run_monthly_refresh
         continue-on-error: true
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-          IPEDS_API_KEY: ${{ secrets.IPEDS_API_KEY }}
-          COLLEGE_SCORECARD_API_KEY: ${{ secrets.COLLEGE_SCORECARD_API_KEY }}
+          SCRAPE_MODE: monthly
           SCRAPER_DIAGNOSTICS_DIR: scraper_diagnostics
+          SCRAPER_BATCH_SIZE: '25'
           PYTHONPATH: ${{ github.workspace }}
         run: |
           set +e
-          python scraper/pipeline.py
+          python scrapers/run_deadline_refresh.py
           EXIT_CODE=$?
           echo "exit_code=${EXIT_CODE}" >> "$GITHUB_OUTPUT"
           exit 0
+
+      - name: Build confidence-drop report
+        if: always()
+        run: |
+          mkdir -p scraper_diagnostics
+          python - <<'PY'
+          import json, pathlib
+          p = pathlib.Path('scraper_diagnostics/diagnostics.json')
+          out = pathlib.Path('scraper_diagnostics/confidence_drops.json')
+          if not p.exists():
+            out.write_text('[]', encoding='utf-8')
+          else:
+            rows = json.loads(p.read_text(encoding='utf-8'))
+            drops = [r for r in rows if r.get('confidence_score', 0) < 0.5]
+            out.write_text(json.dumps(drops, indent=2), encoding='utf-8')
+          PY
 
       - name: Ensure diagnostics completeness
         if: always()
@@ -79,8 +98,8 @@ jobs:
           out.mkdir(parents=True, exist_ok=True)
           now = datetime.datetime.now(datetime.timezone.utc).isoformat()
           defaults = {
-            'run_summary.json': {'workflow':'refresh-data','rows_upserted':0,'rows_skipped_error':0,'schema_errors':0,'retry_count':0,'status':'failed','fatal_error':'fallback_bootstrap','timestamp':now},
-            'scraper_metrics.json': {'workflow':'refresh-data','rows_upserted':0,'rows_skipped_error':0,'schema_errors':0,'retry_count':0,'status':'failed','timestamp':now},
+            'run_summary.json': {'workflow':'scrape-monthly','institutions_processed':0,'success_count':0,'failure_count':0,'schema_errors':0,'network_errors':0,'retry_count':0,'stale_records_detected':0,'duration_seconds':0,'status':'failed','degraded':False,'fatal_error':'fallback_bootstrap','timestamp':now},
+            'scraper_metrics.json': {'workflow':'scrape-monthly','institutions_processed':0,'success_count':0,'failure_count':0,'schema_errors':0,'network_errors':0,'retry_count':0,'stale_records_detected':0,'duration_seconds':0,'status':'failed','timestamp':now},
             'failed_colleges.json': [],
             'stale_colleges.json': [],
             'schema_errors.json': [],
@@ -97,19 +116,19 @@ jobs:
           tar -czf scraper_diagnostics.tar.gz scraper_diagnostics
 
       - name: Upload diagnostics directory
-        if: always()
         uses: actions/upload-artifact@v5
+        if: always()
         with:
-          name: daily-data-refresh-diagnostics
+          name: monthly-deadline-diagnostics
           path: scraper_diagnostics/
           if-no-files-found: ignore
           compression-level: 9
 
       - name: Upload diagnostics archive
-        if: always()
         uses: actions/upload-artifact@v5
+        if: always()
         with:
-          name: daily-data-refresh-diagnostics-archive
+          name: monthly-deadline-diagnostics-archive
           path: scraper_diagnostics.tar.gz
           if-no-files-found: ignore
           compression-level: 9
@@ -126,9 +145,9 @@ jobs:
 
           status = summary.get('status', 'failed')
           fatal_error = summary.get('fatal_error')
-          pipeline_exit_code = '${{ steps.run_data_pipeline.outputs.exit_code }}'
+          scraper_exit_code = '${{ steps.run_monthly_refresh.outputs.exit_code }}'
 
-          print(json.dumps({'workflow':'refresh-data','status':status,'fatal_error':fatal_error,'pipeline_exit_code':pipeline_exit_code}))
+          print(json.dumps({'workflow':'scrape-monthly','status':status,'fatal_error':fatal_error,'scraper_exit_code':scraper_exit_code}))
 
           if status == 'failed':
             sys.exit(1)
