@@ -363,6 +363,7 @@ def find_college_id(name: str, db_lookup: dict[str, int]) -> Optional[int]:
 
 # ── Upsert ────────────────────────────────────────────────────────────────────
 
+<<<<<<< HEAD
 def _structured_log(stage: str, **payload) -> None:
     event = {
         "workflow": "refresh-data",
@@ -371,6 +372,102 @@ def _structured_log(stage: str, **payload) -> None:
         **payload,
     }
     log.info(json.dumps(event, default=str))
+=======
+# Uses COALESCE so existing non-null DB values survive if the new value is NULL.
+_UPSERT_COLUMN_MAP = [
+    ("acceptance_rate", "acceptance_rate"),
+    ("total_enrollment", "total_enrollment"),
+    ("applications_received", "applications_received"),
+    ("median_sat_25", "median_sat_25"),
+    ("median_sat_75", "median_sat_75"),
+    ("median_act_25", "median_act_25"),
+    ("median_act_75", "median_act_75"),
+    ("tuition_in_state", "tuition_in_state"),
+    ("tuition_out_of_state", "tuition_out_of_state"),
+    ("completion_rate", "completion_rate"),
+    ("median_earnings_post_grad", "median_earnings_post_grad"),
+    ("data_source", "data_source"),
+]
+
+_UPSERT_SQL_CACHE = None
+_UPSERT_FIELDS_CACHE = None
+
+
+def _get_table_columns(conn, schema: str, table: str) -> set[str]:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = %s
+              AND table_name = %s
+            """,
+            (schema, table),
+        )
+        return {r[0] for r in cur.fetchall()}
+
+
+def _resolve_upsert_sql(conn):
+    global _UPSERT_SQL_CACHE, _UPSERT_FIELDS_CACHE
+    if _UPSERT_SQL_CACHE is not None and _UPSERT_FIELDS_CACHE is not None:
+        return _UPSERT_SQL_CACHE, _UPSERT_FIELDS_CACHE
+
+    cols = _get_table_columns(conn, "public", "colleges_comprehensive")
+    assignments = []
+    selected = []
+    for key, column in _UPSERT_COLUMN_MAP:
+        if column in cols:
+            assignments.append(f"{column} = COALESCE(%s, {column})")
+            selected.append((key, column))
+
+    if "last_data_refresh" in cols:
+        assignments.append("last_data_refresh = NOW()")
+
+    if not assignments:
+        raise RuntimeError("No compatible columns found for colleges_comprehensive upsert")
+
+    _UPSERT_SQL_CACHE = f"""
+        UPDATE colleges_comprehensive
+        SET
+            {", ".join(assignments)}
+        WHERE id = %s
+        RETURNING id;
+    """
+    _UPSERT_FIELDS_CACHE = selected
+    missing = [column for _, column in _UPSERT_COLUMN_MAP if column not in cols]
+    if missing:
+        log.warning("Schema drift detected in colleges_comprehensive; skipping missing columns: %s", ", ".join(missing))
+    return _UPSERT_SQL_CACHE, _UPSERT_FIELDS_CACHE
+
+_ADMISSIONS_UPSERT_SQL = """
+    INSERT INTO college_admissions (
+        college_id, year, acceptance_rate, yield_rate,
+        application_volume, admit_volume, enrollment_volume,
+        sat_verbal_25, sat_verbal_75, sat_math_25, sat_math_75,
+        act_25, act_75, source, confidence_score
+    ) VALUES (
+        %s, %s, %s, %s,
+        %s, %s, %s,
+        %s, %s, %s, %s,
+        %s, %s, %s, %s
+    )
+    ON CONFLICT (college_id, year) DO UPDATE SET
+        acceptance_rate   = COALESCE(EXCLUDED.acceptance_rate, college_admissions.acceptance_rate),
+        yield_rate        = COALESCE(EXCLUDED.yield_rate, college_admissions.yield_rate),
+        application_volume = COALESCE(EXCLUDED.application_volume, college_admissions.application_volume),
+        admit_volume      = COALESCE(EXCLUDED.admit_volume, college_admissions.admit_volume),
+        enrollment_volume = COALESCE(EXCLUDED.enrollment_volume, college_admissions.enrollment_volume),
+        sat_verbal_25     = COALESCE(EXCLUDED.sat_verbal_25, college_admissions.sat_verbal_25),
+        sat_verbal_75     = COALESCE(EXCLUDED.sat_verbal_75, college_admissions.sat_verbal_75),
+        sat_math_25       = COALESCE(EXCLUDED.sat_math_25, college_admissions.sat_math_25),
+        sat_math_75       = COALESCE(EXCLUDED.sat_math_75, college_admissions.sat_math_75),
+        act_25            = COALESCE(EXCLUDED.act_25, college_admissions.act_25),
+        act_75            = COALESCE(EXCLUDED.act_75, college_admissions.act_75),
+        source            = EXCLUDED.source,
+        confidence_score  = EXCLUDED.confidence_score
+    RETURNING id;
+"""
+>>>>>>> 7b3ed3d (fix: rebuild college cards contracts and harden schema/workflow guards)
 
 
 def ensure_pipeline_diagnostics(out_dir: Path) -> None:
@@ -406,6 +503,7 @@ def ensure_pipeline_diagnostics(out_dir: Path) -> None:
         if not target.exists():
             target.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
+<<<<<<< HEAD
 
 def _write_json(path: Path, payload) -> None:
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
@@ -542,6 +640,16 @@ def _build_admissions_upsert_plan(conn) -> UpsertPlan:
 def upsert_college(conn, college_id: int, data: dict, plan: UpsertPlan) -> bool:
     with conn.cursor() as cur:
         cur.execute(plan.sql, plan.params_builder(college_id, data))
+=======
+    Uses a parameterized UPDATE … RETURNING id — never string interpolation.
+    Returns True if the row was updated, False otherwise.
+    """
+    upsert_sql, fields = _resolve_upsert_sql(conn)
+    params = [data.get(key) for key, _ in fields]
+    params.append(college_id)
+    with conn.cursor() as cur:
+        cur.execute(upsert_sql, params)
+>>>>>>> 7b3ed3d (fix: rebuild college cards contracts and harden schema/workflow guards)
         return cur.fetchone() is not None
 
 

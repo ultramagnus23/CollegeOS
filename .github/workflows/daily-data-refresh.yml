@@ -1,5 +1,10 @@
 name: Daily College Data Refresh
+<<<<<<< HEAD
 
+=======
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+>>>>>>> 7b3ed3d (fix: rebuild college cards contracts and harden schema/workflow guards)
 on:
   schedule:
     - cron: '0 3 * * *'
@@ -54,8 +59,12 @@ jobs:
           PY
 
       - name: Run data pipeline
+<<<<<<< HEAD
         id: run_data_pipeline
         continue-on-error: true
+=======
+        timeout-minutes: 25
+>>>>>>> 7b3ed3d (fix: rebuild college cards contracts and harden schema/workflow guards)
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           IPEDS_API_KEY: ${{ secrets.IPEDS_API_KEY }}
@@ -63,6 +72,7 @@ jobs:
           SCRAPER_DIAGNOSTICS_DIR: scraper_diagnostics
           PYTHONPATH: ${{ github.workspace }}
         run: |
+<<<<<<< HEAD
           set +e
           python scraper/pipeline.py
           EXIT_CODE=$?
@@ -134,3 +144,14 @@ jobs:
             sys.exit(1)
           sys.exit(0)
           PY
+=======
+          mkdir -p scraper_diagnostics
+          python scraper/pipeline.py
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: daily-refresh-diagnostics
+          path: scraper_diagnostics/
+          if-no-files-found: ignore
+>>>>>>> 7b3ed3d (fix: rebuild college cards contracts and harden schema/workflow guards)

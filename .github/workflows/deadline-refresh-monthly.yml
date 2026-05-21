@@ -1,0 +1,58 @@
+name: Rolling Monthly Canonical Deadline Refresh
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  schedule:
+    - cron: '0 5 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scrape-monthly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install scraper dependencies
+        run: |
+          pip install psycopg2-binary requests beautifulsoup4
+
+      - name: Run monthly rolling refresh
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SCRAPE_MODE: monthly
+          SCRAPER_DIAGNOSTICS_DIR: scraper_diagnostics
+        run: |
+          mkdir -p scraper_diagnostics
+          python scrapers/run_deadline_refresh.py
+
+      - name: Build confidence-drop report
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          p = pathlib.Path("scraper_diagnostics/diagnostics.json")
+          out = pathlib.Path("scraper_diagnostics/confidence_drops.json")
+          if not p.exists():
+              out.write_text("[]", encoding="utf-8")
+          else:
+              rows = json.loads(p.read_text(encoding="utf-8"))
+              drops = [r for r in rows if r.get("confidence_score", 0) < 0.5]
+              out.write_text(json.dumps(drops, indent=2), encoding="utf-8")
+          PY
+
+      - name: Upload diagnostics
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: monthly-deadline-diagnostics
+          path: scraper_diagnostics/
+          if-no-files-found: warn

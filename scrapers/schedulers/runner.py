@@ -289,6 +289,8 @@ def run_scrape_cycle(
     deduped_deadlines = resolve_conflicts(deadline_rows)
     deduped_requirements = resolve_conflicts(requirement_rows)
     duration_seconds = int((datetime.now(timezone.utc) - start_time).total_seconds())
+    success_count = sum(1 for d in diagnostics if d.success)
+    failure_count = len(diagnostics) - success_count
     return {
         "deadlines": deduped_deadlines,
         "requirements": deduped_requirements,
