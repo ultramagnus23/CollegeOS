@@ -1,6 +1,8 @@
 const AuthService = require('../services/authService');
 const User = require('../models/User');
-const logger = require('../utils/logger');
+const { processOnboardingPayload, OnboardingValidationError } = require('../services/onboardingService');
+const { getSnapshot, logSnapshot } = require('../services/onboardingMetrics');
+const { safeError, safeLog } = require('../utils/safeLogger');
 
 class AuthController {
   // Register
@@ -103,20 +105,45 @@ class AuthController {
   static async completeOnboarding(req, res, next) {
     try {
       const userId = req.user.userId;
-      const data = req.validatedData;
-      const user = await User.updateOnboarding(userId, data);
+      const requestId = req.requestId || null;
+      const { user, warnings, invalidFields } = await processOnboardingPayload({
+        payload: req.body,
+        requestId,
+        userId,
+      });
+
+      safeLog('onboarding.completed', {
+        requestId,
+        userId,
+        warningsCount: warnings.length,
+        invalidFieldsCount: invalidFields.length,
+        metrics: getSnapshot(),
+      });
+      logSnapshot({ requestId, userId, phase: 'complete_onboarding' });
 
       res.json({
         success: true,
         message: 'Onboarding completed successfully',
+        warnings: warnings.map((warning) => warning.message),
         data: AuthService.sanitizeUser(user)
       });
     } catch (error) {
-      logger.error('Onboarding completion failed', { userId: req.user?.userId, error: error?.message });
-      return res.status(500).json({
-        success: false,
-        message: error?.message || 'Failed to complete onboarding',
-      });
+      if (error instanceof OnboardingValidationError) {
+        safeError('onboarding.validation_failed_response', {
+          requestId: req.requestId || null,
+          userId: req.user?.userId,
+          invalidFields: error.details?.invalidFields || [],
+          validationErrors: error.details?.validationErrors || [],
+        });
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+          warnings: (error.details?.warnings || []).map((warning) => warning.message),
+          invalidFields: error.details?.invalidFields || [],
+          errors: error.details?.validationErrors || [],
+        });
+      }
+      return next(error);
     }
   }
 
