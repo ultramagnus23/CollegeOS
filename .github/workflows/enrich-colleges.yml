@@ -1,24 +1,41 @@
 name: Weekly College Data Enrichment
+
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 2 * * 0'
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: enrich-colleges
+  cancel-in-progress: false
+
 jobs:
   enrich:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm ci
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run migrations
         run: node scripts/runMigrations.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Enrich college data
         run: node scripts/enrichColleges.js
         env:
@@ -26,6 +43,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SCORECARD_API_KEY: ${{ secrets.SCORECARD_API_KEY }}
           USD_TO_INR_RATE: '83'
+
       - name: Post enrichment summary
         if: always()
         run: node scripts/enrichmentReport.js

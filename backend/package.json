@@ -36,6 +36,7 @@
     "scrape:test-deadlines": "node scripts/testDeadlineScraper.js",
     "scrape:weekly": "node -e \"require('./src/jobs/deadlineScrapingScheduler').runWeeklyHighPriority()\"",
     "scrape:monthly": "node -e \"require('./src/jobs/deadlineScrapingScheduler').runMonthlyAllColleges()\""
+    ,"audit:onboarding-schema": "node scripts/auditOnboardingSchema.js"
   },
   "keywords": [
     "college",

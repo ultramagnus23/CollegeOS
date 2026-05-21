@@ -30,3 +30,7 @@ backend/.env
 # SQLite WAL/SHM files (runtime artifacts)
 *.db-wal
 *.db-shm
+
+# Python bytecode/cache artifacts
+__pycache__/
+*.pyc

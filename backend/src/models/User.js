@@ -1,6 +1,8 @@
 const bcrypt = require('bcrypt');
 const dbManager = require('../config/database');
 
+let _usersColumnTypeCache = null;
+
 class User {
   static async create({ email, passwordHash, googleId, fullName, country }) {
     const pool = dbManager.getDatabase();
@@ -38,8 +40,53 @@ class User {
     return rows[0] || null;
   }
 
+  static async getUsersColumnTypeMap(pool) {
+    if (_usersColumnTypeCache) return _usersColumnTypeCache;
+    const { rows } = await pool.query(
+      `SELECT column_name, data_type, udt_name
+         FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'users'`
+    );
+    _usersColumnTypeCache = rows.reduce((acc, row) => {
+      acc[row.column_name] = {
+        dataType: row.data_type,
+        udtName: row.udt_name,
+      };
+      return acc;
+    }, {});
+    return _usersColumnTypeCache;
+  }
+
+  static _coerceBooleanToDb(value, columnMeta) {
+    if (value === null || value === undefined) return null;
+    const dataType = String(columnMeta?.dataType || '').toLowerCase();
+    if (dataType.includes('boolean')) return Boolean(value);
+    if (dataType.includes('integer') || dataType.includes('numeric') || dataType.includes('double') || dataType.includes('real')) {
+      return value ? 1 : 0;
+    }
+    return value ? 'true' : 'false';
+  }
+
+  static _serializeForColumn(value, columnMeta) {
+    if (value === null || value === undefined) return null;
+    const dataType = String(columnMeta?.dataType || '').toLowerCase();
+    const udtName = String(columnMeta?.udtName || '').toLowerCase();
+
+    if (dataType === 'ARRAY' || udtName.startsWith('_')) {
+      if (Array.isArray(value)) return value;
+      return [String(value)];
+    }
+
+    if (dataType.includes('json')) {
+      return JSON.stringify(value);
+    }
+
+    return JSON.stringify(value);
+  }
+
   static async updateOnboarding(userId, data) {
     const pool = dbManager.getDatabase();
+    const columnTypes = await this.getUsersColumnTypeMap(pool);
     const satScore = data?.sat_score ?? data?.test_status?.sat_score ?? null;
     const actScore = data?.act_score ?? data?.test_status?.act_score ?? null;
     const rawGpa = data?.gpa != null ? parseFloat(data.gpa) : null;
@@ -76,10 +123,28 @@ class User {
     const graduationYear = data?.graduation_year != null ? Number(data.graduation_year) : null;
     const parsedGraduationYear = Number.isFinite(graduationYear) ? graduationYear : null;
     const preferredLocation = data?.preferred_location ?? data?.locationPreference ?? null;
+    const normalizedNeedFinancialAid = this._coerceBooleanToDb(
+      data?.need_financial_aid ?? (maxBudgetPerYear === 0 ? true : null),
+      columnTypes.need_financial_aid,
+    );
+    const normalizedCanTakeLoan = this._coerceBooleanToDb(data?.can_take_loan ?? null, columnTypes.can_take_loan);
+    const normalizedPreferredLocation = (() => {
+      if (preferredLocation === null || preferredLocation === undefined) return null;
+      const dataType = String(columnTypes.preferred_location?.dataType || '').toLowerCase();
+      const udtName = String(columnTypes.preferred_location?.udtName || '').toLowerCase();
+      if (dataType === 'ARRAY' || udtName.startsWith('_')) {
+        return Array.isArray(preferredLocation)
+          ? preferredLocation.map((entry) => String(entry))
+          : [String(preferredLocation)];
+      }
+      return Array.isArray(preferredLocation)
+        ? preferredLocation.map((entry) => String(entry)).join(', ')
+        : String(preferredLocation);
+    })();
 
     await pool.query(
       `UPDATE users
-       SET target_countries    = $1,
+        SET target_countries    = $1,
            intended_majors     = $2,
            test_status         = $3,
            language_preferences = $4,
@@ -102,10 +167,10 @@ class User {
             updated_at          = NOW()
         WHERE id = $5`,
       [
-        JSON.stringify(data.target_countries || []),
-        JSON.stringify(intendedMajors),
-        JSON.stringify(data.test_status || {}),
-        JSON.stringify(data.language_preferences || []),
+        this._serializeForColumn(data.target_countries || [], columnTypes.target_countries),
+        this._serializeForColumn(intendedMajors, columnTypes.intended_majors),
+        this._serializeForColumn(data.test_status || {}, columnTypes.test_status),
+        this._serializeForColumn(data.language_preferences || [], columnTypes.language_preferences),
         userId,
         normalizedGpa,
         satScore != null ? Number(satScore) : null,
@@ -115,12 +180,12 @@ class User {
         intendedMajor,
         data?.career_goals ?? data?.careerGoals ?? null,
         data?.country ?? null,
-        data?.need_financial_aid ?? (maxBudgetPerYear === 0 ? true : null),
-        data?.can_take_loan ?? null,
+        normalizedNeedFinancialAid,
+        normalizedCanTakeLoan,
         data?.family_income_usd != null ? Number(data.family_income_usd) : null,
         gradeLevel,
         parsedGraduationYear,
-        preferredLocation,
+        normalizedPreferredLocation,
       ]
     );
     return this.findById(userId);

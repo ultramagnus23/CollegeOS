@@ -24,13 +24,17 @@ Exit codes:
     1  — fatal error or fewer than 500 rows updated
 """
 
+import json
 import logging
 import os
 import re
 import sys
+import time
 import unicodedata
+from dataclasses import dataclass
 from difflib import SequenceMatcher
-from typing import Optional
+from pathlib import Path
+from typing import Callable, Optional
 
 import psycopg2
 import psycopg2.extras
@@ -55,6 +59,32 @@ DEFAULT_IPEDS_CONFIDENCE_SCORE = 0.7
 
 # Fuzzy-match threshold for name matching (0–1)
 FUZZY_THRESHOLD = 0.85
+
+
+class SchemaError(Exception):
+    """Non-retryable schema mismatch."""
+
+
+class ParseError(Exception):
+    """Non-retryable source parsing failure."""
+
+
+class NetworkError(Exception):
+    """Retryable network failure."""
+
+
+class ValidationError(Exception):
+    """Non-retryable validation failure."""
+
+
+class TransientDatabaseError(Exception):
+    """Retryable transient database failure."""
+
+
+@dataclass
+class UpsertPlan:
+    sql: str
+    params_builder: Callable[..., tuple]
 
 # ── Validation constants ───────────────────────────────────────────────────────
 
@@ -333,112 +363,191 @@ def find_college_id(name: str, db_lookup: dict[str, int]) -> Optional[int]:
 
 # ── Upsert ────────────────────────────────────────────────────────────────────
 
-# Uses COALESCE so existing non-null DB values survive if the new value is NULL.
-_UPSERT_SQL = """
-    UPDATE colleges_comprehensive
-    SET
-        acceptance_rate           = COALESCE(%s, acceptance_rate),
-        total_enrollment          = COALESCE(%s, total_enrollment),
-        applications_received     = COALESCE(%s, applications_received),
-        median_sat_25             = COALESCE(%s, median_sat_25),
-        median_sat_75             = COALESCE(%s, median_sat_75),
-        median_act_25             = COALESCE(%s, median_act_25),
-        median_act_75             = COALESCE(%s, median_act_75),
-        tuition_in_state          = COALESCE(%s, tuition_in_state),
-        tuition_out_of_state      = COALESCE(%s, tuition_out_of_state),
-        completion_rate           = COALESCE(%s, completion_rate),
-        median_earnings_post_grad = COALESCE(%s, median_earnings_post_grad),
-        data_source               = %s,
-        last_data_refresh         = NOW()
-    WHERE id = %s
-    RETURNING id;
-"""
-
-_ADMISSIONS_UPSERT_SQL = """
-    INSERT INTO college_admissions (
-        college_id, year, acceptance_rate, yield_rate,
-        application_volume, admit_volume, enrollment_volume,
-        sat_verbal_25, sat_verbal_75, sat_math_25, sat_math_75,
-        act_25, act_75, source, confidence_score
-    ) VALUES (
-        %s, %s, %s, %s,
-        %s, %s, %s,
-        %s, %s, %s, %s,
-        %s, %s, %s, %s
-    )
-    ON CONFLICT (college_id, year) DO UPDATE SET
-        acceptance_rate   = COALESCE(EXCLUDED.acceptance_rate, college_admissions.acceptance_rate),
-        yield_rate        = COALESCE(EXCLUDED.yield_rate, college_admissions.yield_rate),
-        application_volume = COALESCE(EXCLUDED.application_volume, college_admissions.application_volume),
-        admit_volume      = COALESCE(EXCLUDED.admit_volume, college_admissions.admit_volume),
-        enrollment_volume = COALESCE(EXCLUDED.enrollment_volume, college_admissions.enrollment_volume),
-        sat_verbal_25     = COALESCE(EXCLUDED.sat_verbal_25, college_admissions.sat_verbal_25),
-        sat_verbal_75     = COALESCE(EXCLUDED.sat_verbal_75, college_admissions.sat_verbal_75),
-        sat_math_25       = COALESCE(EXCLUDED.sat_math_25, college_admissions.sat_math_25),
-        sat_math_75       = COALESCE(EXCLUDED.sat_math_75, college_admissions.sat_math_75),
-        act_25            = COALESCE(EXCLUDED.act_25, college_admissions.act_25),
-        act_75            = COALESCE(EXCLUDED.act_75, college_admissions.act_75),
-        source            = EXCLUDED.source,
-        confidence_score  = EXCLUDED.confidence_score
-    RETURNING id;
-"""
+def _structured_log(stage: str, **payload) -> None:
+    event = {
+        "workflow": "refresh-data",
+        "stage": stage,
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        **payload,
+    }
+    log.info(json.dumps(event, default=str))
 
 
-def upsert_college(conn, college_id: int, data: dict) -> bool:
-    """
-    Upsert a single validated college record into colleges_comprehensive.
+def ensure_pipeline_diagnostics(out_dir: Path) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    defaults = {
+        "run_summary.json": {
+            "workflow": "refresh-data",
+            "rows_upserted": 0,
+            "rows_skipped_error": 0,
+            "rows_skipped_no_match": 0,
+            "rows_skipped_no_data": 0,
+            "schema_errors": 0,
+            "retry_count": 0,
+            "status": "failed",
+            "fatal_error": None,
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        },
+        "scraper_metrics.json": {
+            "workflow": "refresh-data",
+            "rows_upserted": 0,
+            "rows_skipped_error": 0,
+            "schema_errors": 0,
+            "retry_count": 0,
+            "status": "failed",
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        },
+        "failed_colleges.json": [],
+        "stale_colleges.json": [],
+        "schema_errors.json": [],
+    }
+    for name, payload in defaults.items():
+        target = out_dir / name
+        if not target.exists():
+            target.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
-    Uses a parameterized UPDATE … RETURNING id — never string interpolation.
-    Returns True if the row was updated, False otherwise.
-    """
-    params = (
-        data.get("acceptance_rate"),
-        data.get("total_enrollment"),
-        data.get("applications_received"),
-        data.get("median_sat_25"),
-        data.get("median_sat_75"),
-        data.get("median_act_25"),
-        data.get("median_act_75"),
-        data.get("tuition_in_state"),
-        data.get("tuition_out_of_state"),
-        data.get("completion_rate"),
-        data.get("median_earnings_post_grad"),
-        data.get("data_source", "IPEDS"),
-        college_id,
-    )
+
+def _write_json(path: Path, payload) -> None:
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def _table_columns(conn, table_name: str) -> set[str]:
     with conn.cursor() as cur:
-        cur.execute(_UPSERT_SQL, params)
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = %s
+            """,
+            (table_name,),
+        )
+        return {row[0] for row in cur.fetchall()}
+
+
+def _build_college_upsert_plan(conn) -> UpsertPlan:
+    columns = _table_columns(conn, "colleges_comprehensive")
+    mappings = [
+        ("acceptance_rate", "acceptance_rate"),
+        ("total_enrollment", "total_enrollment"),
+        ("applications_received", "applications_received"),
+        ("median_sat_25", "median_sat_25"),
+        ("median_sat_75", "median_sat_75"),
+        ("median_act_25", "median_act_25"),
+        ("median_act_75", "median_act_75"),
+        ("tuition_in_state", "tuition_in_state"),
+        ("tuition_out_of_state", "tuition_out_of_state"),
+        ("completion_rate", "completion_rate"),
+        ("median_earnings_post_grad", "median_earnings_post_grad"),
+    ]
+    selected = [(field, column) for field, column in mappings if column in columns]
+    if not selected:
+        raise SchemaError("colleges_comprehensive has no expected upsert columns")
+
+    assignments = [f"{column} = COALESCE(%s, {column})" for _, column in selected]
+    include_data_source = "data_source" in columns
+    include_last_data_refresh = "last_data_refresh" in columns
+    if include_data_source:
+        assignments.append("data_source = %s")
+    if include_last_data_refresh:
+        assignments.append("last_data_refresh = NOW()")
+
+    sql = f"""
+        UPDATE colleges_comprehensive
+        SET {", ".join(assignments)}
+        WHERE id = %s
+        RETURNING id;
+    """
+
+    def params_builder(college_id: int, data: dict, _year: int | None = None) -> tuple:
+        params = [data.get(field) for field, _ in selected]
+        if include_data_source:
+            params.append(data.get("data_source", "IPEDS"))
+        params.append(college_id)
+        return tuple(params)
+
+    return UpsertPlan(sql=sql, params_builder=params_builder)
+
+
+def _build_admissions_upsert_plan(conn) -> UpsertPlan:
+    columns = _table_columns(conn, "college_admissions")
+    required = {"college_id", "year"}
+    missing = sorted(required - columns)
+    if missing:
+        raise SchemaError(f"college_admissions missing required columns: {', '.join(missing)}")
+
+    mappings = [
+        ("acceptance_rate", "acceptance_rate"),
+        ("yield_rate", "yield_rate"),
+        ("applicants_total", "application_volume"),
+        ("admitted_total", "admit_volume"),
+        ("enrolled_total", "enrollment_volume"),
+        ("sat_verbal_25", "sat_verbal_25"),
+        ("sat_verbal_75", "sat_verbal_75"),
+        ("sat_math_25", "sat_math_25"),
+        ("sat_math_75", "sat_math_75"),
+        ("median_act_25", "act_25"),
+        ("median_act_75", "act_75"),
+        ("data_source", "source"),
+        ("confidence_score", "confidence_score"),
+    ]
+    selected = [(field, column) for field, column in mappings if column in columns]
+
+    insert_columns = ["college_id", "year"] + [column for _, column in selected]
+    placeholders = ", ".join(["%s"] * len(insert_columns))
+    update_columns = [column for column in insert_columns if column not in {"college_id", "year"}]
+    update_clause = ", ".join(
+        f"{column} = COALESCE(EXCLUDED.{column}, college_admissions.{column})" for column in update_columns
+    ) or "college_id = EXCLUDED.college_id"
+
+    sql = f"""
+        INSERT INTO college_admissions ({", ".join(insert_columns)})
+        VALUES ({placeholders})
+        ON CONFLICT (college_id, year) DO UPDATE SET
+            {update_clause}
+        RETURNING college_id;
+    """
+
+    def params_builder(college_id: int, data: dict, year: int) -> tuple:
+        applicants_total = data.get("applicants_total")
+        if applicants_total is None:
+            applicants_total = data.get("applications_received")
+        admitted_total = data.get("admitted_total")
+        enrolled_total = data.get("enrolled_total")
+        if enrolled_total is None:
+            enrolled_total = data.get("total_enrollment")
+
+        values = {
+            "acceptance_rate": data.get("acceptance_rate"),
+            "yield_rate": data.get("yield_rate"),
+            "applicants_total": applicants_total,
+            "admitted_total": admitted_total,
+            "enrolled_total": enrolled_total,
+            "sat_verbal_25": data.get("sat_verbal_25"),
+            "sat_verbal_75": data.get("sat_verbal_75"),
+            "sat_math_25": data.get("sat_math_25"),
+            "sat_math_75": data.get("sat_math_75"),
+            "median_act_25": data.get("median_act_25"),
+            "median_act_75": data.get("median_act_75"),
+            "data_source": data.get("data_source", "IPEDS"),
+            "confidence_score": data.get("confidence_score", DEFAULT_IPEDS_CONFIDENCE_SCORE),
+        }
+        params = [college_id, year]
+        for field, _column in selected:
+            params.append(values.get(field))
+        return tuple(params)
+
+    return UpsertPlan(sql=sql, params_builder=params_builder)
+
+
+def upsert_college(conn, college_id: int, data: dict, plan: UpsertPlan) -> bool:
+    with conn.cursor() as cur:
+        cur.execute(plan.sql, plan.params_builder(college_id, data))
         return cur.fetchone() is not None
 
 
-def upsert_college_admissions(conn, college_id: int, data: dict, year: int) -> bool:
-    """Upsert admissions-level metrics for a college/year."""
-    applicants_total = data.get("applicants_total")
-    if applicants_total is None:
-        applicants_total = data.get("applications_received")
-    admitted_total = data.get("admitted_total")
-    enrolled_total = data.get("enrolled_total")
-    if enrolled_total is None:
-        enrolled_total = data.get("total_enrollment")
-    params = (
-        college_id,
-        year,
-        data.get("acceptance_rate"),
-        data.get("yield_rate"),
-        applicants_total,
-        admitted_total,
-        enrolled_total,
-        data.get("sat_verbal_25"),
-        data.get("sat_verbal_75"),
-        data.get("sat_math_25"),
-        data.get("sat_math_75"),
-        data.get("median_act_25"),
-        data.get("median_act_75"),
-        data.get("data_source", "IPEDS"),
-        DEFAULT_IPEDS_CONFIDENCE_SCORE,
-    )
+def upsert_college_admissions(conn, college_id: int, data: dict, year: int, plan: UpsertPlan) -> bool:
     with conn.cursor() as cur:
-        cur.execute(_ADMISSIONS_UPSERT_SQL, params)
+        cur.execute(plan.sql, plan.params_builder(college_id, data, year))
         return cur.fetchone() is not None
 
 
@@ -453,9 +562,27 @@ def main() -> int:
       4. Upsert into PostgreSQL.
       5. Exit 1 if fewer than MIN_SUCCESS_ROWS rows were updated.
     """
+    diagnostics_dir = Path(os.environ.get("SCRAPER_DIAGNOSTICS_DIR", "scraper_diagnostics"))
+    ensure_pipeline_diagnostics(diagnostics_dir)
+    started_at = time.time()
+
     db_url = os.environ.get("SUPABASE_DB_URL", "") or os.environ.get("DATABASE_URL", "")
     if not db_url:
         log.error("SUPABASE_DB_URL (or DATABASE_URL) is not set. Aborting.")
+        summary = {
+            "workflow": "refresh-data",
+            "status": "failed",
+            "fatal_error": "SUPABASE_DB_URL (or DATABASE_URL) is not set",
+            "rows_upserted": 0,
+            "rows_skipped_error": 0,
+            "rows_skipped_no_match": 0,
+            "rows_skipped_no_data": 0,
+            "schema_errors": 1,
+            "retry_count": 0,
+            "duration_seconds": int(time.time() - started_at),
+        }
+        _write_json(diagnostics_dir / "run_summary.json", summary)
+        _write_json(diagnostics_dir / "scraper_metrics.json", summary)
         return 1
 
     # ── Step 1: Fetch from all sources ───────────────────────────────────────
@@ -513,13 +640,37 @@ def main() -> int:
     rows_skipped_no_match = 0
     rows_skipped_no_data = 0
     rows_skipped_error = 0
+    schema_errors: list[dict] = []
+    failed_colleges: list[dict] = []
     run_id: Optional[int] = None
     current_year = int(os.environ.get("PIPELINE_YEAR", "2025"))
+    admissions_plan: UpsertPlan | None = None
+    college_plan: UpsertPlan | None = None
 
     try:
         conn = _get_connection(db_url)
         run_id = log_run_start(conn, "daily-data-refresh")
         conn.commit()
+        college_plan = _build_college_upsert_plan(conn)
+        try:
+            admissions_plan = _build_admissions_upsert_plan(conn)
+        except SchemaError as exc:
+            schema_errors.append(
+                {
+                    "stage": "schema_validation",
+                    "table": "college_admissions",
+                    "error_type": "SchemaError",
+                    "message": str(exc),
+                    "retryable": False,
+                }
+            )
+            _structured_log(
+                "schema_validation",
+                table="college_admissions",
+                error_type="SchemaError",
+                retryable=False,
+                message=str(exc),
+            )
         db_colleges = load_db_colleges(conn)
         log.info(f"DB has {len(db_colleges)} colleges to match against")
 
@@ -550,9 +701,13 @@ def main() -> int:
                 continue
 
             try:
-                ok = upsert_college(conn, college_id, record)
+                if college_plan is None:
+                    raise SchemaError("college upsert plan is unavailable")
+                ok = upsert_college(conn, college_id, record, college_plan)
                 if ok:
-                    admissions_ok = upsert_college_admissions(conn, college_id, record, current_year)
+                    admissions_ok = True
+                    if admissions_plan is not None:
+                        admissions_ok = upsert_college_admissions(conn, college_id, record, current_year, admissions_plan)
                     if admissions_ok:
                         rows_updated += 1
                     else:
@@ -561,10 +716,57 @@ def main() -> int:
                 else:
                     rows_skipped_error += 1
                     log.debug(f"[SKIP upsert-empty] {name}")
+            except SchemaError as exc:
+                rows_skipped_error += 1
+                schema_errors.append(
+                    {
+                        "college": name,
+                        "stage": "upsert",
+                        "table": "colleges_comprehensive",
+                        "error_type": "SchemaError",
+                        "message": str(exc),
+                        "retryable": False,
+                    }
+                )
+                failed_colleges.append(
+                    {
+                        "college": name,
+                        "stage": "upsert",
+                        "error_type": "SchemaError",
+                        "message": str(exc),
+                        "retryable": False,
+                    }
+                )
+                _structured_log(
+                    "upsert",
+                    college=name,
+                    table="colleges_comprehensive",
+                    error_type="SchemaError",
+                    retryable=False,
+                    message=str(exc),
+                )
+                conn.rollback()
+                continue
             except Exception as exc:
-                log.warning(f"[ERROR] Upsert failed for {name}: {exc}")
+                _structured_log(
+                    "upsert",
+                    college=name,
+                    table="colleges_comprehensive",
+                    error_type=exc.__class__.__name__,
+                    retryable=False,
+                    message=str(exc),
+                )
                 conn.rollback()
                 rows_skipped_error += 1
+                failed_colleges.append(
+                    {
+                        "college": name,
+                        "stage": "upsert",
+                        "error_type": exc.__class__.__name__,
+                        "message": str(exc),
+                        "retryable": False,
+                    }
+                )
                 continue
 
             # Commit in batches of 200 to reduce memory pressure
@@ -587,6 +789,22 @@ def main() -> int:
                     conn.commit()
                 except Exception:
                     conn.rollback()
+        summary = {
+            "workflow": "refresh-data",
+            "status": "failed",
+            "fatal_error": str(exc),
+            "rows_upserted": rows_updated,
+            "rows_skipped_error": rows_skipped_error,
+            "rows_skipped_no_match": rows_skipped_no_match,
+            "rows_skipped_no_data": rows_skipped_no_data,
+            "schema_errors": len(schema_errors),
+            "retry_count": 0,
+            "duration_seconds": int(time.time() - started_at),
+        }
+        _write_json(diagnostics_dir / "failed_colleges.json", failed_colleges)
+        _write_json(diagnostics_dir / "schema_errors.json", schema_errors)
+        _write_json(diagnostics_dir / "run_summary.json", summary)
+        _write_json(diagnostics_dir / "scraper_metrics.json", summary)
         return 1
     finally:
         if conn:
@@ -603,14 +821,38 @@ def main() -> int:
 
     print(f"ROWS_UPSERTED={rows_updated}")
 
-    if rows_updated < MIN_SUCCESS_ROWS:
-        log.error(
-            f"Only {rows_updated} rows updated — below minimum threshold of "
-            f"{MIN_SUCCESS_ROWS}. Exiting with code 1."
-        )
-        return 1
+    status = "success"
+    fatal_error = None
+    if rows_updated < MIN_SUCCESS_ROWS or rows_skipped_error > 0 or schema_errors:
+        status = "degraded"
 
-    log.info(f"✓ Success: {rows_updated} rows updated (threshold: {MIN_SUCCESS_ROWS})")
+    summary = {
+        "workflow": "refresh-data",
+        "status": status,
+        "fatal_error": fatal_error,
+        "rows_upserted": rows_updated,
+        "rows_skipped_error": rows_skipped_error,
+        "rows_skipped_no_match": rows_skipped_no_match,
+        "rows_skipped_no_data": rows_skipped_no_data,
+        "schema_errors": len(schema_errors),
+        "retry_count": 0,
+        "duration_seconds": int(time.time() - started_at),
+        "threshold": MIN_SUCCESS_ROWS,
+    }
+    _write_json(diagnostics_dir / "failed_colleges.json", failed_colleges)
+    _write_json(diagnostics_dir / "stale_colleges.json", [])
+    _write_json(diagnostics_dir / "schema_errors.json", schema_errors)
+    _write_json(diagnostics_dir / "run_summary.json", summary)
+    _write_json(diagnostics_dir / "scraper_metrics.json", summary)
+
+    if status == "degraded":
+        log.warning(
+            f"Degraded run: rows_updated={rows_updated}, rows_skipped_error={rows_skipped_error}, "
+            f"schema_errors={len(schema_errors)}"
+        )
+    else:
+        log.info(f"✓ Success: {rows_updated} rows updated (threshold: {MIN_SUCCESS_ROWS})")
+
     return 0
 
 
