@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '@/services/api';
 import { Loader2, Bell, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,20 +17,39 @@ const NotificationsPage = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [markingAll, setMarkingAll] = useState(false);
+  const controllerRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
 
-  const loadData = async () => {
-    try {
-      const response = await api.notifications.getAll();
-      setNotifications(response.data || []);
-    } catch {
-      toast.error('Failed to load notifications');
-    } finally {
+  const loadData = async (withRetry = true) => {
+    if (!navigator.onLine) {
+      toast.error('You are offline. Notifications will refresh when network is restored.');
       setLoading(false);
+      return;
+    }
+    controllerRef.current?.abort();
+    controllerRef.current = new AbortController();
+    try {
+      const response = await api.notifications.getAll({ signal: controllerRef.current.signal });
+      if (!mountedRef.current) return;
+      setNotifications(response.data || response.notifications || []);
+    } catch {
+      if (withRetry && mountedRef.current) {
+        setTimeout(() => { void loadData(false); }, 1200);
+      } else if (mountedRef.current) {
+        toast.error('Failed to load notifications');
+      }
+    } finally {
+      if (mountedRef.current) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    mountedRef.current = true;
+    void loadData();
+    return () => {
+      mountedRef.current = false;
+      controllerRef.current?.abort();
+    };
   }, []);
 
   const handleMarkAllRead = async () => {

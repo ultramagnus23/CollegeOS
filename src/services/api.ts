@@ -1169,11 +1169,11 @@ class ApiService {
   
   // Notifications namespace
   notifications = {
-    getAll: () =>
-      this.request('/notifications'),
+    getAll: (options: RequestInit = {}) =>
+      this.request('/notifications', options),
     
-    getUnreadCount: () =>
-      this.request('/notifications/unread-count'),
+    getUnreadCount: (options: RequestInit = {}) =>
+      this.request('/notifications/unread-count', options),
     
     markAsRead: (id: number) =>
       this.request(`/notifications/${id}/read`, {

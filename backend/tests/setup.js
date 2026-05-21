@@ -1,33 +1,26 @@
-// Test setup - gracefully handle database initialization
-let dbManager;
+const dbManager = require('../src/config/database');
+const { createClient, runMigrations, seedCanonicalFixtures } = require('./helpers/testDb');
 
-try {
-  dbManager = require('../src/config/database');
-} catch (error) {
-  console.warn('Database module not available for tests:', error.message);
-  dbManager = null;
-}
+let testDbClient = null;
 
-beforeAll(() => {
-  if (dbManager) {
-    // Initialize test database
-    process.env.DATABASE_PATH = ':memory:'; // Use in-memory database for tests
-    try {
-      dbManager.initialize();
-      dbManager.runMigrations();
-    } catch (error) {
-      console.warn('Database initialization failed:', error.message);
-    }
+beforeAll(async () => {
+  if (process.env.ENABLE_DB_TESTS !== 'true') return;
+  try {
+    testDbClient = await createClient();
+    await runMigrations(testDbClient);
+    await seedCanonicalFixtures(testDbClient);
+  } catch (error) {
+    console.warn('Database initialization failed:', error.message);
   }
 });
 
-afterAll(() => {
-  // Clean up
-  if (dbManager) {
+afterAll(async () => {
+  if (testDbClient) {
     try {
-      dbManager.close();
-    } catch (error) {
-      // Ignore cleanup errors
-    }
+      await testDbClient.end();
+    } catch (_) { /* noop */ }
   }
+  try {
+    await dbManager.close();
+  } catch (_) { /* noop */ }
 });

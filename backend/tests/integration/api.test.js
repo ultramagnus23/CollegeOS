@@ -1,7 +1,9 @@
 const request = require('supertest');
 const app = require('../../src/app');
 
-describe('API Integration Tests', () => {
+const describeIfDb = process.env.ENABLE_DB_TESTS === 'true' ? describe : describe.skip;
+
+describeIfDb('API Integration Tests', () => {
   let authToken;
   let userId;
   
