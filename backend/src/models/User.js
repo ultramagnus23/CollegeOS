@@ -2,6 +2,46 @@ const bcrypt = require('bcrypt');
 const dbManager = require('../config/database');
 
 class User {
+  static _usersColumnTypeCache = null;
+
+  static async getUsersColumnTypes() {
+    if (this._usersColumnTypeCache) return this._usersColumnTypeCache;
+    const pool = dbManager.getDatabase();
+    const { rows } = await pool.query(
+      `
+        SELECT column_name, data_type
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'users'
+          AND column_name = ANY($1::text[])
+      `,
+      [['need_financial_aid', 'can_take_loan']]
+    );
+    this._usersColumnTypeCache = rows.reduce((acc, row) => {
+      acc[row.column_name] = row.data_type;
+      return acc;
+    }, {});
+    return this._usersColumnTypeCache;
+  }
+
+  static coerceBooleanLikeForColumn(rawValue, columnType) {
+    if (rawValue === undefined || rawValue === null) return null;
+    let boolValue = rawValue;
+    if (typeof rawValue === 'string') {
+      const normalized = rawValue.trim().toLowerCase();
+      if (normalized === 'true') boolValue = true;
+      else if (normalized === 'false') boolValue = false;
+    }
+
+    if (columnType === 'integer' || columnType === 'smallint' || columnType === 'bigint' || columnType === 'numeric') {
+      return boolValue === true ? 1 : boolValue === false ? 0 : null;
+    }
+    if (columnType === 'boolean') {
+      return boolValue === true || boolValue === false ? boolValue : null;
+    }
+    return boolValue == null ? null : String(boolValue);
+  }
+
   static async create({ email, passwordHash, googleId, fullName, country }) {
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
@@ -40,6 +80,7 @@ class User {
 
   static async updateOnboarding(userId, data) {
     const pool = dbManager.getDatabase();
+    const columnTypes = await this.getUsersColumnTypes();
     const satScore = data?.sat_score ?? data?.test_status?.sat_score ?? null;
     const actScore = data?.act_score ?? data?.test_status?.act_score ?? null;
     const rawGpa = data?.gpa != null ? parseFloat(data.gpa) : null;
@@ -76,6 +117,10 @@ class User {
     const graduationYear = data?.graduation_year != null ? Number(data.graduation_year) : null;
     const parsedGraduationYear = Number.isFinite(graduationYear) ? graduationYear : null;
     const preferredLocation = data?.preferred_location ?? data?.locationPreference ?? null;
+    const needFinancialAidRaw = data?.need_financial_aid ?? (maxBudgetPerYear === 0 ? true : null);
+    const canTakeLoanRaw = data?.can_take_loan ?? null;
+    const needFinancialAid = this.coerceBooleanLikeForColumn(needFinancialAidRaw, columnTypes.need_financial_aid);
+    const canTakeLoan = this.coerceBooleanLikeForColumn(canTakeLoanRaw, columnTypes.can_take_loan);
 
     await pool.query(
       `UPDATE users
@@ -104,21 +149,21 @@ class User {
       [
         JSON.stringify(data.target_countries || []),
         JSON.stringify(intendedMajors),
-        JSON.stringify(data.test_status || {}),
-        JSON.stringify(data.language_preferences || []),
+         JSON.stringify(data.test_status || {}),
+         JSON.stringify(data.language_preferences || []),
         userId,
         normalizedGpa,
         satScore != null ? Number(satScore) : null,
         actScore != null ? Number(actScore) : null,
         maxBudgetPerYear,
         maxBudgetPerYear,
-        intendedMajor,
-        data?.career_goals ?? data?.careerGoals ?? null,
-        data?.country ?? null,
-        data?.need_financial_aid ?? (maxBudgetPerYear === 0 ? true : null),
-        data?.can_take_loan ?? null,
-        data?.family_income_usd != null ? Number(data.family_income_usd) : null,
-        gradeLevel,
+         intendedMajor,
+         data?.career_goals ?? data?.careerGoals ?? null,
+         data?.country ?? null,
+         needFinancialAid,
+         canTakeLoan,
+         data?.family_income_usd != null ? Number(data.family_income_usd) : null,
+         gradeLevel,
         parsedGraduationYear,
         preferredLocation,
       ]

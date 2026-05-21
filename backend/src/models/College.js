@@ -276,9 +276,9 @@ class College {
     }
 
     const sortable = {
-      name: 'c.name',
+      name: 'c.canonical_name',
       acceptance_rate: 'c.acceptance_rate',
-      total_enrollment: 'c.total_enrollment',
+      total_enrollment: `NULLIF((c.metadata->>'total_enrollment'),'')::numeric`,
       ranking: 'COALESCE(c.global_rank, 999999)',
     };
 

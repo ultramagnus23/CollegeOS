@@ -1,4 +1,6 @@
 name: Weekly College Data Enrichment
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 on:
   workflow_dispatch:
   schedule:
@@ -10,16 +12,21 @@ jobs:
       contents: read
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: '24' }
       - run: npm ci
+      - name: Bootstrap diagnostics
+        run: |
+          mkdir -p scraper_diagnostics
+          printf '{"workflow":"enrich-colleges","status":"starting"}' > scraper_diagnostics/run_summary.json
       - name: Run migrations
         run: node scripts/runMigrations.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       - name: Enrich college data
+        timeout-minutes: 90
         run: node scripts/enrichColleges.js
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -32,3 +39,10 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: enrich-colleges-diagnostics
+          path: scraper_diagnostics/
+          if-no-files-found: ignore

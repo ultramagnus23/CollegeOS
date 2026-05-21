@@ -33,8 +33,8 @@ REQUIRED_SCHEMA_COLUMNS = {
     },
     "canonical.institution_requirements": {
         "institution_id",
-        "requirement_type",
-        "requirement_text",
+        "requirement_category",
+        "requirement_name",
     },
     "canonical.institution_financials": {
         "institution_id",
@@ -107,10 +107,10 @@ def fetch_targets(conn, mode: str) -> List[Dict]:
         if mode == "weekly":
             cur.execute(
                 """
-                SELECT i.id::text AS institution_id, COALESCE(i.website, i.url, '') AS source_url
+                SELECT i.id::text AS institution_id, COALESCE(i.website, '') AS source_url
                 FROM canonical.institutions i
                 LEFT JOIN canonical.popularity_index pi ON pi.institution_id = i.id
-                WHERE COALESCE(i.website, i.url, '') <> ''
+                WHERE COALESCE(i.website, '') <> ''
                 ORDER BY COALESCE(pi.popularity_score, 0) DESC
                 LIMIT 350
                 """
@@ -118,9 +118,9 @@ def fetch_targets(conn, mode: str) -> List[Dict]:
         else:
             cur.execute(
                 """
-                SELECT i.id::text AS institution_id, COALESCE(i.website, i.url, '') AS source_url
+                SELECT i.id::text AS institution_id, COALESCE(i.website, '') AS source_url
                 FROM canonical.institutions i
-                WHERE COALESCE(i.website, i.url, '') <> ''
+                WHERE COALESCE(i.website, '') <> ''
                 ORDER BY i.id
                 LIMIT 1200
                 """
@@ -167,9 +167,13 @@ def upsert_deadlines(conn, deadlines: List[Dict], metrics: Dict):
     rows = []
     now = datetime.now(timezone.utc)
     for d in deadlines:
+        cycle_year = d.get("cycle_year")
+        if cycle_year is None:
+            cycle_year = str(datetime.now(timezone.utc).year)
         rows.append(
             (
                 d["institution_id"],
+                cycle_year,
                 d["deadline_type"],
                 d["deadline_date"],
                 d.get("source_url"),
@@ -183,9 +187,9 @@ def upsert_deadlines(conn, deadlines: List[Dict], metrics: Dict):
         conn,
         """
         INSERT INTO canonical.institution_deadlines
-          (institution_id, deadline_type, deadline_date, source_url, confidence_score, last_verified, parser_version, extraction_timestamp)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (institution_id, deadline_type) DO UPDATE SET
+          (institution_id, cycle_year, deadline_type, deadline_date, source_url, confidence_score, last_verified, parser_version, extraction_timestamp)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (institution_id, cycle_year_key, deadline_type, deadline_date_key) DO UPDATE SET
           deadline_date = EXCLUDED.deadline_date,
           source_url = EXCLUDED.source_url,
           confidence_score = EXCLUDED.confidence_score,
@@ -203,11 +207,17 @@ def upsert_requirements(conn, requirements: List[Dict], metrics: Dict):
     rows = []
     now = datetime.now(timezone.utc)
     for r in requirements:
+        requirement_category = r.get("requirement_type") or r.get("requirement_category") or "general"
+        requirement_name = r.get("requirement_name") or r.get("requirement_text") or "unknown_requirement"
+        requirement_value = r.get("requirement_value")
+        if requirement_value is None and r.get("requirement_text"):
+            requirement_value = r.get("requirement_text")
         rows.append(
             (
                 r["institution_id"],
-                r["requirement_type"],
-                r["requirement_text"],
+                requirement_category,
+                requirement_name,
+                requirement_value,
                 r.get("source_url"),
                 r.get("confidence_score", 0),
                 now,
@@ -219,9 +229,10 @@ def upsert_requirements(conn, requirements: List[Dict], metrics: Dict):
         conn,
         """
         INSERT INTO canonical.institution_requirements
-          (institution_id, requirement_type, requirement_text, source_url, confidence_score, last_verified, parser_version, extraction_timestamp)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (institution_id, requirement_type, requirement_text) DO UPDATE SET
+          (institution_id, requirement_category, requirement_name, requirement_value, source_url, confidence_score, last_verified, parser_version, extraction_timestamp)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (institution_id, requirement_category, requirement_name) DO UPDATE SET
+          requirement_value = COALESCE(EXCLUDED.requirement_value, canonical.institution_requirements.requirement_value),
           source_url = EXCLUDED.source_url,
           confidence_score = EXCLUDED.confidence_score,
           last_verified = EXCLUDED.last_verified,

@@ -334,25 +334,70 @@ def find_college_id(name: str, db_lookup: dict[str, int]) -> Optional[int]:
 # ── Upsert ────────────────────────────────────────────────────────────────────
 
 # Uses COALESCE so existing non-null DB values survive if the new value is NULL.
-_UPSERT_SQL = """
-    UPDATE colleges_comprehensive
-    SET
-        acceptance_rate           = COALESCE(%s, acceptance_rate),
-        total_enrollment          = COALESCE(%s, total_enrollment),
-        applications_received     = COALESCE(%s, applications_received),
-        median_sat_25             = COALESCE(%s, median_sat_25),
-        median_sat_75             = COALESCE(%s, median_sat_75),
-        median_act_25             = COALESCE(%s, median_act_25),
-        median_act_75             = COALESCE(%s, median_act_75),
-        tuition_in_state          = COALESCE(%s, tuition_in_state),
-        tuition_out_of_state      = COALESCE(%s, tuition_out_of_state),
-        completion_rate           = COALESCE(%s, completion_rate),
-        median_earnings_post_grad = COALESCE(%s, median_earnings_post_grad),
-        data_source               = %s,
-        last_data_refresh         = NOW()
-    WHERE id = %s
-    RETURNING id;
-"""
+_UPSERT_COLUMN_MAP = [
+    ("acceptance_rate", "acceptance_rate"),
+    ("total_enrollment", "total_enrollment"),
+    ("applications_received", "applications_received"),
+    ("median_sat_25", "median_sat_25"),
+    ("median_sat_75", "median_sat_75"),
+    ("median_act_25", "median_act_25"),
+    ("median_act_75", "median_act_75"),
+    ("tuition_in_state", "tuition_in_state"),
+    ("tuition_out_of_state", "tuition_out_of_state"),
+    ("completion_rate", "completion_rate"),
+    ("median_earnings_post_grad", "median_earnings_post_grad"),
+    ("data_source", "data_source"),
+]
+
+_UPSERT_SQL_CACHE = None
+_UPSERT_FIELDS_CACHE = None
+
+
+def _get_table_columns(conn, schema: str, table: str) -> set[str]:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = %s
+              AND table_name = %s
+            """,
+            (schema, table),
+        )
+        return {r[0] for r in cur.fetchall()}
+
+
+def _resolve_upsert_sql(conn):
+    global _UPSERT_SQL_CACHE, _UPSERT_FIELDS_CACHE
+    if _UPSERT_SQL_CACHE is not None and _UPSERT_FIELDS_CACHE is not None:
+        return _UPSERT_SQL_CACHE, _UPSERT_FIELDS_CACHE
+
+    cols = _get_table_columns(conn, "public", "colleges_comprehensive")
+    assignments = []
+    selected = []
+    for key, column in _UPSERT_COLUMN_MAP:
+        if column in cols:
+            assignments.append(f"{column} = COALESCE(%s, {column})")
+            selected.append((key, column))
+
+    if "last_data_refresh" in cols:
+        assignments.append("last_data_refresh = NOW()")
+
+    if not assignments:
+        raise RuntimeError("No compatible columns found for colleges_comprehensive upsert")
+
+    _UPSERT_SQL_CACHE = f"""
+        UPDATE colleges_comprehensive
+        SET
+            {", ".join(assignments)}
+        WHERE id = %s
+        RETURNING id;
+    """
+    _UPSERT_FIELDS_CACHE = selected
+    missing = [column for _, column in _UPSERT_COLUMN_MAP if column not in cols]
+    if missing:
+        log.warning("Schema drift detected in colleges_comprehensive; skipping missing columns: %s", ", ".join(missing))
+    return _UPSERT_SQL_CACHE, _UPSERT_FIELDS_CACHE
 
 _ADMISSIONS_UPSERT_SQL = """
     INSERT INTO college_admissions (
@@ -391,23 +436,11 @@ def upsert_college(conn, college_id: int, data: dict) -> bool:
     Uses a parameterized UPDATE … RETURNING id — never string interpolation.
     Returns True if the row was updated, False otherwise.
     """
-    params = (
-        data.get("acceptance_rate"),
-        data.get("total_enrollment"),
-        data.get("applications_received"),
-        data.get("median_sat_25"),
-        data.get("median_sat_75"),
-        data.get("median_act_25"),
-        data.get("median_act_75"),
-        data.get("tuition_in_state"),
-        data.get("tuition_out_of_state"),
-        data.get("completion_rate"),
-        data.get("median_earnings_post_grad"),
-        data.get("data_source", "IPEDS"),
-        college_id,
-    )
+    upsert_sql, fields = _resolve_upsert_sql(conn)
+    params = [data.get(key) for key, _ in fields]
+    params.append(college_id)
     with conn.cursor() as cur:
-        cur.execute(_UPSERT_SQL, params)
+        cur.execute(upsert_sql, params)
         return cur.fetchone() is not None
 
 

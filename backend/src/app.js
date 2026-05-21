@@ -7,6 +7,8 @@ const dbManager = require('./config/database');
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
+const { validateStartupSchema } = require('./startup/schemaValidator');
+const { checkSchemaContracts, formatSchemaContractReport } = require('./utils/schemaContractChecker');
 const {
   requestIdMiddleware,
   securityValidation,
@@ -218,6 +220,13 @@ async function startServer() {
 
     // Run migrations
     await dbManager.runMigrations();
+    const pool = dbManager.getDatabase();
+    await validateStartupSchema(pool, logger);
+    const schemaContractReport = await checkSchemaContracts(pool);
+    logger.info('Schema contract report', formatSchemaContractReport(schemaContractReport));
+    if (!schemaContractReport.ok) {
+      throw new Error('Schema drift detected during startup');
+    }
     logRecommendationEnvDiagnostics();
 
     // Seed colleges if the table is empty
@@ -230,7 +239,6 @@ async function startServer() {
 
     // Log college count so Render cold-start logs confirm data is available
     try {
-      const pool = dbManager.getDatabase();
       const { rows: colRows } = await pool.query('SELECT COUNT(*) AS count FROM canonical.mv_college_cards');
       logger.info(`Colleges table: ${colRows[0].count} rows`);
     } catch (_) {
