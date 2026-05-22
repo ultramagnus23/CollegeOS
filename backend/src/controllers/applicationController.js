@@ -25,7 +25,7 @@ class ApplicationController {
       const userId = req.user?.userId;
       const { status, priority } = req.query;
       
-      logger.info(`[${requestId}] GET /applications - User: ${userId}, Filters: status=${sanitizeForLog(status)}, priority=${sanitizeForLog(priority)}`);
+      logger.info(`[${requestId}] GET /applications - User: ${sanitizeForLog(userId)}, Filters: status=${sanitizeForLog(status)}, priority=${sanitizeForLog(priority)}`);
       
       if (!userId) {
         logger.warn(`[${requestId}] No userId in request - authentication may have failed`);
@@ -36,7 +36,7 @@ class ApplicationController {
         });
       }
       
-      logger.debug(`[${requestId}] Calling Application.findByUser(${userId})`);
+      logger.debug(`[${requestId}] Calling Application.findByUser(${sanitizeForLog(userId)})`);
       const applications = await Application.findByUser(userId, { status, priority });
       
       const duration = Date.now() - startTime;
@@ -62,8 +62,8 @@ class ApplicationController {
       const userId = req.user?.userId;
       const data = req.validatedData || req.body;
       
-      logger.info(`[${requestId}] POST /applications - User: ${userId}`);
-      logger.debug(`[${requestId}] Request body keys: ${Object.keys(data || {}).join(', ')}`);
+      logger.info(`[${requestId}] POST /applications - User: ${sanitizeForLog(userId)}`);
+      logger.debug(`[${requestId}] Request body keys: ${sanitizeForLog(Object.keys(data || {}).join(', '))}`);
       
       if (!userId) {
         logger.warn(`[${requestId}] No userId - returning 401`);
@@ -97,21 +97,21 @@ class ApplicationController {
         throw new Error('Failed to create application - no result returned');
       }
       
-      logger.info(`[${requestId}] Application created with ID: ${application.id}`);
+      logger.info(`[${requestId}] Application created with ID: ${sanitizeForLog(application.id)}`);
       
       // Generate deadlines automatically when application is created
       if (application && application.college_id) {
         try {
-          logger.debug(`[${requestId}] Generating deadlines for college ${application.college_id}`);
+          logger.debug(`[${requestId}] Generating deadlines for college ${sanitizeForLog(application.college_id)}`);
           const { generateDeadlinesForCollege } = require('../services/deadlineGenerator');
           const College = require('../models/College');
           const college = await College.findById(application.college_id);
           
           if (college) {
             await generateDeadlinesForCollege(college, userId, application.id);
-            logger.info(`[${requestId}] Deadlines generated for application ${application.id}`);
+            logger.info(`[${requestId}] Deadlines generated for application ${sanitizeForLog(application.id)}`);
           } else {
-            logger.warn(`[${requestId}] College ${application.college_id} not found for deadline generation`);
+            logger.warn(`[${requestId}] College ${sanitizeForLog(application.college_id)} not found for deadline generation`);
           }
         } catch (deadlineError) {
           // Log but don't fail the application creation
@@ -164,7 +164,7 @@ class ApplicationController {
       const data = req.validatedData || req.body;
       
       logger.info(`[${requestId}] PUT /applications/${sanitizeForLog(id)}`);
-      logger.debug(`[${requestId}] Update data keys: ${Object.keys(data || {}).join(', ')}`);
+      logger.debug(`[${requestId}] Update data keys: ${sanitizeForLog(Object.keys(data || {}).join(', '))}`);
       
       // Get old application to check ownership and status change
       const oldApplication = await Application.findById(parseInt(id));
@@ -180,7 +180,7 @@ class ApplicationController {
       
       // SECURITY: Verify user owns this application
       if (oldApplication.user_id !== userId) {
-        logger.warn(`[${requestId}] User ${userId} attempted to access application ${sanitizeForLog(id)} owned by user ${oldApplication.user_id}`);
+        logger.warn(`[${requestId}] User ${sanitizeForLog(userId)} attempted to access application ${sanitizeForLog(id)} owned by user ${sanitizeForLog(oldApplication.user_id)}`);
         return res.status(403).json({
           success: false,
           message: 'Access denied',
@@ -289,7 +289,7 @@ class ApplicationController {
       }
       
       if (application.user_id !== userId) {
-        logger.warn(`[${requestId}] User ${userId} attempted to delete application ${sanitizeForLog(id)} owned by user ${application.user_id}`);
+        logger.warn(`[${requestId}] User ${sanitizeForLog(userId)} attempted to delete application ${sanitizeForLog(id)} owned by user ${sanitizeForLog(application.user_id)}`);
 
         return res.status(403).json({
           success: false,
@@ -335,7 +335,7 @@ class ApplicationController {
       }
       
       if (application.user_id !== userId) {
-        logger.warn(`[${requestId}] User ${userId} attempted to access timeline for application ${sanitizeForLog(id)} owned by user ${application.user_id}`);
+        logger.warn(`[${requestId}] User ${sanitizeForLog(userId)} attempted to access timeline for application ${sanitizeForLog(id)} owned by user ${sanitizeForLog(application.user_id)}`);
         return res.status(403).json({
           success: false,
           message: 'Access denied',
@@ -364,7 +364,7 @@ class ApplicationController {
       const { id } = req.params;
       const userId = req.user?.userId;
       const applicationId = parseInt(id, 10);
-      logger.info(`[${requestId}] GET /applications/${applicationId}/deadlines`);
+      logger.info(`[${requestId}] GET /applications/${sanitizeForLog(applicationId)}/deadlines`);
 
       const application = await Application.findById(applicationId);
       if (!application) {
@@ -452,7 +452,7 @@ class ApplicationController {
       if (!Number.isInteger(applicationId)) {
         return res.status(400).json({ success: false, message: 'Invalid application id' });
       }
-      logger.info(`[${requestId}] GET /applications/${applicationId}/tasks`);
+      logger.info(`[${requestId}] GET /applications/${sanitizeForLog(applicationId)}/tasks`);
 
       const application = await Application.findById(applicationId);
       if (!application) {

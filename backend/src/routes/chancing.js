@@ -13,7 +13,7 @@ const StudentProfile = require('../models/StudentProfile');
 const College = require('../models/College');
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
-const { sanitizeForLog, sanitizeObject } = require('../utils/security');
+const { sanitizeForLog, sanitizeObject, safeAssign, sanitizeLogInput } = require('../utils/security');
 
 const TIER_RANK = {
   'Safety': 5,
@@ -547,9 +547,8 @@ router.post('/scenario', authenticate, async (req, res, next) => {
     
     // Apply changes to the scenario profile (sanitize to prevent prototype pollution)
     const safeChanges = sanitizeObject(profileChanges);
-    for (const [key, value] of Object.entries(safeChanges)) {
-      scenarioProfile[key] = value;
-    }
+    const ALLOWED_SCENARIO_KEYS = new Set(Object.keys(currentProfile || {}));
+    safeAssign(scenarioProfile, safeChanges, ALLOWED_SCENARIO_KEYS);
     
     // Get colleges
     const colleges = (await Promise.all(collegeIds.map(id => College.findById(id)))).filter(c => c);
@@ -722,13 +721,13 @@ router.get('/history', authenticate, async (req, res, next) => {
       try {
         profileSnapshot = JSON.parse(h.profile_snapshot || '{}');
       } catch (e) {
-        logger.warn(`Invalid JSON in profile_snapshot for history id ${h.id}`);
+        logger.warn(`Invalid JSON in profile_snapshot for history id ${sanitizeLogInput(h.id)}`);
       }
       
       try {
         factors = JSON.parse(h.factors || '[]');
       } catch (e) {
-        logger.warn(`Invalid JSON in factors for history id ${h.id}`);
+        logger.warn(`Invalid JSON in factors for history id ${sanitizeLogInput(h.id)}`);
       }
       
       return {
@@ -1266,7 +1265,7 @@ router.post('/outcome', authenticate, async (req, res, next) => {
       logger.debug('Stats tracking failed:', statsError.message);
     }
     
-    logger.info(`Outcome submitted: user ${userId}, college ${sanitizeForLog(collegeId)}, decision: ${sanitizeForLog(decision)}`);
+    logger.info(`Outcome submitted: user ${sanitizeLogInput(userId)}, college ${sanitizeForLog(collegeId)}, decision: ${sanitizeForLog(decision)}`);
     
     res.status(201).json({
       success: true,

@@ -42,7 +42,7 @@ class AuthController {
   // Refresh token
   static async refresh(req, res, next) {
     try {
-      const { refreshToken } = req.body;
+      const { refreshToken } = req.validatedData || req.body;
       
       if (!refreshToken) {
         return res.status(400).json({
@@ -65,11 +65,14 @@ class AuthController {
   // Logout
   static async logout(req, res, next) {
     try {
-      const { refreshToken } = req.body;
-      
-      if (refreshToken) {
-        await AuthService.logout(refreshToken);
+      const { refreshToken } = req.validatedData || req.body;
+      if (!refreshToken) {
+        return res.status(400).json({
+          success: false,
+          message: 'Refresh token is required'
+        });
       }
+      await AuthService.logout(refreshToken);
       
       res.json({
         success: true,

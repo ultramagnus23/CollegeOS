@@ -5,14 +5,15 @@
 const rateLimit = require('express-rate-limit');
 const securityConfig = require('../config/security');
 const logger = require('../utils/logger');
+const { sanitizeLogInput } = require('../utils/security');
 
 // Log rate limit hits for security monitoring
 const rateLimitHandler = (req, res, options) => {
   logger.warn('Rate limit exceeded', {
-    ip: req.ip,
-    path: req.path,
-    method: req.method,
-    userAgent: req.get('User-Agent'),
+    ip: sanitizeLogInput(req.ip),
+    path: sanitizeLogInput(req.path),
+    method: sanitizeLogInput(req.method),
+    userAgent: sanitizeLogInput(req.get('User-Agent')),
   });
   res.status(429).json(options.message);
 };

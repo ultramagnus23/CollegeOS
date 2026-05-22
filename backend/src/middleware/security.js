@@ -5,6 +5,7 @@
 const crypto = require('crypto');
 const securityConfig = require('../config/security');
 const { hashIdentifier, safeError, safeLog, sanitizeForLog } = require('../utils/safeLogger');
+const MAX_REGEX_INPUT_LENGTH = 256;
 
 /**
  * Generate a unique request ID for tracking
@@ -29,6 +30,10 @@ const detectSuspiciousPatterns = (data, path = '') => {
   const issues = [];
   
   if (typeof data === 'string') {
+    if (data.length > MAX_REGEX_INPUT_LENGTH) {
+      issues.push({ path, pattern: 'INPUT_TOO_LONG' });
+      return issues;
+    }
     for (const pattern of securityConfig.suspiciousPatterns) {
       if (pattern.test(data)) {
         issues.push({ path, pattern: pattern.toString() });

@@ -187,16 +187,20 @@ router.get('/user/tracked', async (req, res, next) => {
 });
 
 /**
- * GET /api/scholarships/user/eligible
- * Get eligible scholarships based on user profile
+ * POST /api/scholarships/user/eligible
+ * Get eligible scholarships based on authenticated user profile + optional non-sensitive filters
  */
-router.get('/user/eligible', async (req, res, next) => {
+router.post('/user/eligible', async (req, res, next) => {
   try {
-    // Build user profile from query or stored data
+    const storedProfile = await User.getAcademicProfile(req.user.userId);
+    // Build user profile from stored profile and non-sensitive request-body filters
     const userProfile = {
-      targetCountries: req.query.countries ? req.query.countries.split(',') : [],
-      nationality: req.query.nationality,
-      academicLevel: req.query.academicLevel
+      ...(storedProfile || {}),
+      targetCountries: Array.isArray(req.body?.targetCountries)
+        ? req.body.targetCountries
+        : [],
+      nationality: storedProfile?.nationality ?? null,
+      academicLevel: storedProfile?.academicLevel ?? null
     };
     
     const scholarships = await Scholarship.getEligibleScholarships(userProfile);

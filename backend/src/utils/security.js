@@ -5,27 +5,50 @@
 
 const path = require('path');
 
+const LOG_ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*m/g;
+const LOG_CONTROL_PATTERN = /[\r\n\t]/g;
+const PROTOTYPE_POLLUTION_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 /**
- * Sanitize a string for safe logging.
- * Strips newlines, carriage returns, ANSI escape codes, and control characters.
- * Truncates excessively long strings to prevent log flooding.
+ * Sanitize any value for safe logging.
+ * Strips newlines, carriage returns, tabs, and ANSI escape codes.
  * @param {*} input - Value to sanitize
- * @param {number} [maxLength=500] - Maximum output length
  * @returns {string} Sanitized string safe for logging
  */
-function sanitizeForLog(input, maxLength = 500) {
-  if (input === null || input === undefined) return '';
-  const str = String(input);
-  // Strip newlines, carriage returns, ANSI escape codes, and control characters
-  let sanitized = str
-    .replace(/[\r\n]+/g, ' ')
-    .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
-    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, '');
-  // Truncate to prevent log flooding
-  if (sanitized.length > maxLength) {
-    sanitized = sanitized.substring(0, maxLength) + '...[truncated]';
+function sanitizeLogInput(input) {
+  return String(input ?? '')
+    .replace(LOG_CONTROL_PATTERN, '_')
+    .replace(LOG_ANSI_ESCAPE_PATTERN, '');
+}
+
+/**
+ * Backwards-compatible alias for legacy call sites.
+ * @param {*} input
+ * @returns {string}
+ */
+function sanitizeForLog(input) {
+  return sanitizeLogInput(input);
+}
+
+/**
+ * Safely assign properties from source to target while blocking prototype pollution keys.
+ * @param {Object} target
+ * @param {Object} source
+ * @param {Set<string>|string[]} [allowedKeys]
+ * @returns {Object}
+ */
+function safeAssign(target, source, allowedKeys = null) {
+  if (!source || typeof source !== 'object') return target;
+  const allowSet = allowedKeys
+    ? (allowedKeys instanceof Set ? allowedKeys : new Set(allowedKeys))
+    : null;
+
+  for (const key of Object.keys(source)) {
+    if (PROTOTYPE_POLLUTION_KEYS.has(key)) continue;
+    if (allowSet && !allowSet.has(key)) continue;
+    target[key] = source[key];
   }
-  return sanitized;
+  return target;
 }
 
 /**
@@ -64,12 +87,10 @@ function sanitizePath(userInput, baseDir) {
 function sanitizeObject(obj) {
   if (typeof obj !== 'object' || obj === null) return obj;
   if (Array.isArray(obj)) return obj.map(sanitizeObject);
-
-  const dangerousKeys = ['__proto__', 'constructor', 'prototype'];
-  const cleaned = {};
+  const cleaned = Object.create(null);
 
   for (const key of Object.keys(obj)) {
-    if (dangerousKeys.includes(key)) continue;
+    if (PROTOTYPE_POLLUTION_KEYS.has(key)) continue;
     const value = obj[key];
     cleaned[key] = (typeof value === 'object' && value !== null)
       ? sanitizeObject(value)
@@ -95,7 +116,9 @@ function safeJsonParse(str, fallback = null) {
 }
 
 module.exports = {
+  sanitizeLogInput,
   sanitizeForLog,
+  safeAssign,
   sanitizePath,
   sanitizeObject,
   safeJsonParse,

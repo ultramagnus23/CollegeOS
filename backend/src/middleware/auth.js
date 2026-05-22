@@ -1,5 +1,6 @@
 const AuthService = require('../services/authService');
 const logger = require('../utils/logger');
+const { sanitizeLogInput } = require('../utils/security');
 
 const authenticate = (req, res, next) => {
   try {
@@ -37,6 +38,16 @@ const authenticate = (req, res, next) => {
     }
     
     const decoded = AuthService.verifyToken(token);
+    if (!decoded || !decoded.userId) {
+      logger.warn('Authentication failed: Invalid decoded token payload', {
+        tokenPreview: sanitizeLogInput(token.substring(0, 12))
+      });
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token payload',
+        errorType: 'INVALID_PAYLOAD'
+      });
+    }
     
     req.user = decoded;
     next();
@@ -75,6 +86,10 @@ const optionalAuth = (req, res, next) => {
     
     const token = authHeader.substring(7);
     const decoded = AuthService.verifyToken(token);
+    if (!decoded || !decoded.userId) {
+      req.user = null;
+      return next();
+    }
     
     req.user = decoded;
     next();
