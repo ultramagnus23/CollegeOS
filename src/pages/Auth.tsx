@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { auth, googleProvider, isFirebaseConfigured } from '../lib/firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect } from 'firebase/auth';
 
 const FIREBASE_POPUP_CLOSED_CODES = new Set([
   'auth/popup-closed-by-user',
@@ -62,6 +62,10 @@ const AuthPage = () => {
       } else {
         // Log the exact code + message so developers can diagnose in the console.
         console.error('[Firebase sign-in error]', { code: err.code, message: err.message });
+        if (err.code === 'auth/popup-blocked') {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        }
         setError(
           FIREBASE_ERROR_MESSAGES[err.code] ?? 'Google sign-in failed. Please try again.'
         );

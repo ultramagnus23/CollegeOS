@@ -282,7 +282,7 @@ class College {
       ranking: 'COALESCE(c.global_rank, 999999)',
     };
 
-    const sortField = sortable[filters.sortBy] || 'c.name';
+    const sortField = sortable[filters.sortBy] || 'c.canonical_name';
     const sortDir = filters.sortDir === 'desc' ? 'DESC' : 'ASC';
     if (filters.search && !filters.sortBy) {
       query += ' ORDER BY relevance_score DESC, c.canonical_name ASC';

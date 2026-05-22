@@ -14,6 +14,7 @@ import ProfileCompleteness from '../components/ProfileCompleteness';
 import { CompactDecisionCountdown } from '@/components/DecisionCountdown';
 import { useTutorial } from '../components/tutorial/TutorialOverlay';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
+import { trackDuration, trackMetric } from '@/observability';
 
 /* ─── Design tokens ──────────────────────────────────────────────────── */
 const h2r = (hex: string, a: number) => {
@@ -179,13 +180,23 @@ const Dashboard = () => {
   }, [start, user]);
 
   const loadDashboardData = async () => {
+    const startedAt = Date.now();
     try {
-      const [collegesRes, applicationsRes, deadlinesRes, essaysRes] = await Promise.all([
+      const [collegesReq, applicationsReq, deadlinesReq, essaysReq] = await Promise.allSettled([
         api.getColleges({ limit:5 }), api.getApplications(), api.getDeadlines(30), api.getEssays()
       ]);
+      const collegesRes = collegesReq.status === 'fulfilled' ? collegesReq.value : { data: [] as any[] };
+      const applicationsRes = applicationsReq.status === 'fulfilled' ? applicationsReq.value : { data: [] as any[] };
+      const deadlinesRes = deadlinesReq.status === 'fulfilled' ? deadlinesReq.value : { data: [] as any[] };
+      const essaysRes = essaysReq.status === 'fulfilled' ? essaysReq.value : { data: [] as any[] };
       const applications = applicationsRes.data || [];
       const deadlines = deadlinesRes.data || [];
       const essays = essaysRes.data || [];
+
+      if (collegesReq.status === 'rejected') trackMetric('dashboard.endpoint_failed', { endpoint: 'colleges' });
+      if (applicationsReq.status === 'rejected') trackMetric('dashboard.endpoint_failed', { endpoint: 'applications' });
+      if (deadlinesReq.status === 'rejected') trackMetric('dashboard.endpoint_failed', { endpoint: 'deadlines' });
+      if (essaysReq.status === 'rejected') trackMetric('dashboard.endpoint_failed', { endpoint: 'essays' });
 
       setStats({
         applications: applications.length,
@@ -246,7 +257,13 @@ const Dashboard = () => {
           { id:'a2', priority:'medium', category:'applications', action:'Add colleges to your list', reason:'Build a balanced reach/target/safety list', impact:'Better application strategy', impactScore:15 },
         ]);
       }
-    } catch (e) { console.error('Dashboard load error:', e); } finally { setLoading(false); }
+    } catch (e) {
+      console.error('Dashboard load error:', e);
+      trackMetric('dashboard.load_failed', { reason: e instanceof Error ? e.message : 'unknown' });
+    } finally {
+      trackDuration('dashboard.load', startedAt);
+      setLoading(false);
+    }
   };
 
   const getDaysUntil = (d: string) => {

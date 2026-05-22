@@ -12,6 +12,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
 import { profileService } from "./services/profileService";
 import { api } from "./services/api";
+import { fetchWithResilience } from "./services/networkManager";
+import { trackDuration, trackMetric } from "./observability";
 import { TutorialProvider, TutorialOverlay } from "./components/tutorial/TutorialOverlay";
 import { OnboardingProvider } from "./contexts/OnboardingContext";
 
@@ -86,10 +88,11 @@ class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryStat
 }
 
 const AppContent = () => {
-  const { refreshUser, user } = useAuth();
+  const { refreshUser, user, authReady } = useAuth();
   const [studentProfile, setStudentProfile] = useState<StudentProfile | null>(null);
 
   useEffect(() => {
+    if (!authReady || !user) return;
     profileService
       .getProfileFromBackend()
       .then((profile) => {
@@ -98,12 +101,23 @@ const AppContent = () => {
       .catch((err) => {
         console.error("Failed to load profile on init:", err);
       });
-  }, []);
+  }, [authReady, user]);
 
   useEffect(() => {
+    if (import.meta.env.VITE_DISABLE_HEALTH_POLLING === '1') return;
+    const startedAt = Date.now();
     const rawBase = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     const healthBase = rawBase.endsWith('/api') ? rawBase.slice(0, -4) : rawBase;
-    fetch(`${healthBase}/health`).catch(() => {});
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3000);
+    fetchWithResilience(`${healthBase}/status`, { signal: controller.signal }, { retries: 0, timeoutMs: 3000 })
+      .then(() => trackDuration('app.status_probe', startedAt, { ok: true }))
+      .catch(() => trackMetric('app.status_probe_failed', { blockedOrOffline: true }))
+      .finally(() => clearTimeout(timer));
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, []);
 
   const handleOnboardingComplete = async (profile: StudentProfile) => {
@@ -131,7 +145,7 @@ const AppContent = () => {
       <Toaster />
       <Sonner />
 
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<AuthPage />} />

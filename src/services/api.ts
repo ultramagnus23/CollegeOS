@@ -3,6 +3,7 @@
 // ============================================
 
 import { apiFetch } from '../utils/apiClient';
+import { trackDuration, trackMetric } from '../observability';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
@@ -40,11 +41,46 @@ class ApiService {
   private baseUrl: string;
   private token: string | null;
   private refreshing: boolean = false;
+  private refreshPromise: Promise<any> | null = null;
+  private inflightGetRequests = new Map<string, Promise<any>>();
+  private authHydrated = false;
+  private authHydrationResolver: (() => void) | null = null;
+  private authHydrationPromise: Promise<void>;
 
   constructor() {
     this.baseUrl = API_BASE_URL;
     this.token = localStorage.getItem('accessToken');
+    this.authHydrationPromise = new Promise((resolve) => {
+      this.authHydrationResolver = resolve;
+    });
     logDebug('init', 'INIT', `ApiService initialized with baseUrl: ${this.baseUrl}`);
+  }
+
+  setAuthHydrated(ready: boolean) {
+    this.authHydrated = ready;
+    if (ready && this.authHydrationResolver) {
+      this.authHydrationResolver();
+      this.authHydrationResolver = null;
+    }
+    if (!ready && !this.authHydrationResolver) {
+      this.authHydrationPromise = new Promise((resolve) => {
+        this.authHydrationResolver = resolve;
+      });
+    }
+  }
+
+  private async waitForAuthHydration() {
+    if (this.authHydrated) return;
+    await Promise.race([
+      this.authHydrationPromise,
+      new Promise<void>((resolve) => setTimeout(resolve, 2000)),
+    ]);
+  }
+
+  private isLikelyProtectedEndpoint(endpoint: string): boolean {
+    if (endpoint.startsWith('/auth/login') || endpoint.startsWith('/auth/register') || endpoint.startsWith('/auth/google')) return false;
+    if (endpoint.startsWith('/colleges') || endpoint.startsWith('/search') || endpoint.startsWith('/discovery')) return false;
+    return true;
   }
 
   setToken(token: string | null) {
@@ -90,103 +126,109 @@ class ApiService {
     // Refresh token from localStorage before each request
     this.token = localStorage.getItem('accessToken');
     logDebug(requestId, 'AUTH', this.token ? 'Token present' : 'No token - request may fail if auth required');
-    
-    let response: Response;
-    try {
-      response = await apiFetch(`${this.baseUrl}${endpoint}`, {
-        ...options,
-        headers: this.getHeaders(),
-      });
-      
-      const duration = (performance.now() - startTime).toFixed(2);
-      logDebug(requestId, 'RESPONSE', `Status ${response.status} in ${duration}ms`, {
-        ok: response.ok,
-        statusText: response.statusText
-      });
-    } catch (networkError: any) {
-      logError(requestId, 'NETWORK', `Network request failed to ${endpoint}`, networkError);
-      throw new Error(`Network error: Could not connect to server. Is the backend running at ${this.baseUrl}?`);
+
+    if (this.isLikelyProtectedEndpoint(endpoint)) {
+      await this.waitForAuthHydration();
     }
 
-    // Attempt to parse JSON always (backend returns JSON)
-    let data;
-    try {
-      data = await response.json();
-      logDebug(requestId, 'PARSE', 'JSON parsed successfully', {
-        success: data?.success,
-        hasData: !!data?.data,
-        dataType: typeof data?.data,
-        count: data?.count,
-        errorType: data?.errorType
-      });
-    } catch (e: any) {
-      logError(requestId, 'PARSE', 'Failed to parse JSON response', e);
-      data = {};
+    const dedupeKey = `${method}:${endpoint}:${String(options.body || '')}`;
+    if (method === 'GET' && this.inflightGetRequests.has(dedupeKey)) {
+      return this.inflightGetRequests.get(dedupeKey)!;
     }
 
-    // Handle 401 Unauthorized - try to refresh token (only once)
-    if (response.status === 401 && (data as any)?.errorType === 'TOKEN_EXPIRED' && retryCount < MAX_RETRIES) {
-      logDebug(requestId, 'TOKEN_REFRESH', 'Access token expired, attempting refresh');
-      const refreshToken = localStorage.getItem('refreshToken');
-      
-      if (refreshToken && endpoint !== '/auth/refresh' && !this.refreshing) {
-        try {
-          this.refreshing = true;
-          // Attempt to refresh the access token
-          const refreshResponse = await apiFetch(`${this.baseUrl}/auth/refresh`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken }),
-          });
-          
-          const refreshData = await refreshResponse.json();
-          
-          if (refreshResponse.ok && (refreshData as any)?.data?.accessToken) {
-            // Update access token and retry the original request
-            const newAccessToken = (refreshData as any).data.accessToken;
-            this.setToken(newAccessToken);
-            logDebug(requestId, 'TOKEN_REFRESH', 'Token refreshed successfully, retrying request');
-            
-            // Retry original request with new token (increment retry count)
-            return this.request(endpoint, options, retryCount + 1);
-          } else {
+    const exec = (async () => {
+      const startedAt = Date.now();
+      let response: Response;
+      try {
+        response = await apiFetch(`${this.baseUrl}${endpoint}`, {
+          ...options,
+          headers: this.getHeaders(),
+        });
+
+        const duration = (performance.now() - startTime).toFixed(2);
+        logDebug(requestId, 'RESPONSE', `Status ${response.status} in ${duration}ms`, {
+          ok: response.ok,
+          statusText: response.statusText
+        });
+      } catch (networkError: any) {
+        logError(requestId, 'NETWORK', `Network request failed to ${endpoint}`, networkError);
+        trackMetric('api.network_error', { endpoint, method });
+        throw new Error(`Network error: Could not connect to server. Is the backend running at ${this.baseUrl}?`);
+      }
+
+      let data;
+      try {
+        data = await response.json();
+        logDebug(requestId, 'PARSE', 'JSON parsed successfully', {
+          success: data?.success,
+          hasData: !!data?.data,
+          dataType: typeof data?.data,
+          count: data?.count,
+          errorType: data?.errorType
+        });
+      } catch (e: any) {
+        logError(requestId, 'PARSE', 'Failed to parse JSON response', e);
+        data = {};
+      }
+
+      if (response.status === 401 && (data as any)?.errorType === 'TOKEN_EXPIRED' && retryCount < MAX_RETRIES) {
+        logDebug(requestId, 'TOKEN_REFRESH', 'Access token expired, attempting refresh');
+        const refreshToken = localStorage.getItem('refreshToken');
+
+        if (refreshToken && endpoint !== '/auth/refresh') {
+          try {
+            this.refreshing = true;
+            this.refreshPromise = this.refreshPromise || apiFetch(`${this.baseUrl}/auth/refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refreshToken }),
+            }).then((r) => r.json());
+            const refreshData = await this.refreshPromise;
+
+            if ((refreshData as any)?.data?.accessToken) {
+              const newAccessToken = (refreshData as any).data.accessToken;
+              this.setToken(newAccessToken);
+              logDebug(requestId, 'TOKEN_REFRESH', 'Token refreshed successfully, retrying request');
+              return this.request(endpoint, options, retryCount + 1);
+            }
             logError(requestId, 'TOKEN_REFRESH', 'Failed to refresh token', refreshData);
-            // Clear tokens and force re-login
             this.clearTokens();
+          } catch (refreshError: any) {
+            logError(requestId, 'TOKEN_REFRESH', 'Error during token refresh', refreshError);
+            this.clearTokens();
+          } finally {
+            this.refreshing = false;
+            this.refreshPromise = null;
           }
-        } catch (refreshError: any) {
-          logError(requestId, 'TOKEN_REFRESH', 'Error during token refresh', refreshError);
-          // Clear tokens and force re-login
-          this.clearTokens();
-        } finally {
-          this.refreshing = false;
-        }
-      } else {
-        if (this.refreshing) {
-          logDebug(requestId, 'TOKEN_REFRESH', 'Already refreshing token, skipping');
-        } else {
+        } else if (!this.refreshing) {
           logDebug(requestId, 'TOKEN_REFRESH', 'No refresh token available or already on refresh endpoint');
-          // Clear tokens and force re-login
           this.clearTokens();
         }
       }
-    }
 
-    if (!response.ok) {
-      const errorMessage = (data as any).message || `API request failed with status ${response.status}`;
-      logError(requestId, 'ERROR', `API Error: ${errorMessage}`, {
-        status: response.status,
-        endpoint,
-        method,
-        responseData: data
-      });
-      throw new Error(errorMessage);
-    }
+      if (!response.ok) {
+        const errorMessage = (data as any).message || `API request failed with status ${response.status}`;
+        logError(requestId, 'ERROR', `API Error: ${errorMessage}`, {
+          status: response.status,
+          endpoint,
+          method,
+          responseData: data
+        });
+        throw new Error(errorMessage);
+      }
 
-    const totalDuration = (performance.now() - startTime).toFixed(2);
-    logDebug(requestId, 'COMPLETE', `Request completed in ${totalDuration}ms`);
-    
-    return data;
+      const totalDuration = (performance.now() - startTime).toFixed(2);
+      logDebug(requestId, 'COMPLETE', `Request completed in ${totalDuration}ms`);
+      trackDuration('api.request', startedAt, { endpoint, method, status: response.status });
+      return data;
+    })();
+
+    if (method === 'GET') this.inflightGetRequests.set(dedupeKey, exec);
+    try {
+      return await exec;
+    } finally {
+      if (method === 'GET') this.inflightGetRequests.delete(dedupeKey);
+    }
   }
 
   // ==================== AUTH ENDPOINTS ====================
