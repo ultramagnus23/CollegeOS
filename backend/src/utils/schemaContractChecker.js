@@ -61,23 +61,24 @@ const BACKEND_SERIALIZER_FIELDS = [
 ];
 
 async function getColumns(pool, schema, table) {
-  const query = `
-    SELECT a.attname AS column_name
-    FROM pg_attribute a
-    JOIN pg_class c
-      ON c.oid = a.attrelid
-    JOIN pg_namespace n
-      ON n.oid = c.relnamespace
-    WHERE n.nspname = $1
-      AND c.relname = $2
-      AND a.attnum > 0
-      AND NOT a.attisdropped
-    ORDER BY a.attnum
-  `;
+  const { rows } = await pool.query(
+    `
+      SELECT a.attname AS column_name
+      FROM pg_attribute a
+      JOIN pg_class c
+        ON c.oid = a.attrelid
+      JOIN pg_namespace n
+        ON n.oid = c.relnamespace
+      WHERE n.nspname = $1
+        AND c.relname = $2
+        AND a.attnum > 0
+        AND NOT a.attisdropped
+      ORDER BY a.attnum
+    `,
+    [schema, table]
+  );
 
-  const result = await pool.query(query, [schema, table]);
-
-  return result.rows.map((r) => r.column_name);
+  return rows.map((r) => r.column_name);
 }
 
 function missingFrom(actualSet, expectedList) {
