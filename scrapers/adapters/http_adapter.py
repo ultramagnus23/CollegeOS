@@ -2,11 +2,24 @@ from __future__ import annotations
 
 import random
 import time
-from typing import List
+from typing import List, Tuple
 
 import requests
 
 from .base_adapter import BaseAdapter, FetchResult
+
+
+RETRYABLE_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
+
+
+def classify_http_status(status_code: int) -> Tuple[str, bool]:
+    if status_code == 429:
+        return "RateLimitError", True
+    if status_code in RETRYABLE_STATUS_CODES:
+        return "NetworkError", True
+    if 500 <= status_code <= 599:
+        return "NetworkError", True
+    return "HttpError", False
 
 
 class HttpAdapter(BaseAdapter):
@@ -21,6 +34,9 @@ class HttpAdapter(BaseAdapter):
 
     def fetch(self, url: str) -> FetchResult:
         last_error = None
+        last_error_type = "NetworkError"
+        retryable = True
+        retries_used = 0
         for attempt in range(1, self.retries + 1):
             try:
                 headers = {"User-Agent": random.choice(self.user_agents)}

@@ -9,6 +9,7 @@ from typing import Dict, List, Tuple
 
 import psycopg2
 from psycopg2 import errors
+
 from psycopg2.extras import execute_batch
 
 from scrapers.schedulers.runner import run_scrape_cycle
@@ -95,6 +96,126 @@ def emit_structured_log(
     )
 
 
+REQUIRED_DIAGNOSTIC_FILES = (
+    "run_summary.json",
+    "scraper_metrics.json",
+    "failed_colleges.json",
+    "stale_colleges.json",
+    "schema_errors.json",
+)
+
+SCHEMA_EXPECTATIONS = {
+    "canonical.institution_admissions": {"institution_id", "acceptance_rate", "last_verified"},
+    "canonical.institution_deadlines": {
+        "institution_id",
+        "deadline_type",
+        "deadline_date",
+        "source_url",
+        "confidence_score",
+        "last_verified",
+        "parser_version",
+        "extraction_timestamp",
+    },
+    "canonical.institution_requirements": {
+        "institution_id",
+        "requirement_type",
+        "requirement_text",
+        "source_url",
+        "confidence_score",
+        "last_verified",
+        "parser_version",
+        "extraction_timestamp",
+    },
+    "canonical.institution_financials": {"institution_id", "last_verified"},
+}
+
+
+def _iso_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _structured_log(
+    *,
+    stage: str,
+    error_type: str,
+    retryable: bool,
+    batch_id: str,
+    institution: str = "system",
+    column: str | None = None,
+    message: str | None = None,
+) -> None:
+    payload = {
+        "institution": institution,
+        "stage": stage,
+        "error_type": error_type,
+        "retryable": retryable,
+        "column": column,
+        "timestamp": _iso_now(),
+        "batch_id": batch_id,
+        "workflow": "scrape-weekly",
+    }
+    if message:
+        payload["message"] = message
+    print(json.dumps(payload, ensure_ascii=False))
+
+
+def ensure_diagnostics_files(out_dir: Path) -> Dict[str, Any]:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    bootstrap = {
+        "run_summary.json": {
+            "workflow": "scrape-weekly",
+            "institutions_processed": 0,
+            "success_count": 0,
+            "failure_count": 0,
+            "schema_errors": 0,
+            "network_errors": 0,
+            "retry_count": 0,
+            "stale_records_detected": 0,
+            "duration_seconds": 0,
+            "status": "failed",
+            "degraded": False,
+            "fatal_error": None,
+            "timestamp": _iso_now(),
+        },
+        "scraper_metrics.json": {
+            "workflow": "scrape-weekly",
+            "institutions_processed": 0,
+            "success_count": 0,
+            "failure_count": 0,
+            "schema_errors": 0,
+            "network_errors": 0,
+            "retry_count": 0,
+            "stale_records_detected": 0,
+            "duration_seconds": 0,
+            "status": "failed",
+            "timestamp": _iso_now(),
+        },
+        "failed_colleges.json": [],
+        "stale_colleges.json": [],
+        "schema_errors.json": [],
+    }
+
+    for name, payload in bootstrap.items():
+        target = out_dir / name
+        if not target.exists():
+            with target.open("w", encoding="utf-8") as fh:
+                json.dump(payload, fh, indent=2)
+
+    legacy = {
+        "summary.json": bootstrap["run_summary.json"],
+        "diagnostics.json": [],
+        "failed_institutions.json": [],
+        "stale_institutions.json": [],
+    }
+    for name, payload in legacy.items():
+        target = out_dir / name
+        if not target.exists():
+            with target.open("w", encoding="utf-8") as fh:
+                json.dump(payload, fh, indent=2)
+
+    return bootstrap
+
+
 def get_connection():
     db_url = os.getenv("SUPABASE_DB_URL")
     if not db_url:
@@ -164,6 +285,7 @@ def _execute_batch_with_retry(conn, query: str, rows: List[Tuple], *, operation:
 
 
 def upsert_deadlines(conn, deadlines: List[Dict], metrics: Dict):
+
     rows = []
     now = datetime.now(timezone.utc)
     for d in deadlines:
@@ -182,6 +304,7 @@ def upsert_deadlines(conn, deadlines: List[Dict], metrics: Dict):
                 d.get("parser_version", "deadline_parser_v1"),
                 d.get("extraction_timestamp"),
             )
+
         )
     _execute_batch_with_retry(
         conn,
@@ -224,6 +347,31 @@ def upsert_requirements(conn, requirements: List[Dict], metrics: Dict):
                 r.get("parser_version", "requirements_parser_v1"),
                 r.get("extraction_timestamp"),
             )
+
+def validate_schema(conn) -> Tuple[Dict[str, bool], List[Dict]]:
+    module_status = {
+        "admissions": True,
+        "deadlines": True,
+        "requirements": True,
+        "financials": True,
+    }
+    schema_errors: List[Dict] = []
+    with conn.cursor() as cur:
+        execute_batch(
+            cur,
+            """
+            INSERT INTO canonical.institution_requirements
+              (institution_id, requirement_type, requirement_text, source_url, confidence_score, last_verified, parser_version, extraction_timestamp)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (institution_id, requirement_type, requirement_text) DO UPDATE SET
+              source_url = EXCLUDED.source_url,
+              confidence_score = EXCLUDED.confidence_score,
+              last_verified = EXCLUDED.last_verified,
+              parser_version = EXCLUDED.parser_version,
+              extraction_timestamp = EXCLUDED.extraction_timestamp
+            """,
+            rows,
+            page_size=200,
         )
     _execute_batch_with_retry(
         conn,
@@ -439,6 +587,7 @@ def main() -> int:
             schema_errors=schema_errors,
         )
     return exit_code
+
 
 
 if __name__ == "__main__":

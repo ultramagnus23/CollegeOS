@@ -20,8 +20,11 @@ from scrapers.validators.payload_validator import validate_deadlines, validate_r
 class ScrapeDiagnostic:
     institution_id: str
     source_url: str
+    batch_id: str
     success: bool
     errors: List[str]
+    error_type: str | None
+    retryable: bool
     deadline_count: int
     requirement_count: int
     confidence_score: float
@@ -286,14 +289,18 @@ def run_scrape_cycle(
     deduped_deadlines = resolve_conflicts(deadline_rows)
     deduped_requirements = resolve_conflicts(requirement_rows)
     duration_seconds = int((datetime.now(timezone.utc) - start_time).total_seconds())
+    success_count = sum(1 for d in diagnostics if d.success)
+    failure_count = len(diagnostics) - success_count
     return {
         "deadlines": deduped_deadlines,
         "requirements": deduped_requirements,
         "diagnostics": [asdict(d) for d in diagnostics],
         "summary": {
+            "workflow": "scrape-weekly",
             "targets": len(targets),
-            "success": sum(1 for d in diagnostics if d.success),
-            "failures": sum(1 for d in diagnostics if not d.success),
+            "institutions_processed": len(diagnostics),
+            "success_count": success_count,
+            "failure_count": failure_count,
             "deadline_records": len(deduped_deadlines),
             "requirement_records": len(deduped_requirements),
             "stale_sources": sum(1 for d in diagnostics if d.stale),

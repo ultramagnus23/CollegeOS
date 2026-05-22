@@ -6,10 +6,12 @@ env:
 on:
   schedule:
     - cron: "0 4 * * 0"
+
   workflow_dispatch:
 
 permissions:
   contents: read
+
 
 concurrency:
   group: scrape-weekly
@@ -24,6 +26,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+
       - name: Install scraper dependencies
         run: |
           python -m pip install --upgrade pip
@@ -37,10 +40,12 @@ jobs:
           printf '[]' > scraper_diagnostics/schema_errors.json
       - name: Run weekly refresh
         id: run_scraper
+
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           SCRAPE_MODE: weekly
           SCRAPER_DIAGNOSTICS_DIR: scraper_diagnostics
+
           PYTHONPATH: ${{ github.workspace }}
         run: |
           set +e
@@ -64,6 +69,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v5
         continue-on-error: true
+
         with:
           name: weekly-deadline-diagnostics
           path: scraper_diagnostics/
@@ -73,6 +79,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v5
         continue-on-error: true
+
         with:
           name: weekly-deadline-diagnostics-archive
           path: scraper_diagnostics.tar.gz
@@ -115,3 +122,4 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python -m unittest scrapers.tests.test_scrape_weekly_smoke -v
+

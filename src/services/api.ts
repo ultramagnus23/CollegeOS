@@ -3,7 +3,7 @@
 // ============================================
 
 import { apiFetch } from '../utils/apiClient';
-import { trackDuration, trackMetric } from '../observability';
+import { sanitizeOnboardingPayload } from '../utils/sanitizeOnboardingPayload';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
@@ -298,10 +298,11 @@ class ApiService {
   }
 
   async completeOnboarding(data: any, options: RequestInit = {}) {
+    const sanitizedPayload = sanitizeOnboardingPayload(data);
     return this.request('/auth/onboarding', {
       ...options,
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify(sanitizedPayload),
     });
   }
 

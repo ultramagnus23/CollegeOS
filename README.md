@@ -1,125 +1,400 @@
-CollegeOS - Comprehensive College Application Management Platform
+# CollegeOS
 
-A full-stack college application tracker helping students discover, organize, and apply to universities worldwide. Features 1000+ colleges (US, India, UK, Germany) with detailed admissions data, personalized chancing calculator, deadline tracking, essay management, and intelligent college recommendations.
+A modern college discovery, recommendation, and application intelligence platform built for global applicants.
 
-Built with React, Node.js, and PostgreSQL (Supabase). Combines data-rich college search with Common App's organizational tools, making college applications manageable for students globally.
+CollegeOS combines structured university data, admissions intelligence, financial analysis, rankings, deadline automation, and personalized recommendation systems into a single platform designed to simplify the college application process.
 
-Key Features: Smart college search • Admission chance calculator • Application deadline tracker • Financial aid comparison • Essay manager • Personalized recommendations
-
----
-
-## Chancing Model
-
-Admission probability is calculated entirely in JavaScript by the deterministic sigmoid model in:
-
-```
-backend/src/services/consolidatedChancingService.js  →  calculateChance(studentProfile, college)
-```
-
-This function uses the student's GPA and SAT delta against the college's medians, anchors to the
-college's own selectivity via a log-odds term, applies an international student penalty, and
-returns `{ tier, probability, confidence, explanation }`.
-
-**The former Python Flask service (`backend/ml-service/`) and FastAPI service (`backend/chancing_service/`) have been removed.** They were never running on Render and had no active callers. All chancing routes (`POST /api/chance`, `POST /api/chancing/calculate`, `POST /api/chancing/ml/batch`) use `consolidatedChancingService` exclusively.
+The platform is built around a canonical data architecture using PostgreSQL + Supabase, with React frontend applications, Node.js APIs, Python scraper infrastructure, and ML-assisted recommendation pipelines.
 
 ---
 
-## Automated Data Pipeline
+# Core Capabilities
 
-CollegeOS includes a fully automated, zero-touch data pipeline that keeps all college data and ML models fresh without manual intervention.
+## College Discovery
 
-### Architecture (quick-stabilization ownership split)
+Explore universities across:
 
+* United States
+* United Kingdom
+* Canada
+* Germany
+* India
+* Europe
+* Australia
+* Singapore
+* Additional international institutions
+
+Features:
+
+* Advanced filtering
+* Rankings exploration
+* Country-based discovery
+* Major-specific exploration
+* Popularity-based sorting
+* Financial fit filtering
+* Admissions selectivity analysis
+
+---
+
+# Recommendation Engine
+
+CollegeOS uses a multi-stage recommendation architecture rather than static weighted scoring.
+
+## Recommendation Pipeline
+
+### Stage 1 — Candidate Retrieval
+
+Semantic retrieval using:
+
+* embeddings
+* vector similarity
+* pgvector + PostgreSQL
+
+This narrows thousands of institutions into high-fit candidates.
+
+### Stage 2 — Ranking Intelligence
+
+Recommendation ranking incorporates:
+
+* academic fit
+* major alignment
+* subject rankings
+* affordability
+* admissions competitiveness
+* outcomes
+* popularity
+* international aid availability
+* career alignment
+
+### Stage 3 — Portfolio Diversification
+
+Recommendation outputs are diversified into:
+
+* Reach
+* Target
+* Safety
+* Wildcard
+
+This prevents repetitive recommendation lists.
+
+### Stage 4 — Explainability
+
+Recommendations include:
+
+* score breakdowns
+* reasoning summaries
+* feature-based explanations
+* confidence scoring
+
+---
+
+# Chancing System
+
+Admissions probability estimation is powered by:
+
+```text
+backend/src/services/consolidatedChancingService.js
 ```
-GitHub Actions (source of truth)          Optional fallback/manual (Python-only)
-───────────────────────────────────       ──────────────────────────────────────
-.github/workflows/daily-data-refresh.yml  scraper/orchestrator_worker.py
-  └─ scraper/pipeline.py                    └─ backend/scripts/data-pipeline/*
+
+The current system is fully integrated into the Node.js backend.
+
+The legacy Flask and FastAPI chancing services have been removed.
+
+The chancing engine evaluates:
+
+* GPA competitiveness
+* SAT/ACT alignment
+* institutional selectivity
+* international applicant considerations
+* admissions deltas
+* confidence levels
+
+Responses include:
+
+* probability
+* tier classification
+* confidence
+* explanation metadata
+
+---
+
+# Canonical Data Architecture
+
+CollegeOS uses a normalized canonical schema centered around:
+
+```text
+canonical.*
 ```
 
-The official admissions data refresh path is **GitHub Actions + `scraper/pipeline.py`**.
-`backend/scripts/data-pipeline/*` + `scraper/orchestrator_worker.py` is retained as Python fallback/manual path.
+Primary canonical domains include:
 
-### Schedules
+* institutions
+* admissions
+* financials
+* outcomes
+* rankings
+* deadlines
+* requirements
+* demographics
+* programs
+* recommendation intelligence
+* embeddings
+* popularity signals
 
-| Job | Schedule | Table written |
-|-----|----------|---------------|
-| Daily data refresh | Daily 03:00 UTC | `colleges_comprehensive` |
+The platform has been migrated away from fragmented legacy joins and duplicate institution representations.
 
-### Health Dashboard
+---
 
+# Rankings & Popularity Intelligence
+
+CollegeOS supports:
+
+* global rankings
+* subject rankings
+* popularity indexing
+* discovery rails
+
+Ranking normalization combines signals from:
+
+* QS
+* THE
+* NIRF
+* institutional metadata
+* engagement metrics
+
+Discovery rails include:
+
+* Top Global
+* Top CS
+* Top Engineering
+* Top Business
+* Top by Country
+* Trending
+* Popular Colleges
+
+---
+
+# Financial Intelligence
+
+Financial analysis supports:
+
+* tuition comparison
+* estimated cost of attendance
+* international tuition
+* aid availability
+* merit scholarship indicators
+* need-blind indicators
+* debt analysis
+* salary outcomes
+* affordability scoring
+
+Financial normalization is country-aware and supports:
+
+* US aid systems
+* UK funding systems
+* Indian financing contexts
+* international applicant aid semantics
+
+---
+
+# Deadlines & Requirements Infrastructure
+
+CollegeOS includes a production scraper infrastructure for:
+
+## Deadlines
+
+* Early Action
+* Early Decision
+* Regular Decision
+* Rolling Admissions
+* International Deadlines
+
+## Requirements
+
+* SAT/ACT policies
+* English proficiency requirements
+* GPA expectations
+* transcript requirements
+* essays
+* recommendations
+* portfolio requirements
+
+The scraper framework supports:
+
+* retries
+* batching
+* schema validation
+* diagnostics generation
+* confidence scoring
+* stale detection
+* structured logging
+* GitHub Actions automation
+
+---
+
+# Automated Data Infrastructure
+
+The platform includes automated refresh pipelines using GitHub Actions.
+
+## Current Pipelines
+
+| Workflow        | Purpose                                   |
+| --------------- | ----------------------------------------- |
+| Daily Refresh   | Canonical data refresh                    |
+| Weekly Scraper  | Rolling admissions + requirements updates |
+| Monthly Scraper | Full refresh + stale reconciliation       |
+
+The scraper infrastructure is designed to:
+
+* tolerate partial failures
+* continue on institution-level errors
+* generate diagnostics artifacts
+* support resumable execution
+
+---
+
+# Tech Stack
+
+## Frontend
+
+* React
+* TypeScript
+* Vite
+* TailwindCSS
+
+## Backend
+
+* Node.js
+* Express
+
+## Database
+
+* PostgreSQL
+* Supabase
+* pgvector
+
+## Scraper Infrastructure
+
+* Python
+* GitHub Actions
+
+## Recommendation Infrastructure
+
+* vector retrieval
+* ranking orchestration
+* explainability layers
+
+---
+
+# Repository Structure
+
+```text
+frontend/
+backend/
+scraper/
+.github/workflows/
+supabase/migrations/
 ```
-GET /api/admin/health
-```
 
-Returns JSON with scraper last-run times, DB counts, and ML model metrics. Cached for 60 seconds.
+---
 
-### Required Environment Variables
+# Environment Variables
 
 ```bash
-DATABASE_URL=postgresql://...
+DATABASE_URL=
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+
+OPENAI_API_KEY=
+
 REDDIT_CLIENT_ID=
 REDDIT_CLIENT_SECRET=
-REDDIT_USER_AGENT=CollegeOS/1.0 by YourUsername
+REDDIT_USER_AGENT=
 REDDIT_USERNAME=
 REDDIT_PASSWORD=
-DATA_GOV_API_KEY=        # https://api.data.gov/signup/ (free)
-OPENAI_API_KEY=          # for claudeParser.js + valuesEngine.js
+
+DATA_GOV_API_KEY=
+
 NODE_ENV=production
 ```
 
-### Running Locally
+---
+
+# Running Locally
+
+## Backend
 
 ```bash
-# Backend app (scraper scheduling is NOT source-of-truth here)
-node backend/src/app.js
-
-# Optional Python fallback worker
-pip install -r scraper/requirements.txt
-python scraper/orchestrator_worker.py
-
-# Run official GitHub Actions pipeline entrypoint locally
-python scraper/pipeline.py
-
-# Run ML training manually
-python scraper/training_pipeline.py
+cd backend
+npm install
+npm run dev
 ```
 
-### Database Migration
+## Frontend
 
-The new tables are created by migration `049_automation_schema.sql`, which runs automatically on server startup:
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-- `chance_me_posts` — parsed Reddit applicant + outcome rows (upsert key: `reddit_post_id, college_name`)
-- `college_admissions_stats` — per-college per-year admissions stats
-- `college_financial_aid` — per-college per-year financial aid data
-- `scraper_run_logs` — one row per scraper job run (used by health endpoint)
+## Python Scraper Infrastructure
+
+```bash
+pip install -r scraper/requirements.txt
+
+python scraper/pipeline.py
+```
 
 ---
 
-## Scraper Setup
+# GitHub Actions
 
-The Python data pipeline runs automatically via GitHub Actions (`.github/workflows/daily-data-refresh.yml`). No always-on scraper server is required.
+Primary automation entrypoints live under:
 
-### Schedule
+```text
+.github/workflows/
+```
 
-| Job | Trigger |
-|---|---|
-| `refresh` (`daily-data-refresh.yml`) | Daily at 03:00 UTC + manual dispatch |
+Main workflows:
 
-The job can also be triggered manually from the GitHub UI: **Actions → Daily College Data Refresh → Run workflow**.
+* daily-data-refresh.yml
+* scrape-weekly.yml
+* scrape-monthly.yml
 
-### Required GitHub Secrets
+---
 
-Add these in your repository under **Settings → Secrets and variables → Actions → New repository secret**:
+# Current Focus Areas
 
-| Secret | Required by | Description |
-|---|---|---|
-| `DATABASE_URL` | All jobs | PostgreSQL connection string (from Supabase or Render) |
-| `REDDIT_CLIENT_ID` | `reddit-scraper` | Reddit app client ID |
-| `REDDIT_CLIENT_SECRET` | `reddit-scraper` | Reddit app client secret |
-| `REDDIT_USER_AGENT` | `reddit-scraper` | e.g. `CollegeOS/1.0 by YourUsername` |
-| `REDDIT_USERNAME` | `reddit-scraper` | Reddit account username |
-| `REDDIT_PASSWORD` | `reddit-scraper` | Reddit account password |
-| `DATA_GOV_API_KEY` | `admissions-scraper`, `financial-scraper`, `college-profile-scraper` | Free key from [api.data.gov/signup](https://api.data.gov/signup/) |
+Active platform development currently focuses on:
 
-Get a Reddit app at [reddit.com/prefs/apps](https://www.reddit.com/prefs/apps) → **create app** → type **script**.
+* recommendation intelligence
+* scraper resilience
+* rankings infrastructure
+* financial intelligence
+* canonical schema expansion
+* observability
+* workflow hardening
+* performance optimization
+* repository cleanup
+
+---
+
+# Status
+
+CollegeOS is currently under active development and infrastructure stabilization.
+
+The platform architecture is transitioning from:
+
+* heuristic systems
+* fragmented schemas
+* legacy joins
+* duplicated data flows
+
+toward:
+
+* canonical intelligence pipelines
+* resilient scraper infrastructure
+* explainable recommendations
+* normalized ranking systems
+* scalable discovery architecture

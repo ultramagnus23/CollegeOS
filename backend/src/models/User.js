@@ -1,6 +1,8 @@
 const bcrypt = require('bcrypt');
 const dbManager = require('../config/database');
 
+let _usersColumnTypeCache = null;
+
 class User {
   static _usersColumnTypeCache = null;
 
@@ -78,9 +80,54 @@ class User {
     return rows[0] || null;
   }
 
+  static async getUsersColumnTypeMap(pool) {
+    if (_usersColumnTypeCache) return _usersColumnTypeCache;
+    const { rows } = await pool.query(
+      `SELECT column_name, data_type, udt_name
+         FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'users'`
+    );
+    _usersColumnTypeCache = rows.reduce((acc, row) => {
+      acc[row.column_name] = {
+        dataType: row.data_type,
+        udtName: row.udt_name,
+      };
+      return acc;
+    }, {});
+    return _usersColumnTypeCache;
+  }
+
+  static _coerceBooleanToDb(value, columnMeta) {
+    if (value === null || value === undefined) return null;
+    const dataType = String(columnMeta?.dataType || '').toLowerCase();
+    if (dataType.includes('boolean')) return Boolean(value);
+    if (dataType.includes('integer') || dataType.includes('numeric') || dataType.includes('double') || dataType.includes('real')) {
+      return value ? 1 : 0;
+    }
+    return value ? 'true' : 'false';
+  }
+
+  static _serializeForColumn(value, columnMeta) {
+    if (value === null || value === undefined) return null;
+    const dataType = String(columnMeta?.dataType || '').toLowerCase();
+    const udtName = String(columnMeta?.udtName || '').toLowerCase();
+
+    if (dataType === 'ARRAY' || udtName.startsWith('_')) {
+      if (Array.isArray(value)) return value;
+      return [String(value)];
+    }
+
+    if (dataType.includes('json')) {
+      return JSON.stringify(value);
+    }
+
+    return JSON.stringify(value);
+  }
+
   static async updateOnboarding(userId, data) {
     const pool = dbManager.getDatabase();
     const columnTypes = await this.getUsersColumnTypes();
+
     const satScore = data?.sat_score ?? data?.test_status?.sat_score ?? null;
     const actScore = data?.act_score ?? data?.test_status?.act_score ?? null;
     const rawGpa = data?.gpa != null ? parseFloat(data.gpa) : null;
@@ -122,9 +169,10 @@ class User {
     const needFinancialAid = this.coerceBooleanLikeForColumn(needFinancialAidRaw, columnTypes.need_financial_aid);
     const canTakeLoan = this.coerceBooleanLikeForColumn(canTakeLoanRaw, columnTypes.can_take_loan);
 
+
     await pool.query(
       `UPDATE users
-       SET target_countries    = $1,
+        SET target_countries    = $1,
            intended_majors     = $2,
            test_status         = $3,
            language_preferences = $4,
@@ -151,6 +199,7 @@ class User {
         JSON.stringify(intendedMajors),
          JSON.stringify(data.test_status || {}),
          JSON.stringify(data.language_preferences || []),
+
         userId,
         normalizedGpa,
         satScore != null ? Number(satScore) : null,
@@ -165,7 +214,7 @@ class User {
          data?.family_income_usd != null ? Number(data.family_income_usd) : null,
          gradeLevel,
         parsedGraduationYear,
-        preferredLocation,
+        normalizedPreferredLocation,
       ]
     );
     return this.findById(userId);

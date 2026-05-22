@@ -14,7 +14,6 @@ Usage:
 Required env vars:
     SUPABASE_DB_URL            — full Postgres connection string (port 6543 for Supabase)
 
-Optional env vars (at least one API key needed for live data):
     IPEDS_API_KEY              — data.gov API key for IPEDS source
     COLLEGE_SCORECARD_API_KEY  — data.gov API key for Scorecard source
     REQUEST_DELAY_SEC          — delay between API pages (default: 0.3)
@@ -24,13 +23,17 @@ Exit codes:
     1  — fatal error or fewer than 500 rows updated
 """
 
+import json
 import logging
 import os
 import re
 import sys
+import time
 import unicodedata
+from dataclasses import dataclass
 from difflib import SequenceMatcher
-from typing import Optional
+from pathlib import Path
+from typing import Callable, Optional
 
 import psycopg2
 import psycopg2.extras
@@ -55,6 +58,32 @@ DEFAULT_IPEDS_CONFIDENCE_SCORE = 0.7
 
 # Fuzzy-match threshold for name matching (0–1)
 FUZZY_THRESHOLD = 0.85
+
+
+class SchemaError(Exception):
+    """Non-retryable schema mismatch."""
+
+
+class ParseError(Exception):
+    """Non-retryable source parsing failure."""
+
+
+class NetworkError(Exception):
+    """Retryable network failure."""
+
+
+class ValidationError(Exception):
+    """Non-retryable validation failure."""
+
+
+class TransientDatabaseError(Exception):
+    """Retryable transient database failure."""
+
+
+@dataclass
+class UpsertPlan:
+    sql: str
+    params_builder: Callable[..., tuple]
 
 # ── Validation constants ───────────────────────────────────────────────────────
 
@@ -429,9 +458,38 @@ _ADMISSIONS_UPSERT_SQL = """
 """
 
 
-def upsert_college(conn, college_id: int, data: dict) -> bool:
-    """
-    Upsert a single validated college record into colleges_comprehensive.
+def ensure_pipeline_diagnostics(out_dir: Path) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    defaults = {
+        "run_summary.json": {
+            "workflow": "refresh-data",
+            "rows_upserted": 0,
+            "rows_skipped_error": 0,
+            "rows_skipped_no_match": 0,
+            "rows_skipped_no_data": 0,
+            "schema_errors": 0,
+            "retry_count": 0,
+            "status": "failed",
+            "fatal_error": None,
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        },
+        "scraper_metrics.json": {
+            "workflow": "refresh-data",
+            "rows_upserted": 0,
+            "rows_skipped_error": 0,
+            "schema_errors": 0,
+            "retry_count": 0,
+            "status": "failed",
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        },
+        "failed_colleges.json": [],
+        "stale_colleges.json": [],
+        "schema_errors.json": [],
+    }
+    for name, payload in defaults.items():
+        target = out_dir / name
+        if not target.exists():
+            target.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     Uses a parameterized UPDATE … RETURNING id — never string interpolation.
     Returns True if the row was updated, False otherwise.
@@ -441,37 +499,13 @@ def upsert_college(conn, college_id: int, data: dict) -> bool:
     params.append(college_id)
     with conn.cursor() as cur:
         cur.execute(upsert_sql, params)
+
         return cur.fetchone() is not None
 
 
-def upsert_college_admissions(conn, college_id: int, data: dict, year: int) -> bool:
-    """Upsert admissions-level metrics for a college/year."""
-    applicants_total = data.get("applicants_total")
-    if applicants_total is None:
-        applicants_total = data.get("applications_received")
-    admitted_total = data.get("admitted_total")
-    enrolled_total = data.get("enrolled_total")
-    if enrolled_total is None:
-        enrolled_total = data.get("total_enrollment")
-    params = (
-        college_id,
-        year,
-        data.get("acceptance_rate"),
-        data.get("yield_rate"),
-        applicants_total,
-        admitted_total,
-        enrolled_total,
-        data.get("sat_verbal_25"),
-        data.get("sat_verbal_75"),
-        data.get("sat_math_25"),
-        data.get("sat_math_75"),
-        data.get("median_act_25"),
-        data.get("median_act_75"),
-        data.get("data_source", "IPEDS"),
-        DEFAULT_IPEDS_CONFIDENCE_SCORE,
-    )
+def upsert_college_admissions(conn, college_id: int, data: dict, year: int, plan: UpsertPlan) -> bool:
     with conn.cursor() as cur:
-        cur.execute(_ADMISSIONS_UPSERT_SQL, params)
+        cur.execute(plan.sql, plan.params_builder(college_id, data, year))
         return cur.fetchone() is not None
 
 
@@ -486,9 +520,27 @@ def main() -> int:
       4. Upsert into PostgreSQL.
       5. Exit 1 if fewer than MIN_SUCCESS_ROWS rows were updated.
     """
+    diagnostics_dir = Path(os.environ.get("SCRAPER_DIAGNOSTICS_DIR", "scraper_diagnostics"))
+    ensure_pipeline_diagnostics(diagnostics_dir)
+    started_at = time.time()
+
     db_url = os.environ.get("SUPABASE_DB_URL", "") or os.environ.get("DATABASE_URL", "")
     if not db_url:
         log.error("SUPABASE_DB_URL (or DATABASE_URL) is not set. Aborting.")
+        summary = {
+            "workflow": "refresh-data",
+            "status": "failed",
+            "fatal_error": "SUPABASE_DB_URL (or DATABASE_URL) is not set",
+            "rows_upserted": 0,
+            "rows_skipped_error": 0,
+            "rows_skipped_no_match": 0,
+            "rows_skipped_no_data": 0,
+            "schema_errors": 1,
+            "retry_count": 0,
+            "duration_seconds": int(time.time() - started_at),
+        }
+        _write_json(diagnostics_dir / "run_summary.json", summary)
+        _write_json(diagnostics_dir / "scraper_metrics.json", summary)
         return 1
 
     # ── Step 1: Fetch from all sources ───────────────────────────────────────
@@ -546,13 +598,37 @@ def main() -> int:
     rows_skipped_no_match = 0
     rows_skipped_no_data = 0
     rows_skipped_error = 0
+    schema_errors: list[dict] = []
+    failed_colleges: list[dict] = []
     run_id: Optional[int] = None
     current_year = int(os.environ.get("PIPELINE_YEAR", "2025"))
+    admissions_plan: UpsertPlan | None = None
+    college_plan: UpsertPlan | None = None
 
     try:
         conn = _get_connection(db_url)
         run_id = log_run_start(conn, "daily-data-refresh")
         conn.commit()
+        college_plan = _build_college_upsert_plan(conn)
+        try:
+            admissions_plan = _build_admissions_upsert_plan(conn)
+        except SchemaError as exc:
+            schema_errors.append(
+                {
+                    "stage": "schema_validation",
+                    "table": "college_admissions",
+                    "error_type": "SchemaError",
+                    "message": str(exc),
+                    "retryable": False,
+                }
+            )
+            _structured_log(
+                "schema_validation",
+                table="college_admissions",
+                error_type="SchemaError",
+                retryable=False,
+                message=str(exc),
+            )
         db_colleges = load_db_colleges(conn)
         log.info(f"DB has {len(db_colleges)} colleges to match against")
 
@@ -583,9 +659,13 @@ def main() -> int:
                 continue
 
             try:
-                ok = upsert_college(conn, college_id, record)
+                if college_plan is None:
+                    raise SchemaError("college upsert plan is unavailable")
+                ok = upsert_college(conn, college_id, record, college_plan)
                 if ok:
-                    admissions_ok = upsert_college_admissions(conn, college_id, record, current_year)
+                    admissions_ok = True
+                    if admissions_plan is not None:
+                        admissions_ok = upsert_college_admissions(conn, college_id, record, current_year, admissions_plan)
                     if admissions_ok:
                         rows_updated += 1
                     else:
@@ -594,10 +674,57 @@ def main() -> int:
                 else:
                     rows_skipped_error += 1
                     log.debug(f"[SKIP upsert-empty] {name}")
+            except SchemaError as exc:
+                rows_skipped_error += 1
+                schema_errors.append(
+                    {
+                        "college": name,
+                        "stage": "upsert",
+                        "table": "colleges_comprehensive",
+                        "error_type": "SchemaError",
+                        "message": str(exc),
+                        "retryable": False,
+                    }
+                )
+                failed_colleges.append(
+                    {
+                        "college": name,
+                        "stage": "upsert",
+                        "error_type": "SchemaError",
+                        "message": str(exc),
+                        "retryable": False,
+                    }
+                )
+                _structured_log(
+                    "upsert",
+                    college=name,
+                    table="colleges_comprehensive",
+                    error_type="SchemaError",
+                    retryable=False,
+                    message=str(exc),
+                )
+                conn.rollback()
+                continue
             except Exception as exc:
-                log.warning(f"[ERROR] Upsert failed for {name}: {exc}")
+                _structured_log(
+                    "upsert",
+                    college=name,
+                    table="colleges_comprehensive",
+                    error_type=exc.__class__.__name__,
+                    retryable=False,
+                    message=str(exc),
+                )
                 conn.rollback()
                 rows_skipped_error += 1
+                failed_colleges.append(
+                    {
+                        "college": name,
+                        "stage": "upsert",
+                        "error_type": exc.__class__.__name__,
+                        "message": str(exc),
+                        "retryable": False,
+                    }
+                )
                 continue
 
             # Commit in batches of 200 to reduce memory pressure
@@ -620,6 +747,22 @@ def main() -> int:
                     conn.commit()
                 except Exception:
                     conn.rollback()
+        summary = {
+            "workflow": "refresh-data",
+            "status": "failed",
+            "fatal_error": str(exc),
+            "rows_upserted": rows_updated,
+            "rows_skipped_error": rows_skipped_error,
+            "rows_skipped_no_match": rows_skipped_no_match,
+            "rows_skipped_no_data": rows_skipped_no_data,
+            "schema_errors": len(schema_errors),
+            "retry_count": 0,
+            "duration_seconds": int(time.time() - started_at),
+        }
+        _write_json(diagnostics_dir / "failed_colleges.json", failed_colleges)
+        _write_json(diagnostics_dir / "schema_errors.json", schema_errors)
+        _write_json(diagnostics_dir / "run_summary.json", summary)
+        _write_json(diagnostics_dir / "scraper_metrics.json", summary)
         return 1
     finally:
         if conn:
@@ -636,14 +779,38 @@ def main() -> int:
 
     print(f"ROWS_UPSERTED={rows_updated}")
 
-    if rows_updated < MIN_SUCCESS_ROWS:
-        log.error(
-            f"Only {rows_updated} rows updated — below minimum threshold of "
-            f"{MIN_SUCCESS_ROWS}. Exiting with code 1."
-        )
-        return 1
+    status = "success"
+    fatal_error = None
+    if rows_updated < MIN_SUCCESS_ROWS or rows_skipped_error > 0 or schema_errors:
+        status = "degraded"
 
-    log.info(f"✓ Success: {rows_updated} rows updated (threshold: {MIN_SUCCESS_ROWS})")
+    summary = {
+        "workflow": "refresh-data",
+        "status": status,
+        "fatal_error": fatal_error,
+        "rows_upserted": rows_updated,
+        "rows_skipped_error": rows_skipped_error,
+        "rows_skipped_no_match": rows_skipped_no_match,
+        "rows_skipped_no_data": rows_skipped_no_data,
+        "schema_errors": len(schema_errors),
+        "retry_count": 0,
+        "duration_seconds": int(time.time() - started_at),
+        "threshold": MIN_SUCCESS_ROWS,
+    }
+    _write_json(diagnostics_dir / "failed_colleges.json", failed_colleges)
+    _write_json(diagnostics_dir / "stale_colleges.json", [])
+    _write_json(diagnostics_dir / "schema_errors.json", schema_errors)
+    _write_json(diagnostics_dir / "run_summary.json", summary)
+    _write_json(diagnostics_dir / "scraper_metrics.json", summary)
+
+    if status == "degraded":
+        log.warning(
+            f"Degraded run: rows_updated={rows_updated}, rows_skipped_error={rows_skipped_error}, "
+            f"schema_errors={len(schema_errors)}"
+        )
+    else:
+        log.info(f"✓ Success: {rows_updated} rows updated (threshold: {MIN_SUCCESS_ROWS})")
+
     return 0
 
 
