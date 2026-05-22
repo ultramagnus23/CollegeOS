@@ -37,10 +37,15 @@ const REQUIRED_INDEXES = [
 async function listColumns(pool, schema, table) {
   const { rows } = await pool.query(
     `
-      SELECT column_name
-      FROM information_schema.columns
-      WHERE table_schema = $1 AND table_name = $2
-      ORDER BY ordinal_position
+      SELECT a.attname AS column_name
+      FROM pg_attribute a
+      JOIN pg_class c ON c.oid = a.attrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = $1
+        AND c.relname = $2
+        AND a.attnum > 0
+        AND NOT a.attisdropped
+      ORDER BY a.attnum
     `,
     [schema, table]
   );
