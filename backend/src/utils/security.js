@@ -16,7 +16,8 @@ const PROTOTYPE_POLLUTION_KEYS = new Set(['__proto__', 'constructor', 'prototype
  * @returns {string} Sanitized string safe for logging
  */
 function sanitizeLogInput(input) {
-  return String(input ?? '')
+  if (input === null || input === undefined) return '';
+  return String(input)
     .replace(LOG_CONTROL_PATTERN, '_')
     .replace(LOG_ANSI_ESCAPE_PATTERN, '');
 }
