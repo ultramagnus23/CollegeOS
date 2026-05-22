@@ -29,3 +29,6 @@ tenacity>=8.2.0
 
 # Utility
 python-dotenv>=1.0.0
+
+# Source config parsing
+PyYAML>=6.0.0

@@ -1,0 +1,105 @@
+name: India Monthly Structured Refresh
+
+on:
+  schedule:
+    - cron: '0 3 1 * *'
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+
+jobs:
+  india-monthly-refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install scraper dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scraper/requirements.txt
+
+      - name: Bootstrap diagnostics directory
+        run: |
+          mkdir -p scraper_diagnostics
+          printf '{}' > scraper_diagnostics/india_health_summary.json
+          printf '[]' > scraper_diagnostics/india_dead_letter.json
+          printf '[]' > scraper_diagnostics/india_stale_records.json
+          printf '[]' > scraper_diagnostics/india_write_dead_letter.json
+
+      - name: Run india monthly ingestion
+        id: run_ingestion
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SCRAPE_MODE: monthly
+          SCRAPER_DIAGNOSTICS_DIR: scraper_diagnostics
+          INDIA_MONTHLY_LIMIT: '5000'
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          set +e
+          python -m scraper.indian.pipelines.run_india_refresh
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Build stale + diagnostics summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d = Path('scraper_diagnostics')
+          d.mkdir(parents=True, exist_ok=True)
+          stale = json.loads((d / 'india_stale_records.json').read_text(encoding='utf-8')) if (d / 'india_stale_records.json').exists() else []
+          dead_letter = json.loads((d / 'india_dead_letter.json').read_text(encoding='utf-8')) if (d / 'india_dead_letter.json').exists() else []
+          summary_path = d / 'india_health_summary.json'
+          summary = json.loads(summary_path.read_text(encoding='utf-8')) if summary_path.exists() else {}
+          summary['monthly_health'] = {
+            'stale_count': len(stale),
+            'dead_letter_count': len(dead_letter),
+            'retry_support_enabled': True,
+          }
+          summary_path.write_text(json.dumps(summary, indent=2), encoding='utf-8')
+          (d / 'india_scraper_health.md').write_text(
+            f"# India Monthly Scraper Health\n\nStatus: {summary.get('status', 'unknown')}\nDead letter rows: {len(dead_letter)}\nStale rows: {len(stale)}\n",
+            encoding='utf-8',
+          )
+          PY
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: india-monthly-diagnostics
+          path: scraper_diagnostics/
+          if-no-files-found: ignore
+          retention-days: 21
+
+      - name: Failure notification
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          status = 'failed'
+          p = Path('scraper_diagnostics/india_health_summary.json')
+          if p.exists():
+            status = json.loads(p.read_text(encoding='utf-8')).get('status', 'failed')
+          exit_code = int('${{ steps.run_ingestion.outputs.exit_code || "1" }}')
+          if status == 'failed' or exit_code != 0:
+            print('::error::India monthly ingestion failed')
+            raise SystemExit(1)
+          print(f'India monthly ingestion completed with status={status}')
+          PY
