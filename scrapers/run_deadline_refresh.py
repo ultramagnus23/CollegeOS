@@ -5,18 +5,11 @@ import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-<<<<<<< HEAD
-from typing import Any, Dict, List
-
-import psycopg2
-from psycopg2 import OperationalError
-from psycopg2.errors import InvalidAuthorizationSpecification, InvalidCatalogName, UndefinedColumn, UndefinedTable
-=======
 from typing import Dict, List, Tuple
 
 import psycopg2
 from psycopg2 import errors
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
+
 from psycopg2.extras import execute_batch
 
 from scrapers.schedulers.runner import run_scrape_cycle
@@ -257,63 +250,6 @@ def fetch_targets(conn, mode: str) -> List[Dict]:
     return [{"institution_id": r[0], "source_url": r[1]} for r in rows]
 
 
-<<<<<<< HEAD
-def validate_schema(conn) -> List[Dict[str, Any]]:
-    drift_rows: List[Dict[str, Any]] = []
-    with conn.cursor() as cur:
-        for qualified_table, required_columns in SCHEMA_EXPECTATIONS.items():
-            schema_name, table_name = qualified_table.split(".", 1)
-            cur.execute(
-                """
-                SELECT column_name
-                FROM information_schema.columns
-                WHERE table_schema = %s AND table_name = %s
-                """,
-                (schema_name, table_name),
-            )
-            columns = {row[0] for row in cur.fetchall()}
-            missing = sorted(required_columns - columns)
-            if missing:
-                for column in missing:
-                    _structured_log(
-                        institution="system",
-                        stage="schema_validation",
-                        error_type="SchemaDrift",
-                        retryable=False,
-                        column=column,
-                        batch_id="batch-0",
-                        message=f"missing column {qualified_table}.{column}",
-                    )
-                drift_rows.append(
-                    {
-                        "table": qualified_table,
-                        "missing_columns": missing,
-                        "detected_at": _iso_now(),
-                        "error_type": "SchemaDrift",
-                    }
-                )
-    return drift_rows
-
-
-def derive_disabled_modules(schema_errors: List[Dict[str, Any]]) -> set[str]:
-    disabled = set()
-    for err in schema_errors:
-        table = err.get("table")
-        if table == "canonical.institution_deadlines":
-            disabled.add("deadlines")
-        if table == "canonical.institution_requirements":
-            disabled.add("requirements")
-        if table == "canonical.institution_admissions":
-            disabled.add("admissions")
-        if table == "canonical.institution_financials":
-            disabled.add("financials")
-    return disabled
-
-
-def upsert_deadlines(conn, deadlines: List[Dict]):
-    if not deadlines:
-        return
-=======
 def _is_retryable_db_error(exc: Exception) -> bool:
     retryable_codes = {"40001", "40P01", "53300", "57P03", "08000", "08003", "08006", "08001"}
     pgcode = getattr(exc, "pgcode", None)
@@ -349,7 +285,7 @@ def _execute_batch_with_retry(conn, query: str, rows: List[Tuple], *, operation:
 
 
 def upsert_deadlines(conn, deadlines: List[Dict], metrics: Dict):
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
+
     rows = []
     now = datetime.now(timezone.utc)
     for d in deadlines:
@@ -368,28 +304,7 @@ def upsert_deadlines(conn, deadlines: List[Dict], metrics: Dict):
                 d.get("parser_version", "deadline_parser_v1"),
                 d.get("extraction_timestamp"),
             )
-<<<<<<< HEAD
-        )
 
-    with conn.cursor() as cur:
-        execute_batch(
-            cur,
-            """
-            INSERT INTO canonical.institution_deadlines
-              (institution_id, deadline_type, deadline_date, source_url, confidence_score, last_verified, parser_version, extraction_timestamp)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (institution_id, deadline_type) DO UPDATE SET
-              deadline_date = EXCLUDED.deadline_date,
-              source_url = EXCLUDED.source_url,
-              confidence_score = EXCLUDED.confidence_score,
-              last_verified = EXCLUDED.last_verified,
-              parser_version = EXCLUDED.parser_version,
-              extraction_timestamp = EXCLUDED.extraction_timestamp
-            """,
-            rows,
-            page_size=200,
-=======
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
         )
     _execute_batch_with_retry(
         conn,
@@ -411,13 +326,7 @@ def upsert_deadlines(conn, deadlines: List[Dict], metrics: Dict):
     )
 
 
-<<<<<<< HEAD
-def upsert_requirements(conn, requirements: List[Dict]):
-    if not requirements:
-        return
-=======
 def upsert_requirements(conn, requirements: List[Dict], metrics: Dict):
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
     rows = []
     now = datetime.now(timezone.utc)
     for r in requirements:
@@ -438,9 +347,15 @@ def upsert_requirements(conn, requirements: List[Dict], metrics: Dict):
                 r.get("parser_version", "requirements_parser_v1"),
                 r.get("extraction_timestamp"),
             )
-<<<<<<< HEAD
-        )
 
+def validate_schema(conn) -> Tuple[Dict[str, bool], List[Dict]]:
+    module_status = {
+        "admissions": True,
+        "deadlines": True,
+        "requirements": True,
+        "financials": True,
+    }
+    schema_errors: List[Dict] = []
     with conn.cursor() as cur:
         execute_batch(
             cur,
@@ -457,8 +372,6 @@ def upsert_requirements(conn, requirements: List[Dict], metrics: Dict):
             """,
             rows,
             page_size=200,
-=======
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
         )
     _execute_batch_with_retry(
         conn,
@@ -480,128 +393,6 @@ def upsert_requirements(conn, requirements: List[Dict], metrics: Dict):
     )
 
 
-<<<<<<< HEAD
-def write_json(path: Path, payload: Any) -> None:
-    with path.open("w", encoding="utf-8") as fh:
-        json.dump(payload, fh, indent=2)
-
-
-def main() -> int:
-    mode = os.getenv("SCRAPE_MODE", "weekly").strip().lower()
-    out_dir = Path(os.getenv("SCRAPER_DIAGNOSTICS_DIR", "scraper_diagnostics"))
-    ensure_diagnostics_files(out_dir)
-
-    started_at = time.time()
-    conn = None
-
-    try:
-        conn = get_connection()
-        schema_errors = validate_schema(conn)
-        disabled_modules = derive_disabled_modules(schema_errors)
-        targets = fetch_targets(conn, mode)
-
-        checkpoint_path = out_dir / "batch_checkpoint.json"
-
-        def checkpoint_writer(payload: Dict[str, Any]) -> None:
-            write_json(checkpoint_path, payload)
-
-        batch_size = int(os.getenv("SCRAPER_BATCH_SIZE", "25"))
-        result = run_scrape_cycle(
-            targets,
-            batch_size=batch_size,
-            checkpoint_callback=checkpoint_writer,
-            disabled_modules=disabled_modules,
-        )
-
-        if "deadlines" not in disabled_modules:
-            upsert_deadlines(conn, result["deadlines"])
-        if "requirements" not in disabled_modules:
-            upsert_requirements(conn, result["requirements"])
-
-        conn.commit()
-
-        duration_seconds = int(time.time() - started_at)
-        summary = {
-            "workflow": "scrape-weekly",
-            "institutions_processed": result["summary"]["institutions_processed"],
-            "success_count": result["summary"]["success_count"],
-            "failure_count": result["summary"]["failure_count"],
-            "schema_errors": result["summary"]["schema_errors"] + len(schema_errors),
-            "network_errors": result["summary"]["network_errors"],
-            "retry_count": result["summary"]["retry_count"],
-            "stale_records_detected": result["summary"]["stale_records_detected"],
-            "duration_seconds": duration_seconds,
-            "status": "degraded" if (result["summary"]["failure_count"] > 0 or schema_errors) else "success",
-            "degraded": bool(result["summary"]["failure_count"] > 0 or schema_errors),
-            "disabled_modules": sorted(disabled_modules),
-            "timestamp": _iso_now(),
-            "fatal_error": None,
-        }
-
-        failed_colleges = [d for d in result["diagnostics"] if not d.get("success")]
-        write_json(out_dir / "run_summary.json", summary)
-        write_json(out_dir / "scraper_metrics.json", summary)
-        write_json(out_dir / "failed_colleges.json", failed_colleges)
-        write_json(out_dir / "stale_colleges.json", [d for d in result["diagnostics"] if d.get("stale")])
-        write_json(out_dir / "schema_errors.json", schema_errors)
-
-        write_json(out_dir / "summary.json", summary)
-        write_json(out_dir / "diagnostics.json", result["diagnostics"])
-        write_json(out_dir / "failed_institutions.json", failed_colleges)
-        write_json(out_dir / "stale_institutions.json", [d for d in result["diagnostics"] if d.get("stale")])
-
-        print(json.dumps(summary, ensure_ascii=False))
-        return 0
-
-    except (OperationalError, InvalidAuthorizationSpecification, InvalidCatalogName) as exc:
-        _structured_log(
-            stage="initialization",
-            error_type="DatabaseUnavailable",
-            retryable=False,
-            batch_id="batch-0",
-            message=str(exc),
-        )
-        failure_summary = ensure_diagnostics_files(out_dir)["run_summary.json"]
-        failure_summary["fatal_error"] = str(exc)
-        failure_summary["status"] = "failed"
-        write_json(out_dir / "run_summary.json", failure_summary)
-        write_json(out_dir / "scraper_metrics.json", failure_summary)
-        return 1
-
-    except (UndefinedTable, UndefinedColumn) as exc:
-        _structured_log(
-            stage="initialization",
-            error_type="MigrationIncompatibility",
-            retryable=False,
-            batch_id="batch-0",
-            message=str(exc),
-        )
-        failure_summary = ensure_diagnostics_files(out_dir)["run_summary.json"]
-        failure_summary["fatal_error"] = str(exc)
-        failure_summary["status"] = "failed"
-        write_json(out_dir / "run_summary.json", failure_summary)
-        write_json(out_dir / "scraper_metrics.json", failure_summary)
-        return 1
-
-    except Exception as exc:
-        _structured_log(
-            stage="initialization",
-            error_type="InitializationFailure",
-            retryable=False,
-            batch_id="batch-0",
-            message=str(exc),
-        )
-        failure_summary = ensure_diagnostics_files(out_dir)["run_summary.json"]
-        failure_summary["fatal_error"] = str(exc)
-        failure_summary["status"] = "failed"
-        write_json(out_dir / "run_summary.json", failure_summary)
-        write_json(out_dir / "scraper_metrics.json", failure_summary)
-        return 1
-
-    finally:
-        if conn is not None:
-            conn.close()
-=======
 def validate_schema(conn) -> Tuple[Dict[str, bool], List[Dict]]:
     module_status = {
         "admissions": True,
@@ -796,7 +587,7 @@ def main() -> int:
             schema_errors=schema_errors,
         )
     return exit_code
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
+
 
 
 if __name__ == "__main__":

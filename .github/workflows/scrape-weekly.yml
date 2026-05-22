@@ -1,28 +1,18 @@
 name: Weekly Canonical Deadline Refresh
 
-<<<<<<< HEAD
-on:
-  schedule:
-    - cron: '0 4 * * 0'
-=======
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 on:
   schedule:
     - cron: "0 4 * * 0"
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
+
   workflow_dispatch:
 
 permissions:
   contents: read
 
-<<<<<<< HEAD
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-=======
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
 concurrency:
   group: scrape-weekly
   cancel-in-progress: false
@@ -33,78 +23,14 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
-<<<<<<< HEAD
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-
-=======
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
+
       - name: Install scraper dependencies
         run: |
           python -m pip install --upgrade pip
           pip install psycopg2-binary requests beautifulsoup4
-<<<<<<< HEAD
-
-      - name: Run scrape-weekly smoke tests
-        run: |
-          python -m unittest scrapers.tests.test_scrape_weekly_smoke -v
-
-      - name: Bootstrap diagnostics directory
-        run: |
-          mkdir -p scraper_diagnostics
-          python - <<'PY'
-          import json, pathlib, datetime
-          out = pathlib.Path('scraper_diagnostics')
-          out.mkdir(parents=True, exist_ok=True)
-          now = datetime.datetime.now(datetime.timezone.utc).isoformat()
-          defaults = {
-            'run_summary.json': {
-              'workflow': 'scrape-weekly',
-              'institutions_processed': 0,
-              'success_count': 0,
-              'failure_count': 0,
-              'schema_errors': 0,
-              'network_errors': 0,
-              'retry_count': 0,
-              'stale_records_detected': 0,
-              'duration_seconds': 0,
-              'status': 'failed',
-              'degraded': False,
-              'fatal_error': None,
-              'timestamp': now,
-            },
-            'scraper_metrics.json': {
-              'workflow': 'scrape-weekly',
-              'institutions_processed': 0,
-              'success_count': 0,
-              'failure_count': 0,
-              'schema_errors': 0,
-              'network_errors': 0,
-              'retry_count': 0,
-              'stale_records_detected': 0,
-              'duration_seconds': 0,
-              'status': 'failed',
-              'timestamp': now,
-            },
-            'failed_colleges.json': [],
-            'stale_colleges.json': [],
-            'schema_errors.json': [],
-          }
-          for name, payload in defaults.items():
-            p = out / name
-            if not p.exists():
-              p.write_text(json.dumps(payload, indent=2), encoding='utf-8')
-          PY
-
-      - name: Run weekly refresh
-        id: run_weekly_refresh
-        continue-on-error: true
-=======
       - name: Bootstrap diagnostics directory
         run: |
           mkdir -p scraper_diagnostics
@@ -114,81 +40,16 @@ jobs:
           printf '[]' > scraper_diagnostics/schema_errors.json
       - name: Run weekly refresh
         id: run_scraper
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
+
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           SCRAPE_MODE: weekly
           SCRAPER_DIAGNOSTICS_DIR: scraper_diagnostics
-<<<<<<< HEAD
-          SCRAPER_BATCH_SIZE: '25'
-=======
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
+
           PYTHONPATH: ${{ github.workspace }}
         run: |
           set +e
           python scrapers/run_deadline_refresh.py
-<<<<<<< HEAD
-          EXIT_CODE=$?
-          echo "exit_code=${EXIT_CODE}" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Ensure diagnostics completeness
-        if: always()
-        run: |
-          mkdir -p scraper_diagnostics
-          python - <<'PY'
-          import json, pathlib, datetime
-          out = pathlib.Path('scraper_diagnostics')
-          out.mkdir(parents=True, exist_ok=True)
-          now = datetime.datetime.now(datetime.timezone.utc).isoformat()
-          defaults = {
-            'run_summary.json': {
-              'workflow': 'scrape-weekly',
-              'institutions_processed': 0,
-              'success_count': 0,
-              'failure_count': 0,
-              'schema_errors': 0,
-              'network_errors': 0,
-              'retry_count': 0,
-              'stale_records_detected': 0,
-              'duration_seconds': 0,
-              'status': 'failed',
-              'degraded': False,
-              'fatal_error': 'fallback_bootstrap',
-              'timestamp': now,
-            },
-            'scraper_metrics.json': {
-              'workflow': 'scrape-weekly',
-              'institutions_processed': 0,
-              'success_count': 0,
-              'failure_count': 0,
-              'schema_errors': 0,
-              'network_errors': 0,
-              'retry_count': 0,
-              'stale_records_detected': 0,
-              'duration_seconds': 0,
-              'status': 'failed',
-              'timestamp': now,
-            },
-            'failed_colleges.json': [],
-            'stale_colleges.json': [],
-            'schema_errors.json': [],
-          }
-          for name, payload in defaults.items():
-            p = out / name
-            if not p.exists():
-              p.write_text(json.dumps(payload, indent=2), encoding='utf-8')
-          PY
-
-      - name: Compress diagnostics
-        if: always()
-        run: |
-          tar -czf scraper_diagnostics.tar.gz scraper_diagnostics
-
-      - name: Upload diagnostics directory
-        uses: actions/upload-artifact@v5
-        if: always()
-=======
           code=$?
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit 0
@@ -208,58 +69,21 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v5
         continue-on-error: true
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
+
         with:
           name: weekly-deadline-diagnostics
           path: scraper_diagnostics/
           if-no-files-found: ignore
-<<<<<<< HEAD
-          compression-level: 9
-
-      - name: Upload diagnostics archive
-        uses: actions/upload-artifact@v5
-        if: always()
-=======
           retention-days: 14
       - name: Upload diagnostics archive
         if: always()
         uses: actions/upload-artifact@v5
         continue-on-error: true
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
+
         with:
           name: weekly-deadline-diagnostics-archive
           path: scraper_diagnostics.tar.gz
           if-no-files-found: ignore
-<<<<<<< HEAD
-          compression-level: 9
-
-      - name: Enforce fatal-only failure semantics
-        if: always()
-        run: |
-          python - <<'PY'
-          import json, pathlib, sys
-
-          summary_path = pathlib.Path('scraper_diagnostics/run_summary.json')
-          summary = {}
-          if summary_path.exists():
-            summary = json.loads(summary_path.read_text(encoding='utf-8'))
-
-          status = summary.get('status', 'failed')
-          fatal_error = summary.get('fatal_error')
-          scraper_exit_code = '${{ steps.run_weekly_refresh.outputs.exit_code }}'
-
-          print(json.dumps({
-            'workflow': 'scrape-weekly',
-            'status': status,
-            'fatal_error': fatal_error,
-            'scraper_exit_code': scraper_exit_code,
-          }))
-
-          if status == 'failed':
-            sys.exit(1)
-          sys.exit(0)
-          PY
-=======
           retention-days: 14
       - name: Final status gate
         if: always()
@@ -298,4 +122,4 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python -m unittest scrapers.tests.test_scrape_weekly_smoke -v
->>>>>>> fa65efe (feat: harden weekly scraper execution and diagnostics)
+

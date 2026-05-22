@@ -1,10 +1,7 @@
 name: Daily College Data Refresh
-<<<<<<< HEAD
-
-=======
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
->>>>>>> 7b3ed3d (fix: rebuild college cards contracts and harden schema/workflow guards)
+
 on:
   schedule:
     - cron: '0 3 * * *'
@@ -59,12 +56,8 @@ jobs:
           PY
 
       - name: Run data pipeline
-<<<<<<< HEAD
-        id: run_data_pipeline
-        continue-on-error: true
-=======
         timeout-minutes: 25
->>>>>>> 7b3ed3d (fix: rebuild college cards contracts and harden schema/workflow guards)
+
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           IPEDS_API_KEY: ${{ secrets.IPEDS_API_KEY }}
@@ -72,79 +65,6 @@ jobs:
           SCRAPER_DIAGNOSTICS_DIR: scraper_diagnostics
           PYTHONPATH: ${{ github.workspace }}
         run: |
-<<<<<<< HEAD
-          set +e
-          python scraper/pipeline.py
-          EXIT_CODE=$?
-          echo "exit_code=${EXIT_CODE}" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Ensure diagnostics completeness
-        if: always()
-        run: |
-          mkdir -p scraper_diagnostics
-          python - <<'PY'
-          import json, pathlib, datetime
-          out = pathlib.Path('scraper_diagnostics')
-          out.mkdir(parents=True, exist_ok=True)
-          now = datetime.datetime.now(datetime.timezone.utc).isoformat()
-          defaults = {
-            'run_summary.json': {'workflow':'refresh-data','rows_upserted':0,'rows_skipped_error':0,'schema_errors':0,'retry_count':0,'status':'failed','fatal_error':'fallback_bootstrap','timestamp':now},
-            'scraper_metrics.json': {'workflow':'refresh-data','rows_upserted':0,'rows_skipped_error':0,'schema_errors':0,'retry_count':0,'status':'failed','timestamp':now},
-            'failed_colleges.json': [],
-            'stale_colleges.json': [],
-            'schema_errors.json': [],
-          }
-          for name, payload in defaults.items():
-            p = out / name
-            if not p.exists():
-              p.write_text(json.dumps(payload, indent=2), encoding='utf-8')
-          PY
-
-      - name: Compress diagnostics
-        if: always()
-        run: |
-          tar -czf scraper_diagnostics.tar.gz scraper_diagnostics
-
-      - name: Upload diagnostics directory
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: daily-data-refresh-diagnostics
-          path: scraper_diagnostics/
-          if-no-files-found: ignore
-          compression-level: 9
-
-      - name: Upload diagnostics archive
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: daily-data-refresh-diagnostics-archive
-          path: scraper_diagnostics.tar.gz
-          if-no-files-found: ignore
-          compression-level: 9
-
-      - name: Enforce fatal-only failure semantics
-        if: always()
-        run: |
-          python - <<'PY'
-          import json, pathlib, sys
-          summary_path = pathlib.Path('scraper_diagnostics/run_summary.json')
-          summary = {}
-          if summary_path.exists():
-            summary = json.loads(summary_path.read_text(encoding='utf-8'))
-
-          status = summary.get('status', 'failed')
-          fatal_error = summary.get('fatal_error')
-          pipeline_exit_code = '${{ steps.run_data_pipeline.outputs.exit_code }}'
-
-          print(json.dumps({'workflow':'refresh-data','status':status,'fatal_error':fatal_error,'pipeline_exit_code':pipeline_exit_code}))
-
-          if status == 'failed':
-            sys.exit(1)
-          sys.exit(0)
-          PY
-=======
           mkdir -p scraper_diagnostics
           python scraper/pipeline.py
       - name: Upload diagnostics
@@ -154,4 +74,4 @@ jobs:
           name: daily-refresh-diagnostics
           path: scraper_diagnostics/
           if-no-files-found: ignore
->>>>>>> 7b3ed3d (fix: rebuild college cards contracts and harden schema/workflow guards)
+

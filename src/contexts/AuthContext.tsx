@@ -22,6 +22,7 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  authReady: boolean;
   login: (email: string, password: string) => Promise<any>;
   loginWithGoogle: (googleId: string, email: string, name: string) => Promise<any>;
   register: (email: string, password: string, fullName: string, country: string) => Promise<any>;
@@ -41,6 +42,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const authControllerRef = useRef<AbortController | null>(null);
 
   const checkAuth = useCallback(async () => {
+    api.setAuthHydrated(false);
     const seq = ++authSeqRef.current;
     authControllerRef.current?.abort();
     authControllerRef.current = new AbortController();
@@ -74,6 +76,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       profileService.clearProfile();
     } finally {
       if (mountedRef.current && seq === authSeqRef.current) {
+        api.setAuthHydrated(true);
         setLoading(false);
       }
     }
@@ -190,7 +193,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, register, logout, completeOnboarding, updateProfile, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, authReady: !loading, login, loginWithGoogle, register, logout, completeOnboarding, updateProfile, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

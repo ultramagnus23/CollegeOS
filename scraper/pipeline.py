@@ -14,7 +14,6 @@ Usage:
 Required env vars:
     SUPABASE_DB_URL            — full Postgres connection string (port 6543 for Supabase)
 
-Optional env vars (at least one API key needed for live data):
     IPEDS_API_KEY              — data.gov API key for IPEDS source
     COLLEGE_SCORECARD_API_KEY  — data.gov API key for Scorecard source
     REQUEST_DELAY_SEC          — delay between API pages (default: 0.3)
@@ -363,16 +362,6 @@ def find_college_id(name: str, db_lookup: dict[str, int]) -> Optional[int]:
 
 # ── Upsert ────────────────────────────────────────────────────────────────────
 
-<<<<<<< HEAD
-def _structured_log(stage: str, **payload) -> None:
-    event = {
-        "workflow": "refresh-data",
-        "stage": stage,
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        **payload,
-    }
-    log.info(json.dumps(event, default=str))
-=======
 # Uses COALESCE so existing non-null DB values survive if the new value is NULL.
 _UPSERT_COLUMN_MAP = [
     ("acceptance_rate", "acceptance_rate"),
@@ -467,7 +456,6 @@ _ADMISSIONS_UPSERT_SQL = """
         confidence_score  = EXCLUDED.confidence_score
     RETURNING id;
 """
->>>>>>> 7b3ed3d (fix: rebuild college cards contracts and harden schema/workflow guards)
 
 
 def ensure_pipeline_diagnostics(out_dir: Path) -> None:
@@ -503,144 +491,6 @@ def ensure_pipeline_diagnostics(out_dir: Path) -> None:
         if not target.exists():
             target.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
-<<<<<<< HEAD
-
-def _write_json(path: Path, payload) -> None:
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-
-def _table_columns(conn, table_name: str) -> set[str]:
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_schema = 'public' AND table_name = %s
-            """,
-            (table_name,),
-        )
-        return {row[0] for row in cur.fetchall()}
-
-
-def _build_college_upsert_plan(conn) -> UpsertPlan:
-    columns = _table_columns(conn, "colleges_comprehensive")
-    mappings = [
-        ("acceptance_rate", "acceptance_rate"),
-        ("total_enrollment", "total_enrollment"),
-        ("applications_received", "applications_received"),
-        ("median_sat_25", "median_sat_25"),
-        ("median_sat_75", "median_sat_75"),
-        ("median_act_25", "median_act_25"),
-        ("median_act_75", "median_act_75"),
-        ("tuition_in_state", "tuition_in_state"),
-        ("tuition_out_of_state", "tuition_out_of_state"),
-        ("completion_rate", "completion_rate"),
-        ("median_earnings_post_grad", "median_earnings_post_grad"),
-    ]
-    selected = [(field, column) for field, column in mappings if column in columns]
-    if not selected:
-        raise SchemaError("colleges_comprehensive has no expected upsert columns")
-
-    assignments = [f"{column} = COALESCE(%s, {column})" for _, column in selected]
-    include_data_source = "data_source" in columns
-    include_last_data_refresh = "last_data_refresh" in columns
-    if include_data_source:
-        assignments.append("data_source = %s")
-    if include_last_data_refresh:
-        assignments.append("last_data_refresh = NOW()")
-
-    sql = f"""
-        UPDATE colleges_comprehensive
-        SET {", ".join(assignments)}
-        WHERE id = %s
-        RETURNING id;
-    """
-
-    def params_builder(college_id: int, data: dict, _year: int | None = None) -> tuple:
-        params = [data.get(field) for field, _ in selected]
-        if include_data_source:
-            params.append(data.get("data_source", "IPEDS"))
-        params.append(college_id)
-        return tuple(params)
-
-    return UpsertPlan(sql=sql, params_builder=params_builder)
-
-
-def _build_admissions_upsert_plan(conn) -> UpsertPlan:
-    columns = _table_columns(conn, "college_admissions")
-    required = {"college_id", "year"}
-    missing = sorted(required - columns)
-    if missing:
-        raise SchemaError(f"college_admissions missing required columns: {', '.join(missing)}")
-
-    mappings = [
-        ("acceptance_rate", "acceptance_rate"),
-        ("yield_rate", "yield_rate"),
-        ("applicants_total", "application_volume"),
-        ("admitted_total", "admit_volume"),
-        ("enrolled_total", "enrollment_volume"),
-        ("sat_verbal_25", "sat_verbal_25"),
-        ("sat_verbal_75", "sat_verbal_75"),
-        ("sat_math_25", "sat_math_25"),
-        ("sat_math_75", "sat_math_75"),
-        ("median_act_25", "act_25"),
-        ("median_act_75", "act_75"),
-        ("data_source", "source"),
-        ("confidence_score", "confidence_score"),
-    ]
-    selected = [(field, column) for field, column in mappings if column in columns]
-
-    insert_columns = ["college_id", "year"] + [column for _, column in selected]
-    placeholders = ", ".join(["%s"] * len(insert_columns))
-    update_columns = [column for column in insert_columns if column not in {"college_id", "year"}]
-    update_clause = ", ".join(
-        f"{column} = COALESCE(EXCLUDED.{column}, college_admissions.{column})" for column in update_columns
-    ) or "college_id = EXCLUDED.college_id"
-
-    sql = f"""
-        INSERT INTO college_admissions ({", ".join(insert_columns)})
-        VALUES ({placeholders})
-        ON CONFLICT (college_id, year) DO UPDATE SET
-            {update_clause}
-        RETURNING college_id;
-    """
-
-    def params_builder(college_id: int, data: dict, year: int) -> tuple:
-        applicants_total = data.get("applicants_total")
-        if applicants_total is None:
-            applicants_total = data.get("applications_received")
-        admitted_total = data.get("admitted_total")
-        enrolled_total = data.get("enrolled_total")
-        if enrolled_total is None:
-            enrolled_total = data.get("total_enrollment")
-
-        values = {
-            "acceptance_rate": data.get("acceptance_rate"),
-            "yield_rate": data.get("yield_rate"),
-            "applicants_total": applicants_total,
-            "admitted_total": admitted_total,
-            "enrolled_total": enrolled_total,
-            "sat_verbal_25": data.get("sat_verbal_25"),
-            "sat_verbal_75": data.get("sat_verbal_75"),
-            "sat_math_25": data.get("sat_math_25"),
-            "sat_math_75": data.get("sat_math_75"),
-            "median_act_25": data.get("median_act_25"),
-            "median_act_75": data.get("median_act_75"),
-            "data_source": data.get("data_source", "IPEDS"),
-            "confidence_score": data.get("confidence_score", DEFAULT_IPEDS_CONFIDENCE_SCORE),
-        }
-        params = [college_id, year]
-        for field, _column in selected:
-            params.append(values.get(field))
-        return tuple(params)
-
-    return UpsertPlan(sql=sql, params_builder=params_builder)
-
-
-def upsert_college(conn, college_id: int, data: dict, plan: UpsertPlan) -> bool:
-    with conn.cursor() as cur:
-        cur.execute(plan.sql, plan.params_builder(college_id, data))
-=======
     Uses a parameterized UPDATE … RETURNING id — never string interpolation.
     Returns True if the row was updated, False otherwise.
     """
@@ -649,7 +499,7 @@ def upsert_college(conn, college_id: int, data: dict, plan: UpsertPlan) -> bool:
     params.append(college_id)
     with conn.cursor() as cur:
         cur.execute(upsert_sql, params)
->>>>>>> 7b3ed3d (fix: rebuild college cards contracts and harden schema/workflow guards)
+
         return cur.fetchone() is not None
 
 
