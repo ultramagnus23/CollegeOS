@@ -1,4 +1,3 @@
-```js
 'use strict';
 
 const MV_COLUMNS = [
@@ -25,7 +24,7 @@ const MV_COLUMNS = [
   'graduation_rate_4yr',
   'employment_rate',
   'median_start_salary',
-  'metadata',
+  'metadata'
 ];
 
 const FRONTEND_SELECT_FIELDS = [...MV_COLUMNS];
@@ -35,7 +34,7 @@ const FRONTEND_ORDER_FIELDS = [
   'acceptance_rate',
   'cost_of_attendance',
   'global_rank',
-  'popularity_score',
+  'popularity_score'
 ];
 
 const BACKEND_SERIALIZER_FIELDS = [
@@ -58,28 +57,27 @@ const BACKEND_SERIALIZER_FIELDS = [
   'graduation_rate_4yr',
   'employment_rate',
   'median_start_salary',
-  'metadata',
+  'metadata'
 ];
 
 async function getColumns(pool, schema, table) {
-  const { rows } = await pool.query(
-    `
-      SELECT a.attname AS column_name
-      FROM pg_attribute a
-      JOIN pg_class c
-        ON c.oid = a.attrelid
-      JOIN pg_namespace n
-        ON n.oid = c.relnamespace
-      WHERE n.nspname = $1
-        AND c.relname = $2
-        AND a.attnum > 0
-        AND NOT a.attisdropped
-      ORDER BY a.attnum
-    `,
-    [schema, table]
-  );
+  const query = `
+    SELECT a.attname AS column_name
+    FROM pg_attribute a
+    JOIN pg_class c
+      ON c.oid = a.attrelid
+    JOIN pg_namespace n
+      ON n.oid = c.relnamespace
+    WHERE n.nspname = $1
+      AND c.relname = $2
+      AND a.attnum > 0
+      AND NOT a.attisdropped
+    ORDER BY a.attnum
+  `;
 
-  return rows.map((r) => r.column_name);
+  const result = await pool.query(query, [schema, table]);
+
+  return result.rows.map((r) => r.column_name);
 }
 
 function missingFrom(actualSet, expectedList) {
@@ -87,9 +85,7 @@ function missingFrom(actualSet, expectedList) {
 }
 
 function buildRenameCandidates(missingColumn, actualColumns) {
-  const tokens = missingColumn
-    .split('_')
-    .filter(Boolean);
+  const tokens = missingColumn.split('_').filter(Boolean);
 
   return actualColumns.filter((candidate) =>
     tokens.some((token) => candidate.includes(token))
@@ -97,11 +93,18 @@ function buildRenameCandidates(missingColumn, actualColumns) {
 }
 
 async function checkSchemaContracts(pool) {
-  const columns = await getColumns(pool, 'canonical', 'mv_college_cards');
+  const columns = await getColumns(
+    pool,
+    'canonical',
+    'mv_college_cards'
+  );
 
   const actual = new Set(columns);
 
-  const missingRequiredColumns = missingFrom(actual, MV_COLUMNS);
+  const missingRequiredColumns = missingFrom(
+    actual,
+    MV_COLUMNS
+  );
 
   const missingFrontendFields = missingFrom(
     actual,
@@ -120,15 +123,13 @@ async function checkSchemaContracts(pool) {
   const staleReferences = [
     ...new Set([
       ...missingFrontendFields,
-      ...missingBackendSerializerFields,
-    ]),
+      ...missingBackendSerializerFields
+    ])
   ];
 
   const diagnostics = {
     ok: false,
-
     checkedAt: new Date().toISOString(),
-
     relation: 'canonical.mv_college_cards',
 
     columns,
@@ -139,26 +140,28 @@ async function checkSchemaContracts(pool) {
       selectFields: FRONTEND_SELECT_FIELDS,
       orderFields: FRONTEND_ORDER_FIELDS,
       missingSelectFields: missingFrontendFields,
-      invalidOrderFields,
+      invalidOrderFields
     },
 
     backend: {
       serializerFields: BACKEND_SERIALIZER_FIELDS,
-      missingSerializerFields: missingBackendSerializerFields,
+      missingSerializerFields:
+        missingBackendSerializerFields
     },
 
     drift: {
       missingRequiredColumns,
-
       staleReferences,
 
-      renamedColumnsSuspected: missingRequiredColumns.map(
-        (column) => ({
+      renamedColumnsSuspected:
+        missingRequiredColumns.map((column) => ({
           missing: column,
-          candidates: buildRenameCandidates(column, columns),
-        })
-      ),
-    },
+          candidates: buildRenameCandidates(
+            column,
+            columns
+          )
+        }))
+    }
   };
 
   diagnostics.ok =
@@ -173,11 +176,8 @@ async function checkSchemaContracts(pool) {
 function formatSchemaContractReport(report) {
   return {
     ok: report.ok,
-
     checkedAt: report.checkedAt,
-
     relation: report.relation,
-
     totalColumnsDetected: report.columns.length,
 
     missingRequiredColumns:
@@ -196,7 +196,7 @@ function formatSchemaContractReport(report) {
       report.backend.missingSerializerFields,
 
     renamedColumnsSuspected:
-      report.drift.renamedColumnsSuspected,
+      report.drift.renamedColumnsSuspected
   };
 }
 
@@ -206,6 +206,5 @@ module.exports = {
   FRONTEND_ORDER_FIELDS,
   BACKEND_SERIALIZER_FIELDS,
   checkSchemaContracts,
-  formatSchemaContractReport,
+  formatSchemaContractReport
 };
-```
