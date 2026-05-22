@@ -91,7 +91,7 @@ class DeadlineAutoPopulationService {
         result.message = `Deadlines added for ${collegeName}`;
       }
 
-      logger.info(`Successfully populated ${result.deadlinesAdded.length} deadlines for application ${applicationId}`);
+      logger.info(`Successfully populated ${sanitizeForLog(result.deadlinesAdded.length)} deadlines for application ${sanitizeForLog(applicationId)}`);
       
       return result;
 

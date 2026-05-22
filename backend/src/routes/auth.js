@@ -10,8 +10,8 @@ const validators = require('../utils/validators');
 router.post('/register', authLimiter, validate(validators.registerUser), AuthController.register);
 router.post('/login', authLimiter, validate(validators.loginUser), AuthController.login);
 router.post('/google', authLimiter, AuthController.googleLogin);
-router.post('/refresh', AuthController.refresh);
-router.post('/logout', AuthController.logout);
+router.post('/refresh', authLimiter, AuthController.refresh);
+router.post('/logout', authLimiter, AuthController.logout);
 
 // Protected routes
 router.get('/me', authenticate, AuthController.getCurrentUser);

@@ -108,8 +108,10 @@ class Document {
 
   static async checkRequiredDocuments(userId, collegeId, requiredCategories) {
     const pool = dbManager.getDatabase();
-    const results = {};
+    const results = Object.create(null);
+    const ALLOWED_CATEGORIES = new Set(Object.values(this.CATEGORIES));
     for (const category of requiredCategories) {
+      if (!ALLOWED_CATEGORIES.has(category)) continue;
       const { rows } = await pool.query(
         `SELECT COUNT(*) as count FROM documents
          WHERE user_id=$1 AND category=$2

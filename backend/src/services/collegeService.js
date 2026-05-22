@@ -15,7 +15,7 @@ class CollegeService {
   static async getColleges(filters = {}) {
     try {
       const colleges = await College.findAll(filters);
-      logger.debug(`Retrieved ${colleges.length} colleges`);
+      logger.debug(`Retrieved ${sanitizeForLog(colleges.length)} colleges`);
       return colleges;
     } catch (error) {
       logger.error('Failed to get colleges:', error);
@@ -37,7 +37,7 @@ class CollegeService {
 
       throw new Error('College not found');
     } catch (error) {
-      logger.error(`Failed to get college ${id}:`, error);
+      logger.error(`Failed to get college ${sanitizeForLog(id)}:`, error);
       throw error;
     }
   }

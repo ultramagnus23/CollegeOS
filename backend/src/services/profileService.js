@@ -221,7 +221,7 @@ class ProfileService {
           WHERE user_id = $1
         `, [userId]);
         subjectsCleared = true;
-        logger.info(`Cleared subjects for user ${userId} due to curriculum change from ${existingProfile.curriculum_type} to ${sanitizeForLog(newCurriculumType)}`);
+        logger.info(`Cleared subjects for user ${sanitizeForLog(userId)} due to curriculum change from ${sanitizeForLog(existingProfile.curriculum_type)} to ${sanitizeForLog(newCurriculumType)}`);
       }
     }
     
@@ -805,10 +805,10 @@ class ProfileService {
       const profile = await this.getCompleteProfile(userId);
       if (profile && profile.profile) {
         const eligibility = EligibilityAutoFulfillService.checkAutoFulfillments(profile.profile);
-        logger.debug(`Eligibility recalculated for user ${userId}:`, eligibility);
+        logger.debug(`Eligibility recalculated for user ${sanitizeForLog(userId)}:`, eligibility);
       }
     } catch (error) {
-      logger.warn(`Failed to recalculate eligibility for user ${userId}:`, error.message);
+      logger.warn(`Failed to recalculate eligibility for user ${sanitizeForLog(userId)}:`, sanitizeForLog(error.message));
     }
   }
   

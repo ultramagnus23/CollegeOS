@@ -44,7 +44,7 @@ class EssayAutoLoadingService {
       result.success = true;
       result.message = `Essays loaded for ${college.name}`;
       
-      logger.info(`Successfully loaded ${result.essaysAdded.length} essays for application ${applicationId}`);
+      logger.info(`Successfully loaded ${sanitizeForLog(result.essaysAdded.length)} essays for application ${sanitizeForLog(applicationId)}`);
       
       return result;
 
