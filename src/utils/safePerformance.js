@@ -41,7 +41,7 @@ export function safeMeasure(name) {
   const startedAt = nowMs();
   return (payload = {}) => {
     try {
-      const durationMs = Math.max(0, Number((nowMs() - startedAt).toFixed(2)));
+      const durationMs = Math.max(0, Math.round((nowMs() - startedAt) * 100) / 100);
       devLog(`${name}`, { ...payload, durationMs });
       return durationMs;
     } catch {
@@ -98,11 +98,10 @@ export function safeTrackDuration(name, fn) {
 export function safeTrackSince(name, startedAt, payload = {}) {
   try {
     const endAt = nowMs();
-    const durationMs = Math.max(0, Number((endAt - startedAt).toFixed(2)));
+    const durationMs = Math.max(0, Math.round((endAt - startedAt) * 100) / 100);
     devLog(`${name}`, { ...payload, durationMs });
     return durationMs;
   } catch {
     return 0;
   }
 }
-

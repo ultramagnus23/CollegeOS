@@ -25,6 +25,13 @@ export default tseslint.config(
     plugins: {
       import: importPlugin,
     },
+    settings: {
+      "import/resolver": {
+        node: {
+          extensions: [".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"],
+        },
+      },
+    },
     rules: {
       "no-undef": "error",
       "no-unused-vars": "warn",

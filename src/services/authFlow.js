@@ -19,6 +19,8 @@ const FIREBASE_ERROR_MESSAGES = {
 };
 
 function randomAttemptId() {
+  const uuid = globalThis?.crypto?.randomUUID?.();
+  if (uuid) return `auth_${uuid}`;
   return `auth_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
@@ -199,4 +201,3 @@ export const authFlowConstants = {
   FIREBASE_POPUP_CLOSED_CODES,
   FIREBASE_ERROR_MESSAGES,
 };
-

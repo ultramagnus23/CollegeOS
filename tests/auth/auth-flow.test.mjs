@@ -6,7 +6,12 @@ import {
   normalizeGoogleLoginResponse,
   runGoogleSignInFlow,
 } from '../../src/services/authFlow.js';
-import { safeAsyncMeasure, safeMeasure, safeTrackDuration } from '../../src/utils/safePerformance.js';
+import {
+  safeAsyncMeasure,
+  safeMeasure,
+  safeTrackDuration,
+  safeTrackSince,
+} from '../../src/utils/safePerformance.js';
 
 test('runGoogleSignInFlow succeeds for valid popup user', async () => {
   let loginCalled = false;
@@ -139,5 +144,8 @@ test('safe performance helpers never throw for standard usage', async () => {
 
   const tracked = safeTrackDuration('test.track', () => 'value');
   assert.equal(tracked, 'value');
-});
 
+  const sinceDuration = safeTrackSince('test.since', Date.now() - 25, { ok: true });
+  assert.equal(typeof sinceDuration, 'number');
+  assert.ok(sinceDuration >= 0);
+});
