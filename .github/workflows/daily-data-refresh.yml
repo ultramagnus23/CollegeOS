@@ -1,4 +1,5 @@
 name: Daily College Data Refresh
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -10,9 +11,6 @@ on:
 permissions:
   contents: read
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 concurrency:
   group: daily-data-refresh
   cancel-in-progress: false
@@ -21,33 +19,30 @@ jobs:
   refresh:
     name: Refresh College Data
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
 
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install psycopg2-binary requests pandas python-dotenv tenacity
+          cache: 'pip'
 
       - name: Bootstrap diagnostics directory
         run: |
           mkdir -p scraper_diagnostics
           python - <<'PY'
-          import json, pathlib, datetime
+          import json, pathlib, datetime, platform
           out = pathlib.Path('scraper_diagnostics')
           out.mkdir(parents=True, exist_ok=True)
           now = datetime.datetime.now(datetime.timezone.utc).isoformat()
           defaults = {
-            'run_summary.json': {'workflow':'refresh-data','rows_upserted':0,'rows_skipped_error':0,'schema_errors':0,'retry_count':0,'status':'failed','fatal_error':None,'timestamp':now},
-            'scraper_metrics.json': {'workflow':'refresh-data','rows_upserted':0,'rows_skipped_error':0,'schema_errors':0,'retry_count':0,'status':'failed','timestamp':now},
+            'run_summary.json': {'workflow':'daily-data-refresh','rows_upserted':0,'rows_skipped_error':0,'schema_errors':0,'retry_count':0,'status':'failed','fatal_error':'not_started','timestamp':now},
+            'scraper_metrics.json': {'workflow':'daily-data-refresh','rows_upserted':0,'rows_skipped_error':0,'schema_errors':0,'retry_count':0,'status':'failed','timestamp':now},
             'failed_colleges.json': [],
             'stale_colleges.json': [],
             'schema_errors.json': [],
+            'environment_summary.json': {'python': platform.python_version(), 'platform': platform.platform(), 'timestamp': now},
           }
           for name, payload in defaults.items():
             p = out / name
@@ -55,9 +50,44 @@ jobs:
               p.write_text(json.dumps(payload, indent=2), encoding='utf-8')
           PY
 
-      - name: Run data pipeline
-        timeout-minutes: 25
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install psycopg2-binary requests pandas python-dotenv tenacity
+          python -m pip freeze > scraper_diagnostics/pip-freeze.txt
 
+      - name: Verify DB connectivity
+        id: db_connectivity
+        continue-on-error: true
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, psycopg2
+          out = pathlib.Path('scraper_diagnostics/db_connectivity.json')
+          payload = {'ok': False, 'error': None}
+          db_url = os.environ.get('SUPABASE_DB_URL')
+          if not db_url:
+            payload['error'] = 'SUPABASE_DB_URL missing'
+          else:
+            try:
+              conn = psycopg2.connect(db_url, connect_timeout=8)
+              cur = conn.cursor()
+              cur.execute('SELECT 1')
+              cur.fetchone()
+              cur.close()
+              conn.close()
+              payload['ok'] = True
+            except Exception as exc:
+              payload['error'] = str(exc)
+          out.write_text(json.dumps(payload, indent=2), encoding='utf-8')
+          raise SystemExit(0 if payload['ok'] else 1)
+          PY
+
+      - name: Run data pipeline
+        id: run_pipeline
+        continue-on-error: true
+        timeout-minutes: 30
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           IPEDS_API_KEY: ${{ secrets.IPEDS_API_KEY }}
@@ -65,13 +95,72 @@ jobs:
           SCRAPER_DIAGNOSTICS_DIR: scraper_diagnostics
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          mkdir -p scraper_diagnostics
-          python scraper/pipeline.py
+          set -o pipefail
+          python scraper/pipeline.py 2>&1 | tee scraper_diagnostics/pipeline.log
+
+      - name: Categorize failures
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          out = pathlib.Path('scraper_diagnostics')
+          summary = {'category':'unknown','details':[]}
+          run_summary = out / 'run_summary.json'
+          db_diag = out / 'db_connectivity.json'
+
+          if db_diag.exists():
+            db = json.loads(db_diag.read_text(encoding='utf-8'))
+            if not db.get('ok'):
+              summary['category'] = 'db_connectivity_failure'
+              summary['details'].append(db.get('error'))
+
+          if run_summary.exists():
+            rs = json.loads(run_summary.read_text(encoding='utf-8'))
+            if rs.get('schema_errors', 0) > 0:
+              summary['category'] = 'schema_contract_failure'
+            elif rs.get('rows_skipped_error', 0) > 0:
+              summary['category'] = 'partial_data_failure'
+            elif rs.get('status') in ('failed', 'degraded'):
+              summary['category'] = 'runtime_failure'
+
+          (out / 'failure_category.json').write_text(json.dumps(summary, indent=2), encoding='utf-8')
+          PY
+
+      - name: Workflow completion summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          out = pathlib.Path('scraper_diagnostics')
+          run_summary = {}
+          if (out / 'run_summary.json').exists():
+            run_summary = json.loads((out / 'run_summary.json').read_text(encoding='utf-8'))
+          failure = {}
+          if (out / 'failure_category.json').exists():
+            failure = json.loads((out / 'failure_category.json').read_text(encoding='utf-8'))
+          print('## Daily data refresh summary')
+          print(f"- status: {run_summary.get('status', 'unknown')}")
+          print(f"- rows_upserted: {run_summary.get('rows_upserted', 0)}")
+          print(f"- rows_skipped_error: {run_summary.get('rows_skipped_error', 0)}")
+          print(f"- schema_errors: {run_summary.get('schema_errors', 0)}")
+          print(f"- failure_category: {failure.get('category', 'none')}")
+          PY
+
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v5
         with:
           name: daily-refresh-diagnostics
           path: scraper_diagnostics/
-          if-no-files-found: ignore
+          if-no-files-found: error
+          compression-level: 9
 
+      - name: Final status gate
+        if: always()
+        run: |
+          db_ok="${{ steps.db_connectivity.outcome }}"
+          pipeline_ok="${{ steps.run_pipeline.outcome }}"
+          if [ "$db_ok" != "success" ] || [ "$pipeline_ok" != "success" ]; then
+            echo "Daily refresh failed (db=$db_ok, pipeline=$pipeline_ok)."
+            exit 1
+          fi

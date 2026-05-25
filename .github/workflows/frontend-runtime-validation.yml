@@ -1,5 +1,8 @@
 name: Frontend Runtime Validation
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   pull_request:
   push:
@@ -11,10 +14,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: frontend-runtime-validation-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate-frontend-runtime:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
 
@@ -23,21 +30,98 @@ jobs:
           node-version: '24'
           cache: npm
 
+      - name: Bootstrap diagnostics
+        run: |
+          mkdir -p diagnostics/frontend
+          node -v | tee diagnostics/frontend/node-version.txt
+          npm -v | tee diagnostics/frontend/npm-version.txt
+          env | sort > diagnostics/frontend/environment.txt
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Run validation pipeline with diagnostics
+        id: runtime_pipeline
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          mkdir -p diagnostics/frontend
 
-      - name: Typecheck
-        run: npm run typecheck
+          run_step() {
+            local name="$1"
+            local cmd="$2"
+            echo "::group::${name}"
+            bash -lc "$cmd" 2>&1 | tee "diagnostics/frontend/${name}.log"
+            local code=${PIPESTATUS[0]}
+            printf '{"step":"%s","exit_code":%s}\n' "$name" "$code" >> diagnostics/frontend/results.ndjson
+            echo "::endgroup::"
+            return $code
+          }
 
-      - name: Test
-        run: npm run test
+          overall=0
+          run_step lint "npm run lint" || overall=1
+          run_step typecheck "npm run typecheck" || overall=1
+          run_step test "npm run test" || overall=1
+          run_step runtime_check "npm run runtime-check" || overall=1
+          run_step build "npm run build" || overall=1
+          run_step full_production_check "node scripts/full-production-check.js --skip-db --skip-scraper --skip-onboarding-e2e" || overall=1
 
-      - name: Runtime reference check
-        run: npm run runtime-check
+          echo "overall_exit_code=${overall}" >> "$GITHUB_OUTPUT"
+          exit 0
 
-      - name: Build
-        run: npm run build
+      - name: Build workflow health summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
 
+          results_file = Path('diagnostics/frontend/results.ndjson')
+          summary_file = Path('diagnostics/frontend/workflow-summary.json')
+          steps = []
+          failed = []
+
+          if results_file.exists():
+            for line in results_file.read_text(encoding='utf-8').splitlines():
+              if not line.strip():
+                continue
+              entry = json.loads(line)
+              steps.append(entry)
+              if int(entry.get('exit_code', 1)) != 0:
+                failed.append(entry)
+
+          payload = {
+            'workflow': 'frontend-runtime-validation',
+            'steps': steps,
+            'failed_steps': failed,
+            'failed_count': len(failed),
+          }
+          summary_file.write_text(json.dumps(payload, indent=2), encoding='utf-8')
+
+          with open(Path.cwd() / Path('.github_step_summary_tmp.md'), 'w', encoding='utf-8') as f:
+            f.write('## Frontend runtime validation summary\n')
+            f.write(f"- Total steps: {len(steps)}\n")
+            f.write(f"- Failed steps: {len(failed)}\n")
+            if failed:
+              f.write('\n### Failed commands\n')
+              for item in failed:
+                f.write(f"- {item['step']} (exit={item['exit_code']})\n")
+          PY
+          cat .github_step_summary_tmp.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload runtime diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: frontend-runtime-diagnostics
+          path: diagnostics/frontend/
+          if-no-files-found: error
+          compression-level: 9
+
+      - name: Final gate
+        if: always()
+        run: |
+          if [ "${{ steps.runtime_pipeline.outputs.overall_exit_code }}" != "0" ]; then
+            echo "Frontend runtime validation failed. See frontend-runtime-diagnostics artifact."
+            exit 1
+          fi
