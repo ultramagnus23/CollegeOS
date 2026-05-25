@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 
 const root = process.cwd();
 const args = new Set(process.argv.slice(2));
+const reportPath = path.join(root, 'production-validation-report.json');
 
 const options = {
   skipDb: args.has('--skip-db'),
@@ -13,159 +14,298 @@ const options = {
   skipOnboardingE2E: args.has('--skip-onboarding-e2e'),
 };
 
-const failures = [];
-const warnings = [];
+const report = {
+  generatedAt: new Date().toISOString(),
+  options,
+  passedChecks: [],
+  failedChecks: [],
+  warnings: [],
+  endpointTimings: [],
+  schemaDiagnostics: {},
+  recommendationDiagnostics: {},
+  scraperDiagnostics: {},
+  missingEnvVars: [],
+  dbIntegritySummary: {},
+};
 
-function run(cmd, cmdArgs, cwd = root) {
-  const result = spawnSync(cmd, cmdArgs, { cwd, stdio: 'pipe', encoding: 'utf8' });
+function addPass(name, details = {}) {
+  report.passedChecks.push({ name, details });
+}
+function addFail(name, details = {}) {
+  report.failedChecks.push({ name, details });
+}
+function addWarn(name, details = {}) {
+  report.warnings.push({ name, details });
+}
+
+function run(cmd, cmdArgs, cwd = root, env = process.env) {
+  const started = Date.now();
+  const result = spawnSync(cmd, cmdArgs, { cwd, env, stdio: 'pipe', encoding: 'utf8' });
   return {
     ok: result.status === 0,
     status: result.status,
     stdout: result.stdout || '',
     stderr: result.stderr || '',
+    durationMs: Date.now() - started,
   };
 }
 
-function fail(message, details = '') {
-  failures.push(details ? `${message}: ${details}` : message);
+function writeReport() {
+  fs.writeFileSync(reportPath, JSON.stringify(report, null, 2), 'utf8');
 }
 
-function warn(message) {
-  warnings.push(message);
-}
-
-function checkFileExists(relPath, label) {
+function assertPathExists(relPath, name) {
   const full = path.join(root, relPath);
-  if (!fs.existsSync(full)) fail(`${label} missing`, relPath);
+  if (!fs.existsSync(full)) {
+    addFail(name, { missingPath: relPath });
+    return false;
+  }
+  addPass(name, { path: relPath });
+  return true;
+}
+
+function checkRequiredEnvVars() {
+  const required = [];
+  if (!options.skipOnboardingE2E) {
+    required.push('JWT_SECRET', 'REFRESH_TOKEN_SECRET');
+  }
+  const recommended = ['SUPABASE_DB_URL', 'DATABASE_URL', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
+
+  for (const key of required) {
+    if (!process.env[key]) report.missingEnvVars.push(key);
+  }
+  if (!options.skipDb && !(process.env.DATABASE_URL || process.env.SUPABASE_DB_URL)) {
+    report.missingEnvVars.push('DATABASE_URL|SUPABASE_DB_URL');
+  }
+
+  if (report.missingEnvVars.length > 0) {
+    addFail('required_env_vars', { missing: report.missingEnvVars });
+  } else {
+    addPass('required_env_vars');
+  }
+
+  const missingRecommended = recommended.filter((k) => !process.env[k]);
+  if (missingRecommended.length > 0) {
+    addWarn('recommended_env_vars', { missing: missingRecommended });
+  } else {
+    addPass('recommended_env_vars');
+  }
 }
 
 function checkWorkflows() {
   const wfDir = path.join(root, '.github', 'workflows');
   if (!fs.existsSync(wfDir)) {
-    fail('workflow directory missing', wfDir);
+    addFail('workflow_directory', { error: `${wfDir} missing` });
     return;
   }
 
-  const files = fs.readdirSync(wfDir).filter((name) => name.endsWith('.yml') || name.endsWith('.yaml'));
-  if (files.length === 0) fail('no workflow files found');
+  const requiredWorkflows = [
+    'onboarding-smoke.yml',
+    'frontend-runtime-validation.yml',
+    'daily-data-refresh.yml',
+    'enrich-colleges.yml',
+  ];
+  const files = fs.readdirSync(wfDir).filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'));
+
+  for (const wf of requiredWorkflows) {
+    if (!files.includes(wf)) addFail('required_workflow_missing', { workflow: wf });
+  }
 
   for (const file of files) {
     const rel = path.join('.github', 'workflows', file);
-    const full = path.join(root, rel);
-    const text = fs.readFileSync(full, 'utf8');
+    const text = fs.readFileSync(path.join(root, rel), 'utf8');
 
-    if (!text.includes('actions/checkout@v5')) fail(`workflow missing checkout@v5`, rel);
+    const checks = [
+      ['actions/checkout@v5', 'checkout_v5'],
+      ['permissions:', 'permissions_block'],
+      ['timeout-minutes:', 'job_timeout'],
+      ['concurrency:', 'concurrency_guard'],
+      ['workflow_dispatch:', 'workflow_dispatch'],
+    ];
+
+    for (const [needle, checkName] of checks) {
+      if (!text.includes(needle)) addFail(`workflow_${checkName}`, { workflow: rel });
+    }
+
     if (text.includes('actions/setup-node@') && !text.includes('actions/setup-node@v5')) {
-      fail(`workflow not using setup-node@v5`, rel);
+      addFail('workflow_node_action_version', { workflow: rel });
     }
     if (text.includes('actions/setup-python@') && !text.includes('actions/setup-python@v6')) {
-      fail(`workflow not using setup-python@v6`, rel);
+      addFail('workflow_python_action_version', { workflow: rel });
     }
     if (text.includes('actions/upload-artifact@') && !text.includes('actions/upload-artifact@v5')) {
-      fail(`workflow not using upload-artifact@v5`, rel);
+      addFail('workflow_artifact_action_version', { workflow: rel });
     }
-
-    const uploadBlocks = text.match(/uses:\s*actions\/upload-artifact@v5[\s\S]*?(?=\n\s*-\s+name:|\n\s*-\s+uses:|\n\s*[A-Za-z_]+:|\s*$)/g) || [];
-    for (const block of uploadBlocks) {
-      if (!/if:\s*always\(\)/.test(block) && !/if:\s*always\(\)/.test(text)) {
-        fail(`artifact upload missing if: always()`, rel);
-      }
-    }
-
-    if (/secrets\.[A-Z0-9_]+/.test(text) && !/env:\s*\n/.test(text)) {
-      warn(`workflow references secrets without explicit env block in one or more steps (${rel})`);
+    if (text.includes('actions/upload-artifact@v5') && !text.includes('if: always()')) {
+      addFail('workflow_artifact_missing_if_always', { workflow: rel });
     }
   }
+
+  addPass('workflow_validation', { workflowCount: files.length });
 }
 
 function checkFrontend() {
   const runtime = run('npm', ['run', 'runtime-check']);
-  if (!runtime.ok) fail('frontend runtime-check failed', runtime.stderr || runtime.stdout);
+  if (!runtime.ok) addFail('frontend_runtime_check', { stderr: runtime.stderr, stdout: runtime.stdout });
+  else addPass('frontend_runtime_check', { durationMs: runtime.durationMs });
 
   const build = run('npm', ['run', 'build']);
-  if (!build.ok) fail('frontend build failed', build.stderr || build.stdout);
+  if (!build.ok) addFail('frontend_build', { stderr: build.stderr, stdout: build.stdout });
+  else addPass('frontend_build', { durationMs: build.durationMs });
+
+  if ((build.stdout || '').includes('Some chunks are larger than 500 kB')) {
+    addWarn('frontend_chunk_size_warning');
+  }
 }
 
 function checkBackend() {
   const backendDir = path.join(root, 'backend');
-  checkFileExists('backend/src/app.js', 'backend app entry');
-  checkFileExists('backend/src/startup/schemaValidator.js', 'schema validator');
-  checkFileExists('backend/src/routes', 'backend routes directory');
+  assertPathExists('backend/src/app.js', 'backend_entry');
+  assertPathExists('backend/src/startup/schemaValidator.js', 'backend_schema_validator');
+  assertPathExists('backend/src/routes', 'backend_routes_directory');
 
-  const schemaValidatorUnit = run('npx', ['jest', 'tests/unit/schemaValidator.test.js', '--runInBand', '--coverage=false'], backendDir);
-  if (!schemaValidatorUnit.ok) {
-    fail('backend schema validator test failed', schemaValidatorUnit.stderr || schemaValidatorUnit.stdout);
-  }
+  const schemaTests = run('npx', ['jest', 'tests/unit/schemaValidator.test.js', '--runInBand', '--coverage=false'], backendDir);
+  if (!schemaTests.ok) addFail('backend_schema_validator_test', { stderr: schemaTests.stderr, stdout: schemaTests.stdout });
+  else addPass('backend_schema_validator_test', { durationMs: schemaTests.durationMs });
 
   const startupProbe = run('node', ['-e', "require('./src/app'); process.exit(0);"], backendDir);
-  if (!startupProbe.ok) fail('backend startup import failed', startupProbe.stderr || startupProbe.stdout);
+  if (!startupProbe.ok) addFail('backend_startup_probe', { stderr: startupProbe.stderr, stdout: startupProbe.stdout });
+  else addPass('backend_startup_probe', { durationMs: startupProbe.durationMs });
 }
 
-function checkDatabase() {
-  if (options.skipDb) return;
-  const databaseUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
-  if (!databaseUrl) {
-    fail('database check failed', 'DATABASE_URL/SUPABASE_DB_URL missing');
+function checkDatabaseAndEndpoints() {
+  if (options.skipDb) {
+    addWarn('database_checks_skipped');
     return;
   }
-  const checkScript = `
+  const databaseUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+  if (!databaseUrl) {
+    addFail('database_url_missing', { message: 'DATABASE_URL/SUPABASE_DB_URL missing' });
+    return;
+  }
+
+  const dbScript = `
     const { Client } = require('pg');
     const client = new Client({ connectionString: process.env.DATABASE_URL || process.env.SUPABASE_DB_URL, ssl: { rejectUnauthorized: false } });
     (async () => {
       await client.connect();
       await client.query('SELECT 1');
-      await client.query("SELECT to_regclass('canonical.mv_college_cards')");
-      await client.query("SELECT 1 FROM information_schema.columns WHERE table_schema='canonical' AND table_name='mv_college_cards' LIMIT 1");
-      await client.query("SELECT 1 FROM pg_indexes WHERE schemaname='canonical' AND tablename='institution_deadlines' LIMIT 1");
+      const mv = await client.query("SELECT to_regclass('canonical.mv_college_cards') AS mv");
+      const cols = await client.query("SELECT COUNT(*)::int AS count FROM information_schema.columns WHERE table_schema='canonical' AND table_name='mv_college_cards'");
+      const idx = await client.query("SELECT COUNT(*)::int AS count FROM pg_indexes WHERE schemaname='canonical' AND tablename='institution_deadlines'");
       const dupes = await client.query("SELECT institution_id, deadline_type, deadline_date, COUNT(*) FROM canonical.institution_deadlines GROUP BY institution_id, deadline_type, deadline_date HAVING COUNT(*) > 1");
-      if (dupes.rows.length > 0) {
-        throw new Error('Duplicate deadline records detected in canonical.institution_deadlines');
-      }
+      const payload = { mv: mv.rows[0].mv, requiredColumns: cols.rows[0].count, indexCount: idx.rows[0].count, duplicateDeadlineGroups: dupes.rows.length };
+      console.log(JSON.stringify(payload));
       await client.end();
+      if (!payload.mv) process.exit(2);
+      if (payload.requiredColumns <= 0) process.exit(3);
+      if (payload.indexCount <= 0) process.exit(4);
+      if (payload.duplicateDeadlineGroups > 0) process.exit(5);
     })().catch(async (err) => { console.error(err.stack || err.message); try { await client.end(); } catch {} process.exit(1); });
   `;
-  const db = run('node', ['-e', checkScript], path.join(root, 'backend'));
-  if (!db.ok) fail('database validation failed', db.stderr || db.stdout);
+  const db = run('node', ['-e', dbScript], path.join(root, 'backend'));
+  if (!db.ok) {
+    addFail('database_integrity_checks', { stderr: db.stderr, stdout: db.stdout });
+  } else {
+    const line = db.stdout.trim().split('\n').pop();
+    try {
+      report.dbIntegritySummary = JSON.parse(line);
+    } catch {
+      report.dbIntegritySummary = { raw: line };
+    }
+    report.schemaDiagnostics = report.dbIntegritySummary;
+    addPass('database_integrity_checks', report.dbIntegritySummary);
+  }
+
+  const endpointScript = `
+    const app = require('./backend/src/app');
+    (async () => {
+      const server = app.listen(0);
+      await new Promise(r => server.once('listening', r));
+      const port = server.address().port;
+      const base = 'http://127.0.0.1:' + port;
+      const endpoints = ['/health','/status','/api/discovery/popular?limit=5','/api/recommendations?limit=5','/api/admin/scraper-health'];
+      const timings = [];
+      let failed = false;
+      for (const endpoint of endpoints) {
+        const start = Date.now();
+        const res = await fetch(base + endpoint, { headers: { 'Content-Type': 'application/json' } });
+        const durationMs = Date.now() - start;
+        timings.push({ endpoint, status: res.status, durationMs });
+        if (res.status >= 500) failed = true;
+      }
+      server.close();
+      console.log(JSON.stringify({ timings, failed }));
+      process.exit(failed ? 2 : 0);
+    })().catch((err) => { console.error(err.stack || err.message); process.exit(1); });
+  `;
+  const endpointProbe = run('node', ['-e', endpointScript], root, {
+    ...process.env,
+    DATABASE_URL: databaseUrl,
+    SUPABASE_DB_URL: databaseUrl,
+  });
+  if (!endpointProbe.ok) {
+    addFail('endpoint_health_checks', { stderr: endpointProbe.stderr, stdout: endpointProbe.stdout });
+  } else {
+    const parsed = JSON.parse(endpointProbe.stdout.trim().split('\n').pop());
+    report.endpointTimings = parsed.timings || [];
+    report.recommendationDiagnostics = {
+      recommendationEndpoint: (report.endpointTimings || []).find((x) => x.endpoint.includes('/api/recommendations')) || null,
+    };
+    report.scraperDiagnostics = {
+      scraperHealthEndpoint: (report.endpointTimings || []).find((x) => x.endpoint.includes('/api/admin/scraper-health')) || null,
+    };
+    addPass('endpoint_health_checks', { count: report.endpointTimings.length });
+  }
 }
 
 function checkScrapers() {
-  if (options.skipScraper) return;
-  checkFileExists('scraper/pipeline.py', 'primary scraper pipeline');
-  checkFileExists('scraper/training_pipeline.py', 'training pipeline');
-  checkFileExists('scrapers/run_deadline_refresh.py', 'deadline refresh runner');
+  if (options.skipScraper) {
+    addWarn('scraper_checks_skipped');
+    return;
+  }
+  assertPathExists('scraper/pipeline.py', 'scraper_pipeline');
+  assertPathExists('scraper/training_pipeline.py', 'scraper_training_pipeline');
+  assertPathExists('scrapers/run_deadline_refresh.py', 'deadline_refresh_runner');
 
   const diagDir = path.join(root, 'scraper_diagnostics_check');
   fs.mkdirSync(diagDir, { recursive: true });
-  const probe = run('python', ['-c', "import pathlib, json; p=pathlib.Path('scraper_diagnostics_check/probe.json'); p.write_text(json.dumps({'ok': True}), encoding='utf-8')"], root);
-  if (!probe.ok) fail('scraper diagnostics directory is not writable', probe.stderr || probe.stdout);
+  const writable = run('python', ['-c', "import pathlib, json; p=pathlib.Path('scraper_diagnostics_check/probe.json'); p.write_text(json.dumps({'ok': True}), encoding='utf-8')"], root);
+  if (!writable.ok) addFail('scraper_diagnostics_writable', { stderr: writable.stderr, stdout: writable.stdout });
+  else addPass('scraper_diagnostics_writable');
 
-  const mappingCheck = run('python', ['-c', "import importlib; importlib.import_module('scraper.pipeline'); print('pipeline-import-ok')"], root);
-  if (!mappingCheck.ok) fail('scraper pipeline import failed', mappingCheck.stderr || mappingCheck.stdout);
+  const importProbe = run('python', ['-c', "import importlib; importlib.import_module('scraper.pipeline'); print('pipeline-import-ok')"], root);
+  if (!importProbe.ok) addFail('scraper_pipeline_import', { stderr: importProbe.stderr, stdout: importProbe.stdout });
+  else addPass('scraper_pipeline_import');
 }
 
 function checkOnboardingE2E() {
-  if (options.skipOnboardingE2E) return;
+  if (options.skipOnboardingE2E) {
+    addWarn('onboarding_e2e_skipped');
+    return;
+  }
   const backendDir = path.join(root, 'backend');
-  const res = run('npx', ['jest', 'tests/integration/onboardingSmoke.test.js', '--runInBand', '--coverage=false'], backendDir);
-  if (!res.ok) fail('onboarding E2E smoke test failed', res.stderr || res.stdout);
+  const smoke = run('npx', ['jest', 'tests/integration/onboardingSmoke.test.js', 'tests/integration/fullOnboardingJourney.test.js', '--runInBand', '--coverage=false'], backendDir, process.env);
+  if (!smoke.ok) addFail('onboarding_e2e_tests', { stderr: smoke.stderr, stdout: smoke.stdout });
+  else addPass('onboarding_e2e_tests', { durationMs: smoke.durationMs });
 }
 
+checkRequiredEnvVars();
 checkFrontend();
 checkBackend();
-checkDatabase();
+checkDatabaseAndEndpoints();
 checkScrapers();
 checkWorkflows();
 checkOnboardingE2E();
 
-if (warnings.length > 0) {
-  console.log('=== WARNINGS ===');
-  for (const entry of warnings) console.log(`- ${entry}`);
-}
+writeReport();
 
-if (failures.length > 0) {
+if (report.failedChecks.length > 0) {
   console.error('=== FULL PRODUCTION CHECK FAILED ===');
-  for (const entry of failures) console.error(`- ${entry}`);
+  for (const entry of report.failedChecks) console.error(`- ${entry.name}`);
+  console.error(`Report: ${reportPath}`);
   process.exit(1);
 }
 
 console.log('=== FULL PRODUCTION CHECK PASSED ===');
+console.log(`Report: ${reportPath}`);

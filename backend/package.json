@@ -28,7 +28,7 @@
     "db:diagnose": "node scripts/diagnoseDatabase.js",
     "db:check": "node scripts/diagnoseDatabase.js",
     "test": "jest --coverage",
-    "lint": "eslint src/",
+    "lint": "eslint \"src/**/*.js\"",
     "vectors:precompute": "node scripts/precomputeCollegeVectors.js",
     "vectors:force": "node scripts/precomputeCollegeVectors.js --force",
     "populate:majors": "node scripts/populateMajorsMapping.js",
@@ -76,6 +76,7 @@
   "devDependencies": {
     "eslint": "^9.39.2",
     "jest": "^29.7.0",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "supertest": "^7.1.4"
   }
 }

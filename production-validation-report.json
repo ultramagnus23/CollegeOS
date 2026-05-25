@@ -1,0 +1,94 @@
+{
+  "generatedAt": "2026-05-25T21:09:23.329Z",
+  "options": {
+    "skipDb": true,
+    "skipScraper": true,
+    "skipOnboardingE2E": true
+  },
+  "passedChecks": [
+    {
+      "name": "required_env_vars",
+      "details": {}
+    },
+    {
+      "name": "frontend_runtime_check",
+      "details": {
+        "durationMs": 239
+      }
+    },
+    {
+      "name": "frontend_build",
+      "details": {
+        "durationMs": 11539
+      }
+    },
+    {
+      "name": "backend_entry",
+      "details": {
+        "path": "backend/src/app.js"
+      }
+    },
+    {
+      "name": "backend_schema_validator",
+      "details": {
+        "path": "backend/src/startup/schemaValidator.js"
+      }
+    },
+    {
+      "name": "backend_routes_directory",
+      "details": {
+        "path": "backend/src/routes"
+      }
+    },
+    {
+      "name": "backend_schema_validator_test",
+      "details": {
+        "durationMs": 1264
+      }
+    },
+    {
+      "name": "backend_startup_probe",
+      "details": {
+        "durationMs": 583
+      }
+    },
+    {
+      "name": "workflow_validation",
+      "details": {
+        "workflowCount": 7
+      }
+    }
+  ],
+  "failedChecks": [],
+  "warnings": [
+    {
+      "name": "recommended_env_vars",
+      "details": {
+        "missing": [
+          "SUPABASE_DB_URL",
+          "DATABASE_URL",
+          "SUPABASE_URL",
+          "SUPABASE_SERVICE_ROLE_KEY"
+        ]
+      }
+    },
+    {
+      "name": "database_checks_skipped",
+      "details": {}
+    },
+    {
+      "name": "scraper_checks_skipped",
+      "details": {}
+    },
+    {
+      "name": "onboarding_e2e_skipped",
+      "details": {}
+    }
+  ],
+  "endpointTimings": [],
+  "schemaDiagnostics": {},
+  "recommendationDiagnostics": {},
+  "scraperDiagnostics": {},
+  "missingEnvVars": [],
+  "dbIntegritySummary": {}
+}

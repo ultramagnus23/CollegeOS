@@ -27,10 +27,25 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
 
       - name: Bootstrap diagnostics directory
         run: |
           mkdir -p scraper_diagnostics
+          node -v | tee scraper_diagnostics/node-version.txt
+          npm -v | tee scraper_diagnostics/npm-version.txt
+          python --version | tee scraper_diagnostics/python-version.txt
+          {
+            echo "branch=${GITHUB_REF_NAME}"
+            echo "sha=${GITHUB_SHA}"
+            echo "actor=${GITHUB_ACTOR}"
+            echo "has_SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL != '' }}"
+            echo "has_IPEDS_API_KEY=${{ secrets.IPEDS_API_KEY != '' }}"
+            echo "has_COLLEGE_SCORECARD_API_KEY=${{ secrets.COLLEGE_SCORECARD_API_KEY != '' }}"
+          } | tee scraper_diagnostics/startup-diagnostics.txt
           python - <<'PY'
           import json, pathlib, datetime, platform
           out = pathlib.Path('scraper_diagnostics')

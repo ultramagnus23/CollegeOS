@@ -5,6 +5,7 @@ env:
 
 on:
   pull_request:
+  pull_request_target:
   push:
     branches:
       - main
@@ -14,6 +15,8 @@ on:
 
 permissions:
   contents: read
+  actions: read
+  checks: read
 
 concurrency:
   group: onboarding-smoke-${{ github.ref }}
@@ -44,6 +47,14 @@ jobs:
           node -v | tee diagnostics/onboarding-smoke/node-version.txt
           npm -v | tee diagnostics/onboarding-smoke/npm-version.txt
           python --version | tee diagnostics/onboarding-smoke/python-version.txt
+          {
+            echo "branch=${GITHUB_REF_NAME}"
+            echo "sha=${GITHUB_SHA}"
+            echo "actor=${GITHUB_ACTOR}"
+            echo "has_SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL != '' }}"
+            echo "has_JWT_SECRET=${{ secrets.JWT_SECRET != '' }}"
+            echo "has_REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET != '' }}"
+          } | tee diagnostics/onboarding-smoke/startup-diagnostics.txt
           env | sort > diagnostics/onboarding-smoke/environment.txt
 
       - name: Install frontend dependencies
@@ -85,7 +96,7 @@ jobs:
           run();
           NODE
 
-      - name: Run onboarding smoke E2E test
+      - name: Run onboarding smoke E2E tests
         id: onboarding_test
         continue-on-error: true
         env:
@@ -96,7 +107,7 @@ jobs:
           REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET }}
         run: |
           cd backend
-          npx jest tests/integration/onboardingSmoke.test.js --runInBand --coverage=false 2>&1 | tee ../diagnostics/onboarding-smoke/onboarding-smoke.log
+          npx jest tests/integration/onboardingSmoke.test.js tests/integration/fullOnboardingJourney.test.js --runInBand --coverage=false 2>&1 | tee ../diagnostics/onboarding-smoke/onboarding-smoke.log
 
       - name: Run full production validation gate
         id: full_check

@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: read
+  actions: read
+  checks: read
 
 concurrency:
   group: enrich-colleges
@@ -26,11 +28,26 @@ jobs:
         with:
           node-version: '24'
           cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
 
       - name: Bootstrap diagnostics
         run: |
           mkdir -p scraper_diagnostics
           printf '{"workflow":"enrich-colleges","status":"starting"}' > scraper_diagnostics/run_summary.json
+          node -v | tee scraper_diagnostics/node-version.txt
+          npm -v | tee scraper_diagnostics/npm-version.txt
+          python --version | tee scraper_diagnostics/python-version.txt
+          {
+            echo "branch=${GITHUB_REF_NAME}"
+            echo "sha=${GITHUB_SHA}"
+            echo "actor=${GITHUB_ACTOR}"
+            echo "has_SUPABASE_URL=${{ secrets.SUPABASE_URL != '' }}"
+            echo "has_SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}"
+            echo "has_SCORECARD_API_KEY=${{ secrets.SCORECARD_API_KEY != '' }}"
+          } | tee scraper_diagnostics/startup-diagnostics.txt
           env | sort > scraper_diagnostics/environment.txt
 
       - name: Install dependencies

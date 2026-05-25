@@ -5,6 +5,8 @@ env:
 
 on:
   pull_request:
+  pull_request_target:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -13,6 +15,8 @@ on:
 
 permissions:
   contents: read
+  actions: read
+  checks: read
 
 concurrency:
   group: frontend-runtime-validation-${{ github.ref }}
@@ -29,12 +33,23 @@ jobs:
         with:
           node-version: '24'
           cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
 
       - name: Bootstrap diagnostics
         run: |
           mkdir -p diagnostics/frontend
           node -v | tee diagnostics/frontend/node-version.txt
           npm -v | tee diagnostics/frontend/npm-version.txt
+          python --version | tee diagnostics/frontend/python-version.txt
+          {
+            echo "branch=${GITHUB_REF_NAME}"
+            echo "sha=${GITHUB_SHA}"
+            echo "actor=${GITHUB_ACTOR}"
+            echo "has_SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL != '' }}"
+            echo "has_OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY != '' }}"
+          } | tee diagnostics/frontend/startup-diagnostics.txt
           env | sort > diagnostics/frontend/environment.txt
 
       - name: Install dependencies
