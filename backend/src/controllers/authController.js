@@ -3,6 +3,8 @@ const User = require('../models/User');
 const { processOnboardingPayload, OnboardingValidationError } = require('../services/onboardingService');
 const { getSnapshot, logSnapshot } = require('../services/onboardingMetrics');
 const { safeError, safeLog } = require('../utils/safeLogger');
+const logger = require('../utils/logger');
+const { reportError } = require('../utils/errorReporter');
 
 class AuthController {
   // Register
@@ -132,6 +134,18 @@ class AuthController {
       });
     } catch (error) {
       if (error instanceof OnboardingValidationError) {
+        reportError(logger, {
+          category: 'onboarding',
+          error,
+          requestId: req.requestId || null,
+          onboardingCorrelationId: req.requestId || `onboarding-${req.user?.userId || 'unknown'}`,
+          context: {
+            userId: req.user?.userId,
+            invalidFields: error.details?.invalidFields || [],
+            validationErrors: error.details?.validationErrors || [],
+          },
+          level: 'warn',
+        });
         safeError('onboarding.validation_failed_response', {
           requestId: req.requestId || null,
           userId: req.user?.userId,
@@ -146,6 +160,16 @@ class AuthController {
           errors: error.details?.validationErrors || [],
         });
       }
+      reportError(logger, {
+        category: 'onboarding',
+        error,
+        requestId: req.requestId || null,
+        onboardingCorrelationId: req.requestId || `onboarding-${req.user?.userId || 'unknown'}`,
+        context: {
+          userId: req.user?.userId,
+          route: '/api/auth/onboarding',
+        },
+      });
       return next(error);
     }
   }
@@ -159,6 +183,16 @@ class AuthController {
         data: AuthService.sanitizeUser(user)
       });
     } catch (error) {
+      reportError(logger, {
+        category: 'auth',
+        error,
+        requestId: req.requestId || null,
+        context: {
+          route: '/api/auth/google',
+          hasGoogleId: Boolean(req.body?.googleId),
+          hasEmail: Boolean(req.body?.email),
+        },
+      });
       next(error);
     }
   }

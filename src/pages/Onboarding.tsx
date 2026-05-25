@@ -26,6 +26,7 @@ import {
   TRAIT_OPTIONS,
 } from '@/constants/onboardingOptions';
 import { logProfileTelemetry } from '@/lib/profileTelemetry';
+import { createCorrelationId, reportError } from '@/utils/errorReporter';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface StructuredActivity {
@@ -385,6 +386,7 @@ const MajorSelector: React.FC<MajorSelectorProps> = ({
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [recents, setRecents] = useState<string[]>([]);
+  const majorSelectorCorrelationIdRef = useRef(createCorrelationId('major-selector'));
 
   useEffect(() => {
     try {
@@ -393,7 +395,11 @@ const MajorSelector: React.FC<MajorSelectorProps> = ({
       if (Array.isArray(parsed)) {
         setRecents(dedupeNormalized(parsed.filter((x): x is string => typeof x === 'string')).slice(0, 6));
       }
-    } catch {
+    } catch (error) {
+      reportError('onboarding', error, {
+        onboardingCorrelationId: majorSelectorCorrelationIdRef.current,
+        phase: 'major-selector-recents-load',
+      }, 'warn');
       setRecents([]);
     }
   }, []);
@@ -403,8 +409,11 @@ const MajorSelector: React.FC<MajorSelectorProps> = ({
       const next = dedupeNormalized([major, ...prev]).slice(0, 6);
       try {
         localStorage.setItem(ONBOARDING_RECENT_MAJORS_KEY, JSON.stringify(next));
-      } catch {
-        // ignore localStorage failures
+      } catch (error) {
+        reportError('onboarding', error, {
+          onboardingCorrelationId: majorSelectorCorrelationIdRef.current,
+          phase: 'major-selector-recents-save',
+        }, 'warn');
       }
       return next;
     });
@@ -1010,6 +1019,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   const [showTraitRefine, setShowTraitRefine] = useState(false);
   const progressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const completionSeqRef = useRef(0);
+  const onboardingCorrelationIdRef = useRef(createCorrelationId('onboarding'));
 
   const { completionPercent: backendCompletionPercent, refetch: refetchCompletion } = useProfileCompletion();
 
@@ -1017,7 +1027,13 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     try {
       const saved = localStorage.getItem('onboarding_data');
       return saved ? JSON.parse(saved) : defaultData();
-    } catch { return defaultData(); }
+    } catch (error) {
+      reportError('onboarding', error, {
+        onboardingCorrelationId: onboardingCorrelationIdRef.current,
+        phase: 'initial-draft-restore',
+      }, 'warn');
+      return defaultData();
+    }
   });
 
   function defaultData() {
@@ -1043,8 +1059,11 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
     try {
       const localDraft = JSON.parse(localDraftRaw);
       setStudentData((prev: any) => ({ ...defaultData(), ...prev, ...localDraft }));
-    } catch {
-      // ignore malformed local draft
+    } catch (error) {
+      reportError('onboarding', error, {
+        onboardingCorrelationId: onboardingCorrelationIdRef.current,
+        phase: 'local-draft-parse',
+      }, 'warn');
     }
   }, []);
 
@@ -1065,8 +1084,11 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   const updateData = useCallback((field: string, value: any) => {
     setStudentData((prev: any) => {
       const next = { ...prev, [field]: value, draft_updated_at: Date.now() };
-      try { localStorage.setItem('onboarding_data', JSON.stringify(next)); } catch {
-        // intentionally ignore draft persistence failures
+      try { localStorage.setItem('onboarding_data', JSON.stringify(next)); } catch (error) {
+        reportError('onboarding', error, {
+          onboardingCorrelationId: onboardingCorrelationIdRef.current,
+          phase: 'draft-autosave',
+        }, 'warn');
       }
       if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
       progressDebounceRef.current = setTimeout(() => {}, 1500);
@@ -1944,7 +1966,11 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             });
             localStorage.setItem('instant_recommendations', JSON.stringify(recRes?.data || recRes || []));
           } catch (recommendationError) {
-            console.error('Failed to pre-compute onboarding recommendations:', recommendationError);
+            reportError('onboarding', recommendationError, {
+              onboardingCorrelationId: onboardingCorrelationIdRef.current,
+              phase: 'recommendation-bootstrap',
+              userId: user?.id ?? null,
+            });
           }
 
           try {
@@ -1952,12 +1978,19 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             await refreshUser();
             refetchCompletion();
           } catch (refreshError) {
-            console.error('Failed to refresh onboarding completion state:', refreshError);
+            reportError('onboarding', refreshError, {
+              onboardingCorrelationId: onboardingCorrelationIdRef.current,
+              phase: 'post-completion-refresh',
+              userId: user?.id ?? null,
+            });
           }
 
           // Clear localStorage draft
-          try { localStorage.removeItem('onboarding_data'); } catch {
-            // intentionally ignore draft cleanup failures
+          try { localStorage.removeItem('onboarding_data'); } catch (error) {
+            reportError('onboarding', error, {
+              onboardingCorrelationId: onboardingCorrelationIdRef.current,
+              phase: 'draft-cleanup',
+            }, 'warn');
           }
 
           await onComplete(studentData);
@@ -1975,15 +2008,22 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
               navigate('/suggestions');
               return;
             }
-          } catch {
-            // non-critical — fall through to dashboard
+          } catch (error) {
+            reportError('onboarding', error, {
+              onboardingCorrelationId: onboardingCorrelationIdRef.current,
+              phase: 'suggestions-prefetch',
+            }, 'warn');
           }
 
           if (isStaleCompletion()) return;
           navigate('/dashboard');
         } catch (err) {
           if (isStaleCompletion()) return;
-          console.error('Failed to save profile:', err);
+          reportError('onboarding', err, {
+            onboardingCorrelationId: onboardingCorrelationIdRef.current,
+            phase: 'complete-onboarding',
+            userId: user?.id ?? null,
+          });
           toast.error('Failed to save profile. Please try again.');
           setShowLoading(false);
         }

@@ -135,6 +135,7 @@ app.get('/health', apiLimiter, async (req, res) => {
     client.release();
     dbConnected = true;
   } catch (_) {
+    logger.warn('health check db probe failed');
     dbConnected = false;
   }
   res.status(dbConnected ? 200 : 503).json({
@@ -157,6 +158,7 @@ app.get('/status', apiLimiter, async (req, res) => {
     client.release();
     dbConnected = true;
   } catch (_) {
+    logger.warn('status check db probe failed');
     dbConnected = false;
   }
   res.status(dbConnected ? 200 : 503).json({
@@ -217,12 +219,12 @@ app.use(errorHandler);
 function gracefulShutdown(signal) {
   logger.info(`${signal} received: closing HTTP server`);
 
-  try { require('./jobs/mlRetraining').stop(); } catch (e) { /* ignore */ }
-  try { require('./jobs/dataRefresh').stop(); } catch (e) { /* ignore */ }
-  try { require('./jobs/scraperScheduler').stop(); } catch (e) { /* ignore */ }
-  try { require('../../jobs/orchestrator').stop(); } catch (e) { /* ignore */ }
+  try { require('./jobs/mlRetraining').stop(); } catch (e) { logger.warn('Failed to stop mlRetraining job', { error: e?.message }); }
+  try { require('./jobs/dataRefresh').stop(); } catch (e) { logger.warn('Failed to stop dataRefresh job', { error: e?.message }); }
+  try { require('./jobs/scraperScheduler').stop(); } catch (e) { logger.warn('Failed to stop scraperScheduler job', { error: e?.message }); }
+  try { require('../../jobs/orchestrator').stop(); } catch (e) { logger.warn('Failed to stop orchestrator job', { error: e?.message }); }
   if (deadlineSchedulerInstance) {
-    try { deadlineSchedulerInstance.stop(); } catch (e) { /* ignore */ }
+    try { deadlineSchedulerInstance.stop(); } catch (e) { logger.warn('Failed to stop deadline scheduler', { error: e?.message }); }
   }
 
   if (server) {
