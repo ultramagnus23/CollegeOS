@@ -27,14 +27,14 @@ export class AuthErrorBoundary extends React.Component {
     });
   }
 
-  handleRetry = () => {
+  handleRetry() {
     this.setState({ hasError: false, message: '', stack: '' });
     if (typeof this.props.onRetry === 'function') {
       this.props.onRetry();
       return;
     }
     window.location.assign('/auth');
-  };
+  }
 
   render() {
     if (!this.state.hasError) {
@@ -59,7 +59,7 @@ export class AuthErrorBoundary extends React.Component {
           <button
             type="button"
             className="mt-5 w-full rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
-            onClick={this.handleRetry}
+            onClick={() => this.handleRetry()}
           >
             Retry sign-in
           </button>
@@ -70,4 +70,3 @@ export class AuthErrorBoundary extends React.Component {
 }
 
 export default AuthErrorBoundary;
-

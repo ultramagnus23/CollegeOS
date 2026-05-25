@@ -1,0 +1,43 @@
+name: Frontend Runtime Validation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+      - copilot/**
+
+permissions:
+  contents: read
+
+jobs:
+  validate-frontend-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+      - name: Runtime reference check
+        run: npm run runtime-check
+
+      - name: Build
+        run: npm run build
+

@@ -15,13 +15,6 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const authLog = useMemo(() => createAuthEventLogger(console.info), []);
 
-  // If the user is already authenticated, redirect declaratively.
-  // This is driven purely by AuthContext state — no imperative navigate() needed.
-  if (user) {
-    const needsOnboarding = !user.onboarding_complete;
-    return <Navigate to={needsOnboarding ? '/onboarding' : '/dashboard'} replace />;
-  }
-
   useEffect(() => {
     if (!isFirebaseConfigured || !auth) return;
 
@@ -47,6 +40,13 @@ const AuthPage = () => {
       active = false;
     };
   }, [authLog, loginWithGoogle]);
+
+  // If the user is already authenticated, redirect declaratively.
+  // This is driven purely by AuthContext state — no imperative navigate() needed.
+  if (user) {
+    const needsOnboarding = !user.onboarding_complete;
+    return <Navigate to={needsOnboarding ? '/onboarding' : '/dashboard'} replace />;
+  }
 
   const handleGoogleSignIn = async () => {
     if (!isFirebaseConfigured || !auth || !googleProvider) {
