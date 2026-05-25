@@ -4,6 +4,7 @@
 
 import { apiFetch } from '../utils/apiClient';
 import { sanitizeOnboardingPayload } from '../utils/sanitizeOnboardingPayload';
+import { trackDuration, trackMetric } from '../observability';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
@@ -46,6 +47,10 @@ class ApiService {
   private authHydrated = false;
   private authHydrationResolver: (() => void) | null = null;
   private authHydrationPromise: Promise<void>;
+
+  private now(): number {
+    return globalThis?.performance?.now?.() ?? Date.now();
+  }
 
   constructor() {
     this.baseUrl = API_BASE_URL;
@@ -113,7 +118,7 @@ class ApiService {
   private async request(endpoint: string, options: RequestInit = {}, retryCount: number = 0) {
     const requestId = generateRequestId();
     const method = options.method || 'GET';
-    const startTime = performance.now();
+    const startTime = this.now();
     const MAX_RETRIES = 1; // Only retry once to prevent infinite loops
     
     // Log request start
@@ -145,7 +150,7 @@ class ApiService {
           headers: this.getHeaders(),
         });
 
-        const duration = (performance.now() - startTime).toFixed(2);
+        const duration = (this.now() - startTime).toFixed(2);
         logDebug(requestId, 'RESPONSE', `Status ${response.status} in ${duration}ms`, {
           ok: response.ok,
           statusText: response.statusText
@@ -217,7 +222,7 @@ class ApiService {
         throw new Error(errorMessage);
       }
 
-      const totalDuration = (performance.now() - startTime).toFixed(2);
+      const totalDuration = (this.now() - startTime).toFixed(2);
       logDebug(requestId, 'COMPLETE', `Request completed in ${totalDuration}ms`);
       trackDuration('api.request', startedAt, { endpoint, method, status: response.status });
       return data;

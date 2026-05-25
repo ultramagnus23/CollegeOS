@@ -1,4 +1,4 @@
-import { initializeApp, FirebaseApp } from 'firebase/app';
+import { initializeApp, FirebaseApp, getApp, getApps } from 'firebase/app';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import { getAuth, GoogleAuthProvider, Auth } from 'firebase/auth';
 
@@ -44,16 +44,25 @@ if (isFirebaseConfigured) {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
   };
 
-  _app = initializeApp(firebaseConfig);
+  _app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   _auth = getAuth(_app);
   _googleProvider = new GoogleAuthProvider();
+  _googleProvider.setCustomParameters({ prompt: 'select_account' });
 
   // Analytics is optional and only works in supported browser environments
-  isSupported().then((supported) => {
-    if (supported && _app) {
-      getAnalytics(_app);
-    }
-  });
+  isSupported()
+    .then((supported) => {
+      if (supported && _app) {
+        getAnalytics(_app);
+      }
+    })
+    .catch((error) => {
+      if (import.meta.env.DEV) {
+        console.warn('[Firebase] Analytics disabled', {
+          message: error instanceof Error ? error.message : 'unknown_error',
+        });
+      }
+    });
 }
 
 export const auth = _auth;
