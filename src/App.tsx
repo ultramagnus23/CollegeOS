@@ -44,6 +44,7 @@ import Chancing from "./pages/Chancing";
 import SuggestionsPage from "./pages/Suggestions";
 import SuggestedColleges from "./pages/SuggestedColleges";
 import Rankings from "./pages/Rankings";
+import AuthErrorBoundary from "./components/errors/AuthErrorBoundary";
 // FinancialAid import removed — page merged into Scholarships; /financial-aid redirects to /scholarships
 
 import { StudentProfile } from "./types/index";
@@ -148,7 +149,14 @@ const AppContent = () => {
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/auth" element={<AuthPage />} />
+          <Route
+            path="/auth"
+            element={
+              <AuthErrorBoundary>
+                <AuthPage />
+              </AuthErrorBoundary>
+            }
+          />
           <Route path="/terms" element={<Terms />} />
 
           <Route
