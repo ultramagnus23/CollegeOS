@@ -1065,7 +1065,9 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
   const updateData = useCallback((field: string, value: any) => {
     setStudentData((prev: any) => {
       const next = { ...prev, [field]: value, draft_updated_at: Date.now() };
-      try { localStorage.setItem('onboarding_data', JSON.stringify(next)); } catch {}
+      try { localStorage.setItem('onboarding_data', JSON.stringify(next)); } catch {
+        // intentionally ignore draft persistence failures
+      }
       if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
       progressDebounceRef.current = setTimeout(() => {}, 1500);
       return next;
@@ -1954,7 +1956,9 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           }
 
           // Clear localStorage draft
-          try { localStorage.removeItem('onboarding_data'); } catch {}
+          try { localStorage.removeItem('onboarding_data'); } catch {
+            // intentionally ignore draft cleanup failures
+          }
 
           await onComplete(studentData);
 
@@ -1971,7 +1975,9 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
               navigate('/suggestions');
               return;
             }
-          } catch { /* non-critical — fall through to dashboard */ }
+          } catch {
+            // non-critical — fall through to dashboard
+          }
 
           if (isStaleCompletion()) return;
           navigate('/dashboard');
