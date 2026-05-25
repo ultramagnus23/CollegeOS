@@ -39,6 +39,7 @@ export const WordCountTracker = ({
   // Determine which limit to use
   const limit = limitType === 'words' ? wordLimit : characterLimit;
   const currentCount = limitType === 'words' ? wordCount : characterCount;
+  const percentage = limit ? (currentCount / limit) * 100 : 0;
 
   // Notify parent component if limit is exceeded
   useEffect(() => {
@@ -47,9 +48,8 @@ export const WordCountTracker = ({
       onLimitExceeded(false);
       return;
     }
-    const percentage = (currentCount / limit) * 100;
     onLimitExceeded(percentage > 100);
-  }, [currentCount, limit, onLimitExceeded]);
+  }, [limit, onLimitExceeded, percentage]);
   
   if (!limit) {
     // No limit set, show basic counts
@@ -61,9 +61,6 @@ export const WordCountTracker = ({
       </div>
     );
   }
-  
-  // Calculate percentage
-  const percentage = (currentCount / limit) * 100;
   
   // Determine color based on percentage
   let color = '';

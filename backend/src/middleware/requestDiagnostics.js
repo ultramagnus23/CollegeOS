@@ -3,7 +3,7 @@
 function requestDiagnostics(logger = console) {
   return (req, res, next) => {
     const startedAt = process.hrtime.bigint();
-    const requestId = req.requestId || res.getHeader('X-Request-Id') || null;
+    const requestId = req.requestId || req.get('X-Request-Id') || null;
 
     res.on('finish', () => {
       const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
