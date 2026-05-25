@@ -117,7 +117,10 @@ function checkDatabase() {
       await client.query("SELECT to_regclass('canonical.mv_college_cards')");
       await client.query("SELECT 1 FROM information_schema.columns WHERE table_schema='canonical' AND table_name='mv_college_cards' LIMIT 1");
       await client.query("SELECT 1 FROM pg_indexes WHERE schemaname='canonical' AND tablename='institution_deadlines' LIMIT 1");
-      await client.query("SELECT institution_id, COUNT(*) FROM canonical.institution_deadlines GROUP BY institution_id, deadline_type, deadline_date HAVING COUNT(*) > 1 LIMIT 1");
+      const dupes = await client.query("SELECT institution_id, deadline_type, deadline_date, COUNT(*) FROM canonical.institution_deadlines GROUP BY institution_id, deadline_type, deadline_date HAVING COUNT(*) > 1");
+      if (dupes.rows.length > 0) {
+        throw new Error('Duplicate deadline records detected in canonical.institution_deadlines');
+      }
       await client.end();
     })().catch(async (err) => { console.error(err.stack || err.message); try { await client.end(); } catch {} process.exit(1); });
   `;

@@ -135,7 +135,7 @@ app.get('/health', apiLimiter, async (req, res) => {
     client.release();
     dbConnected = true;
   } catch (_) {
-    logger.warn('health check db probe failed');
+    logger.warn('health check (/health) db probe failed');
     dbConnected = false;
   }
   res.status(dbConnected ? 200 : 503).json({
@@ -158,7 +158,7 @@ app.get('/status', apiLimiter, async (req, res) => {
     client.release();
     dbConnected = true;
   } catch (_) {
-    logger.warn('status check db probe failed');
+    logger.warn('status check (/status) db probe failed');
     dbConnected = false;
   }
   res.status(dbConnected ? 200 : 503).json({

@@ -68,7 +68,7 @@ async function readScraperRunLogs(pool) {
       ${hasFinishedAt ? 'finished_at' : 'NULL::timestamptz AS finished_at'},
       status,
       COALESCE(${hasRowsInserted ? 'rows_inserted' : '0'}, 0) AS rows_inserted,
-      COALESCE(${hasRowsUpdated ? 'rows_updated' : 'rows_upserted'}, 0) AS rows_updated,
+      COALESCE(${hasRowsUpdated ? 'rows_updated' : 'rows_upserted'}, 0) AS rows_modified,
       COALESCE(${hasRowsFailed ? 'rows_failed' : '0'}, 0) AS rows_failed,
       COALESCE(${hasDuplicateSkips ? 'duplicate_skips' : '0'}, 0) AS duplicate_skips,
       COALESCE(${hasSchemaMismatchFailures ? 'schema_mismatch_failures' : '0'}, 0) AS schema_mismatch_failures,
@@ -95,7 +95,7 @@ function buildJobHealth(rows) {
       job.lastStatus = row.status || 'unknown';
       job.executionDurationSeconds = secondsBetween(row.started_at, row.finished_at);
       job.rowsInserted = Number(row.rows_inserted || 0);
-      job.rowsUpdated = Number(row.rows_updated || 0);
+      job.rowsUpdated = Number(row.rows_modified || 0);
       job.rowsFailed = Number(row.rows_failed || 0);
       job.duplicateSkips = Number(row.duplicate_skips || 0);
       job.schemaMismatchFailures = Number(row.schema_mismatch_failures || 0);

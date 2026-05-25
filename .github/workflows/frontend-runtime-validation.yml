@@ -98,7 +98,7 @@ jobs:
           }
           summary_file.write_text(json.dumps(payload, indent=2), encoding='utf-8')
 
-          with open(Path.cwd() / Path('.github_step_summary_tmp.md'), 'w', encoding='utf-8') as f:
+          with open(Path.cwd() / Path('workflow-step-summary-tmp.md'), 'w', encoding='utf-8') as f:
             f.write('## Frontend runtime validation summary\n')
             f.write(f"- Total steps: {len(steps)}\n")
             f.write(f"- Failed steps: {len(failed)}\n")
@@ -107,7 +107,7 @@ jobs:
               for item in failed:
                 f.write(f"- {item['step']} (exit={item['exit_code']})\n")
           PY
-          cat .github_step_summary_tmp.md >> "$GITHUB_STEP_SUMMARY"
+          cat workflow-step-summary-tmp.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload runtime diagnostics
         if: always()
