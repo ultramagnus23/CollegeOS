@@ -34,6 +34,10 @@ Generated during final production stabilization sweep.
 ## 7. Schema validation status
 - Startup schema validator + schema contract checker remain enforced.
 - Production check validates canonical MV and deadline deduplication constraints when DB checks are enabled.
+- Canonical frontend relation contract is frozen at `canonical.mv_college_cards` via:
+  - `src/contracts/frontendCollegeCardContract.ts`
+  - startup schema checks (`backend/src/utils/schemaContractChecker.js`)
+  - runtime diagnostics (`scripts/frontend-contract-diagnostics.js`)
 
 ## 8. DB health summary
 - DB health and endpoint timing checks are emitted to `production-validation-report.json`.
@@ -41,10 +45,14 @@ Generated during final production stabilization sweep.
 ## 9. Removed dead systems
 - Removed stale unit test referencing deleted `fitClassificationService`.
 - Backend lint configuration modernized for ESLint v9 flat config.
+- Removed duplicate frontend card-field source file `src/contracts/collegeCardFields.js` in favor of centralized contract.
 
 ## 10. Remaining technical debt
 - Repository-wide frontend lint warnings remain (non-fatal but noisy).
 - Some legacy route files still include broad catch-all 500 wrappers with inconsistent diagnostics style.
+- Canonical relation bypasses still exist in detail/recommendation enrichment paths and are now surfaced in:
+  - `reports/frontend-contract-drift-report.json`
+  - `reports/frontend-unused-query-report.json`
 
 ## 11. Known non-blocking issues
 - Frontend build chunk-size warning exists.

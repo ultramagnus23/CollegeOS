@@ -4,8 +4,8 @@ import {
   COLLEGE_CARD_COLUMNS,
   FRONTEND_CANONICAL_RELATION,
   parseFrontendCollegeCardOrThrow,
-  type CollegeCardContract,
 } from '../contracts/collegeContracts';
+import type { FrontendCollegeCard } from '../contracts/frontendCollegeCardContract';
 
 type CanonicalId = string | number;
 
@@ -13,7 +13,7 @@ const PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 const CANONICAL_DEBUG = import.meta.env.DEV || import.meta.env.VITE_CANONICAL_DEBUG === '1';
 
-type CanonicalCardRow = CollegeCardContract;
+type CanonicalCardRow = FrontendCollegeCard;
 
 interface CanonicalCollegeDetail {
   institution: Record<string, unknown>;

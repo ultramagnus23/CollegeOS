@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-25T21:10:03.933Z",
+  "generatedAt": "2026-05-26T16:38:08.818Z",
   "options": {
     "skipDb": true,
     "skipScraper": true,
@@ -13,13 +13,13 @@
     {
       "name": "frontend_runtime_check",
       "details": {
-        "durationMs": 174
+        "durationMs": 219
       }
     },
     {
       "name": "frontend_build",
       "details": {
-        "durationMs": 5286
+        "durationMs": 5315
       }
     },
     {
@@ -43,13 +43,13 @@
     {
       "name": "backend_schema_validator_test",
       "details": {
-        "durationMs": 974
+        "durationMs": 1201
       }
     },
     {
       "name": "backend_startup_probe",
       "details": {
-        "durationMs": 459
+        "durationMs": 474
       }
     },
     {

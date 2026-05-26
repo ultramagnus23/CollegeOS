@@ -1,0 +1,5 @@
+- Validate btree index coverage for canonical.mv_college_cards(canonical_name).
+- Validate btree index coverage for canonical.mv_college_cards(country_code, global_rank).
+- Keep popularity/ranking sorts constrained with LIMIT + deterministic tiebreakers.
+- Avoid expanding joins in card-list endpoints; use card view fields first.
+- Monitor query latency p95 for /api/search/colleges and /api/discovery/*.
