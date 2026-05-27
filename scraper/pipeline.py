@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 scraper/pipeline.py
-────────────────────
+--------------------
 Master data pipeline for CollegeOS.
 
 Orchestrates three data sources (IPEDS, College Scorecard, NCES CSV),
@@ -12,15 +12,15 @@ Usage:
     python scraper/pipeline.py
 
 Required env vars:
-    SUPABASE_DB_URL            — full Postgres connection string (port 6543 for Supabase)
+    SUPABASE_DB_URL            -- full Postgres connection string (port 6543 for Supabase)
 
-    IPEDS_API_KEY              — data.gov API key for IPEDS source
-    COLLEGE_SCORECARD_API_KEY  — data.gov API key for Scorecard source
-    REQUEST_DELAY_SEC          — delay between API pages (default: 0.3)
+    IPEDS_API_KEY              -- data.gov API key for IPEDS source
+    COLLEGE_SCORECARD_API_KEY  -- data.gov API key for Scorecard source
+    REQUEST_DELAY_SEC          -- delay between API pages (default: 0.3)
 
 Exit codes:
-    0  — success (≥500 rows updated)
-    1  — fatal error or fewer than 500 rows updated
+    0  -- success (>=500 rows updated)
+    1  -- fatal error or fewer than 500 rows updated
 """
 
 import json
@@ -40,7 +40,7 @@ import psycopg2.extras
 from dotenv import load_dotenv
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-# ── Bootstrap ─────────────────────────────────────────────────────────────────
+# -- Bootstrap ----------------------------------------------------------------
 
 load_dotenv()
 
@@ -56,7 +56,7 @@ log = logging.getLogger("pipeline")
 MIN_SUCCESS_ROWS = int(os.environ.get("MIN_SUCCESS_ROWS", "500"))
 DEFAULT_IPEDS_CONFIDENCE_SCORE = 0.7
 
-# Fuzzy-match threshold for name matching (0–1)
+# Fuzzy-match threshold for name matching (0-1)
 FUZZY_THRESHOLD = 0.85
 
 
@@ -85,14 +85,14 @@ class UpsertPlan:
     sql: str
     params_builder: Callable[..., tuple]
 
-# ── Validation constants ───────────────────────────────────────────────────────
+# -- Validation constants -----------------------------------------------------
 
 ACCEPTANCE_RATE_MIN = 0.01
 ACCEPTANCE_RATE_MAX = 0.99
 SAT_MIN, SAT_MAX = 400, 1600
 ACT_MIN, ACT_MAX = 1, 36
 
-# ── Source imports (lazy — only fail if all three fail) ───────────────────────
+# -- Source imports (lazy -- only fail if all three fail) ---------------------
 
 def _import_sources():
     """
@@ -109,7 +109,7 @@ def _import_sources():
             log.warning(f"Could not import source '{name}': {exc}")
     return sources
 
-# ── Name normalisation ────────────────────────────────────────────────────────
+# -- Name normalisation -------------------------------------------------------
 
 _PUNCT_RE = re.compile(r"[^\w\s]")
 
@@ -119,7 +119,7 @@ def _normalise_name(name: str) -> str:
     Normalise an institution name for matching.
     Lowercases, strips punctuation, collapses whitespace, removes accents.
     """
-    # Decompose unicode (e.g. é → e + combining accent) then strip non-ASCII
+    # Decompose unicode (e.g. e + combining accent) then strip non-ASCII
     nfkd = unicodedata.normalize("NFKD", name)
     ascii_only = nfkd.encode("ascii", "ignore").decode("ascii")
     lower = ascii_only.lower()
@@ -127,12 +127,12 @@ def _normalise_name(name: str) -> str:
     return " ".join(no_punct.split())
 
 
-# ── Field validators ──────────────────────────────────────────────────────────
+# -- Field validators ---------------------------------------------------------
 
 def _validate_acceptance_rate(value, college_name: str) -> Optional[float]:
     """
     Validate and return acceptance_rate as a decimal in [0.01, 0.99].
-    Converts percentage form (e.g. 18.5 → 0.185) automatically.
+    Converts percentage form (e.g. 18.5 -> 0.185) automatically.
     Logs and returns None if the value is invalid.
     """
     if value is None:
@@ -150,7 +150,7 @@ def _validate_acceptance_rate(value, college_name: str) -> Optional[float]:
     if not (ACCEPTANCE_RATE_MIN <= v <= ACCEPTANCE_RATE_MAX):
         log.debug(
             f"[{college_name}] acceptance_rate={v:.4f} out of range "
-            f"[{ACCEPTANCE_RATE_MIN}, {ACCEPTANCE_RATE_MAX}] — skipped"
+            f"[{ACCEPTANCE_RATE_MIN}, {ACCEPTANCE_RATE_MAX}] -- skipped"
         )
         return None
 
@@ -158,7 +158,7 @@ def _validate_acceptance_rate(value, college_name: str) -> Optional[float]:
 
 
 def _validate_sat(value) -> Optional[int]:
-    """Validate SAT composite score (400–1600). Returns None if out of range."""
+    """Validate SAT composite score (400-1600). Returns None if out of range."""
     if value is None:
         return None
     try:
@@ -169,7 +169,7 @@ def _validate_sat(value) -> Optional[int]:
 
 
 def _validate_act(value) -> Optional[int]:
-    """Validate ACT composite score (1–36). Returns None if out of range."""
+    """Validate ACT composite score (1-36). Returns None if out of range."""
     if value is None:
         return None
     try:
@@ -224,7 +224,7 @@ def validate_record(record: dict) -> dict:
     return record
 
 
-# ── Merge logic ───────────────────────────────────────────────────────────────
+# -- Merge logic --------------------------------------------------------------
 
 def merge_sources(
     ipeds: list[dict],
@@ -264,7 +264,7 @@ def merge_sources(
     return merged
 
 
-# ── Database helpers ──────────────────────────────────────────────────────────
+# -- Database helpers ---------------------------------------------------------
 
 @retry(stop=stop_after_attempt(4), wait=wait_exponential(min=2, max=20))
 def _get_connection(db_url: str) -> psycopg2.extensions.connection:
@@ -276,7 +276,7 @@ def _get_connection(db_url: str) -> psycopg2.extensions.connection:
 
 def load_db_colleges(conn) -> dict[str, int]:
     """
-    Load all (normalised_name → id) pairs from colleges_comprehensive.
+    Load all (normalised_name -> id) pairs from colleges_comprehensive.
     Used for fuzzy matching incoming scraper records to DB rows.
     """
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -338,8 +338,7 @@ def find_college_id(name: str, db_lookup: dict[str, int]) -> Optional[int]:
     if key in db_lookup:
         return db_lookup[key]
 
-    # 2. Prefix (handles "University of California Berkeley" vs "UC Berkeley" less well,
-    #    but good for truncated names)
+    # 2. Prefix (handles truncated names reasonably well)
     prefix = key[:30]
     for k, cid in db_lookup.items():
         if k[:30] == prefix:
@@ -360,7 +359,7 @@ def find_college_id(name: str, db_lookup: dict[str, int]) -> Optional[int]:
     return None
 
 
-# ── Upsert ────────────────────────────────────────────────────────────────────
+# -- Upsert -------------------------------------------------------------------
 
 # Uses COALESCE so existing non-null DB values survive if the new value is NULL.
 _UPSERT_COLUMN_MAP = [
@@ -425,8 +424,12 @@ def _resolve_upsert_sql(conn):
     _UPSERT_FIELDS_CACHE = selected
     missing = [column for _, column in _UPSERT_COLUMN_MAP if column not in cols]
     if missing:
-        log.warning("Schema drift detected in colleges_comprehensive; skipping missing columns: %s", ", ".join(missing))
+        log.warning(
+            "Schema drift detected in colleges_comprehensive; skipping missing columns: %s",
+            ", ".join(missing),
+        )
     return _UPSERT_SQL_CACHE, _UPSERT_FIELDS_CACHE
+
 
 _ADMISSIONS_UPSERT_SQL = """
     INSERT INTO college_admissions (
@@ -457,6 +460,78 @@ _ADMISSIONS_UPSERT_SQL = """
     RETURNING id;
 """
 
+
+# -- Helper utilities ---------------------------------------------------------
+
+def _write_json(path: Path, data) -> None:
+    """Serialize data to a JSON file, converting non-serialisable types to str."""
+    path.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+
+
+def _structured_log(stage: str, **kwargs) -> None:
+    """Emit a single-line structured JSON warning for downstream log parsers."""
+    log.warning(json.dumps({"stage": stage, **kwargs}, default=str))
+
+
+# -- Upsert plan builders -----------------------------------------------------
+
+def _build_college_upsert_plan(conn) -> UpsertPlan:
+    """
+    Build a UpsertPlan for the colleges_comprehensive table.
+    Inspects the live schema so it gracefully handles schema drift.
+    Raises RuntimeError if no compatible columns are found.
+    """
+    sql, fields = _resolve_upsert_sql(conn)
+
+    def params_builder(college_id: int, data: dict, *_) -> tuple:
+        params = [data.get(key) for key, _ in fields]
+        params.append(college_id)
+        return tuple(params)
+
+    return UpsertPlan(sql=sql, params_builder=params_builder)
+
+
+def _build_admissions_upsert_plan(conn) -> UpsertPlan:
+    """
+    Build a UpsertPlan for the college_admissions table.
+    Raises SchemaError if required columns are missing.
+    """
+    required_cols = {
+        "college_id", "year", "acceptance_rate", "yield_rate",
+        "application_volume", "admit_volume", "enrollment_volume",
+        "sat_verbal_25", "sat_verbal_75", "sat_math_25", "sat_math_75",
+        "act_25", "act_75", "source", "confidence_score",
+    }
+    cols = _get_table_columns(conn, "public", "college_admissions")
+    missing = required_cols - cols
+    if missing:
+        raise SchemaError(
+            f"college_admissions is missing required columns: {', '.join(sorted(missing))}"
+        )
+
+    def params_builder(college_id: int, data: dict, year: int) -> tuple:
+        return (
+            college_id,
+            year,
+            data.get("acceptance_rate"),
+            data.get("yield_rate"),
+            data.get("applications_received") or data.get("applicants_total"),
+            data.get("admitted_total"),
+            data.get("total_enrollment") or data.get("enrolled_total"),
+            data.get("sat_verbal_25"),
+            data.get("sat_verbal_75"),
+            data.get("median_sat_25"),
+            data.get("median_sat_75"),
+            data.get("median_act_25"),
+            data.get("median_act_75"),
+            data.get("data_source", "pipeline"),
+            data.get("confidence_score", DEFAULT_IPEDS_CONFIDENCE_SCORE),
+        )
+
+    return UpsertPlan(sql=_ADMISSIONS_UPSERT_SQL, params_builder=params_builder)
+
+
+# -- Diagnostics --------------------------------------------------------------
 
 def ensure_pipeline_diagnostics(out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -491,15 +566,17 @@ def ensure_pipeline_diagnostics(out_dir: Path) -> None:
         if not target.exists():
             target.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
-    Uses a parameterized UPDATE … RETURNING id — never string interpolation.
+
+# -- Upsert functions ---------------------------------------------------------
+
+def upsert_college(conn, college_id: int, data: dict, plan: UpsertPlan) -> bool:
+    """
+    Upsert one row into colleges_comprehensive via the pre-built UpsertPlan.
+    Uses a parameterized UPDATE ... RETURNING id -- never string interpolation.
     Returns True if the row was updated, False otherwise.
     """
-    upsert_sql, fields = _resolve_upsert_sql(conn)
-    params = [data.get(key) for key, _ in fields]
-    params.append(college_id)
     with conn.cursor() as cur:
-        cur.execute(upsert_sql, params)
-
+        cur.execute(plan.sql, plan.params_builder(college_id, data))
         return cur.fetchone() is not None
 
 
@@ -509,7 +586,7 @@ def upsert_college_admissions(conn, college_id: int, data: dict, year: int, plan
         return cur.fetchone() is not None
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# -- Main ---------------------------------------------------------------------
 
 def main() -> int:
     """
@@ -543,7 +620,7 @@ def main() -> int:
         _write_json(diagnostics_dir / "scraper_metrics.json", summary)
         return 1
 
-    # ── Step 1: Fetch from all sources ───────────────────────────────────────
+    # -- Step 1: Fetch from all sources ---------------------------------------
     sources = _import_sources()
     if not sources:
         log.error("No source modules available. Aborting.")
@@ -588,11 +665,11 @@ def main() -> int:
 
     log.info(f"{sources_succeeded}/3 sources succeeded")
 
-    # ── Step 2: Merge ─────────────────────────────────────────────────────────
+    # -- Step 2: Merge --------------------------------------------------------
     merged = merge_sources(ipeds_data, scorecard_data, nces_data)
     log.info(f"Merged {len(merged)} unique institutions from all sources")
 
-    # ── Step 3: Connect to DB ─────────────────────────────────────────────────
+    # -- Step 3: Connect to DB ------------------------------------------------
     conn = None
     rows_updated = 0
     rows_skipped_no_match = 0
@@ -632,7 +709,7 @@ def main() -> int:
         db_colleges = load_db_colleges(conn)
         log.info(f"DB has {len(db_colleges)} colleges to match against")
 
-        # ── Step 4: Validate + Upsert ─────────────────────────────────────────
+        # -- Step 4: Validate + Upsert ----------------------------------------
         for _key, record in merged.items():
             name = record.get("name", "")
             college_id = find_college_id(name, db_colleges)
@@ -665,7 +742,9 @@ def main() -> int:
                 if ok:
                     admissions_ok = True
                     if admissions_plan is not None:
-                        admissions_ok = upsert_college_admissions(conn, college_id, record, current_year, admissions_plan)
+                        admissions_ok = upsert_college_admissions(
+                            conn, college_id, record, current_year, admissions_plan
+                        )
                     if admissions_ok:
                         rows_updated += 1
                     else:
@@ -768,14 +847,14 @@ def main() -> int:
         if conn:
             conn.close()
 
-    # ── Step 5: Summary + exit code ───────────────────────────────────────────
-    log.info("─" * 60)
-    log.info(f"Pipeline complete:")
-    log.info(f"  rows updated        : {rows_updated}")
+    # -- Step 5: Summary + exit code ------------------------------------------
+    log.info("-" * 60)
+    log.info("Pipeline complete:")
+    log.info(f"  rows updated         : {rows_updated}")
     log.info(f"  skipped (no DB match): {rows_skipped_no_match}")
-    log.info(f"  skipped (no data)   : {rows_skipped_no_data}")
-    log.info(f"  skipped (error)     : {rows_skipped_error}")
-    log.info("─" * 60)
+    log.info(f"  skipped (no data)    : {rows_skipped_no_data}")
+    log.info(f"  skipped (error)      : {rows_skipped_error}")
+    log.info("-" * 60)
 
     print(f"ROWS_UPSERTED={rows_updated}")
 
@@ -809,7 +888,7 @@ def main() -> int:
             f"schema_errors={len(schema_errors)}"
         )
     else:
-        log.info(f"✓ Success: {rows_updated} rows updated (threshold: {MIN_SUCCESS_ROWS})")
+        log.info(f"Success: {rows_updated} rows updated (threshold: {MIN_SUCCESS_ROWS})")
 
     return 0
 
