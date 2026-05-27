@@ -347,6 +347,7 @@ def upsert_requirements(conn, requirements: List[Dict], metrics: Dict):
                 r.get("parser_version", "requirements_parser_v1"),
                 r.get("extraction_timestamp"),
             )
+        )
 
 def validate_schema(conn) -> Tuple[Dict[str, bool], List[Dict]]:
     module_status = {
