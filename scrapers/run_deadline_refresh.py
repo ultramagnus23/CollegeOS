@@ -5,11 +5,10 @@ import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import psycopg2
 from psycopg2 import errors
-
 from psycopg2.extras import execute_batch
 
 from scrapers.schedulers.runner import run_scrape_cycle
@@ -285,7 +284,6 @@ def _execute_batch_with_retry(conn, query: str, rows: List[Tuple], *, operation:
 
 
 def upsert_deadlines(conn, deadlines: List[Dict], metrics: Dict):
-
     rows = []
     now = datetime.now(timezone.utc)
     for d in deadlines:
@@ -304,7 +302,6 @@ def upsert_deadlines(conn, deadlines: List[Dict], metrics: Dict):
                 d.get("parser_version", "deadline_parser_v1"),
                 d.get("extraction_timestamp"),
             )
-
         )
     _execute_batch_with_retry(
         conn,
@@ -348,37 +345,12 @@ def upsert_requirements(conn, requirements: List[Dict], metrics: Dict):
                 r.get("extraction_timestamp"),
             )
         )
-
-def validate_schema(conn) -> Tuple[Dict[str, bool], List[Dict]]:
-    module_status = {
-        "admissions": True,
-        "deadlines": True,
-        "requirements": True,
-        "financials": True,
-    }
-    schema_errors: List[Dict] = []
-    with conn.cursor() as cur:
-        execute_batch(
-            cur,
-            """
-            INSERT INTO canonical.institution_requirements
-              (institution_id, requirement_type, requirement_text, source_url, confidence_score, last_verified, parser_version, extraction_timestamp)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (institution_id, requirement_type, requirement_text) DO UPDATE SET
-              source_url = EXCLUDED.source_url,
-              confidence_score = EXCLUDED.confidence_score,
-              last_verified = EXCLUDED.last_verified,
-              parser_version = EXCLUDED.parser_version,
-              extraction_timestamp = EXCLUDED.extraction_timestamp
-            """,
-            rows,
-            page_size=200,
-        )
     _execute_batch_with_retry(
         conn,
         """
         INSERT INTO canonical.institution_requirements
-          (institution_id, requirement_category, requirement_name, requirement_value, source_url, confidence_score, last_verified, parser_version, extraction_timestamp)
+          (institution_id, requirement_category, requirement_name, requirement_value,
+           source_url, confidence_score, last_verified, parser_version, extraction_timestamp)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (institution_id, requirement_category, requirement_name) DO UPDATE SET
           requirement_value = COALESCE(EXCLUDED.requirement_value, canonical.institution_requirements.requirement_value),
@@ -588,7 +560,6 @@ def main() -> int:
             schema_errors=schema_errors,
         )
     return exit_code
-
 
 
 if __name__ == "__main__":
