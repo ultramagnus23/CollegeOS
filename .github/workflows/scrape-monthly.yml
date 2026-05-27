@@ -137,7 +137,7 @@ jobs:
 
       - name: Upload diagnostics directory
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: monthly-deadline-diagnostics
           path: scraper_diagnostics/
