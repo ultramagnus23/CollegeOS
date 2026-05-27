@@ -1,0 +1,81 @@
+{
+  "checkedAt": "2026-05-26T16:38:09.023Z",
+  "canonicalRelation": "canonical.mv_college_cards",
+  "selectBlockCount": 17,
+  "selectBlocks": [
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'institution_id'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'institution_id'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "COLLEGE_CARD_COLUMNS, { count: 'estimated' }"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'id, canonical_name, normalized_name, slug, aliases, country_code, region_code, state_region, city, latitude, longitude, institution_type, control_type, established_year, website, logo_url, canonical_external_ids, metadata, updated_at'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'institution_id, data_year, acceptance_rate, yield_rate, sat_25, sat_50, sat_75, act_25, act_50, act_75, test_optional, application_volume, admit_volume, enrollment_volume'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'institution_id, data_year, tuition_in_state, tuition_out_state, tuition_international, cost_of_attendance, avg_financial_aid, avg_debt, percent_receiving_aid, merit_scholarship_flag, need_blind_flag, net_price_low_income, net_price_mid_income, net_price_high_income'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'institution_id, data_year, graduation_rate_4yr, graduation_rate_6yr, retention_rate, employment_rate, median_start_salary, median_mid_career_salary, grad_school_rate'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'deadline_type, deadline_date, notification_date, is_binding, cycle_year'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'requirement_category, requirement_name, requirement_value, requirement_payload'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'ranking_year, ranking_body, national_rank, global_rank, subject_rank, ranking_score'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'institution_id, data_year, percent_international, gender_ratio, ethnic_distribution, percent_first_gen'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'institution_id, housing_guarantee, campus_safety_score, athletics_division, club_count'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'program_name, degree_type, field_category, enrollment, acceptance_rate'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'institution_id, overall_score, section_scores, missing_required_fields'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'institution_id, freshness_score, final_quality_score, confidence_penalty'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'state_region'"
+    },
+    {
+      "file": "src/lib/collegeService.ts",
+      "select": "'country_code'"
+    }
+  ],
+  "orderColumnsUsed": [
+    "data_year",
+    "cycle_year",
+    "ranking_year",
+    "program_name"
+  ]
+}

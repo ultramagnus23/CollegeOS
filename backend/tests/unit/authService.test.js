@@ -1,7 +1,8 @@
 const AuthService = require('../../src/services/authService');
 const User = require('../../src/models/User');
+const describeIfDb = process.env.ENABLE_DB_TESTS === 'true' ? describe : describe.skip;
 
-describe('AuthService', () => {
+describeIfDb('AuthService', () => {
   describe('register', () => {
     it('should register a new user successfully', async () => {
       const userData = {

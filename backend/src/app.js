@@ -12,6 +12,7 @@ const { validateStartupSchema } = require('./startup/schemaValidator');
 const { checkSchemaContracts, formatSchemaContractReport } = require('./utils/schemaContractChecker');
 const { requestMetricsMiddleware } = require('./observability');
 const { MaterializedViewManager } = require('./services/materializedViewManager');
+const { requestDiagnostics } = require('./middleware/requestDiagnostics');
 const {
   requestIdMiddleware,
   securityValidation,
@@ -104,6 +105,7 @@ app.use(cors(securityConfig.cors));
 // Security logging
 app.use(securityLogger);
 app.use(requestMetricsMiddleware(logger));
+app.use(requestDiagnostics(logger));
 
 // Body parsing with strict size limits
 app.use(express.json({ limit: securityConfig.requestLimits.json }));
@@ -133,6 +135,7 @@ app.get('/health', apiLimiter, async (req, res) => {
     client.release();
     dbConnected = true;
   } catch (_) {
+    logger.warn('health check (/health) db probe failed');
     dbConnected = false;
   }
   res.status(dbConnected ? 200 : 503).json({
@@ -140,27 +143,28 @@ app.get('/health', apiLimiter, async (req, res) => {
     timestamp: new Date().toISOString(),
     dbConnected,
   });
+});
 
-  // Health alias to avoid client-side blockers on "/health" URL patterns.
-  app.get('/status', apiLimiter, async (req, res) => {
-    let dbConnected = false;
-    try {
-      const pool = dbManager.getDatabase();
-      const client = await Promise.race([
-        pool.connect(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500)),
-      ]);
-      await client.query('SELECT 1');
-      client.release();
-      dbConnected = true;
-    } catch (_) {
-      dbConnected = false;
-    }
-    res.status(dbConnected ? 200 : 503).json({
-      status: dbConnected ? 'ok' : 'degraded',
-      timestamp: new Date().toISOString(),
-      dbConnected,
-    });
+// Health alias to avoid client-side blockers on "/health" URL patterns.
+app.get('/status', apiLimiter, async (req, res) => {
+  let dbConnected = false;
+  try {
+    const pool = dbManager.getDatabase();
+    const client = await Promise.race([
+      pool.connect(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500)),
+    ]);
+    await client.query('SELECT 1');
+    client.release();
+    dbConnected = true;
+  } catch (_) {
+    logger.warn('status check (/status) db probe failed');
+    dbConnected = false;
+  }
+  res.status(dbConnected ? 200 : 503).json({
+    status: dbConnected ? 'ok' : 'degraded',
+    timestamp: new Date().toISOString(),
+    dbConnected,
   });
 });
 
@@ -215,12 +219,12 @@ app.use(errorHandler);
 function gracefulShutdown(signal) {
   logger.info(`${signal} received: closing HTTP server`);
 
-  try { require('./jobs/mlRetraining').stop(); } catch (e) { /* ignore */ }
-  try { require('./jobs/dataRefresh').stop(); } catch (e) { /* ignore */ }
-  try { require('./jobs/scraperScheduler').stop(); } catch (e) { /* ignore */ }
-  try { require('../../jobs/orchestrator').stop(); } catch (e) { /* ignore */ }
+  try { require('./jobs/mlRetraining').stop(); } catch (e) { logger.warn('Failed to stop mlRetraining job', { error: e?.message }); }
+  try { require('./jobs/dataRefresh').stop(); } catch (e) { logger.warn('Failed to stop dataRefresh job', { error: e?.message }); }
+  try { require('./jobs/scraperScheduler').stop(); } catch (e) { logger.warn('Failed to stop scraperScheduler job', { error: e?.message }); }
+  try { require('../../jobs/orchestrator').stop(); } catch (e) { logger.warn('Failed to stop orchestrator job', { error: e?.message }); }
   if (deadlineSchedulerInstance) {
-    try { deadlineSchedulerInstance.stop(); } catch (e) { /* ignore */ }
+    try { deadlineSchedulerInstance.stop(); } catch (e) { logger.warn('Failed to stop deadline scheduler', { error: e?.message }); }
   }
 
   if (server) {

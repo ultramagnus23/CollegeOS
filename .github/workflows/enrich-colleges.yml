@@ -1,6 +1,8 @@
 name: Weekly College Data Enrichment
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   workflow_dispatch:
   schedule:
@@ -8,9 +10,8 @@ on:
 
 permissions:
   contents: read
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  actions: read
+  checks: read
 
 concurrency:
   group: enrich-colleges
@@ -19,41 +20,110 @@ concurrency:
 jobs:
   enrich:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v5
+
       - uses: actions/setup-node@v5
-        with: { node-version: '24' }
-      - run: npm ci
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+
       - name: Bootstrap diagnostics
         run: |
           mkdir -p scraper_diagnostics
           printf '{"workflow":"enrich-colleges","status":"starting"}' > scraper_diagnostics/run_summary.json
+          node -v | tee scraper_diagnostics/node-version.txt
+          npm -v | tee scraper_diagnostics/npm-version.txt
+          python --version | tee scraper_diagnostics/python-version.txt
+          {
+            echo "branch=${GITHUB_REF_NAME}"
+            echo "sha=${GITHUB_SHA}"
+            echo "actor=${GITHUB_ACTOR}"
+            echo "has_SUPABASE_URL=${{ secrets.SUPABASE_URL != '' }}"
+            echo "has_SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}"
+            echo "has_SCORECARD_API_KEY=${{ secrets.SCORECARD_API_KEY != '' }}"
+          } | tee scraper_diagnostics/startup-diagnostics.txt
+          env | sort > scraper_diagnostics/environment.txt
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ls --depth=0 > scraper_diagnostics/npm-ls.txt
+
       - name: Run migrations
-        run: node scripts/runMigrations.js
+        id: migrations
+        continue-on-error: true
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -o pipefail
+          node scripts/runMigrations.js 2>&1 | tee scraper_diagnostics/migrations.log
 
       - name: Enrich college data
-        timeout-minutes: 90
-        run: node scripts/enrichColleges.js
+        id: enrich_job
+        continue-on-error: true
+        timeout-minutes: 100
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SCORECARD_API_KEY: ${{ secrets.SCORECARD_API_KEY }}
           USD_TO_INR_RATE: '83'
+        run: |
+          set -o pipefail
+          node scripts/enrichColleges.js 2>&1 | tee scraper_diagnostics/enrich.log
 
       - name: Post enrichment summary
+        id: enrich_summary
         if: always()
-        run: node scripts/enrichmentReport.js
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node scripts/enrichmentReport.js 2>&1 | tee scraper_diagnostics/enrichment-report.log
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Categorize workflow outcome
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          out = pathlib.Path('scraper_diagnostics')
+          payload = {
+            'workflow': 'enrich-colleges',
+            'migrations_outcome': '${{ steps.migrations.outcome }}',
+            'enrich_outcome': '${{ steps.enrich_job.outcome }}',
+            'summary_outcome': '${{ steps.enrich_summary.outcome }}',
+            'category': 'success'
+          }
+          if payload['migrations_outcome'] != 'success':
+            payload['category'] = 'migration_failure'
+          elif payload['enrich_outcome'] != 'success':
+            payload['category'] = 'enrichment_runtime_failure'
+          elif payload['summary_outcome'] != 'success':
+            payload['category'] = 'summary_generation_failure'
+          (out / 'failure_category.json').write_text(json.dumps(payload, indent=2), encoding='utf-8')
+          PY
+
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v5
         with:
           name: enrich-colleges-diagnostics
           path: scraper_diagnostics/
-          if-no-files-found: ignore
+          if-no-files-found: error
+          compression-level: 9
+
+      - name: Final status gate
+        if: always()
+        run: |
+          if [ "${{ steps.migrations.outcome }}" != "success" ] || [ "${{ steps.enrich_job.outcome }}" != "success" ]; then
+            echo "Enrichment failed. Check enrich-colleges-diagnostics artifact."
+            exit 1
+          fi

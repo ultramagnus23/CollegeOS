@@ -17,10 +17,13 @@ const router = express.Router();
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
 const { authenticate, adminOnly } = require('../middleware/auth');
+const { getScraperHealthSnapshot } = require('../services/scraperHealthService');
 
 // 60-second in-memory cache
 let _cachedResult = null;
 let _cacheExpiresAt = 0;
+let _cachedScraperHealth = null;
+let _scraperHealthCacheExpiresAt = 0;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -213,6 +216,27 @@ router.get('/health', authenticate, adminOnly, async (req, res) => {
   } catch (err) {
     logger.error('admin/health: failed to build health payload', { error: err.message });
     res.status(500).json({ error: 'Failed to fetch health data', detail: err.message });
+  }
+});
+
+/**
+ * GET /api/admin/scraper-health
+ * Requires authentication and admin role.
+ */
+router.get('/scraper-health', authenticate, adminOnly, async (req, res) => {
+  const now = Date.now();
+  if (_cachedScraperHealth && now < _scraperHealthCacheExpiresAt) {
+    return res.json(_cachedScraperHealth);
+  }
+
+  try {
+    const payload = await getScraperHealthSnapshot();
+    _cachedScraperHealth = payload;
+    _scraperHealthCacheExpiresAt = now + 60000;
+    return res.json(payload);
+  } catch (err) {
+    logger.error('admin/scraper-health: failed to build scraper health payload', { error: err.message });
+    return res.status(500).json({ error: 'Failed to fetch scraper health data', detail: err.message });
   }
 });
 

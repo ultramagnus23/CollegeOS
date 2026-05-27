@@ -1,0 +1,47 @@
+{
+  "checkedAt": "2026-05-26T16:38:09.023Z",
+  "canonicalRelation": "canonical.mv_college_cards",
+  "flaggedBypassPaths": [
+    {
+      "file": "src/lib/collegeService.ts",
+      "relations": [
+        "canonical.institutions",
+        "canonical.institution_admissions",
+        "canonical.institution_financials",
+        "canonical.institution_outcomes",
+        "canonical.institution_deadlines",
+        "canonical.institution_requirements",
+        "canonical.institution_rankings",
+        "canonical.institution_demographics",
+        "canonical.institution_campus_life",
+        "canonical.institution_programs",
+        "canonical.institution_completeness",
+        "canonical.institution_quality_scores"
+      ]
+    },
+    {
+      "file": "backend/src/routes/search.js",
+      "relations": [
+        "canonical.institution_programs"
+      ]
+    },
+    {
+      "file": "backend/src/routes/colleges.js",
+      "relations": [
+        "canonical.institutions",
+        "canonical.institution_completeness",
+        "canonical.institution_quality_scores",
+        "canonical.institution_admissions"
+      ]
+    },
+    {
+      "file": "backend/src/services/recommendation/recommendationPipelineService.js",
+      "relations": [
+        "canonical.institution_programs",
+        "canonical.institution_rankings",
+        "canonical.institution_admissions"
+      ]
+    }
+  ],
+  "note": "Flagged paths should be reviewed for migration to canonical.mv_college_cards when they are frontend-card consumers."
+}
