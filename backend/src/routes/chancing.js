@@ -308,15 +308,15 @@ router.get('/recommendations', authenticate, async (req, res, next) => {
     const preferredCountries = profile.preferredCountries || profile.preferred_countries || [];
     
     if (country) {
-      colleges = await College.search({ country: country, limit: parseInt(limit) * 3 });
+      colleges = await College.findAll({ country: country, limit: parseInt(limit) * 3 });
     } else if (preferredCountries.length > 0) {
       // Get colleges from all preferred countries
       const nested = await Promise.all(
-        preferredCountries.map(c => College.search({ country: c, limit: parseInt(limit) }))
+        preferredCountries.map(c => College.findAll({ country: c, limit: parseInt(limit) }))
       );
       colleges = nested.flat();
     } else {
-      colleges = await College.search({ limit: parseInt(limit) * 3 });
+      colleges = await College.findAll({ limit: parseInt(limit) * 3 });
     }
     
     // Get chancing results
