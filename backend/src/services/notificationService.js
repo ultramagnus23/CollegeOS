@@ -30,7 +30,7 @@ class NotificationService {
       const pool = dbManager.getDatabase();
       let query = `SELECT id, user_id, type, title, message, metadata, created_at, read
                    FROM notifications WHERE user_id = $1`;
-      if (unreadOnly) query += ' AND read = false';
+      if (unreadOnly) query += ' AND read IS FALSE';
       query += ' ORDER BY created_at DESC LIMIT 50';
       const { rows } = await pool.query(query, [userId]);
       return rows.map(n => ({ ...n, metadata: n.metadata ? (typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata) : {}, read: Boolean(n.read) }));
