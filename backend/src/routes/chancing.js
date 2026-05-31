@@ -266,18 +266,36 @@ router.get('/my-list', authenticate, async (req, res, next) => {
     // Get chancing results
     const results = await getChancingResults(req.user.userId, colleges);
     
-    if (results.error) {
-      return res.status(400).json({
-        success: false,
-        message: results.message,
-        code: 'PROFILE_REQUIRED'
-      });
-    }
-    
-    res.json({
-      success: true,
-      data: results
-    });
+// Get chancing results
+const results = await getChancingResults(req.user.userId, colleges);
+
+if (results.error) {
+  return res.json({
+    success: true,
+    data: {
+      results: [],
+      grouped: {
+        safety: [],
+        target: [],
+        reach: []
+      },
+      summary: {
+        total: 0,
+        safetyCount: 0,
+        targetCount: 0,
+        reachCount: 0
+      }
+    },
+    profileRequired: true,
+    redirect: '/onboarding',
+    message: results.message
+  });
+}
+
+res.json({
+  success: true,
+  data: results
+});
   } catch (error) {
     logger.error('My list chancing failed:', error);
     next(error);
