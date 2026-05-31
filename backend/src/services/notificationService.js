@@ -53,7 +53,7 @@ class NotificationService {
   static async markAllAsRead(userId) {
     try {
       const pool = dbManager.getDatabase();
-      const { rowCount } = await pool.query(`UPDATE notifications SET read = true WHERE user_id = $1 AND read = false`, [userId]);
+      const { rowCount } = await pool.query(`UPDATE notifications SET read = TRUE WHERE user_id = $1 AND read IS FALSE`, [userId]);
       logger.info('Marked notifications as read', { userId, count: rowCount });
       return rowCount;
     } catch (error) {
@@ -65,7 +65,7 @@ class NotificationService {
   static async getUnreadCount(userId) {
     try {
       const pool = dbManager.getDatabase();
-      const { rows } = await pool.query(`SELECT COUNT(*) AS count FROM notifications WHERE user_id = $1 AND read = false`, [userId]);
+      const { rows } = await pool.query(`SELECT COUNT(*) AS count FROM notifications WHERE user_id = $1 AND read IS FALSE`, [userId]);
       return parseInt(rows[0].count) || 0;
     } catch (error) {
       logger.error('Error getting unread count:', error);
