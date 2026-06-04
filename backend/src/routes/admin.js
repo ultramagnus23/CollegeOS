@@ -104,6 +104,139 @@ async function buildHealthPayload() {
           : null,
       };
     }
+
+    async function buildScraperHealthPayload() {
+      const pool = dbManager.getDatabase();
+      const nowIso = new Date().toISOString();
+
+      const rowsRes = await pool.query(`
+        SELECT
+          scraper_name,
+          started_at,
+          finished_at,
+          rows_inserted,
+          rows_updated,
+          rows_skipped,
+          duplicates_detected,
+          runtime_ms,
+          success,
+          failure_reason,
+          failure_category,
+          schema_mismatches,
+          stale_records_detected,
+          ingestion_coverage,
+          diagnostics
+        FROM canonical.scraper_execution_history
+        WHERE started_at > NOW() - INTERVAL '30 days'
+        ORDER BY started_at DESC
+        LIMIT 500
+      `).catch(() => ({ rows: [] }));
+
+      const byScraper = new Map();
+      const recentExceptions = [];
+
+      for (const row of rowsRes.rows) {
+        const name = row.scraper_name || 'unknown';
+        const bucket = byScraper.get(name) || {
+          scraper_name: name,
+          total_runs: 0,
+          successful_runs: 0,
+          failed_runs: 0,
+          duplicates_detected: 0,
+          avg_runtime_ms: 0,
+          latest_run_at: null,
+          latest_success_at: null,
+          latest_failure_reason: null,
+          schema_mismatches: 0,
+          stale_records_detected: 0,
+          ingestion_coverage_values: [],
+        };
+
+        bucket.total_runs += 1;
+        bucket.duplicates_detected += Number(row.duplicates_detected || 0);
+        bucket.schema_mismatches += Number(row.schema_mismatches || 0);
+        bucket.stale_records_detected += Number(row.stale_records_detected || 0);
+        if (typeof row.runtime_ms === 'number') {
+          bucket.avg_runtime_ms = ((bucket.avg_runtime_ms * (bucket.total_runs - 1)) + row.runtime_ms) / bucket.total_runs;
+        }
+
+        const startedAtIso = row.started_at ? new Date(row.started_at).toISOString() : null;
+        if (!bucket.latest_run_at || (startedAtIso && startedAtIso > bucket.latest_run_at)) {
+          bucket.latest_run_at = startedAtIso;
+        }
+
+        if (row.success) {
+          bucket.successful_runs += 1;
+          if (!bucket.latest_success_at || (startedAtIso && startedAtIso > bucket.latest_success_at)) {
+            bucket.latest_success_at = startedAtIso;
+          }
+        } else {
+          bucket.failed_runs += 1;
+          bucket.latest_failure_reason = row.failure_reason || row.failure_category || 'unknown_failure';
+          if (recentExceptions.length < 50) {
+            recentExceptions.push({
+              scraper_name: name,
+              started_at: startedAtIso,
+              failure_reason: row.failure_reason || null,
+              failure_category: row.failure_category || null,
+            });
+          }
+        }
+
+        if (row.ingestion_coverage != null) {
+          bucket.ingestion_coverage_values.push(Number(row.ingestion_coverage));
+        }
+        byScraper.set(name, bucket);
+      }
+
+      const scrapers = Array.from(byScraper.values()).map((item) => {
+        const failureRate = item.total_runs > 0 ? item.failed_runs / item.total_runs : 0;
+        const duplicateRate = item.total_runs > 0 ? item.duplicates_detected / item.total_runs : 0;
+        const avgCoverage = item.ingestion_coverage_values.length
+          ? item.ingestion_coverage_values.reduce((a, b) => a + b, 0) / item.ingestion_coverage_values.length
+          : null;
+        const stale = !item.latest_success_at || (Date.now() - Date.parse(item.latest_success_at)) > 7 * 24 * 60 * 60 * 1000;
+        return {
+          scraper_name: item.scraper_name,
+          total_runs: item.total_runs,
+          successful_runs: item.successful_runs,
+          failed_runs: item.failed_runs,
+          failure_rate: Number(failureRate.toFixed(4)),
+          duplicate_rate: Number(duplicateRate.toFixed(4)),
+          avg_runtime_ms: Math.round(item.avg_runtime_ms || 0),
+          latest_run_at: item.latest_run_at,
+          latest_success_at: item.latest_success_at,
+          latest_failure_reason: item.latest_failure_reason,
+          stale,
+          schema_mismatches: item.schema_mismatches,
+          stale_records_detected: item.stale_records_detected,
+          ingestion_coverage: avgCoverage == null ? null : Number(avgCoverage.toFixed(2)),
+        };
+      });
+
+      return {
+        generated_at: nowIso,
+        scraper_count: scrapers.length,
+        stale_scrapers: scrapers.filter((s) => s.stale).map((s) => s.scraper_name),
+        runtime_trends: scrapers
+          .map((s) => ({ scraper_name: s.scraper_name, avg_runtime_ms: s.avg_runtime_ms }))
+          .sort((a, b) => b.avg_runtime_ms - a.avg_runtime_ms),
+        failure_rates: scrapers
+          .map((s) => ({ scraper_name: s.scraper_name, failure_rate: s.failure_rate }))
+          .sort((a, b) => b.failure_rate - a.failure_rate),
+        duplicate_rates: scrapers
+          .map((s) => ({ scraper_name: s.scraper_name, duplicate_rate: s.duplicate_rate }))
+          .sort((a, b) => b.duplicate_rate - a.duplicate_rate),
+        ingestion_coverage: scrapers
+          .map((s) => ({ scraper_name: s.scraper_name, ingestion_coverage: s.ingestion_coverage }))
+          .filter((row) => row.ingestion_coverage != null),
+        last_successful_runs: scrapers
+          .map((s) => ({ scraper_name: s.scraper_name, latest_success_at: s.latest_success_at }))
+          .sort((a, b) => (b.latest_success_at || '').localeCompare(a.latest_success_at || '')),
+        recent_exceptions: recentExceptions,
+        scrapers,
+      };
+    }
   }
 
   // Ensure all known jobs appear (even if never run)
@@ -213,6 +346,16 @@ router.get('/health', authenticate, adminOnly, async (req, res) => {
   } catch (err) {
     logger.error('admin/health: failed to build health payload', { error: err.message });
     res.status(500).json({ error: 'Failed to fetch health data', detail: err.message });
+  }
+});
+
+router.get('/scraper-health', authenticate, adminOnly, async (_req, res) => {
+  try {
+    const payload = await buildScraperHealthPayload();
+    res.json(payload);
+  } catch (err) {
+    logger.error('admin/scraper-health: failed to build health payload', { error: err.message });
+    res.status(500).json({ error: 'Failed to fetch scraper health', detail: err.message });
   }
 });
 

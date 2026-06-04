@@ -216,7 +216,7 @@ class CollegeService {
 
     const completenessPromise = pool.query(
       `
-      SELECT *
+      SELECT institution_id, overall_score, section_scores, missing_required_fields
       FROM canonical.institution_completeness
       WHERE institution_id = $1::uuid
       LIMIT 1
@@ -226,7 +226,7 @@ class CollegeService {
 
     const qualityScoresPromise = pool.query(
       `
-      SELECT *
+      SELECT institution_id, freshness_score, final_quality_score, confidence_penalty
       FROM canonical.institution_quality_scores
       WHERE institution_id = $1::uuid
       LIMIT 1

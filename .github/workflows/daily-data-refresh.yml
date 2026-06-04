@@ -29,6 +29,48 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Workflow preflight diagnostics
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          IPEDS_API_KEY: ${{ secrets.IPEDS_API_KEY }}
+          COLLEGE_SCORECARD_API_KEY: ${{ secrets.COLLEGE_SCORECARD_API_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p workflow-diagnostics
+          {
+            echo "workflow=daily-data-refresh"
+            echo "run_id=${{ github.run_id }}"
+            echo "run_attempt=${{ github.run_attempt }}"
+            echo "sha=${{ github.sha }}"
+            echo "runner=${{ runner.os }}-${{ runner.arch }}"
+            echo "python=$(python --version 2>&1)"
+            echo "node=$(node --version 2>/dev/null || echo n/a)"
+            echo "npm=$(npm --version 2>/dev/null || echo n/a)"
+          } > workflow-diagnostics/env-snapshot.txt
+          for name in SUPABASE_DB_URL IPEDS_API_KEY COLLEGE_SCORECARD_API_KEY; do
+            value="${!name:-}"
+            if [ -z "$value" ]; then
+              echo "::error title=MissingSecret::${name} is not configured"
+              exit 1
+            fi
+          done
+          python - <<'PY'
+          import json, os
+          from urllib.parse import urlparse
+          url = os.environ.get("SUPABASE_DB_URL", "")
+          parsed = urlparse(url)
+          payload = {
+            "supabase_db_url_present": bool(url),
+            "host": parsed.hostname,
+            "scheme": parsed.scheme,
+            "port": parsed.port,
+          }
+          open("workflow-diagnostics/preflight-checks.json", "w", encoding="utf-8").write(json.dumps(payload, indent=2))
+          PY
+          echo "### Daily workflow preflight" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ✅ secrets validated" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ✅ diagnostics bootstrapped" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -75,3 +117,10 @@ jobs:
           path: scraper_diagnostics/
           if-no-files-found: ignore
 
+      - name: Upload workflow diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: daily-refresh-workflow-diagnostics
+          path: workflow-diagnostics/
+          if-no-files-found: warn

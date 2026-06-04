@@ -451,13 +451,88 @@ def write_diagnostics(
     write_json_file(out_dir / "schema_errors.json", schema_errors)
 
 
+def _log_execution_start(conn, scraper_name: str) -> int | None:
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO canonical.scraper_execution_history
+                  (scraper_name, started_at, success, diagnostics)
+                VALUES (%s, NOW(), false, '{}'::jsonb)
+                RETURNING id
+                """,
+                (scraper_name,),
+            )
+            row = cur.fetchone()
+            return int(row[0]) if row else None
+    except Exception:
+        return None
+
+
+def _log_execution_end(
+    conn,
+    execution_id: int | None,
+    *,
+    run_summary: Dict,
+    scraper_metrics: Dict,
+    schema_errors: List[Dict],
+    failed_colleges: List[Dict],
+    success: bool,
+    failure_reason: str | None,
+) -> None:
+    if execution_id is None:
+        return
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE canonical.scraper_execution_history
+               SET finished_at = NOW(),
+                   rows_inserted = %s,
+                   rows_updated = %s,
+                   rows_skipped = %s,
+                   duplicates_detected = %s,
+                   runtime_ms = GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (NOW() - started_at)) * 1000)::bigint),
+                   success = %s,
+                   failure_reason = %s,
+                   failure_category = %s,
+                   schema_mismatches = %s,
+                   stale_records_detected = %s,
+                   diagnostics = %s::jsonb
+             WHERE id = %s
+            """,
+            (
+                int(run_summary.get("success_count", 0)),
+                0,
+                int(run_summary.get("failure_count", 0)),
+                int(scraper_metrics.get("error_types", {}).get("DuplicateRecord", 0)),
+                success,
+                failure_reason,
+                None if success else "scraper_failure",
+                len(schema_errors),
+                int(run_summary.get("stale_records_detected", 0)),
+                json.dumps(
+                    {
+                        "run_summary": run_summary,
+                        "scraper_metrics": scraper_metrics,
+                        "failed_colleges_count": len(failed_colleges),
+                        "schema_errors_count": len(schema_errors),
+                    }
+                ),
+                execution_id,
+            ),
+        )
+
+
 def main() -> int:
     start = datetime.now(timezone.utc)
     out_dir = bootstrap_diagnostics()
     checkpoint_path = str(out_dir / "checkpoint.json")
     mode = os.getenv("SCRAPE_MODE", "weekly").strip().lower()
+    dry_run = os.getenv("SCRAPER_DRY_RUN", "0").strip().lower() in {"1", "true", "yes"}
+    resume_from = max(0, int(os.getenv("SCRAPER_RESUME_FROM", "0")))
     status = "failed"
     conn = None
+    execution_id = None
 
     run_summary = {
         "workflow": WORKFLOW_NAME,
@@ -486,10 +561,14 @@ def main() -> int:
 
     try:
         conn = get_connection()
+        execution_id = _log_execution_start(conn, f"deadline-{mode}-refresh")
+        conn.commit()
         module_status, schema_errors = validate_schema(conn)
         scraper_metrics["module_status"] = module_status
 
         targets = fetch_targets(conn, mode)
+        if resume_from > 0:
+            targets = targets[resume_from:]
         result = run_scrape_cycle(
             targets,
             checkpoint_path=checkpoint_path,
@@ -498,10 +577,11 @@ def main() -> int:
         summary = result["summary"]
         failed_colleges = [d for d in result["diagnostics"] if not d["success"]]
 
-        if module_status.get("deadlines", True):
-            upsert_deadlines(conn, result["deadlines"], scraper_metrics)
-        if module_status.get("requirements", True):
-            upsert_requirements(conn, result["requirements"], scraper_metrics)
+        if not dry_run:
+            if module_status.get("deadlines", True):
+                upsert_deadlines(conn, result["deadlines"], scraper_metrics)
+            if module_status.get("requirements", True):
+                upsert_requirements(conn, result["requirements"], scraper_metrics)
         conn.commit()
 
         error_types = summary.get("error_types", {})
@@ -520,6 +600,8 @@ def main() -> int:
             "stale_records_detected": int(summary.get("stale_sources", 0)),
             "duration_seconds": int((datetime.now(timezone.utc) - start).total_seconds()),
             "status": status,
+            "dry_run": dry_run,
+            "resume_from": resume_from,
         }
         scraper_metrics = {
             "workflow": WORKFLOW_NAME,
@@ -531,6 +613,17 @@ def main() -> int:
             "retry_count": retry_count,
         }
         print(json.dumps(run_summary, ensure_ascii=False))
+        _log_execution_end(
+            conn,
+            execution_id,
+            run_summary=run_summary,
+            scraper_metrics=scraper_metrics,
+            schema_errors=schema_errors,
+            failed_colleges=failed_colleges,
+            success=status in {"success", "degraded"},
+            failure_reason=None,
+        )
+        conn.commit()
     except (RuntimeError, psycopg2.OperationalError) as exc:
         status = "failed"
         exit_code = 1
@@ -571,6 +664,21 @@ def main() -> int:
             retryable=False,
             message=str(exc),
         )
+        if conn is not None:
+            try:
+                _log_execution_end(
+                    conn,
+                    execution_id,
+                    run_summary=run_summary,
+                    scraper_metrics=scraper_metrics,
+                    schema_errors=schema_errors,
+                    failed_colleges=failed_colleges,
+                    success=False,
+                    failure_reason=str(exc),
+                )
+                conn.commit()
+            except Exception:
+                conn.rollback()
     finally:
         if conn is not None:
             try:

@@ -21,6 +21,34 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Workflow preflight diagnostics
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          mkdir -p workflow-diagnostics
+          {
+            echo "workflow=deadline-refresh-monthly"
+            echo "run_id=${{ github.run_id }}"
+            echo "sha=${{ github.sha }}"
+            echo "python=$(python --version 2>&1)"
+          } > workflow-diagnostics/env-snapshot.txt
+          for name in SUPABASE_DB_URL; do
+            value="${!name:-}"
+            if [ -z "$value" ]; then
+              echo "::error title=MissingSecret::${name} is not configured"
+              exit 1
+            fi
+          done
+          test -f scrapers/run_deadline_refresh.py || { echo "::error title=MissingScript::scrapers/run_deadline_refresh.py not found"; exit 1; }
+          python - <<'PY'
+          import json, os
+          payload = {"supabase_db_url_present": bool(os.getenv("SUPABASE_DB_URL")), "script_exists": True}
+          open("workflow-diagnostics/preflight-checks.json", "w", encoding="utf-8").write(json.dumps(payload, indent=2))
+          PY
+          echo "### Deadline monthly preflight" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ✅ secret validation done" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Install scraper dependencies
         run: |
           pip install psycopg2-binary requests beautifulsoup4
@@ -55,4 +83,12 @@ jobs:
         with:
           name: monthly-deadline-diagnostics
           path: scraper_diagnostics/
+          if-no-files-found: warn
+
+      - name: Upload workflow diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: deadline-refresh-monthly-workflow-diagnostics
+          path: workflow-diagnostics/
           if-no-files-found: warn

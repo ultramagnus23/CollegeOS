@@ -70,10 +70,79 @@ def _flatten_for_writes(rows):
     return grouped
 
 
+def _log_execution_start(conn, scraper_name: str) -> int | None:
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO canonical.scraper_execution_history
+                  (scraper_name, started_at, success, diagnostics)
+                VALUES (%s, NOW(), false, '{}'::jsonb)
+                RETURNING id
+                """,
+                (scraper_name,),
+            )
+            row = cur.fetchone()
+            return int(row[0]) if row else None
+    except Exception:
+        return None
+
+
+def _log_execution_end(
+    conn,
+    execution_id: int | None,
+    *,
+    payload: dict,
+    rows_inserted: int,
+    rows_updated: int,
+    rows_skipped: int,
+    duplicates_detected: int,
+    schema_mismatches: int,
+    success: bool,
+    failure_reason: str | None,
+) -> None:
+    if execution_id is None:
+        return
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE canonical.scraper_execution_history
+               SET finished_at = NOW(),
+                   rows_inserted = %s,
+                   rows_updated = %s,
+                   rows_skipped = %s,
+                   duplicates_detected = %s,
+                   runtime_ms = GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (NOW() - started_at)) * 1000)::bigint),
+                   success = %s,
+                   failure_reason = %s,
+                   failure_category = %s,
+                   schema_mismatches = %s,
+                   stale_records_detected = %s,
+                   diagnostics = %s::jsonb
+             WHERE id = %s
+            """,
+            (
+                rows_inserted,
+                rows_updated,
+                rows_skipped,
+                duplicates_detected,
+                success,
+                failure_reason,
+                None if success else "ingestion_error",
+                schema_mismatches,
+                int(payload.get("stale_records", 0)),
+                json.dumps(payload),
+                execution_id,
+            ),
+        )
+
+
 def main() -> int:
     diagnostics_dir = os.getenv("SCRAPER_DIAGNOSTICS_DIR", "scraper_diagnostics")
     os.makedirs(diagnostics_dir, exist_ok=True)
     mode = os.getenv("SCRAPE_MODE", "weekly").strip().lower()
+    dry_run = os.getenv("SCRAPER_DRY_RUN", "0").strip().lower() in {"1", "true", "yes"}
+    resume_from = max(0, int(os.getenv("SCRAPER_RESUME_FROM", "0")))
     status = "failed"
     payload = {
         "workflow": f"india-{mode}-refresh",
@@ -95,17 +164,25 @@ def main() -> int:
         return 1
 
     conn = None
+    execution_id = None
     try:
         conn = psycopg2.connect(db_url)
+        execution_id = _log_execution_start(conn, f"india-{mode}-refresh")
+        conn.commit()
         pipeline = IndiaIngestionPipeline(
             source_config_path="scraper/indian/sources/shiksha.yaml",
             diagnostics_dir=diagnostics_dir,
         )
         targets = _fetch_targets(conn, mode)
+        if resume_from > 0:
+            targets = targets[resume_from:]
         result = pipeline.run(targets, mode=mode)
 
-        writer = SupabaseIndianWriter(conn)
-        write_result = writer.write(_flatten_for_writes(result["records"]), parser_version=PARSER_VERSION)
+        if dry_run:
+            write_result = {"ok": 0, "failed": 0, "dead_letter": []}
+        else:
+            writer = SupabaseIndianWriter(conn)
+            write_result = writer.write(_flatten_for_writes(result["records"]), parser_version=PARSER_VERSION)
 
         payload.update(
             {
@@ -115,17 +192,49 @@ def main() -> int:
                 "failed_rows": write_result["failed"],
                 "stale_records": result["summary"]["stale_count"],
                 "dead_letter": len(result["dead_letter"]) + len(write_result["dead_letter"]),
+                "dry_run": dry_run,
+                "resume_from": resume_from,
             }
         )
 
         with open(os.path.join(diagnostics_dir, "india_write_dead_letter.json"), "w", encoding="utf-8") as handle:
             json.dump(write_result["dead_letter"], handle, indent=2)
 
+        _log_execution_end(
+            conn,
+            execution_id,
+            payload=payload,
+            rows_inserted=int(write_result.get("ok", 0)),
+            rows_updated=0,
+            rows_skipped=int(write_result.get("failed", 0)),
+            duplicates_detected=0,
+            schema_mismatches=0,
+            success=payload["status"] in {"success", "degraded"},
+            failure_reason=None,
+        )
+        conn.commit()
+
     except Exception as exc:
         payload["status"] = "failed"
         payload["error"] = str(exc)
         if conn:
             conn.rollback()
+            try:
+                _log_execution_end(
+                    conn,
+                    execution_id,
+                    payload=payload,
+                    rows_inserted=0,
+                    rows_updated=0,
+                    rows_skipped=0,
+                    duplicates_detected=0,
+                    schema_mismatches=0,
+                    success=False,
+                    failure_reason=str(exc),
+                )
+                conn.commit()
+            except Exception:
+                conn.rollback()
     finally:
         if conn:
             conn.close()
