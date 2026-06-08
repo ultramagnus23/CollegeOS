@@ -11,7 +11,7 @@ describe('College model clean_colleges refactor', () => {
     mockQuery.mockReset();
   });
 
-  test('findAll queries clean_colleges with detail joins and returns slugged results', async () => {
+  test('findAll queries canonical cards view and returns slugged results', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -34,9 +34,8 @@ describe('College model clean_colleges refactor', () => {
     const rows = await College.findAll({ limit: 10, offset: 0 });
 
     const sql = mockQuery.mock.calls[0][0];
-    expect(sql).toContain('FROM public.clean_colleges c');
-    expect(sql).toContain('LEFT JOIN public.college_admissions ca');
-    expect(sql).toContain('LEFT JOIN public.college_financial_data cfd');
+    expect(sql).toContain('FROM canonical.mv_college_cards c');
+    expect(sql).toContain('canonical.institution_programs');
     expect(rows[0].slug).toBe('example-university-101');
   });
 
@@ -66,10 +65,9 @@ describe('College model clean_colleges refactor', () => {
 
     const row = await College.findById(7);
     const sql = mockQuery.mock.calls[0][0];
-    expect(sql).toContain('FROM public.clean_colleges cc');
-    expect(sql).toContain('LEFT JOIN public.college_admissions ca');
+    expect(sql).toContain('FROM canonical.mv_college_cards c');
     expect(row.acceptanceRate).toBeNull();
-    expect(row.tuitionInState).toBeNull();
+    expect(row.tuitionInState ?? null).toBeNull();
     expect(row.slug).toBe('null-data-college-7');
   });
 });

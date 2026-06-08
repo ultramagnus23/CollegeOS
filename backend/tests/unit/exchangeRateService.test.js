@@ -12,6 +12,7 @@ describe('exchangeRateService', () => {
 
   function loadService({ axiosRate, dbRows, axiosError, dbError } = {}) {
     let service;
+    jest.resetModules();
 
     jest.isolateModules(() => {
       // Mock axios
@@ -32,6 +33,10 @@ describe('exchangeRateService', () => {
 
       service = require('../../src/services/exchangeRateService');
     });
+
+    if (service && typeof service._resetCacheForTests === 'function') {
+      service._resetCacheForTests();
+    }
 
     return service;
   }
@@ -97,6 +102,7 @@ describe('exchangeRateService', () => {
       ];
 
       let service;
+      jest.resetModules();
       jest.isolateModules(() => {
         jest.doMock('axios', () => ({ get: jest.fn() }));
         jest.doMock('../../src/config/database', () => ({
@@ -116,6 +122,7 @@ describe('exchangeRateService', () => {
 
     it('returns empty array when DB is unavailable', async () => {
       let service;
+      jest.resetModules();
       jest.isolateModules(() => {
         jest.doMock('axios', () => ({ get: jest.fn() }));
         jest.doMock('../../src/config/database', () => ({

@@ -9,7 +9,7 @@ describe('startup schema validator', () => {
           if (params[0] === 'public' && params[1] === 'mv_college_cards') return { rows: [{ table_type: 'VIEW' }] };
           return { rows: [{ table_type: 'BASE TABLE' }] };
         }
-        if (sql.includes('FROM information_schema.columns')) {
+        if (sql.includes('FROM pg_attribute')) {
           return {
             rows: [
               'id', 'canonical_name', 'country_code', 'state_region', 'city', 'website', 'logo_url', 'description',
@@ -36,7 +36,7 @@ describe('startup schema validator', () => {
           if (params[0] === 'public' && params[1] === 'mv_college_cards') return { rows: [{ table_type: 'VIEW' }] };
           return { rows: [{ table_type: 'BASE TABLE' }] };
         }
-        if (sql.includes('FROM information_schema.columns')) return { rows: [] };
+        if (sql.includes('FROM pg_attribute')) return { rows: [] };
         if (sql.includes('FROM pg_indexes')) return { rows: [{ '?column?': 1 }] };
         return { rows: [] };
       }),

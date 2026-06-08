@@ -1,0 +1,142 @@
+name: Frontend Runtime Validation
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  pull_request:
+  pull_request_target:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+      - copilot/**
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: frontend-runtime-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-frontend-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Bootstrap diagnostics
+        run: |
+          mkdir -p diagnostics/frontend
+          node -v | tee diagnostics/frontend/node-version.txt
+          npm -v | tee diagnostics/frontend/npm-version.txt
+          python --version | tee diagnostics/frontend/python-version.txt
+          {
+            echo "branch=${GITHUB_REF_NAME}"
+            echo "sha=${GITHUB_SHA}"
+            echo "actor=${GITHUB_ACTOR}"
+            echo "has_SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL != '' }}"
+            echo "has_OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY != '' }}"
+          } | tee diagnostics/frontend/startup-diagnostics.txt
+          env | sort > diagnostics/frontend/environment.txt
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run validation pipeline with diagnostics
+        id: runtime_pipeline
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          mkdir -p diagnostics/frontend
+
+          run_step() {
+            local name="$1"
+            local cmd="$2"
+            echo "::group::${name}"
+            bash -lc "$cmd" 2>&1 | tee "diagnostics/frontend/${name}.log"
+            local code=${PIPESTATUS[0]}
+            printf '{"step":"%s","exit_code":%s}\n' "$name" "$code" >> diagnostics/frontend/results.ndjson
+            echo "::endgroup::"
+            return $code
+          }
+
+          overall=0
+          run_step lint "npm run lint" || overall=1
+          run_step typecheck "npm run typecheck" || overall=1
+          run_step test "npm run test" || overall=1
+          run_step runtime_check "npm run runtime-check" || overall=1
+          run_step build "npm run build" || overall=1
+          run_step full_production_check "node scripts/full-production-check.js --skip-db --skip-scraper --skip-onboarding-e2e" || overall=1
+
+          echo "overall_exit_code=${overall}" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Build workflow health summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          results_file = Path('diagnostics/frontend/results.ndjson')
+          summary_file = Path('diagnostics/frontend/workflow-summary.json')
+          steps = []
+          failed = []
+
+          if results_file.exists():
+            for line in results_file.read_text(encoding='utf-8').splitlines():
+              if not line.strip():
+                continue
+              entry = json.loads(line)
+              steps.append(entry)
+              if int(entry.get('exit_code', 1)) != 0:
+                failed.append(entry)
+
+          payload = {
+            'workflow': 'frontend-runtime-validation',
+            'steps': steps,
+            'failed_steps': failed,
+            'failed_count': len(failed),
+          }
+          summary_file.write_text(json.dumps(payload, indent=2), encoding='utf-8')
+
+          with open(Path.cwd() / Path('workflow-step-summary-tmp.md'), 'w', encoding='utf-8') as f:
+            f.write('## Frontend runtime validation summary\n')
+            f.write(f"- Total steps: {len(steps)}\n")
+            f.write(f"- Failed steps: {len(failed)}\n")
+            if failed:
+              f.write('\n### Failed commands\n')
+              for item in failed:
+                f.write(f"- {item['step']} (exit={item['exit_code']})\n")
+          PY
+          cat workflow-step-summary-tmp.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload runtime diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: frontend-runtime-diagnostics
+          path: diagnostics/frontend/
+          if-no-files-found: error
+          compression-level: 9
+
+      - name: Final gate
+        if: always()
+        run: |
+          if [ "${{ steps.runtime_pipeline.outputs.overall_exit_code }}" != "0" ]; then
+            echo "Frontend runtime validation failed. See frontend-runtime-diagnostics artifact."
+            exit 1
+          fi

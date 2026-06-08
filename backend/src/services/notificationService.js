@@ -30,7 +30,7 @@ class NotificationService {
       const pool = dbManager.getDatabase();
       let query = `SELECT id, user_id, type, title, message, metadata, created_at, read
                    FROM notifications WHERE user_id = $1`;
-      if (unreadOnly) query += ' AND read = false';
+      if (unreadOnly) query += ' AND read IS FALSE';
       query += ' ORDER BY created_at DESC LIMIT 50';
       const { rows } = await pool.query(query, [userId]);
       return rows.map(n => ({ ...n, metadata: n.metadata ? (typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata) : {}, read: Boolean(n.read) }));
@@ -53,7 +53,7 @@ class NotificationService {
   static async markAllAsRead(userId) {
     try {
       const pool = dbManager.getDatabase();
-      const { rowCount } = await pool.query(`UPDATE notifications SET read = true WHERE user_id = $1 AND read = false`, [userId]);
+      const { rowCount } = await pool.query(`UPDATE notifications SET read = TRUE WHERE user_id = $1 AND read IS FALSE`, [userId]);
       logger.info('Marked notifications as read', { userId, count: rowCount });
       return rowCount;
     } catch (error) {
@@ -65,7 +65,7 @@ class NotificationService {
   static async getUnreadCount(userId) {
     try {
       const pool = dbManager.getDatabase();
-      const { rows } = await pool.query(`SELECT COUNT(*) AS count FROM notifications WHERE user_id = $1 AND read = false`, [userId]);
+      const { rows } = await pool.query(`SELECT COUNT(*) AS count FROM notifications WHERE user_id = $1 AND read IS FALSE`, [userId]);
       return parseInt(rows[0].count) || 0;
     } catch (error) {
       logger.error('Error getting unread count:', error);

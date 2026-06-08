@@ -17,7 +17,7 @@ class NotificationController {
    */
   static async getNotifications(req, res) {
     try {
-      const userId = this.resolveUserId(req);
+      const userId = NotificationController.resolveUserId(req);
       if (!userId) {
         return res.status(401).json({ success: false, message: 'Unauthorized' });
       }
@@ -45,7 +45,7 @@ class NotificationController {
    */
   static async getUnreadCount(req, res) {
     try {
-      const userId = this.resolveUserId(req);
+      const userId = NotificationController.resolveUserId(req);
       if (!userId) {
         return res.status(401).json({ success: false, message: 'Unauthorized' });
       }
@@ -71,7 +71,7 @@ class NotificationController {
    */
   static async markAsRead(req, res) {
     try {
-      const userId = this.resolveUserId(req);
+      const userId = NotificationController.resolveUserId(req);
       if (!userId) {
         return res.status(401).json({ success: false, message: 'Unauthorized' });
       }
@@ -105,7 +105,7 @@ class NotificationController {
    */
   static async markAllAsRead(req, res) {
     try {
-      const userId = this.resolveUserId(req);
+      const userId = NotificationController.resolveUserId(req);
       if (!userId) {
         return res.status(401).json({ success: false, message: 'Unauthorized' });
       }
@@ -131,7 +131,7 @@ class NotificationController {
    */
   static async createTestNotification(req, res) {
     try {
-      const userId = this.resolveUserId(req);
+      const userId = NotificationController.resolveUserId(req);
       if (!userId) {
         return res.status(401).json({ success: false, message: 'Unauthorized' });
       }

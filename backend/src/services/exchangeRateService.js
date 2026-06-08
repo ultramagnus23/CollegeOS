@@ -16,6 +16,11 @@ const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours — spec requirement for sch
 let cachedRate = null;
 let cacheTimestamp = 0;
 
+function _resetCacheForTests() {
+  cachedRate = null;
+  cacheTimestamp = 0;
+}
+
 // ── DB helpers ────────────────────────────────────────────────────────────────
 
 /**
@@ -147,4 +152,4 @@ async function getRateHistory(limit = 90) {
   }
 }
 
-module.exports = { getUSDtoINR, getRateHistory };
+module.exports = { getUSDtoINR, getRateHistory, _resetCacheForTests };

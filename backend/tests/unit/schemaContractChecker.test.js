@@ -9,7 +9,12 @@ describe('schemaContractChecker', () => {
       'graduation_rate_4yr', 'employment_rate', 'median_start_salary', 'metadata', 'updated_at',
     ];
     const pool = {
-      query: jest.fn(async () => ({ rows: columns.map((column_name) => ({ column_name })) })),
+      query: jest.fn(async (sql) => {
+        if (String(sql).includes('to_regclass')) {
+          return { rows: [{ relation: 'canonical.institution_programs' }] };
+        }
+        return { rows: columns.map((column_name) => ({ column_name })) };
+      }),
     };
 
     const report = await checkSchemaContracts(pool);
@@ -19,7 +24,12 @@ describe('schemaContractChecker', () => {
 
   test('reports missing frontend/backend fields', async () => {
     const pool = {
-      query: jest.fn(async () => ({ rows: [{ column_name: 'id' }, { column_name: 'canonical_name' }] })),
+      query: jest.fn(async (sql) => {
+        if (String(sql).includes('to_regclass')) {
+          return { rows: [{ relation: 'canonical.institution_programs' }] };
+        }
+        return { rows: [{ column_name: 'id' }, { column_name: 'canonical_name' }] };
+      }),
     };
 
     const report = await checkSchemaContracts(pool);

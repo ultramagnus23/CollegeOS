@@ -2,11 +2,10 @@ import { supabase, isSupabaseConfigured, CollegeWithRelations } from './supabase
 import { formatCountryName, normalizeCountryCode } from './country';
 import {
   COLLEGE_CARD_COLUMNS,
-  COLLEGE_DETAIL_SECTION_COLUMNS,
-  CollegeCardContractSchema,
-  type CollegeCardContract,
-  type CollegeDetailSection,
+  FRONTEND_CANONICAL_RELATION,
+  parseFrontendCollegeCardOrThrow,
 } from '../contracts/collegeContracts';
+import type { FrontendCollegeCard } from '../contracts/frontendCollegeCardContract';
 
 type CanonicalId = string | number;
 
@@ -16,7 +15,7 @@ const CANONICAL_DEBUG = import.meta.env.DEV || import.meta.env.VITE_CANONICAL_DE
 const DETAIL_CACHE_TTL_MS = 5 * 60 * 1000;
 const detailCache = new Map<string, { expiresAt: number; value: CollegeRecord | null }>();
 
-type CanonicalCardRow = CollegeCardContract;
+type CanonicalCardRow = FrontendCollegeCard;
 
 interface CanonicalCollegeDetail {
   institution: Record<string, unknown>;
@@ -34,13 +33,6 @@ interface CanonicalCollegeDetail {
 }
 
 type CollegeRecord = CollegeWithRelations | CanonicalCollegeDetail;
-
-type CanonicalLatestRow = {
-  institution_id: CanonicalId;
-  data_year?: number | null;
-  updated_at?: string | null;
-  [key: string]: unknown;
-};
 
 function requireClient() {
   if (!supabase) {
@@ -103,32 +95,6 @@ function bool(value: unknown): boolean | null {
   return typeof value === 'boolean' ? value : null;
 }
 
-function reduceLatest<T extends CanonicalLatestRow>(rows: T[]): Map<string, T> {
-  const map = new Map<string, T>();
-  for (const row of rows) {
-    const key = String(row.institution_id);
-    const current = map.get(key);
-    if (!current) {
-      map.set(key, row);
-      continue;
-    }
-
-    const currentYear = typeof current.data_year === 'number' ? current.data_year : -1;
-    const nextYear = typeof row.data_year === 'number' ? row.data_year : -1;
-    if (nextYear > currentYear) {
-      map.set(key, row);
-      continue;
-    }
-
-    if (nextYear === currentYear) {
-      const currentTs = current.updated_at ? Date.parse(current.updated_at) : 0;
-      const nextTs = row.updated_at ? Date.parse(row.updated_at) : 0;
-      if (nextTs > currentTs) map.set(key, row);
-    }
-  }
-  return map;
-}
-
 async function resolveInstitutionId(id: CanonicalId): Promise<CanonicalId | null> {
   const client = requireClient();
   const rawId = String(id).trim();
@@ -164,55 +130,17 @@ async function getSearchIndexInstitutionIds(query: string): Promise<CanonicalId[
 }
 
 async function enrichCardRows(baseRows: CanonicalCardRow[]): Promise<Array<Record<string, unknown>>> {
-  const client = requireClient();
-  const ids = baseRows.map((row) => row.id).filter(Boolean);
-  if (ids.length === 0) return [];
-
-  const [admissionsRes, financialsRes, outcomesRes, completenessRes, qualityRes] = await Promise.all([
-    client
-      .schema('canonical')
-      .from('institution_admissions')
-      .select('institution_id, data_year, updated_at, sat_50, act_50, test_optional')
-      .in('institution_id', ids as string[]),
-    client
-      .schema('canonical')
-      .from('institution_financials')
-      .select('institution_id, data_year, updated_at, tuition_international, cost_of_attendance, merit_scholarship_flag, need_blind_flag, percent_receiving_aid')
-      .in('institution_id', ids as string[]),
-    client
-      .schema('canonical')
-      .from('institution_outcomes')
-      .select('institution_id, data_year, updated_at, graduation_rate_6yr, median_start_salary')
-      .in('institution_id', ids as string[]),
-    client
-      .schema('canonical')
-      .from('institution_completeness')
-      .select('institution_id, overall_score')
-      .in('institution_id', ids as string[]),
-    client
-      .schema('canonical')
-      .from('institution_quality_scores')
-      .select('institution_id, freshness_score, final_quality_score')
-      .in('institution_id', ids as string[]),
-  ]);
-
-  const admissionsLatest = reduceLatest((admissionsRes.data ?? []) as CanonicalLatestRow[]);
-  const financialsLatest = reduceLatest((financialsRes.data ?? []) as CanonicalLatestRow[]);
-  const outcomesLatest = reduceLatest((outcomesRes.data ?? []) as CanonicalLatestRow[]);
-  const completenessMap = new Map((completenessRes.data ?? []).map((r: { institution_id: CanonicalId; overall_score?: number | null }) => [String(r.institution_id), r]));
-  const qualityMap = new Map((qualityRes.data ?? []).map((r: { institution_id: CanonicalId; freshness_score?: number | null; final_quality_score?: number | null }) => [String(r.institution_id), r]));
-
   const byCountry = new Map<string, { total: number; missingAdmissions: number; missingFinancials: number }>();
   const rows = baseRows.map((row) => {
-    const key = String(row.id);
     const countryCode = String(row.country_code ?? '').toUpperCase() || 'UNKNOWN';
     const acc = byCountry.get(countryCode) ?? { total: 0, missingAdmissions: 0, missingFinancials: 0 };
     acc.total += 1;
-    const admissions = asRecord(admissionsLatest.get(key));
-    const financials = asRecord(financialsLatest.get(key));
-    const outcomes = asRecord(outcomesLatest.get(key));
-    const completeness = asRecord(completenessMap.get(key));
-    const quality = asRecord(qualityMap.get(key));
+    const metadata = asRecord(row.metadata);
+    const admissions = asRecord(metadata.admissions);
+    const financials = asRecord(metadata.financials);
+    const outcomes = asRecord(metadata.outcomes);
+    const completeness = asRecord(metadata.completeness);
+    const quality = asRecord(metadata.quality_scores);
     if (Object.keys(admissions).length === 0) acc.missingAdmissions += 1;
     if (Object.keys(financials).length === 0) acc.missingFinancials += 1;
     byCountry.set(countryCode, acc);
@@ -225,7 +153,7 @@ async function enrichCardRows(baseRows: CanonicalCardRow[]): Promise<Array<Recor
       cost_of_attendance: num(firstDefined(financials.cost_of_attendance, row.cost_of_attendance)),
       merit_scholarship_flag: bool(financials.merit_scholarship_flag),
       need_blind_flag: bool(financials.need_blind_flag),
-      international_aid_available: bool(asRecord(row.metadata).international_aid_available),
+      international_aid_available: bool(metadata.international_aid_available),
       graduation_rate_6yr: num(outcomes.graduation_rate_6yr),
       median_start_salary: num(firstDefined(outcomes.median_start_salary, row.median_start_salary)),
       completeness_score: num(completeness.overall_score),
@@ -314,10 +242,7 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
     const { data, error, count } = await q.order(column, { ascending }).range(from, to);
     if (error) throw error;
 
-    const parsedRows = (data ?? [])
-      .map((raw) => CollegeCardContractSchema.safeParse(raw))
-      .filter((r): r is { success: true; data: CanonicalCardRow } => r.success)
-      .map((r) => r.data);
+    const parsedRows = (data ?? []).map((raw) => parseFrontendCollegeCardOrThrow(raw as unknown)) as CanonicalCardRow[];
 
     const enrichedRows = await enrichCardRows(parsedRows);
     const sortedRows =
@@ -472,6 +397,7 @@ export async function getDistinctCountries(): Promise<string[]> {
   const client = requireClient();
   const { data, error } = await client.schema('canonical').from('mv_college_cards').select('country_code').not('country_code', 'is', null).limit(1000);
   if (error) throw error;
+  debugCanonical('canonical_country_source', { relation: FRONTEND_CANONICAL_RELATION });
   return [...new Set((data ?? []).map((r: { country_code: string | null }) => r.country_code).filter(Boolean) as string[])].sort();
 }
 

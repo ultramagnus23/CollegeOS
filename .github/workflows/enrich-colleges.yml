@@ -1,6 +1,8 @@
 name: Weekly College Data Enrichment
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   workflow_dispatch:
   schedule:
@@ -8,6 +10,8 @@ on:
 
 permissions:
   contents: read
+  actions: read
+  checks: read
 
 concurrency:
   group: enrich-colleges
@@ -16,80 +20,171 @@ concurrency:
 jobs:
   enrich:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
+
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with: { node-version: '24' }
-      - name: Workflow preflight diagnostics
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SCORECARD_API_KEY: ${{ secrets.SCORECARD_API_KEY }}
-        run: |
-          set -euo pipefail
-          mkdir -p workflow-diagnostics
-          {
-            echo "workflow=enrich-colleges"
-            echo "run_id=${{ github.run_id }}"
-            echo "sha=${{ github.sha }}"
-            echo "node=$(node --version)"
-            echo "npm=$(npm --version)"
-          } > workflow-diagnostics/env-snapshot.txt
-          for name in SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY SCORECARD_API_KEY; do
-            value="${!name:-}"
-            if [ -z "$value" ]; then
-              echo "::error title=MissingSecret::${name} is not configured"
-              exit 1
-            fi
-          done
-          for file in scripts/runMigrations.js scripts/enrichColleges.js scripts/enrichmentReport.js; do
-            if [ ! -f "$file" ]; then
-              echo "::error title=MissingScript::${file} not found"
-              exit 1
-            fi
-          done
-          node -e "const fs=require('fs');fs.writeFileSync('workflow-diagnostics/preflight-checks.json', JSON.stringify({scripts_ok:true,secrets_ok:true,ts:new Date().toISOString()},null,2));"
-          echo "### Enrichment workflow preflight" >> "$GITHUB_STEP_SUMMARY"
-          echo "- ✅ required secrets present" >> "$GITHUB_STEP_SUMMARY"
-          echo "- ✅ referenced scripts found" >> "$GITHUB_STEP_SUMMARY"
-      - run: npm ci
-      - name: Bootstrap diagnostics
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Bootstrap Diagnostics
         run: |
           mkdir -p scraper_diagnostics
-          printf '{"workflow":"enrich-colleges","status":"starting"}' > scraper_diagnostics/run_summary.json
-      - name: Run migrations
-        run: node scripts/runMigrations.js
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
-      - name: Enrich college data
-        timeout-minutes: 90
-        run: node scripts/enrichColleges.js
+          printf '{"workflow":"enrich-colleges","status":"starting"}' \
+            > scraper_diagnostics/run_summary.json
+
+          node -v | tee scraper_diagnostics/node-version.txt
+          npm -v | tee scraper_diagnostics/npm-version.txt
+          python --version | tee scraper_diagnostics/python-version.txt
+
+          {
+            echo "branch=${GITHUB_REF_NAME}"
+            echo "sha=${GITHUB_SHA}"
+            echo "actor=${GITHUB_ACTOR}"
+
+            echo "has_SUPABASE_URL=${{ secrets.SUPABASE_URL != '' }}"
+            echo "has_SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}"
+            echo "has_SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL != '' }}"
+            echo "has_SCORECARD_API_KEY=${{ secrets.SCORECARD_API_KEY != '' }}"
+          } | tee scraper_diagnostics/startup-diagnostics.txt
+
+          env | sort > scraper_diagnostics/environment.txt
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+          npm ls --depth=0 > scraper_diagnostics/npm-ls.txt
+
+      - name: Verify Required Secrets
+        run: |
+          missing=0
+
+          [ -z "${SUPABASE_URL}" ] && echo "Missing SUPABASE_URL" && missing=1
+          [ -z "${SUPABASE_SERVICE_ROLE_KEY}" ] && echo "Missing SUPABASE_SERVICE_ROLE_KEY" && missing=1
+          [ -z "${SUPABASE_DB_URL}" ] && echo "Missing SUPABASE_DB_URL" && missing=1
+
+          if [ "$missing" -eq 1 ]; then
+            echo "Required secrets are missing."
+            exit 1
+          fi
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+      - name: Run Migrations
+        id: migrations
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -e
+          set -o pipefail
+
+          echo "Starting migrations..."
+
+          node scripts/runMigrations.js \
+            2>&1 | tee scraper_diagnostics/migrations.log
+
+      - name: Enrich College Data
+        id: enrich_job
+        continue-on-error: true
+        timeout-minutes: 100
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           SCORECARD_API_KEY: ${{ secrets.SCORECARD_API_KEY }}
-          USD_TO_INR_RATE: '83'
+          USD_TO_INR_RATE: "83"
+        run: |
+          set -e
+          set -o pipefail
 
-      - name: Post enrichment summary
+          echo "Starting enrichment..."
+
+          node scripts/enrichColleges.js \
+            2>&1 | tee scraper_diagnostics/enrich.log
+
+      - name: Generate Enrichment Report
+        id: enrich_summary
         if: always()
-        run: node scripts/enrichmentReport.js
+        continue-on-error: true
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      - name: Upload diagnostics
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -e
+          set -o pipefail
+
+          node scripts/enrichmentReport.js \
+            2>&1 | tee scraper_diagnostics/enrichment-report.log
+
+      - name: Categorize Workflow Outcome
         if: always()
-        uses: actions/upload-artifact@v5
+        run: |
+          python << 'PY'
+          import json
+          import pathlib
+
+          out = pathlib.Path("scraper_diagnostics")
+
+          payload = {
+              "workflow": "enrich-colleges",
+              "migrations_outcome": "${{ steps.migrations.outcome }}",
+              "enrich_outcome": "${{ steps.enrich_job.outcome }}",
+              "summary_outcome": "${{ steps.enrich_summary.outcome }}",
+              "category": "success"
+          }
+
+          if payload["migrations_outcome"] != "success":
+              payload["category"] = "migration_failure"
+          elif payload["enrich_outcome"] != "success":
+              payload["category"] = "enrichment_runtime_failure"
+          elif payload["summary_outcome"] != "success":
+              payload["category"] = "summary_generation_failure"
+
+          (out / "failure_category.json").write_text(
+              json.dumps(payload, indent=2),
+              encoding="utf-8"
+          )
+          PY
+
+      - name: Upload Diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: enrich-colleges-diagnostics
           path: scraper_diagnostics/
-          if-no-files-found: ignore
-      - name: Upload workflow diagnostics
+          if-no-files-found: error
+          compression-level: 9
+
+      - name: Final Status Gate
         if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: enrich-colleges-workflow-diagnostics
-          path: workflow-diagnostics/
-          if-no-files-found: warn
+        run: |
+          echo "Migration Outcome: ${{ steps.migrations.outcome }}"
+          echo "Enrichment Outcome: ${{ steps.enrich_job.outcome }}"
+          echo "Summary Outcome: ${{ steps.enrich_summary.outcome }}"
+
+          if [ "${{ steps.migrations.outcome }}" != "success" ] || \
+             [ "${{ steps.enrich_job.outcome }}" != "success" ]; then
+            echo "Enrichment workflow failed."
+            echo "Download the enrich-colleges-diagnostics artifact."
+            exit 1
+          fi
+
+          echo "Enrichment workflow completed successfully."

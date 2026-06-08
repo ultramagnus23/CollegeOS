@@ -15,6 +15,9 @@ const dbManager = require('../config/database');
 const logger = require('../utils/logger');
 const { sanitizeForLog, sanitizeObject, safeAssign, sanitizeLogInput } = require('../utils/security');
 
+// FIX #1: OUTCOME_CONTRIBUTION_POINTS was referenced but never defined — caused ReferenceError crash
+const OUTCOME_CONTRIBUTION_POINTS = 10;
+
 const TIER_RANK = {
   'Safety': 5,
   'Match': 4,
@@ -33,21 +36,21 @@ async function getChancingResults(userId, colleges) {
   if (!profile) {
     return { error: 'Profile not found', message: 'Please complete your student profile to get chancing results.' };
   }
-  const results = [];
+  // NOTE: variable named 'chancingResults' here to avoid any shadowing issues if this
+  // function is ever inlined; original used 'results' which is fine in function scope.
+  const chancingResults = [];
   for (const college of colleges) {
     const chancing = await consolidatedChancingService.calculateChance(profile, college);
 
-    // Count how many chancing factors had real data (from the service's own tracking)
     const studentSAT = profile?.sat_total ?? profile?.sat_score ?? null;
     const studentGPA = profile?.gpa_unweighted ?? profile?.gpa_weighted ?? profile?.gpa ?? null;
     const collegeSAT = college?.sat_avg ?? college?.sat_total_50 ?? college?.median_sat ?? null;
     const collegeGPA = college?.gpa_50 ?? college?.median_gpa ?? null;
-    // Use number of active factorScores keys as factorsUsed for accurate UI signal
     const factorsUsed = chancing.factorScores
       ? Object.values(chancing.factorScores).filter(f => f && f.score != null).length
       : (studentSAT != null && collegeSAT != null ? 1 : 0) + (studentGPA != null && collegeGPA != null ? 1 : 0);
 
-    results.push({
+    chancingResults.push({
       college: {
         id: college.id,
         name: college.name,
@@ -64,14 +67,14 @@ async function getChancingResults(userId, colleges) {
       }
     });
   }
-  results.sort((a, b) => (TIER_RANK[b.chancing.tier] ?? 0) - (TIER_RANK[a.chancing.tier] ?? 0));
-  const safety = results.filter(r => r.chancing.tier === 'Safety');
-  const target = results.filter(r => r.chancing.tier === 'Match');
-  const reach = results.filter(r => r.chancing.tier === 'Reach' || r.chancing.tier === 'Long Shot' || r.chancing.tier === 'Extreme Reach');
+  chancingResults.sort((a, b) => (TIER_RANK[b.chancing.tier] ?? 0) - (TIER_RANK[a.chancing.tier] ?? 0));
+  const safety = chancingResults.filter(r => r.chancing.tier === 'Safety');
+  const target = chancingResults.filter(r => r.chancing.tier === 'Match');
+  const reach = chancingResults.filter(r => r.chancing.tier === 'Reach' || r.chancing.tier === 'Long Shot' || r.chancing.tier === 'Extreme Reach');
   return {
-    results,
+    results: chancingResults,
     grouped: { safety, target, reach },
-    summary: { total: results.length, safetyCount: safety.length, targetCount: target.length, reachCount: reach.length }
+    summary: { total: chancingResults.length, safetyCount: safety.length, targetCount: target.length, reachCount: reach.length }
   };
 }
 
@@ -91,7 +94,6 @@ router.post('/calculate', authenticate, async (req, res, next) => {
       });
     }
     
-    // Get student profile
     const profile = await StudentProfile.getCompleteProfile(req.user.userId);
     
     if (!profile) {
@@ -102,7 +104,6 @@ router.post('/calculate', authenticate, async (req, res, next) => {
       });
     }
     
-    // Get college
     const college = await College.findById(collegeId);
     
     if (!college) {
@@ -112,7 +113,6 @@ router.post('/calculate', authenticate, async (req, res, next) => {
       });
     }
 
-    // Build application context from request body
     const application = {
       decision_type:          decision_type          ?? null,
       demonstrated_interest:  demonstrated_interest  ?? null,
@@ -134,13 +134,14 @@ router.post('/calculate', authenticate, async (req, res, next) => {
           collegeId,
           predictionType,
           chancing.probability ?? null,
-          chancing.category,
+          // FIX #2: chancing.category may be undefined if calculateChance only returns { tier }.
+          // Fall back to chancing.tier to avoid inserting NULL unexpectedly.
+          chancing.category || chancing.tier,
           chancing.confidence,
           JSON.stringify(chancing.factorScores ?? [])
         ]
       );
     } catch (auditError) {
-      // Non-critical - don't fail if audit logging fails
       logger.debug('Prediction audit log failed:', auditError.message);
     }
     
@@ -202,23 +203,21 @@ router.post('/batch', authenticate, async (req, res, next) => {
     const wasTruncated = collegeIds.length > MAX_BATCH_SIZE;
     const limitedIds = collegeIds.slice(0, MAX_BATCH_SIZE);
     
-    // Get colleges
     const colleges = (await Promise.all(limitedIds.map(id => College.findById(id)))).filter(c => c);
     
-    // Get chancing results
-    const results = await getChancingResults(req.user.userId, colleges);
+    const batchResults = await getChancingResults(req.user.userId, colleges);
     
-    if (results.error) {
+    if (batchResults.error) {
       return res.status(400).json({
         success: false,
-        message: results.message,
+        message: batchResults.message,
         code: 'PROFILE_REQUIRED'
       });
     }
     
     res.json({
       success: true,
-      data: results,
+      data: batchResults,
       meta: {
         requested: collegeIds.length,
         processed: limitedIds.length,
@@ -240,7 +239,6 @@ router.get('/my-list', authenticate, async (req, res, next) => {
   try {
     const Application = require('../models/Application');
     
-    // Get user's applications
     const applications = await Application.findByUser(req.user.userId);
     
     if (!applications || applications.length === 0) {
@@ -259,24 +257,37 @@ router.get('/my-list', authenticate, async (req, res, next) => {
       });
     }
     
-    // Get colleges from applications
     const collegeIds = applications.map(a => a.college_id);
     const colleges = (await Promise.all(collegeIds.map(id => College.findById(id)))).filter(c => c);
     
-    // Get chancing results
-    const results = await getChancingResults(req.user.userId, colleges);
-    
-    if (results.error) {
-      return res.status(400).json({
-        success: false,
-        message: results.message,
-        code: 'PROFILE_REQUIRED'
+    const listResults = await getChancingResults(req.user.userId, colleges);
+
+    if (listResults.error) {
+      return res.json({
+        success: true,
+        data: {
+          results: [],
+          grouped: {
+            safety: [],
+            target: [],
+            reach: []
+          },
+          summary: {
+            total: 0,
+            safetyCount: 0,
+            targetCount: 0,
+            reachCount: 0
+          }
+        },
+        profileRequired: true,
+        redirect: '/onboarding',
+        message: listResults.message
       });
     }
-    
+
     res.json({
       success: true,
-      data: results
+      data: listResults
     });
   } catch (error) {
     logger.error('My list chancing failed:', error);
@@ -292,7 +303,6 @@ router.get('/recommendations', authenticate, async (req, res, next) => {
   try {
     const { limit = 20, country } = req.query;
     
-    // Get student profile
     const profile = await StudentProfile.getCompleteProfile(req.user.userId);
     
     if (!profile) {
@@ -303,46 +313,43 @@ router.get('/recommendations', authenticate, async (req, res, next) => {
       });
     }
     
-    // Get colleges - filter by preferred countries if set
     let colleges;
     const preferredCountries = profile.preferredCountries || profile.preferred_countries || [];
     
     if (country) {
-      colleges = await College.search({ country: country, limit: parseInt(limit) * 3 });
+      colleges = await College.findAll({ country: country, limit: parseInt(limit) * 3 });
     } else if (preferredCountries.length > 0) {
-      // Get colleges from all preferred countries
       const nested = await Promise.all(
-        preferredCountries.map(c => College.search({ country: c, limit: parseInt(limit) }))
+        preferredCountries.map(c => College.findAll({ country: c, limit: parseInt(limit) }))
       );
       colleges = nested.flat();
     } else {
-      colleges = await College.search({ limit: parseInt(limit) * 3 });
+      colleges = await College.findAll({ limit: parseInt(limit) * 3 });
     }
     
-    // Get chancing results
-    const results = await getChancingResults(req.user.userId, colleges || []);
+    const recResults = await getChancingResults(req.user.userId, colleges || []);
     
-    if (results.error) {
+    if (recResults.error) {
       return res.status(400).json({
         success: false,
-        message: results.message,
+        message: recResults.message,
         code: 'PROFILE_REQUIRED'
       });
     }
     
     // Limit results
-    results.results = results.results.slice(0, parseInt(limit));
+    recResults.results = recResults.results.slice(0, parseInt(limit));
     
-    // Recalculate grouped
-    results.grouped = {
-      safety: results.results.filter(r => r.chancing.tier === 'Safety'),
-      target: results.results.filter(r => r.chancing.tier === 'Match'),
-      reach: results.results.filter(r => r.chancing.tier === 'Reach' || r.chancing.tier === 'Long Shot' || r.chancing.tier === 'Extreme Reach')
+    // Recalculate grouped after slicing
+    recResults.grouped = {
+      safety: recResults.results.filter(r => r.chancing.tier === 'Safety'),
+      target: recResults.results.filter(r => r.chancing.tier === 'Match'),
+      reach: recResults.results.filter(r => r.chancing.tier === 'Reach' || r.chancing.tier === 'Long Shot' || r.chancing.tier === 'Extreme Reach')
     };
     
     res.json({
       success: true,
-      data: results
+      data: recResults
     });
   } catch (error) {
     logger.error('Recommendations failed:', error);
@@ -375,7 +382,7 @@ router.get('/profile-strength', authenticate, async (req, res, next) => {
     
     // Academic section
     let academicScore = 0;
-    let academicMax = 30;
+    const academicMax = 30;
     
     if (profile.gpa_unweighted || profile.gpa_weighted) {
       const gpa = profile.gpa_unweighted || profile.gpa_weighted;
@@ -418,7 +425,7 @@ router.get('/profile-strength', authenticate, async (req, res, next) => {
     // Activities section
     const activities = profile.activities || [];
     let activityScore = 0;
-    let activityMax = 30;
+    const activityMax = 30;
     
     const tier1 = activities.filter(a => a.tier_rating === 1).length;
     const tier2 = activities.filter(a => a.tier_rating === 2).length;
@@ -440,7 +447,7 @@ router.get('/profile-strength', authenticate, async (req, res, next) => {
     // Course rigor section
     const coursework = profile.coursework || [];
     let rigorScore = 0;
-    let rigorMax = 20;
+    const rigorMax = 20;
     
     const apIb = coursework.filter(c => c.course_level === 'AP' || c.course_level === 'IB').length;
     rigorScore = Math.min(20, apIb * 2);
@@ -456,15 +463,22 @@ router.get('/profile-strength', authenticate, async (req, res, next) => {
     
     // Profile completeness
     let completenessScore = 0;
-    let completenessMax = 20;
+    const completenessMax = 20;
+
+    // FIX #3: Normalize intendedMajors — profile may use either camelCase or snake_case
+    const intendedMajors = profile.intendedMajors || (profile.intended_major ? [profile.intended_major] : []);
+
+    // FIX #4: Normalize preferredCountries — profile may use either camelCase or snake_case
+    // Previously `profile.preferredCountries` check silently ignored `preferred_countries`
+    const preferredCountriesNorm = profile.preferredCountries || profile.preferred_countries || [];
     
     if (profile.first_name) completenessScore += 2;
     if (profile.gpa_unweighted || profile.gpa_weighted) completenessScore += 3;
     if (profile.sat_total || profile.act_composite) completenessScore += 3;
     if (activities.length > 0) completenessScore += 4;
     if (coursework.length > 0) completenessScore += 3;
-    if (profile.intendedMajors && profile.intendedMajors.length > 0) completenessScore += 2;
-    if (profile.preferredCountries && profile.preferredCountries.length > 0) completenessScore += 3;
+    if (intendedMajors.length > 0) completenessScore += 2;
+    if (preferredCountriesNorm.length > 0) completenessScore += 3;
     
     sections.push({
       name: 'Profile Completeness',
@@ -490,7 +504,7 @@ router.get('/profile-strength', authenticate, async (req, res, next) => {
     if (coursework.length < 3) {
       recommendations.push('Add your coursework, especially AP/IB classes');
     }
-    if (!profile.intendedMajors || profile.intendedMajors.length === 0) {
+    if (intendedMajors.length === 0) {
       recommendations.push('Add your intended major(s) to get better college matches');
     }
     
@@ -531,7 +545,6 @@ router.post('/scenario', authenticate, async (req, res, next) => {
       });
     }
     
-    // Get current profile
     const currentProfile = await StudentProfile.getCompleteProfile(req.user.userId);
     
     if (!currentProfile) {
@@ -542,26 +555,19 @@ router.post('/scenario', authenticate, async (req, res, next) => {
       });
     }
     
-    // Create temporary merged profile with changes
     const scenarioProfile = { ...currentProfile };
     
-    // Apply changes to the scenario profile (sanitize to prevent prototype pollution)
     const safeChanges = sanitizeObject(profileChanges);
     const ALLOWED_SCENARIO_KEYS = new Set(Object.keys(currentProfile || {}));
     safeAssign(scenarioProfile, safeChanges, ALLOWED_SCENARIO_KEYS);
     
-    // Get colleges
     const colleges = (await Promise.all(collegeIds.map(id => College.findById(id)))).filter(c => c);
     
-    // Calculate chances with both profiles
     const currentResults = [];
     const scenarioResults = [];
     
     for (const college of colleges) {
-      // Current chances
       const currentChancing = await consolidatedChancingService.calculateChance(currentProfile, college);
-      
-      // Scenario chances
       const scenarioChancing = await consolidatedChancingService.calculateChance(scenarioProfile, college);
       
       currentResults.push({
@@ -575,7 +581,6 @@ router.post('/scenario', authenticate, async (req, res, next) => {
       });
     }
     
-    // Calculate comparison
     const comparison = colleges.map((college, idx) => {
       const oldTier = currentResults[idx].chancing.tier;
       const newTier = scenarioResults[idx].chancing.tier;
@@ -644,7 +649,6 @@ router.post('/save-history', authenticate, async (req, res, next) => {
     
     const pool = dbManager.getDatabase();
     
-    // Create profile snapshot
     const profileSnapshot = profile ? {
       gpa: profile.gpa_unweighted || profile.gpa_weighted,
       sat: profile.sat_total,
@@ -656,7 +660,7 @@ router.post('/save-history', authenticate, async (req, res, next) => {
     const resolvedCategory = category
       || (tier === 'Safety' ? 'safety' : tier === 'Match' ? 'target' : 'reach');
 
-    const result = await pool.query(
+    const saveResult = await pool.query(
       `INSERT INTO chancing_history (
         user_id, college_id, chance_percentage, category, profile_snapshot, factors
       ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
@@ -673,7 +677,7 @@ router.post('/save-history', authenticate, async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: 'Chancing history saved',
-      data: { id: result.rows[0].id }
+      data: { id: saveResult.rows[0].id }
     });
   } catch (error) {
     logger.error('Save history failed:', error);
@@ -684,12 +688,14 @@ router.post('/save-history', authenticate, async (req, res, next) => {
 /**
  * GET /api/chancing/history
  * Get user's chancing history
+ *
+ * NOTE (schema): Queries `colleges_full` — verify this table exists in your DB.
+ * If the table is named `colleges`, update the JOIN below accordingly.
  */
 router.get('/history', authenticate, async (req, res, next) => {
   try {
     const { collegeId, limit = 50 } = req.query;
     
-    // Validate and bound limit
     const boundedLimit = Math.min(Math.max(1, parseInt(limit) || 50), 1000);
     
     const pool = dbManager.getDatabase();
@@ -713,7 +719,6 @@ router.get('/history', authenticate, async (req, res, next) => {
     
     const history = (await pool.query(query, params)).rows;
     
-    // Parse JSON fields with error handling
     const parsedHistory = history.map(h => {
       let profileSnapshot = {};
       let factors = [];
@@ -753,7 +758,6 @@ router.get('/history', authenticate, async (req, res, next) => {
  */
 router.post('/compare', authenticate, async (req, res, next) => {
   try {
-    // Get current profile and all colleges in list
     const Application = require('../models/Application');
     const applications = await Application.findByUser(req.user.userId);
     
@@ -769,19 +773,18 @@ router.post('/compare', authenticate, async (req, res, next) => {
     }
     
     const collegeIds = applications.map(a => a.college_id);
-    const results = await getChancingResults(req.user.userId,
+    const compareResults = await getChancingResults(req.user.userId,
       (await Promise.all(collegeIds.map(id => College.findById(id)))).filter(c => c)
     );
     
-    if (results.error) {
+    if (compareResults.error) {
       return res.status(400).json({
         success: false,
-        message: results.message,
+        message: compareResults.message,
         code: 'PROFILE_REQUIRED'
       });
     }
     
-    // Get previous history entries for comparison
     const pool = dbManager.getDatabase();
     
     const historyRows = (await pool.query(
@@ -793,7 +796,7 @@ router.post('/compare', authenticate, async (req, res, next) => {
     )).rows;
     const historyByCollege = Object.fromEntries(historyRows.map(h => [h.college_id, h]));
 
-    const comparison = results.results.map(r => {
+    const comparison = compareResults.results.map(r => {
       const lastHistory = historyByCollege[r.college.id];
       const oldTier = lastHistory?.category === 'safety' ? 'Safety'
         : lastHistory?.category === 'target' ? 'Match'
@@ -840,12 +843,14 @@ router.post('/compare', authenticate, async (req, res, next) => {
 /**
  * GET /api/chancing/:collegeId/cds
  * Get CDS-based chancing for a specific college
+ *
+ * NOTE (schema): Queries `college_cds_data` and `admitted_student_samples`.
+ * Verify both tables exist in your DB / migration files.
  */
 router.get('/:collegeId/cds', authenticate, async (req, res, next) => {
   try {
     const { collegeId } = req.params;
     
-    // Get student profile
     const profile = await StudentProfile.getCompleteProfile(req.user.userId);
     
     if (!profile) {
@@ -856,7 +861,6 @@ router.get('/:collegeId/cds', authenticate, async (req, res, next) => {
       });
     }
     
-    // Get college
     const college = await College.findById(collegeId);
     
     if (!college) {
@@ -866,14 +870,13 @@ router.get('/:collegeId/cds', authenticate, async (req, res, next) => {
       });
     }
     
-    // Get CDS data for this college
     const pool = dbManager.getDatabase();
     const cdsData = (await pool.query(
       `SELECT * FROM college_cds_data WHERE college_id = $1`,
       [collegeId]
     )).rows[0];
     
-    // Get admitted student samples
+    // NOTE: admitted_student_samples — verify table exists
     const samples = (await pool.query(
       `SELECT * FROM admitted_student_samples 
       WHERE college_id = $1 
@@ -882,10 +885,8 @@ router.get('/:collegeId/cds', authenticate, async (req, res, next) => {
       [collegeId]
     )).rows;
     
-    // Calculate CDS-based chance using consolidated service
     const chancing = await consolidatedChancingService.calculateChance(profile, college, { preferCDS: true });
     
-    // Comparison with admitted samples (null since getAdmittedSampleComparison removed with deprecated import)
     const comparison = null;
     
     res.json({
@@ -926,6 +927,8 @@ router.get('/:collegeId/cds', authenticate, async (req, res, next) => {
 /**
  * GET /api/chancing/:collegeId/admitted-samples
  * Get admitted student samples for comparison
+ *
+ * NOTE (schema): Queries `admitted_student_samples` — verify table exists.
  */
 router.get('/:collegeId/admitted-samples', authenticate, async (req, res, next) => {
   try {
@@ -933,7 +936,6 @@ router.get('/:collegeId/admitted-samples', authenticate, async (req, res, next) 
     
     const pool = dbManager.getDatabase();
     
-    // Get admitted student samples
     const samples = (await pool.query(
       `SELECT * FROM admitted_student_samples 
       WHERE college_id = $1 
@@ -942,7 +944,6 @@ router.get('/:collegeId/admitted-samples', authenticate, async (req, res, next) 
       [collegeId]
     )).rows;
     
-    // Get college info
     const college = await College.findById(collegeId);
     
     res.json({
@@ -1062,10 +1063,6 @@ router.get('/region/:region', authenticate, async (req, res, next) => {
 // CHANCING ENGINE STATUS
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * GET /api/chancing/ml/status
- * Returns deterministic engine status (no external ML service).
- */
 router.get('/ml/status', authenticate, async (req, res) => {
   res.json({
     success: true,
@@ -1077,10 +1074,6 @@ router.get('/ml/status', authenticate, async (req, res) => {
   });
 });
 
-/**
- * GET /api/chancing/ml/models
- * Returns deterministic model description.
- */
 router.get('/ml/models', authenticate, async (req, res) => {
   res.json({
     success: true,
@@ -1091,10 +1084,6 @@ router.get('/ml/models', authenticate, async (req, res) => {
   });
 });
 
-/**
- * GET /api/chancing/ml/model/:collegeId
- * Returns per-college model info using the deterministic engine.
- */
 router.get('/ml/model/:collegeId', authenticate, async (req, res) => {
   res.json({
     success: true,
@@ -1105,10 +1094,6 @@ router.get('/ml/model/:collegeId', authenticate, async (req, res) => {
   });
 });
 
-/**
- * POST /api/chancing/ml/batch
- * Batch chancing using deterministic engine.
- */
 router.post('/ml/batch', authenticate, async (req, res, next) => {
   try {
     const { collegeIds } = req.body;
@@ -1135,6 +1120,11 @@ router.post('/ml/batch', authenticate, async (req, res, next) => {
 /**
  * POST /api/chancing/outcome
  * Submit admission outcome for Brier Score tracking.
+ *
+ * NOTE (schema): The INSERT into prediction_logs uses ON CONFLICT (user_id, college_id).
+ * This requires a UNIQUE index on (user_id, college_id) in prediction_logs.
+ * If missing, the query will throw: "there is no unique or exclusion constraint matching the ON CONFLICT specification".
+ * Migration to add it: CREATE UNIQUE INDEX IF NOT EXISTS prediction_logs_user_college_uidx ON prediction_logs(user_id, college_id);
  */
 router.post('/outcome', authenticate, async (req, res, next) => {
   try {
@@ -1161,7 +1151,6 @@ router.post('/outcome', authenticate, async (req, res, next) => {
       });
     }
     
-    // Get user's profile
     const profile = await StudentProfile.getCompleteProfile(userId);
     if (!profile) {
       return res.status(400).json({
@@ -1170,7 +1159,6 @@ router.post('/outcome', authenticate, async (req, res, next) => {
       });
     }
     
-    // Get college
     const college = await College.findById(collegeId);
     if (!college) {
       return res.status(404).json({
@@ -1181,14 +1169,12 @@ router.post('/outcome', authenticate, async (req, res, next) => {
     
     const pool = dbManager.getDatabase();
     
-    // Count activity tiers
     const activities = profile.activities || [];
     const tier1Count = activities.filter(a => a.tier_rating === 1).length;
     const tier2Count = activities.filter(a => a.tier_rating === 2).length;
     const tier3Count = activities.filter(a => a.tier_rating === 3 || a.tier_rating === 4).length;
     
-    // Insert training data with high confidence (user-verified)
-    const result = await pool.query(
+    const outcomeResult = await pool.query(
       `INSERT INTO ml_training_data (
         student_id, college_id, gpa, sat_total, act_composite,
         class_rank_percentile, num_ap_courses, activity_tier_1_count,
@@ -1221,7 +1207,7 @@ router.post('/outcome', authenticate, async (req, res, next) => {
       ]
     );
     
-    const trainingDataId = result.rows[0].id;
+    const trainingDataId = outcomeResult.rows[0].id;
     
     // Write to prediction_logs for Brier Score tracking
     try {
@@ -1245,10 +1231,10 @@ router.post('/outcome', authenticate, async (req, res, next) => {
       await pool.query(
         `INSERT INTO user_outcome_contributions (user_id, training_data_id, college_id, decision, points_awarded)
         VALUES ($1, $2, $3, $4, $5)`,
+        // FIX #1 (usage): OUTCOME_CONTRIBUTION_POINTS is now defined at the top of this file
         [userId, trainingDataId, collegeId, decision, OUTCOME_CONTRIBUTION_POINTS]
       );
       
-      // Update or insert user stats
       await pool.query(
         `INSERT INTO user_ml_stats (user_id, total_contributions, verified_contributions, total_points, last_contribution_at)
         VALUES ($1, 1, 1, $2, NOW())
@@ -1261,7 +1247,6 @@ router.post('/outcome', authenticate, async (req, res, next) => {
         [userId, OUTCOME_CONTRIBUTION_POINTS, OUTCOME_CONTRIBUTION_POINTS]
       );
     } catch (statsError) {
-      // Non-critical - contribution tracking is optional
       logger.debug('Stats tracking failed:', statsError.message);
     }
     
@@ -1272,6 +1257,7 @@ router.post('/outcome', authenticate, async (req, res, next) => {
       message: 'Thank you for contributing! Your outcome helps improve predictions for everyone.',
       data: {
         trainingDataId: trainingDataId,
+        // FIX #1 (usage): OUTCOME_CONTRIBUTION_POINTS is now defined at the top of this file
         pointsEarned: OUTCOME_CONTRIBUTION_POINTS,
         decision: decision
       }
@@ -1318,7 +1304,6 @@ router.get('/contribution-stats', authenticate, async (req, res, next) => {
       });
     }
     
-    // Calculate rank and next rank
     const ranks = [
       { name: 'newcomer', minPoints: 0 },
       { name: 'contributor', minPoints: 10 },
@@ -1362,13 +1347,14 @@ router.get('/contribution-stats', authenticate, async (req, res, next) => {
 /**
  * GET /api/chancing/ml/data-needs
  * Get colleges that need more data for ML training
+ *
+ * NOTE (schema): Queries `colleges_full` — verify table name matches your DB.
  */
 router.get('/ml/data-needs', authenticate, async (req, res, next) => {
   try {
     const pool = dbManager.getDatabase();
-    const minSamples = 30;  // Minimum samples needed for training
+    const minSamples = 30;
     
-    // Get colleges with some data but not enough for training
     const collegesNeedingData = (await pool.query(
       `SELECT 
         t.college_id,
@@ -1402,15 +1388,13 @@ router.get('/ml/data-needs', authenticate, async (req, res, next) => {
 
 /**
  * GET /api/chancing/brier-score
- * Compute Brier Score for this user's predictions (requires outcome submissions).
- * Brier Score = mean((p_i - o_i)^2) where p_i = predicted probability, o_i = actual outcome (0/1).
- * Lower is better; 0 = perfect, 0.25 = no-skill.
+ * Compute Brier Score for this user's predictions.
+ * Brier Score = mean((p_i - o_i)^2). Lower is better; 0 = perfect, 0.25 = no-skill.
  */
 router.get('/brier-score', authenticate, async (req, res, next) => {
   try {
     const pool = dbManager.getDatabase();
 
-    // Join prediction_logs with ml_training_data (user outcomes) to get paired predictions
     const rows = (await pool.query(
       `SELECT pl.predicted_probability, pl.actual_outcome
        FROM prediction_logs pl
