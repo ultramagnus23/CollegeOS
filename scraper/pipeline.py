@@ -321,6 +321,75 @@ def log_run_end(conn, run_id: int, rows_upserted: int, status: str, error: Optio
         )
 
 
+def log_execution_history_start(conn, scraper_name: str) -> Optional[int]:
+    """Insert canonical.scraper_execution_history start row."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO canonical.scraper_execution_history
+                  (scraper_name, started_at, success, diagnostics)
+                VALUES (%s, NOW(), false, '{}'::jsonb)
+                RETURNING id
+                """,
+                (scraper_name,),
+            )
+            row = cur.fetchone()
+            return int(row[0]) if row else None
+    except Exception:
+        return None
+
+
+def log_execution_history_end(
+    conn,
+    execution_id: Optional[int],
+    *,
+    rows_inserted: int,
+    rows_updated: int,
+    rows_skipped: int,
+    duplicates_detected: int,
+    schema_mismatches: int,
+    stale_records_detected: int,
+    success: bool,
+    failure_reason: Optional[str],
+    diagnostics: dict,
+) -> None:
+    if execution_id is None:
+        return
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE canonical.scraper_execution_history
+               SET finished_at = NOW(),
+                   rows_inserted = %s,
+                   rows_updated = %s,
+                   rows_skipped = %s,
+                   duplicates_detected = %s,
+                   runtime_ms = GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (NOW() - started_at)) * 1000)::bigint),
+                   success = %s,
+                   failure_reason = %s,
+                   failure_category = %s,
+                   schema_mismatches = %s,
+                   stale_records_detected = %s,
+                   diagnostics = %s::jsonb
+             WHERE id = %s
+            """,
+            (
+                rows_inserted,
+                rows_updated,
+                rows_skipped,
+                duplicates_detected,
+                success,
+                failure_reason,
+                None if success else "pipeline_error",
+                schema_mismatches,
+                stale_records_detected,
+                json.dumps(diagnostics),
+                execution_id,
+            ),
+        )
+
+
 def find_college_id(name: str, db_lookup: dict[str, int]) -> Optional[int]:
     """
     Find the DB id for a college by normalised name.
@@ -600,6 +669,8 @@ def main() -> int:
     diagnostics_dir = Path(os.environ.get("SCRAPER_DIAGNOSTICS_DIR", "scraper_diagnostics"))
     ensure_pipeline_diagnostics(diagnostics_dir)
     started_at = time.time()
+    dry_run = os.environ.get("SCRAPER_DRY_RUN", "0").strip().lower() in {"1", "true", "yes"}
+    resume_from = max(0, int(os.environ.get("SCRAPER_RESUME_FROM", "0")))
 
     db_url = os.environ.get("SUPABASE_DB_URL", "") or os.environ.get("DATABASE_URL", "")
     if not db_url:
@@ -678,6 +749,7 @@ def main() -> int:
     schema_errors: list[dict] = []
     failed_colleges: list[dict] = []
     run_id: Optional[int] = None
+    execution_history_id: Optional[int] = None
     current_year = int(os.environ.get("PIPELINE_YEAR", "2025"))
     admissions_plan: UpsertPlan | None = None
     college_plan: UpsertPlan | None = None
@@ -685,6 +757,7 @@ def main() -> int:
     try:
         conn = _get_connection(db_url)
         run_id = log_run_start(conn, "daily-data-refresh")
+        execution_history_id = log_execution_history_start(conn, "daily-data-refresh")
         conn.commit()
         college_plan = _build_college_upsert_plan(conn)
         try:
@@ -738,7 +811,10 @@ def main() -> int:
             try:
                 if college_plan is None:
                     raise SchemaError("college upsert plan is unavailable")
-                ok = upsert_college(conn, college_id, record, college_plan)
+                if dry_run:
+                    ok = True
+                else:
+                    ok = upsert_college(conn, college_id, record, college_plan)
                 if ok:
                     admissions_ok = True
                     if admissions_plan is not None:
@@ -814,6 +890,25 @@ def main() -> int:
         if run_id is not None:
             status = "success" if rows_updated >= MIN_SUCCESS_ROWS else "partial"
             log_run_end(conn, run_id, rows_updated, status)
+            log_execution_history_end(
+                conn,
+                execution_history_id,
+                rows_inserted=rows_updated,
+                rows_updated=rows_updated,
+                rows_skipped=rows_skipped_no_match + rows_skipped_no_data + rows_skipped_error,
+                duplicates_detected=0,
+                schema_mismatches=len(schema_errors),
+                stale_records_detected=0,
+                success=status in {"success", "partial"},
+                failure_reason=None,
+                diagnostics={
+                    "dry_run": dry_run,
+                    "resume_from": resume_from,
+                    "rows_skipped_no_match": rows_skipped_no_match,
+                    "rows_skipped_no_data": rows_skipped_no_data,
+                    "rows_skipped_error": rows_skipped_error,
+                },
+            )
             conn.commit()
 
     except Exception as exc:
@@ -823,6 +918,19 @@ def main() -> int:
             if run_id is not None:
                 try:
                     log_run_end(conn, run_id, rows_updated, "failed", str(exc))
+                    log_execution_history_end(
+                        conn,
+                        execution_history_id,
+                        rows_inserted=rows_updated,
+                        rows_updated=rows_updated,
+                        rows_skipped=rows_skipped_no_match + rows_skipped_no_data + rows_skipped_error,
+                        duplicates_detected=0,
+                        schema_mismatches=len(schema_errors),
+                        stale_records_detected=0,
+                        success=False,
+                        failure_reason=str(exc),
+                        diagnostics={"dry_run": dry_run, "resume_from": resume_from},
+                    )
                     conn.commit()
                 except Exception:
                     conn.rollback()
@@ -875,6 +983,8 @@ def main() -> int:
         "retry_count": 0,
         "duration_seconds": int(time.time() - started_at),
         "threshold": MIN_SUCCESS_ROWS,
+        "dry_run": dry_run,
+        "resume_from": resume_from,
     }
     _write_json(diagnostics_dir / "failed_colleges.json", failed_colleges)
     _write_json(diagnostics_dir / "stale_colleges.json", [])

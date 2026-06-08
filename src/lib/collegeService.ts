@@ -12,6 +12,8 @@ type CanonicalId = string | number;
 const PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 const CANONICAL_DEBUG = import.meta.env.DEV || import.meta.env.VITE_CANONICAL_DEBUG === '1';
+const DETAIL_CACHE_TTL_MS = 5 * 60 * 1000;
+const detailCache = new Map<string, { expiresAt: number; value: CollegeRecord | null }>();
 
 type CanonicalCardRow = FrontendCollegeCard;
 
@@ -259,25 +261,58 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
   });
 }
 
-export async function getCollegeById(id: CanonicalId): Promise<CollegeRecord | null> {
+export async function getCollegeById(id: CanonicalId, sections?: CollegeDetailSection[]): Promise<CollegeRecord | null> {
   const client = requireClient();
   return timed('getCollegeById', async () => {
     const institutionId = await resolveInstitutionId(id);
     if (!institutionId) return null;
+    const allSections: CollegeDetailSection[] = [
+      'institution', 'admissions', 'financials', 'outcomes', 'deadlines', 'requirements',
+      'rankings', 'demographics', 'campus_life', 'programs', 'completeness', 'quality_scores',
+    ];
+    const requestedSections = sections && sections.length > 0
+      ? [...new Set(['institution', ...sections])]
+      : allSections;
+    const cacheKey = `${institutionId}:${requestedSections.join(',')}`;
+    const cached = detailCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
 
+    const include = (section: CollegeDetailSection) => requestedSections.includes(section);
     const [institutionRes, admissionsRes, financialsRes, outcomesRes, deadlinesRes, requirementsRes, rankingsRes, demographicsRes, campusLifeRes, programsRes, completenessRes, qualityRes] = await Promise.all([
-      client.schema('canonical').from('institutions').select('id, canonical_name, normalized_name, slug, aliases, country_code, region_code, state_region, city, latitude, longitude, institution_type, control_type, established_year, website, logo_url, canonical_external_ids, metadata, updated_at').eq('id', institutionId as string).maybeSingle(),
-      client.schema('canonical').from('institution_admissions').select('institution_id, data_year, acceptance_rate, yield_rate, sat_25, sat_50, sat_75, act_25, act_50, act_75, test_optional, application_volume, admit_volume, enrollment_volume').eq('institution_id', institutionId as string).order('data_year', { ascending: false, nullsFirst: false }).limit(1),
-      client.schema('canonical').from('institution_financials').select('institution_id, data_year, tuition_in_state, tuition_out_state, tuition_international, cost_of_attendance, avg_financial_aid, avg_debt, percent_receiving_aid, merit_scholarship_flag, need_blind_flag, net_price_low_income, net_price_mid_income, net_price_high_income').eq('institution_id', institutionId as string).order('data_year', { ascending: false, nullsFirst: false }).limit(1),
-      client.schema('canonical').from('institution_outcomes').select('institution_id, data_year, graduation_rate_4yr, graduation_rate_6yr, retention_rate, employment_rate, median_start_salary, median_mid_career_salary, grad_school_rate').eq('institution_id', institutionId as string).order('data_year', { ascending: false, nullsFirst: false }).limit(1),
-      client.schema('canonical').from('institution_deadlines').select('deadline_type, deadline_date, notification_date, is_binding, cycle_year').eq('institution_id', institutionId as string).order('cycle_year', { ascending: false, nullsFirst: false }),
-      client.schema('canonical').from('institution_requirements').select('requirement_category, requirement_name, requirement_value, requirement_payload').eq('institution_id', institutionId as string),
-      client.schema('canonical').from('institution_rankings').select('ranking_year, ranking_body, national_rank, global_rank, subject_rank, ranking_score').eq('institution_id', institutionId as string).order('ranking_year', { ascending: false, nullsFirst: false }),
-      client.schema('canonical').from('institution_demographics').select('institution_id, data_year, percent_international, gender_ratio, ethnic_distribution, percent_first_gen').eq('institution_id', institutionId as string).order('data_year', { ascending: false, nullsFirst: false }).limit(1),
-      client.schema('canonical').from('institution_campus_life').select('institution_id, housing_guarantee, campus_safety_score, athletics_division, club_count').eq('institution_id', institutionId as string).limit(1),
-      client.schema('canonical').from('institution_programs').select('program_name, degree_type, field_category, enrollment, acceptance_rate').eq('institution_id', institutionId as string).order('program_name', { ascending: true }),
-      client.schema('canonical').from('institution_completeness').select('institution_id, overall_score, section_scores, missing_required_fields').eq('institution_id', institutionId as string).maybeSingle(),
-      client.schema('canonical').from('institution_quality_scores').select('institution_id, freshness_score, final_quality_score, confidence_penalty').eq('institution_id', institutionId as string).maybeSingle(),
+      client.schema('canonical').from('institutions').select(COLLEGE_DETAIL_SECTION_COLUMNS.institution).eq('id', institutionId as string).maybeSingle(),
+      include('admissions')
+        ? client.schema('canonical').from('institution_admissions').select(COLLEGE_DETAIL_SECTION_COLUMNS.admissions).eq('institution_id', institutionId as string).order('data_year', { ascending: false, nullsFirst: false }).limit(1)
+        : Promise.resolve({ data: [] }),
+      include('financials')
+        ? client.schema('canonical').from('institution_financials').select(COLLEGE_DETAIL_SECTION_COLUMNS.financials).eq('institution_id', institutionId as string).order('data_year', { ascending: false, nullsFirst: false }).limit(1)
+        : Promise.resolve({ data: [] }),
+      include('outcomes')
+        ? client.schema('canonical').from('institution_outcomes').select(COLLEGE_DETAIL_SECTION_COLUMNS.outcomes).eq('institution_id', institutionId as string).order('data_year', { ascending: false, nullsFirst: false }).limit(1)
+        : Promise.resolve({ data: [] }),
+      include('deadlines')
+        ? client.schema('canonical').from('institution_deadlines').select(COLLEGE_DETAIL_SECTION_COLUMNS.deadlines).eq('institution_id', institutionId as string).order('cycle_year', { ascending: false, nullsFirst: false })
+        : Promise.resolve({ data: [] }),
+      include('requirements')
+        ? client.schema('canonical').from('institution_requirements').select(COLLEGE_DETAIL_SECTION_COLUMNS.requirements).eq('institution_id', institutionId as string)
+        : Promise.resolve({ data: [] }),
+      include('rankings')
+        ? client.schema('canonical').from('institution_rankings').select(COLLEGE_DETAIL_SECTION_COLUMNS.rankings).eq('institution_id', institutionId as string).order('ranking_year', { ascending: false, nullsFirst: false })
+        : Promise.resolve({ data: [] }),
+      include('demographics')
+        ? client.schema('canonical').from('institution_demographics').select(COLLEGE_DETAIL_SECTION_COLUMNS.demographics).eq('institution_id', institutionId as string).order('data_year', { ascending: false, nullsFirst: false }).limit(1)
+        : Promise.resolve({ data: [] }),
+      include('campus_life')
+        ? client.schema('canonical').from('institution_campus_life').select(COLLEGE_DETAIL_SECTION_COLUMNS.campus_life).eq('institution_id', institutionId as string).limit(1)
+        : Promise.resolve({ data: [] }),
+      include('programs')
+        ? client.schema('canonical').from('institution_programs').select(COLLEGE_DETAIL_SECTION_COLUMNS.programs).eq('institution_id', institutionId as string).order('program_name', { ascending: true })
+        : Promise.resolve({ data: [] }),
+      include('completeness')
+        ? client.schema('canonical').from('institution_completeness').select(COLLEGE_DETAIL_SECTION_COLUMNS.completeness).eq('institution_id', institutionId as string).maybeSingle()
+        : Promise.resolve({ data: null }),
+      include('quality_scores')
+        ? client.schema('canonical').from('institution_quality_scores').select(COLLEGE_DETAIL_SECTION_COLUMNS.quality_scores).eq('institution_id', institutionId as string).maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
     if (institutionRes.error) throw institutionRes.error;
@@ -309,6 +344,7 @@ export async function getCollegeById(id: CanonicalId): Promise<CollegeRecord | n
       quality_score: (detail.quality_scores as Record<string, unknown>)?.final_quality_score ?? null,
     });
 
+    detailCache.set(cacheKey, { value: detail, expiresAt: Date.now() + DETAIL_CACHE_TTL_MS });
     return detail;
   });
 }

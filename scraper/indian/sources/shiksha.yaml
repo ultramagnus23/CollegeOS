@@ -1,0 +1,132 @@
+source_name: shiksha
+parser_version: india_v1
+allowed_domains:
+  - shiksha.com
+  - careers360.com
+  - collegedunia.com
+selectors:
+  college_name:
+    - "h1"
+    - "[data-test='heading']"
+  website:
+    - "a[href*='http']:contains('Website')"
+  city:
+    - "[data-test='city']"
+  state:
+    - "[data-test='state']"
+  ownership_type:
+    - "[data-test='ownership']"
+  institution_category:
+    - "[data-test='category']"
+  accreditation:
+    - "[data-test='accreditation']"
+  establishment_year:
+    - "[data-test='established']"
+
+  entrance_exams:
+    - "[data-test='exams-accepted'] li"
+    - ".exams-accepted li"
+  cutoff_ranges:
+    - "[data-test='cutoff'] li"
+  eligibility_criteria:
+    - "[data-test='eligibility'] li"
+  application_timelines:
+    - "[data-test='application-dates'] li"
+
+  tuition:
+    - "[data-test='tuition']"
+  hostel_fees:
+    - "[data-test='hostel-fees']"
+  mess_fees:
+    - "[data-test='mess-fees']"
+  scholarships:
+    - "[data-test='scholarships'] li"
+
+  median_package:
+    - "[data-test='median-package']"
+  average_package:
+    - "[data-test='average-package']"
+  highest_package:
+    - "[data-test='highest-package']"
+  placement_rate:
+    - "[data-test='placement-rate']"
+  top_recruiters:
+    - "[data-test='top-recruiters'] li"
+
+  degrees_offered:
+    - "[data-test='degrees-offered'] li"
+  programs:
+    - "[data-test='programs'] li"
+  duration:
+    - "[data-test='duration']"
+
+  nirf:
+    - "[data-test='nirf-rank']"
+  qs_india:
+    - "[data-test='qs-india-rank']"
+  times_india:
+    - "[data-test='times-india-rank']"
+  outlook:
+    - "[data-test='outlook-rank']"
+  india_today:
+    - "[data-test='india-today-rank']"
+
+  application_opens:
+    - "[data-test='application-open']"
+  application_closes:
+    - "[data-test='application-close']"
+  scholarship_deadlines:
+    - "[data-test='scholarship-deadline']"
+
+  sat_acceptance:
+    - "[data-test='sat-acceptance']"
+  act_acceptance:
+    - "[data-test='act-acceptance']"
+  ap_acceptance:
+    - "[data-test='ap-acceptance']"
+  ib_acceptance:
+    - "[data-test='ib-acceptance']"
+  a_level_acceptance:
+    - "[data-test='a-level-acceptance']"
+  english_proficiency:
+    - "[data-test='english-proficiency']"
+
+extraction_rules:
+  legal_policy:
+    allow_structured_facts_only: true
+    disallow_editorial_content: true
+    disallow_reviews: true
+    disallow_user_comments: true
+  output_fields:
+    - identity
+    - admissions
+    - fees
+    - placements
+    - academics
+    - rankings
+    - deadlines
+    - international
+
+pagination_rules:
+  enabled: true
+  max_pages: 20
+  strategy: "next_link"
+  selector: "a[rel='next']"
+
+rate_limit:
+  request_delay_seconds: 0.35
+  timeout_seconds: 25
+
+retry_strategy:
+  max_attempts: 3
+  backoff_seconds: 1.5
+  circuit_breaker_threshold: 5
+  circuit_breaker_cooldown_seconds: 30
+
+confidence_weighting:
+  default: 0.7
+  official_domain_bonus: 0.2
+  fresh_data_bonus: 0.1
+
+stale_detection:
+  stale_days: 45

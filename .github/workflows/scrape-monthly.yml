@@ -27,6 +27,28 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
+      - name: Workflow preflight diagnostics
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          mkdir -p workflow-diagnostics
+          {
+            echo "workflow=scrape-monthly"
+            echo "run_id=${{ github.run_id }}"
+            echo "sha=${{ github.sha }}"
+            echo "python=$(python --version 2>&1)"
+          } > workflow-diagnostics/env-snapshot.txt
+          [ -n "${SUPABASE_DB_URL:-}" ] || { echo "::error title=MissingSecret::SUPABASE_DB_URL not configured"; exit 1; }
+          test -f scrapers/run_deadline_refresh.py || { echo "::error title=MissingScript::scrapers/run_deadline_refresh.py not found"; exit 1; }
+          python - <<'PY'
+          import json, os
+          checks = {"supabase_db_url_present": bool(os.getenv("SUPABASE_DB_URL")), "script_exists": True}
+          open("workflow-diagnostics/preflight-checks.json", "w", encoding="utf-8").write(json.dumps(checks, indent=2))
+          PY
+          echo "### Monthly scraper preflight" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ✅ secret + script checks passed" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Install scraper dependencies
         run: |
           python -m pip install --upgrade pip
@@ -152,6 +174,14 @@ jobs:
           path: scraper_diagnostics.tar.gz
           if-no-files-found: error
           compression-level: 9
+
+      - name: Upload workflow diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: scrape-monthly-workflow-diagnostics
+          path: workflow-diagnostics/
+          if-no-files-found: warn
 
       - name: Enforce fatal-only failure semantics
         if: always()
