@@ -10,7 +10,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BA
 
 // ==================== DEBUG LOGGING UTILITIES ====================
 // Debug mode is enabled in development, disabled in production
-const DEBUG_MODE = process.env.NODE_ENV !== 'production';
+const DEBUG_MODE = import.meta.env.DEV;
 
 function generateRequestId(): string {
   return `req_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;

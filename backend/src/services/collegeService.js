@@ -330,18 +330,20 @@ class CollegeService {
       )).rows[0];
 
       if (!data) {
+        const college = await College.findById(collegeId);
         return {
           available: false,
           message: 'Data not available. Please visit the official website.',
-          college: College.findById(collegeId)
+          college,
         };
       }
 
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        const college = await College.findById(collegeId);
         return {
           available: false,
           message: 'Data is outdated. Please visit the official website.',
-          college: College.findById(collegeId),
+          college,
           lastUpdated: data.scraped_at
         };
       }

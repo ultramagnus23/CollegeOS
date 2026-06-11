@@ -155,8 +155,8 @@ class User {
     };
 
     const parsedBudget = data?.max_budget_per_year != null
-      ? Number(data.max_budget_per_year)
-      : (data?.budget != null ? Number(data.budget) : parseBudgetRange(data?.budgetRange));
+      ? Math.round(Number(data.max_budget_per_year))
+      : (data?.budget != null ? Math.round(Number(data.budget)) : parseBudgetRange(data?.budgetRange));
     const maxBudgetPerYear = Number.isFinite(parsedBudget) ? parsedBudget : null;
     const intendedMajors = Array.isArray(data?.intended_majors) ? data.intended_majors : [];
     const intendedMajor = data?.intended_major ?? intendedMajors[0] ?? null;
@@ -164,6 +164,7 @@ class User {
     const graduationYear = data?.graduation_year != null ? Number(data.graduation_year) : null;
     const parsedGraduationYear = Number.isFinite(graduationYear) ? graduationYear : null;
     const preferredLocation = data?.preferred_location ?? data?.locationPreference ?? null;
+    const normalizedPreferredLocation = preferredLocation ? String(preferredLocation).trim() : null;
     const needFinancialAidRaw = data?.need_financial_aid ?? (maxBudgetPerYear === 0 ? true : null);
     const canTakeLoanRaw = data?.can_take_loan ?? null;
     const needFinancialAid = this.coerceBooleanLikeForColumn(needFinancialAidRaw, columnTypes.need_financial_aid);
@@ -246,10 +247,15 @@ class User {
     const user = userRows[0];
     if (!user) return null;
 
-    // Parse JSON columns stored on users table
-    const testStatus  = user.test_status        ? JSON.parse(user.test_status)        : {};
-    const targetCountries = user.target_countries ? JSON.parse(user.target_countries)  : [];
-    const intendedMajors  = user.intended_majors  ? JSON.parse(user.intended_majors)   : [];
+    // Parse JSON columns stored on users table with safe fallbacks
+    const _parseJson = (v, def = []) => {
+      if (!v) return def;
+      try { return typeof v === 'string' ? JSON.parse(v) : v; } catch { return def; }
+    };
+
+    const testStatus  = _parseJson(user.test_status, {});
+    const targetCountries = _parseJson(user.target_countries, []);
+    const intendedMajors  = _parseJson(user.intended_majors, []);
 
     // Extended profile row — may not exist yet for new users
     const { rows: spRows } = await pool.query(
@@ -257,11 +263,6 @@ class User {
       [userId]
     );
     const sp = spRows[0] || {};
-
-    const _parseJson = (v, def = []) => {
-      if (!v) return def;
-      try { return typeof v === 'string' ? JSON.parse(v) : v; } catch { return def; }
-    };
 
     // Merge into a flat object that eligibilityChecker and recommendationEngine
     // both understand.  We expose both the flat keys (used by eligibilityChecker)

@@ -27,5 +27,19 @@ const validate = (schema) => {
   };
 };
 
-module.exports = { validate };
+/**
+ * Strictly parse an integer from a string.
+ * Returns null if the string contains any non-digit characters,
+ * preventing "123abc" → 123 or "123 " → 123 coercion bugs.
+ */
+function strictInt(value, fallback = null) {
+  if (value == null) return fallback;
+  const str = String(value).trim();
+  if (!/^\d+$/.test(str)) return fallback;
+  const num = Number(str);
+  if (!Number.isFinite(num) || num < 0) return fallback;
+  return num;
+}
+
+module.exports = { validate, strictInt };
 
