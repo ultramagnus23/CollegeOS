@@ -40,7 +40,7 @@ const onboardingSchema = z.object({
   })).max(30).default([]),
   grade_level: nullableString(50),
   graduation_year: nullableInteger(2020, 2100),
-  preferred_location: nullableString(120),
+  preferred_location: z.union([z.string().trim().max(120), z.array(z.string().trim().min(1).max(120))]).nullable().optional(),
   gender: nullableString(50),
 }).strict();
 

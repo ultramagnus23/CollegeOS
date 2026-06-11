@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const dbManager = require('../config/database');
+const logger = require('../utils/logger');
 
 let _usersColumnTypeCache = null;
 
@@ -164,27 +165,59 @@ class User {
     const graduationYear = data?.graduation_year != null ? Number(data.graduation_year) : null;
     const parsedGraduationYear = Number.isFinite(graduationYear) ? graduationYear : null;
     const preferredLocation = data?.preferred_location ?? data?.locationPreference ?? null;
-    const normalizedPreferredLocation = preferredLocation ? String(preferredLocation).trim() : null;
+    const normalizedPreferredLocation = preferredLocation
+      ? (Array.isArray(preferredLocation) ? preferredLocation.map(v => String(v).trim()).filter(Boolean) : [String(preferredLocation).trim()])
+      : null;
     const needFinancialAidRaw = data?.need_financial_aid ?? (maxBudgetPerYear === 0 ? true : null);
     const canTakeLoanRaw = data?.can_take_loan ?? null;
     const needFinancialAid = this.coerceBooleanLikeForColumn(needFinancialAidRaw, columnTypes.need_financial_aid);
     const canTakeLoan = this.coerceBooleanLikeForColumn(canTakeLoanRaw, columnTypes.can_take_loan);
 
+    const writePayload = {
+      target_countries: data.target_countries || [],
+      intended_majors: intendedMajors,
+      test_status: data.test_status || {},
+      language_preferences: data.language_preferences || [],
+      gpa: normalizedGpa,
+      sat_score: satScore != null ? Number(satScore) : null,
+      act_score: actScore != null ? Number(actScore) : null,
+      budget: maxBudgetPerYear,
+      max_budget_per_year: maxBudgetPerYear,
+      intended_major: intendedMajor,
+      career_goals: data?.career_goals ?? data?.careerGoals ?? null,
+      country: data?.country ?? null,
+      need_financial_aid: needFinancialAid,
+      can_take_loan: canTakeLoan,
+      family_income_usd: data?.family_income_usd != null ? Number(data.family_income_usd) : null,
+      grade_level: gradeLevel,
+      graduation_year: parsedGraduationYear,
+      preferred_location: normalizedPreferredLocation,
+    };
+
+    logger.debug('onboarding.pre_db_write', {
+      userId,
+      payloadKeys: Object.keys(writePayload),
+      fieldTypes: Object.fromEntries(
+        Object.entries(writePayload).map(([k, v]) => [k, v == null ? 'null' : Array.isArray(v) ? `array:${v.length}` : typeof v])
+      ),
+      preferred_location: normalizedPreferredLocation,
+      preferred_location_type: normalizedPreferredLocation == null ? 'null' : Array.isArray(normalizedPreferredLocation) ? 'array' : 'string',
+    });
 
     await pool.query(
       `UPDATE users
         SET target_countries    = $1,
-           intended_majors     = $2,
-           test_status         = $3,
-           language_preferences = $4,
-           onboarding_complete = 1,
-           onboarding_completed = TRUE,
-           gpa                 = COALESCE($6, gpa),
-           sat_score           = COALESCE($7, sat_score),
-           act_score           = COALESCE($8, act_score),
-           budget              = COALESCE($9, budget),
-           max_budget_per_year = COALESCE($10, max_budget_per_year),
-           intended_major      = COALESCE($11, intended_major),
+            intended_majors     = $2,
+            test_status         = $3,
+            language_preferences = $4,
+            onboarding_complete = 1,
+            onboarding_completed = TRUE,
+            gpa                 = COALESCE($6, gpa),
+            sat_score           = COALESCE($7, sat_score),
+            act_score           = COALESCE($8, act_score),
+            budget              = COALESCE($9, budget),
+            max_budget_per_year = COALESCE($10, max_budget_per_year),
+            intended_major      = COALESCE($11, intended_major),
             career_goals        = COALESCE($12, career_goals),
             country             = COALESCE($13, country),
             need_financial_aid  = COALESCE($14, need_financial_aid),
@@ -196,26 +229,25 @@ class User {
             updated_at          = NOW()
         WHERE id = $5`,
       [
-        JSON.stringify(data.target_countries || []),
-        JSON.stringify(intendedMajors),
-         JSON.stringify(data.test_status || {}),
-         JSON.stringify(data.language_preferences || []),
-
+        JSON.stringify(writePayload.target_countries),
+        JSON.stringify(writePayload.intended_majors),
+        JSON.stringify(writePayload.test_status),
+        JSON.stringify(writePayload.language_preferences),
         userId,
-        normalizedGpa,
-        satScore != null ? Number(satScore) : null,
-        actScore != null ? Number(actScore) : null,
-        maxBudgetPerYear,
-        maxBudgetPerYear,
-         intendedMajor,
-         data?.career_goals ?? data?.careerGoals ?? null,
-         data?.country ?? null,
-         needFinancialAid,
-         canTakeLoan,
-         data?.family_income_usd != null ? Number(data.family_income_usd) : null,
-         gradeLevel,
-        parsedGraduationYear,
-        normalizedPreferredLocation,
+        writePayload.gpa,
+        writePayload.sat_score,
+        writePayload.act_score,
+        writePayload.budget,
+        writePayload.max_budget_per_year,
+        writePayload.intended_major,
+        writePayload.career_goals,
+        writePayload.country,
+        writePayload.need_financial_aid,
+        writePayload.can_take_loan,
+        writePayload.family_income_usd,
+        writePayload.grade_level,
+        writePayload.graduation_year,
+        writePayload.preferred_location,
       ]
     );
     return this.findById(userId);

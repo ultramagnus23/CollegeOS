@@ -205,7 +205,11 @@ function normalizeOnboardingPayload(rawPayload = {}) {
     ),
     grade_level: safeString(payload.grade_level ?? payload.current_grade, { maxLength: 50 }),
     graduation_year: safeInteger(payload.graduation_year, { min: 2020, max: 2100 }),
-    preferred_location: safeString(payload.preferred_location ?? payload.locationPreference, { maxLength: 120 }),
+    preferred_location: safeArray(
+      payload.preferred_location ?? payload.locationPreference,
+      (value) => safeString(value, { maxLength: 120 }),
+      { maxItems: 10 },
+    ),
     gender: safeString(payload.gender, { maxLength: 50 }),
   };
 
