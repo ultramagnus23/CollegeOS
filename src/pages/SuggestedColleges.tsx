@@ -13,9 +13,14 @@ interface SuggestedCollege {
   id: number;
   name: string;
   location?: string;
+  city?: string;
+  state?: string;
+  country?: string;
   acceptanceRate: number;
   tier: 'Safety' | 'Match' | 'Reach' | 'Extreme Reach';
   matchScore: number;
+  rank?: number;
+  median_sat?: number;
 }
 
 /* ── Design constants ─────────────────────────────────────────────────────── */
@@ -92,6 +97,11 @@ function CollegeCard({
             {([college.city, college.state, college.country].filter(Boolean).join(', ')) && (
               <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', margin: '2px 0 0', fontFamily: "'Inter', system-ui, sans-serif" }}>
                 📍 {[college.city, college.state, college.country].filter(Boolean).join(', ')}
+              </p>
+            )}
+            {college.median_sat != null && (
+              <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', margin: '2px 0 0', fontFamily: "'Inter', system-ui, sans-serif" }}>
+                Median SAT: {college.median_sat}
               </p>
             )}
           </div>

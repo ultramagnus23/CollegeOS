@@ -1,0 +1,119 @@
+# CollegeOS — Session Handoff File
+# Generated: June 2026
+# Purpose: Preserve context for next chat session (token limits approaching)
+
+## Repository
+- URL: github.com/ultramagnus23/CollegeOS
+- Stack: React/TypeScript frontend + Node/Express backend + Supabase/PostgreSQL
+- Working dir: C:\Users\chait\Downloads\CollegeOS\CollegeOS
+
+## COMPLETED TASKS (10 of 23)
+
+### 1. Bug Fixes
+| # | Task | File | Line | Details |
+|---|------|------|------|---------|
+| 1 | Fix ReferenceError: `normalizedPreferredLocation` → `preferredLocation` | `backend/src/models/User.js` | 217 | `PUT /api/auth/onboarding` was crashing because the column name was wrong |
+| 2 | Add `INSERT INTO student_profiles ... ON CONFLICT DO UPDATE` | `backend/src/models/User.js` | after line 217 | Student profile data was silently dropped during onboarding — now upserts |
+| 3 | Fix `rejectUnauthorized: false` → `true` | `backend/src/config/database.js` + `onboarding-smoke.yml` | — | MITM vulnerability for all remote DB connections |
+| 4 | Fix `req.user.id` → `req.user.userId` | `backend/src/routes/scholarships.js` | 177 | JWT middleware sets `userId`, not `id` — getUserTracked route was broken |
+| 5 | Fix match score ×100 display bug | `src/pages/Scholarships.tsx` | 263 | `relevance_score` is already 0–100; `Math.round(score * 100)` was showing 7500% |
+
+### 2. Scholarship Engine Fixes
+| # | Task | File | Line | Details |
+|---|------|------|------|---------|
+| 6 | Fix `handleMatch` response shape | `src/pages/Scholarships.tsx` | 171 | `res.data` is `{ results, excluded, summary }`, not a flat array — now reads `matchResult?.results` with `m.relevance_score` |
+| 7 | Profile normalisation shim in `/match` and `/explain` | `backend/src/routes/scholarships.js` | — | `User.getAcademicProfile` returns flat shape; `scholarshipMatchingService` expects nested `identity/academic/financial` — shim maps: nationality, gender, gpa_4_scale, intended_major, ielts_overall, class_12_percentage, sat_total, degree_level, budget, scholarship_priority, annual_family_income |
+
+### 3. Onboarding Flow Fixes
+| # | Task | File | Line | Details |
+|---|------|------|------|---------|
+| 8 | Pre-populate email from auth user | `src/components/onboarding/OnboardingFlow.tsx` | 100-109 | Sets `email` and `first_name` from `user.email` / `user.user_metadata?.first_name` in useEffect |
+| 9 | Fix `[user]` → `[user?.id]` dependency array | `OnboardingFlow.tsx` | 109 | Object reference causes infinite re-render loop; primitive id is stable |
+| 10 | Fix `budget_max = 0` → `null` for "Need Full Financial Aid" | `OnboardingFlow.tsx` | 45, 200, 228, 263, 289, 301, 313, 323 | `max: null` instead of `max: 0`; all 7 `budget_inr` conversions use `formData.budget_max > 0 ? Math.round(... * 83) : null` |
+| 11 | Remove duplicate `currentStep === 2` block | `OnboardingFlow.tsx` | — | Cleaned up duplicate else-if block |
+
+### 4. Infrastructure / DevOps
+| # | Task | File | Details |
+|---|------|------|---------|
+| 12 | Fix GitHub Actions action versions | 5 workflow files | `checkout@v5→v4`, `setup-node@v5→v4`, `setup-python@v6→v5`, `upload-artifact@v5→v4` |
+| 13 | Fix `env | sort` secret leaks | 3 workflows | Replaced with `sed 's/=.*/=<redacted>/'` to emit keys only, not values |
+| 14 | Add router-level auth+admin middleware | `backend/src/routes/admin.js` | `router.use(authenticate, adminOnly)` — removed per-route duplicates |
+| 15 | Add SQL dump patterns to `.gitignore` | `.gitignore` | `supabase_dump.sql`, `*_dump.sql`, `*.sql.dump` |
+| 16 | Install `eslint-plugin-import` in backend | `backend/eslint.config.js` | Added to plugins and overrides |
+| 17 | Convert 6 JS/JSX files to TypeScript | 6 files | AuthErrorBoundary, authFlow, onboardingContract, recommendationContract, dashboardContract, safePerformance — full typecheck passes clean |
+
+## REMAINING TASKS (13)
+
+### Phase 1 — Critical (1 remaining)
+| # | Task | File | Priority | Details |
+|---|------|------|----------|---------|
+| 3.2 | Wrap all `saveProfile` calls in try/catch with `return` on failure | `OnboardingFlow.tsx` — `nextStep` function | HIGH | Currently bare `await saveProfile(...)` — if any save fails, error is swallowed and step increments anyway. Need try/catch + return on error for all 7 saveProfile calls (lines ~200, 228, 263, 289, 301, 313, 323) |
+
+### Phase 2 — Data Fixes (4 remaining)
+| # | Task | File | Priority | Details |
+|---|------|------|----------|---------|
+| 4.5 | Add column aliases in grants route | `backend/src/routes/grants.js` | HIGH | Add `AS award_amount_inr` and `AS deadline` to SQL SELECT |
+| 4.6 | Add column aliases for gov loans | `backend/src/routes/loans.js` | HIGH | Add `AS bank_name`, `AS interest_rate`, `AS csis_subsidy` |
+| 4.7 | Add column aliases for private loans | `backend/src/routes/loans.js` | HIGH | Add `AS lender_name`, `AS max_amount`, `AS interest_rate_min`, `AS interest_rate_max`, `AS cosigner_required` |
+| 2.1 | Rewrite `GET /suggested` route | `backend/src/routes/colleges.js` | HIGH | Full rewrite: LEFT JOIN LATERAL for tier matching, sigmoid scoring function, tier-balanced selection (1 each from reach/match/safety), return `rank` and `median_sat` |
+
+### Phase 3 — Engine Rewrites (4 remaining)
+| # | Task | File | Priority | Details |
+|---|------|------|----------|---------|
+| 1.6 | ChancingEngine.ts full rewrite | `src/services/ChancingEngine.ts` | HIGH | Current 30-line additive formula → rewrite with: 8-dim feature vector, sigmoid band-placement (undergrad/PG), cosine similarity for extracurricular tiering, logistic regression for final probability, Brier calibration logging |
+| 1.7 | Backend Brier prediction logging | `backend/src/routes/chancing.js` | HIGH | After each chancing calculation, insert into `chancing_predictions` table (student_id, features_json, predicted_prob, actual_admit, brier_score, calculated_at) |
+| 3.5 | handleSubmit sequential failure recovery | `OnboardingFlow.tsx` — `handleSubmit` | MEDIUM | Per-step error messages: if step 3 fails, show error but don't reset steps 1-2; retry only failed step |
+| 3.8 | `curriculum_type` change clears `curriculumData` | `OnboardingFlow.tsx` | MEDIUM | When user switches CBSE/ICSE/IB/State, reset `curriculumData` to avoid stale data |
+| 3.12 | SAT sub-score cross-validation | `OnboardingFlow.tsx` | LOW | Validate Math + EBRW ≈ Total SAT; show warning if discrepancy > 40 points |
+
+### Phase 4 — UI/UX Polish (4 remaining)
+| # | Task | File | Priority | Details |
+|---|------|------|----------|---------|
+| 2.2 | MV health check endpoint | `backend/src/routes/admin.js` | MEDIUM | New GET `/api/admin/mv-health` — checks materialized view freshness, row counts, staleness threshold |
+| 1.5 | Admin Brier score endpoint | `backend/src/routes/admin.js` | MEDIUM | New GET `/api/admin/brier-scores` — returns aggregate Brier score, per-major breakdown, prediction distribution |
+| 4.9 | Auto-run match + eligible/ineligible segmentation | `src/pages/Scholarships.tsx` | MEDIUM | On profile load, auto-trigger match API; segment results into eligible/ineligible buckets with counts |
+| 4.10 | Show `watch_outs` + `net_cost_inr_per_year` | `src/pages/Scholarships.tsx` | LOW | Display from match results: watch_outs (caveats), net_cost_inr_per_year (after scholarship discount) |
+
+### Phase 0 — DB Prep (1 remaining)
+| # | Task | File | Priority | Details |
+|---|------|------|----------|---------|
+| 0 | SQL migrations for new tables | `migrations/` (new file) | MEDIUM | Create `chancing_predictions` table (id, student_id, features_json, predicted_prob, actual_admit, brier_score, calculated_at) + `onboarding_drafts` table (id, user_id, step_data JSONB, created_at, updated_at) |
+
+## CRITICAL CONTEXT (for next session)
+
+### What was confirmed NOT in git
+- `.env` files — safe
+- `supabase_dump.sql` — not in working tree
+- `.gitignore` was updated with SQL dump patterns
+
+### Key architectural decisions
+- Profile normalisation shim in `scholarships.js` bridges flat `User.getAcademicProfile` → nested `scholarshipMatchingService` expected shape
+- Budget conversion: `formData.budget_max > 0 ? Math.round(formData.budget_max * 83) : null` (INR conversion at 83 INR/USD, null for full aid)
+- Dependency array `[user?.id]` (primitive) instead of `[user]` (object reference) prevents infinite re-render
+- `relevance_score` in match results is already 0–100 scale
+- `req.user.userId` set by JWT middleware (not `id`)
+
+### Files that need attention in next session
+1. `OnboardingFlow.tsx` — has duplicate blocks from previous edits; may need `git checkout` restore before further edits
+2. `backend/src/routes/scholarships.js` — profile normalisation shim applied to `/match` and `/explain`
+3. `src/pages/Scholarships.tsx` — handleMatch shape + score display fixed
+4. `backend/src/routes/colleges.js` — needs full `/suggested` rewrite
+5. `backend/src/routes/grants.js` — needs column aliases
+6. `backend/src/routes/loans.js` — needs column aliases for both gov and private routes
+7. `backend/src/routes/admin.js` — needs MV health + Brier endpoints
+8. `backend/src/routes/chancing.js` — needs Brier logging
+9. `src/services/ChancingEngine.ts` — needs full rewrite (currently 30-line additive formula)
+10. `migrations/` — needs new SQL files for `chancing_predictions` and `onboarding_drafts`
+
+### Recommended order for next session
+1. Phase 2.4 (grants/loans column aliases) — 3 quick edits
+2. Phase 3.8 + 3.12 (OnboardingFlow curriculumData + SAT validation) — 2 small edits
+3. Phase 3.5 (handleSubmit sequential recovery) — medium edit
+4. Phase 1.3.2 (saveProfile try/catch) — important but large edit
+5. Phase 2.1 (colleges /suggested rewrite) — major backend change
+6. Phase 2.2 + 1.5 (admin endpoints) — new routes in admin.js
+7. Phase 3.1.7 (Brier logging) — extends existing chancing routes
+8. Phase 3.1.6 (ChancingEngine.ts rewrite) — major frontend rewrite
+9. Phase 2.2.3 (SuggestedColleges frontend) — improvements
+10. Phase 4.9 + 4.10 (Scholarships polish) — UI enhancements
+11. Phase 0 (SQL migrations) — database prep

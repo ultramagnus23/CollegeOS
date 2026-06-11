@@ -34,10 +34,32 @@ router.post('/match', authenticate, async (req, res, next) => {
       });
     }
 
+    // ── Normalise flat User.getAcademicProfile shape into nested structure ──
     const studentProfile = {
       ...rawProfile,
       today_date:      new Date().toISOString().split('T')[0],
       live_usd_to_inr: liveRate,
+      identity: {
+        nationality: rawProfile.country || rawProfile.citizenship || 'Indian',
+        gender:      rawProfile.gender || null,
+      },
+      academic: {
+        ...(rawProfile.academic || {}),
+        gpa_4_scale:         rawProfile.academic?.gpa            ?? null,
+        intended_major:      rawProfile.preferences?.intended_major ?? rawProfile.preferred_majors?.[0] ?? null,
+        ielts_overall:       rawProfile.ielts                     ?? rawProfile.academic?.ielts ?? null,
+        class_12_percentage: rawProfile.academic?.percentage      ?? rawProfile.board_exam_percentage ?? null,
+        sat_total:           rawProfile.sat_score                 ?? null,
+        degree_level:        'undergraduate',
+      },
+      financial: {
+        ...(rawProfile.financial || {}),
+        max_budget_per_year_inr: rawProfile.financial?.max_budget_per_year
+          ? Math.round(rawProfile.financial.max_budget_per_year * liveRate)
+          : rawProfile.budget_inr ?? null,
+        scholarship_priority:     rawProfile.financial?.scholarship_priority ?? 'merit',
+        annual_family_income_inr: rawProfile.financial?.annual_family_income_inr ?? null,
+      },
     };
 
     const scholarships = await Scholarship.findAllForMatching(500);
@@ -98,6 +120,27 @@ router.post('/explain', authenticate, async (req, res, next) => {
       ...rawProfile,
       today_date:      new Date().toISOString().split('T')[0],
       live_usd_to_inr: liveRate,
+      identity: {
+        nationality: rawProfile.country || rawProfile.citizenship || 'Indian',
+        gender:      rawProfile.gender || null,
+      },
+      academic: {
+        ...(rawProfile.academic || {}),
+        gpa_4_scale:         rawProfile.academic?.gpa            ?? null,
+        intended_major:      rawProfile.preferences?.intended_major ?? rawProfile.preferred_majors?.[0] ?? null,
+        ielts_overall:       rawProfile.ielts                     ?? rawProfile.academic?.ielts ?? null,
+        class_12_percentage: rawProfile.academic?.percentage      ?? rawProfile.board_exam_percentage ?? null,
+        sat_total:           rawProfile.sat_score                 ?? null,
+        degree_level:        'undergraduate',
+      },
+      financial: {
+        ...(rawProfile.financial || {}),
+        max_budget_per_year_inr: rawProfile.financial?.max_budget_per_year
+          ? Math.round(rawProfile.financial.max_budget_per_year * liveRate)
+          : rawProfile.budget_inr ?? null,
+        scholarship_priority:     rawProfile.financial?.scholarship_priority ?? 'merit',
+        annual_family_income_inr: rawProfile.financial?.annual_family_income_inr ?? null,
+      },
     };
 
     const result = explainMatch(scholarship, studentProfile);
@@ -174,7 +217,7 @@ router.use('/user', authenticate);
 router.get('/user/tracked', async (req, res, next) => {
   try {
     const { status } = req.query;
-    const scholarships = await Scholarship.getUserScholarships(req.user.id, status);
+    const scholarships = await Scholarship.getUserScholarships(req.user.userId, status);
     
     res.json({
       success: true,

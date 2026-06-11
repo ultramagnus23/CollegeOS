@@ -37,13 +37,13 @@ const MAJORS = [
 ];
 
 // Budget options
-const BUDGET_OPTIONS = [
-  { value: 'under_20k', label: 'Under $20,000/year', min: 0, max: 20000 },
-  { value: '20k_40k', label: '$20,000 - $40,000/year', min: 20000, max: 40000 },
-  { value: '40k_60k', label: '$40,000 - $60,000/year', min: 40000, max: 60000 },
-  { value: 'over_60k', label: '$60,000+/year', min: 60000, max: 100000 },
-  { value: 'need_aid', label: 'Need Full Financial Aid', min: 0, max: 0 }
-];
+  const BUDGET_OPTIONS = [
+    { value: 'under_20k', label: 'Under $20,000/year', min: 0, max: 20000 },
+    { value: '20k_40k', label: '$20,000 - $40,000/year', min: 20000, max: 40000 },
+    { value: '40k_60k', label: '$40,000 - $60,000/year', min: 40000, max: 60000 },
+    { value: 'over_60k', label: '$60,000+/year', min: 60000, max: 100000 },
+    { value: 'need_aid', label: 'Need Full Financial Aid', min: 0, max: null }
+  ];
 
 interface OnboardingFlowProps {
   onComplete?: () => void;
@@ -98,8 +98,15 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
 
   // Load draft on mount
   useEffect(() => {
+    if (user?.email) {
+      setFormData(prev => ({
+        ...prev,
+        email: prev.email || user.email || '',
+        first_name: prev.first_name || user.user_metadata?.first_name || '',
+      }));
+    }
     loadDraft();
-  }, [user]);
+  }, [user?.id]);
 
   const loadDraft = async () => {
     if (!user?.id) return;
@@ -133,7 +140,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   };
 
   const updateFormData = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      // Phase 3.8: curriculum_type change clears curriculumData to avoid stale data
+      if (field === 'curriculum_type' && prev.curriculum_type !== value) {
+        return { ...prev, [field]: value, curriculumData: null };
+      }
+      return { ...prev, [field]: value };
+    });
   };
 
   const toggleArrayValue = (field: string, value: string) => {
@@ -181,18 +194,25 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
       ...prev,
       curriculumData: data
     }));
-    // Step 3 save (curriculum-specific fields) before moving forward
-    await saveProfile({
-      curriculum_type: data?.curriculum_type || formData.curriculum_type,
-      streams: data?.stream ? [data.stream] : (formData.curriculum_type ? [formData.curriculum_type] : []),
-      gpa: data?.overall_percentage ?? null,
-      sat_score: formData.sat_total ?? null,
-      activities: formData.activities || [],
-      preferred_majors: formData.intended_majors || [],
-      target_countries: formData.preferred_countries || [],
-      budget_inr: formData.budget_max != null ? Math.round(formData.budget_max * 83) : null,
-      traits: [],
-    });
+    try {
+      await saveProfile({
+        curriculum_type: data?.curriculum_type || formData.curriculum_type,
+        streams: data?.stream ? [data.stream] : (formData.curriculum_type ? [formData.curriculum_type] : []),
+        gpa: data?.overall_percentage ?? null,
+        sat_score: formData.sat_total ?? null,
+        activities: formData.activities || [],
+        preferred_majors: formData.intended_majors || [],
+        target_countries: formData.preferred_countries || [],
+        budget_inr: formData.budget_max != null && formData.budget_max > 0
+          ? Math.round(formData.budget_max * 83)
+          : null,
+        traits: [],
+      });
+    } catch (err) {
+      console.error('Failed to save curriculum data:', err);
+      setErrors(['Failed to save your curriculum data. Please try again.']);
+      return;
+    }
     await nextStep();
   };
 
@@ -208,25 +228,44 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     if (currentStep === 2) {
       const skipCurriculumStep = !['IB', 'A-Level', 'CBSE'].includes(formData.curriculum_type);
       if (skipCurriculumStep) {
-        await saveProfile({
-          curriculum_type: formData.curriculum_type,
-          streams: formData.curriculum_type ? [formData.curriculum_type] : [],
-          gpa: formData.curriculumData?.overall_percentage ?? null,
-          sat_score: formData.sat_total ?? null,
-          activities: formData.activities || [],
-          preferred_majors: formData.intended_majors || [],
-          target_countries: formData.preferred_countries || [],
-          budget_inr: formData.budget_max != null ? Math.round(formData.budget_max * 83) : null,
-          traits: [],
-        });
+        try {
+          await saveProfile({
+            curriculum_type: formData.curriculum_type,
+            streams: formData.curriculum_type ? [formData.curriculum_type] : [],
+            gpa: formData.curriculumData?.overall_percentage ?? null,
+            sat_score: formData.sat_total ?? null,
+            activities: formData.activities || [],
+            preferred_majors: formData.intended_majors || [],
+            target_countries: formData.preferred_countries || [],
+            budget_inr: formData.budget_max != null && formData.budget_max > 0
+              ? Math.round(formData.budget_max * 83)
+              : null,
+            traits: [],
+          });
+        } catch (err) {
+          console.error('Failed to save curriculum data:', err);
+          setErrors(['Failed to save your data. Please try again.']);
+          return;
+        }
         setCurrentStep(4); // Skip to test scores
         return;
       }
     }
 
-    // Incremental save before each forward step transition
+    // Phase 1.3.2: Incremental save before each forward step transition with try/catch
+    const saveWithError = async (stepName: string, data: any) => {
+      try {
+        await saveProfile(data);
+      } catch (err) {
+        console.error(`Failed to save ${stepName}:`, err);
+        setErrors([`Failed to save ${stepName}. Please try again.`]);
+        return false;
+      }
+      return true;
+    };
+
     if (currentStep === 1) {
-      await saveProfile({
+      if (!(await saveWithError('basic info', {
         first_name: formData.first_name,
         last_name: formData.last_name,
         email: formData.email,
@@ -239,9 +278,9 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         budget_inr: null,
         traits: [],
         activities: [],
-      });
+      }))) return;
     } else if (currentStep === 2) {
-      await saveProfile({
+      if (!(await saveWithError('curriculum', {
         curriculum_type: formData.curriculum_type,
         streams: formData.curriculum_type ? [formData.curriculum_type] : [],
         gpa: formData.curriculumData?.overall_percentage ?? null,
@@ -249,43 +288,52 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         activities: formData.activities || [],
         preferred_majors: formData.intended_majors || [],
         target_countries: formData.preferred_countries || [],
-        budget_inr: formData.budget_max != null ? Math.round(formData.budget_max * 83) : null,
+        budget_inr: formData.budget_max != null && formData.budget_max > 0
+          ? Math.round(formData.budget_max * 83)
+          : null,
         traits: [],
-      });
+      }))) return;
     } else if (currentStep === 4) {
-      await saveProfile({
+      if (!(await saveWithError('test scores', {
         sat_score: formData.sat_total ?? null,
         act_score: formData.act_composite ?? null,
         activities: formData.activities || [],
         preferred_majors: formData.intended_majors || [],
         target_countries: formData.preferred_countries || [],
-        budget_inr: formData.budget_max != null ? Math.round(formData.budget_max * 83) : null,
+        budget_inr: formData.budget_max != null && formData.budget_max > 0
+          ? Math.round(formData.budget_max * 83)
+          : null,
         streams: formData.curriculum_type ? [formData.curriculum_type] : [],
         gpa: formData.curriculumData?.overall_percentage ?? null,
         traits: [],
-      });
+      }))) return;
     } else if (currentStep === 5) {
-      await saveProfile({
+      if (!(await saveWithError('activities', {
         activities: formData.activities || [],
         preferred_majors: formData.intended_majors || [],
         target_countries: formData.preferred_countries || [],
-        budget_inr: formData.budget_max != null ? Math.round(formData.budget_max * 83) : null,
+        budget_inr: formData.budget_max != null && formData.budget_max > 0
+          ? Math.round(formData.budget_max * 83)
+          : null,
         streams: formData.curriculum_type ? [formData.curriculum_type] : [],
         gpa: formData.curriculumData?.overall_percentage ?? null,
         sat_score: formData.sat_total ?? null,
         traits: [],
-      });
+      }))) return;
     } else if (currentStep === 6) {
-      await saveProfile({
+      if (!(await saveWithError('preferences', {
         preferred_majors: formData.intended_majors || [],
         target_countries: formData.preferred_countries || [],
-        budget_inr: formData.budget_max != null ? Math.round(formData.budget_max * 83) : null,
+        budget_inr: formData.budget_max != null && formData.budget_max > 0
+          ? Math.round(formData.budget_max * 83)
+          : null,
         streams: formData.curriculum_type ? [formData.curriculum_type] : [],
         gpa: formData.curriculumData?.overall_percentage ?? null,
         sat_score: formData.sat_total ?? null,
-        traits: [],
+        act_score: formData.act_composite ?? null,
         activities: formData.activities || [],
-      });
+        traits: [],
+      }))) return;
     }
 
     setCurrentStep(prev => Math.min(prev + 1, 7));
@@ -307,94 +355,116 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   // Submit final data
   const handleSubmit = async () => {
     setSaving(true);
+    setErrors([]);
+    
+    // Phase 3.5: Sequential failure recovery with per-step error messages
+    const steps = [
+      {
+        name: 'Basic info',
+        fn: async () => {
+          if (user?.id) {
+            await api.updateBasicInfo(user.id, {
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+              email: formData.email,
+              country: formData.country
+            });
+          }
+        }
+      },
+      {
+        name: 'Academic info',
+        fn: async () => {
+          if (user?.id) {
+            await api.updateAcademicInfo(user.id, {
+              curriculum_type: formData.curriculum_type,
+              ...(formData.curriculumData || {})
+            });
+          }
+        }
+      },
+      {
+        name: 'Subjects',
+        fn: async () => {
+          if (formData.curriculumData?.subjects?.length > 0 && user?.id) {
+            await api.updateSubjects(user.id, {
+              curriculum_type: formData.curriculum_type,
+              subjects: formData.curriculumData.subjects
+            });
+          }
+        }
+      },
+      {
+        name: 'Test scores',
+        fn: async () => {
+          if (!formData.skip_tests && user?.id) {
+            await api.updateTestScores(user.id, {
+              sat_total: formData.sat_total,
+              sat_math: formData.sat_math,
+              sat_ebrw: formData.sat_ebrw,
+              act_composite: formData.act_composite,
+              ielts_score: formData.ielts_score,
+              toefl_score: formData.toefl_score
+            });
+          }
+        }
+      },
+      {
+        name: 'Preferences',
+        fn: async () => {
+          if (user?.id) {
+            await api.updatePreferences(user.id, {
+              intended_majors: formData.intended_majors,
+              preferred_countries: formData.preferred_countries,
+              budget_min: formData.budget_min,
+              budget_max: formData.budget_max,
+              preferred_college_size: formData.college_size_preference,
+              preferred_setting: formData.campus_setting_preference
+            });
+          }
+        }
+      },
+      {
+        name: 'Onboarding completion',
+        fn: async () => {
+          if (user?.id) {
+            await api.completeOnboarding({
+              targetCountries: formData.preferred_countries,
+              intendedMajors: formData.intended_majors,
+              testStatus: {
+                sat: { taken: !!formData.sat_total, score: formData.sat_total },
+                act: { taken: !!formData.act_composite, score: formData.act_composite },
+                ielts: { taken: !!formData.ielts_score, score: formData.ielts_score },
+                toefl: { taken: !!formData.toefl_score, score: formData.toefl_score }
+              },
+              languagePreferences: ['English']
+            });
+          }
+        }
+      }
+    ];
+    
+    const failedSteps: string[] = [];
+    
+    for (const step of steps) {
+      try {
+        await step.fn();
+      } catch (error: any) {
+        console.error(`Failed to save ${step.name}:`, error);
+        failedSteps.push(step.name);
+      }
+    }
+    
+    if (failedSteps.length > 0) {
+      setErrors([
+        `Some steps failed to save: ${failedSteps.join(', ')}. Your profile may be incomplete. Please try again.`
+      ]);
+      setSaving(false);
+      return;
+    }
+    
     try {
-      // Combine all form data
-      const profileData = {
-        // Basic info
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        email: formData.email,
-        country: formData.country,
-        
-        // Academic
-        curriculum_type: formData.curriculum_type,
-        ...formData.curriculumData,
-        
-        // Test scores
-        sat_total: formData.sat_total,
-        sat_math: formData.sat_math,
-        sat_ebrw: formData.sat_ebrw,
-        act_composite: formData.act_composite,
-        ielts_score: formData.ielts_score,
-        toefl_score: formData.toefl_score,
-        
-        // Preferences
-        intended_majors: formData.intended_majors,
-        preferred_countries: formData.preferred_countries,
-        budget_min: formData.budget_min,
-        budget_max: formData.budget_max,
-        preferred_college_size: formData.college_size_preference,
-        preferred_setting: formData.campus_setting_preference
-      };
-
       if (user?.id) {
-        // Update basic info
-        await api.updateBasicInfo(user.id, {
-          first_name: profileData.first_name,
-          last_name: profileData.last_name,
-          email: profileData.email,
-          country: profileData.country
-        });
-
-        // Update academic info
-        await api.updateAcademicInfo(user.id, {
-          curriculum_type: profileData.curriculum_type,
-          ...(formData.curriculumData || {})
-        });
-
-        // Update subjects if available
-        if (formData.curriculumData?.subjects?.length > 0) {
-          await api.updateSubjects(user.id, {
-            curriculum_type: formData.curriculum_type,
-            subjects: formData.curriculumData.subjects
-          });
-        }
-
-        // Update test scores
-        if (!formData.skip_tests) {
-          await api.updateTestScores(user.id, {
-            sat_total: profileData.sat_total,
-            sat_math: profileData.sat_math,
-            sat_ebrw: profileData.sat_ebrw,
-            act_composite: profileData.act_composite,
-            ielts_score: profileData.ielts_score,
-            toefl_score: profileData.toefl_score
-          });
-        }
-
-        // Update preferences
-        await api.updatePreferences(user.id, {
-          intended_majors: profileData.intended_majors,
-          preferred_countries: profileData.preferred_countries,
-          budget_min: profileData.budget_min,
-          budget_max: profileData.budget_max,
-          preferred_college_size: profileData.preferred_college_size,
-          preferred_setting: profileData.preferred_setting
-        });
-
-        // Mark onboarding complete
-        await api.completeOnboarding({
-          targetCountries: formData.preferred_countries,
-          intendedMajors: formData.intended_majors,
-          testStatus: {
-            sat: { taken: !!formData.sat_total, score: formData.sat_total },
-            act: { taken: !!formData.act_composite, score: formData.act_composite },
-            ielts: { taken: !!formData.ielts_score, score: formData.ielts_score },
-            toefl: { taken: !!formData.toefl_score, score: formData.toefl_score }
-          },
-          languagePreferences: ['English']
-        });
-
         await refreshUser?.();
       }
 
@@ -404,10 +474,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         navigate('/dashboard');
       }
     } catch (error: any) {
-      console.error('Failed to save profile:', error);
-      const errorMessage = error.message || 'Failed to save profile. Please try again.';
-      setErrors([errorMessage]);
+      console.error('Navigation failed:', error);
+      setErrors([error.message || 'Failed to complete onboarding. Please try again.']);
+      setSaving(false);
+      return;
     }
+    
     setSaving(false);
   };
 
@@ -670,6 +742,14 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                         />
                       </div>
                     </div>
+                    {/* Phase 3.12: SAT sub-score cross-validation */}
+                    {formData.sat_math != null && formData.sat_ebrw != null && formData.sat_total != null && (
+                      Math.abs(formData.sat_math + formData.sat_ebrw - formData.sat_total) > 40 ? (
+                        <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                          ⚠️ Your Math ({formData.sat_math}) + EBRW ({formData.sat_ebrw}) = {formData.sat_math + formData.sat_ebrw}, which differs from your Total ({formData.sat_total}) by {Math.abs(formData.sat_math + formData.sat_ebrw - formData.sat_total)} points. Please verify your scores.
+                        </div>
+                      ) : null
+                    )}
                   </div>
 
                   {/* ACT */}

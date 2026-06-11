@@ -144,6 +144,32 @@ router.post('/calculate', authenticate, async (req, res, next) => {
     } catch (auditError) {
       logger.debug('Prediction audit log failed:', auditError.message);
     }
+
+    // Log Brier prediction for calibration tracking
+    try {
+      const pool = dbManager.getDatabase();
+      const features = {
+        student_sat: chancing.studentSAT,
+        student_gpa: chancing.studentGPA,
+        college_sat: chancing.collegeSAT,
+        college_gpa: chancing.collegeGPA,
+        acceptance_rate: college.acceptance_rate,
+        intended_major: application.intended_major,
+        decision_type: application.decision_type,
+      };
+      await pool.query(
+        `INSERT INTO chancing_predictions (user_id, college_id, features_json, predicted_prob, calculated_at)
+        VALUES ($1, $2, $3, $4, NOW())`,
+        [
+          req.user.userId,
+          collegeId,
+          JSON.stringify(features),
+          chancing.probability ?? null,
+        ]
+      );
+    } catch (brierErr) {
+      logger.debug('Brier prediction log failed (non-critical):', brierErr.message);
+    }
     
     res.json({
       success: true,

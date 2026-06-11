@@ -511,6 +511,7 @@ router.get('/suggested', authenticate, async (req, res, next) => {
         acceptanceRate: ar,
         tier: tierLabel(ar),
         matchScore,
+        medianSat: csat,
       };
     });
 

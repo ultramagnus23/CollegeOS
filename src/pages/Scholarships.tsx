@@ -91,6 +91,7 @@ const Scholarships: React.FC = () => {
   const [page, setPage] = useState(1);
   const [matchScores, setMatchScores] = useState<Record<number, number>>({});
   const [matchLoading, setMatchLoading] = useState(false);
+  const [matchResults, setMatchResults] = useState<any>(null);
   const [trackingId, setTrackingId] = useState<number | null>(null);
 
   useEffect(() => { loadScholarships(); }, [searchTerm]);
@@ -99,6 +100,13 @@ const Scholarships: React.FC = () => {
   useEffect(() => { if (activeTab === 'private') loadPrivLoans(); }, [activeTab]);
   useEffect(() => { if (activeTab === 'college-costs' || activeTab === 'international-aid') loadCollegeCosts(); }, [activeTab]);
   useEffect(() => { if (activeTab === 'loans') loadFinLoans(); }, [activeTab, loanAmount]);
+
+  // Phase 4.9: Auto-run match on component mount
+  useEffect(() => {
+    if (scholarships.length > 0 && Object.keys(matchScores).length === 0) {
+      handleMatch();
+    }
+  }, [scholarships.length]);
 
   const loadScholarships = async () => {
     setLoading(true);
@@ -169,10 +177,16 @@ const Scholarships: React.FC = () => {
     setMatchLoading(true);
     try {
       const res = await api.scholarships.match() as any;
+      const matchResult = (res as any)?.data;
       const scores: Record<number, number> = {};
-      (res.data || []).forEach((m: any) => { scores[m.id] = m.match_score ?? m.score ?? 0; });
+      (matchResult?.results || []).forEach((m: any) => {
+        scores[Number(m.scholarship_id)] = m.relevance_score ?? 0;
+      });
       setMatchScores(scores);
-      toast.success('Match scores updated!');
+      setMatchResults(matchResult);
+      const eligible = (matchResult?.results || []).filter((m: any) => (m.relevance_score ?? 0) >= 50).length;
+      const ineligible = (matchResult?.results || []).filter((m: any) => (m.relevance_score ?? 0) < 50).length;
+      toast.success(`Match scores updated! ${eligible} eligible, ${ineligible} ineligible`);
     } catch { toast.error('Failed to run matching'); }
     finally { setMatchLoading(false); }
   };
@@ -248,6 +262,9 @@ const Scholarships: React.FC = () => {
                     const dp = deadlinePill(s.deadline);
                     const score = matchScores[s.id];
                     const tracked = trackedIds.has(s.id);
+                    const matchData = matchResults?.results?.find((m: any) => Number(m.scholarship_id) === s.id);
+                    const watchOuts = matchData?.watch_outs || null;
+                    const netCostInr = matchData?.net_cost_inr_per_year ?? null;
                     return (
                       <div key={s.id} style={{
                         background: S.surface, border: `1px solid ${S.border}`,
@@ -260,19 +277,27 @@ const Scholarships: React.FC = () => {
                               <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font }}>{s.name}</h3>
                               {score !== undefined && (
                                 <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: h2r(ACCENT, 0.15), color: ACCENT, fontWeight: 700 }}>
-                                  {Math.round(score * 100)}% match
+                                  {Math.round(score)}% match
                                 </span>
                               )}
                             </div>
                             <p style={{ fontSize: 13, color: S.muted, marginBottom: 10 }}>{s.provider} · {s.country}</p>
                             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                               <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700 }}>{s.amount} {s.currency}</span>
+                              {netCostInr != null && (
+                                <span style={{ fontSize: 13, color: '#10B981', fontWeight: 700 }}>Net cost: ₹{netCostInr.toLocaleString('en-IN')} / yr</span>
+                              )}
                               <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: dp.bg, color: dp.color, border: `1px solid ${dp.border}`, fontWeight: 600 }}>
                                 {dp.label}
                               </span>
                               {s.need_based === 1 && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(59,158,255,0.12)', color: '#3B9EFF', fontWeight: 600 }}>Need-based</span>}
                               {s.merit_based === 1 && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(16,185,129,0.12)', color: '#10B981', fontWeight: 600 }}>Merit-based</span>}
                             </div>
+                            {watchOuts && (
+                              <div style={{ marginTop: 8, padding: '6px 10px', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 8, fontSize: 11, color: '#FBBF24' }}>
+                                ⚠️ {typeof watchOuts === 'string' ? watchOuts : watchOuts.join('; ')}
+                              </div>
+                            )}
                           </div>
                           <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center' }}>
                             {s.application_url && (
