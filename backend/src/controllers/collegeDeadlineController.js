@@ -13,7 +13,7 @@ class CollegeDeadlineController {
       const { year } = req.query;
       
       // Verify college exists
-      const college = College.findById(parseInt(id));
+      const college = await College.findById(parseInt(id));
       if (!college) {
         return res.status(404).json({
           success: false,
@@ -22,7 +22,7 @@ class CollegeDeadlineController {
         });
       }
       
-      const deadlines = CollegeDeadline.findByCollege(
+      const deadlines = await CollegeDeadline.findByCollege(
         parseInt(id), 
         year ? parseInt(year) : undefined
       );
@@ -67,7 +67,7 @@ class CollegeDeadlineController {
       const data = req.body;
       
       // Verify college exists
-      const college = College.findById(parseInt(id));
+      const college = await College.findById(parseInt(id));
       if (!college) {
         return res.status(404).json({
           success: false,
@@ -79,7 +79,7 @@ class CollegeDeadlineController {
       // Add college_id to data
       data.collegeId = parseInt(id);
       
-      const deadlines = CollegeDeadline.createOrUpdate(data);
+      const deadlines = await CollegeDeadline.createOrUpdate(data);
       
       res.json({
         success: true,

@@ -84,8 +84,14 @@ const validators = {
   
   // Create application
   createApplication: Joi.object({
-    collegeId: Joi.number().options({ convert: true }).integer().positive().optional(),
-    college_id: Joi.number().options({ convert: true }).integer().positive().optional(),
+    collegeId: Joi.alternatives().try(
+      Joi.number().options({ convert: true }).integer().positive(),
+      Joi.string().uuid()
+    ).optional(),
+    college_id: Joi.alternatives().try(
+      Joi.number().options({ convert: true }).integer().positive(),
+      Joi.string().uuid()
+    ).optional(),
     college_name: Joi.string().trim().max(500).optional(),
     applicationType: Joi.string().trim().optional(),
     application_type: Joi.string().trim().optional(),
@@ -127,6 +133,19 @@ const validators = {
     googleDriveLink: Joi.string().uri().optional(),
     status: Joi.string().trim().valid(...Object.values(ESSAY_STATUS)).optional(),
     notes: Joi.string().trim().max(1000).optional()
+  }),
+  
+  // Add college manually
+  addCollege: Joi.object({
+    name: Joi.string().trim().min(2).max(300).required(),
+    country: Joi.string().trim().min(2).max(100).required(),
+    location: Joi.string().trim().max(300).optional().allow(null, ''),
+    officialWebsite: Joi.string().trim().uri().required(),
+    admissionsUrl: Joi.string().trim().uri().optional().allow(null, ''),
+    programsUrl: Joi.string().trim().uri().optional().allow(null, ''),
+    applicationPortalUrl: Joi.string().trim().uri().optional().allow(null, ''),
+    academicStrengths: Joi.array().items(Joi.string().trim().max(200)).optional(),
+    majorCategories: Joi.array().items(Joi.string().trim().max(200)).optional()
   })
 };
 

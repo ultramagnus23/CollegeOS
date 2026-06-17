@@ -122,54 +122,165 @@ class College {
 
   static async findById(id) {
     const pool = dbManager.getDatabase();
-    const { rows } = await pool.query(
-      `SELECT
-         c.id,
-         c.canonical_name AS name,
-         c.country_code AS country,
-         c.state_region AS state,
-         c.city,
-         c.website AS official_website,
-         c.website,
-         c.website AS website_url,
-         c.institution_type AS type,
-         c.institution_type,
-         NULL::text AS size_category,
-         c.description,
-         c.acceptance_rate,
-         c.sat_50 AS sat_25,
-         c.sat_50 AS sat_75,
-         c.act_50 AS act_25,
-         c.act_50 AS act_75,
-         NULL::numeric AS gpa_25,
-         NULL::numeric AS gpa_75,
-         c.cost_of_attendance AS tuition_domestic,
-         c.cost_of_attendance AS tuition_international,
-         NULLIF((c.metadata->>'total_enrollment'),'')::numeric AS total_enrollment,
-         NULL::int AS qs_rank,
-         c.global_rank AS ranking_us_news,
-         NULL::int AS the_rank,
-         c.metadata->'major_categories' AS top_majors,
-         'canonical.mv_college_cards'::text AS data_source,
-         NULL::text AS data_source_url,
-         1::numeric AS data_quality_score,
-         NULL::timestamptz AS last_data_refresh,
-         c.updated_at AS last_updated_at,
-         c.updated_at,
-         c.updated_at AS created_at,
-         NULL::date AS application_deadline,
-         NULL::date AS rd_deadline,
-         NULL::date AS ed_deadline,
-         NULL::date AS ea_deadline,
-         LOWER(REGEXP_REPLACE(c.canonical_name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
-         (SELECT ARRAY_AGG(cp.program_name) FROM canonical.institution_programs cp WHERE cp.institution_id = c.id) AS program_names
-       FROM canonical.mv_college_cards c
-       WHERE c.id = $1`,
-      [id]
-    );
 
-    if (!rows[0]) return null;
-    return this.formatCollege(rows[0]);
+    // Try UUID lookup first (canonical.mv_college_cards.id is UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const strId = String(id).trim();
+
+    if (uuidRegex.test(strId)) {
+      const { rows } = await pool.query(
+        `SELECT
+           c.id,
+           c.canonical_name AS name,
+           c.country_code AS country,
+           c.state_region AS state,
+           c.city,
+           c.website AS official_website,
+           c.website,
+           c.website AS website_url,
+           c.institution_type AS type,
+           c.institution_type,
+           NULL::text AS size_category,
+           c.description,
+           c.acceptance_rate,
+           c.sat_50 AS sat_25,
+           c.sat_50 AS sat_75,
+           c.act_50 AS act_25,
+           c.act_50 AS act_75,
+           NULL::numeric AS gpa_25,
+           NULL::numeric AS gpa_75,
+           c.cost_of_attendance AS tuition_domestic,
+           c.cost_of_attendance AS tuition_international,
+           NULLIF((c.metadata->>'total_enrollment'),'')::numeric AS total_enrollment,
+           NULL::int AS qs_rank,
+           c.global_rank AS ranking_us_news,
+           NULL::int AS the_rank,
+           c.metadata->'major_categories' AS top_majors,
+           'canonical.mv_college_cards'::text AS data_source,
+           NULL::text AS data_source_url,
+           1::numeric AS data_quality_score,
+           NULL::timestamptz AS last_data_refresh,
+           c.updated_at AS last_updated_at,
+           c.updated_at,
+           c.updated_at AS created_at,
+           NULL::date AS application_deadline,
+           NULL::date AS rd_deadline,
+           NULL::date AS ed_deadline,
+           NULL::date AS ea_deadline,
+           LOWER(REGEXP_REPLACE(c.canonical_name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
+           (SELECT ARRAY_AGG(cp.program_name) FROM canonical.institution_programs cp WHERE cp.institution_id = c.id) AS program_names
+         FROM canonical.mv_college_cards c
+         WHERE c.id = $1::uuid`,
+        [id]
+      );
+      if (rows[0]) return this.formatCollege(rows[0]);
+    }
+
+    // Try numeric/INTEGER lookup in legacy colleges table
+    const numericId = Number(id);
+    if (Number.isInteger(numericId) && numericId > 0) {
+      const { rows } = await pool.query(
+        `SELECT
+           c.id,
+           c.name,
+           c.country,
+           c.state,
+           c.city,
+           c.official_website,
+           c.acceptance_rate,
+           c.tuition_domestic,
+           c.tuition_international,
+           c.qs_rank,
+           c.ranking_us_news,
+           c.the_rank,
+           c.type,
+           c.size_category,
+           c.description,
+           NULL::numeric AS sat_25,
+           NULL::numeric AS sat_75,
+           NULL::numeric AS act_25,
+           NULL::numeric AS act_75,
+           NULL::numeric AS gpa_25,
+           NULL::numeric AS gpa_75,
+           NULL::int AS total_enrollment,
+           NULL::int AS qs_rank_legacy,
+           NULL::int AS ranking_us_news_legacy,
+           NULL::text AS data_source,
+           NULL::text AS data_source_url,
+           1::numeric AS data_quality_score,
+           c.updated_at AS last_updated_at,
+           c.updated_at,
+           c.created_at,
+           c.application_deadline,
+           c.rd_deadline,
+           c.ed_deadline,
+           c.ea_deadline,
+           c.slug,
+           NULL::text[] AS program_names
+         FROM colleges c
+         WHERE c.id = $1`,
+        [numericId]
+      );
+      if (rows[0]) return this.formatCollege(rows[0]);
+    }
+
+    // Try legacy colleges_comprehensive table
+    if (Number.isInteger(numericId) && numericId > 0) {
+      try {
+        const { rows } = await pool.query(
+          `SELECT
+             c.id,
+             c.name,
+             c.country,
+             c.state,
+             c.city,
+             c.official_website,
+             c.acceptance_rate,
+             c.tuition_domestic,
+             c.tuition_international,
+             c.qs_rank,
+             c.ranking_us_news,
+             c.type,
+             c.size_category,
+             c.description,
+             NULL::numeric AS sat_25,
+             NULL::numeric AS sat_75,
+             NULL::numeric AS act_25,
+             NULL::numeric AS act_75,
+             NULL::numeric AS gpa_25,
+             NULL::numeric AS gpa_75,
+             NULL::int AS total_enrollment,
+             NULL::int AS qs_rank_legacy,
+             NULL::int AS ranking_us_news_legacy,
+             NULL::text AS data_source,
+             NULL::text AS data_source_url,
+             1::numeric AS data_quality_score,
+             c.updated_at AS last_updated_at,
+             c.updated_at,
+             c.created_at,
+             c.application_deadline,
+             c.rd_deadline,
+             c.ed_deadline,
+             c.ea_deadline,
+             c.slug,
+             NULL::text[] AS program_names
+           FROM colleges_comprehensive c
+           WHERE c.id = $1`,
+          [numericId]
+        );
+        if (rows[0]) return this.formatCollege(rows[0]);
+      } catch {
+        // Table may not exist
+      }
+    }
+
+    logger.warn('COLLEGE_NOT_FOUND', {
+      id,
+      idType: typeof id,
+      isUUID: uuidRegex.test(strId),
+      isNumeric: Number.isInteger(numericId) && numericId > 0
+    });
+    return null;
   }
 
   static async findAll(filters = {}) {

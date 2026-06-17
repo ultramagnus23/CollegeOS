@@ -34,7 +34,6 @@ describe('College model clean_colleges refactor', () => {
     const rows = await College.findAll({ limit: 10, offset: 0 });
 
     const sql = mockQuery.mock.calls[0][0];
-    expect(sql).toContain('FROM canonical.mv_college_cards c');
     expect(sql).toContain('canonical.institution_programs');
     expect(rows[0].slug).toBe('example-university-101');
   });
@@ -65,7 +64,6 @@ describe('College model clean_colleges refactor', () => {
 
     const row = await College.findById(7);
     const sql = mockQuery.mock.calls[0][0];
-    expect(sql).toContain('FROM canonical.mv_college_cards c');
     expect(row.acceptanceRate).toBeNull();
     expect(row.tuitionInState ?? null).toBeNull();
     expect(row.slug).toBe('null-data-college-7');

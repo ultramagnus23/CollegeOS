@@ -19,8 +19,28 @@ class Application {
       Object.entries(data).filter(([k]) => ALLOWED_INSERT_FIELDS.includes(k))
     );
 
+    // Resolve collegeId from either camelCase or snake_case input
+    const rawCollegeId = data.collegeId || data.college_id;
+    if (!rawCollegeId) {
+      const err = new Error('Valid college_id is required');
+      err.statusCode = 400;
+      err.code = 'INVALID_COLLEGE_ID';
+      throw err;
+    }
+
+    // Resolve the college ID to a numeric value:
+    // - If numeric, use it directly
+    // - If UUID string, look it up in canonical.mv_college_cards or canonical.institutions
+    const numericCollegeId = await this.resolveCollegeId(pool, rawCollegeId);
+    if (numericCollegeId == null) {
+      const err = new Error('College not found');
+      err.statusCode = 400;
+      err.code = 'COLLEGE_NOT_FOUND';
+      throw err;
+    }
+
     // Check for duplicate first
-    const existingApp = await this.findByUserAndCollege(userId, data.collegeId || data.college_id);
+    const existingApp = await this.findByUserAndCollege(userId, numericCollegeId);
     if (existingApp) {
       const error = new Error('College already added to your list');
       error.statusCode = 400;
@@ -28,26 +48,6 @@ class Application {
       throw error;
     }
 
-    // Resolve collegeId from either camelCase or snake_case input
-    const collegeId = data.collegeId || data.college_id;
-    if (!collegeId || Number.isNaN(Number(collegeId))) {
-      const err = new Error('Valid college_id is required');
-      err.statusCode = 400;
-      err.code = 'INVALID_COLLEGE_ID';
-      throw err;
-    }
-
-    // Ensure referenced college exists in canonical table.
-    const { rows: collegeRows } = await pool.query(
-      'SELECT id FROM colleges WHERE id = $1 LIMIT 1',
-      [Number(collegeId)]
-    );
-    if (!collegeRows.length) {
-      const err = new Error('College does not exist in canonical colleges table');
-      err.statusCode = 400;
-      err.code = 'COLLEGE_NOT_FOUND';
-      throw err;
-    }
     let rows;
     try {
       ({ rows } = await pool.query(
@@ -56,7 +56,7 @@ class Application {
          RETURNING id`,
         [
           userId,
-          Number(collegeId),
+          numericCollegeId,
           safeData.status || data.status || 'researching',
           safeData.application_type || data.application_type || data.applicationType || null,
           safeData.priority || data.priority || null,
@@ -83,7 +83,7 @@ class Application {
     try {
       const DeadlineAutoPopulationService = require('../services/deadlineAutoPopulationService');
       const deadlineResult = await DeadlineAutoPopulationService.populateDeadlinesForApplication(
-        userId, applicationId, collegeId
+        userId, applicationId, numericCollegeId
       );
       logger.info('Auto-populated deadlines:', deadlineResult);
     } catch (error) {
@@ -94,7 +94,7 @@ class Application {
     try {
       const EssayAutoLoadingService = require('../services/essayAutoLoadingService');
       const essayResult = await EssayAutoLoadingService.loadEssaysForApplication(
-        userId, applicationId, collegeId
+        userId, applicationId, numericCollegeId
       );
       logger.info('Auto-loaded essays:', essayResult);
     } catch (error) {
@@ -102,6 +102,58 @@ class Application {
     }
 
     return this.findById(applicationId);
+  }
+
+  /**
+   * Resolve a raw college ID (numeric or UUID string) to a numeric ID.
+   * 1. If numeric, use it directly (verify in legacy colleges table).
+   * 2. If UUID string, look it up in canonical tables via identity map.
+   * Returns null if the college cannot be resolved.
+   */
+  static async resolveCollegeId(pool, rawId) {
+    // Case 1: numeric ID — use directly
+    const numeric = Number(rawId);
+    if (Number.isInteger(numeric) && numeric > 0) {
+      // Verify the numeric ID exists in the legacy colleges table
+      const { rows } = await pool.query(
+        'SELECT id FROM colleges WHERE id = $1 LIMIT 1',
+        [numeric]
+      );
+      if (rows.length > 0) return numeric;
+      // Try colleges_comprehensive
+      try {
+        const { rows: ccRows } = await pool.query(
+          'SELECT id FROM colleges_comprehensive WHERE id = $1 LIMIT 1',
+          [numeric]
+        );
+        if (ccRows.length > 0) return numeric;
+      } catch {
+        // Table may not exist
+      }
+      return null;
+    }
+
+    // Case 2: UUID string — look up in canonical tables
+    const strId = String(rawId).trim();
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(strId)) return null;
+
+    // Try canonical.institutions.id → institution_identity_map
+    try {
+      const { rows: identityRows } = await pool.query(
+        `SELECT im.legacy_id
+         FROM canonical.institutions i
+         JOIN canonical.institution_identity_map im ON i.id = im.canonical_institution_id
+         WHERE i.id = $1
+         LIMIT 1`,
+        [strId]
+      );
+      if (identityRows.length > 0) return Number(identityRows[0].legacy_id);
+    } catch {
+      // institution_identity_map may not exist yet
+    }
+
+    return null;
   }
 
   static async findByUserAndCollege(userId, collegeId) {

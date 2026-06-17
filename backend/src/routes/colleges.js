@@ -3,6 +3,8 @@ const router = express.Router();
 const CollegeController = require('../controllers/collegeController');
 const CollegeDeadlineController = require('../controllers/collegeDeadlineController');
 const { authenticate } = require('../middleware/auth');
+const { validate } = require('../middleware/validation');
+const validators = require('../utils/validators');
 const logger = require('../utils/logger');
 const CANONICAL_DEBUG = process.env.CANONICAL_DEBUG === '1' || process.env.NODE_ENV !== 'production';
 
@@ -152,7 +154,7 @@ router.get('/:id/majors', async (req, res, next) => {
 router.get('/:id/deadlines', CollegeDeadlineController.getCollegeDeadlines);
 
 // Protected routes - require authentication
-router.post('/', authenticate, CollegeController.createCollege); // Add college manually (Layer 1)
+router.post('/', authenticate, validate(validators.addCollege), CollegeController.createCollege); // Add college manually (Layer 1)
 router.get('/:id/data', authenticate, CollegeController.getCollegeData);
 router.get('/:id/eligibility', authenticate, CollegeController.checkEligibility);
 

@@ -122,11 +122,11 @@ router.post('/optimize-list', authenticate, async (req, res, next) => {
     let colleges = [];
     
     if (collegeIds && Array.isArray(collegeIds) && collegeIds.length > 0) {
-      colleges = collegeIds.map(id => College.findById(id)).filter(c => c);
+      colleges = (await Promise.all(collegeIds.map(id => College.findById(id)))).filter(c => c);
     } else {
       // Get from applications
-      const applications = Application.findByUser(userId);
-      colleges = applications.map(a => College.findById(a.college_id)).filter(c => c);
+      const applications = await Application.findByUser(userId);
+      colleges = (await Promise.all(applications.map(a => College.findById(a.college_id)))).filter(c => c);
     }
     
     if (colleges.length === 0) {
@@ -170,8 +170,8 @@ router.post('/optimize-list/suggest', authenticate, async (req, res, next) => {
     }
     
     // Get current colleges
-    const applications = Application.findByUser(userId);
-    const currentColleges = applications.map(a => College.findById(a.college_id)).filter(c => c);
+    const applications = await Application.findByUser(userId);
+    const currentColleges = (await Promise.all(applications.map(a => College.findById(a.college_id)))).filter(c => c);
     const currentIds = currentColleges.map(c => c.id);
     
     // Get suggestions via consolidated service (takes userId + list of IDs)
@@ -213,7 +213,7 @@ router.post('/optimize-list/what-if', authenticate, async (req, res, next) => {
     }
 
     // Get the target college
-    const college = College.findById(collegeId);
+    const college = await College.findById(collegeId);
     
     if (!college) {
       return res.status(404).json({
@@ -232,8 +232,8 @@ router.post('/optimize-list/what-if', authenticate, async (req, res, next) => {
     }
 
     // Get current application list
-    const applications = Application.findByUser(userId);
-    const currentColleges = applications.map(a => College.findById(a.college_id)).filter(c => c);
+    const applications = await Application.findByUser(userId);
+    const currentColleges = (await Promise.all(applications.map(a => College.findById(a.college_id)))).filter(c => c);
     const currentIds = currentColleges.map(c => c.id);
 
     // Simulate the action
@@ -300,18 +300,11 @@ router.post('/what-if', authenticate, async (req, res, next) => {
     
     // Get colleges
     let colleges = [];
-    if (collegeIds && Array.isArray(collegeIds) && collegeIds.length > 0) {
-      colleges = collegeIds.map(id => College.findById(id)).filter(c => c);
+    if (collegeIds && Array.isArray(collegeIds)) {
+      colleges = (await Promise.all(collegeIds.map(id => College.findById(id)))).filter(c => c);
     } else {
-      const applications = Application.findByUser(userId);
-      colleges = applications.map(a => College.findById(a.college_id)).filter(c => c);
-    }
-    
-    if (colleges.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'No colleges to analyze. Add colleges to your list.'
-      });
+      const applications = await Application.findByUser(userId);
+      colleges = (await Promise.all(applications.map(a => College.findById(a.college_id)))).filter(c => c);
     }
     
     // Run what-if analysis
@@ -357,10 +350,10 @@ router.post('/what-if/scenarios', authenticate, async (req, res, next) => {
     // Get colleges
     let colleges = [];
     if (collegeIds && Array.isArray(collegeIds)) {
-      colleges = collegeIds.map(id => College.findById(id)).filter(c => c);
+      colleges = (await Promise.all(collegeIds.map(id => College.findById(id)))).filter(c => c);
     } else {
-      const applications = Application.findByUser(userId);
-      colleges = applications.map(a => College.findById(a.college_id)).filter(c => c);
+      const applications = await Application.findByUser(userId);
+      colleges = (await Promise.all(applications.map(a => College.findById(a.college_id)))).filter(c => c);
     }
     
     // Run scenario analysis
@@ -399,10 +392,10 @@ router.post('/sensitivity', authenticate, async (req, res, next) => {
     // Get colleges
     let colleges = [];
     if (collegeIds && Array.isArray(collegeIds)) {
-      colleges = collegeIds.map(id => College.findById(id)).filter(c => c);
+      colleges = (await Promise.all(collegeIds.map(id => College.findById(id)))).filter(c => c);
     } else {
-      const applications = Application.findByUser(userId);
-      colleges = applications.map(a => College.findById(a.college_id)).filter(c => c);
+      const applications = await Application.findByUser(userId);
+      colleges = (await Promise.all(applications.map(a => College.findById(a.college_id)))).filter(c => c);
     }
     
     if (colleges.length === 0) {
@@ -451,7 +444,7 @@ router.post('/thresholds', authenticate, async (req, res, next) => {
     }
     
     // Get college
-    const college = College.findById(collegeId);
+    const college = await College.findById(collegeId);
     
     if (!college) {
       return res.status(404).json({
@@ -491,8 +484,8 @@ router.get('/recommendations', authenticate, async (req, res, next) => {
     }
     
     // Get colleges
-    const applications = Application.findByUser(userId);
-    const colleges = applications.map(a => College.findById(a.college_id)).filter(c => c);
+    const applications = await Application.findByUser(userId);
+    const colleges = (await Promise.all(applications.map(a => College.findById(a.college_id)))).filter(c => c);
     
     // If no colleges, use sample top colleges
     let targetColleges = colleges;
@@ -535,8 +528,8 @@ router.get('/summary', authenticate, async (req, res, next) => {
     }
     
     // Get colleges
-    const applications = Application.findByUser(userId);
-    const colleges = applications.map(a => College.findById(a.college_id)).filter(c => c);
+    const applications = await Application.findByUser(userId);
+    const colleges = (await Promise.all(applications.map(a => College.findById(a.college_id)))).filter(c => c);
     
     // Calculate profile strength
     const profileStrength = calculateProfileStrength(profile);

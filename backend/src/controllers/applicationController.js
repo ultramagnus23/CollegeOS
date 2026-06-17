@@ -89,7 +89,16 @@ class ApplicationController {
         });
       }
       
-      logger.debug(`[${requestId}] Creating application for college: ${sanitizeForLog(data.collegeId)}`);
+      logger.info(`[${requestId}] Creating application for college: ${sanitizeForLog(data.collegeId)} (type: ${typeof data.collegeId})`);
+      logger.debug(`[${requestId}] Full request data: ${JSON.stringify({
+        collegeId: data.collegeId,
+        college_id: data.college_id,
+        application_type: data.application_type,
+        status: data.status,
+        priority: data.priority,
+        notes: data.notes,
+        canonical_institution_id: data.canonical_institution_id
+      })}`);
       const application = await Application.create(userId, data);
       
       if (!application) {

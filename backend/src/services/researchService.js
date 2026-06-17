@@ -9,7 +9,7 @@ class ResearchService {
   // Main on-demand research endpoint
   async conductResearch(collegeId, researchType, options = {}) {
     try {
-      const college = College.findById(collegeId);
+      const college = await College.findById(collegeId);
       if (!college) {
         throw new Error('College not found');
       }

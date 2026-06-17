@@ -212,7 +212,7 @@ async function generateDeterministicFallbackRecommendations(normalizedStudent = 
       c.acceptance_rate,
       c.sat_50 AS sat_75,
       c.act_50 AS act_75,
-      a.gpa_75,
+      NULL::numeric AS gpa_75,
       c.tuition_international,
       c.cost_of_attendance AS net_cost_usd,
       TRUE AS international_aid_available,
@@ -415,6 +415,26 @@ async function generateRecommendationsV2(userProfile, options = {}) {
       const retrieved = Array.isArray(retrievalCandidates) ? retrievalCandidates : [];
       console.log('[2] retrieved:', retrieved.length);
     });
+
+    // If embeddings were unavailable or returned no candidates, skip to deterministic fallback
+    if (!Array.isArray(retrievalCandidates) || retrievalCandidates.length === 0) {
+      console.log('[DETERMINISTIC FALLBACK] Using deterministic recommendations due to empty retrieval');
+      const fallback = await generateDeterministicFallbackRecommendations(normalizedStudent, options, 'empty_retrieval');
+      return {
+        recommendations: Array.isArray(fallback?.recommendations) ? fallback.recommendations : [],
+        metadata: {
+          pipeline: 'v3',
+          fallbackUsed: true,
+          fallbackReason: 'empty_retrieval',
+          durationMs: nowMs() - pipelineStartedAt,
+          stageTimings,
+        },
+        diagnostics: {
+          stage: 'fallback',
+          infrastructure: infraDiagnostics || null,
+        },
+      };
+    }
 
     await runStage('[6] ranking feature engineering', 'ranking_feature_engineering_ms', async () => {
       const candidateIds = (Array.isArray(retrievalCandidates) ? retrievalCandidates : [])
