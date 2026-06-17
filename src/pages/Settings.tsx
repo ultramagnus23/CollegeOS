@@ -256,8 +256,8 @@ const SCROLL_DELAY_MS = 100;
       why_college_matters: p?.why_college_matters || '',
       career_goals:        p?.career_goals        || '',
       life_goals_raw:      p?.life_goals_raw      || '',
-      // Identity
-      gender: p?.gender || '',
+      // Identity — gender lives in users table, not student_profiles
+      gender: p?.gender || data.user?.gender || '',
     });
   };
 

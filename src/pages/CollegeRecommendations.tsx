@@ -219,7 +219,7 @@ const CollegeRecommendations: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await (api as any).recommendations.get();
+      const res = await api.recommendations.get();
       if (!mountedRef.current || seq !== loadSeqRef.current) return;
       if (res?.success && res.recommendations) {
         setData(res);
@@ -243,7 +243,7 @@ const CollegeRecommendations: React.FC = () => {
     try {
       setGenerating(true);
       setError('');
-      const res = await (api as any).recommendations.generate();
+      const res = await api.recommendations.generate();
       if (res?.recommendations || res?.success) {
         await load();
         toast.success('Recommendations generated!');

@@ -20,7 +20,7 @@ interface TimelineDeadline {
   college_name: string;
   deadline_type: string;
   deadline_date: string;
-  is_completed: number;
+  is_completed: boolean;
 }
 
 interface TimelineMonth {
@@ -49,11 +49,11 @@ export function Timeline() {
     loadData();
   }, []);
 
-  const handleToggleDeadline = async (id: number, isCompleted: number) => {
+  const handleToggleDeadline = async (id: number, isCompleted: boolean) => {
     const key = `deadline-${id}`;
     setToggling(key);
     try {
-      await api.deadlines.update(id, { isCompleted: isCompleted === 1 ? 0 : 1 });
+      await api.deadlines.update(id, { isCompleted: !isCompleted });
       await loadData();
     } catch {
       toast.error('Failed to update deadline');
@@ -164,7 +164,7 @@ export function Timeline() {
                   })}
 
                   {month.deadlines.map(deadline => {
-                    const isCompleted = deadline.is_completed === 1;
+                    const isCompleted = deadline.is_completed;
                     const key = `deadline-${deadline.id}`;
                     const isToggling = toggling === key;
                     return (
