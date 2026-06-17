@@ -36,10 +36,13 @@ class DeadlineAutoPopulationService {
         collegeDeadlines = await this._getCollegeDeadlines(collegeId, currentYear - 1);
         
         if (!collegeDeadlines) {
-          result.message = 'No deadline data available for this college';
+          // No college-specific deadline data — still generate support task defaults
+          await this._insertSupportDeadlines(pool, userId, applicationId, collegeId, null, result);
+          result.message = 'Default support deadlines created (no college-specific data found)';
+          result.success = true;
           return result;
         }
-        
+
         result.usedHistoricalData = true;
       }
 
@@ -54,39 +57,28 @@ class DeadlineAutoPopulationService {
       )).rows[0];
       const collegeName = college ? college.name : 'College';
 
-      // Insert deadlines only for types that are offered (offered = true)
+      // Insert admission deadlines (types that the college offers)
       const deadlinesToCreate = this._extractOfferedDeadlines(collegeDeadlines);
-      
-      if (deadlinesToCreate.length === 0) {
-        result.message = 'No applicable deadlines found for this college';
-        return result;
-      }
-
       for (const deadline of deadlinesToCreate) {
-        await pool.query(`
-          INSERT INTO deadlines (
-            application_id, 
-            deadline_type, 
-            deadline_date, 
-            description,
-            source_url,
-            status
-          ) VALUES ($1, $2, $3, $4, $5, $6)
-        `, [
-          applicationId,
-          deadline.type,
-          deadline.date,
-          deadline.description,
-          collegeDeadlines.source_url || null,
-          'not_started'
-        ]);
+        await pool.query(
+          `INSERT INTO deadlines (user_id, application_id, deadline_type, deadline_date, title, description)
+           SELECT $1, $2, $3, $4, $5, $6
+           WHERE NOT EXISTS (
+             SELECT 1 FROM deadlines WHERE application_id = $2 AND deadline_type = $3
+           )`,
+          [userId, applicationId, deadline.type, deadline.date, deadline.description, deadline.description]
+        );
         result.deadlinesAdded.push(deadline);
       }
-      
+
+      // Always add support deadlines (FAFSA, transcripts, rec letters, etc.)
+      const rdDate = collegeDeadlines.regular_decision_date || null;
+      await this._insertSupportDeadlines(pool, userId, applicationId, collegeId, rdDate, result);
+
       result.success = true;
-      
+
       if (result.usedHistoricalData) {
-        result.message = `Showing ${currentYear - 1} deadlines. ${currentYear} not yet released. Will auto-update when available.`;
+        result.message = `Showing ${currentYear - 1} deadlines. ${currentYear} not yet released.`;
       } else {
         result.message = `Deadlines added for ${collegeName}`;
       }
@@ -191,6 +183,61 @@ class DeadlineAutoPopulationService {
     }
 
     return deadlines;
+  }
+
+  /**
+   * Insert standard support deadlines (FAFSA, CSS Profile, transcripts, rec letters, etc.).
+   * Uses sensible date defaults derived from the RD deadline when available.
+   * Skips any type that already exists for this application (dedup guard).
+   * @private
+   */
+  static async _insertSupportDeadlines(pool, userId, applicationId, collegeId, rdDate, result) {
+    const now = new Date();
+    const nextJan1 = new Date(now.getFullYear() + 1, 0, 1);
+
+    // If rdDate given, derive relative dates; otherwise use calendar defaults
+    const rd = rdDate ? new Date(rdDate) : new Date(nextJan1);
+    const minus30 = (base) => {
+      const d = new Date(base);
+      d.setDate(d.getDate() - 30);
+      return d.toISOString().slice(0, 10);
+    };
+    const minus60 = (base) => {
+      const d = new Date(base);
+      d.setDate(d.getDate() - 60);
+      return d.toISOString().slice(0, 10);
+    };
+    const minus90 = (base) => {
+      const d = new Date(base);
+      d.setDate(d.getDate() - 90);
+      return d.toISOString().slice(0, 10);
+    };
+
+    const supportDeadlines = [
+      { type: 'fafsa',               date: `${now.getFullYear()}-10-01`, title: 'FAFSA Opens — Submit Early' },
+      { type: 'css_profile',          date: `${now.getFullYear()}-10-15`, title: 'CSS Profile Submission' },
+      { type: 'transcript_request',   date: minus60(rd),                  title: 'Request Official Transcripts' },
+      { type: 'teacher_rec_request',  date: minus90(rd),                  title: 'Ask Teachers for Recommendations' },
+      { type: 'counselor_rec',        date: minus60(rd),                  title: 'Counselor Recommendation Request' },
+      { type: 'test_score_send',      date: minus30(rd),                  title: 'Send SAT/ACT Scores to College' },
+      { type: 'midyear_report',       date: `${now.getFullYear() + 1}-02-15`, title: 'Submit Midyear School Report' },
+    ];
+
+    for (const d of supportDeadlines) {
+      try {
+        await pool.query(
+          `INSERT INTO deadlines (user_id, application_id, deadline_type, deadline_date, title, description)
+           SELECT $1, $2, $3, $4, $5, $5
+           WHERE NOT EXISTS (
+             SELECT 1 FROM deadlines WHERE application_id = $2 AND deadline_type = $3
+           )`,
+          [userId, applicationId, d.type, d.date, d.title]
+        );
+        result.deadlinesAdded.push({ type: d.type, date: d.date, description: d.title });
+      } catch (err) {
+        logger.warn(`Support deadline insert skipped for type=${d.type}:`, err?.message);
+      }
+    }
   }
 
   /**
