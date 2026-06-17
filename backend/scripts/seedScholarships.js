@@ -593,29 +593,31 @@ const SCHOLARSHIPS = [
   },
 ];
 
-async function seedScholarships() {
-  let pool;
+async function seedIfEmpty() {
+  const pool = dbManager.getDatabase();
+
+  // Determine which table to use
+  let tableName = 'scholarships';
   try {
-    await dbManager.connect();
-    pool = dbManager.getDatabase();
-
-    // Determine which table to use
-    let tableName = 'scholarships';
+    await pool.query(`SELECT 1 FROM scholarships_new LIMIT 1`);
+    tableName = 'scholarships_new';
+  } catch {
     try {
-      await pool.query(`SELECT 1 FROM scholarships_new LIMIT 1`);
-      tableName = 'scholarships_new';
+      await pool.query(`SELECT 1 FROM scholarships LIMIT 1`);
+      tableName = 'scholarships';
     } catch {
-      try {
-        await pool.query(`SELECT 1 FROM scholarships LIMIT 1`);
-        tableName = 'scholarships';
-      } catch {
-        console.error('Neither scholarships nor scholarships_new table exists. Run migration 058 first.');
-        process.exit(1);
-      }
+      throw new Error('Neither scholarships nor scholarships_new table exists. Run migration 058 first.');
     }
+  }
 
-    console.log(`Seeding ${SCHOLARSHIPS.length} scholarships into ${tableName}...`);
-    let inserted = 0, skipped = 0;
+  // Skip if already seeded
+  const { rows } = await pool.query(`SELECT COUNT(*) AS count FROM ${tableName}`);
+  if (parseInt(rows[0].count, 10) > 0) {
+    return;
+  }
+
+  console.log(`Seeding ${SCHOLARSHIPS.length} scholarships into ${tableName}...`);
+  let inserted = 0, skipped = 0;
 
     for (const s of SCHOLARSHIPS) {
       try {
@@ -659,13 +661,19 @@ async function seedScholarships() {
       }
     }
 
-    console.log(`Done! Inserted: ${inserted}, Skipped (duplicate/error): ${skipped}`);
+    console.log(`Scholarships seeded — Inserted: ${inserted}, Skipped: ${skipped}`);
   } catch (err) {
-    console.error('Fatal error:', err.message);
-    process.exit(1);
-  } finally {
-    process.exit(0);
+    throw err;
   }
 }
 
-seedScholarships();
+module.exports = { seedIfEmpty };
+
+// CLI entry point: node backend/scripts/seedScholarships.js
+if (require.main === module) {
+  dbManager.initialize();
+  dbManager.runMigrations()
+    .then(() => seedIfEmpty())
+    .then(() => process.exit(0))
+    .catch((err) => { console.error('Fatal:', err.message); process.exit(1); });
+}
