@@ -72,7 +72,7 @@ class DeadlineAutoPopulationService {
       }
 
       // Always add support deadlines (FAFSA, transcripts, rec letters, etc.)
-      const rdDate = collegeDeadlines.regular_decision_date || null;
+      const rdDate = collegeDeadlines.regular_decision_deadline || null;
       await this._insertSupportDeadlines(pool, userId, applicationId, collegeId, rdDate, result);
 
       result.success = true;
@@ -100,12 +100,11 @@ class DeadlineAutoPopulationService {
    */
   static async _getCollegeDeadlines(collegeId, year) {
     const pool = dbManager.getDatabase();
-    
-    // Query application_deadlines table
-    return (await pool.query(`
-      SELECT * FROM application_deadlines 
-      WHERE college_id = $1 AND application_year = $2
-    `, [collegeId, year])).rows[0];
+    // Column is academic_year (text), not application_year
+    return (await pool.query(
+      `SELECT * FROM application_deadlines WHERE college_id = $1 AND academic_year = $2`,
+      [collegeId, String(year)]
+    )).rows[0];
   }
 
   /**
@@ -117,69 +116,30 @@ class DeadlineAutoPopulationService {
     const deadlines = [];
     const currentYear = new Date().getFullYear();
 
-    // Early Decision I
-    if (collegeDeadlines.offers_early_decision && collegeDeadlines.early_decision_1_date) {
-      deadlines.push({
-        type: 'early_decision_1',
-        date: collegeDeadlines.early_decision_1_date,
-        description: 'Early Decision I deadline',
-        notificationDate: collegeDeadlines.early_decision_1_notification
-      });
-    }
+    // Actual column names in application_deadlines:
+    //   early_decision_1_deadline, early_decision_2_deadline,
+    //   early_action_deadline, restrictive_early_action_deadline,
+    //   regular_decision_deadline, priority_deadline, rolling_admission (INTEGER)
+    const d = collegeDeadlines;
 
-    // Early Decision II
-    if (collegeDeadlines.offers_early_decision && collegeDeadlines.early_decision_2_date) {
-      deadlines.push({
-        type: 'early_decision_2',
-        date: collegeDeadlines.early_decision_2_date,
-        description: 'Early Decision II deadline',
-        notificationDate: collegeDeadlines.early_decision_2_notification
-      });
+    if (d.early_decision_1_deadline) {
+      deadlines.push({ type: 'early_decision_1', date: d.early_decision_1_deadline, description: 'Early Decision I deadline', notificationDate: d.early_decision_1_notification });
     }
-
-    // Early Action
-    if (collegeDeadlines.offers_early_action && collegeDeadlines.early_action_date) {
-      deadlines.push({
-        type: 'early_action',
-        date: collegeDeadlines.early_action_date,
-        description: 'Early Action deadline',
-        notificationDate: collegeDeadlines.early_action_notification
-      });
+    if (d.early_decision_2_deadline) {
+      deadlines.push({ type: 'early_decision_2', date: d.early_decision_2_deadline, description: 'Early Decision II deadline', notificationDate: d.early_decision_2_notification });
     }
-
-    // Restrictive Early Action
-    if (collegeDeadlines.offers_restrictive_ea && collegeDeadlines.restrictive_early_action_date) {
-      deadlines.push({
-        type: 'restrictive_early_action',
-        date: collegeDeadlines.restrictive_early_action_date,
-        description: 'Restrictive Early Action deadline',
-        notificationDate: collegeDeadlines.restrictive_early_action_notification
-      });
+    if (d.early_action_deadline) {
+      deadlines.push({ type: 'early_action', date: d.early_action_deadline, description: 'Early Action deadline', notificationDate: d.early_action_notification });
     }
-
-    // Regular Decision
-    if (collegeDeadlines.regular_decision_date) {
-      deadlines.push({
-        type: 'regular_decision',
-        date: collegeDeadlines.regular_decision_date,
-        description: 'Regular Decision deadline',
-        notificationDate: collegeDeadlines.regular_decision_notification
-      });
+    if (d.restrictive_early_action_deadline) {
+      deadlines.push({ type: 'restrictive_early_action', date: d.restrictive_early_action_deadline, description: 'Restrictive Early Action deadline', notificationDate: d.restrictive_early_action_notification });
     }
-
-    // Rolling Admission
-    if (collegeDeadlines.offers_rolling_admission) {
-      // For rolling admissions, use priority deadline if available
-      const rollingDate = collegeDeadlines.priority_deadline || 
-                         collegeDeadlines.regular_decision_date ||
-                         `${currentYear + 1}-06-01`; // Default to June 1 if no date
-      
-      deadlines.push({
-        type: 'rolling_admission',
-        date: rollingDate,
-        description: collegeDeadlines.priority_deadline ? 'Priority deadline for rolling admission' : 'Rolling admission',
-        notificationDate: null
-      });
+    if (d.regular_decision_deadline) {
+      deadlines.push({ type: 'regular_decision', date: d.regular_decision_deadline, description: 'Regular Decision deadline', notificationDate: d.regular_decision_notification });
+    }
+    if (d.rolling_admission === 1 || d.rolling_admission === true) {
+      const rollingDate = d.priority_deadline || d.regular_decision_deadline || `${currentYear + 1}-06-01`;
+      deadlines.push({ type: 'rolling_admission', date: rollingDate, description: d.priority_deadline ? 'Priority deadline for rolling admission' : 'Rolling admission', notificationDate: null });
     }
 
     return deadlines;

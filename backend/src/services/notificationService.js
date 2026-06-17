@@ -1,7 +1,6 @@
 /**
  * Notification Service
  * Handles creation, retrieval, and management of user notifications
- * Supports in-app notifications and email alerts for deadline/essay changes
  */
 
 const dbManager = require('../config/database');
@@ -12,10 +11,11 @@ class NotificationService {
   static async createNotification(userId, type, title, message, metadata = {}) {
     try {
       const pool = dbManager.getDatabase();
+      // Table uses is_read (not read); metadata added by migration 092
       const { rows } = await pool.query(
-        `INSERT INTO notifications (user_id, type, title, message, metadata, created_at, read)
+        `INSERT INTO notifications (user_id, type, title, message, metadata, created_at, is_read)
          VALUES ($1,$2,$3,$4,$5,NOW(),false) RETURNING id`,
-        [userId, type, title, message, JSON.stringify(metadata)]
+        [userId, type, title, message, metadata]
       );
       logger.info('Notification created', { userId, type: sanitizeForLog(type) });
       return { id: rows[0].id, userId, type, title, message, metadata, read: false };
@@ -28,12 +28,16 @@ class NotificationService {
   static async getUserNotifications(userId, unreadOnly = false) {
     try {
       const pool = dbManager.getDatabase();
-      let query = `SELECT id, user_id, type, title, message, metadata, created_at, read
+      let query = `SELECT id, user_id, type, title, message, metadata, created_at, is_read AS read
                    FROM notifications WHERE user_id = $1`;
-      if (unreadOnly) query += ' AND read IS FALSE';
+      if (unreadOnly) query += ' AND is_read IS FALSE';
       query += ' ORDER BY created_at DESC LIMIT 50';
       const { rows } = await pool.query(query, [userId]);
-      return rows.map(n => ({ ...n, metadata: n.metadata ? (typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata) : {}, read: Boolean(n.read) }));
+      return rows.map(n => ({
+        ...n,
+        metadata: n.metadata ? (typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata) : {},
+        read: Boolean(n.read),
+      }));
     } catch (error) {
       logger.error('Error fetching notifications:', error);
       return [];
@@ -43,7 +47,10 @@ class NotificationService {
   static async markAsRead(notificationId, userId) {
     try {
       const pool = dbManager.getDatabase();
-      await pool.query(`UPDATE notifications SET read = true WHERE id = $1 AND user_id = $2`, [notificationId, userId]);
+      await pool.query(
+        `UPDATE notifications SET is_read = true WHERE id = $1 AND user_id = $2`,
+        [notificationId, userId]
+      );
       logger.info('Notification marked as read', { notificationId });
     } catch (error) {
       logger.error('Error marking notification as read:', error);
@@ -53,7 +60,10 @@ class NotificationService {
   static async markAllAsRead(userId) {
     try {
       const pool = dbManager.getDatabase();
-      const { rowCount } = await pool.query(`UPDATE notifications SET read = TRUE WHERE user_id = $1 AND read IS FALSE`, [userId]);
+      const { rowCount } = await pool.query(
+        `UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read IS FALSE`,
+        [userId]
+      );
       logger.info('Marked notifications as read', { userId, count: rowCount });
       return rowCount;
     } catch (error) {
@@ -65,7 +75,10 @@ class NotificationService {
   static async getUnreadCount(userId) {
     try {
       const pool = dbManager.getDatabase();
-      const { rows } = await pool.query(`SELECT COUNT(*) AS count FROM notifications WHERE user_id = $1 AND read IS FALSE`, [userId]);
+      const { rows } = await pool.query(
+        `SELECT COUNT(*) AS count FROM notifications WHERE user_id = $1 AND is_read IS FALSE`,
+        [userId]
+      );
       return parseInt(rows[0].count) || 0;
     } catch (error) {
       logger.error('Error getting unread count:', error);
@@ -111,7 +124,9 @@ class NotificationService {
   static async cleanupOldNotifications() {
     try {
       const pool = dbManager.getDatabase();
-      const { rowCount } = await pool.query(`DELETE FROM notifications WHERE created_at < NOW() - INTERVAL '90 days'`);
+      const { rowCount } = await pool.query(
+        `DELETE FROM notifications WHERE created_at < NOW() - INTERVAL '90 days'`
+      );
       logger.info('Cleaned up old notifications', { count: rowCount });
       return rowCount;
     } catch (error) {
@@ -123,23 +138,27 @@ class NotificationService {
   static async checkApproachingDeadlines() {
     try {
       const pool = dbManager.getDatabase();
+      // user_id on deadlines is populated by migration 093; is_completed replaces status
       const { rows: upcomingDeadlines } = await pool.query(
-        `SELECT d.id, d.user_id, d.deadline_date, d.deadline_type,
+        `SELECT d.user_id, d.deadline_date, d.deadline_type,
                 c.name AS college_name, c.id AS college_id,
                 EXTRACT(EPOCH FROM (d.deadline_date::timestamptz - NOW())) / 86400 AS days_until
          FROM deadlines d
          JOIN applications a ON d.application_id = a.id
          JOIN colleges_full c ON a.college_id = c.id
-         WHERE d.status != 'submitted'
+         WHERE (d.is_completed IS NULL OR d.is_completed = false)
            AND d.deadline_date >= CURRENT_DATE
-           AND d.deadline_date <= CURRENT_DATE + INTERVAL '7 days'`
+           AND d.deadline_date <= CURRENT_DATE + INTERVAL '7 days'
+           AND (d.user_id IS NOT NULL OR a.user_id IS NOT NULL)`
       );
 
       let notificationsCreated = 0;
       for (const deadline of upcomingDeadlines) {
+        const userId = deadline.user_id;
+        if (!userId) continue;
         const daysUntil = Math.ceil(parseFloat(deadline.days_until));
         if ([7, 3, 1, 0].includes(daysUntil)) {
-          await this.notifyDeadlineApproaching(deadline.user_id, deadline.college_name, deadline.deadline_type, deadline.deadline_date, daysUntil, deadline.college_id);
+          await this.notifyDeadlineApproaching(userId, deadline.college_name, deadline.deadline_type, deadline.deadline_date, daysUntil, deadline.college_id);
           notificationsCreated++;
         }
       }
@@ -154,17 +173,30 @@ class NotificationService {
   static async checkApproachingDecisions() {
     try {
       const pool = dbManager.getDatabase();
+      // application_deadlines uses type-specific notification columns
       const { rows: upcomingDecisions } = await pool.query(
         `SELECT a.user_id, c.name AS college_name, c.id AS college_id,
-                ad.notification_date,
-                EXTRACT(EPOCH FROM (ad.notification_date::timestamptz - NOW())) / 86400 AS days_until
+                COALESCE(
+                  ad.regular_decision_notification,
+                  ad.early_decision_1_notification,
+                  ad.early_action_notification
+                ) AS notification_date,
+                EXTRACT(EPOCH FROM (
+                  COALESCE(
+                    ad.regular_decision_notification,
+                    ad.early_decision_1_notification,
+                    ad.early_action_notification
+                  )::timestamptz - NOW()
+                )) / 86400 AS days_until
          FROM applications a
          JOIN colleges_full c ON a.college_id = c.id
-         JOIN application_deadlines ad ON c.id = ad.college_id
+         JOIN application_deadlines ad ON ad.college_id = a.college_id
          WHERE a.status = 'submitted'
-           AND ad.notification_date IS NOT NULL
-           AND ad.notification_date >= CURRENT_DATE
-           AND ad.notification_date <= CURRENT_DATE + INTERVAL '7 days'`
+           AND COALESCE(
+             ad.regular_decision_notification,
+             ad.early_decision_1_notification,
+             ad.early_action_notification
+           ) BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '7 days'`
       );
 
       let notificationsCreated = 0;

@@ -8,8 +8,8 @@ SELECT
   country_code,
   COUNT(*) AS total,
   COUNT(*) FILTER (WHERE acceptance_rate IS NOT NULL) AS has_acceptance_rate,
-  COUNT(*) FILTER (WHERE sat_50 IS NOT NULL OR sat_25 IS NOT NULL) AS has_sat,
-  COUNT(*) FILTER (WHERE act_50 IS NOT NULL OR act_25 IS NOT NULL) AS has_act,
+  COUNT(*) FILTER (WHERE sat_50 IS NOT NULL) AS has_sat,
+  COUNT(*) FILTER (WHERE act_50 IS NOT NULL) AS has_act,
   COUNT(*) FILTER (WHERE tuition_international IS NOT NULL) AS has_tuition_intl,
   COUNT(*) FILTER (WHERE cost_of_attendance IS NOT NULL) AS has_coa,
   COUNT(*) FILTER (WHERE graduation_rate_4yr IS NOT NULL) AS has_grad_rate,
@@ -26,8 +26,8 @@ ORDER BY total DESC;
 SELECT
   COUNT(*) AS us_total,
   ROUND(100.0 * COUNT(*) FILTER (WHERE acceptance_rate IS NULL) / COUNT(*), 1) AS pct_missing_acceptance,
-  ROUND(100.0 * COUNT(*) FILTER (WHERE sat_50 IS NULL AND sat_25 IS NULL) / COUNT(*), 1) AS pct_missing_sat,
-  ROUND(100.0 * COUNT(*) FILTER (WHERE act_50 IS NULL AND act_25 IS NULL) / COUNT(*), 1) AS pct_missing_act,
+  ROUND(100.0 * COUNT(*) FILTER (WHERE sat_50 IS NULL) / COUNT(*), 1) AS pct_missing_sat,
+  ROUND(100.0 * COUNT(*) FILTER (WHERE act_50 IS NULL) / COUNT(*), 1) AS pct_missing_act,
   ROUND(100.0 * COUNT(*) FILTER (WHERE cost_of_attendance IS NULL) / COUNT(*), 1) AS pct_missing_coa,
   ROUND(100.0 * COUNT(*) FILTER (WHERE graduation_rate_4yr IS NULL) / COUNT(*), 1) AS pct_missing_grad_rate,
   ROUND(100.0 * COUNT(*) FILTER (WHERE employment_rate IS NULL) / COUNT(*), 1) AS pct_missing_employment,
@@ -63,7 +63,7 @@ SELECT
   mv.canonical_name,
   mv.global_rank,
   CASE WHEN mv.acceptance_rate IS NULL THEN 'missing' ELSE 'ok' END AS acceptance_rate,
-  CASE WHEN mv.sat_50 IS NULL AND mv.sat_25 IS NULL THEN 'missing' ELSE 'ok' END AS sat,
+  CASE WHEN mv.sat_50 IS NULL THEN 'missing' ELSE 'ok' END AS sat,
   CASE WHEN mv.cost_of_attendance IS NULL AND mv.tuition_international IS NULL THEN 'missing' ELSE 'ok' END AS cost,
   CASE WHEN mv.graduation_rate_4yr IS NULL THEN 'missing' ELSE 'ok' END AS grad_rate,
   CASE WHEN mv.median_start_salary IS NULL THEN 'missing' ELSE 'ok' END AS salary
@@ -72,7 +72,7 @@ WHERE mv.country_code = 'US'
   AND mv.global_rank <= 200
   AND (
     mv.acceptance_rate IS NULL OR
-    (mv.sat_50 IS NULL AND mv.sat_25 IS NULL) OR
+    mv.sat_50 IS NULL OR
     mv.graduation_rate_4yr IS NULL
   )
 ORDER BY mv.global_rank ASC;
@@ -81,15 +81,15 @@ ORDER BY mv.global_rank ASC;
 -- 5. Deadline coverage summary
 -- ─────────────────────────────────────────────────────────────────
 SELECT
-  application_year,
+  academic_year,
   COUNT(DISTINCT college_id) AS colleges_with_deadlines,
-  COUNT(*) FILTER (WHERE regular_decision_date IS NOT NULL) AS has_rd,
-  COUNT(*) FILTER (WHERE early_action_date IS NOT NULL) AS has_ea,
-  COUNT(*) FILTER (WHERE early_decision_1_date IS NOT NULL) AS has_ed1,
-  COUNT(*) FILTER (WHERE offers_rolling_admission = TRUE OR offers_rolling_admission = 1) AS has_rolling
+  COUNT(*) FILTER (WHERE regular_decision_deadline IS NOT NULL) AS has_rd,
+  COUNT(*) FILTER (WHERE early_action_deadline IS NOT NULL) AS has_ea,
+  COUNT(*) FILTER (WHERE early_decision_1_deadline IS NOT NULL) AS has_ed1,
+  COUNT(*) FILTER (WHERE rolling_admission = 1) AS has_rolling
 FROM public.application_deadlines
-GROUP BY application_year
-ORDER BY application_year DESC;
+GROUP BY academic_year
+ORDER BY academic_year DESC;
 
 -- ─────────────────────────────────────────────────────────────────
 -- 6. Identity map coverage (canonical ↔ legacy)
