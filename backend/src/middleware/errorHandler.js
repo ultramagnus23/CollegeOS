@@ -120,6 +120,7 @@ const errorHandler = (err, req, res, next) => {
   const errorResponse = {
     success: false,
     error: sanitizeForLog(status >= 500 && isProduction() ? 'Internal server error' : message),
+    message: sanitizeForLog(status >= 500 && isProduction() ? 'Internal server error' : message),
     requestId,
   };
 
