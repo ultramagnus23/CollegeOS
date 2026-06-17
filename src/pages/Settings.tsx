@@ -254,7 +254,10 @@ const SCROLL_DELAY_MS = 100;
       preferred_setting: p?.locationPreference || p?.preferred_setting || '',
       // Goals & Values fields
       why_college_matters: p?.why_college_matters || '',
+      career_goals:        p?.career_goals        || '',
       life_goals_raw:      p?.life_goals_raw      || '',
+      // Identity — gender lives in users table, not student_profiles
+      gender: p?.gender || data.user?.gender || '',
     });
   };
 
@@ -322,7 +325,8 @@ const SCROLL_DELAY_MS = 100;
         phone: formData.phone,
         country: formData.country,
         grade_level: formData.grade_level,
-        graduation_year: formData.graduation_year ? parseInt(formData.graduation_year) : null
+        graduation_year: formData.graduation_year ? parseInt(formData.graduation_year) : null,
+        gender: formData.gender || null,
       });
       
       // Also update ProfileService
@@ -349,6 +353,7 @@ const SCROLL_DELAY_MS = 100;
           country: formData.country || null,
           grade_level: formData.grade_level || null,
           graduation_year: formData.graduation_year ? parseInt(formData.graduation_year, 10) : null,
+          gender: formData.gender || null,
         });
         await loadProfile();
         await refreshUser?.();
@@ -804,6 +809,19 @@ const SCROLL_DELAY_MS = 100;
                   />
                 </div>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Gender</Label>
+                  <select
+                    value={formData.gender}
+                    onChange={(e) => updateFormField('gender', e.target.value)}
+                    className={SELECT_CLASS}
+                  >
+                    <option value="">Prefer not to say</option>
+                    {['Male', 'Female', 'Non-binary', 'Other'].map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                </div>
+              </div>
               <div className="flex justify-end pt-4">
                 <Button onClick={saveBasicInfo} disabled={saving}>
                   {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -832,6 +850,12 @@ const SCROLL_DELAY_MS = 100;
                 <Label className="text-muted-foreground text-sm">Grade Level</Label>
                 <p className="text-foreground font-medium">{profileData?.profile?.grade_level || 'Not set'}</p>
               </div>
+              {profileData?.profile?.gender && (
+                <div>
+                  <Label className="text-muted-foreground text-sm">Gender</Label>
+                  <p className="text-foreground font-medium">{profileData.profile.gender}</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1499,6 +1523,17 @@ const SCROLL_DELAY_MS = 100;
                   />
                 </div>
                 <div>
+                  <Label htmlFor="career_goals">Career goals</Label>
+                  <textarea
+                    id="career_goals"
+                    rows={3}
+                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    placeholder="What career path or industry are you aiming for?"
+                    value={formData.career_goals || ''}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, career_goals: e.target.value }))}
+                  />
+                </div>
+                <div>
                   <Label htmlFor="life_goals_raw">Life goals</Label>
                   <textarea
                     id="life_goals_raw"
@@ -1516,6 +1551,7 @@ const SCROLL_DELAY_MS = 100;
                       try {
                         await api.updateProfile({
                           why_college_matters: formData.why_college_matters || null,
+                          career_goals: formData.career_goals || null,
                           life_goals_raw: formData.life_goals_raw || null,
                         });
                         toggleEditMode('goals');
@@ -1540,6 +1576,12 @@ const SCROLL_DELAY_MS = 100;
                   <Label className="text-muted-foreground text-xs uppercase tracking-wide">Why college matters</Label>
                   <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">
                     {formData.why_college_matters || <span className="text-muted-foreground italic">Not set — click Edit to add</span>}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs uppercase tracking-wide">Career goals</Label>
+                  <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">
+                    {formData.career_goals || <span className="text-muted-foreground italic">Not set — click Edit to add</span>}
                   </p>
                 </div>
                 <div>

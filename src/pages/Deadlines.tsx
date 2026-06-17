@@ -20,7 +20,7 @@ interface Deadline {
   deadline_type: string;
   deadline_date: string;
   description?: string;
-  is_completed: number;
+  is_completed: boolean;
 }
 
 interface IntelligenceDeadline {
@@ -205,9 +205,9 @@ const Deadlines: React.FC = () => {
     }
   };
 
-  const handleToggleComplete = async (id: number, isCompleted: number) => {
+  const handleToggleComplete = async (id: number, isCompleted: boolean) => {
     try {
-      await api.updateDeadline(id, { isCompleted: isCompleted === 1 ? 0 : 1 });
+      await api.updateDeadline(id, { isCompleted: !isCompleted });
       loadData();
     } catch {
       toast.error('Failed to update deadline');
@@ -376,9 +376,9 @@ const Deadlines: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {deadlines.map((deadline, index) => (
                   <div key={deadline.id} style={{
-                    background: deadline.is_completed === 1 ? 'rgba(16,185,129,0.04)' : S.surface,
-                    border: `1px solid ${deadline.is_completed === 1 ? 'rgba(16,185,129,0.25)' : S.border}`,
-                    borderLeft: `3px solid ${deadline.is_completed === 1 ? '#10B981' : ACCENT}`,
+                    background: deadline.is_completed ? 'rgba(16,185,129,0.04)' : S.surface,
+                    border: `1px solid ${deadline.is_completed ? 'rgba(16,185,129,0.25)' : S.border}`,
+                    borderLeft: `3px solid ${deadline.is_completed ? '#10B981' : ACCENT}`,
                     borderRadius: 16, padding: '18px 22px',
                     animation: 'fadeUp 0.3s ease both', animationDelay: `${index * 0.05}s`,
                     transition: 'border-color 0.2s',
@@ -390,7 +390,7 @@ const Deadlines: React.FC = () => {
                           onClick={() => handleToggleComplete(deadline.id, deadline.is_completed)}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 2, flexShrink: 0 }}
                         >
-                          {deadline.is_completed === 1
+                          {deadline.is_completed
                             ? <CheckCircle size={22} color="#10B981" />
                             : <Circle size={22} color={S.muted} />
                           }
@@ -400,8 +400,8 @@ const Deadlines: React.FC = () => {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
                             <h3 style={{
                               fontSize: 16, fontWeight: 800, fontFamily: S.font,
-                              color: deadline.is_completed === 1 ? S.muted : 'var(--color-text-primary)',
-                              textDecoration: deadline.is_completed === 1 ? 'line-through' : 'none',
+                              color: deadline.is_completed ? S.muted : 'var(--color-text-primary)',
+                              textDecoration: deadline.is_completed ? 'line-through' : 'none',
                             }}>
                               {deadline.college_name}
                             </h3>
@@ -421,7 +421,7 @@ const Deadlines: React.FC = () => {
                             <span style={{ fontSize: 13, color: S.dim, fontFamily: S.font, display: 'flex', alignItems: 'center', gap: 5 }}>
                               <Calendar size={13} /> {new Date(deadline.deadline_date + 'T00:00:00').toLocaleDateString()}
                             </span>
-                            {deadline.is_completed !== 1 && (
+                            {!deadline.is_completed && (
                               <span style={getUrgencyStyle(deadline.deadline_date)}>
                                 {getDaysUntil(deadline.deadline_date)}
                               </span>

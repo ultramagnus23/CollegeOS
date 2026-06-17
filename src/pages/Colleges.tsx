@@ -46,7 +46,7 @@ const COLLEGE_SYNC_DEBUG = import.meta.env.DEV;
 
 const normalizeLegacyCollege = (row: any) => ({
   ...row,
-  id: Number(row?.id) || 0,
+  id: row?.id ?? 0,
   name: String(row?.name || row?.college_name || 'Unknown College'),
   country: row?.country ?? null,
   city: row?.city ?? null,
@@ -62,7 +62,7 @@ const normalizeLegacyCollege = (row: any) => ({
 
 const normalizeLegacyRecommendation = (row: any) => ({
   ...row,
-  id: Number(row?.id || row?.college_id || row?.college?.id) || 0,
+  id: row?.id || row?.college_id || row?.college?.id || 0,
   name: String(row?.name || row?.college_name || row?.college?.name || 'Unknown College'),
   country: row?.country ?? row?.college?.country ?? null,
   state: row?.state ?? row?.college?.state ?? row?.college?.state_region ?? null,
@@ -94,7 +94,7 @@ const Colleges: React.FC = () => {
   const [countries, setCountries] = useState<string[]>([]);
   const [programs, setPrograms] = useState<string[]>([]);
   // Map of collegeId → fit category, populated by a single batch call after colleges load
-  const [fitMap, setFitMap] = useState<Record<number, string | null>>({});
+  const [fitMap, setFitMap] = useState<Record<string | number, string | null>>({});
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -105,7 +105,7 @@ const Colleges: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [addingCollegeId, setAddingCollegeId] = useState<number | null>(null);
+  const [addingCollegeId, setAddingCollegeId] = useState<string | number | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -115,7 +115,7 @@ const Colleges: React.FC = () => {
 
   // ── ML-grade recommendations (cosine similarity + admit chance) ───────────
   interface RecommendedCollege {
-    id: number;
+    id: string | number;
     name: string;
     country?: string;
     state?: string;
@@ -129,7 +129,7 @@ const Colleges: React.FC = () => {
   const [recsError, setRecsError] = useState<string | null>(null);
   const [recsLoaded, setRecsLoaded] = useState(false);
   // Expandable "Why?" state: college id → boolean
-  const [whyExpanded, setWhyExpanded] = useState<Record<number, boolean>>({});
+  const [whyExpanded, setWhyExpanded] = useState<Record<string | number, boolean>>({});
 
   /* ==================== LOAD FILTERS ==================== */
 
@@ -444,7 +444,7 @@ const Colleges: React.FC = () => {
 
 /* ==================== ACTIONS ==================== */
 
-  const handleAddCollege = async (collegeId: number) => {
+  const handleAddCollege = async (collegeId: string | number) => {
     if (!user) {
       toast.info('Create a free account to save colleges.');
       navigate('/auth');

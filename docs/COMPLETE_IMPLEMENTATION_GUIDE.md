@@ -1,5 +1,7 @@
 # CollegeOS - Complete Implementation Guide
 
+> ⚠️ **STALE — SQLite-era documentation. Do not follow database setup, prerequisite, or migration instructions. Current stack is PostgreSQL + Supabase. See README.md and CLAUDE.md for current architecture.**
+
 > **Comprehensive documentation consolidating all implementation guides, system summaries, and technical documentation for the CollegeOS college application management platform.**
 
 **Last Updated:** February 2026  

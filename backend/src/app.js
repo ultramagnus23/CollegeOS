@@ -274,6 +274,14 @@ async function startServer() {
       logger.warn('College seeding skipped or failed:', { error: seedErr.message });
     }
 
+    // Seed scholarships if the table is empty
+    try {
+      const { seedIfEmpty: seedScholarshipsIfEmpty } = require('../../scripts/seedScholarships');
+      await seedScholarshipsIfEmpty();
+    } catch (scholarshipSeedErr) {
+      logger.warn('Scholarship seeding skipped or failed:', { error: scholarshipSeedErr.message });
+    }
+
     // Log college count so Render cold-start logs confirm data is available
     try {
       const { rows: colRows } = await pool.query('SELECT COUNT(*) AS count FROM canonical.mv_college_cards');

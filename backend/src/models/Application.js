@@ -21,6 +21,12 @@ class Application {
 
     // Resolve collegeId from either camelCase or snake_case input
     const rawCollegeId = data.collegeId || data.college_id;
+    logger.debug('Application.create', {
+      userId,
+      rawCollegeId,
+      rawCollegeIdType: typeof rawCollegeId,
+      dataKeys: Object.keys(data),
+    });
     if (!rawCollegeId) {
       const err = new Error('Valid college_id is required');
       err.statusCode = 400;
@@ -111,6 +117,7 @@ class Application {
    * Returns null if the college cannot be resolved.
    */
   static async resolveCollegeId(pool, rawId) {
+    logger.debug('resolveCollegeId called', { rawId, rawIdType: typeof rawId });
     // Case 1: numeric ID — use directly
     const numeric = Number(rawId);
     if (Number.isInteger(numeric) && numeric > 0) {
@@ -138,7 +145,7 @@ class Application {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(strId)) return null;
 
-    // Try canonical.institutions.id → institution_identity_map
+    // Try canonical → identity map → legacy integer id
     try {
       const { rows: identityRows } = await pool.query(
         `SELECT im.legacy_id
@@ -149,8 +156,42 @@ class Application {
         [strId]
       );
       if (identityRows.length > 0) return Number(identityRows[0].legacy_id);
-    } catch {
-      // institution_identity_map may not exist yet
+
+      // UUID not in identity map — fetch canonical data and find/create a legacy record
+      const { rows: canonRows } = await pool.query(
+        `SELECT canonical_name, country_code FROM canonical.institutions WHERE id = $1 LIMIT 1`,
+        [strId]
+      );
+      if (canonRows.length === 0) return null;
+
+      const { canonical_name, country_code } = canonRows[0];
+
+      // Try matching by name in legacy colleges table
+      let legacyId;
+      const { rows: byName } = await pool.query(
+        `SELECT id FROM colleges WHERE LOWER(name) = LOWER($1) LIMIT 1`,
+        [canonical_name]
+      );
+      if (byName.length > 0) {
+        legacyId = byName[0].id;
+      } else {
+        // Create a minimal legacy record so this college can be added
+        const { rows: inserted } = await pool.query(
+          `INSERT INTO colleges (name, country) VALUES ($1, $2) RETURNING id`,
+          [canonical_name, country_code || 'Unknown']
+        );
+        legacyId = inserted[0].id;
+      }
+
+      // Record the mapping so future lookups are fast
+      await pool.query(
+        `INSERT INTO canonical.institution_identity_map (canonical_institution_id, legacy_id, source)
+         VALUES ($1, $2, 'auto') ON CONFLICT (canonical_institution_id) DO NOTHING`,
+        [strId, legacyId]
+      );
+      return legacyId;
+    } catch (err) {
+      logger.warn('resolveCollegeId UUID lookup failed:', { uuid: strId, error: err?.message });
     }
 
     return null;

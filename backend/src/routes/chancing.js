@@ -715,8 +715,7 @@ router.post('/save-history', authenticate, async (req, res, next) => {
  * GET /api/chancing/history
  * Get user's chancing history
  *
- * NOTE (schema): Queries `colleges_full` — verify this table exists in your DB.
- * If the table is named `colleges`, update the JOIN below accordingly.
+ * colleges_full is defined in migration 090 as a view of the colleges table.
  */
 router.get('/history', authenticate, async (req, res, next) => {
   try {
@@ -730,7 +729,7 @@ router.get('/history', authenticate, async (req, res, next) => {
     let query = `
       SELECT ch.*, c.name as college_name
       FROM chancing_history ch
-      JOIN colleges_full c ON ch.college_id = c.id
+      LEFT JOIN colleges_full c ON ch.college_id = c.id
       WHERE ch.user_id = $${paramIndex++}
     `;
     const params = [req.user.userId];
@@ -1374,7 +1373,7 @@ router.get('/contribution-stats', authenticate, async (req, res, next) => {
  * GET /api/chancing/ml/data-needs
  * Get colleges that need more data for ML training
  *
- * NOTE (schema): Queries `colleges_full` — verify table name matches your DB.
+ * colleges_full is defined in migration 090 as a view of the colleges table.
  */
 router.get('/ml/data-needs', authenticate, async (req, res, next) => {
   try {

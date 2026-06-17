@@ -1,6 +1,10 @@
 """
-CollegeOS Scraper — Configuration
-All settings pulled from environment variables / .env
+CollegeOS legacy scraper — IPEDS, US/Europe/India data ingestion, training pipeline.
+India intelligence pipeline: scraper/indian/ (used by india-weekly-refresh.yml, india-monthly-refresh.yml).
+Canonical deadline/requirements refresh: scrapers/ (plural, used by scrape-weekly.yml, scrape-monthly.yml).
+Do not add new scrapers to both trees — pick the appropriate one.
+
+Configuration: all settings pulled from environment variables / .env
 """
 
 import os

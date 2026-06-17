@@ -10,6 +10,8 @@ const validate = (schema) => {
     if (error) {
       const errors = error.details.map(detail => ({
         field: detail.path.join('.'),
+        value: detail.context?.value,
+        expected: detail.type,
         message: detail.message
       }));
       

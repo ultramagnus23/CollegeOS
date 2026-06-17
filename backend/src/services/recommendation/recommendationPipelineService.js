@@ -224,7 +224,6 @@ async function generateDeterministicFallbackRecommendations(normalizedStudent = 
         WHERE r.institution_id = c.id
       ) AS ranking
     FROM canonical.mv_college_cards c
-    LEFT JOIN canonical.institution_admissions a ON a.institution_id = c.id
     LEFT JOIN (
       SELECT institution_id, ARRAY_AGG(program_name) AS programs
       FROM canonical.institution_programs
