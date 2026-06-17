@@ -176,6 +176,88 @@
 
 ---
 
+## PHASE 7 — CRITICAL PRE-LAUNCH FIXES (Session 2)
+
+### P7-1 · Fix "Add College" 400 Validation failed — DONE
+- **Root cause:** `normalizeLegacyCollege` in `Colleges.tsx` cast UUID id with `Number(uuid) → NaN → || 0 = 0`. Joi `.positive()` rejects 0.
+- **Fix:** Removed forced `Number()` cast; widened TypeScript types (`id: string | number`, `fitMap`, `addingCollegeId`, etc.)
+- **File:** `src/pages/Colleges.tsx`
+
+### P7-2 · Fix 42P10 constraint error in resolveCollegeId — DONE
+- **Root cause:** `ON CONFLICT (canonical_institution_id)` requires a unique constraint; `CREATE TABLE IF NOT EXISTS` in migration 087 skips constraints when table pre-exists.
+- **Fix:** Changed identity map INSERT to `WHERE NOT EXISTS` pattern. Migration 091 adds constraint idempotently.
+- **Files:** `backend/src/models/Application.js`, `backend/migrations/091_schema_gaps.sql`
+
+### P7-3 · Fix "column c.application_deadline does not exist" in chancing — DONE
+- **Root cause:** Migration 058 added `rd/ed/ea_deadline` to `colleges` but not `application_deadline`. `College.findById()` selects all four.
+- **Fix:** Migration 091 adds `application_deadline DATE` to `colleges` and all four columns to `colleges_comprehensive`.
+- **File:** `backend/migrations/091_schema_gaps.sql`
+
+### P7-4 · Fix `colleges_full` view not defined — DONE
+- **Root cause:** `colleges_full` referenced in 20+ source files but no migration ever created it.
+- **Fix:** Migration 090 creates `public.colleges_full` as `SELECT * FROM public.colleges`.
+- **File:** `backend/migrations/090_colleges_full_view.sql`
+
+### P7-5 · Fix recommendation pipeline JOIN error — DONE
+- **Root cause:** `generateDeterministicFallbackRecommendations` had `LEFT JOIN canonical.institution_admissions a` with nothing selected from alias `a` — any schema issue on that table caused silent join failure.
+- **Fix:** Removed the unnecessary JOIN entirely.
+- **File:** `backend/src/services/recommendation/recommendationPipelineService.js`
+
+### P7-6 · Fix deadlineAutoPopulationService INSERT failures — DONE
+- **Root cause 1:** Wrong identity map column names (`institution_id`, `source_pk` don't exist → should be `canonical_institution_id`, `legacy_id`).
+- **Root cause 2:** INSERT used non-existent columns `source_url`, `status`; omitted NOT NULL columns `user_id`, `title`.
+- **Fix:** Corrected column names; rewrote INSERT to valid deadlines schema with `WHERE NOT EXISTS` dedup. Added `_insertSupportDeadlines()` generating FAFSA, CSS Profile, transcript, rec letters, test scores, midyear relative to RD date. Fallback triggers support deadlines even when no college-specific data exists.
+- **File:** `backend/src/services/deadlineAutoPopulationService.js`
+
+### P7-7 · Fix essayAutoLoadingService INSERT failures — DONE
+- **Root cause 1:** Same wrong identity map column names.
+- **Root cause 2:** INSERT used non-existent columns `essay_type`, `is_required`, `shared_across_colleges`, `platform`; omitted NOT NULL column `title`.
+- **Fix:** Corrected column names; rewrote all INSERTs to valid essays schema columns with `WHERE NOT EXISTS` dedup.
+- **File:** `backend/src/services/essayAutoLoadingService.js`
+
+### P7-8 · Fix error handler response mismatch — DONE
+- **Root cause:** `errorHandler.js` returned `{ error: '...' }` but frontend reads `data.message`.
+- **Fix:** Added `message` field mirroring `error` in all error responses.
+- **File:** `backend/src/middleware/errorHandler.js`
+
+### P7-9 · Validation error detail — DONE
+- **Fix:** Added `value` and `expected` fields to Joi validation error objects for easier debugging.
+- **File:** `backend/src/middleware/validation.js`
+
+### P7-10 · Missing college data audit — TODO
+- Audit NULL percentages by column across `canonical.institutions` and supporting tables
+- Identify colleges missing acceptance rate, tuition, SAT/ACT ranges, enrollment, outcomes data
+- Backfill from existing tables where possible; flag gaps for scraper refresh
+
+### P7-11 · Deadline data quality audit — TODO
+- Ensure `application_deadlines` table has RD/EA/ED/scholarship deadlines for top colleges
+- Cross-check against `canonical.institution_admissions` for any extractable deadline dates
+- Flag colleges with zero deadline records for scraper priority queue
+
+### P7-12 · College card data enrichment — TODO
+- Add salary outcomes, employment rate, median debt, ROI, SAT/ACT/GPA ranges to card display
+- Ensure `canonical.mv_college_cards` includes or can be refreshed to include these fields
+
+### P7-13 · Job outcome predictions for data-sparse colleges — TODO
+- Estimate missing colleges from major/ranking/region/cost/acceptance rate features
+- Output prediction confidence and source tag on frontend
+
+### P7-14 · GitHub Actions audit — TODO
+- Verify all secret names match repo secrets (SUPABASE_URL, SUPABASE_KEY, etc.)
+- Check Python version pins, pip install steps, scraper entry points
+
+### P7-15 · Database audit — TODO
+- Check for missing tables, broken foreign keys, invalid indexes
+- Verify views don't reference non-existent columns
+- Confirm migration order is deterministic (all files have numeric prefix now)
+
+### P7-16 · Performance audit — TODO
+- Log queries >500ms; identify N+1 patterns
+- Add missing indexes for common join/filter columns
+- Check materialized view refresh frequency
+
+---
+
 ## KNOWN BLOCKERS (do not attempt to fix in code)
 
 | Blocker | Status |
