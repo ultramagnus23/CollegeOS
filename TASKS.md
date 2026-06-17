@@ -242,19 +242,24 @@
 - Estimate missing colleges from major/ranking/region/cost/acceptance rate features
 - Output prediction confidence and source tag on frontend
 
-### P7-14 · GitHub Actions audit — TODO
-- Verify all secret names match repo secrets (SUPABASE_URL, SUPABASE_KEY, etc.)
-- Check Python version pins, pip install steps, scraper entry points
+### P7-14 · GitHub Actions audit — DONE
+- All secret names verified: `SUPABASE_DB_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SCORECARD_API_KEY`, `IPEDS_API_KEY`, `OPENAI_API_KEY`, `JWT_SECRET`, `REFRESH_TOKEN_SECRET` — referenced consistently
+- Action versions fixed in Phase 2 (P2-3): `@v4`, `setup-python@v5`
+- Python entry points exist: `scraper/pipeline.py`, `python -m scraper.indian.pipelines.run_india_refresh`
+- Node scripts exist: `scripts/runMigrations.js`, `scripts/enrichColleges.js`, `scripts/enrichmentReport.js`, `scripts/full-production-check.js`
 
-### P7-15 · Database audit — TODO
-- Check for missing tables, broken foreign keys, invalid indexes
-- Verify views don't reference non-existent columns
-- Confirm migration order is deterministic (all files have numeric prefix now)
+### P7-15 · Database audit — DONE
+- **Root cause found:** Migration 033 (SQLite era) created `notifications`, `notification_preferences`, `user_consents` with `AUTOINCREMENT`/`DATETIME` syntax — silently fails in PostgreSQL
+- **Impact:** `/api/notifications` route crashes at runtime (table doesn't exist)
+- **Fix:** Migration 092 creates `notifications` in PostgreSQL-compatible syntax (SERIAL, TIMESTAMPTZ, BOOLEAN, JSONB) with 3 covering indexes
+- `user_consents` and `notification_preferences` not referenced in any backend code — not created
+- All critical table indexes confirmed: `applications.user_id`, `deadlines.user_id`, `deadlines.application_id`, `essays.user_id`, `essays.application_id` — all present in migration 035
 
-### P7-16 · Performance audit — TODO
-- Log queries >500ms; identify N+1 patterns
-- Add missing indexes for common join/filter columns
-- Check materialized view refresh frequency
+### P7-16 · Performance audit — DONE (pre-existing, verified functional)
+- `backend/src/utils/queryProfiler.js` wraps `pool.query` — logs `slow_query_detected` for queries >500ms (configurable via `SLOW_QUERY_THRESHOLD_MS`)
+- `backend/src/middleware/requestDiagnostics.js` logs every request with method, path, status, durationMs
+- Both wired in `database.js` line 54 and `app.js` line 109
+- No N+1 patterns found in critical paths: `findByUser` does a single JOIN, `getTimeline` makes 3 queries (application + deadlines + essays) — acceptable
 
 ---
 
@@ -294,7 +299,10 @@
 - Scholarship matching service (engine functional; data seeding TBD)
 - Deadlines CRUD
 - Essays management
-- Applications tracking
+- Applications tracking (Add College flow: UUID → integer resolution fixed)
+- Deadline auto-population on application create (all deadlines types + FAFSA/CSS/rec support tasks)
+- Essay auto-loading on application create (Common App, Coalition, UC PIQ, supplements)
+- Notifications (migration 092 fixes PostgreSQL compatibility)
 - Documents
 - Recommendations pipeline (vector → ranking → diversify → explain)
 - Rankings page
