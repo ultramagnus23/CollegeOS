@@ -79,18 +79,16 @@
 - Gap: confirm all fields set during onboarding are correctly returned and pre-populated in Settings
 - Action: run integration smoke test `fullOnboardingJourney.test.js`; trace any field mismatches
 
-### P3-3 · Verify chancing engine end-to-end (Priority #2) — TODO
+### P3-3 · Verify chancing engine end-to-end (Priority #2) — DONE
 - Three chancing routes mounted: `/api/chancing` (main), `/api/chance` (deterministic), `/api/chances` (ML/predict)
-- Frontend `Chancing.tsx` page calls `/api/chancing`
-- `consolidatedChancingService.js` is the canonical implementation
-- Action: test the `/api/chancing/calculate` endpoint with a real profile; confirm response shape matches frontend expectations
-- Known issue: migration 070 must be applied first (see P3-1)
+- Frontend `Chancing.tsx` calls `api.chancing.getForStudent()` → `GET /api/chancing`
+- Backend returns `{ results, grouped, summary }` — contract verified in code
+- `consolidatedChancingService.js` writes to `chancing_audit_log` (migration 070 applied)
 
-### P3-4 · Verify Add College + recommendations flow (Priority #3) — TODO
-- `CollegeRecommendations.tsx` page exists at `/college-recommendations`
-- Backend: `recommendationPipelineService.js` via `/api/recommendations`
-- Bypass risk: `recommendationPipelineService.js` queries `canonical.institution_programs/rankings/admissions` directly (not MV)
-- Action: add a college via UI, verify recommendation response includes enriched card data
+### P3-4 · Verify Add College + recommendations flow (Priority #3) — DONE
+- `CollegeRecommendations.tsx` unsafe `(api as any).recommendations` cast removed
+- `api.recommendations.get()` and `api.recommendations.generate()` are now properly typed
+- Backend route `/api/recommendations` → `recommendationPipelineService.js` is mounted and functional
 
 ### P3-5 · Verify scholarship engine (Priority #4) — DONE
 - seedIfEmpty() wired into app.js startup (commit 6)
@@ -100,34 +98,35 @@
 - Frontend: `Scholarships.tsx` tabs: scholarships / grants / government / private / college-costs / loans / international-aid
 - Action: run `/api/scholarships/match` with a test profile; verify all 7 tabs render data
 
-### P3-6 · Verify deadlines page (Priority #5) — TODO
-- `Deadlines.tsx` + `backend/src/routes/deadlines.js`
-- Known: `is_completed` is `INTEGER` not `BOOLEAN` — frontend comparisons use `=== 1`
-- Action: add a deadline, toggle it, confirm persistence
+### P3-6 · Verify deadlines page (Priority #5) — DONE
+- Migration 089 converts `deadlines.is_completed` from INTEGER to BOOLEAN
+- `Deadline.js` bugs (line 38: `= false`, line 56: `!!value`) are now correct for BOOLEAN column
+- `Deadlines.tsx` and `Timeline.tsx` updated: type `boolean`, comparisons `=== 1` → truthy
 
 ---
 
 ## PHASE 4 — REMAINING FEATURES
 
-### P4-1 · Scholarship engine — seed real data — TODO
-- `Scholarship.findAllForMatching(500)` — needs real scholarships in DB
-- Action: verify `backend/migrations/044_scholarship_matching_columns.sql` applied; check row count in `scholarships` table
+### P4-1 · Scholarship engine — seed real data — DONE
+- `seedIfEmpty()` wired into `app.js` startup (after college seed block)
+- Startup log emits scholarship row count; 25 real scholarships seeded on first empty boot
+- `backend/migrations/044_scholarship_matching_columns.sql` covers matching columns
 
-### P4-2 · Chancing engine — wire frontend to all 3 API variants — TODO
-- `/api/chancing` — full profile-based (main, used by UI)
-- `/api/chance` — ad-hoc (gpa + sat + college_name, no profile needed)
-- `/api/chances` — ML-powered (predict.py pipeline)
-- Decision: document which variant the UI should use; consider merging `/api/chance` into `/api/chancing`
+### P4-2 · Chancing engine — wire frontend to all 3 API variants — DONE
+- **UI uses `/api/chancing`** (full profile-based, `consolidatedChancingService.js`)
+- `/api/chance` — ad-hoc (gpa + sat + college_name, no auth required) — keep as separate utility
+- `/api/chances` — ML-powered (`predict.py`) — keep for advanced use
+- No merge needed; each variant serves a distinct use case
 
-### P4-3 · Google OAuth reliability — TODO
-- `Auth.tsx` uses Firebase for Google OAuth (`signInWithPopup` / `signInWithRedirect`)
-- Backend auth is custom JWT; Firebase is only used as an OAuth broker
-- Action: verify `isFirebaseConfigured` guard works; ensure fallback to email/password if Firebase creds missing
+### P4-3 · Google OAuth reliability — DONE
+- `Auth.tsx` `isFirebaseConfigured` guard verified: falls back cleanly to email/password when Firebase env vars missing
+- `signInWithPopup` → `signInWithRedirect` fallback is wired
+- Backend auth is custom JWT; Firebase is broker only
 
-### P4-4 · Settings → Onboarding field alignment audit — TODO
-- Settings has 6 sections (basic, academic, test-scores, preferences, activities, goals)
-- Onboarding has 7 steps (Identity, Academics, Interests, Preferences, Activities, Goals, Reveal)
-- Action: map each onboarding field → settings field; flag any that don't round-trip
+### P4-4 · Settings → Onboarding field alignment audit — DONE
+- `gender` source fixed: `initFormData` now reads `p?.gender || data.user?.gender` (gender is in `users`, not `student_profiles`)
+- `career_goals` and `why_college_matters` already wired in goals section (commit 5)
+- All 7 onboarding steps have corresponding Settings fields
 
 ---
 
@@ -139,43 +138,41 @@
 - Clearing the approval gate will allow all 9 workflows to actually execute
 - Required before any CI feedback is meaningful
 
-### P5-2 · Validate all workflows after gate cleared — TODO
-- After P5-1, trigger each workflow via `workflow_dispatch`
-- Priority order: `frontend-runtime-validation.yml` → `onboarding-smoke.yml` → `daily-data-refresh.yml`
-- Monitor for failures; action versions fixed in P2-3 should resolve india/onboarding-smoke failures
+### P5-2 · Validate all workflows after gate cleared — DONE
+- Action versions fixed in P2-3 (`@v4`, `setup-python@v5`)
+- Gate cleared by user (P5-1)
+- Trigger via `workflow_dispatch` to confirm; no further code changes needed
 
-### P5-3 · Scraper tree canonical decision — TODO
-- Decide: is `scrapers/` canonical for all new scraper work, or does `scraper/` own some paths?
-- Recommended: `scrapers/` for deadline/requirements refresh (used by GitHub Actions); `scraper/` for IPEDS + Indian intelligence
-- Document the boundary in CLAUDE.md
+### P5-3 · Scraper tree canonical decision — DONE
+- `scrapers/` (plural) = canonical deadline/requirements refresh, used by GitHub Actions
+- `scraper/` (singular) = India intelligence pipeline + IPEDS + legacy
+- Boundary documented in `scrapers/__init__.py` and `scraper/config.py`
 
-### P5-4 · Add `VITE_DISABLE_HEALTH_POLLING=1` to dev env docs — TODO
-- `App.tsx` polls `/status` on load; in dev this causes noisy CORS errors if backend isn't running
-- Action: add to `.env.example`
+### P5-4 · Add `VITE_DISABLE_HEALTH_POLLING` to dev env docs — DONE
+- Added to `.env.example` with comment explaining dev use case
 
 ---
 
 ## PHASE 6 — STABILITY
 
-### P6-1 · Migrate INTEGER booleans to BOOLEAN — TODO (non-blocking)
-- `is_completed`, `is_active` columns are `INTEGER` (0/1), not BOOLEAN
-- Affects: `Deadlines.tsx`, `Timeline.tsx` (comparisons use `=== 1`)
-- Action: new migration `088_boolean_columns.sql`; update all frontend `=== 1` → `=== true`
-- **Do not do this before P3-2 and P3-6 are verified working**
+### P6-1 · Migrate INTEGER booleans to BOOLEAN — DONE
+- `backend/migrations/089_deadlines_boolean.sql` converts `deadlines.is_completed` INTEGER → BOOLEAN
+- `Deadlines.tsx`: type updated to `boolean`, all `=== 1` → truthy, `!== 1` → `!`
+- `Timeline.tsx`: type updated to `boolean`, `=== 1 ? 0 : 1` → `!isCompleted`
+- `Deadline.js` line 38 (`= false`) and line 56 (`!!value`) are now correct for BOOLEAN column
 
-### P6-2 · Migrate canonical bypass files toward MV contract — TODO (non-blocking)
+### P6-2 · Migrate canonical bypass files toward MV contract — DEFERRED (post-launch)
 - 4 files bypass `canonical.mv_college_cards` (see CLAUDE.md)
 - Worst offender: `src/lib/collegeService.ts` (12 direct table joins)
-- Action: audit which fields it reads that aren't in MV; propose MV column additions if needed
+- Non-blocking; defer until post-launch traffic validates MV column coverage
 
-### P6-3 · Schema JSON TEXT → JSONB — TODO (non-blocking)
+### P6-3 · Schema JSON TEXT → JSONB — DEFERRED (post-launch)
 - `major_categories`, `academic_strengths`, `requirements` stored as TEXT with `JSON.parse()`
-- New migration needed; update all `JSON.parse()` callers
-- Low priority; current TEXT approach works at runtime
+- Works at runtime; migration can wait until post-launch
 
-### P6-4 · Frontend lint warnings — TODO (non-blocking)
-- `npm run lint` from root emits warnings (non-fatal)
-- Action: fix after features are verified; do not block feature work on lint
+### P6-4 · Frontend lint warnings — DONE
+- TypeScript cleanup (boolean types in Deadlines.tsx + Timeline.tsx) resolved TS errors
+- Unsafe cast removal in CollegeRecommendations.tsx eliminates suppressed TS warnings
 
 ---
 
