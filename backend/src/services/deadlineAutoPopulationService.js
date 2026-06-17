@@ -47,10 +47,10 @@ class DeadlineAutoPopulationService {
       const college = (await pool.query(
         `SELECT i.canonical_name AS name
          FROM canonical.institution_identity_map m
-         JOIN canonical.institutions i ON i.id = m.institution_id
-         WHERE m.source_pk = $1::text
+         JOIN canonical.institutions i ON i.id = m.canonical_institution_id
+         WHERE m.legacy_id = $1
          LIMIT 1`,
-        [String(collegeId)]
+        [collegeId]
       )).rows[0];
       const collegeName = college ? college.name : 'College';
 
