@@ -167,22 +167,55 @@ class AuthService {
 
   static async refreshAccessToken(refreshToken) {
     try {
+      logger.info('TOKEN_REFRESH_ATTEMPT', {
+        tokenPrefix: refreshToken.substring(0, 15) + '...',
+        hasToken: !!refreshToken
+      });
       const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret);
+      logger.info('REFRESH_TOKEN_JWT_VERIFIED', {
+        userId: decoded.userId,
+        tokenId: decoded.tokenId ? decoded.tokenId.substring(0, 8) + '...' : null
+      });
       const pool = dbManager.getDatabase();
       const { rows } = await pool.query(
         `SELECT * FROM refresh_tokens WHERE token = $1 AND user_id = $2 AND expires_at > NOW()`,
         [refreshToken, decoded.userId]
       );
-      if (!rows[0]) throw new Error('Invalid refresh token');
+      if (!rows[0]) {
+        logger.warn('REFRESH_TOKEN_INVALID', {
+          tokenPrefix: refreshToken.substring(0, 15) + '...',
+          userId: decoded.userId,
+          reason: 'Token not found in DB, expired, or user mismatch'
+        });
+        throw new Error('Invalid refresh token');
+      }
+      logger.info('REFRESH_TOKEN_DB_VALIDATED', {
+        userId: decoded.userId,
+        tokenExists: true,
+        expiresAt: rows[0].expires_at
+      });
       const user = await User.findById(decoded.userId);
       if (!user) throw new Error('User not found');
       await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
+      logger.info('REFRESH_TOKEN_REVOKED', {
+        userId: user.id,
+        oldTokenPrefix: refreshToken.substring(0, 15) + '...'
+      });
       const newRefreshToken = this.generateRefreshToken(user);
       await this.storeRefreshToken(user.id, newRefreshToken);
       const accessToken = this.generateAccessToken(user);
+      logger.info('TOKEN_REFRESH_SUCCESS', {
+        userId: user.id,
+        email: sanitizeForLog(user.email),
+        newAccessTokenPrefix: accessToken.substring(0, 15) + '...',
+        newRefreshTokenPrefix: newRefreshToken.substring(0, 15) + '...'
+      });
       return { accessToken, refreshToken: newRefreshToken };
     } catch (error) {
-      logger.error('Token refresh failed:', error);
+      logger.error('TOKEN_REFRESH_FAILURE', {
+        error: error.message,
+        hasRefreshToken: !!refreshToken
+      });
       throw error;
     }
   }
@@ -203,11 +236,33 @@ class AuthService {
   }
 
   static generateAccessToken(user) {
-    return jwt.sign({ userId: user.id, email: user.email, role: user.role || 'student' }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
+    const accessToken = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role || 'student' },
+      config.jwt.secret,
+      { expiresIn: config.jwt.expiresIn }
+    );
+    logger.info('ACCESS_TOKEN_CREATED', {
+      userId: user.id,
+      email: sanitizeForLog(user.email),
+      expiresIn: config.jwt.expiresIn,
+      tokenPrefix: accessToken.substring(0, 15) + '...'
+    });
+    return accessToken;
   }
 
   static generateRefreshToken(user) {
-    return jwt.sign({ userId: user.id, tokenId: crypto.randomBytes(32).toString('hex') }, config.jwt.refreshSecret, { expiresIn: config.jwt.refreshExpiresIn });
+    const refreshToken = jwt.sign(
+      { userId: user.id, tokenId: crypto.randomBytes(32).toString('hex') },
+      config.jwt.refreshSecret,
+      { expiresIn: config.jwt.refreshExpiresIn }
+    );
+    logger.info('REFRESH_TOKEN_CREATED', {
+      userId: user.id,
+      email: sanitizeForLog(user.email),
+      expiresIn: config.jwt.refreshExpiresIn,
+      tokenIdPrefix: refreshToken.substring(0, 15) + '...'
+    });
+    return refreshToken;
   }
 
   static async storeRefreshToken(userId, token) {
@@ -218,6 +273,11 @@ class AuthService {
       'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
       [userId, token, expiryDate.toISOString()]
     );
+    logger.info('REFRESH_TOKEN_STORED_IN_DB', {
+      userId,
+      tokenPrefix: token.substring(0, 15) + '...',
+      expiresAt: expiryDate.toISOString()
+    });
   }
 
   static sanitizeUser(user) {

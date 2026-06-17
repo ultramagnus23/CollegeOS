@@ -6,7 +6,11 @@ const authenticate = (req, res, next) => {
     const authHeader = req.headers.authorization;
     
     if (!authHeader) {
-      logger.warn('Authentication failed: No Authorization header');
+      logger.warn('AUTH_MIDDLEWARE_NO_HEADER', {
+        path: req.path,
+        method: req.method,
+        ip: req.ip
+      });
       return res.status(401).json({
         success: false,
         message: 'No token provided',
@@ -15,7 +19,9 @@ const authenticate = (req, res, next) => {
     }
     
     if (!authHeader.startsWith('Bearer ')) {
-      logger.warn('Authentication failed: Invalid Authorization header format', {
+      logger.warn('AUTH_MIDDLEWARE_INVALID_FORMAT', {
+        path: req.path,
+        method: req.method,
         format: authHeader.substring(0, 20)
       });
       return res.status(401).json({
@@ -28,7 +34,10 @@ const authenticate = (req, res, next) => {
     const token = authHeader.substring(7);
     
     if (!token || token.trim() === '') {
-      logger.warn('Authentication failed: Empty token');
+      logger.warn('AUTH_MIDDLEWARE_EMPTY_TOKEN', {
+        path: req.path,
+        method: req.method
+      });
       return res.status(401).json({
         success: false,
         message: 'Empty token provided',
@@ -36,9 +45,20 @@ const authenticate = (req, res, next) => {
       });
     }
     
+    logger.info('AUTH_HEADER_INJECTED', {
+      path: req.path,
+      method: req.method,
+      tokenPrefix: token.substring(0, 15) + '...',
+      hasBearer: true
+    });
+    
     const decoded = AuthService.verifyToken(token);
     if (!decoded || !decoded.userId) {
-      logger.warn('Authentication failed: Invalid decoded token payload');
+      logger.warn('AUTH_MIDDLEWARE_INVALID_PAYLOAD', {
+        path: req.path,
+        method: req.method,
+        decodedPayload: decoded ? Object.keys(decoded) : null
+      });
       return res.status(401).json({
         success: false,
         message: 'Invalid token payload',
@@ -46,10 +66,22 @@ const authenticate = (req, res, next) => {
       });
     }
     
+    logger.info('AUTH_MIDDLEWARE_SUCCESS', {
+      path: req.path,
+      method: req.method,
+      userId: decoded.userId,
+      email: decoded.email
+    });
+    
     req.user = decoded;
     next();
   } catch (error) {
-    logger.error('Authentication failed:', error);
+    logger.error('AUTH_MIDDLEWARE_FAILURE', {
+      path: req.path,
+      method: req.method,
+      error: error.message,
+      errorType: error.name
+    });
     
     // Determine error type for better client handling
     let errorType = 'INVALID_TOKEN';

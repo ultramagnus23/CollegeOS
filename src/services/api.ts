@@ -47,6 +47,9 @@ class ApiService {
   private authHydrated = false;
   private authHydrationResolver: (() => void) | null = null;
   private authHydrationPromise: Promise<void>;
+  private refreshFailureCount: number = 0;
+  private readonly MAX_REFRESH_FAILURES = 3;
+  private onAuthInvalidated?: () => void;
 
   private now(): number {
     return globalThis?.performance?.now?.() ?? Date.now();
@@ -59,6 +62,10 @@ class ApiService {
       this.authHydrationResolver = resolve;
     });
     logDebug('init', 'INIT', `ApiService initialized with baseUrl: ${this.baseUrl}`);
+  }
+
+  setOnAuthInvalidated(callback: () => void) {
+    this.onAuthInvalidated = callback;
   }
 
   setAuthHydrated(ready: boolean) {
@@ -103,8 +110,10 @@ class ApiService {
     const requestId = generateRequestId();
     logDebug(requestId, 'TOKEN', 'Clearing all tokens');
     this.token = null;
+    this.refreshFailureCount = 0;
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    this.onAuthInvalidated?.();
   }
 
   private getHeaders() {
@@ -182,6 +191,13 @@ class ApiService {
 
         if (refreshToken && endpoint !== '/auth/refresh') {
           try {
+            // Prevent infinite refresh loops
+            if (this.refreshFailureCount >= this.MAX_REFRESH_FAILURES) {
+              logError(requestId, 'TOKEN_REFRESH', 'Max refresh failures reached, clearing auth state');
+              this.clearTokens();
+              throw new Error('Session expired. Please log in again.');
+            }
+
             this.refreshing = true;
             this.refreshPromise = this.refreshPromise || apiFetch(`${this.baseUrl}/auth/refresh`, {
               method: 'POST',
@@ -192,14 +208,24 @@ class ApiService {
 
             if ((refreshData as any)?.data?.accessToken) {
               const newAccessToken = (refreshData as any).data.accessToken;
+              const newRefreshToken = (refreshData as any).data.refreshToken;
+
               this.setToken(newAccessToken);
+              if (newRefreshToken) {
+                localStorage.setItem('refreshToken', newRefreshToken);
+                logDebug(requestId, 'TOKEN_REFRESH', 'New refresh token stored');
+              }
+
+              this.refreshFailureCount = 0;
               logDebug(requestId, 'TOKEN_REFRESH', 'Token refreshed successfully, retrying request');
               return this.request(endpoint, options, retryCount + 1);
             }
             logError(requestId, 'TOKEN_REFRESH', 'Failed to refresh token', refreshData);
+            this.refreshFailureCount++;
             this.clearTokens();
           } catch (refreshError: any) {
             logError(requestId, 'TOKEN_REFRESH', 'Error during token refresh', refreshError);
+            this.refreshFailureCount++;
             this.clearTokens();
           } finally {
             this.refreshing = false;

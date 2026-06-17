@@ -47,19 +47,39 @@ class AuthController {
       const { refreshToken } = req.validatedData || req.body;
       
       if (!refreshToken) {
+        logger.warn('REFRESH_REQUEST_NO_TOKEN', {
+          ip: req.ip,
+          path: req.path
+        });
         return res.status(400).json({
           success: false,
           message: 'Refresh token is required'
         });
       }
       
+      logger.info('REFRESH_CONTROLLER_START', {
+        userId: req.user?.userId || 'none',
+        ip: req.ip,
+        hasRefreshToken: !!refreshToken
+      });
+      
       const result = await AuthService.refreshAccessToken(refreshToken);
+      
+      logger.info('REFRESH_CONTROLLER_SUCCESS', {
+        userId: req.user?.userId || 'none',
+        hasNewAccessToken: !!result.accessToken,
+        hasNewRefreshToken: !!result.refreshToken
+      });
       
       res.json({
         success: true,
         data: result
       });
     } catch (error) {
+      logger.error('REFRESH_CONTROLLER_FAILURE', {
+        error: error.message,
+        ip: req.ip
+      });
       next(error);
     }
   }
@@ -208,7 +228,21 @@ class AuthController {
         });
       }
 
+      logger.info('GOOGLE_LOGIN_START', {
+        googleId: googleId.substring(0, 10) + '...',
+        email: email,
+        ip: req.ip
+      });
+
       const result = await AuthService.googleLogin(googleId, email, name || 'Google User');
+
+      logger.info('GOOGLE_LOGIN_SUCCESS', {
+        userId: result.user.id,
+        email: result.user.email,
+        isNewUser: false,
+        hasAccessToken: !!result.tokens?.accessToken,
+        hasRefreshToken: !!result.tokens?.refreshToken
+      });
 
       res.json({
         success: true,
@@ -216,6 +250,11 @@ class AuthController {
         data: result
       });
     } catch (error) {
+      logger.error('GOOGLE_LOGIN_FAILURE', {
+        error: error.message,
+        googleId: req.body?.googleId?.substring(0, 10) + '...',
+        ip: req.ip
+      });
       next(error);
     }
   }

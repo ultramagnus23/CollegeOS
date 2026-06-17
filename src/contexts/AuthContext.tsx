@@ -73,6 +73,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!mountedRef.current || seq !== authSeqRef.current) return;
       console.error('Auth check failed:', error);
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       profileService.clearProfile();
     } finally {
       if (mountedRef.current && seq === authSeqRef.current) {
@@ -85,6 +86,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     // Migrate old data on first load
     profileService.migrateOldData();
+
+    // Listen for auth invalidation from API layer (refresh failures)
+    api.setOnAuthInvalidated(() => {
+      if (!mountedRef.current) return;
+      setUser(null);
+      profileService.clearProfile();
+    });
+
     void checkAuth();
     return () => {
       mountedRef.current = false;
@@ -94,6 +103,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, password: string) => {
     const response = await api.login(email, password);
+    const tokens = (response as any)?.data?.tokens;
+    if (tokens?.accessToken) {
+      api.setToken(tokens.accessToken);
+    }
+    if (tokens?.refreshToken) {
+      localStorage.setItem('refreshToken', tokens.refreshToken);
+    }
     const user = response.data.user;
     setUser(user);
     
@@ -105,11 +121,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loginWithGoogle = async (googleId: string, email: string, name: string) => {
     const response = await api.googleLogin(googleId, email, name);
-    // Explicitly persist the access token before any state update so that
-    // subsequent API calls in the same tick (e.g. during onboarding) can use it.
     const tokens = (response as any)?.data?.tokens;
     if (tokens?.accessToken) {
-      localStorage.setItem('accessToken', tokens.accessToken);
+      api.setToken(tokens.accessToken);
+    }
+    if (tokens?.refreshToken) {
+      localStorage.setItem('refreshToken', tokens.refreshToken);
     }
     const user = response.data.user;
     setUser(user);
@@ -122,6 +139,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const register = async (email: string, password: string, fullName: string, country: string) => {
     const response = await api.register(email, password, fullName, country);
+    const tokens = (response as any)?.data?.tokens;
+    if (tokens?.accessToken) {
+      api.setToken(tokens.accessToken);
+    }
+    if (tokens?.refreshToken) {
+      localStorage.setItem('refreshToken', tokens.refreshToken);
+    }
     const user = response.data.user;
     setUser(user);
     
