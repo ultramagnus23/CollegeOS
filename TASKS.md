@@ -46,6 +46,13 @@
 - [ ] **Phase 4 30+ majors** — `majors` has only 37 CIP categories → ~8.7 majors/college. Backfill `institution_programs` from `public.college_programs` (19,049 granular names) to approach 30+.
 - [ ] 3,212 institutions have no `college_majors` source data (DQ `missing_majors`) — need sourcing.
 
+### Phase 8 — Scraper Architecture — ✅ DOCUMENTED
+- [x] `scraper_architecture.md`: 6-tier source hierarchy mapped to `canonical.source_tier` enum + existing modules; unified upsert/provenance contract; DB-enforced never-overwrite precedence; consolidation plan (keep `scrapers/`, fold `scraper/sources/*` in); build priorities mapped to real gaps.
+
+### Full-dataset verification — ✅ DONE
+- [x] `data_quality_verification.md`: loaded COMPLETE dump into local PG 18, applied 094–102 via `runMigrations.js`, scanned all 8,236 institutions. Before→After: mv_college_cards 0→8,236; outcomes rates 0%→100% filled; completeness now honest (75.7 inflated → 30.1 truthful); **zero impossible values**.
+- [ ] ⏳ Apply on production Supabase via `npm run migrate` (pending user confirmation — writes to live DB; non-concurrent MV refresh briefly locks card reads).
+
 ### Genuine data gaps (no rows anywhere — must source, not backfill)
 - [ ] Deadlines (Phase 6) — all 7 deadline tables empty
 - [ ] Requirements + Essays (Phase 7) — all empty

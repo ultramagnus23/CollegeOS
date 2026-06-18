@@ -1,6 +1,6 @@
 # Daily Data Quality Report
 
-**Generated:** 2026-06-18T09:10:03.886Z
+**Generated:** 2026-06-18T09:18:43.452Z
 **Institutions scanned:** 8236
 **Snapshot rows recorded:** 5
 
