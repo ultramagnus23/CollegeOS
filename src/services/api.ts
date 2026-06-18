@@ -601,6 +601,12 @@ class ApiService {
     return this.request(`/applications${queryString ? `?${queryString}` : ''}`);
   }
 
+  // Unified command-center payload: profile completeness, applications +
+  // reach/target/safety, deadlines, essays, documents, tasks, and nextAction.
+  async getDashboard() {
+    return this.request('/dashboard');
+  }
+
   async createApplication(data: any) {
     return this.request('/applications', {
       method: 'POST',
