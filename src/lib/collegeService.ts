@@ -8,6 +8,7 @@ import {
   type CollegeDetailSection,
 } from '../contracts/collegeContracts';
 import type { FrontendCollegeCard } from '../contracts/frontendCollegeCardContract';
+import { parseSearchQuery } from './searchQuery';
 
 type CanonicalId = string | number;
 
@@ -145,6 +146,32 @@ async function getSearchIndexInstitutionIds(query: string): Promise<CanonicalId[
   return (fb ?? []).map((row: { id: CanonicalId }) => row.id).filter(Boolean);
 }
 
+// Discovery search: parse the natural-language query into structured params and
+// resolve ranked ids via canonical.search_colleges (entity + keyword/major +
+// filters + intent sort). Falls back to entity-only resolution if unavailable.
+async function resolveSearchIds(query: string, filters: CollegeFilters): Promise<CanonicalId[]> {
+  const client = requireClient();
+  const parsed = parseSearchQuery(query);
+  const { data, error } = await client.schema('canonical').rpc('search_colleges', {
+    p_q: parsed.entity,
+    p_keywords: parsed.keywords,
+    p_country: filters.country ?? parsed.country ?? null,
+    p_max_tuition: filters.maxTuition ?? parsed.maxTuition ?? null,
+    p_min_acceptance: filters.minAcceptance ?? null,
+    p_max_acceptance: filters.maxAcceptance ?? null,
+    p_test_optional: parsed.testOptional,
+    p_sort: parsed.sort,
+    p_limit: 500,
+    p_offset: 0,
+  });
+
+  if (!error && Array.isArray(data)) {
+    return data.map((row: { institution_id: CanonicalId }) => row.institution_id).filter(Boolean);
+  }
+  if (error) debugCanonical('search_colleges_fallback', { message: error.message });
+  return getSearchIndexInstitutionIds(query);
+}
+
 async function enrichCardRows(baseRows: CanonicalCardRow[]): Promise<Array<Record<string, unknown>>> {
   const byCountry = new Map<string, { total: number; missingAdmissions: number; missingFinancials: number }>();
   const rows = baseRows.map((row) => {
@@ -240,7 +267,7 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
     // preserve that order (server-side .order would clobber relevance ranking).
     let rankedIds: CanonicalId[] | null = null;
     if (query?.trim()) {
-      rankedIds = await getSearchIndexInstitutionIds(query);
+      rankedIds = await resolveSearchIds(query, filters);
       if (rankedIds.length === 0) {
         return { data: [], count: 0, page: safePage, pageSize: safePageSize, totalPages: 1 };
       }
