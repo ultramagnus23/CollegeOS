@@ -29,22 +29,56 @@ function pick(...vals) {
   return null;
 }
 
+// Deadlines live in canonical.institution_deadlines (the canonical source), NOT on
+// the legacy colleges tables — public.colleges only has `application_deadline` and
+// public.colleges_comprehensive's deadline columns are empty. These LATERAL
+// fragments project the named deadline fields from the canonical table so
+// College.findById never references columns that don't exist, and so deadlines
+// light up automatically once the add-college pipeline populates them.
+const CANONICAL_DEADLINE_SELECT = `
+  max(d.deadline_date) FILTER (WHERE d.deadline_type IN ('regular_decision','priority','rolling')) AS application_deadline,
+  max(d.deadline_date) FILTER (WHERE d.deadline_type = 'regular_decision') AS rd_deadline,
+  max(d.deadline_date) FILTER (WHERE d.deadline_type IN ('early_decision_1','early_decision_2')) AS ed_deadline,
+  max(d.deadline_date) FILTER (WHERE d.deadline_type = 'early_action') AS ea_deadline`;
+
+// Canonical (UUID) path: the institution id is the join key directly.
+const CANONICAL_DEADLINE_LATERAL = `
+  LEFT JOIN LATERAL (
+    SELECT ${CANONICAL_DEADLINE_SELECT}
+    FROM canonical.institution_deadlines d
+    WHERE d.institution_id = c.id
+  ) dl ON true`;
+
+// Legacy (integer id) path: bridge to the canonical institution via the identity
+// map, then read the same canonical deadlines.
+const LEGACY_DEADLINE_LATERAL = `
+  LEFT JOIN LATERAL (
+    SELECT ${CANONICAL_DEADLINE_SELECT}
+    FROM canonical.institution_deadlines d
+    JOIN canonical.institution_identity_map im ON im.institution_id = d.institution_id
+    WHERE im.source_pk = c.id::text
+      AND im.source_table IN ('public.colleges', 'public.colleges_comprehensive')
+  ) dl ON true`;
+
 class College {
   static async create(data) {
     const pool = dbManager.getDatabase();
     const acceptanceRate = normalizeAcceptanceRate(data.acceptanceRate || data.acceptance_rate);
 
     const { rows } = await pool.query(
+      // Only application_deadline exists on public.colleges; the rd/ed/ea
+      // deadlines live in canonical.institution_deadlines (populated by the
+      // add-college pipeline), so they are not written to the legacy row.
       `INSERT INTO colleges (
          name, country, state, city, official_website,
          acceptance_rate, tuition_domestic, tuition_international,
          qs_rank, ranking_us_news, type, size_category,
-         application_deadline, rd_deadline, ed_deadline, ea_deadline
+         application_deadline
        ) VALUES (
          $1,$2,$3,$4,$5,
          $6,$7,$8,
          $9,$10,$11,$12,
-         $13,$14,$15,$16
+         $13
        ) RETURNING id`,
       [
         data.name,
@@ -60,9 +94,6 @@ class College {
         data.type || null,
         data.size_category || null,
         data.application_deadline || null,
-        data.rd_deadline || null,
-        data.ed_deadline || null,
-        data.ea_deadline || null,
       ]
     );
 
@@ -163,13 +194,13 @@ class College {
            c.updated_at AS last_updated_at,
            c.updated_at,
            c.updated_at AS created_at,
-           NULL::date AS application_deadline,
-           NULL::date AS rd_deadline,
-           NULL::date AS ed_deadline,
-           NULL::date AS ea_deadline,
+           dl.application_deadline,
+           dl.rd_deadline,
+           dl.ed_deadline,
+           dl.ea_deadline,
            LOWER(REGEXP_REPLACE(c.canonical_name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
            (SELECT ARRAY_AGG(cp.program_name) FROM canonical.institution_programs cp WHERE cp.institution_id = c.id) AS program_names
-         FROM canonical.mv_college_cards c
+         FROM canonical.mv_college_cards c${CANONICAL_DEADLINE_LATERAL}
          WHERE c.id = $1::uuid`,
         [id]
       );
@@ -211,13 +242,13 @@ class College {
            c.updated_at AS last_updated_at,
            c.updated_at,
            c.created_at,
-           c.application_deadline,
-           c.rd_deadline,
-           c.ed_deadline,
-           c.ea_deadline,
+           dl.application_deadline,
+           dl.rd_deadline,
+           dl.ed_deadline,
+           dl.ea_deadline,
            c.slug,
            NULL::text[] AS program_names
-         FROM colleges c
+         FROM colleges c${LEGACY_DEADLINE_LATERAL}
          WHERE c.id = $1`,
         [numericId]
       );
@@ -258,13 +289,13 @@ class College {
              c.updated_at AS last_updated_at,
              c.updated_at,
              c.created_at,
-             c.application_deadline,
-             c.rd_deadline,
-             c.ed_deadline,
-             c.ea_deadline,
+             dl.application_deadline,
+             dl.rd_deadline,
+             dl.ed_deadline,
+             dl.ea_deadline,
              c.slug,
              NULL::text[] AS program_names
-           FROM colleges_comprehensive c
+           FROM colleges_comprehensive c${LEGACY_DEADLINE_LATERAL}
            WHERE c.id = $1`,
           [numericId]
         );
@@ -320,14 +351,14 @@ class College {
         c.updated_at AS last_updated_at,
         c.updated_at,
         c.updated_at AS created_at,
-        NULL::date AS application_deadline,
-        NULL::date AS rd_deadline,
-        NULL::date AS ed_deadline,
-        NULL::date AS ea_deadline,
+        dl.application_deadline,
+        dl.rd_deadline,
+        dl.ed_deadline,
+        dl.ea_deadline,
         LOWER(REGEXP_REPLACE(c.canonical_name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
         COALESCE(c.popularity_score, 0)::numeric AS relevance_score,
         (SELECT ARRAY_AGG(cp.program_name) FROM canonical.institution_programs cp WHERE cp.institution_id = c.id) AS program_names
-      FROM canonical.mv_college_cards c
+      FROM canonical.mv_college_cards c${CANONICAL_DEADLINE_LATERAL}
       WHERE c.canonical_name IS NOT NULL
         AND LENGTH(TRIM(c.canonical_name)) > 1
     `;
@@ -501,10 +532,9 @@ class College {
       type: 'type',
       sizeCategory: 'size_category',
       description: 'description',
+      // Only application_deadline exists on public.colleges; rd/ed/ea deadlines
+      // live in canonical.institution_deadlines, not on the legacy row.
       applicationDeadline: 'application_deadline',
-      rdDeadline: 'rd_deadline',
-      edDeadline: 'ed_deadline',
-      eaDeadline: 'ea_deadline',
     };
 
     const updates = [];
