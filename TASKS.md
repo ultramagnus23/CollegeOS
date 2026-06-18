@@ -16,13 +16,13 @@
 - [x] Row-count + NULL profile of `canonical.*` and legacy `public.*`
 - [x] Produce `database_quality_report.md` (HIGH/MEDIUM/LOW)
 
-### HIGH (launch blockers) — TODO
-- [ ] **H1** — `canonical.mv_college_cards` is `WITH NO DATA` (never refreshed). Refresh after H2/H3; add populated-row-count assertion to startup MV health check.
-- [ ] **H2** — Backfill empty canonical satellites from legacy via identity map: `institution_programs` (←`college_majors` 184,800), `institution_rankings` (←`college_rankings` 748), `institution_demographics` (←`student_demographics` 6,323), `institution_campus_life` (←`campus_life` 8,552), `major_ontology` (←`majors` 37).
-- [ ] **H3** — Re-map sparse card fields: `institution_outcomes.graduation_rate_4yr`/`employment_rate`/`retention_rate` (100% NULL), `institution_financials.avg_financial_aid`/`net_price_*` (100% NULL) from `academic_outcomes`/`cost_of_attendance`. (Note: `acceptance_rate` 69% NULL is source sparsity, not migration loss → Phase 5/6 sourcing.)
+### HIGH (launch blockers)
+- [x] **H1** — MV refresh written: `099_recompute_completeness_and_refresh_mv.sql` runs `REFRESH MATERIALIZED VIEW canonical.mv_college_cards`. ⏳ still TODO: populated-row-count assertion in startup MV health check.
+- [x] **H2** — Backfill migrations written (`backend/migrations/094`–`098`): `institution_programs` (←`college_majors`), `major_ontology` (←`majors`), `institution_rankings` (←`college_rankings` + popularity recompute), `institution_demographics` (←`student_demographics`), `institution_campus_life` (←`campus_life`, partial). Mapping spec: `missing_data_report.md`. ⏳ run `npm run migrate` + verify counts.
+- [ ] **H3** — Re-map sparse card fields: `institution_outcomes.graduation_rate_4yr`/`employment_rate`/`retention_rate` (100% NULL), `institution_financials.avg_financial_aid`/`net_price_*` (100% NULL) from `academic_outcomes`/`cost_of_attendance`/`net_price_data`. (Note: `acceptance_rate` 69% NULL is source sparsity, not migration loss → Phase 5/6 sourcing.) See `missing_data_report.md` §8.
 
 ### MEDIUM — TODO
-- [ ] **M1** — Fix completeness engine: `overall_score` 75.7% counts only admissions+financials; `outcomes_score`=0 despite 6,061 rows. Score all 8 domains.
+- [x] **M1** — Completeness recompute written: `099` adds `canonical.recompute_institution_completeness()` scoring all 8 domains with a weighted overall, and mirrors to `institutions.completeness_score`. ⏳ run migration.
 - [ ] **M2** — Consolidate duplicate college objects (`public.colleges`/`colleges_comprehensive`/`colleges_legacy` + 5 college views) → `canonical.institutions`. Repoint 4 drift-vector files first.
 - [ ] **M3** — Two `mv_college_cards` (canonical MV + public view); pick canonical, redirect/remove the other.
 - [ ] **M4** — Consolidate 6 empty deadline tables + 3 requirement tables to one canonical table per domain.
