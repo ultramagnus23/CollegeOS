@@ -1,0 +1,49 @@
+name: Scorecard Canonical Refresh
+
+# Rolling weekly cycle: each daily run refreshes the N least-recently-updated US
+# institutions directly from the College Scorecard API into the canonical.* tables
+# the app reads. --batch=1000/day cycles all ~6,200 US schools in about a week.
+# Real, sourced data only (provenance stored in source_attribution).
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  schedule:
+    - cron: '30 4 * * *'   # daily 04:30 UTC
+  workflow_dispatch:
+    inputs:
+      batch:
+        description: 'Number of institutions to refresh this run'
+        required: false
+        default: '1000'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scorecard-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh canonical college data
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci --omit=dev || npm install --omit=dev
+
+      - name: Refresh from College Scorecard
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+          COLLEGE_SCORECARD_API_KEY: ${{ secrets.COLLEGE_SCORECARD_API_KEY }}
+        run: node scripts/refreshScorecard.js --batch=${{ github.event.inputs.batch || '1000' }}
