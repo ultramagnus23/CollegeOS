@@ -14,21 +14,25 @@ export interface ParsedSearch {
   sort: SearchSort;
 }
 
-// Country words -> the form actually stored in canonical (mixed ISO codes and
-// full names, e.g. "CANADA" not "CA"). See audit 2026-06-18.
+// Country words -> ISO-3166 alpha-2 code (canonical.institutions.country_code is
+// normalized to ISO by migration 108).
 const COUNTRY_MAP: Array<[RegExp, string]> = [
   [/\b(usa|u\.?s\.?a?|america|american|united states)\b/, 'US'],
   [/\b(uk|u\.?k\.?|britain|british|england|english|scotland|united kingdom)\b/, 'GB'],
-  [/\b(canada|canadian)\b/, 'CANADA'],
+  [/\b(canada|canadian)\b/, 'CA'],
   [/\b(india|indian)\b/, 'IN'],
-  [/\b(australia|australian|aussie)\b/, 'AUSTRALIA'],
+  [/\b(australia|australian|aussie)\b/, 'AU'],
   [/\b(germany|german|deutschland)\b/, 'DE'],
   [/\b(france|french)\b/, 'FR'],
   [/\b(ireland|irish)\b/, 'IE'],
-  [/\b(south korea|korea|korean)\b/, 'SOUTH KOREA'],
-  [/\b(japan|japanese)\b/, 'JAPAN'],
-  [/\b(switzerland|swiss)\b/, 'SWITZERLAND'],
-  [/\b(sweden|swedish)\b/, 'SWEDEN'],
+  [/\b(netherlands|dutch|holland)\b/, 'NL'],
+  [/\b(south korea|korea|korean)\b/, 'KR'],
+  [/\b(japan|japanese)\b/, 'JP'],
+  [/\b(switzerland|swiss)\b/, 'CH'],
+  [/\b(sweden|swedish)\b/, 'SE'],
+  [/\b(new zealand|kiwi)\b/, 'NZ'],
+  [/\b(singapore|singaporean)\b/, 'SG'],
+  [/\b(hong kong)\b/, 'HK'],
 ];
 
 // Major synonyms -> full-text keyword that matches institution_programs names
