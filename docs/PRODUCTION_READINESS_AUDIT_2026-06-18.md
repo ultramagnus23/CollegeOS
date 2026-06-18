@@ -1,8 +1,9 @@
 # Production Readiness Audit — 2026-06-18
 
-Verified against `supabase_dump.sql` (pg_dump, captured 2026-06-18 14:08) and the
-repo at branch `docs/repo-audit-and-tasks`. All numbers below are counted directly
-from the dump's `COPY` blocks — none are estimated or fabricated.
+Row counts below are from a **live read-only query** against the production Supabase
+DB (2026-06-18T10:07Z), which supersedes `supabase_dump.sql` — that dump (captured
+14:08) predates the `094–102` backfills and is stale. Nothing here is estimated or
+fabricated. Repo at branch `docs/repo-audit-and-tasks`.
 
 ## P0 — Fixed this session
 
@@ -22,84 +23,57 @@ college detail page (`Failed to load college`).
   the duplicate-module guard in `npm run runtime-check`.
 - Gates: `npm run typecheck` clean, `npm run lint` 0 errors, `npm run runtime-check` pass.
 
-## Dataset audit — canonical layer row counts (live dump)
+## Dataset audit — LIVE canonical row counts
 
-| Table | Rows | Status |
-|-------|------|--------|
-| `canonical.institutions` | **8,236** | ✅ exceeds 5,000 target |
-| `canonical.institution_admissions` | 6,236 | ~76% coverage |
-| `canonical.institution_financials` | 6,236 | ~76% coverage |
-| `canonical.institution_outcomes` | 6,061 | ~74% coverage |
-| `canonical.institution_completeness` | 8,236 | row per institution |
-| `canonical.institution_programs` | **0** | ❌ empty (majors source) |
-| `canonical.institution_rankings` | **0** | ❌ empty |
-| `canonical.institution_demographics` | **0** | ❌ empty |
-| `canonical.institution_campus_life` | **0** | ❌ empty |
-| `canonical.institution_deadlines` | **0** | ❌ empty |
-| `canonical.institution_requirements` | **0** | ❌ empty |
-| `canonical.institution_quality_scores` | **0** | ❌ empty |
+Verified by a read-only query against the live Supabase DB
+(`aws-1-ap-northeast-2.pooler.supabase.com`, server time 2026-06-18T10:07Z).
+The `supabase_dump.sql` snapshot is **stale** — it began at 14:08:41, ~20 min
+before migrations `094–102` were authored (14:25–14:33). The backfills HAVE since
+been applied (all 9 present in the live `migrations` table).
 
-> ⚠️ **These counts are from a snapshot that predates the backfills — they do NOT
-> describe current production.** The dump began at **14:08:41**; migrations `094–102`
-> were authored at **14:25–14:33** and the "applied to production" tracker note was
-> committed at **14:59** (`46328c8`, which only edits one line of `TASKS.md` and is
-> *not* evidence the SQL ran). So the dump cannot confirm whether production is still
-> empty. **Confirm with a live read-only count before acting** (see below).
+| Table | Dump (stale) | **Live** | Status |
+|-------|------|------|--------|
+| `institutions` | 8,236 | **8,236** | ✅ exceeds 5,000 target |
+| `institution_admissions` | 6,236 | **6,236** | ~76% |
+| `institution_financials` | 6,236 | **6,236** | ~76% |
+| `institution_outcomes` | 6,061 | **6,061** | ~74% |
+| `institution_programs` | 0 | **43,613** | ✅ backfilled (094) |
+| `institution_demographics` | 0 | **6,232** | ✅ backfilled (097) |
+| `institution_campus_life` | 0 | **8,236** | ✅ backfilled (098) |
+| `institution_completeness` | 8,236 | **8,236** | row per institution |
+| `mv_college_cards` | n/a | **8,236** | ✅ refreshed (099) |
+| `institution_rankings` | 0 | **335** | ⚠️ only 329 insts ranked |
+| `institution_deadlines` | 0 | **0** | ❌ needs scrapers |
+| `institution_requirements` | 0 | **0** | ❌ needs scrapers |
+| `institution_quality_scores` | 0 | **0** | ❌ never populated |
 
-Detail pages now **load** (no crash). Whether the rankings / programs / deadlines /
-requirements / demographics / campus-life sections show data depends on the *current*
-live state, which this pre-migration dump cannot tell us.
+Detail pages now **load** (no crash) and render programs / demographics / campus-life
+for most colleges. Three real gaps remain (below).
 
-## Confirm current state, then (if needed) backfill — no scraping
+## Coverage / quality reality (live)
 
-The dump was captured at 14:08; backfill migrations `094–102` were authored at
-14:25–14:33 (same day, **after** the dump). As of the dump the live `migrations`
-table topped out at `090_colleges_full_view.sql` and the canonical detail tables
-were empty — but that snapshot is stale. Verify the **live** DB first:
+- **Programs:** 5,024 / 8,236 institutions have ≥1 program. Distribution: **3,212
+  have ZERO**, 2,944 have 1–9, 2,059 have 10–29, and only **21 meet the "30+ majors"
+  target**. The 094 backfill is IPEDS-only, so non-US institutions mostly have none.
+- **Rankings:** only **329 institutions ranked** (QS 304 + NIRF 31) vs the 5,000+
+  target. `mv_college_cards.global_rank` is non-null for just **298** rows. The
+  legacy source (`public.college_rankings`) only had 748 rows — QS + NIRF — so US
+  News / THE / Niche / CWUR are simply absent and need ingestion.
+- **Completeness:** average `overall_score` = **33.2%**; only **104** institutions
+  ≥80%, **6,078** below 50%. "No incomplete cards" is far from met — most cards are
+  thin because deadlines/requirements/quality are empty and rankings/programs are sparse.
+- **Quality engine:** `102` is applied but only *defines* `fn_data_quality_issues()`,
+  `v_data_quality_summary`, and `fn_snapshot_data_quality()` — it never invokes them.
+  `data_quality_snapshots` = 0 and `institution_quality_scores` = 0. Run
+  `SELECT canonical.fn_snapshot_data_quality();` to take the first snapshot;
+  `institution_quality_scores` needs a separate populator (it is not written by 102).
 
-```sql
--- read-only, run against the live DB
-SELECT 'programs' t, count(*) FROM canonical.institution_programs
-UNION ALL SELECT 'rankings', count(*) FROM canonical.institution_rankings
-UNION ALL SELECT 'demographics', count(*) FROM canonical.institution_demographics;
-SELECT filename FROM migrations WHERE filename ~ '^(09[4-9]|10[0-2])_' ORDER BY 1;
-```
+## Still requires scrapers (no legacy source exists)
 
-If those tables are still empty / `094–102` are absent from `migrations`, run the
-backfill. The source data already exists in the legacy `public.*` schema:
-
-The source data already exists in the legacy `public.*` schema:
-
-- `public.college_majors` — **184,800** IPEDS program-completion rows → `094` backfills `institution_programs`
-- `public.college_rankings` — **748** rows (QS 628, NIRF 120) → `096` backfills `institution_rankings`
-- `public.colleges_comprehensive` — 8,330 rows; `canonical.institution_identity_map` — 8,329 (the id bridge)
-
-**Unblock (one operational step, no scraping, no fabrication):**
-
-```bash
-cd backend && npm run migrate   # applies un-applied files incl. 094–102, in order
-```
-
-The driver only runs files not already in the `migrations` table, and the migrations
-are idempotent (`ON CONFLICT DO NOTHING`), so this is safe to run **even if they were
-already applied** — it is a no-op in that case.
-
-- `094` programs ← IPEDS (`college_majors`)
-- `095` major ontology
-- `096` rankings ← QS/NIRF (`college_rankings`)
-- `097` demographics, `098` campus_life
-- `099` recompute all 8 completeness domains + `REFRESH MATERIALIZED VIEW canonical.mv_college_cards`
-- `100` outcomes enrich, `101` financials enrich (from legacy)
-- `102` data-quality engine (`canonical.data_quality_snapshots`)
-
-Migrations are idempotent (`ON CONFLICT DO NOTHING`, `CREATE … IF NOT EXISTS`) and
-additive (no deletes/overwrites). The driver (`backend/src/config/database.js`)
-applies only un-executed files, in sorted order.
-
-## Still requires scrapers (no legacy source in this dump)
-
-- `institution_deadlines` — no backfill migration; populated by the deadline scrapers.
-- `institution_requirements` — no backfill migration; populated by the requirements scrapers.
+- `institution_deadlines` (0) — no backfill migration; deadline scrapers.
+- `institution_requirements` (0) — no backfill migration; requirements scrapers.
+  This is the hard blocker for the P2 add-college pipeline's non-fallback mode and
+  for per-institution essay/document required-flags.
 
 Both are gated behind the GitHub Actions approval issue (see CLAUDE.md: workflows
 stuck in `action_required` — a repo/org Settings approval gate, not a code/YAML fix).
