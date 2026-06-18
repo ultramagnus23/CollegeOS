@@ -51,7 +51,7 @@
 
 ### Full-dataset verification — ✅ DONE
 - [x] `data_quality_verification.md`: loaded COMPLETE dump into local PG 18, applied 094–102 via `runMigrations.js`, scanned all 8,236 institutions. Before→After: mv_college_cards 0→8,236; outcomes rates 0%→100% filled; completeness now honest (75.7 inflated → 30.1 truthful); **zero impossible values**.
-- [ ] ⏳ Apply on production Supabase via `npm run migrate` (pending user confirmation — writes to live DB; non-concurrent MV refresh briefly locks card reads).
+- [x] ✅ **APPLIED TO PRODUCTION** (2026-06-18) via `runMigrations.js` over the Supabase session pooler (5432). All 094–102 recorded; prod verified identical to local: mv_college_cards 0→8,236, programs 43,613, outcomes 6,061/6,061 filled, completeness 30.1 honest, **0 impossible values**.
 
 ### Genuine data gaps (no rows anywhere — must source, not backfill)
 - [ ] Deadlines (Phase 6) — all 7 deadline tables empty
