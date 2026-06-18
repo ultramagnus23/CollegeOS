@@ -116,19 +116,33 @@ async function resolveInstitutionId(id: CanonicalId): Promise<CanonicalId | null
   return data?.institution_id ?? null;
 }
 
+// Ranked entity resolution via canonical.search_institutions (migration 104):
+// exact > alias/acronym > prefix > fuzzy (trigram), popularity tie-break. Returns
+// ids in relevance order. Falls back to a normalized-name substring match if the
+// RPC is unavailable (e.g. not yet deployed).
 async function getSearchIndexInstitutionIds(query: string): Promise<CanonicalId[]> {
   const client = requireClient();
   const normalized = query.trim();
   if (!normalized) return [];
 
-  const { data } = await client
+  const { data, error } = await client
     .schema('canonical')
-    .from('institution_search_index')
-    .select('institution_id')
-    .ilike('autocomplete_text', `%${normalized}%`)
-    .limit(250);
+    .rpc('search_institutions', { p_q: normalized, p_limit: 250, p_offset: 0 });
 
-  return (data ?? []).map((row: { institution_id: CanonicalId }) => row.institution_id).filter(Boolean);
+  if (!error && Array.isArray(data)) {
+    return data
+      .map((row: { institution_id: CanonicalId }) => row.institution_id)
+      .filter(Boolean);
+  }
+
+  if (error) debugCanonical('search_rpc_fallback', { message: error.message });
+  const { data: fb } = await client
+    .schema('canonical')
+    .from('institutions')
+    .select('id')
+    .ilike('normalized_name', `%${normalized.toLowerCase()}%`)
+    .limit(250);
+  return (fb ?? []).map((row: { id: CanonicalId }) => row.id).filter(Boolean);
 }
 
 async function enrichCardRows(baseRows: CanonicalCardRow[]): Promise<Array<Record<string, unknown>>> {
@@ -222,21 +236,45 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
   const { column, ascending } = normalizeOrder(sortBy);
 
   return timed('searchColleges', async () => {
-    let q = client.schema('canonical').from('mv_college_cards').select(COLLEGE_CARD_COLUMNS, { count: 'estimated' });
-
+    // Relevance path: when a text query is present, resolve ranked ids first and
+    // preserve that order (server-side .order would clobber relevance ranking).
+    let rankedIds: CanonicalId[] | null = null;
     if (query?.trim()) {
-      const ids = await getSearchIndexInstitutionIds(query);
-      if (ids.length > 0) {
-        q = q.in('id', ids as string[]);
-      } else {
-        q = q.ilike('canonical_name', `%${query.trim()}%`);
+      rankedIds = await getSearchIndexInstitutionIds(query);
+      if (rankedIds.length === 0) {
+        return { data: [], count: 0, page: safePage, pageSize: safePageSize, totalPages: 1 };
       }
     }
 
+    let q = client.schema('canonical').from('mv_college_cards').select(COLLEGE_CARD_COLUMNS, { count: 'estimated' });
+    if (rankedIds) q = q.in('id', rankedIds as string[]);
     if (country) q = q.eq('country_code', country);
     if (minAcceptance !== undefined) q = q.gte('acceptance_rate', minAcceptance);
     if (maxAcceptance !== undefined) q = q.lte('acceptance_rate', maxAcceptance);
     if (maxTuition !== undefined) q = q.lte('cost_of_attendance', maxTuition);
+
+    if (rankedIds) {
+      // Fetch all matched (bounded by the RPC limit), then order by relevance and
+      // paginate client-side so additional filters still intersect correctly.
+      const { data, error } = await q.limit(rankedIds.length);
+      if (error) throw error;
+      const parsedRows = (data ?? []).map((raw) => parseFrontendCollegeCardOrThrow(raw as unknown)) as CanonicalCardRow[];
+      const enrichedRows = await enrichCardRows(parsedRows);
+      const rankIndex = new Map(rankedIds.map((id, idx) => [String(id), idx]));
+      const ordered = enrichedRows.sort(
+        (a, b) => (rankIndex.get(String(a.id)) ?? Number.MAX_SAFE_INTEGER) - (rankIndex.get(String(b.id)) ?? Number.MAX_SAFE_INTEGER),
+      );
+      const total = ordered.length;
+      const fromIdx = (safePage - 1) * safePageSize;
+      const pageRows = ordered.slice(fromIdx, fromIdx + safePageSize);
+      return {
+        data: pageRows as CollegeRecord[],
+        count: total,
+        page: safePage,
+        pageSize: safePageSize,
+        totalPages: Math.max(1, Math.ceil(total / safePageSize)),
+      };
+    }
 
     const from = (safePage - 1) * safePageSize;
     const to = from + safePageSize - 1;
