@@ -19,7 +19,7 @@
 ### HIGH (launch blockers)
 - [x] **H1** — MV refresh written: `099_recompute_completeness_and_refresh_mv.sql` runs `REFRESH MATERIALIZED VIEW canonical.mv_college_cards`. ⏳ still TODO: populated-row-count assertion in startup MV health check.
 - [x] **H2** — Backfill migrations written (`backend/migrations/094`–`098`): `institution_programs` (←`college_majors`), `major_ontology` (←`majors`), `institution_rankings` (←`college_rankings` + popularity recompute), `institution_demographics` (←`student_demographics`), `institution_campus_life` (←`campus_life`, partial). Mapping spec: `missing_data_report.md`. ⏳ run `npm run migrate` + verify counts.
-- [ ] **H3** — Re-map sparse card fields: `institution_outcomes.graduation_rate_4yr`/`employment_rate`/`retention_rate` (100% NULL), `institution_financials.avg_financial_aid`/`net_price_*` (100% NULL) from `academic_outcomes`/`cost_of_attendance`/`net_price_data`. (Note: `acceptance_rate` 69% NULL is source sparsity, not migration loss → Phase 5/6 sourcing.) See `missing_data_report.md` §8.
+- [x] **H3** — Outcomes/financials enrichment written (`100`, `101`) and **validated on real data locally**: `institution_outcomes` grad_4yr/6yr/retention/employment all filled 6,061 (scale-corrected fractions→percent); `institution_financials` net_price_* (4,842) + avg_debt (4,763) filled. ⚠️ `avg_financial_aid` stays NULL — source column `college_financial_aid.avg_financial_aid_package` is itself 100% NULL → genuine gap (Phase 5). `acceptance_rate` 69% NULL is source sparsity, not migration loss.
 
 ### MEDIUM — TODO
 - [x] **M1** — Completeness recompute written: `099` adds `canonical.recompute_institution_completeness()` scoring all 8 domains with a weighted overall, and mirrors to `institutions.completeness_score`. ⏳ run migration.
@@ -32,6 +32,19 @@
 - [ ] **L1** — Update `CLAUDE.md` stale migration note (070 "pending" → chain at 093).
 - [ ] **L2** — Verify `public.migrations` id gap (71–74 absent) is renumber, not skip.
 - [ ] **L3** — Pick one Python scraper tree (`scraper/` vs `scrapers/`).
+
+### Phase 9 — Data Quality Engine — ✅ WRITTEN & VALIDATED
+- [x] `102_data_quality_engine.sql`: `canonical.fn_data_quality_issues()` (impossible values + missing-data, HIGH/MEDIUM/LOW), `v_data_quality_summary` view, `data_quality_snapshots` history table, `fn_snapshot_data_quality()`.
+- [x] `backend/scripts/dataQualityReport.js`: writes `daily_data_quality_report.md`, records snapshot, exits 1 on HIGH (CI gate).
+- [x] `.github/workflows/data-quality.yml`: weekly (Mon 06:00 UTC) + dispatch. ⚠️ subject to the repo Actions approval gate (see CLAUDE.md).
+
+### Validation (all migrations 094–102, local throwaway PG 18 with real dump schema+data)
+- [x] Loaded `schema_only.sql` (real 46 canonical + 103 public objects) + real data for 13 involved tables; ran 094–102 with `ON_ERROR_STOP=1` — all clean.
+- [x] Results: programs 0→43,613; rankings 0→335; demographics 0→6,232; campus_life 0→8,236; **mv_college_cards 0→8,236 (304 with global_rank)**; outcomes rates scale-correct 0–100; DQ summary internally consistent (missing_majors 3,212 = 8,236−5,024 covered).
+
+### Follow-ups surfaced by validation
+- [ ] **Phase 4 30+ majors** — `majors` has only 37 CIP categories → ~8.7 majors/college. Backfill `institution_programs` from `public.college_programs` (19,049 granular names) to approach 30+.
+- [ ] 3,212 institutions have no `college_majors` source data (DQ `missing_majors`) — need sourcing.
 
 ### Genuine data gaps (no rows anywhere — must source, not backfill)
 - [ ] Deadlines (Phase 6) — all 7 deadline tables empty

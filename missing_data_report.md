@@ -63,6 +63,8 @@ Source `college_majors` (184,800 rows) is uniformly `awlevel = 6` (undergraduate
 | `source_attribution` | `{source:'IPEDS', confidence:0.9, last_verified_at}` | tier-2 source |
 
 **Idempotency:** add `UNIQUE(institution_id, normalized_program_name, degree_type_key)`; `ON CONFLICT DO NOTHING`.
+**Verified result (local run on real data):** 184,800 source rows → **43,613 distinct programs across 5,024 institutions (~8.7 majors each)**. The other 3,212 institutions have no `college_majors` data (flagged `missing_majors` by the Phase 9 engine).
+**Residual gap — Phase 4 "30+ majors" NOT met from this source:** `public.majors` has only **37 CIP categories**, so per-college distinct majors caps low. Hitting 30+ requires the granular `public.college_programs` (19,049 rows, free-text names) or external sourcing — a follow-up, not part of migration 094.
 **Residual gap:** `acceptance_rate` per program — not in source (genuine gap, Phase 5).
 
 ---
@@ -149,8 +151,9 @@ These need re-mapping from legacy (where the data exists) or external sourcing (
 | `institution_outcomes.graduation_rate_4yr` | 100% | `public.academic_outcomes.graduation_rate` (19.5% null) — but it's generic, not 4yr-specific | Map to `graduation_rate_6yr`; source true 4yr from Scorecard |
 | `institution_outcomes.employment_rate` | 100% | No | Scorecard/CDS (Phase 5) |
 | `institution_outcomes.retention_rate` | 100% | No | IPEDS (Phase 5) |
-| `institution_financials.avg_financial_aid` | 100% | `public.cost_of_attendance` / `college_financial_aid` | Re-map (Phase 3) |
-| `institution_financials.net_price_*` | 100% | `public.net_price_data` (check) | Re-map (Phase 3) |
+| `institution_financials.avg_financial_aid` | 100% | ❌ `college_financial_aid.avg_financial_aid_package` is itself **100% NULL** (verified) | **Genuine gap** — source Scorecard/IPEDS (Phase 5) |
+| `institution_financials.net_price_*` | 100% | ✅ `college_financial_aid.avg_net_price_*` (4,923 populated) | **Filled by migration 101** |
+| `institution_financials.avg_debt` | 23.7% | ✅ `academic_details.median_debt` | **Filled by migration 101** |
 | `institution_admissions.sat_50/act_50` | 81–85% | `public.colleges.sat_25/75` partial | Scorecard/CDS |
 | `institution_admissions.acceptance_rate` | 68.9% | No (69% null in legacy too) | **Genuine source sparsity** — Scorecard/CDS |
 | `institutions.control_type` | 73% | IPEDS Directory | Phase 3 (M5) |
