@@ -39,15 +39,34 @@ college detail page (`Failed to load college`).
 | `canonical.institution_requirements` | **0** | ❌ empty |
 | `canonical.institution_quality_scores` | **0** | ❌ empty |
 
-Detail pages now **load** (no crash), but the rankings / programs / deadlines /
-requirements / demographics / campus-life sections render empty for every college
-until the tables are populated.
+> ⚠️ **These counts are from a snapshot that predates the backfills — they do NOT
+> describe current production.** The dump began at **14:08:41**; migrations `094–102`
+> were authored at **14:25–14:33** and the "applied to production" tracker note was
+> committed at **14:59** (`46328c8`, which only edits one line of `TASKS.md` and is
+> *not* evidence the SQL ran). So the dump cannot confirm whether production is still
+> empty. **Confirm with a live read-only count before acting** (see below).
 
-## Why the detail tables are empty (and how to fix without scraping)
+Detail pages now **load** (no crash). Whether the rankings / programs / deadlines /
+requirements / demographics / campus-life sections show data depends on the *current*
+live state, which this pre-migration dump cannot tell us.
+
+## Confirm current state, then (if needed) backfill — no scraping
 
 The dump was captured at 14:08; backfill migrations `094–102` were authored at
-14:25–14:33 (same day, **after** the dump) and have **not** been applied. The live
-`migrations` table's last entry is `090_colleges_full_view.sql`.
+14:25–14:33 (same day, **after** the dump). As of the dump the live `migrations`
+table topped out at `090_colleges_full_view.sql` and the canonical detail tables
+were empty — but that snapshot is stale. Verify the **live** DB first:
+
+```sql
+-- read-only, run against the live DB
+SELECT 'programs' t, count(*) FROM canonical.institution_programs
+UNION ALL SELECT 'rankings', count(*) FROM canonical.institution_rankings
+UNION ALL SELECT 'demographics', count(*) FROM canonical.institution_demographics;
+SELECT filename FROM migrations WHERE filename ~ '^(09[4-9]|10[0-2])_' ORDER BY 1;
+```
+
+If those tables are still empty / `094–102` are absent from `migrations`, run the
+backfill. The source data already exists in the legacy `public.*` schema:
 
 The source data already exists in the legacy `public.*` schema:
 
@@ -58,8 +77,12 @@ The source data already exists in the legacy `public.*` schema:
 **Unblock (one operational step, no scraping, no fabrication):**
 
 ```bash
-cd backend && npm run migrate   # applies 094–102 in order
+cd backend && npm run migrate   # applies un-applied files incl. 094–102, in order
 ```
+
+The driver only runs files not already in the `migrations` table, and the migrations
+are idempotent (`ON CONFLICT DO NOTHING`), so this is safe to run **even if they were
+already applied** — it is a no-op in that case.
 
 - `094` programs ← IPEDS (`college_majors`)
 - `095` major ontology
