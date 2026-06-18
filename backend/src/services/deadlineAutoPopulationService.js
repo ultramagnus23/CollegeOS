@@ -36,10 +36,13 @@ class DeadlineAutoPopulationService {
         collegeDeadlines = await this._getCollegeDeadlines(collegeId, currentYear - 1);
         
         if (!collegeDeadlines) {
-          result.message = 'No deadline data available for this college';
+          // No college-specific deadline data — still generate support task defaults
+          await this._insertSupportDeadlines(pool, userId, applicationId, collegeId, null, result);
+          result.message = 'Default support deadlines created (no college-specific data found)';
+          result.success = true;
           return result;
         }
-        
+
         result.usedHistoricalData = true;
       }
 
@@ -47,46 +50,35 @@ class DeadlineAutoPopulationService {
       const college = (await pool.query(
         `SELECT i.canonical_name AS name
          FROM canonical.institution_identity_map m
-         JOIN canonical.institutions i ON i.id = m.institution_id
-         WHERE m.source_pk = $1::text
+         JOIN canonical.institutions i ON i.id = m.canonical_institution_id
+         WHERE m.legacy_id = $1
          LIMIT 1`,
-        [String(collegeId)]
+        [collegeId]
       )).rows[0];
       const collegeName = college ? college.name : 'College';
 
-      // Insert deadlines only for types that are offered (offered = true)
+      // Insert admission deadlines (types that the college offers)
       const deadlinesToCreate = this._extractOfferedDeadlines(collegeDeadlines);
-      
-      if (deadlinesToCreate.length === 0) {
-        result.message = 'No applicable deadlines found for this college';
-        return result;
-      }
-
       for (const deadline of deadlinesToCreate) {
-        await pool.query(`
-          INSERT INTO deadlines (
-            application_id, 
-            deadline_type, 
-            deadline_date, 
-            description,
-            source_url,
-            status
-          ) VALUES ($1, $2, $3, $4, $5, $6)
-        `, [
-          applicationId,
-          deadline.type,
-          deadline.date,
-          deadline.description,
-          collegeDeadlines.source_url || null,
-          'not_started'
-        ]);
+        await pool.query(
+          `INSERT INTO deadlines (user_id, application_id, deadline_type, deadline_date, title, description)
+           SELECT $1, $2, $3, $4, $5, $6
+           WHERE NOT EXISTS (
+             SELECT 1 FROM deadlines WHERE application_id = $2 AND deadline_type = $3
+           )`,
+          [userId, applicationId, deadline.type, deadline.date, deadline.description, deadline.description]
+        );
         result.deadlinesAdded.push(deadline);
       }
-      
+
+      // Always add support deadlines (FAFSA, transcripts, rec letters, etc.)
+      const rdDate = collegeDeadlines.regular_decision_deadline || null;
+      await this._insertSupportDeadlines(pool, userId, applicationId, collegeId, rdDate, result);
+
       result.success = true;
-      
+
       if (result.usedHistoricalData) {
-        result.message = `Showing ${currentYear - 1} deadlines. ${currentYear} not yet released. Will auto-update when available.`;
+        result.message = `Showing ${currentYear - 1} deadlines. ${currentYear} not yet released.`;
       } else {
         result.message = `Deadlines added for ${collegeName}`;
       }
@@ -108,12 +100,11 @@ class DeadlineAutoPopulationService {
    */
   static async _getCollegeDeadlines(collegeId, year) {
     const pool = dbManager.getDatabase();
-    
-    // Query application_deadlines table
-    return (await pool.query(`
-      SELECT * FROM application_deadlines 
-      WHERE college_id = $1 AND application_year = $2
-    `, [collegeId, year])).rows[0];
+    // Column is academic_year (text), not application_year
+    return (await pool.query(
+      `SELECT * FROM application_deadlines WHERE college_id = $1 AND academic_year = $2`,
+      [collegeId, String(year)]
+    )).rows[0];
   }
 
   /**
@@ -125,72 +116,88 @@ class DeadlineAutoPopulationService {
     const deadlines = [];
     const currentYear = new Date().getFullYear();
 
-    // Early Decision I
-    if (collegeDeadlines.offers_early_decision && collegeDeadlines.early_decision_1_date) {
-      deadlines.push({
-        type: 'early_decision_1',
-        date: collegeDeadlines.early_decision_1_date,
-        description: 'Early Decision I deadline',
-        notificationDate: collegeDeadlines.early_decision_1_notification
-      });
-    }
+    // Actual column names in application_deadlines:
+    //   early_decision_1_deadline, early_decision_2_deadline,
+    //   early_action_deadline, restrictive_early_action_deadline,
+    //   regular_decision_deadline, priority_deadline, rolling_admission (INTEGER)
+    const d = collegeDeadlines;
 
-    // Early Decision II
-    if (collegeDeadlines.offers_early_decision && collegeDeadlines.early_decision_2_date) {
-      deadlines.push({
-        type: 'early_decision_2',
-        date: collegeDeadlines.early_decision_2_date,
-        description: 'Early Decision II deadline',
-        notificationDate: collegeDeadlines.early_decision_2_notification
-      });
+    if (d.early_decision_1_deadline) {
+      deadlines.push({ type: 'early_decision_1', date: d.early_decision_1_deadline, description: 'Early Decision I deadline', notificationDate: d.early_decision_1_notification });
     }
-
-    // Early Action
-    if (collegeDeadlines.offers_early_action && collegeDeadlines.early_action_date) {
-      deadlines.push({
-        type: 'early_action',
-        date: collegeDeadlines.early_action_date,
-        description: 'Early Action deadline',
-        notificationDate: collegeDeadlines.early_action_notification
-      });
+    if (d.early_decision_2_deadline) {
+      deadlines.push({ type: 'early_decision_2', date: d.early_decision_2_deadline, description: 'Early Decision II deadline', notificationDate: d.early_decision_2_notification });
     }
-
-    // Restrictive Early Action
-    if (collegeDeadlines.offers_restrictive_ea && collegeDeadlines.restrictive_early_action_date) {
-      deadlines.push({
-        type: 'restrictive_early_action',
-        date: collegeDeadlines.restrictive_early_action_date,
-        description: 'Restrictive Early Action deadline',
-        notificationDate: collegeDeadlines.restrictive_early_action_notification
-      });
+    if (d.early_action_deadline) {
+      deadlines.push({ type: 'early_action', date: d.early_action_deadline, description: 'Early Action deadline', notificationDate: d.early_action_notification });
     }
-
-    // Regular Decision
-    if (collegeDeadlines.regular_decision_date) {
-      deadlines.push({
-        type: 'regular_decision',
-        date: collegeDeadlines.regular_decision_date,
-        description: 'Regular Decision deadline',
-        notificationDate: collegeDeadlines.regular_decision_notification
-      });
+    if (d.restrictive_early_action_deadline) {
+      deadlines.push({ type: 'restrictive_early_action', date: d.restrictive_early_action_deadline, description: 'Restrictive Early Action deadline', notificationDate: d.restrictive_early_action_notification });
     }
-
-    // Rolling Admission
-    if (collegeDeadlines.offers_rolling_admission) {
-      // For rolling admissions, use priority deadline if available
-      const rollingDate = collegeDeadlines.priority_deadline || 
-                         collegeDeadlines.regular_decision_date ||
-                         `${currentYear + 1}-06-01`; // Default to June 1 if no date
-      
-      deadlines.push({
-        type: 'rolling_admission',
-        date: rollingDate,
-        description: collegeDeadlines.priority_deadline ? 'Priority deadline for rolling admission' : 'Rolling admission',
-        notificationDate: null
-      });
+    if (d.regular_decision_deadline) {
+      deadlines.push({ type: 'regular_decision', date: d.regular_decision_deadline, description: 'Regular Decision deadline', notificationDate: d.regular_decision_notification });
+    }
+    if (d.rolling_admission === 1 || d.rolling_admission === true) {
+      const rollingDate = d.priority_deadline || d.regular_decision_deadline || `${currentYear + 1}-06-01`;
+      deadlines.push({ type: 'rolling_admission', date: rollingDate, description: d.priority_deadline ? 'Priority deadline for rolling admission' : 'Rolling admission', notificationDate: null });
     }
 
     return deadlines;
+  }
+
+  /**
+   * Insert standard support deadlines (FAFSA, CSS Profile, transcripts, rec letters, etc.).
+   * Uses sensible date defaults derived from the RD deadline when available.
+   * Skips any type that already exists for this application (dedup guard).
+   * @private
+   */
+  static async _insertSupportDeadlines(pool, userId, applicationId, collegeId, rdDate, result) {
+    const now = new Date();
+    const nextJan1 = new Date(now.getFullYear() + 1, 0, 1);
+
+    // If rdDate given, derive relative dates; otherwise use calendar defaults
+    const rd = rdDate ? new Date(rdDate) : new Date(nextJan1);
+    const minus30 = (base) => {
+      const d = new Date(base);
+      d.setDate(d.getDate() - 30);
+      return d.toISOString().slice(0, 10);
+    };
+    const minus60 = (base) => {
+      const d = new Date(base);
+      d.setDate(d.getDate() - 60);
+      return d.toISOString().slice(0, 10);
+    };
+    const minus90 = (base) => {
+      const d = new Date(base);
+      d.setDate(d.getDate() - 90);
+      return d.toISOString().slice(0, 10);
+    };
+
+    const supportDeadlines = [
+      { type: 'fafsa',               date: `${now.getFullYear()}-10-01`, title: 'FAFSA Opens — Submit Early' },
+      { type: 'css_profile',          date: `${now.getFullYear()}-10-15`, title: 'CSS Profile Submission' },
+      { type: 'transcript_request',   date: minus60(rd),                  title: 'Request Official Transcripts' },
+      { type: 'teacher_rec_request',  date: minus90(rd),                  title: 'Ask Teachers for Recommendations' },
+      { type: 'counselor_rec',        date: minus60(rd),                  title: 'Counselor Recommendation Request' },
+      { type: 'test_score_send',      date: minus30(rd),                  title: 'Send SAT/ACT Scores to College' },
+      { type: 'midyear_report',       date: `${now.getFullYear() + 1}-02-15`, title: 'Submit Midyear School Report' },
+    ];
+
+    for (const d of supportDeadlines) {
+      try {
+        await pool.query(
+          `INSERT INTO deadlines (user_id, application_id, deadline_type, deadline_date, title, description)
+           SELECT $1, $2, $3, $4, $5, $5
+           WHERE NOT EXISTS (
+             SELECT 1 FROM deadlines WHERE application_id = $2 AND deadline_type = $3
+           )`,
+          [userId, applicationId, d.type, d.date, d.title]
+        );
+        result.deadlinesAdded.push({ type: d.type, date: d.date, description: d.title });
+      } catch (err) {
+        logger.warn(`Support deadline insert skipped for type=${d.type}:`, err?.message);
+      }
+    }
   }
 
   /**

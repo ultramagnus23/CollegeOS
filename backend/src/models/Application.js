@@ -183,10 +183,15 @@ class Application {
         legacyId = inserted[0].id;
       }
 
-      // Record the mapping so future lookups are fast
+      // Record the mapping so future lookups are fast.
+      // Use WHERE NOT EXISTS instead of ON CONFLICT to avoid 42P10 when the unique
+      // constraint doesn't exist (table pre-dated migration 087/091).
       await pool.query(
         `INSERT INTO canonical.institution_identity_map (canonical_institution_id, legacy_id, source)
-         VALUES ($1, $2, 'auto') ON CONFLICT (canonical_institution_id) DO NOTHING`,
+         SELECT $1, $2, 'auto'
+         WHERE NOT EXISTS (
+           SELECT 1 FROM canonical.institution_identity_map WHERE canonical_institution_id = $1
+         )`,
         [strId, legacyId]
       );
       return legacyId;

@@ -62,17 +62,17 @@ class EssayAutoLoadingService {
   static async _getCollegeData(collegeId) {
     const pool = dbManager.getDatabase();
     return (await pool.query(`
-      SELECT 
-        m.source_pk::int AS id,
+      SELECT
+        m.legacy_id AS id,
         i.canonical_name AS name,
         i.country_code AS country,
         cd.application_platforms
       FROM canonical.institution_identity_map m
-      JOIN canonical.institutions i ON i.id = m.institution_id
-      LEFT JOIN public.college_deadlines cd ON cd.college_id = m.source_pk::int
-      WHERE m.source_pk = $1::text
+      JOIN canonical.institutions i ON i.id = m.canonical_institution_id
+      LEFT JOIN public.college_deadlines cd ON cd.college_id = m.legacy_id
+      WHERE m.legacy_id = $1
       LIMIT 1
-    `, [String(collegeId)])).rows[0];
+    `, [collegeId])).rows[0];
   }
 
   /**
@@ -106,69 +106,52 @@ class EssayAutoLoadingService {
     const pool = dbManager.getDatabase();
     const currentYear = new Date().getFullYear();
 
+    // essays table columns: user_id, application_id, college_id, title, prompt, word_limit, status
     if (platform === 'common_app') {
-      // Check if Common App main essay already exists
-      const exists = (await pool.query(`
-        SELECT id FROM essays WHERE user_id = $1 AND essay_type = 'common_app_main'
-      `, [userId])).rows[0];
+      const exists = (await pool.query(
+        `SELECT id FROM essays WHERE user_id = $1 AND title = 'Common App Personal Statement'`,
+        [userId]
+      )).rows[0];
 
       if (!exists) {
         const commonAppPrompts = this._getCommonAppPrompts(currentYear);
-        await pool.query(`
-          INSERT INTO essays (
-            application_id, user_id, essay_type, prompt, word_limit,
-            is_required, shared_across_colleges, status, platform
-          ) VALUES (NULL, $1, $2, $3, $4, true, true, 'not_started', $5)
-        `, [userId, 'common_app_main', commonAppPrompts, 650, 'Common Application']);
-
-        result.essaysAdded.push({
-          type: 'common_app_main',
-          prompt: 'Common App Personal Statement',
-          wordLimit: 650
-        });
+        await pool.query(
+          `INSERT INTO essays (user_id, application_id, title, prompt, word_limit, status)
+           VALUES ($1, NULL, 'Common App Personal Statement', $2, 650, 'not_started')`,
+          [userId, commonAppPrompts]
+        );
+        result.essaysAdded.push({ type: 'common_app_main', prompt: 'Common App Personal Statement', wordLimit: 650 });
       }
     } else if (platform === 'coalition') {
-      const exists = (await pool.query(`
-        SELECT id FROM essays WHERE user_id = $1 AND essay_type = 'coalition_main'
-      `, [userId])).rows[0];
+      const exists = (await pool.query(
+        `SELECT id FROM essays WHERE user_id = $1 AND title = 'Coalition Personal Statement'`,
+        [userId]
+      )).rows[0];
 
       if (!exists) {
         const coalitionPrompts = this._getCoalitionPrompts(currentYear);
-        await pool.query(`
-          INSERT INTO essays (
-            application_id, user_id, essay_type, prompt, word_limit,
-            is_required, shared_across_colleges, status, platform
-          ) VALUES (NULL, $1, $2, $3, $4, true, true, 'not_started', $5)
-        `, [userId, 'coalition_main', coalitionPrompts, 650, 'Coalition Application']);
-
-        result.essaysAdded.push({
-          type: 'coalition_main',
-          prompt: 'Coalition Personal Statement',
-          wordLimit: 650
-        });
+        await pool.query(
+          `INSERT INTO essays (user_id, application_id, title, prompt, word_limit, status)
+           VALUES ($1, NULL, 'Coalition Personal Statement', $2, 650, 'not_started')`,
+          [userId, coalitionPrompts]
+        );
+        result.essaysAdded.push({ type: 'coalition_main', prompt: 'Coalition Personal Statement', wordLimit: 650 });
       }
     } else if (platform === 'uc') {
-      // UC PIQs - 8 prompts, choose 4
-      const exists = (await pool.query(`
-        SELECT id FROM essays WHERE user_id = $1 AND essay_type LIKE 'uc_piq_%'
-      `, [userId])).rows[0];
+      const exists = (await pool.query(
+        `SELECT id FROM essays WHERE user_id = $1 AND title LIKE 'UC PIQ %'`,
+        [userId]
+      )).rows[0];
 
       if (!exists) {
         const ucPrompts = this._getUCPrompts(currentYear);
-
         for (const [index, prompt] of ucPrompts.entries()) {
-          await pool.query(`
-            INSERT INTO essays (
-              application_id, user_id, essay_type, prompt, word_limit,
-              is_required, shared_across_colleges, status, platform, essay_number
-            ) VALUES (NULL, $1, $2, $3, $4, false, true, 'not_started', $5, $6)
-          `, [userId, `uc_piq_${index + 1}`, prompt, 350, 'UC Application', index + 1]);
-
-          result.essaysAdded.push({
-            type: `uc_piq_${index + 1}`,
-            prompt: `UC PIQ ${index + 1}`,
-            wordLimit: 350
-          });
+          await pool.query(
+            `INSERT INTO essays (user_id, application_id, title, prompt, word_limit, status)
+             VALUES ($1, NULL, $2, $3, 350, 'not_started')`,
+            [userId, `UC PIQ ${index + 1}`, prompt]
+          );
+          result.essaysAdded.push({ type: `uc_piq_${index + 1}`, prompt: `UC PIQ ${index + 1}`, wordLimit: 350 });
         }
       }
     }
@@ -200,24 +183,17 @@ class EssayAutoLoadingService {
       usedHistorical = true;
     }
 
-    // Insert supplements
+    // Insert supplements — only valid essays table columns: user_id, application_id, college_id, title, prompt, word_limit, status
     for (const [index, supplement] of supplements.entries()) {
-      await pool.query(`
-        INSERT INTO essays (
-          application_id, user_id, college_id, essay_type, prompt, 
-          word_limit, is_required, status, essay_number, historical_data
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'not_started', $8, $9)
-      `, [
-        applicationId,
-        userId,
-        collegeId,
-        'supplemental',
-        supplement.prompt_text,
-        supplement.word_limit,
-        supplement.is_required != null ? !!supplement.is_required : true,
-        supplement.prompt_order || index + 1,
-        usedHistorical
-      ]);
+      const title = `Supplement ${index + 1}${usedHistorical ? ' (prev year)' : ''}`;
+      await pool.query(
+        `INSERT INTO essays (user_id, application_id, college_id, title, prompt, word_limit, status)
+         SELECT $1, $2, $3, $4, $5, $6, 'not_started'
+         WHERE NOT EXISTS (
+           SELECT 1 FROM essays WHERE application_id = $2 AND title = $4
+         )`,
+        [userId, applicationId, collegeId, title, supplement.prompt_text, supplement.word_limit || 650]
+      );
 
       result.essaysAdded.push({
         type: 'supplemental',

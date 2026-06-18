@@ -1,5 +1,13 @@
--- Migration 090: Create colleges_full view
--- colleges_full is referenced in 20+ source files but was never defined in any migration.
--- Define it as an alias view of the colleges table (INTEGER id) so all JOINs on college_id work.
-CREATE OR REPLACE VIEW public.colleges_full AS
-SELECT * FROM public.colleges;
+-- Migration 090: Ensure public.colleges_full view exists
+-- The view was created by migration_colleges_table_refactor.sql (already applied)
+-- as a rich view.  CREATE OR REPLACE cannot drop columns, so check existence first.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.views
+    WHERE table_schema = 'public' AND table_name = 'colleges_full'
+  ) THEN
+    EXECUTE 'CREATE VIEW public.colleges_full AS SELECT * FROM public.colleges';
+  END IF;
+END
+$$;
