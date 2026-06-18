@@ -12,6 +12,11 @@ const COUNTRY_NAME_BY_CODE: Record<string, string> = {
   CH: 'Switzerland',
   CN: 'China',
   JP: 'Japan',
+  KR: 'South Korea',
+  SE: 'Sweden',
+  NZ: 'New Zealand',
+  HK: 'Hong Kong',
+  IE: 'Ireland',
 };
 
 const COUNTRY_CODE_BY_NAME: Record<string, string> = Object.fromEntries(
