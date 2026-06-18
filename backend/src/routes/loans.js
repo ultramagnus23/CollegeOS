@@ -2,7 +2,9 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
-const db = require('../config/database');
+// config/database exports the DatabaseManager (no .query); resolve the pool lazily.
+const dbManager = require('../config/database');
+const db = { query: (...args) => dbManager.getDatabase().query(...args) };
 
 // GET /api/loans/government
 router.get('/government', authenticate, async (req, res, next) => {
