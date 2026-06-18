@@ -32,9 +32,15 @@ class ApplicationBootstrapService {
     }
 
     await this._step('deadlines', summary, async () => {
-      const { generateDeadlinesForCollege } = require('./deadlineGenerator');
-      const result = await generateDeadlinesForCollege(college, userId, application.id);
-      summary.deadlines = this._count(result);
+      // deadlineGenerator only BUILDS objects (no persistence); the auto-population
+      // service is the one that actually writes user deadlines into the `deadlines`
+      // table from canonical college deadline data (empty until scraped, so this is
+      // a no-op today — but correct, and lights up once institution_deadlines fills).
+      const DeadlineAutoPopulationService = require('./deadlineAutoPopulationService');
+      const result = await DeadlineAutoPopulationService.populateDeadlinesForApplication(
+        userId, application.id, application.college_id,
+      );
+      summary.deadlines = this._count(result, ['inserted', 'created', 'count', 'deadlines']);
     });
 
     await this._step('essays', summary, async () => {
