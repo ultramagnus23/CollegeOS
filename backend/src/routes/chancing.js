@@ -1146,10 +1146,10 @@ router.post('/ml/batch', authenticate, async (req, res, next) => {
  * POST /api/chancing/outcome
  * Submit admission outcome for Brier Score tracking.
  *
- * NOTE (schema): The INSERT into prediction_logs uses ON CONFLICT (user_id, college_id).
- * This requires a UNIQUE index on (user_id, college_id) in prediction_logs.
- * If missing, the query will throw: "there is no unique or exclusion constraint matching the ON CONFLICT specification".
- * Migration to add it: CREATE UNIQUE INDEX IF NOT EXISTS prediction_logs_user_college_uidx ON prediction_logs(user_id, college_id);
+ * NOTE (schema): prediction_logs has a PARTIAL unique index
+ * idx_prediction_logs_user_college ON (user_id, college_id) WHERE college_id IS NOT NULL.
+ * The ON CONFLICT below repeats that WHERE predicate so PG can infer the partial
+ * index; without it PG throws "no unique or exclusion constraint matching".
  */
 router.post('/outcome', authenticate, async (req, res, next) => {
   try {
@@ -1239,9 +1239,12 @@ router.post('/outcome', authenticate, async (req, res, next) => {
       const chancing = await consolidatedChancingService.calculateChance(profile, college);
       const actualOutcome = decision === 'accepted' ? 1 : 0;
       await pool.query(
+        // The matching unique index (idx_prediction_logs_user_college) is PARTIAL
+        // (WHERE college_id IS NOT NULL); ON CONFLICT must repeat that predicate to
+        // infer it, otherwise PG throws "no unique or exclusion constraint matching".
         `INSERT INTO prediction_logs (user_id, college_id, predicted_probability, actual_outcome, engine)
          VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (user_id, college_id) DO UPDATE SET
+         ON CONFLICT (user_id, college_id) WHERE college_id IS NOT NULL DO UPDATE SET
            predicted_probability = EXCLUDED.predicted_probability,
            actual_outcome = EXCLUDED.actual_outcome,
            updated_at = NOW()`,
