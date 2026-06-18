@@ -1,0 +1,58 @@
+name: Weekly Data Quality Report
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: data-quality
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    name: Scan canonical data quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install backend deps
+        working-directory: backend
+        run: npm ci --omit=dev || npm install --omit=dev
+
+      - name: Apply migrations (includes 102 data-quality engine)
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: node scripts/runMigrations.js
+
+      - name: Generate data quality report
+        id: report
+        continue-on-error: true   # surface HIGH issues without blocking the weekly run
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: node backend/scripts/dataQualityReport.js
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-data-quality-report
+          path: daily_data_quality_report.md
+          if-no-files-found: warn
+
+      - name: Flag HIGH-severity result
+        if: steps.report.outcome == 'failure'
+        run: echo "::warning::HIGH-severity data-quality issues detected — see uploaded report."

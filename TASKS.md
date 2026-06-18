@@ -5,6 +5,60 @@
 
 ---
 
+## DATASET REBUILD + DATA QUALITY PASS (2026-06-18, from supabase_dump.sql)
+
+> Separate workstream from the repo-audit phases below. Source of truth: `supabase_dump.sql`.
+> Full findings: `database_quality_report.md`. Rule: backfill from existing tables first; use
+> confidence scores; never overwrite higher-confidence/newer data; provenance everywhere; small commits.
+
+### Phase 1 — Audit — ✅ DONE
+- [x] Convert UTF-16 dump → UTF-8; census 179 tables across 10 schemas
+- [x] Row-count + NULL profile of `canonical.*` and legacy `public.*`
+- [x] Produce `database_quality_report.md` (HIGH/MEDIUM/LOW)
+
+### HIGH (launch blockers)
+- [x] **H1** — MV refresh written: `099_recompute_completeness_and_refresh_mv.sql` runs `REFRESH MATERIALIZED VIEW canonical.mv_college_cards`. ⏳ still TODO: populated-row-count assertion in startup MV health check.
+- [x] **H2** — Backfill migrations written (`backend/migrations/094`–`098`): `institution_programs` (←`college_majors`), `major_ontology` (←`majors`), `institution_rankings` (←`college_rankings` + popularity recompute), `institution_demographics` (←`student_demographics`), `institution_campus_life` (←`campus_life`, partial). Mapping spec: `missing_data_report.md`. ⏳ run `npm run migrate` + verify counts.
+- [x] **H3** — Outcomes/financials enrichment written (`100`, `101`) and **validated on real data locally**: `institution_outcomes` grad_4yr/6yr/retention/employment all filled 6,061 (scale-corrected fractions→percent); `institution_financials` net_price_* (4,842) + avg_debt (4,763) filled. ⚠️ `avg_financial_aid` stays NULL — source column `college_financial_aid.avg_financial_aid_package` is itself 100% NULL → genuine gap (Phase 5). `acceptance_rate` 69% NULL is source sparsity, not migration loss.
+
+### MEDIUM — TODO
+- [x] **M1** — Completeness recompute written: `099` adds `canonical.recompute_institution_completeness()` scoring all 8 domains with a weighted overall, and mirrors to `institutions.completeness_score`. ⏳ run migration.
+- [ ] **M2** — Consolidate duplicate college objects (`public.colleges`/`colleges_comprehensive`/`colleges_legacy` + 5 college views) → `canonical.institutions`. Repoint 4 drift-vector files first.
+- [ ] **M3** — Two `mv_college_cards` (canonical MV + public view); pick canonical, redirect/remove the other.
+- [ ] **M4** — Consolidate 6 empty deadline tables + 3 requirement tables to one canonical table per domain.
+- [ ] **M5** — Backfill `institutions` identity cols from IPEDS (`control_type` 73% NULL, `established_year` 78%, `address` 100%, lat/long 12.7%).
+
+### LOW — TODO
+- [ ] **L1** — Update `CLAUDE.md` stale migration note (070 "pending" → chain at 093).
+- [ ] **L2** — Verify `public.migrations` id gap (71–74 absent) is renumber, not skip.
+- [ ] **L3** — Pick one Python scraper tree (`scraper/` vs `scrapers/`).
+
+### Phase 9 — Data Quality Engine — ✅ WRITTEN & VALIDATED
+- [x] `102_data_quality_engine.sql`: `canonical.fn_data_quality_issues()` (impossible values + missing-data, HIGH/MEDIUM/LOW), `v_data_quality_summary` view, `data_quality_snapshots` history table, `fn_snapshot_data_quality()`.
+- [x] `backend/scripts/dataQualityReport.js`: writes `daily_data_quality_report.md`, records snapshot, exits 1 on HIGH (CI gate).
+- [x] `.github/workflows/data-quality.yml`: weekly (Mon 06:00 UTC) + dispatch. ⚠️ subject to the repo Actions approval gate (see CLAUDE.md).
+
+### Validation (all migrations 094–102, local throwaway PG 18 with real dump schema+data)
+- [x] Loaded `schema_only.sql` (real 46 canonical + 103 public objects) + real data for 13 involved tables; ran 094–102 with `ON_ERROR_STOP=1` — all clean.
+- [x] Results: programs 0→43,613; rankings 0→335; demographics 0→6,232; campus_life 0→8,236; **mv_college_cards 0→8,236 (304 with global_rank)**; outcomes rates scale-correct 0–100; DQ summary internally consistent (missing_majors 3,212 = 8,236−5,024 covered).
+
+### Follow-ups surfaced by validation
+- [ ] **Phase 4 30+ majors** — `majors` has only 37 CIP categories → ~8.7 majors/college. Backfill `institution_programs` from `public.college_programs` (19,049 granular names) to approach 30+.
+- [ ] 3,212 institutions have no `college_majors` source data (DQ `missing_majors`) — need sourcing.
+
+### Phase 8 — Scraper Architecture — ✅ DOCUMENTED
+- [x] `scraper_architecture.md`: 6-tier source hierarchy mapped to `canonical.source_tier` enum + existing modules; unified upsert/provenance contract; DB-enforced never-overwrite precedence; consolidation plan (keep `scrapers/`, fold `scraper/sources/*` in); build priorities mapped to real gaps.
+
+### Full-dataset verification — ✅ DONE
+- [x] `data_quality_verification.md`: loaded COMPLETE dump into local PG 18, applied 094–102 via `runMigrations.js`, scanned all 8,236 institutions. Before→After: mv_college_cards 0→8,236; outcomes rates 0%→100% filled; completeness now honest (75.7 inflated → 30.1 truthful); **zero impossible values**.
+- [x] ✅ **APPLIED TO PRODUCTION** (2026-06-18) via `runMigrations.js` over the Supabase session pooler (5432). All 094–102 recorded; prod verified identical to local: mv_college_cards 0→8,236, programs 43,613, outcomes 6,061/6,061 filled, completeness 30.1 honest, **0 impossible values**.
+
+### Genuine data gaps (no rows anywhere — must source, not backfill)
+- [ ] Deadlines (Phase 6) — all 7 deadline tables empty
+- [ ] Requirements + Essays (Phase 7) — all empty
+
+---
+
 ## PHASE 1 — AUDIT ✅ DONE
 
 - [x] DONE — Read CLAUDE.md, README, migration audit, release readiness, drift reports
