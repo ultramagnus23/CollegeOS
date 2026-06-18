@@ -5,6 +5,40 @@
 
 ---
 
+## DATASET REBUILD + DATA QUALITY PASS (2026-06-18, from supabase_dump.sql)
+
+> Separate workstream from the repo-audit phases below. Source of truth: `supabase_dump.sql`.
+> Full findings: `database_quality_report.md`. Rule: backfill from existing tables first; use
+> confidence scores; never overwrite higher-confidence/newer data; provenance everywhere; small commits.
+
+### Phase 1 — Audit — ✅ DONE
+- [x] Convert UTF-16 dump → UTF-8; census 179 tables across 10 schemas
+- [x] Row-count + NULL profile of `canonical.*` and legacy `public.*`
+- [x] Produce `database_quality_report.md` (HIGH/MEDIUM/LOW)
+
+### HIGH (launch blockers) — TODO
+- [ ] **H1** — `canonical.mv_college_cards` is `WITH NO DATA` (never refreshed). Refresh after H2/H3; add populated-row-count assertion to startup MV health check.
+- [ ] **H2** — Backfill empty canonical satellites from legacy via identity map: `institution_programs` (←`college_majors` 184,800), `institution_rankings` (←`college_rankings` 748), `institution_demographics` (←`student_demographics` 6,323), `institution_campus_life` (←`campus_life` 8,552), `major_ontology` (←`majors` 37).
+- [ ] **H3** — Re-map sparse card fields: `institution_outcomes.graduation_rate_4yr`/`employment_rate`/`retention_rate` (100% NULL), `institution_financials.avg_financial_aid`/`net_price_*` (100% NULL) from `academic_outcomes`/`cost_of_attendance`. (Note: `acceptance_rate` 69% NULL is source sparsity, not migration loss → Phase 5/6 sourcing.)
+
+### MEDIUM — TODO
+- [ ] **M1** — Fix completeness engine: `overall_score` 75.7% counts only admissions+financials; `outcomes_score`=0 despite 6,061 rows. Score all 8 domains.
+- [ ] **M2** — Consolidate duplicate college objects (`public.colleges`/`colleges_comprehensive`/`colleges_legacy` + 5 college views) → `canonical.institutions`. Repoint 4 drift-vector files first.
+- [ ] **M3** — Two `mv_college_cards` (canonical MV + public view); pick canonical, redirect/remove the other.
+- [ ] **M4** — Consolidate 6 empty deadline tables + 3 requirement tables to one canonical table per domain.
+- [ ] **M5** — Backfill `institutions` identity cols from IPEDS (`control_type` 73% NULL, `established_year` 78%, `address` 100%, lat/long 12.7%).
+
+### LOW — TODO
+- [ ] **L1** — Update `CLAUDE.md` stale migration note (070 "pending" → chain at 093).
+- [ ] **L2** — Verify `public.migrations` id gap (71–74 absent) is renumber, not skip.
+- [ ] **L3** — Pick one Python scraper tree (`scraper/` vs `scrapers/`).
+
+### Genuine data gaps (no rows anywhere — must source, not backfill)
+- [ ] Deadlines (Phase 6) — all 7 deadline tables empty
+- [ ] Requirements + Essays (Phase 7) — all empty
+
+---
+
 ## PHASE 1 — AUDIT ✅ DONE
 
 - [x] DONE — Read CLAUDE.md, README, migration audit, release readiness, drift reports
