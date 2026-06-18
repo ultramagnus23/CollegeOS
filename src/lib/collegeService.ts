@@ -2,8 +2,10 @@ import { supabase, isSupabaseConfigured, CollegeWithRelations } from './supabase
 import { formatCountryName, normalizeCountryCode } from './country';
 import {
   COLLEGE_CARD_COLUMNS,
+  COLLEGE_DETAIL_SECTION_COLUMNS,
   FRONTEND_CANONICAL_RELATION,
   parseFrontendCollegeCardOrThrow,
+  type CollegeDetailSection,
 } from '../contracts/collegeContracts';
 import type { FrontendCollegeCard } from '../contracts/frontendCollegeCardContract';
 
