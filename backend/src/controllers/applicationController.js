@@ -108,33 +108,30 @@ class ApplicationController {
       
       logger.info(`[${requestId}] Application created with ID: ${sanitizeForLog(application.id)}`);
       
-      // Generate deadlines automatically when application is created
+      // Bootstrap the full application workspace (deadlines, essays, documents,
+      // tasks, timeline) in one orchestrated, best-effort pass. Never fails the
+      // application creation — each step records its own error.
+      let bootstrap = null;
       if (application && application.college_id) {
         try {
-          logger.debug(`[${requestId}] Generating deadlines for college ${sanitizeForLog(application.college_id)}`);
-          const { generateDeadlinesForCollege } = require('../services/deadlineGenerator');
+          const ApplicationBootstrapService = require('../services/applicationBootstrapService');
           const College = require('../models/College');
           const college = await College.findById(application.college_id);
-          
-          if (college) {
-            await generateDeadlinesForCollege(college, userId, application.id);
-            logger.info(`[${requestId}] Deadlines generated for application ${sanitizeForLog(application.id)}`);
-          } else {
-            logger.warn(`[${requestId}] College ${sanitizeForLog(application.college_id)} not found for deadline generation`);
-          }
-        } catch (deadlineError) {
-          // Log but don't fail the application creation
-          logger.error(`[${requestId}] Failed to generate deadlines:`, deadlineError);
+          bootstrap = await ApplicationBootstrapService.bootstrap(userId, application, college);
+          logger.info(`[${requestId}] Application bootstrap complete`, bootstrap);
+        } catch (bootstrapError) {
+          logger.error(`[${requestId}] Application bootstrap failed (non-fatal):`, bootstrapError);
         }
       }
-      
+
       const duration = Date.now() - startTime;
       logger.info(`[${requestId}] Application creation completed in ${duration}ms`);
-      
+
       res.status(201).json(addDebugInfo({
         success: true,
-        message: 'Application created successfully. Deadlines generated automatically.',
-        data: application
+        message: 'Application created successfully. Deadlines, essays, documents, tasks and timeline generated automatically.',
+        data: application,
+        bootstrap
       }, { requestId, duration: `${duration}ms` }));
     } catch (error) {
       logger.error(`[${requestId}] Error in createApplication:`, error);
