@@ -33,6 +33,7 @@
     "vectors:force": "node scripts/precomputeCollegeVectors.js --force",
     "populate:majors": "node scripts/populateMajorsMapping.js",
     "populate:quality": "node scripts/populateQualityScores.js",
+    "refresh:scorecard": "node scripts/refreshScorecard.js",
     "populate:real-data": "node scripts/populateRealCollegeData.js",
     "scrape:test-deadlines": "node scripts/testDeadlineScraper.js",
     "scrape:weekly": "node -e \"require('./src/jobs/deadlineScrapingScheduler').runWeeklyHighPriority()\"",
