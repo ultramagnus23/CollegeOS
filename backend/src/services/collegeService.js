@@ -160,10 +160,20 @@ class CollegeService {
     const requirementsPromise = pool.query(
       `
       SELECT
-        requirement_category, requirement_name, requirement_value, requirement_payload
+        institution_id, cycle_year, degree_level, applicant_type,
+        sat_policy, act_policy, sat_required, act_required, sat_optional, test_blind,
+        sat_superscore, act_superscore, toefl_required, ielts_required, duolingo_required,
+        toefl_min_score, ielts_min_score, duolingo_min_score,
+        transcript_required, resume_required, cv_required,
+        essays_required, supplemental_essays_required, supplemental_essay_count,
+        portfolio_required, audition_required,
+        teacher_recommendations_required, counselor_recommendation_required,
+        interview_required, interview_optional,
+        common_app_supported, coalition_app_supported, ucas_supported, direct_apply_supported,
+        application_platform, financial_documents_required, passport_required, visa_documents_required
       FROM canonical.institution_requirements
       WHERE institution_id = $1::uuid
-      ORDER BY requirement_category ASC, requirement_name ASC
+      ORDER BY cycle_year DESC NULLS LAST, degree_level ASC NULLS LAST, applicant_type ASC NULLS LAST
       `,
       [institutionId]
     );
@@ -216,7 +226,9 @@ class CollegeService {
 
     const completenessPromise = pool.query(
       `
-      SELECT institution_id, overall_score, section_scores, missing_required_fields
+      SELECT institution_id, overall_score, admissions_score, financials_score,
+             outcomes_score, rankings_score, programs_score, demographics_score,
+             requirements_score, deadlines_score, score_breakdown
       FROM canonical.institution_completeness
       WHERE institution_id = $1::uuid
       LIMIT 1
@@ -226,7 +238,8 @@ class CollegeService {
 
     const qualityScoresPromise = pool.query(
       `
-      SELECT institution_id, freshness_score, final_quality_score, confidence_penalty
+      SELECT institution_id, consistency_score, freshness_score, lineage_score,
+             conflict_score, final_quality_score
       FROM canonical.institution_quality_scores
       WHERE institution_id = $1::uuid
       LIMIT 1

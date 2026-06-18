@@ -18,9 +18,10 @@ router.get('/monthly', authenticate, async (req, res, next) => {
       const result = await pool.query(
         `SELECT at.id, at.title, at.task_type AS type, at.due_date,
                 CASE WHEN at.completed THEN 'completed' ELSE 'pending' END AS status,
-                a.college_name
+                c.name AS college_name
          FROM application_tasks at
          JOIN applications a ON at.application_id = a.id
+         LEFT JOIN colleges_full c ON c.id = a.college_id
          WHERE a.user_id = $1
          ORDER BY at.due_date ASC NULLS LAST`,
         [userId]
@@ -31,15 +32,16 @@ router.get('/monthly', authenticate, async (req, res, next) => {
       tasks = [];
     }
 
-    // Pull deadlines from application_deadlines joined with applications
+    // Pull user-facing deadlines (the `deadlines` table is keyed on user_id and
+    // college_id; application_deadlines is the empty college-level source table).
     try {
       const result = await pool.query(
-        `SELECT ad.id, a.college_name, ad.deadline_type, ad.deadline_date,
-                CASE WHEN ad.completed THEN 1 ELSE 0 END AS is_completed
-         FROM application_deadlines ad
-         JOIN applications a ON ad.application_id = a.id
-         WHERE a.user_id = $1
-         ORDER BY ad.deadline_date ASC NULLS LAST`,
+        `SELECT d.id, c.name AS college_name, d.deadline_type, d.deadline_date,
+                CASE WHEN d.is_completed THEN 1 ELSE 0 END AS is_completed
+         FROM deadlines d
+         LEFT JOIN colleges_full c ON c.id = d.college_id
+         WHERE d.user_id = $1
+         ORDER BY d.deadline_date ASC NULLS LAST`,
         [userId]
       );
       deadlines = result.rows;

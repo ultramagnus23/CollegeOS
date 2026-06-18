@@ -86,12 +86,13 @@ router.get('/colleges', async (req, res) => {
           coalesce((SELECT string_agg(cp.program_name, ' ') FROM canonical.institution_programs cp WHERE cp.institution_id=c.id),'')
         ) @@ websearch_to_tsquery('english', $${relevanceParams.qIdx})
         OR c.canonical_name ILIKE $${relevanceParams.ilikeIdx}
+        OR c.canonical_name ILIKE $${relevanceParams.prefixIdx}
         OR (
-          $${relevanceParams.acronymIdx} <> ''
+          $${relevanceParams.acronymIdx}::text <> ''
           AND REGEXP_REPLACE(UPPER(c.canonical_name), '[^A-Z]', '', 'g') = $${relevanceParams.acronymIdx}
         )
         OR (
-          $${relevanceParams.trigramIdx} <> ''
+          $${relevanceParams.trigramIdx}::text <> ''
           AND GREATEST(
             COALESCE(similarity(LOWER(c.canonical_name), LOWER($${relevanceParams.trigramIdx})), 0),
             COALESCE(word_similarity(LOWER($${relevanceParams.trigramIdx}), LOWER(c.canonical_name)), 0)
@@ -229,7 +230,7 @@ router.get('/colleges', async (req, res) => {
           WHEN c.acceptance_rate BETWEEN 0.01 AND 0.99 THEN 0
           ELSE 1
         END ASC,
-        COALESCE(c.total_enrollment, 0) DESC,
+        COALESCE(NULLIF((c.metadata->>'total_enrollment'), '')::numeric, 0) DESC,
         c.canonical_name ASC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
