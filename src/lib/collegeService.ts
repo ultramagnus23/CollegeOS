@@ -281,21 +281,29 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
     if (maxTuition !== undefined) q = q.lte('cost_of_attendance', maxTuition);
 
     if (rankedIds) {
-      // Fetch all matched (bounded by the RPC limit), then order by relevance and
-      // paginate client-side so additional filters still intersect correctly.
-      const { data, error } = await q.limit(rankedIds.length);
+      // The RPC already applied every filter and produced ranked ids, so hydrate
+      // ONLY the current page's cards (not all matches) — fetching hundreds of wide
+      // metadata rows per keystroke was the main search-latency cost.
+      const total = rankedIds.length;
+      const fromIdx = (safePage - 1) * safePageSize;
+      const pageIds = rankedIds.slice(fromIdx, fromIdx + safePageSize);
+      if (pageIds.length === 0) {
+        return { data: [], count: total, page: safePage, pageSize: safePageSize, totalPages: Math.max(1, Math.ceil(total / safePageSize)) };
+      }
+      const { data, error } = await client
+        .schema('canonical')
+        .from('mv_college_cards')
+        .select(COLLEGE_CARD_COLUMNS)
+        .in('id', pageIds as string[]);
       if (error) throw error;
       const parsedRows = (data ?? []).map((raw) => parseFrontendCollegeCardOrThrow(raw as unknown)) as CanonicalCardRow[];
       const enrichedRows = await enrichCardRows(parsedRows);
-      const rankIndex = new Map(rankedIds.map((id, idx) => [String(id), idx]));
+      const rankIndex = new Map(pageIds.map((id, idx) => [String(id), idx]));
       const ordered = enrichedRows.sort(
         (a, b) => (rankIndex.get(String(a.id)) ?? Number.MAX_SAFE_INTEGER) - (rankIndex.get(String(b.id)) ?? Number.MAX_SAFE_INTEGER),
       );
-      const total = ordered.length;
-      const fromIdx = (safePage - 1) * safePageSize;
-      const pageRows = ordered.slice(fromIdx, fromIdx + safePageSize);
       return {
-        data: pageRows as CollegeRecord[],
+        data: ordered as CollegeRecord[],
         count: total,
         page: safePage,
         pageSize: safePageSize,
