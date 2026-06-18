@@ -162,6 +162,8 @@ const Dashboard = () => {
   const [urgentAlerts, setUrgentAlerts] = useState<any[]>([]);
   const [collegeList, setCollegeList] = useState<any[]>([]);
   const [todaysTasks, setTodaysTasks] = useState<any[]>([]);
+  const [nextAction, setNextAction] = useState<any>(null);
+  const [distribution, setDistribution] = useState({ reach:0, target:0, safety:0, unclassified:0 });
 
   const { completionPercent: profileStrength } = useProfileCompletion();
 
@@ -182,6 +184,18 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     const startedAt = Date.now();
     try {
+      // Unified command-center payload (profile, reach/target/safety, nextAction).
+      // Authoritative for aggregates + "what should I do next"; detail lists below
+      // still come from their endpoints (they carry college names etc.).
+      try {
+        const dash: any = await api.getDashboard();
+        if (dash?.success && dash.data) {
+          const d = dash.data;
+          if (d.nextAction) setNextAction(d.nextAction);
+          if (d.applications?.distribution) setDistribution(d.applications.distribution);
+        }
+      } catch { /* fall back to per-endpoint aggregates below */ }
+
       const [collegesReq, applicationsReq, deadlinesReq, essaysReq] = await Promise.allSettled([
         api.getColleges({ limit:5 }), api.getApplications(), api.getDeadlines(30), api.getEssays()
       ]);
@@ -337,6 +351,41 @@ const Dashboard = () => {
         </div>
 
         <div style={{ maxWidth:1280, margin:'0 auto', padding:'36px 48px 80px' }}>
+
+          {/* ── What should I do next? (command center) ── */}
+          {nextAction && (() => {
+            const u = nextAction.urgency || 'medium';
+            const uc = u==='critical' ? '#EF4444' : u==='high' ? '#F97316' : u==='low' ? '#10B981' : S.accent;
+            const ctaRoutes: Record<string,string> = { profile:'/settings', explore:'/colleges', deadlines:'/deadlines', documents:'/documents', essays:'/essays', tasks:'/deadlines', timeline:'/timeline' };
+            return (
+              <div style={{ marginBottom:24, padding:'20px 24px', borderRadius:16, border:`1px solid ${h2r(uc,0.35)}`, background:`linear-gradient(135deg, ${h2r(uc,0.10)} 0%, transparent 70%)`, display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+                  <div style={{ width:44, height:44, borderRadius:12, background:h2r(uc,0.18), display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>🎯</div>
+                  <div>
+                    <div style={{ fontSize:11, color:h2r(uc,0.9), textTransform:'uppercase', letterSpacing:'0.1em', fontWeight:700, marginBottom:4 }}>Do this next</div>
+                    <div style={{ fontSize:18, fontWeight:800, color:S.text, lineHeight:1.2 }}>{nextAction.label}</div>
+                    {nextAction.why && <div style={{ fontSize:13, color:S.muted, marginTop:4 }}>{nextAction.why}</div>}
+                  </div>
+                </div>
+                <button onClick={()=>navigate(ctaRoutes[nextAction.cta] || '/')} style={{ padding:'10px 20px', borderRadius:10, border:'none', background:uc, color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', fontFamily:S.font }}>
+                  Go →
+                </button>
+              </div>
+            );
+          })()}
+
+          {/* ── Reach / Target / Safety balance ── */}
+          {(distribution.reach + distribution.target + distribution.safety + distribution.unclassified) > 0 && (
+            <div style={{ marginBottom:24, display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))', gap:14 }}>
+              {([['Reach', distribution.reach, '#EF4444', '🌟'],['Target', distribution.target, '#3B9EFF', '🎯'],['Safety', distribution.safety, '#10B981', '🛡️'],['Unclassified', distribution.unclassified, '#64748B', '❓']] as const).map(([label, val, color, icon]) => (
+                <div key={label} style={{ padding:'16px 18px', borderRadius:14, border:`1px solid ${S.border}`, background:'var(--color-surface-subtle)' }}>
+                  <div style={{ fontSize:20, marginBottom:6 }}>{icon}</div>
+                  <div style={{ fontSize:28, fontWeight:900, color }}>{val}</div>
+                  <div style={{ fontSize:12, color:S.muted, fontWeight:600 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* ── Urgent alerts ── */}
           {urgentAlerts.length > 0 && (
