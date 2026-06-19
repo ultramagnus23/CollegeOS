@@ -974,7 +974,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
           {(() => {
             // International applicants: show this college's need policy FOR INTERNATIONALS.
             const aid = getAidGuidance(
-              { citizenship: cardUser?.country, country: cardUser?.country },
+              { citizenship: cardUser?.citizenship || cardUser?.country, country: cardUser?.country },
               { name: college?.name, country: college?.country, international_need_blind: (college as any)?.need_blind_flag, need_aware_intl: (college as any)?.need_aware_intl },
             );
             if (!aid.isInternational) return null;

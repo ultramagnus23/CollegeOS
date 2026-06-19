@@ -127,6 +127,7 @@ function normalizeOnboardingPayload(rawPayload = {}) {
     'high_school_name', 'school_name',
     'curriculum_type',
     'curriculum_type_other', 'curriculum_other',
+    'citizenship',
     'why_college', 'whyCollege',
     'interest_tags', 'skillsStrengths',
     'trait_weights', 'traitWeights',
@@ -228,6 +229,7 @@ function normalizeOnboardingPayload(rawPayload = {}) {
     high_school_name: safeString(payload.high_school_name ?? payload.school_name, { maxLength: 255 }),
     curriculum_type: safeString(payload.curriculum_type, { maxLength: 100 }),
     curriculum_type_other: safeString(payload.curriculum_type_other ?? payload.curriculum_other, { maxLength: 100 }),
+    citizenship: safeString(payload.citizenship, { maxLength: 80 }),
     why_college: safeString(payload.why_college ?? payload.whyCollege, { maxLength: 4000 }),
     interest_tags: safeArray(payload.interest_tags ?? payload.skillsStrengths, (value) => safeString(value, { maxLength: 80 }), { maxItems: 40 }),
     trait_weights: (() => {

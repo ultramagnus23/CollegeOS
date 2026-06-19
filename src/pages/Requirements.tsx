@@ -340,7 +340,7 @@ const Requirements = () => {
         // the onboarding country (no separate citizenship field yet); a missing value
         // fails safe to "international" so FAFSA is never shown to a non-US applicant.
         const aid = getAidGuidance(
-          { citizenship: user?.country, country: user?.country },
+          { citizenship: user?.citizenship || user?.country, country: user?.country },
           { name: collegeName, country },
         );
         const aidReqs: Requirement[] = (aid.forms || []).map((f: any, i: number) => ({

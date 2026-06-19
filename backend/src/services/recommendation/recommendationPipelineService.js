@@ -1,6 +1,7 @@
 'use strict';
 
 const dbManager = require('../../config/database');
+const { calculateChance } = require('../consolidatedChancingService');
 const { featureVector } = require('./featureEngineeringService');
 const { rankCandidates } = require('./ltrInferenceService');
 const { diversifyPortfolio } = require('./diversificationService');
@@ -217,6 +218,7 @@ function normalizeStudentProfile(userProfile = {}) {
     satBand: userProfile.academic?.sat_band || null,
     actBand: userProfile.academic?.act_band || null,
     budgetBand: userProfile.financial?.budget_band || null,
+    country: userProfile.country || userProfile.preferences?.country || userProfile.citizenship || null,
     careerGoals: userProfile.career_goals || userProfile.preferences?.career_goals || userProfile.careerGoals || null,
     campusSizePreference: userProfile.preferences?.campus_size || null,
     researchInterest: userProfile.preferences?.research_interest || null,
@@ -295,6 +297,7 @@ async function generateDeterministicFallbackRecommendations(normalizedStudent = 
       rows = Array.isArray(retry.rows) ? retry.rows : rows;
     }
     logQueryResult(rows, null);
+    const rowById = new Map((Array.isArray(rows) ? rows : []).map((r) => [r.id, r]));
     const scoredAll = (Array.isArray(rows) ? rows : []).map((row) => {
       const features = featureVector(scoringStudent || {}, row || {}, {}, {
         popularity_score: Number(row?.popularity_score) || 0,
@@ -388,6 +391,34 @@ async function generateDeterministicFallbackRecommendations(normalizedStudent = 
       }
     }
     const scored = picked.sort((a, b) => b.overall_score - a.overall_score).slice(0, safeLimit);
+
+    // Replace the crude (no-ceiling) admit estimate on the FINAL set with the
+    // calibrated chancing model, so e.g. an elite school shows ~4% (reach), not 62%.
+    // Selectivity-aware portfolio SELECTION above is preserved; only the displayed
+    // admit_chance / classification are upgraded to the honest model output.
+    const chancingStudent = {
+      sat_total: scoringStudent.sat ?? null,
+      act_composite: scoringStudent.act ?? null,
+      gpa_unweighted: scoringStudent.gpa ?? null,
+      country: scoringStudent.country ?? null,
+      intended_major: Array.isArray(scoringStudent.intendedMajors) ? scoringStudent.intendedMajors[0] : null,
+    };
+    for (const rec of scored) {
+      const row = rowById.get(rec.college_id);
+      if (!row) continue;
+      try {
+        const chance = await calculateChance(
+          chancingStudent,
+          { name: row.name, acceptance_rate: row.acceptance_rate, sat_avg: row.sat_75, country: row.country },
+          { intended_major: chancingStudent.intended_major },
+        );
+        if (chance && chance.chance_percentage != null) {
+          rec.admit_chance = chance.chance_percentage;
+          if (chance.category && chance.category !== 'unknown') rec.classification = chance.category;
+          rec.confidence_label = chance.confidence || rec.explanation?.confidence_label;
+        }
+      } catch (_e) { /* keep the fallback estimate if chancing fails for this row */ }
+    }
 
     return {
       recommendations: scored,

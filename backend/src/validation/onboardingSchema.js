@@ -50,6 +50,7 @@ const onboardingSchema = z.object({
   high_school_name: nullableString(255),
   curriculum_type: nullableString(100),
   curriculum_type_other: nullableString(100),
+  citizenship: nullableString(80),
   why_college: nullableString(4000),
   interest_tags: z.array(z.string().trim().min(1).max(80)).max(40).default([]),
   trait_weights: z.record(z.string(), z.number()).nullable().optional(),

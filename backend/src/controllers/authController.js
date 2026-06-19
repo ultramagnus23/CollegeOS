@@ -116,10 +116,25 @@ class AuthController {
           message: 'User not found'
         });
       }
-      
+
+      const sanitized = AuthService.sanitizeUser(user);
+      // Surface citizenship (stored on student_profiles) so the frontend's aid logic
+      // can use real citizenship instead of inferring it from country of residence.
+      try {
+        const dbManager = require('../config/database');
+        const pool = dbManager.getDatabase();
+        const { rows } = await pool.query(
+          'SELECT citizenship_status FROM student_profiles WHERE user_id = $1 LIMIT 1',
+          [req.user.userId],
+        );
+        sanitized.citizenship = rows[0]?.citizenship_status ?? null;
+      } catch (citizenshipError) {
+        sanitized.citizenship = sanitized.citizenship ?? null;
+      }
+
       res.json({
         success: true,
-        data: AuthService.sanitizeUser(user)
+        data: sanitized
       });
     } catch (error) {
       next(error);

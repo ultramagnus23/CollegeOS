@@ -8,6 +8,7 @@ export interface User {
   email: string;
   full_name: string;
   country: string;
+  citizenship?: string | null; // from student_profiles.citizenship_status, surfaced by /auth/me
   onboarding_complete: boolean;
   role?: string;
   has_completed_tour?: boolean;

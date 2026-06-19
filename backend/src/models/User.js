@@ -289,7 +289,7 @@ class User {
            intended_major, intended_majors, subjects, preferred_countries,
            preferred_college_size, college_size_preference, preferred_setting, campus_setting_preference,
            budget_max, interest_tags, trait_weights, extracurriculars,
-           career_goals, why_college, updated_at
+           career_goals, why_college, citizenship_status, updated_at
          ) VALUES (
            $1,$2,$3,$4,$5,$6,$7,
            $8,$9,$10,$11,$12,
@@ -297,7 +297,7 @@ class User {
            $18,$19,$20,$21,
            $22,$23,$24,$25,
            $26,$27,$28,$29,
-           $30,$31,NOW()
+           $30,$31,$32,NOW()
          )
          ON CONFLICT (user_id) DO UPDATE SET
            first_name = COALESCE(EXCLUDED.first_name, student_profiles.first_name),
@@ -330,6 +330,7 @@ class User {
            extracurriculars = EXCLUDED.extracurriculars,
            career_goals = COALESCE(EXCLUDED.career_goals, student_profiles.career_goals),
            why_college = COALESCE(EXCLUDED.why_college, student_profiles.why_college),
+           citizenship_status = COALESCE(EXCLUDED.citizenship_status, student_profiles.citizenship_status),
            updated_at = NOW()`,
         [
           userId, firstName, lastName, baseUser.email || null, spCountry, data?.phone ?? null, dob,
@@ -338,7 +339,7 @@ class User {
           intendedMajor, toJsonArray(intendedMajors), toJsonArray(subjectsArr), toJsonArray(writePayload.target_countries),
           preferredCollegeSize, preferredCollegeSize, preferredSetting, preferredSetting,
           maxBudgetPerYear, toJsonArray(interestTags), JSON.stringify(traitWeights), JSON.stringify(activitiesArr),
-          writePayload.career_goals, data?.why_college ?? null,
+          writePayload.career_goals, data?.why_college ?? null, (data?.citizenship ?? null),
         ]
       );
 
