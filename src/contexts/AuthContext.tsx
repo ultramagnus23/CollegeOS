@@ -11,10 +11,12 @@ export interface User {
   onboarding_complete: boolean;
   role?: string;
   has_completed_tour?: boolean;
-  target_countries?: string; // JSON string
-  intended_majors?: string;  // JSON string
-  test_status?: string;      // JSON string
-  language_preferences?: string; // JSON string
+  // Canonical contract: /auth/* responses return these parsed (see
+  // AuthService.sanitizeUser). Arrays/object, not JSON strings.
+  target_countries?: string[];
+  intended_majors?: string[];
+  test_status?: { sat_score?: number | null; act_score?: number | null; ib_predicted?: number | null } | Record<string, unknown>;
+  language_preferences?: string[];
   created_at?: string;
   updated_at?: string;
 }

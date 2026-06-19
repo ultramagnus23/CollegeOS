@@ -167,7 +167,14 @@ const Dashboard = () => {
 
   const { completionPercent: profileStrength } = useProfileCompletion();
 
-  const safe = (s: any, f: any) => { try { return s ? JSON.parse(s) : f; } catch { return f; } };
+  // /auth/* now returns these already parsed (arrays). Stay tolerant of a
+  // legacy JSON-string shape from cached data without forcing a re-parse.
+  const safe = (s: any, f: any) => {
+    if (s == null) return f;
+    if (Array.isArray(s)) return s;
+    if (typeof s === 'string') { try { return JSON.parse(s); } catch { return f; } }
+    return s ?? f;
+  };
   const targetCountries = safe(user?.target_countries, []);
   const intendedMajors = safe(user?.intended_majors, []);
 

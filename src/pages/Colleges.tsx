@@ -7,6 +7,8 @@ import { normalizeCountryData, College, TestScores, GraduationRates } from '../t
 import FitBadge from '../components/FitBadge';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { formatDualFromUsd, FX_NOTE } from '../lib/currency.mjs';
+import { getAidGuidance } from '../lib/financialAidPolicy.mjs';
 import { safeString } from '../lib/utils';
 import {
   searchColleges,
@@ -849,6 +851,7 @@ const Colleges: React.FC = () => {
 /* ==================== DARK COLLEGE CARD ==================== */
 
 const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onViewDetails, isAdding, fit }) => {
+  const { user: cardUser } = useAuth();
   useEffect(() => {
     if (!COLLEGE_SYNC_DEBUG || !college || index > 1) return;
     console.debug('[CollegeSync] college-card.render', {
@@ -879,9 +882,11 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
   const formatCurrency = (amount: number | null | undefined, country: string): string => {
     if (amount === null || amount === undefined) return NOT_AVAILABLE;
     if (country === 'India') return `₹${(amount / 100000).toFixed(1)}L`;
+    // GBP/EUR costs are native; converting via the USD→INR rate would be wrong, so leave them.
     if (country === 'United Kingdom') return `£${(amount / 1000).toFixed(0)}K`;
     if (country === 'Germany') return amount === 0 ? 'Free' : `€${amount?.toLocaleString() ?? '0'}`;
-    return `$${(amount / 1000).toFixed(0)}K`;
+    // USD-denominated costs (US + default): show BOTH USD and INR for Indian students.
+    return formatDualFromUsd(amount) || `$${(amount / 1000).toFixed(0)}K`;
   };
 
   const formatEnrollment = (num: number | null | undefined): string => {
@@ -966,6 +971,21 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
           {(college as any)?.international_aid_available ? (
             <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(168,85,247,0.18)', color: '#A855F7', fontWeight: 600, fontFamily: S.font }}>International Aid</span>
           ) : null}
+          {(() => {
+            // International applicants: show this college's need policy FOR INTERNATIONALS.
+            const aid = getAidGuidance(
+              { citizenship: cardUser?.country, country: cardUser?.country },
+              { name: college?.name, country: college?.country, international_need_blind: (college as any)?.need_blind_flag, need_aware_intl: (college as any)?.need_aware_intl },
+            );
+            if (!aid.isInternational) return null;
+            if (aid.needPolicy === 'need-blind-intl') {
+              return <span title="Need-blind for international applicants — verify on the college aid page" style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(16,185,129,0.18)', color: '#10B981', fontWeight: 600, fontFamily: S.font }}>Need-blind (Intl)</span>;
+            }
+            if (aid.needPolicy === 'need-aware-intl') {
+              return <span title="Need-aware admit, meets full need once admitted — verify on the college aid page" style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(59,158,255,0.18)', color: '#3B9EFF', fontWeight: 600, fontFamily: S.font }}>Meets full need (Intl)</span>;
+            }
+            return null;
+          })()}
           <FitBadge fitData={fit} className="ml-auto" />
         </div>
       </div>
@@ -974,13 +994,13 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: S.border, padding: 0 }}>
         {[
           { icon: '📈', label: 'Acceptance', value: formatAcceptanceRate(acceptanceRate), color: '#10B981' },
-          { icon: '💰', label: 'Tuition', value: formatCurrency(college?.tuition_cost, countryName), color: '#3B9EFF' },
+          { icon: '💰', label: 'Tuition', value: formatCurrency(college?.tuition_cost, countryName), color: '#3B9EFF', title: FX_NOTE },
           { icon: '🧠', label: 'SAT Median', value: (college as any)?.sat_median != null ? String((college as any).sat_median) : NOT_AVAILABLE, color: '#8B5CF6' },
           { icon: '📝', label: 'ACT Median', value: (college as any)?.act_median != null ? String((college as any).act_median) : NOT_AVAILABLE, color: '#A855F7' },
           { icon: '💼', label: 'Start Salary', value: (college as any)?.median_start_salary != null ? `$${Number((college as any).median_start_salary).toLocaleString()}` : NOT_AVAILABLE, color: '#22C55E' },
           { icon: '🎓', label: 'Grad Rate', value: formatRate((college as any)?.graduation_rate_6yr), color: '#F59E0B' },
         ].map((stat, i) => (
-          <div key={i} style={{ padding: '12px 16px', background: S.surface }}>
+          <div key={i} title={(stat as any).title || undefined} style={{ padding: '12px 16px', background: S.surface }}>
             <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font, marginBottom: 3 }}>{stat.label}</div>
             <div style={{ fontSize: stat.value === NOT_AVAILABLE ? 11 : 15, fontWeight: 700, color: stat.value === NOT_AVAILABLE ? S.dim : 'var(--color-text-primary)', fontFamily: S.font }}>{stat.value}</div>
           </div>

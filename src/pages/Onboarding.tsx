@@ -1944,6 +1944,22 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             grade_level: studentData.current_grade || null,
             graduation_year: studentData.graduation_year ? Number(studentData.graduation_year) : null,
             preferred_location: studentData.locationPreference || null,
+            // Identity + academic fields that must persist to student_profiles so
+            // the profile does not reset on reload and chancing/recs see real data.
+            name: studentData.name || null,
+            gender: studentData.gender || null,
+            phone: studentData.phone || null,
+            date_of_birth: studentData.date_of_birth || null,
+            school_name: studentData.school_name || null,
+            curriculum_type: studentData.curriculum_type || studentData.currentBoard || null,
+            curriculum_other: studentData.curriculum_other || null,
+            why_college: studentData.whyCollege || null,
+            subjects: normalizedSubjects,
+            interest_tags: normalizedTraits,
+            trait_weights: studentData.traitWeights || {},
+            activities: cleanedActivities,
+            preferred_college_size: studentData.campusSize || null,
+            preferred_setting: studentData.locationPreference || null,
           });
 
           setStudentData((prev: any) => ({

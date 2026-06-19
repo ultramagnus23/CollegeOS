@@ -121,6 +121,17 @@ function normalizeOnboardingPayload(rawPayload = {}) {
     'grade_level', 'current_grade', 'graduation_year',
     'preferred_location', 'locationPreference',
     'gender',
+    'name',
+    'phone',
+    'date_of_birth',
+    'high_school_name', 'school_name',
+    'curriculum_type',
+    'curriculum_type_other', 'curriculum_other',
+    'why_college', 'whyCollege',
+    'interest_tags', 'skillsStrengths',
+    'trait_weights', 'traitWeights',
+    'preferred_college_size', 'campusSize',
+    'preferred_setting',
   ]);
 
   const unknownFields = Object.keys(payload).filter((key) => !knownFields.has(key));
@@ -211,6 +222,26 @@ function normalizeOnboardingPayload(rawPayload = {}) {
       { maxItems: 10 },
     ),
     gender: safeString(payload.gender, { maxLength: 50 }),
+    name: safeString(payload.name, { maxLength: 160 }),
+    phone: safeString(payload.phone, { maxLength: 40 }),
+    date_of_birth: safeString(payload.date_of_birth, { maxLength: 20 }),
+    high_school_name: safeString(payload.high_school_name ?? payload.school_name, { maxLength: 255 }),
+    curriculum_type: safeString(payload.curriculum_type, { maxLength: 100 }),
+    curriculum_type_other: safeString(payload.curriculum_type_other ?? payload.curriculum_other, { maxLength: 100 }),
+    why_college: safeString(payload.why_college ?? payload.whyCollege, { maxLength: 4000 }),
+    interest_tags: safeArray(payload.interest_tags ?? payload.skillsStrengths, (value) => safeString(value, { maxLength: 80 }), { maxItems: 40 }),
+    trait_weights: (() => {
+      const raw = payload.trait_weights ?? payload.traitWeights;
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+      const out = {};
+      for (const [key, value] of Object.entries(raw)) {
+        const num = normalizeNumber(value);
+        if (num !== null) out[String(key).slice(0, 80)] = num;
+      }
+      return Object.keys(out).length > 0 ? out : null;
+    })(),
+    preferred_college_size: safeString(payload.preferred_college_size ?? payload.campusSize, { maxLength: 40 }),
+    preferred_setting: safeString(payload.preferred_setting, { maxLength: 40 }),
   };
 
   if (payload.gpa !== undefined && normalized.gpa === null && payload.gpa !== null && payload.gpa !== '') {

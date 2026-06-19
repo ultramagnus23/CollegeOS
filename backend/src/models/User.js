@@ -204,52 +204,152 @@ class User {
       preferred_location_type: normalizedPreferredLocation == null ? 'null' : Array.isArray(normalizedPreferredLocation) ? 'array' : 'string',
     });
 
-    await pool.query(
-      `UPDATE users
-        SET target_countries    = $1,
-            intended_majors     = $2,
-            test_status         = $3,
-            language_preferences = $4,
-            onboarding_complete = 1,
-            onboarding_completed = TRUE,
-            gpa                 = COALESCE($6, gpa),
-            sat_score           = COALESCE($7, sat_score),
-            act_score           = COALESCE($8, act_score),
-            budget              = COALESCE($9, budget),
-            max_budget_per_year = COALESCE($10, max_budget_per_year),
-            intended_major      = COALESCE($11, intended_major),
-            career_goals        = COALESCE($12, career_goals),
-            country             = COALESCE($13, country),
-            need_financial_aid  = COALESCE($14, need_financial_aid),
-            can_take_loan       = COALESCE($15, can_take_loan),
-            family_income_usd   = COALESCE($16, family_income_usd),
-            grade_level         = COALESCE($17, grade_level),
-            graduation_year     = COALESCE($18, graduation_year),
-            preferred_location  = COALESCE($19, preferred_location),
-            updated_at          = NOW()
-        WHERE id = $5`,
-      [
-        JSON.stringify(writePayload.target_countries),
-        JSON.stringify(writePayload.intended_majors),
-        JSON.stringify(writePayload.test_status),
-        JSON.stringify(writePayload.language_preferences),
-        userId,
-        writePayload.gpa,
-        writePayload.sat_score,
-        writePayload.act_score,
-        writePayload.budget,
-        writePayload.max_budget_per_year,
-        writePayload.intended_major,
-        writePayload.career_goals,
-        writePayload.country,
-        writePayload.need_financial_aid,
-        writePayload.can_take_loan,
-        writePayload.family_income_usd,
-        writePayload.grade_level,
-        writePayload.graduation_year,
-        writePayload.preferred_location,
-      ]
-    );
+    // Build the student_profiles (read-side) mirror values. The /profile/completion
+    // endpoint, Settings page and the recommendation/chancing engines all read from
+    // student_profiles — NOT users. Writing only `users` here is what made the
+    // profile appear to reset to 0% on reload. We now write BOTH tables atomically.
+    const gpaType = String(data?.gpa_type || 'percentage').toLowerCase();
+    const boardExamPercentage = (gpaType === 'percentage' && rawGpa != null && !Number.isNaN(rawGpa)) ? rawGpa : null;
+    const toJsonArray = (v) => JSON.stringify(Array.isArray(v) ? v : []);
+    const interestTags = Array.isArray(data?.interest_tags) ? data.interest_tags : [];
+    const subjectsArr = Array.isArray(data?.subjects) ? data.subjects : [];
+    const activitiesArr = Array.isArray(data?.activities) ? data.activities : [];
+    const traitWeights = (data?.trait_weights && typeof data.trait_weights === 'object' && !Array.isArray(data.trait_weights)) ? data.trait_weights : {};
+    const dob = (() => {
+      const v = data?.date_of_birth;
+      return (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v.trim())) ? v.trim() : null;
+    })();
+    const preferredSetting = data?.preferred_setting ?? (Array.isArray(normalizedPreferredLocation) ? normalizedPreferredLocation[0] : null);
+    const preferredCollegeSize = data?.preferred_college_size ?? null;
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      await client.query(
+        `UPDATE users
+          SET target_countries    = $1,
+              intended_majors     = $2,
+              test_status         = $3,
+              language_preferences = $4,
+              onboarding_complete = 1,
+              onboarding_completed = TRUE,
+              gpa                 = COALESCE($6, gpa),
+              sat_score           = COALESCE($7, sat_score),
+              act_score           = COALESCE($8, act_score),
+              budget              = COALESCE($9, budget),
+              max_budget_per_year = COALESCE($10, max_budget_per_year),
+              intended_major      = COALESCE($11, intended_major),
+              career_goals        = COALESCE($12, career_goals),
+              country             = COALESCE($13, country),
+              need_financial_aid  = COALESCE($14, need_financial_aid),
+              can_take_loan       = COALESCE($15, can_take_loan),
+              family_income_usd   = COALESCE($16, family_income_usd),
+              grade_level         = COALESCE($17, grade_level),
+              graduation_year     = COALESCE($18, graduation_year),
+              preferred_location  = COALESCE($19, preferred_location),
+              updated_at          = NOW()
+          WHERE id = $5`,
+        [
+          JSON.stringify(writePayload.target_countries),
+          JSON.stringify(writePayload.intended_majors),
+          JSON.stringify(writePayload.test_status),
+          JSON.stringify(writePayload.language_preferences),
+          userId,
+          writePayload.gpa,
+          writePayload.sat_score,
+          writePayload.act_score,
+          writePayload.budget,
+          writePayload.max_budget_per_year,
+          writePayload.intended_major,
+          writePayload.career_goals,
+          writePayload.country,
+          writePayload.need_financial_aid,
+          writePayload.can_take_loan,
+          writePayload.family_income_usd,
+          writePayload.grade_level,
+          writePayload.graduation_year,
+          writePayload.preferred_location,
+        ]
+      );
+
+      const { rows: baseRows } = await client.query('SELECT email, full_name, country FROM users WHERE id = $1', [userId]);
+      const baseUser = baseRows[0] || {};
+      const fullName = (data?.name && String(data.name).trim()) || baseUser.full_name || '';
+      const nameParts = fullName.split(/\s+/).filter(Boolean);
+      const firstName = nameParts[0] || null;
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
+      const spCountry = writePayload.country ?? baseUser.country ?? null;
+
+      await client.query(
+        `INSERT INTO student_profiles (
+           user_id, first_name, last_name, email, country, phone, date_of_birth,
+           grade_level, graduation_year, high_school_name, curriculum_type, curriculum_type_other,
+           gpa_unweighted, board_exam_percentage, overall_percentage, sat_total, act_composite,
+           intended_major, intended_majors, subjects, preferred_countries,
+           preferred_college_size, college_size_preference, preferred_setting, campus_setting_preference,
+           budget_max, interest_tags, trait_weights, extracurriculars,
+           career_goals, why_college, updated_at
+         ) VALUES (
+           $1,$2,$3,$4,$5,$6,$7,
+           $8,$9,$10,$11,$12,
+           $13,$14,$15,$16,$17,
+           $18,$19,$20,$21,
+           $22,$23,$24,$25,
+           $26,$27,$28,$29,
+           $30,$31,NOW()
+         )
+         ON CONFLICT (user_id) DO UPDATE SET
+           first_name = COALESCE(EXCLUDED.first_name, student_profiles.first_name),
+           last_name = COALESCE(EXCLUDED.last_name, student_profiles.last_name),
+           email = COALESCE(EXCLUDED.email, student_profiles.email),
+           country = COALESCE(EXCLUDED.country, student_profiles.country),
+           phone = COALESCE(EXCLUDED.phone, student_profiles.phone),
+           date_of_birth = COALESCE(EXCLUDED.date_of_birth, student_profiles.date_of_birth),
+           grade_level = COALESCE(EXCLUDED.grade_level, student_profiles.grade_level),
+           graduation_year = COALESCE(EXCLUDED.graduation_year, student_profiles.graduation_year),
+           high_school_name = COALESCE(EXCLUDED.high_school_name, student_profiles.high_school_name),
+           curriculum_type = COALESCE(EXCLUDED.curriculum_type, student_profiles.curriculum_type),
+           curriculum_type_other = COALESCE(EXCLUDED.curriculum_type_other, student_profiles.curriculum_type_other),
+           gpa_unweighted = COALESCE(EXCLUDED.gpa_unweighted, student_profiles.gpa_unweighted),
+           board_exam_percentage = COALESCE(EXCLUDED.board_exam_percentage, student_profiles.board_exam_percentage),
+           overall_percentage = COALESCE(EXCLUDED.overall_percentage, student_profiles.overall_percentage),
+           sat_total = COALESCE(EXCLUDED.sat_total, student_profiles.sat_total),
+           act_composite = COALESCE(EXCLUDED.act_composite, student_profiles.act_composite),
+           intended_major = COALESCE(EXCLUDED.intended_major, student_profiles.intended_major),
+           intended_majors = EXCLUDED.intended_majors,
+           subjects = EXCLUDED.subjects,
+           preferred_countries = EXCLUDED.preferred_countries,
+           preferred_college_size = COALESCE(EXCLUDED.preferred_college_size, student_profiles.preferred_college_size),
+           college_size_preference = COALESCE(EXCLUDED.college_size_preference, student_profiles.college_size_preference),
+           preferred_setting = COALESCE(EXCLUDED.preferred_setting, student_profiles.preferred_setting),
+           campus_setting_preference = COALESCE(EXCLUDED.campus_setting_preference, student_profiles.campus_setting_preference),
+           budget_max = COALESCE(EXCLUDED.budget_max, student_profiles.budget_max),
+           interest_tags = EXCLUDED.interest_tags,
+           trait_weights = EXCLUDED.trait_weights,
+           extracurriculars = EXCLUDED.extracurriculars,
+           career_goals = COALESCE(EXCLUDED.career_goals, student_profiles.career_goals),
+           why_college = COALESCE(EXCLUDED.why_college, student_profiles.why_college),
+           updated_at = NOW()`,
+        [
+          userId, firstName, lastName, baseUser.email || null, spCountry, data?.phone ?? null, dob,
+          gradeLevel, parsedGraduationYear, data?.high_school_name ?? null, data?.curriculum_type ?? null, data?.curriculum_type_other ?? null,
+          normalizedGpa, boardExamPercentage, boardExamPercentage, (satScore != null ? Number(satScore) : null), (actScore != null ? Number(actScore) : null),
+          intendedMajor, toJsonArray(intendedMajors), toJsonArray(subjectsArr), toJsonArray(writePayload.target_countries),
+          preferredCollegeSize, preferredCollegeSize, preferredSetting, preferredSetting,
+          maxBudgetPerYear, toJsonArray(interestTags), JSON.stringify(traitWeights), JSON.stringify(activitiesArr),
+          writePayload.career_goals, data?.why_college ?? null,
+        ]
+      );
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+
     return this.findById(userId);
   }
 

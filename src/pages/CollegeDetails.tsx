@@ -606,6 +606,16 @@ const CollegeDetail: React.FC = () => {
     (college as any).outcomes?.graduation_rate_4yr ??
     null;
 
+  // Graduation/retention rates arrive on mixed scales: canonical outcomes are 0–100
+  // percentages, a few legacy rows are 0–1 fractions. Normalise to a 0–100 percentage
+  // so a 94.06% rate never renders as "9406%".
+  const asPct = (v: number | null | undefined): number | null => {
+    if (v == null || Number.isNaN(Number(v))) return null;
+    const n = Number(v);
+    const p = n <= 1 ? n * 100 : n;
+    return Math.max(0, Math.min(100, p));
+  };
+
   // Religious Affiliation
   const resolvedReligiousAffiliation: string | null =
     college.comprehensiveData?.religiousAffiliation ??
@@ -1055,9 +1065,9 @@ const CollegeDetail: React.FC = () => {
                     <StatItem 
                       label="4-Year Grad Rate" 
                       value={resolvedGradRate4yr != null
-                        ? `${(resolvedGradRate4yr * 100).toFixed(1)}%`
+                        ? `${asPct(resolvedGradRate4yr)!.toFixed(1)}%`
                         : `${college.graduationRates?.fourYear}%`
-                      } 
+                      }
                       icon={<Award />} 
                     />
                   )}
@@ -2003,13 +2013,13 @@ const CollegeDetail: React.FC = () => {
                             <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
                             <circle 
                               cx="50" cy="50" r="45" fill="none" stroke="#3B82F6" strokeWidth="10"
-                              strokeDasharray={`${college.academicOutcomes.graduationRate6yr * 100 * 2.83} 283`}
+                              strokeDasharray={`${(asPct(college.academicOutcomes.graduationRate6yr) ?? 0) * 2.83} 283`}
                               strokeLinecap="round"
                               transform="rotate(-90 50 50)"
                             />
                           </svg>
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-2xl font-bold">{(college.academicOutcomes.graduationRate6yr * 100).toFixed(1)}%</span>
+                            <span className="text-2xl font-bold">{asPct(college.academicOutcomes.graduationRate6yr)!.toFixed(1)}%</span>
                           </div>
                         </div>
                         <p className="mt-2 font-medium">6-Year Graduation Rate</p>

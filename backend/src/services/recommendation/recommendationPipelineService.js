@@ -40,10 +40,41 @@ function toCountryName(value) {
   return map[raw.toUpperCase()] || raw.replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// mv_college_cards.country_code is ISO-2. Student preferences arrive as full names
+// ("United States") or ISO. Normalise both sides to ISO-2 so country filtering and
+// country_match scoring actually line up (previously "united states" vs "us" → no match).
+const COUNTRY_NAME_TO_ISO = {
+  'united states': 'US', usa: 'US', us: 'US', america: 'US',
+  'united kingdom': 'GB', uk: 'GB', 'great britain': 'GB', england: 'GB',
+  canada: 'CA', australia: 'AU', germany: 'DE', netherlands: 'NL', singapore: 'SG',
+  ireland: 'IE', india: 'IN', france: 'FR', 'new zealand': 'NZ', switzerland: 'CH',
+  sweden: 'SE', 'south korea': 'KR', korea: 'KR', japan: 'JP', italy: 'IT', spain: 'ES',
+  uae: 'AE', 'united arab emirates': 'AE', china: 'CN', 'hong kong': 'HK',
+};
+function toIsoCountry(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  if (/^[A-Za-z]{2}$/.test(raw)) return raw.toUpperCase();
+  return COUNTRY_NAME_TO_ISO[raw.toLowerCase()] || raw.toUpperCase();
+}
+
 function classifyPortfolioBucket(admitChance) {
   if (admitChance >= 0.68) return 'safety';
   if (admitChance >= 0.38) return 'target';
   return 'reach';
+}
+
+// Selectivity-aware bucketing. The crude fallback admit estimate compresses a strong
+// applicant to ~50-60% at almost every school, collapsing the portfolio to all-"target".
+// A college's own acceptance rate is the dominant prior for reach/target/safety, nudged
+// by fit — so a <15%-accept school is a reach for everyone and a >55%-accept school is a
+// safety for a competitive applicant.
+function classifyBySelectivity(acceptRate, admitChance) {
+  const ar = Number(acceptRate);
+  if (!Number.isFinite(ar) || ar <= 0) return classifyPortfolioBucket(admitChance);
+  if (ar < 0.15) return 'reach';
+  if (ar > 0.55) return admitChance >= 0.45 ? 'safety' : 'target';
+  return admitChance >= 0.60 ? 'safety' : admitChance >= 0.38 ? 'target' : 'reach';
 }
 
 function estimateAdmitChance(features) {
@@ -177,7 +208,10 @@ function normalizeStudentProfile(userProfile = {}) {
     gpa: userProfile.gpa || userProfile.academic?.gpa || null,
     sat: userProfile.sat_score || userProfile.academic?.sat_score || null,
     act: userProfile.act_score || userProfile.academic?.act_score || null,
-    maxBudgetUsd: userProfile.financial?.max_budget_per_year_usd || userProfile.max_budget_per_year_usd || userProfile.maxBudgetUsd || null,
+    maxBudgetUsd: userProfile.financial?.max_budget_per_year_usd
+      || userProfile.financial?.max_budget_per_year // shape emitted by User.getAcademicProfile
+      || userProfile.max_budget_per_year_usd || userProfile.max_budget_per_year
+      || userProfile.maxBudgetUsd || null,
     degreeLevel: userProfile.preferences?.degree_level || userProfile.degree_level || null,
     gpaBand: userProfile.academic?.gpa_band || null,
     satBand: userProfile.academic?.sat_band || null,
@@ -194,7 +228,24 @@ function normalizeStudentProfile(userProfile = {}) {
 async function generateDeterministicFallbackRecommendations(normalizedStudent = {}, options = {}, cause = null) {
   const pool = dbManager.getDatabase();
   const safeLimit = Math.max(10, Math.min(30, Number(options.limit) || 20));
-  const query = `SELECT
+
+  // Normalise the student's preferred countries to ISO-2 so country filtering and
+  // country_match scoring line up with mv_college_cards.country_code.
+  const isoCountries = [...new Set(
+    (Array.isArray(normalizedStudent.preferredCountries) ? normalizedStudent.preferredCountries : [])
+      .map(toIsoCountry)
+      .filter(Boolean),
+  )];
+  const scoringStudent = { ...normalizedStudent, preferredCountries: isoCountries };
+
+  // Candidate pool: quality-FIRST (globally-ranked institutions surface ahead of the
+  // long tail of unranked/for-profit colleges) and, when the student named target
+  // countries, restricted to those. Previously this was `LIMIT 60` with no WHERE/ORDER
+  // BY, so it returned an arbitrary set (Puerto Rico technical colleges, etc.) identical
+  // for every student regardless of profile.
+  const poolSize = Math.max(180, safeLimit * 12);
+  const useCountryFilter = isoCountries.length > 0;
+  const baseSelect = `SELECT
       c.id,
       c.canonical_name AS name,
       c.country_code AS country,
@@ -218,6 +269,7 @@ async function generateDeterministicFallbackRecommendations(normalizedStudent = 
       TRUE AS international_aid_available,
       c.median_start_salary AS median_earnings_6yr,
       c.graduation_rate_4yr AS graduation_rate_6yr,
+      c.popularity_score,
       (
         SELECT MIN(r.global_rank)
         FROM canonical.institution_rankings r
@@ -228,27 +280,36 @@ async function generateDeterministicFallbackRecommendations(normalizedStudent = 
       SELECT institution_id, ARRAY_AGG(program_name) AS programs
       FROM canonical.institution_programs
       GROUP BY institution_id
-    ) p ON p.institution_id = c.id
-    LIMIT $1`;
-  const payload = [Math.max(60, safeLimit * 5)];
+    ) p ON p.institution_id = c.id`;
+  const orderBy = ` ORDER BY ranking ASC NULLS LAST, c.popularity_score DESC NULLS LAST, c.acceptance_rate ASC NULLS LAST`;
+  const query = useCountryFilter
+    ? `${baseSelect} WHERE c.country_code = ANY($2::text[])${orderBy} LIMIT $1`
+    : `${baseSelect}${orderBy} LIMIT $1`;
+  const payload = useCountryFilter ? [poolSize, isoCountries] : [poolSize];
   try {
     logRawSql(query, payload);
-    const { rows } = await pool.query(query, payload);
+    let { rows } = await pool.query(query, payload);
+    // If the country filter starved the pool (sparse data for that country), retry unfiltered.
+    if (useCountryFilter && (!Array.isArray(rows) || rows.length < safeLimit)) {
+      const retry = await pool.query(`${baseSelect}${orderBy} LIMIT $1`, [poolSize]);
+      rows = Array.isArray(retry.rows) ? retry.rows : rows;
+    }
     logQueryResult(rows, null);
-    const scored = (Array.isArray(rows) ? rows : []).map((row) => {
-      const features = featureVector(normalizedStudent || {}, row || {}, {}, {
-        popularity_score: 0,
+    const scoredAll = (Array.isArray(rows) ? rows : []).map((row) => {
+      const features = featureVector(scoringStudent || {}, row || {}, {}, {
+        popularity_score: Number(row?.popularity_score) || 0,
         search_volume_score: 0,
       });
       const prediction = fallbackPrediction(features);
       const admitChance = estimateAdmitChance(features);
+      const bucket = classifyBySelectivity(row?.acceptance_rate, admitChance);
       return {
         college_id: row?.id || null,
         college_name: row?.name || 'Unknown institution',
         country: toCountryName(row?.country) || 'Unknown',
         overall_score: Number((prediction.score * 100).toFixed(2)),
         confidence_score: Number((prediction.confidence || 0.55).toFixed(4)),
-        classification: classifyPortfolioBucket(admitChance),
+        classification: bucket,
         admit_chance: Number((admitChance * 100).toFixed(1)),
         score_breakdown: {
           major_fit: Number((features.major_availability * 100).toFixed(1)),
@@ -274,7 +335,7 @@ async function generateDeterministicFallbackRecommendations(normalizedStudent = 
         reasoning: [
           'Fallback recommendation generated from deterministic scoring.',
           `Confidence: ${Math.round((prediction.confidence || 0.55) * 100)}%`,
-          `Portfolio bucket: ${classifyPortfolioBucket(admitChance)}`,
+          `Portfolio bucket: ${bucket}`,
         ],
         financial_intelligence: {
           scholarship_probability: 0,
@@ -299,15 +360,41 @@ async function generateDeterministicFallbackRecommendations(normalizedStudent = 
       };
     })
       .filter((r) => r.college_id)
-      .sort((a, b) => b.overall_score - a.overall_score)
-      .slice(0, safeLimit);
+      .sort((a, b) => b.overall_score - a.overall_score);
+
+    // Build a balanced reach/target/safety portfolio instead of returning the top-N
+    // by score (which previously produced all-"target" lists). Quotas: 35% reach,
+    // 40% target, 25% safety; shortfalls in any bucket are backfilled by score.
+    const byBucket = { reach: [], target: [], safety: [] };
+    for (const r of scoredAll) (byBucket[r.classification] || byBucket.target).push(r);
+    const quota = {
+      reach: Math.round(safeLimit * 0.35),
+      target: Math.round(safeLimit * 0.40),
+      safety: 0,
+    };
+    quota.safety = Math.max(0, safeLimit - quota.reach - quota.target);
+    const picked = [];
+    const pickedIds = new Set();
+    for (const bucket of ['reach', 'target', 'safety']) {
+      for (const r of byBucket[bucket].slice(0, quota[bucket])) {
+        picked.push(r); pickedIds.add(r.college_id);
+      }
+    }
+    // Backfill to safeLimit from the highest-scored remaining candidates.
+    if (picked.length < safeLimit) {
+      for (const r of scoredAll) {
+        if (picked.length >= safeLimit) break;
+        if (!pickedIds.has(r.college_id)) { picked.push(r); pickedIds.add(r.college_id); }
+      }
+    }
+    const scored = picked.sort((a, b) => b.overall_score - a.overall_score).slice(0, safeLimit);
 
     return {
       recommendations: scored,
       metadata: {
         pipeline: 'v3-fallback',
         fallbackUsed: true,
-        fallbackStrategy: 'deterministic-scoring',
+        fallbackStrategy: 'deterministic-scoring-balanced',
       },
       diagnostics: {
         stage: 'fallback',

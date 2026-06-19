@@ -302,15 +302,27 @@ async function calculateChance(studentProfile, college, application = {}) {
     const essayBonus       = (essay && essay.length > 100) ? 1 : 0;
 
     const rubric            = ecScore + awardsScore + researchBonus + leadershipBonus + essayBonus;
-    const profileMultiplier = 0.72 + (rubric / 18) * 0.56;
-    const profileScore      = rubric / 18;
+    // Distinguish "no holistic data entered" (UNKNOWN) from "weak holistic profile"
+    // (REPORTED). When the student has supplied no ECs/awards/leadership/research/
+    // essay at all, treat the holistic factor as unknown — exclude it and apply a
+    // neutral multiplier — instead of penalising academics as if they had none.
+    // Otherwise a strong but incompletely-filled profile (e.g. the legacy 44%
+    // cohort) is under-predicted purely because a section was left blank.
+    const hasHolisticData = extracurriculars.length > 0 || awards.length > 0
+      || leadershipRoles.length > 0 || sp.research === true || (!!essay && essay.length > 100);
+    const profileMultiplier = hasHolisticData ? (0.72 + (rubric / 18) * 0.56) : 1.0;
+    const profileScore      = hasHolisticData ? (rubric / 18) : null;
+    if (!hasHolisticData) missingDataFields.push('extracurriculars / awards');
 
     factorScores.holisticProfile = {
       score: profileScore,
       weight: f3Weight,
-      contribution: profileScore * f3Weight,
+      contribution: profileScore != null ? profileScore * f3Weight : null,
       multiplier: profileMultiplier,
-      detail: `EC tier breakdown: ${tier1ECs} national, ${tier2ECs} regional, ${tier3ECs} school`,
+      unknown: !hasHolisticData,
+      detail: hasHolisticData
+        ? `EC tier breakdown: ${tier1ECs} national, ${tier2ECs} regional, ${tier3ECs} school`
+        : 'No activities/awards entered — excluded from estimate (not penalised). Add them to refine.',
     };
 
     // ── FACTOR 4 — International Pool (weight 0.14) ─────────────────────────

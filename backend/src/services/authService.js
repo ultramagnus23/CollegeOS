@@ -281,7 +281,21 @@ class AuthService {
   }
 
   static sanitizeUser(user) {
+    if (!user) return user;
     const { password_hash, ...sanitized } = user;
+    // Canonical API contract: expose the JSON columns as parsed arrays/objects,
+    // not raw DB JSON-text strings. This matches src/types/api.types.ts and
+    // profileService (both already typed as string[]) so the frontend never has
+    // to JSON.parse an auth response. Robust to both text and jsonb storage.
+    const parseJsonField = (value, fallback) => {
+      if (value === null || value === undefined) return fallback;
+      if (typeof value !== 'string') return value; // already parsed (jsonb/object)
+      try { return JSON.parse(value); } catch { return fallback; }
+    };
+    sanitized.target_countries = parseJsonField(sanitized.target_countries, []);
+    sanitized.intended_majors = parseJsonField(sanitized.intended_majors, []);
+    sanitized.language_preferences = parseJsonField(sanitized.language_preferences, []);
+    sanitized.test_status = parseJsonField(sanitized.test_status, {});
     return sanitized;
   }
 

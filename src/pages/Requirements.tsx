@@ -17,6 +17,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
+import { getAidGuidance } from '../lib/financialAidPolicy.mjs';
 
 interface Requirement {
   id: string;
@@ -39,6 +41,7 @@ interface CollegeRequirements {
 
 const Requirements = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [collegeRequirements, setCollegeRequirements] = useState<CollegeRequirements[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedColleges, setExpandedColleges] = useState<Set<number>>(new Set());
@@ -83,8 +86,9 @@ const Requirements = () => {
           { id: `${collegeId}-app-6`, text: 'SAT/ACT scores (if required)', completed: false, category: 'application' as const },
           { id: `${collegeId}-app-7`, text: 'Common App essay (650 words)', completed: false, category: 'application' as const },
           { id: `${collegeId}-app-8`, text: 'Supplemental essays', completed: false, category: 'application' as const },
-          { id: `${collegeId}-app-9`, text: 'CSS Profile (for financial aid)', completed: false, category: 'application' as const },
-          { id: `${collegeId}-app-10`, text: 'FAFSA (for financial aid)', completed: false, category: 'application' as const },
+          // Financial-aid forms are injected per-applicant in loadRequirements() via
+          // getAidGuidance() so FAFSA is NEVER shown to non-US citizens. Do not hard-code
+          // FAFSA/CSS here — that was the citizenship-blind liability bug.
         ],
         academic: [
           { id: `${collegeId}-acad-1`, text: 'GPA: 3.5+ recommended', completed: false, category: 'academic' as const },
@@ -332,13 +336,31 @@ const Requirements = () => {
         // Get country-specific requirements
         const countryReqs = getCountryRequirements(collegeId, country, collegeName);
 
+        // Citizenship-aware financial-aid forms. Student citizenship is derived from
+        // the onboarding country (no separate citizenship field yet); a missing value
+        // fails safe to "international" so FAFSA is never shown to a non-US applicant.
+        const aid = getAidGuidance(
+          { citizenship: user?.country, country: user?.country },
+          { name: collegeName, country },
+        );
+        const aidReqs: Requirement[] = (aid.forms || []).map((f: any, i: number) => ({
+          id: `${collegeId}-aid-${i}`,
+          text: `${f.name}${f.required ? ' (required)' : ''}${f.note ? ` — ${f.note}` : ''}`,
+          completed: false,
+          category: 'application' as const,
+        }));
+        countryReqs.application = [...countryReqs.application, ...aidReqs];
+
         return {
           college_id: collegeId,
           college_name: collegeName,
           country: country,
           requirements: countryReqs,
           progress: 0,
-        };
+          aidSummary: aid.summary,
+          aidPolicy: aid.needPolicy,
+          aidWarnings: aid.warnings,
+        } as CollegeRequirements & { aidSummary: string; aidPolicy: string; aidWarnings: string[] };
       });
 
       setCollegeRequirements(requirements);
