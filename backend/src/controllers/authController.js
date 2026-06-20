@@ -231,6 +231,25 @@ class AuthController {
       next(error);
     }
   }
+
+  // Update the user's preferred display currency (unified money system).
+  static async updatePreferredCurrency(req, res, next) {
+    const SUPPORTED = ['USD', 'INR', 'EUR', 'GBP', 'CAD', 'AUD', 'SGD', 'HKD', 'KRW', 'JPY', 'CHF'];
+    try {
+      const code = String(req.body?.preferred_currency || '').toUpperCase();
+      if (!SUPPORTED.includes(code)) {
+        return res.status(400).json({ success: false, message: `Unsupported currency. Use one of: ${SUPPORTED.join(', ')}` });
+      }
+      const dbManager = require('../config/database');
+      const pool = dbManager.getDatabase();
+      await pool.query('UPDATE users SET preferred_currency = $1, updated_at = NOW() WHERE id = $2', [code, req.user.userId]);
+      const user = await User.findById(req.user.userId);
+      res.json({ success: true, data: AuthService.sanitizeUser(user) });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // Google login / register via Firebase
   static async googleLogin(req, res, next) {
     try {

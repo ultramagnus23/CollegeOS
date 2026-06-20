@@ -7,7 +7,7 @@ import { normalizeCountryData, College, TestScores, GraduationRates } from '../t
 import FitBadge from '../components/FitBadge';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import { formatDualFromUsd, FX_NOTE } from '../lib/currency.mjs';
+import { usePreferredCurrency } from '../hooks/usePreferredCurrency';
 import { getAidGuidance } from '../lib/financialAidPolicy.mjs';
 import { safeString } from '../lib/utils';
 import {
@@ -852,6 +852,7 @@ const Colleges: React.FC = () => {
 
 const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onViewDetails, isAdding, fit }) => {
   const { user: cardUser } = useAuth();
+  const { formatMoney, fxNote, currencyForCountry } = usePreferredCurrency();
   useEffect(() => {
     if (!COLLEGE_SYNC_DEBUG || !college || index > 1) return;
     console.debug('[CollegeSync] college-card.render', {
@@ -879,15 +880,10 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
     return `${pct.toFixed(1)}%`;
   };
 
-  const formatCurrency = (amount: number | null | undefined, country: string): string => {
-    if (amount === null || amount === undefined) return NOT_AVAILABLE;
-    if (country === 'India') return `₹${(amount / 100000).toFixed(1)}L`;
-    // GBP/EUR costs are native; converting via the USD→INR rate would be wrong, so leave them.
-    if (country === 'United Kingdom') return `£${(amount / 1000).toFixed(0)}K`;
-    if (country === 'Germany') return amount === 0 ? 'Free' : `€${amount?.toLocaleString() ?? '0'}`;
-    // USD-denominated costs (US + default): show BOTH USD and INR for Indian students.
-    return formatDualFromUsd(amount) || `$${(amount / 1000).toFixed(0)}K`;
-  };
+  // Unified money formatting — cost is in the institution's local currency, shown
+  // as dual (preferred currency primary). No manual symbols/conversions here.
+  const formatCurrency = (amount: number | null | undefined, country: string): string =>
+    formatMoney(amount, currencyForCountry(country)) ?? NOT_AVAILABLE;
 
   const formatEnrollment = (num: number | null | undefined): string => {
     if (!num) return NOT_AVAILABLE;
@@ -994,7 +990,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: S.border, padding: 0 }}>
         {[
           { icon: '📈', label: 'Acceptance', value: formatAcceptanceRate(acceptanceRate), color: '#10B981' },
-          { icon: '💰', label: 'Tuition', value: formatCurrency(college?.tuition_cost, countryName), color: '#3B9EFF', title: FX_NOTE },
+          { icon: '💰', label: 'Tuition', value: formatCurrency(college?.tuition_cost, countryName), color: '#3B9EFF', title: fxNote },
           { icon: '🧠', label: 'SAT Median', value: (college as any)?.sat_median != null ? String((college as any).sat_median) : NOT_AVAILABLE, color: '#8B5CF6' },
           { icon: '📝', label: 'ACT Median', value: (college as any)?.act_median != null ? String((college as any).act_median) : NOT_AVAILABLE, color: '#A855F7' },
           { icon: '💼', label: 'Start Salary', value: (college as any)?.median_start_salary != null ? `$${Number((college as any).median_start_salary).toLocaleString()}` : NOT_AVAILABLE, color: '#22C55E' },

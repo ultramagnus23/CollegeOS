@@ -343,6 +343,13 @@ class ApiService {
     });
   }
 
+  async updatePreferredCurrency(preferred_currency: string) {
+    return this.request('/auth/preferred-currency', {
+      method: 'PATCH',
+      body: JSON.stringify({ preferred_currency }),
+    });
+  }
+
   async googleOnboarding(payload: { googleId: string; email: string; name: string; profile: any }) {
     return this.request('/auth/google-onboarding', {
       method: 'POST',

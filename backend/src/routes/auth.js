@@ -17,5 +17,6 @@ router.post('/logout', authLimiter, AuthController.logout);
 router.get('/me', authenticate, AuthController.getCurrentUser);
 router.put('/onboarding', authenticate, AuthController.completeOnboarding);
 router.patch('/tour-complete', authenticate, AuthController.completeTour);
+router.patch('/preferred-currency', authenticate, AuthController.updatePreferredCurrency);
 
 module.exports = router;

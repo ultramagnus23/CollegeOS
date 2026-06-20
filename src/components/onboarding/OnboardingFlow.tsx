@@ -8,6 +8,7 @@ import { ArrowRight, ArrowLeft, GraduationCap, BookOpen, Target, Trophy, FileTex
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { CurrencyService } from '../../lib/money.mjs';
 import IBOnboarding from './IBOnboarding';
 import ALevelOnboarding from './ALevelOnboarding';
 import CBSEOnboarding from './CBSEOnboarding';
@@ -204,7 +205,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         preferred_majors: formData.intended_majors || [],
         target_countries: formData.preferred_countries || [],
         budget_inr: formData.budget_max != null && formData.budget_max > 0
-          ? Math.round(formData.budget_max * 83)
+          ? Math.round(CurrencyService.convert(formData.budget_max, 'USD', 'INR') || 0)
           : null,
         traits: [],
       });
@@ -238,7 +239,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             preferred_majors: formData.intended_majors || [],
             target_countries: formData.preferred_countries || [],
             budget_inr: formData.budget_max != null && formData.budget_max > 0
-              ? Math.round(formData.budget_max * 83)
+              ? Math.round(CurrencyService.convert(formData.budget_max, 'USD', 'INR') || 0)
               : null,
             traits: [],
           });
@@ -289,7 +290,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         preferred_majors: formData.intended_majors || [],
         target_countries: formData.preferred_countries || [],
         budget_inr: formData.budget_max != null && formData.budget_max > 0
-          ? Math.round(formData.budget_max * 83)
+          ? Math.round(CurrencyService.convert(formData.budget_max, 'USD', 'INR') || 0)
           : null,
         traits: [],
       }))) return;
@@ -301,7 +302,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         preferred_majors: formData.intended_majors || [],
         target_countries: formData.preferred_countries || [],
         budget_inr: formData.budget_max != null && formData.budget_max > 0
-          ? Math.round(formData.budget_max * 83)
+          ? Math.round(CurrencyService.convert(formData.budget_max, 'USD', 'INR') || 0)
           : null,
         streams: formData.curriculum_type ? [formData.curriculum_type] : [],
         gpa: formData.curriculumData?.overall_percentage ?? null,
@@ -313,7 +314,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         preferred_majors: formData.intended_majors || [],
         target_countries: formData.preferred_countries || [],
         budget_inr: formData.budget_max != null && formData.budget_max > 0
-          ? Math.round(formData.budget_max * 83)
+          ? Math.round(CurrencyService.convert(formData.budget_max, 'USD', 'INR') || 0)
           : null,
         streams: formData.curriculum_type ? [formData.curriculum_type] : [],
         gpa: formData.curriculumData?.overall_percentage ?? null,
@@ -325,7 +326,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         preferred_majors: formData.intended_majors || [],
         target_countries: formData.preferred_countries || [],
         budget_inr: formData.budget_max != null && formData.budget_max > 0
-          ? Math.round(formData.budget_max * 83)
+          ? Math.round(CurrencyService.convert(formData.budget_max, 'USD', 'INR') || 0)
           : null,
         streams: formData.curriculum_type ? [formData.curriculum_type] : [],
         gpa: formData.curriculumData?.overall_percentage ?? null,

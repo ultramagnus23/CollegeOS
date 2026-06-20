@@ -9,6 +9,7 @@ export interface User {
   full_name: string;
   country: string;
   citizenship?: string | null; // from student_profiles.citizenship_status, surfaced by /auth/me
+  preferred_currency?: string | null; // unified money system display currency
   onboarding_complete: boolean;
   role?: string;
   has_completed_tour?: boolean;
