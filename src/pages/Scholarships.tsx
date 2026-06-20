@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { toast } from 'sonner';
+import { usePreferredCurrency } from '../hooks/usePreferredCurrency';
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 interface Scholarship {
@@ -75,6 +76,7 @@ const deadlinePill = (deadline?: string) => {
 };
 
 const Scholarships: React.FC = () => {
+  const { formatMoney } = usePreferredCurrency();
   const [activeTab, setActiveTab] = useState<Tab>('scholarships');
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);
   const [trackedIds, setTrackedIds] = useState<Set<number>>(new Set());
@@ -285,7 +287,7 @@ const Scholarships: React.FC = () => {
                             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                               <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700 }}>{s.amount} {s.currency}</span>
                               {netCostInr != null && (
-                                <span style={{ fontSize: 13, color: '#10B981', fontWeight: 700 }}>Net cost: ₹{netCostInr.toLocaleString('en-IN')} / yr</span>
+                                <span style={{ fontSize: 13, color: '#10B981', fontWeight: 700 }}>Net cost: {formatMoney(netCostInr, 'INR')} / yr</span>
                               )}
                               <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: dp.bg, color: dp.color, border: `1px solid ${dp.border}`, fontWeight: 600 }}>
                                 {dp.label}
@@ -353,7 +355,7 @@ const Scholarships: React.FC = () => {
                     </div>
                     <p style={{ fontSize: 13, color: S.muted, marginBottom: 10 }}>{g.provider}</p>
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                      {g.award_amount_inr && <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700 }}>₹{g.award_amount_inr.toLocaleString('en-IN')} / year</span>}
+                      {g.award_amount_inr && <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700 }}>{formatMoney(g.award_amount_inr, 'INR')} / year</span>}
                       {g.deadline && <span style={{ fontSize: 12, color: S.dim }}>Deadline: {new Date(g.deadline).toLocaleDateString()}</span>}
                     </div>
                   </div>
@@ -383,7 +385,7 @@ const Scholarships: React.FC = () => {
                     </div>
                     {l.scheme_name && <p style={{ fontSize: 13, color: S.muted, marginBottom: 10 }}>{l.scheme_name}</p>}
                     <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                      {l.max_loan_amount_inr && <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700 }}>Max: ₹{l.max_loan_amount_inr.toLocaleString('en-IN')}</span>}
+                      {l.max_loan_amount_inr && <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 700 }}>Max: {formatMoney(l.max_loan_amount_inr, 'INR')}</span>}
                       {l.interest_rate && <span style={{ fontSize: 13, color: S.muted }}>Rate: {l.interest_rate}%</span>}
                     </div>
                   </div>
@@ -513,7 +515,7 @@ const Scholarships: React.FC = () => {
                           {l.interest_rate_max != null ? `–${l.interest_rate_max}%` : ''}
                         </span>
                       )}
-                      {l.emi_per_lakh != null && <span style={{ fontSize: 13, color: S.muted }}>EMI/lakh: ₹{l.emi_per_lakh.toLocaleString()}</span>}
+                      {l.emi_per_lakh != null && <span style={{ fontSize: 13, color: S.muted }}>EMI/lakh: {formatMoney(l.emi_per_lakh, 'INR')}</span>}
                       {l.tenure_years != null && <span style={{ fontSize: 13, color: S.muted }}>Tenure: {l.tenure_years} yr</span>}
                     </div>
                   </div>

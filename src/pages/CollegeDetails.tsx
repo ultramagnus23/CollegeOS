@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { DataFreshnessIndicator } from '@/components/DataFreshnessIndicator';
 import { getCollegeById, isSupabaseConfigured, normalizeToDetail } from '../lib/collegeService';
 import { useAuth } from '../contexts/AuthContext';
+import { usePreferredCurrency } from '../hooks/usePreferredCurrency';
 import { formatCountryName, getCountryTheme, normalizeCountryCode } from '../lib/country';
 const COLLEGE_SYNC_DEBUG = import.meta.env.DEV;
 
@@ -256,6 +257,7 @@ const CollegeDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { formatMoney, currencyForCountry } = usePreferredCurrency();
 
   const [college, setCollege] = useState<College | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -496,16 +498,13 @@ const CollegeDetail: React.FC = () => {
     return `${percentage.toFixed(1)}%`;
   };
 
+  // Unified money formatting — cost is in the institution's local currency (derived
+  // from country), shown dual with the viewer's preferred currency primary. Free
+  // public-university tuition (0) is surfaced as a word, not "$0".
   const formatCurrency = (amount: number | null | undefined, countryCode: string | null): string | null => {
     if (amount === null || amount === undefined) return null;
-    if (countryCode === 'IN') {
-      return `₹${amount.toLocaleString('en-IN')}`;
-    } else if (countryCode === 'GB') {
-      return `£${amount.toLocaleString('en-GB')}`;
-    } else if (countryCode === 'DE') {
-      return amount === 0 ? 'Free (Public)' : `€${amount.toLocaleString('de-DE')}`;
-    }
-    return `$${amount.toLocaleString('en-US')}`;
+    if (amount === 0 && countryCode === 'DE') return 'Free (Public)';
+    return formatMoney(amount, currencyForCountry(countryCode || 'US'));
   };
 
   const formatEnrollment = (num: number | null | undefined): string | null => {
@@ -605,6 +604,16 @@ const CollegeDetail: React.FC = () => {
     college.academicOutcomes?.graduationRate4yr ??
     (college as any).outcomes?.graduation_rate_4yr ??
     null;
+
+  // Graduation/retention rates arrive on mixed scales: canonical outcomes are 0–100
+  // percentages, a few legacy rows are 0–1 fractions. Normalise to a 0–100 percentage
+  // so a 94.06% rate never renders as "9406%".
+  const asPct = (v: number | null | undefined): number | null => {
+    if (v == null || Number.isNaN(Number(v))) return null;
+    const n = Number(v);
+    const p = n <= 1 ? n * 100 : n;
+    return Math.max(0, Math.min(100, p));
+  };
 
   // Religious Affiliation
   const resolvedReligiousAffiliation: string | null =
@@ -825,7 +834,7 @@ const CollegeDetail: React.FC = () => {
             {/* Show net price prominently if available */}
             {(() => {
               if (resolvedAvgNetPrice) {
-                return <QuickStat label="Avg Net Price" value={`$${resolvedAvgNetPrice?.toLocaleString() ?? ''}`} />;
+                return <QuickStat label="Avg Net Price" value={formatCurrency(resolvedAvgNetPrice, countryCode) ?? '—'} />;
               }
               // Fallback to tuition
                const tuitionStr = formatCurrency(college.tuition_cost, countryCode);
@@ -1055,9 +1064,9 @@ const CollegeDetail: React.FC = () => {
                     <StatItem 
                       label="4-Year Grad Rate" 
                       value={resolvedGradRate4yr != null
-                        ? `${(resolvedGradRate4yr * 100).toFixed(1)}%`
+                        ? `${asPct(resolvedGradRate4yr)!.toFixed(1)}%`
                         : `${college.graduationRates?.fourYear}%`
-                      } 
+                      }
                       icon={<Award />} 
                     />
                   )}
@@ -1522,7 +1531,7 @@ const CollegeDetail: React.FC = () => {
                           <div className="p-6 bg-muted rounded-xl text-center mb-4">
                             <DollarSign className="w-8 h-8 text-primary mx-auto mb-2" />
                             <div className="text-3xl font-bold text-primary/80">
-                              ${college.financialData.tuitionInState?.toLocaleString() ?? ''}
+                              {formatCurrency(college.financialData.tuitionInState, countryCode) ?? '—'}
                             </div>
                             <p className="text-primary mt-2 font-medium">Annual Tuition</p>
                             <p className="text-xs text-blue-500 mt-1">
@@ -1539,7 +1548,7 @@ const CollegeDetail: React.FC = () => {
                             <div className="p-4 bg-primary/5 rounded-xl text-center">
                               <DollarSign className="w-6 h-6 text-primary mx-auto mb-2" />
                               <div className="text-2xl font-bold text-primary">
-                                ${college.financialData.tuitionInState?.toLocaleString() ?? ''}
+                                {formatCurrency(college.financialData.tuitionInState, countryCode) ?? '—'}
                               </div>
                               <p className="text-sm text-primary/80 mt-1">In-State Tuition</p>
                             </div>
@@ -1548,7 +1557,7 @@ const CollegeDetail: React.FC = () => {
                             <div className="p-4 bg-purple-50 rounded-xl text-center">
                               <DollarSign className="w-6 h-6 text-purple-600 mx-auto mb-2" />
                               <div className="text-2xl font-bold text-purple-600">
-                                ${college.financialData.tuitionOutState?.toLocaleString() ?? ''}
+                                {formatCurrency(college.financialData.tuitionOutState, countryCode) ?? '—'}
                               </div>
                               <p className="text-sm text-purple-700 mt-1">Out-of-State Tuition</p>
                             </div>
@@ -1557,7 +1566,7 @@ const CollegeDetail: React.FC = () => {
                             <div className="p-4 bg-indigo-50 rounded-xl text-center">
                               <DollarSign className="w-6 h-6 text-indigo-600 mx-auto mb-2" />
                               <div className="text-2xl font-bold text-indigo-600">
-                                ${college.financialData.tuitionInternational?.toLocaleString() ?? ''}
+                                {formatCurrency(college.financialData.tuitionInternational, countryCode) ?? '—'}
                               </div>
                               <p className="text-sm text-indigo-700 mt-1">International Tuition</p>
                             </div>
@@ -1573,7 +1582,7 @@ const CollegeDetail: React.FC = () => {
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Total Cost of Attendance</span>
                         <span className="text-xl font-bold text-foreground">
-                          ${college.financialData.costOfAttendance?.toLocaleString() ?? ''}
+                          {formatCurrency(college.financialData.costOfAttendance, countryCode) ?? '—'}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground/70 mt-1">Includes tuition, room, board, and other fees</p>
@@ -1613,7 +1622,7 @@ const CollegeDetail: React.FC = () => {
                       <div className="p-4 bg-primary/5 rounded-lg">
                         <p className="text-sm text-primary mb-1">Average Net Price</p>
                         <p className="text-2xl font-bold text-primary/80">
-                          ${resolvedAvgNetPrice?.toLocaleString() ?? ''}
+                          {formatCurrency(resolvedAvgNetPrice, countryCode) ?? '—'}
                         </p>
                         <p className="text-xs text-blue-500 mt-1">After grants and scholarships</p>
                       </div>
@@ -1631,7 +1640,7 @@ const CollegeDetail: React.FC = () => {
                       <div className="p-4 bg-orange-50 rounded-lg">
                         <p className="text-sm text-orange-600 mb-1">Median Student Debt</p>
                         <p className="text-2xl font-bold text-orange-700">
-                          ${resolvedMedianDebt?.toLocaleString() ?? ''}
+                          {formatCurrency(resolvedMedianDebt, countryCode) ?? '—'}
                         </p>
                       </div>
                     )}
@@ -1646,19 +1655,19 @@ const CollegeDetail: React.FC = () => {
                     {college.financialData.netPriceLowIncome && (
                       <div className="flex items-center justify-between p-3 bg-emerald-500/10 rounded-lg">
                         <span className="text-sm text-emerald-500">Low Income ($0-$30k)</span>
-                        <span className="font-bold text-green-700">${college.financialData.netPriceLowIncome?.toLocaleString() ?? ''}</span>
+                        <span className="font-bold text-green-700">{formatCurrency(college.financialData.netPriceLowIncome, countryCode) ?? '—'}</span>
                       </div>
                     )}
                     {college.financialData.netPriceMidIncome && (
                       <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
                         <span className="text-sm text-yellow-600">Middle Income ($30k-$75k)</span>
-                        <span className="font-bold text-yellow-700">${college.financialData.netPriceMidIncome?.toLocaleString() ?? ''}</span>
+                        <span className="font-bold text-yellow-700">{formatCurrency(college.financialData.netPriceMidIncome, countryCode) ?? '—'}</span>
                       </div>
                     )}
                     {college.financialData.netPriceHighIncome && (
                       <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg">
                         <span className="text-sm text-primary">High Income ($75k+)</span>
-                        <span className="font-bold text-primary/80">${college.financialData.netPriceHighIncome?.toLocaleString() ?? ''}</span>
+                        <span className="font-bold text-primary/80">{formatCurrency(college.financialData.netPriceHighIncome, countryCode) ?? '—'}</span>
                       </div>
                     )}
                   </div>
@@ -2003,13 +2012,13 @@ const CollegeDetail: React.FC = () => {
                             <circle cx="50" cy="50" r="45" fill="none" stroke="#E5E7EB" strokeWidth="10" />
                             <circle 
                               cx="50" cy="50" r="45" fill="none" stroke="#3B82F6" strokeWidth="10"
-                              strokeDasharray={`${college.academicOutcomes.graduationRate6yr * 100 * 2.83} 283`}
+                              strokeDasharray={`${(asPct(college.academicOutcomes.graduationRate6yr) ?? 0) * 2.83} 283`}
                               strokeLinecap="round"
                               transform="rotate(-90 50 50)"
                             />
                           </svg>
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-2xl font-bold">{(college.academicOutcomes.graduationRate6yr * 100).toFixed(1)}%</span>
+                            <span className="text-2xl font-bold">{asPct(college.academicOutcomes.graduationRate6yr)!.toFixed(1)}%</span>
                           </div>
                         </div>
                         <p className="mt-2 font-medium">6-Year Graduation Rate</p>
@@ -2113,8 +2122,8 @@ const CollegeDetail: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex justify-between text-xs text-muted-foreground/70 mt-1">
-                            <span>${resolvedSalary6yr?.toLocaleString() ?? ''}</span>
-                            <span>${resolvedSalary10yr?.toLocaleString() ?? ''}</span>
+                            <span>{formatCurrency(resolvedSalary6yr, countryCode) ?? '—'}</span>
+                            <span>{formatCurrency(resolvedSalary10yr, countryCode) ?? '—'}</span>
                           </div>
                         </div>
                       )}

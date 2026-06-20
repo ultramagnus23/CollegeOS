@@ -42,6 +42,20 @@ const onboardingSchema = z.object({
   graduation_year: nullableInteger(2020, 2100),
   preferred_location: z.union([z.string().trim().max(120), z.array(z.string().trim().min(1).max(120))]).nullable().optional(),
   gender: nullableString(50),
+  // Extended identity/academic fields persisted to student_profiles (the read-side
+  // table used by /profile/completion and the recommendation/chancing engines).
+  name: nullableString(160),
+  phone: nullableString(40),
+  date_of_birth: nullableString(20),
+  high_school_name: nullableString(255),
+  curriculum_type: nullableString(100),
+  curriculum_type_other: nullableString(100),
+  citizenship: nullableString(80),
+  why_college: nullableString(4000),
+  interest_tags: z.array(z.string().trim().min(1).max(80)).max(40).default([]),
+  trait_weights: z.record(z.string(), z.number()).nullable().optional(),
+  preferred_college_size: nullableString(40),
+  preferred_setting: nullableString(40),
 }).strict();
 
 const onboardingFieldMappings = [

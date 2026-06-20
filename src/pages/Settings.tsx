@@ -16,6 +16,8 @@ import { ValidationMessage, useFormValidation, ValidationRules } from '@/hooks/u
 import { useAutosave, DraftRestoreBanner } from '@/hooks/useAutosave';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
+import { usePreferredCurrency } from '@/hooks/usePreferredCurrency';
+import { SUPPORTED_CURRENCIES } from '@/lib/money.mjs';
 import { CURRICULUM_OPTIONS, MAJOR_OPTIONS, SUBJECT_OPTIONS } from '@/constants/onboardingOptions';
 import { logProfileTelemetry } from '@/lib/profileTelemetry';
 
@@ -68,6 +70,8 @@ const FIELD_SECTION_MAP: Record<string, string> = {
 
 const Settings = () => {
   const { user, refreshUser } = useAuth();
+  const { preferred: preferredCurrency, setPreferredCurrency, fxNote } = usePreferredCurrency();
+  const [savingCurrency, setSavingCurrency] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -1310,6 +1314,28 @@ const SCROLL_DELAY_MS = 100;
                     <option value="">Any</option>
                     {['Urban', 'Suburban', 'Rural'].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
+                </div>
+                <div>
+                  <Label>Display Currency</Label>
+                  <select
+                    value={preferredCurrency}
+                    disabled={savingCurrency}
+                    onChange={async (e) => {
+                      setSavingCurrency(true);
+                      try {
+                        await setPreferredCurrency(e.target.value);
+                        showMessage('success', 'Display currency updated');
+                      } catch {
+                        showMessage('error', 'Could not update currency');
+                      } finally {
+                        setSavingCurrency(false);
+                      }
+                    }}
+                    className={SELECT_CLASS}
+                  >
+                    {SUPPORTED_CURRENCIES.map((c: string) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">All costs show in this currency first. {fxNote}</p>
                 </div>
               </div>
 

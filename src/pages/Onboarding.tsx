@@ -1038,7 +1038,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
 
   function defaultData() {
     return {
-      name: '', grade: '', currentBoard: '', country: '', dreamSchool: '',
+      name: '', grade: '', currentBoard: '', country: '', citizenship: '', dreamSchool: '',
       current_grade: '', gender: '', phone: '', date_of_birth: '', graduation_year: '',
       school_name: '', curriculum_type: '', curriculum_other: '',
       currentGPA: '', gpaType: 'percentage', satScore: '', actScore: '', ibPredicted: '', subjects: [],
@@ -1282,6 +1282,19 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                   <option value="">Select your country</option>
                   {['India','USA','UK','Canada','Singapore','UAE','Pakistan','Bangladesh','Sri Lanka','Nepal','Other'].map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
+              </div>
+              <div>
+                <label style={labelStyle}>
+                  Citizenship
+                  <span title="Determines financial-aid eligibility (e.g. FAFSA is U.S.-citizens only)" style={{ marginLeft: 6, fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>ℹ️ affects aid eligibility</span>
+                </label>
+                <select value={studentData.citizenship} onChange={e => updateData('citizenship', e.target.value)} style={{ ...inputFieldStyle(accent), marginTop: 6 }}>
+                  <option value="">Same as country / select citizenship</option>
+                  {['India','USA','UK','Canada','Singapore','UAE','Pakistan','Bangladesh','Sri Lanka','Nepal','Other'].map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 4, fontFamily: "'Inter', system-ui, sans-serif" }}>
+                  Non-U.S. citizens are not eligible for U.S. federal aid (FAFSA); we’ll show CSS Profile / institutional aid instead.
+                </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
@@ -1944,6 +1957,23 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             grade_level: studentData.current_grade || null,
             graduation_year: studentData.graduation_year ? Number(studentData.graduation_year) : null,
             preferred_location: studentData.locationPreference || null,
+            // Identity + academic fields that must persist to student_profiles so
+            // the profile does not reset on reload and chancing/recs see real data.
+            name: studentData.name || null,
+            gender: studentData.gender || null,
+            citizenship: studentData.citizenship || studentData.country || null,
+            phone: studentData.phone || null,
+            date_of_birth: studentData.date_of_birth || null,
+            school_name: studentData.school_name || null,
+            curriculum_type: studentData.curriculum_type || studentData.currentBoard || null,
+            curriculum_other: studentData.curriculum_other || null,
+            why_college: studentData.whyCollege || null,
+            subjects: normalizedSubjects,
+            interest_tags: normalizedTraits,
+            trait_weights: studentData.traitWeights || {},
+            activities: cleanedActivities,
+            preferred_college_size: studentData.campusSize || null,
+            preferred_setting: studentData.locationPreference || null,
           });
 
           setStudentData((prev: any) => ({

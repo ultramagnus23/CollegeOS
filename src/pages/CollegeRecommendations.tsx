@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { toast } from 'sonner';
 import { formatCountryName } from '../lib/country';
+import { usePreferredCurrency } from '../hooks/usePreferredCurrency';
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 interface ScoreBreakdown {
@@ -94,6 +95,7 @@ const ScoreBar: React.FC<{ label: string; value: number; max: number; color: str
 
 /* ─── College Card ────────────────────────────────────────────────────────── */
 const CollegeCard: React.FC<{ rec: Recommendation; rank: number }> = ({ rec, rank }) => {
+  const { formatMoney } = usePreferredCurrency();
   const [expanded, setExpanded] = useState(false);
   const cls = CLASS_CFG[rec.classification?.toLowerCase()] || CLASS_CFG.target;
   const sb = rec.score_breakdown;
@@ -148,7 +150,7 @@ const CollegeCard: React.FC<{ rec: Recommendation; rank: number }> = ({ rec, ran
               <>
                 <span style={{ fontSize: 11, color: S.dim }}>·</span>
                 <span style={{ fontSize: 11, color: S.muted }}>
-                  ₹{((rec.net_cost_inr_per_year ?? 0) / 100000).toFixed(1)}L/yr
+                  {formatMoney(rec.net_cost_inr_per_year, 'INR')}/yr
                 </span>
               </>
             )}

@@ -1,0 +1,49 @@
+name: Scraper — Institution Enrichment
+
+# Runs live scrapers through the unified framework (fetch → validate → idempotent
+# upsert with source attribution). Re-running is safe (ON CONFLICT upserts); rows
+# that cannot be sourced are skipped, never fabricated. Currently wires the
+# Wikidata enrichment adapter; add adapters to scripts/runScraper.js as they land.
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  schedule:
+    - cron: '0 5 * * 2'   # weekly, Tuesday 05:00 UTC
+  workflow_dispatch:
+    inputs:
+      adapter:
+        description: 'Adapter to run (e.g. wikidata)'
+        required: false
+        default: 'wikidata'
+      limit:
+        description: 'Max institutions to process'
+        required: false
+        default: '50'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scraper-enrich
+  cancel-in-progress: false
+
+jobs:
+  enrich:
+    name: Run enrichment scraper
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci || npm install
+      - name: Run scraper
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/runScraper.js "${{ github.event.inputs.adapter || 'wikidata' }}" --limit="${{ github.event.inputs.limit || '50' }}"

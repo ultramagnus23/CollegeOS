@@ -916,8 +916,14 @@ class ProfileService {
    * @returns {any} Parsed value or fallback
    */
   static safeParseJSON(jsonString, fallback) {
-    if (!jsonString || jsonString === 'undefined' || jsonString === 'null') {
+    if (jsonString === null || jsonString === undefined || jsonString === 'undefined' || jsonString === 'null') {
       return fallback;
+    }
+    // json/jsonb columns are already parsed to JS objects/arrays by node-pg —
+    // running JSON.parse on them throws and silently drops the data (this is
+    // what made onboarding activities read as empty). Pass them through as-is.
+    if (typeof jsonString === 'object') {
+      return jsonString;
     }
     try {
       return JSON.parse(jsonString);

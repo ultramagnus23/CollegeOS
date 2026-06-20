@@ -37,8 +37,20 @@ const errorHandler = (err, req, res, next) => {
   let message = 'Internal server error';
   let errorCode = 'INTERNAL_ERROR';
 
+  // Client-error status codes assigned by upstream middleware (which runs before
+  // our route handlers). body-parser rejects malformed/invalid JSON with a
+  // SyntaxError carrying { status: 400, type: 'entity.parse.failed' }; without
+  // honoring it this would fall through to a misleading 500.
+  const upstreamStatus = Number(err?.status ?? err?.statusCode);
+  const isBodyParseError = err?.type === 'entity.parse.failed'
+    || (err instanceof SyntaxError && upstreamStatus >= 400 && upstreamStatus < 500);
+
   // Handle specific error types
-  if (err?.message === 'User not found') {
+  if (isBodyParseError) {
+    status = 400;
+    message = 'Invalid request body: malformed or non-object JSON';
+    errorCode = 'INVALID_JSON';
+  } else if (err?.message === 'User not found') {
     status = 404;
     message = err.message;
     errorCode = 'USER_NOT_FOUND';
@@ -114,6 +126,14 @@ const errorHandler = (err, req, res, next) => {
     status = 403;
     message = 'Origin not allowed';
     errorCode = 'CORS_ERROR';
+  }
+
+  // Fallback: honor any explicit 4xx client-error status set by middleware or a
+  // custom error (e.g. AppError) that we didn't match above, instead of 500.
+  if (status === 500 && Number.isFinite(upstreamStatus) && upstreamStatus >= 400 && upstreamStatus < 500) {
+    status = upstreamStatus;
+    if (message === 'Internal server error') message = err?.message || 'Request error';
+    if (errorCode === 'INTERNAL_ERROR') errorCode = 'CLIENT_ERROR';
   }
 
   // Build response object
