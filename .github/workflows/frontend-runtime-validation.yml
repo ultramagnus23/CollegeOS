@@ -55,6 +55,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # full-production-check.js shells into backend/ to `require('./src/app')` and run
+      # `npx jest` — those need backend node_modules, which root `npm ci` does not install.
+      # Without this the backend_startup_probe + backend_schema_validator_test checks fail.
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci || npm install
+
       - name: Run validation pipeline with diagnostics
         id: runtime_pipeline
         continue-on-error: true
