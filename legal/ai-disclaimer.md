@@ -1,6 +1,6 @@
 # COLLEGEOS — AI DISCLAIMER
 
-Last Updated: [DATE]
+Last Updated: June 20, 2026
 
 ## 1. PURPOSE AND SCOPE
 

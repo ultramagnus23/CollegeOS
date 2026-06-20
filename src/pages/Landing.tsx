@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { GraduationCap, Target, Calendar } from 'lucide-react';
+import { LegalFooter } from '../components/legal/LegalFooter';
 
 const features = [
   {
@@ -90,17 +91,20 @@ export default function Landing() {
       </div>
 
       <footer className="border-t border-border py-10">
-        <div className="max-w-6xl mx-auto px-6 flex flex-wrap gap-6 text-sm text-muted-foreground">
-          <Link to="/colleges" className="hover:text-foreground">Colleges</Link>
-          <Link to="/auth" className="hover:text-foreground">Get Started</Link>
-          <a
-            href="https://github.com/ultramagnus23/CollegeOS"
-            target="_blank"
-            rel="noreferrer"
-            className="hover:text-foreground"
-          >
-            GitHub
-          </a>
+        <div className="max-w-6xl mx-auto px-6 space-y-4">
+          <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
+            <Link to="/colleges" className="hover:text-foreground">Colleges</Link>
+            <Link to="/auth" className="hover:text-foreground">Get Started</Link>
+            <a
+              href="https://github.com/ultramagnus23/CollegeOS"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-foreground"
+            >
+              GitHub
+            </a>
+          </div>
+          <LegalFooter />
         </div>
       </footer>
     </div>
