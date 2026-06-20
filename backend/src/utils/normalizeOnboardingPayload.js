@@ -235,12 +235,19 @@ function normalizeOnboardingPayload(rawPayload = {}) {
     trait_weights: (() => {
       const raw = payload.trait_weights ?? payload.traitWeights;
       if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
-      const out = {};
+      // Keys come from the request body — guard against prototype-pollution
+      // ("__proto__"/"constructor"/"prototype") and write own properties only.
+      const FORBIDDEN_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+      const out = Object.create(null);
       for (const [key, value] of Object.entries(raw)) {
+        const safeKey = String(key).slice(0, 80);
+        if (FORBIDDEN_KEYS.has(safeKey)) continue;
         const num = normalizeNumber(value);
-        if (num !== null) out[String(key).slice(0, 80)] = num;
+        if (num !== null) {
+          Object.defineProperty(out, safeKey, { value: num, enumerable: true, writable: true, configurable: true });
+        }
       }
-      return Object.keys(out).length > 0 ? out : null;
+      return Object.keys(out).length > 0 ? { ...out } : null;
     })(),
     preferred_college_size: safeString(payload.preferred_college_size ?? payload.campusSize, { maxLength: 40 }),
     preferred_setting: safeString(payload.preferred_setting, { maxLength: 40 }),
