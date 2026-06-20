@@ -1,6 +1,6 @@
 # COLLEGEOS — ACCOUNT DELETION AND DATA DELETION POLICY
 
-Last Updated: [DATE]
+Last Updated: June 20, 2026
 
 ## 1. PURPOSE
 

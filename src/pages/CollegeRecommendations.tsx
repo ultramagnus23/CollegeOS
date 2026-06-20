@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { toast } from 'sonner';
 import { formatCountryName } from '../lib/country';
 import { usePreferredCurrency } from '../hooks/usePreferredCurrency';
+import { AIDisclaimer } from '../components/legal/AIDisclaimer';
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 interface ScoreBreakdown {
@@ -282,6 +283,7 @@ const CollegeRecommendations: React.FC = () => {
             <p style={{ fontSize: 14, color: S.muted, marginTop: 6 }}>
               Personalized college matches based on your academic profile, values, financials, and location preferences.
             </p>
+            <AIDisclaimer variant="recommendations" className="mt-2" />
             {data?.exchange_rate_estimated && (
               <p style={{ fontSize: 12, color: '#F59E0B', marginTop: 4 }}>
                 ⚠️ INR figures use an estimated exchange rate (₹{data.exchange_rate_used}/USD) — live rate unavailable.

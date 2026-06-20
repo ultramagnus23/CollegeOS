@@ -1,6 +1,6 @@
 # COLLEGEOS — TERMS OF SERVICE
 
-Last Updated: [DATE]
+Last Updated: June 20, 2026
 
 ## 1. ACCEPTANCE OF TERMS
 
@@ -314,15 +314,17 @@ Last Updated: [DATE]
 
 [REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW]
 
-17.1 **Governing Law.** These Terms shall be governed by and construed in accordance with the laws of [JURISDICTION], without regard to its conflict of law principles.
+17.1 **Governing Law.** These Terms shall be governed by and construed in accordance with the laws of India, without regard to its conflict of law principles.
 
-17.2 **Arbitration.** [REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW] Any dispute, claim, or controversy arising out of or relating to these Terms or the Service shall be finally settled by binding arbitration administered by [ARBITRATION BODY] in accordance with its rules. The arbitration shall be conducted in [LANGUAGE] in [LOCATION]. Judgment on the award may be entered in any court having jurisdiction.
+17.2 **Arbitration.** [REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW] Any dispute, claim, or controversy arising out of or relating to these Terms or the Service shall be finally settled by binding arbitration administered by a sole arbitrator appointed under the Arbitration and Conciliation Act, 1996 (India) in accordance with its rules. The arbitration shall be conducted in English in India. Judgment on the award may be entered in any court having jurisdiction.
 
 17.3 **Class Action Waiver.** TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, YOU AGREE THAT ANY DISPUTE RESOLUTION PROCEEDINGS WILL BE CONDUCTED ONLY ON AN INDIVIDUAL BASIS AND NOT IN A CLASS, CONSOLIDATED, OR REPRESENTATIVE ACTION.
 
 17.4 **Opt-Out.** You may opt out of the arbitration and class action waiver provisions by providing written notice to us within 30 days of accepting these Terms.
 
-17.5 **Alternative Dispute Resolution.** We encourage you to contact us first to resolve any disputes informally. You may contact us at [CONTACT EMAIL] or [CONTACT ADDRESS].
+17.5 **Alternative Dispute Resolution.** We encourage you to contact us first to resolve any disputes informally. You may contact us at [CONTACT EMAIL] or [CONTACT ADDRESS]. We will attempt in good faith to resolve any dispute within thirty (30) days of receiving written notice before either party initiates formal proceedings.
+
+17.6 **Minor Users — Arbitration Carve-Out.** The arbitration and class-action-waiver provisions in Sections 17.2–17.3 do **not** apply to a claim brought by or on behalf of a User who is a minor where, under applicable law, a minor cannot be bound to such provisions absent a parent or guardian's binding consent. In such cases the dispute may proceed in the courts of competent jurisdiction in India. Nothing in this Section limits any non-waivable statutory right of a minor or their parent/guardian. *(This carve-out is provided in good faith and is pending jurisdiction-specific legal review.)*
 
 ## 18. CHANGES TO TERMS
 

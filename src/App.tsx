@@ -36,7 +36,7 @@ import Recommendations from "./pages/Recommendations";
 import CollegeRecommendations from "./pages/CollegeRecommendations";
 import { Timeline } from "./pages/Timeline";
 import NotificationsPage from "./pages/Notifications";
-import Terms from "./pages/Terms";
+import LegalPage from "./pages/LegalPage";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import Landing from "./pages/Landing";
@@ -157,7 +157,15 @@ const AppContent = () => {
               </AuthErrorBoundary>
             }
           />
-          <Route path="/terms" element={<Terms />} />
+          {/* Legal pages — rendered directly from /legal/*.md (single source of truth) */}
+          <Route path="/terms" element={<LegalPage slug="terms" />} />
+          <Route path="/privacy" element={<LegalPage slug="privacy" />} />
+          <Route path="/cookies" element={<LegalPage slug="cookies" />} />
+          <Route path="/data-retention" element={<LegalPage slug="data-retention" />} />
+          <Route path="/account-deletion" element={<LegalPage slug="account-deletion" />} />
+          <Route path="/minor-policy" element={<LegalPage slug="minor-policy" />} />
+          <Route path="/community-guidelines" element={<LegalPage slug="community-guidelines" />} />
+          <Route path="/ai-disclaimer" element={<LegalPage slug="ai-disclaimer" />} />
 
           <Route
             path="/onboarding"

@@ -1,6 +1,6 @@
 # COLLEGEOS — COMMUNITY GUIDELINES
 
-Last Updated: [DATE]
+Last Updated: June 20, 2026
 
 ## 1. PURPOSE
 

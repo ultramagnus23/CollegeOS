@@ -5,6 +5,7 @@ import NotificationBadge from '../components/NotificationBadge';
 import AIChatbot from '../components/AIChatbot';
 import ThemeToggle from '../components/ui/ThemeToggle';
 import { TutorialTrigger } from '../components/tutorial/TutorialOverlay';
+import { LegalFooter } from '../components/legal/LegalFooter';
 import { 
   Home, 
   School, 
@@ -180,6 +181,9 @@ const DashboardLayout = () => {
       {/* Main Content */}
       <main className="lg:ml-64 min-h-screen pb-20 lg:pb-0 pt-14 lg:pt-0">
         <Outlet />
+        <footer className="px-6 py-6 mt-8" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <LegalFooter />
+        </footer>
       </main>
 
       {/* Mobile Bottom Navigation */}
