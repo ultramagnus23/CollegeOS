@@ -13,7 +13,13 @@ router.get('/monthly', authenticate, async (req, res, next) => {
     let tasks = [];
     let deadlines = [];
 
-    // Pull tasks from application_tasks joined with applications
+    // Pull tasks from BOTH task tables: `application_tasks` (generic per-application
+    // checklist items, populated on first GET of an application's task list) and
+    // `tasks` (the richer auto-generated set from ApplicationBootstrapService —
+    // also what Dashboard.tsx "Today's Tasks" and Timeline.tsx's completion toggle
+    // read/write). They are two real, independently-populated sources; union both
+    // rather than silently dropping one (the disconnect itself is tracked as
+    // follow-up consolidation work, not papered over here).
     try {
       const result = await pool.query(
         `SELECT at.id, at.title, at.task_type AS type, at.due_date,
@@ -23,7 +29,14 @@ router.get('/monthly', authenticate, async (req, res, next) => {
          JOIN applications a ON at.application_id = a.id
          LEFT JOIN colleges_full c ON c.id = a.college_id
          WHERE a.user_id = $1
-         ORDER BY at.due_date ASC NULLS LAST`,
+         UNION ALL
+         SELECT t.id, t.title, t.task_type AS type, t.deadline AS due_date,
+                t.status,
+                c2.name AS college_name
+         FROM tasks t
+         LEFT JOIN colleges_full c2 ON c2.id = t.college_id
+         WHERE t.user_id = $1
+         ORDER BY due_date ASC NULLS LAST`,
         [userId]
       );
       tasks = result.rows;
