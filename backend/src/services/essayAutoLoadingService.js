@@ -61,16 +61,24 @@ class EssayAutoLoadingService {
    */
   static async _getCollegeData(collegeId) {
     const pool = dbManager.getDatabase();
+    // Two bugs fixed here:
+    // 1. public.college_deadlines has no application_platforms column (schema
+    //    drift — this query 500'd/threw for every call). No real platform-
+    //    detection data source exists yet; _detectApplicationPlatform already
+    //    degrades gracefully when application_platforms is undefined.
+    // 2. institution_identity_map.legacy_id is 0% populated (8,329 rows use
+    //    source_pk instead) — filtering on `legacy_id = $1` could never match
+    //    ANY college, so essays were never auto-loaded for anyone, ever. Use
+    //    the same source_pk/institution_id pattern requirementService already
+    //    uses successfully.
     return (await pool.query(`
       SELECT
-        m.legacy_id AS id,
+        m.source_pk::int AS id,
         i.canonical_name AS name,
-        i.country_code AS country,
-        cd.application_platforms
+        i.country_code AS country
       FROM canonical.institution_identity_map m
-      JOIN canonical.institutions i ON i.id = m.canonical_institution_id
-      LEFT JOIN public.college_deadlines cd ON cd.college_id = m.legacy_id
-      WHERE m.legacy_id = $1
+      JOIN canonical.institutions i ON i.id = m.institution_id
+      WHERE m.source_pk = $1::text
       LIMIT 1
     `, [collegeId])).rows[0];
   }
@@ -163,13 +171,23 @@ class EssayAutoLoadingService {
    */
   static async _loadCollegeSupplements(userId, applicationId, collegeId, platform, currentYear, result) {
     const pool = dbManager.getDatabase();
-    
-    // Query essay_prompts table for college supplements
-    let supplements = (await pool.query(`
-      SELECT * FROM essay_prompts 
-      WHERE college_id = $1 
-      ORDER BY prompt_order ASC
-    `, [collegeId])).rows;
+
+    // essay_prompts has no real data source yet (no scraper has populated
+    // supplemental-essay prompts — matches the known data gap, not a bug to
+    // fabricate around). The table may not even exist; degrade to "no
+    // supplements available" rather than letting this throw and kill the
+    // platform main-essay result that already succeeded above.
+    let supplements = [];
+    try {
+      supplements = (await pool.query(`
+        SELECT * FROM essay_prompts
+        WHERE college_id = $1
+        ORDER BY prompt_order ASC
+      `, [collegeId])).rows;
+    } catch (error) {
+      logger.debug('No essay_prompts table or data:', error.message);
+      supplements = [];
+    }
 
     let usedHistorical = false;
 

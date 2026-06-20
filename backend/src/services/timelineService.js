@@ -337,15 +337,24 @@ function getGeneralActionsForMonth(month, year, applications) {
 // Helper functions
 async function getUserApplications(userId) {
   const pool = dbManager.getDatabase();
+  // colleges_full has no deadline_templates JSON column (schema drift — this threw
+  // on every call, so monthly timeline generation never ran for any user). The
+  // real per-deadline-type columns are ea_deadline/ed_deadline/rd_deadline/
+  // application_deadline; synthesize the same { early_action, ... } shape the
+  // rest of this file already expects, from those real columns.
   const rows = (await pool.query(`
-      SELECT a.*, c.name, c.country, c.deadline_templates
+      SELECT a.*, c.name, c.country, c.ea_deadline, c.ed_deadline, c.rd_deadline, c.application_deadline
       FROM applications a
       JOIN colleges_full c ON a.college_id = c.id
       WHERE a.user_id = $1
     `, [userId])).rows;
   return rows.map(row => ({
     ...row,
-    deadline_templates: JSON.parse(row.deadline_templates || '{}')
+    deadline_templates: {
+      early_action: row.ea_deadline || null,
+      early_decision: row.ed_deadline || null,
+      regular_decision: row.rd_deadline || row.application_deadline || null,
+    },
   }));
 }
 
