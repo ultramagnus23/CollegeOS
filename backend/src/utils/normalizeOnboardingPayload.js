@@ -2,6 +2,19 @@
 
 const MAX_TEXT = 4000;
 
+// Allowlist of valid trait keys (mirrors src/constants/onboardingOptions.ts TRAIT_OPTIONS).
+// trait_weights is built by iterating THIS constant list and reading the user's value,
+// so a property name written to the output is never user-controlled (prevents the
+// remote-property-injection / prototype-pollution class entirely).
+const ALLOWED_TRAIT_KEYS = [
+  'Creative', 'Artistic', 'Experimental', 'Imaginative', 'Design-Oriented', 'Aesthetic Thinker', 'Visionary',
+  'Organizer', 'Community Builder', 'Delegator', 'Strategic Leader', 'Persuasive', 'Analytical', 'Systems Thinker',
+  'Problem Solver', 'Logical', 'Detail-Oriented', 'Research-Oriented', 'Empathetic', 'Collaborative', 'Mentor',
+  'Communicator', 'Diplomatic', 'Listener', 'Disciplined', 'Consistent', 'Competitive', 'Ambitious', 'Independent',
+  'Self-Starter', 'Entrepreneurial', 'Risk-Taker', 'Builder', 'Inventor', 'Product Thinker', 'Futurist', 'Humanitarian',
+  'Culturally Curious', 'Ethical Thinker', 'Sustainability-Oriented', 'Policy-Oriented',
+];
+
 function isBlank(value) {
   return typeof value === 'string' && value.trim() === '';
 }
@@ -235,19 +248,16 @@ function normalizeOnboardingPayload(rawPayload = {}) {
     trait_weights: (() => {
       const raw = payload.trait_weights ?? payload.traitWeights;
       if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
-      // Keys come from the request body — guard against prototype-pollution
-      // ("__proto__"/"constructor"/"prototype") and write own properties only.
-      const FORBIDDEN_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
-      const out = Object.create(null);
-      for (const [key, value] of Object.entries(raw)) {
-        const safeKey = String(key).slice(0, 80);
-        if (FORBIDDEN_KEYS.has(safeKey)) continue;
-        const num = normalizeNumber(value);
-        if (num !== null) {
-          Object.defineProperty(out, safeKey, { value: num, enumerable: true, writable: true, configurable: true });
-        }
+      // Iterate the CONSTANT allowlist and read the user's value. The key written to
+      // `out` is always one of our constants — never a user-supplied string — so this
+      // cannot be exploited for property injection / prototype pollution.
+      const out = {};
+      for (const trait of ALLOWED_TRAIT_KEYS) {
+        if (!Object.prototype.hasOwnProperty.call(raw, trait)) continue;
+        const num = normalizeNumber(raw[trait]);
+        if (num !== null) out[trait] = num;
       }
-      return Object.keys(out).length > 0 ? { ...out } : null;
+      return Object.keys(out).length > 0 ? out : null;
     })(),
     preferred_college_size: safeString(payload.preferred_college_size ?? payload.campusSize, { maxLength: 40 }),
     preferred_setting: safeString(payload.preferred_setting, { maxLength: 40 }),
