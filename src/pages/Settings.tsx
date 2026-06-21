@@ -248,6 +248,8 @@ const SCROLL_DELAY_MS = 100;
       act_composite: p?.actScore || p?.act_composite || '',
       ielts_score: p?.ielts_score || '',
       toefl_score: p?.toefl_score || '',
+      duolingo_score: p?.duolingo_score || '',
+      board_exam_percentage: p?.board_exam_percentage || p?.percentage || '',
       
       // Preferences
       intended_majors: p?.potentialMajors || p?.intendedMajors || p?.intended_majors || [],
@@ -422,50 +424,33 @@ const SCROLL_DELAY_MS = 100;
 
   const saveTestScores = async () => {
     if (!user?.id) return;
-    
+
     setSaving(true);
+    // The granular /test-scores endpoint does not cover Duolingo or board-exam
+    // percentage, so we persist the full set through canonical-sync (the complete
+    // student_profiles upsert) as the source of truth, and best-effort the granular
+    // endpoint too for compatibility.
+    const payload = {
+      sat_total: formData.sat_total ? parseInt(formData.sat_total, 10) : null,
+      sat_math: formData.sat_math ? parseInt(formData.sat_math, 10) : null,
+      sat_ebrw: formData.sat_ebrw ? parseInt(formData.sat_ebrw, 10) : null,
+      act_composite: formData.act_composite ? parseInt(formData.act_composite, 10) : null,
+      ielts_score: formData.ielts_score ? parseFloat(formData.ielts_score) : null,
+      toefl_score: formData.toefl_score ? parseInt(formData.toefl_score, 10) : null,
+      duolingo_score: formData.duolingo_score ? parseInt(formData.duolingo_score, 10) : null,
+      board_exam_percentage: formData.board_exam_percentage ? parseFloat(formData.board_exam_percentage) : null,
+    };
     try {
-      await api.updateTestScores(user.id, {
-        sat_total: formData.sat_total ? parseInt(formData.sat_total) : null,
-        sat_math: formData.sat_math ? parseInt(formData.sat_math) : null,
-        sat_ebrw: formData.sat_ebrw ? parseInt(formData.sat_ebrw) : null,
-        act_composite: formData.act_composite ? parseInt(formData.act_composite) : null,
-        ielts_score: formData.ielts_score ? parseFloat(formData.ielts_score) : null,
-        toefl_score: formData.toefl_score ? parseInt(formData.toefl_score) : null
-      });
-      
-      // Also update ProfileService
-      profileService.updateProfile({
-        satScore: formData.sat_total,
-        actScore: formData.act_composite,
-        test_status: {
-          satScore: formData.sat_total || null,
-          actScore: formData.act_composite || null,
-          ibPredicted: null
-        }
-      });
-      
+      try { await api.updateTestScores(user.id, payload); } catch { /* canonical-sync below is authoritative */ }
+      await syncCanonicalSection(payload);
+      profileService.updateProfile({ satScore: formData.sat_total, actScore: formData.act_composite });
       await loadProfile();
       setEditMode(prev => ({ ...prev, testScores: false }));
       showMessage('success', 'Test scores saved successfully');
       refetchCompletion();
     } catch (error: any) {
-      try {
-        await syncCanonicalSection({
-          sat_total: formData.sat_total ? parseInt(formData.sat_total, 10) : null,
-          sat_math: formData.sat_math ? parseInt(formData.sat_math, 10) : null,
-          sat_ebrw: formData.sat_ebrw ? parseInt(formData.sat_ebrw, 10) : null,
-          act_composite: formData.act_composite ? parseInt(formData.act_composite, 10) : null,
-          ielts_score: formData.ielts_score ? parseFloat(formData.ielts_score) : null,
-          toefl_score: formData.toefl_score ? parseInt(formData.toefl_score, 10) : null,
-        });
-        await loadProfile();
-        setEditMode(prev => ({ ...prev, testScores: false }));
-        showMessage('success', 'Test scores saved successfully');
-      } catch (fallbackError: any) {
-        console.error('Failed to save test scores:', error, fallbackError);
-        showMessage('error', parseErrorMessage(fallbackError));
-      }
+      console.error('Failed to save test scores:', error);
+      showMessage('error', parseErrorMessage(error));
     }
     setSaving(false);
   };
@@ -1149,31 +1134,63 @@ const SCROLL_DELAY_MS = 100;
               {/* English Proficiency */}
               <div className="bg-muted rounded-lg p-4">
                 <h3 className="font-medium text-foreground mb-3">English Proficiency</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label>IELTS</Label>
-                    <Input 
+                    <Input
                       type="number"
                       step="0.5"
                       min="0"
                       max="9"
-                      value={formData.ielts_score} 
+                      value={formData.ielts_score}
                       onChange={(e) => updateFormField('ielts_score', e.target.value)}
-                      className="mt-1" 
+                      className="mt-1"
                       placeholder="0-9"
                     />
                   </div>
                   <div>
                     <Label>TOEFL</Label>
-                    <Input 
+                    <Input
                       type="number"
                       min="0"
                       max="120"
-                      value={formData.toefl_score} 
+                      value={formData.toefl_score}
                       onChange={(e) => updateFormField('toefl_score', e.target.value)}
-                      className="mt-1" 
+                      className="mt-1"
                       placeholder="0-120"
                     />
+                  </div>
+                  <div>
+                    <Label>Duolingo</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="160"
+                      value={formData.duolingo_score}
+                      onChange={(e) => updateFormField('duolingo_score', e.target.value)}
+                      className="mt-1"
+                      placeholder="0-160"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-muted rounded-lg p-4">
+                <h3 className="font-medium text-foreground mb-3">Board Exam</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Board Exam Percentage</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={formData.board_exam_percentage}
+                      onChange={(e) => updateFormField('board_exam_percentage', e.target.value)}
+                      className="mt-1"
+                      placeholder="e.g. 94.5 (CBSE / ISC / state boards)"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Used for percentage-based curricula (CBSE, ISC, state boards).</p>
                   </div>
                 </div>
               </div>
