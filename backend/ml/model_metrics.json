@@ -7,79 +7,110 @@
   ],
   "dataset": {
     "source": "SIMULATED from real college_admissions_stats (acceptance_rate + median_sat)",
+    "synthetic": true,
     "colleges_used": 795,
     "applicants_per_college": 60,
     "total_cases": 47700,
-    "positive_rate": 0.4464,
-    "gpa_note": "median_gpa_admitted is unavailable in the data; GPA simulated from a generic SAT-correlated population prior."
+    "positive_rate": 0.4395,
+    "gpa_note": "median_gpa_admitted is unavailable in the data; GPA simulated from a generic SAT-correlated population prior.",
+    "real_rows_available": 0,
+    "real_rows_needed": 200
   },
   "holdout": {
     "n": 9540,
-    "roc_auc": 0.8731,
-    "brier": 0.1439,
+    "roc_auc": 0.8553,
+    "brier": 0.1538,
+    "precision": 0.7551,
+    "recall": 0.7203,
+    "f1": 0.7373,
+    "confusion_at_0_5": {
+      "tp": 3044,
+      "fp": 987,
+      "fn": 1182,
+      "tn": 4327
+    },
     "calibration": [
       {
         "bin": "0.0-0.1",
-        "n": 1639,
-        "mean_predicted": 0.048,
-        "observed_rate": 0.044
+        "n": 1485,
+        "mean_predicted": 0.051,
+        "observed_rate": 0.041
       },
       {
         "bin": "0.1-0.2",
-        "n": 1194,
-        "mean_predicted": 0.146,
-        "observed_rate": 0.109
+        "n": 1262,
+        "mean_predicted": 0.149,
+        "observed_rate": 0.144
       },
       {
         "bin": "0.2-0.3",
-        "n": 1006,
-        "mean_predicted": 0.247,
-        "observed_rate": 0.255
+        "n": 1030,
+        "mean_predicted": 0.249,
+        "observed_rate": 0.237
       },
       {
         "bin": "0.3-0.4",
-        "n": 815,
+        "n": 893,
         "mean_predicted": 0.348,
-        "observed_rate": 0.346
+        "observed_rate": 0.368
       },
       {
         "bin": "0.4-0.5",
-        "n": 763,
+        "n": 839,
         "mean_predicted": 0.45,
-        "observed_rate": 0.433
+        "observed_rate": 0.436
       },
       {
         "bin": "0.5-0.6",
-        "n": 724,
+        "n": 855,
         "mean_predicted": 0.55,
-        "observed_rate": 0.55
+        "observed_rate": 0.542
       },
       {
         "bin": "0.6-0.7",
-        "n": 751,
+        "n": 829,
         "mean_predicted": 0.65,
-        "observed_rate": 0.642
+        "observed_rate": 0.671
       },
       {
         "bin": "0.7-0.8",
-        "n": 837,
-        "mean_predicted": 0.751,
-        "observed_rate": 0.783
+        "n": 823,
+        "mean_predicted": 0.749,
+        "observed_rate": 0.769
       },
       {
         "bin": "0.8-0.9",
-        "n": 863,
+        "n": 807,
         "mean_predicted": 0.85,
         "observed_rate": 0.862
       },
       {
         "bin": "0.9-1.0",
-        "n": 948,
-        "mean_predicted": 0.95,
-        "observed_rate": 0.965
+        "n": 717,
+        "mean_predicted": 0.946,
+        "observed_rate": 0.971
       }
     ]
   },
-  "caveat": "SYNTHETIC-HOLDOUT metrics — measure recovery of the stats-grounded simulation, NOT real predictive accuracy against actual admissions. Re-train on prediction_logs.actual_outcome when real labels exist.",
-  "trained_at": "2026-06-20T18:38:50.983Z"
+  "feature_importance": [
+    {
+      "feature": "logit_acceptance_rate",
+      "weight": 1.1834,
+      "importance": 0.403
+    },
+    {
+      "feature": "sat_z",
+      "weight": 1.069,
+      "importance": 0.364
+    },
+    {
+      "feature": "gpa_centered",
+      "weight": 0.6842,
+      "importance": 0.233
+    }
+  ],
+  "caveat": "SYNTHETIC-HOLDOUT metrics — measure recovery of the stats-grounded simulation, NOT real predictive accuracy against actual admissions. Trainer auto-switches to REAL labels once ml_training_data has >= MIN_REAL accepted/rejected rows.",
+  "git_sha": "ee2d318",
+  "trained_at": "2026-06-21T17:49:58.184Z",
+  "version": 1
 }
