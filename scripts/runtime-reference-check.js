@@ -43,7 +43,11 @@ function fileExists(candidate) {
 
 function resolveImport(fromFile, specifier) {
   if (!specifier.startsWith('.')) return null;
-  const base = path.resolve(path.dirname(fromFile), specifier);
+  // Strip Vite/bundler query + fragment suffixes (e.g. "./x.md?raw", "./y.svg?url")
+  // before resolving — these resolve to real asset files, not JS modules. Asset
+  // files are absent from the export map, so export checks skip automatically.
+  const cleanSpecifier = specifier.replace(/[?#].*$/, '');
+  const base = path.resolve(path.dirname(fromFile), cleanSpecifier);
   const candidates = [base, ...CODE_EXTENSIONS.map((ext) => `${base}${ext}`)];
   for (const ext of CODE_EXTENSIONS) {
     candidates.push(path.join(base, `index${ext}`));
