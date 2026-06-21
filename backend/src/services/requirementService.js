@@ -79,16 +79,16 @@ class RequirementService {
   static async decomposeApplication(collegeId) {
     const pool = dbManager.getDatabase();
     
-    // Get college info to determine application system
+    // Get college info to determine application system.
+    // public.college_deadlines has no application_platforms column (schema drift —
+    // this threw for every call, so requirement decomposition/tasks never ran).
     const college = (await pool.query(
       `SELECT
          m.source_pk::int AS id,
          i.canonical_name AS name,
-         i.country_code AS country,
-         cd.application_platforms
+         i.country_code AS country
        FROM canonical.institution_identity_map m
        JOIN canonical.institutions i ON i.id = m.institution_id
-       LEFT JOIN public.college_deadlines cd ON cd.college_id = m.source_pk::int
        WHERE m.source_pk = $1::text
        LIMIT 1`,
       [String(collegeId)]
@@ -202,12 +202,22 @@ class RequirementService {
    */
   static async createApplicationTasks(userId, collegeId, applicationId = null) {
     const pool = dbManager.getDatabase();
-    
+
     // Get decomposed tasks
     const taskTemplates = await this.decomposeApplication(collegeId);
-    
+
     const createdTasks = [];
-    
+
+    // Write into `tasks` — the table Dashboard.tsx ("Today's Tasks") and
+    // Timeline.tsx (completion toggle) actually read/write, and the table
+    // RequirementService's critical-path/dependency/blocking logic already
+    // targets. Migration 116 added application_id/estimated_hours/
+    // blocking_reason/updated_at so this insert (which previously referenced
+    // non-existent columns and failed silently for every application) now
+    // succeeds and the auto-generated tasks are visible where users actually
+    // see tasks. (`application_tasks` is a second, older table still used by
+    // one applications-detail endpoint and the /timeline/monthly route —
+    // tracked as follow-up consolidation work, not touched here.)
     for (const template of taskTemplates) {
       try {
         const result = await pool.query(`
@@ -226,9 +236,9 @@ class RequirementService {
           'not_started',
           template.deadline || null,
           template.estimatedHours || 1,
-          template.priority || 3
+          template.priority || 3,
         ]);
-        
+
         createdTasks.push({
           id: result.rows[0].id,
           ...template,

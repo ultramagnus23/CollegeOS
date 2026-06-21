@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
+import { AIDisclaimer } from '@/components/legal/AIDisclaimer';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -207,6 +208,7 @@ const AIChatbot = () => {
 
       {/* Input */}
       <div className="p-4 border-t border-gray-200 bg-white rounded-b-2xl">
+        <AIDisclaimer variant="chatbot" className="mb-2" />
         <div className="flex gap-2">
           <Input
             value={inputValue}

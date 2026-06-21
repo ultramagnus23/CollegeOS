@@ -46,25 +46,31 @@ class DeadlineAutoPopulationService {
         result.usedHistoricalData = true;
       }
 
-      // Get college name for messages
+      // Get college name for messages. institution_identity_map.legacy_id is 0%
+      // populated (8,329 rows use source_pk instead) — this always returned no
+      // rows; use the populated source_pk/institution_id columns instead.
       const college = (await pool.query(
         `SELECT i.canonical_name AS name
          FROM canonical.institution_identity_map m
-         JOIN canonical.institutions i ON i.id = m.canonical_institution_id
-         WHERE m.legacy_id = $1
+         JOIN canonical.institutions i ON i.id = m.institution_id
+         WHERE m.source_pk = $1::text
          LIMIT 1`,
-        [collegeId]
+        [String(collegeId)]
       )).rows[0];
       const collegeName = college ? college.name : 'College';
 
       // Insert admission deadlines (types that the college offers)
       const deadlinesToCreate = this._extractOfferedDeadlines(collegeDeadlines);
       for (const deadline of deadlinesToCreate) {
+        // Same parameter-type-inference issue as the support-deadlines insert below:
+        // a bare SELECT with no FROM gives Postgres no column context, and $3 is
+        // reused in the WHERE NOT EXISTS subquery — without explicit casts this
+        // silently failed for every college-specific deadline on every application.
         await pool.query(
           `INSERT INTO deadlines (user_id, application_id, deadline_type, deadline_date, title, description)
-           SELECT $1, $2, $3, $4, $5, $6
+           SELECT $1::integer, $2::integer, $3::varchar, $4::timestamp, $5::text, $6::text
            WHERE NOT EXISTS (
-             SELECT 1 FROM deadlines WHERE application_id = $2 AND deadline_type = $3
+             SELECT 1 FROM deadlines WHERE application_id = $2::integer AND deadline_type = $3::varchar
            )`,
           [userId, applicationId, deadline.type, deadline.date, deadline.description, deadline.description]
         );
@@ -185,11 +191,17 @@ class DeadlineAutoPopulationService {
 
     for (const d of supportDeadlines) {
       try {
+        // Explicit casts are required: a bare SELECT (no FROM) gives Postgres no
+        // column context to infer parameter types, and $3 is reused inside the
+        // WHERE NOT EXISTS subquery (compared against the varchar deadline_type
+        // column) — without casts PG deduces conflicting types for the same
+        // parameter ("inconsistent types deduced for parameter $3") and the
+        // insert silently failed for every deadline, every application.
         await pool.query(
           `INSERT INTO deadlines (user_id, application_id, deadline_type, deadline_date, title, description)
-           SELECT $1, $2, $3, $4, $5, $5
+           SELECT $1::integer, $2::integer, $3::varchar, $4::timestamp, $5::text, $5::text
            WHERE NOT EXISTS (
-             SELECT 1 FROM deadlines WHERE application_id = $2 AND deadline_type = $3
+             SELECT 1 FROM deadlines WHERE application_id = $2::integer AND deadline_type = $3::varchar
            )`,
           [userId, applicationId, d.type, d.date, d.title]
         );

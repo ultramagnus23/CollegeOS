@@ -82,12 +82,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       if (mountedRef.current && seq === authSeqRef.current) {
         api.setAuthHydrated(true);
-        setLoading(false);
       }
+      // The initial loading gate must ALWAYS release once any auth attempt settles —
+      // even a superseded or aborted one. Gating this on `seq`/mount (as before) could
+      // leave the app on an infinite "Loading…" spinner if a check was superseded or
+      // its request never delivered a matching settle. The staleness guards above still
+      // protect USER STATE; they must not hold the loading gate hostage.
+      if (mountedRef.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    // Reset on (re)mount — the cleanup sets this false; without re-arming it here a
+    // remount (or StrictMode double-invoke) would leave checkAuth's guards permanently
+    // false and the app stuck on the loading spinner.
+    mountedRef.current = true;
+
     // Migrate old data on first load
     profileService.migrateOldData();
 
@@ -104,6 +114,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       authControllerRef.current?.abort();
     };
   }, [checkAuth]);
+
+  // Watchdog: the auth gate must NEVER trap the user on an infinite spinner. The
+  // network layer caps a request at ~37s (12s × up to 3 tries); if `loading` is
+  // still set well past that, something pathological happened (hung promise, a
+  // settle that never matched the guard) — release the gate so the app can render
+  // (ProtectedRoute will route to /auth if no session was established).
+  useEffect(() => {
+    if (!loading) return undefined;
+    const watchdog = setTimeout(() => {
+      if (mountedRef.current) {
+        console.warn('[auth] loading exceeded 45s — releasing gate to avoid an infinite spinner.');
+        setLoading(false);
+      }
+    }, 45000);
+    return () => clearTimeout(watchdog);
+  }, [loading]);
 
   const login = async (email: string, password: string) => {
     const response = await api.login(email, password);

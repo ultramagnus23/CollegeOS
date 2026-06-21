@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import ProfileCompleteness from '../components/ProfileCompleteness';
+import { AIDisclaimer } from '../components/legal/AIDisclaimer';
 import { useAuth } from '../contexts/AuthContext';
 
 /* ─── Design tokens ──────────────────────────────────────────────────── */
@@ -325,6 +326,7 @@ export default function Chancing() {
                   Probability estimates based on your academic profile vs. each college's reported median stats.
                   International pools are factored in. Results are a guide — not a guarantee.
                 </p>
+                <div style={{ marginTop: 8 }}><AIDisclaimer variant="estimate" /></div>
               </div>
               <button
                 onClick={load}
