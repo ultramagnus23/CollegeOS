@@ -42,7 +42,7 @@ class DatabaseManager {
 
       this.pool = new Pool({
         connectionString: dbUrl,
-        ssl: isRemoteDb ? { rejectUnauthorized: true } : false,
+        ssl: isRemoteDb ? { rejectUnauthorized: false } : false,
         max: 20,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 5000,

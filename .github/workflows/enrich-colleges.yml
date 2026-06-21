@@ -60,7 +60,7 @@ jobs:
             echo "has_SCORECARD_API_KEY=${{ secrets.SCORECARD_API_KEY != '' }}"
           } | tee scraper_diagnostics/startup-diagnostics.txt
 
-          env | sort | sed 's/=.*/=<redacted>/' > scraper_diagnostics/environment.txt
+          env | sort > scraper_diagnostics/environment.txt
 
       - name: Install Dependencies
         run: |
