@@ -8,6 +8,16 @@ describe('usOfficialDeadlines extraction (pure, no network)', () => {
     expect(cleanHtml(html)).toBe('Early Action (EA) November 1');
   });
 
+  test('cleanHtml strips whitespaced end tags and decodes entities once (no double-unescape)', () => {
+    // </script > with a space must still be stripped; &amp;nbsp; must NOT collapse
+    // to a real space (single-pass decode leaves the literal text intact).
+    const html = '<script>x=1</script ><p>Tufts &amp; Co. &nbsp; Early Action November 1</p>';
+    const out = cleanHtml(html);
+    expect(out).toContain('Tufts & Co.');          // &amp; -> & exactly once
+    expect(out).not.toContain('x=1');               // </script > stripped
+    expect(out).toContain('Early Action November 1');
+  });
+
   test('extracts EA + RD with page-derived dates and correct cycle years', () => {
     const text = 'Early Action (EA) Deadline Application Component November 1 ... Regular Action (RA) Deadline January 5 ...';
     const out = extractDeadlines(text);

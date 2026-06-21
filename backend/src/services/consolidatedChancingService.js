@@ -3,6 +3,7 @@
 
 const logger = require('../utils/logger');
 const { sanitizeForLog } = require('../utils/security');
+const chancingModel = require('./ml/chancingModel');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MATH HELPERS
@@ -557,7 +558,28 @@ async function calculateChance(studentProfile, college, application = {}) {
     const cappedProbability = Math.min(scaledProbability, selectivityCeiling);
     const ceilingApplied    = cappedProbability < rawComposite;
 
-    const probability = clamp(cappedProbability, 0.01, 0.95);
+    let probability = clamp(cappedProbability, 0.01, 0.95);
+    let probabilitySource = 'heuristic';
+    let modelProbability = null;
+
+    // Model-first with heuristic fallback: when the calibrated chancing model can run
+    // (college acceptance_rate + median SAT present, student SAT/ACT present) use its
+    // probability as primary, still bounded by the selectivity ceiling for safety. If
+    // the model can't produce a value (missing stats / artifact not built), keep the
+    // heuristic. See backend/ml/ + MODEL_REPORT.md.
+    try {
+      const ml = chancingModel.predictAdmitProbability(
+        { sat: studentSATRaw, act: studentACT, gpa: effectiveStudentGPA },
+        { acceptanceRate: col.acceptance_rate, medianSat: colSatMid },
+      );
+      if (ml && Number.isFinite(ml.probability)) {
+        modelProbability = ml.probability;
+        probability = clamp(Math.min(ml.probability, selectivityCeiling), 0.01, 0.95);
+        probabilitySource = 'model';
+      }
+    } catch (mlError) {
+      logger.warn('chancing model inference failed; using heuristic', { error: sanitizeForLog(mlError?.message) });
+    }
 
     // Probability range
     const probabilityRange = {
@@ -673,6 +695,8 @@ async function calculateChance(studentProfile, college, application = {}) {
       chance_percentage: Math.round(probability * 100),
       chance_label: chanceLabel,
       confidence,
+      probability_source: probabilitySource,
+      model_probability: modelProbability,
       explanation,
       studentSAT: studentSATRaw,
       collegeSAT: colSatMid,

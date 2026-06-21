@@ -55,14 +55,21 @@ const ANCHORS = [
 
 const DATE_RE = /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})\b/i;
 
+// Single-pass entity decode: each &entity; is replaced exactly once and the
+// replacement is NOT re-scanned, so there's no double-unescaping (a decoded '&'
+// can't start a second decode). End-tag regexes allow whitespace before '>'
+// (e.g. "</script >") so script/style bodies are reliably stripped.
+const HTML_ENTITIES = {
+  nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', apos: "'",
+  rsquo: "'", lsquo: "'", '#8217': "'", '#8216': "'", '#39': "'",
+};
+
 function cleanHtml(html) {
   return String(html || '')
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&#8217;|&rsquo;/gi, "'")
+    .replace(/&(#?\w+);/g, (m, e) => (Object.prototype.hasOwnProperty.call(HTML_ENTITIES, e) ? HTML_ENTITIES[e] : ' '))
     .replace(/\s+/g, ' ')
     .trim();
 }
