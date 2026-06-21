@@ -37,8 +37,8 @@
     "populate:real-data": "node scripts/populateRealCollegeData.js",
     "scrape:test-deadlines": "node scripts/testDeadlineScraper.js",
     "scrape:weekly": "node -e \"require('./src/jobs/deadlineScrapingScheduler').runWeeklyHighPriority()\"",
-    "scrape:monthly": "node -e \"require('./src/jobs/deadlineScrapingScheduler').runMonthlyAllColleges()\""
-    ,"audit:onboarding-schema": "node scripts/auditOnboardingSchema.js"
+    "scrape:monthly": "node -e \"require('./src/jobs/deadlineScrapingScheduler').runMonthlyAllColleges()\"",
+    "audit:onboarding-schema": "node scripts/auditOnboardingSchema.js"
   },
   "keywords": [
     "college",
@@ -77,6 +77,7 @@
   },
   "devDependencies": {
     "eslint": "^9.39.2",
+    "eslint-plugin-import": "^2.32.0",
     "jest": "^29.7.0",
     "nodemon": "^3.1.11",
     "supertest": "^7.1.4"

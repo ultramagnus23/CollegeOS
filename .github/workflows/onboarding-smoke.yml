@@ -27,9 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
@@ -37,7 +37,7 @@ jobs:
             package-lock.json
             backend/package-lock.json
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -55,7 +55,7 @@ jobs:
             echo "has_JWT_SECRET=${{ secrets.JWT_SECRET != '' }}"
             echo "has_REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET != '' }}"
           } | tee diagnostics/onboarding-smoke/startup-diagnostics.txt
-          env | sort > diagnostics/onboarding-smoke/environment.txt
+          env | sort | sed 's/=.*/=<redacted>/' > diagnostics/onboarding-smoke/environment.txt
 
       - name: Install frontend dependencies
         run: npm ci
@@ -79,7 +79,7 @@ jobs:
             if (!url) {
               payload.error = 'SUPABASE_DB_URL missing';
             } else {
-              const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
+              const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: true } });
               try {
                 await client.connect();
                 await client.query('SELECT 1');
@@ -148,7 +148,7 @@ jobs:
 
       - name: Upload onboarding smoke diagnostics
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: onboarding-smoke-diagnostics
           path: diagnostics/onboarding-smoke/
