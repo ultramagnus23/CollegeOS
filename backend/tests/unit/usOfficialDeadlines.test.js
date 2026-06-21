@@ -11,10 +11,10 @@ describe('usOfficialDeadlines extraction (pure, no network)', () => {
   test('cleanHtml strips whitespaced end tags and decodes entities once (no double-unescape)', () => {
     // </script > with a space must still be stripped; &amp;nbsp; must NOT collapse
     // to a real space (single-pass decode leaves the literal text intact).
-    const html = '<script>x=1</script ><p>Tufts &amp; Co. &nbsp; Early Action November 1</p>';
+    const html = '<script>x=1</script\t\n bar><p>Tufts &amp; Co. &nbsp; Early Action November 1</p>';
     const out = cleanHtml(html);
     expect(out).toContain('Tufts & Co.');          // &amp; -> & exactly once
-    expect(out).not.toContain('x=1');               // </script > stripped
+    expect(out).not.toContain('x=1');               // malformed end tag still stripped
     expect(out).toContain('Early Action November 1');
   });
 
