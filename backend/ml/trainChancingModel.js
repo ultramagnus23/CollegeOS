@@ -46,6 +46,16 @@ function randn() {
 // The "true" generative relationship (real base rate + academic strength vs band).
 const TRUE = { satZ: 1.2, gpaZ: 0.8, noise: 0.5 };
 
+// Minimum real labeled rows (with both classes) before we train on REAL outcomes
+// instead of the simulation. Below this the simulated model is the honest choice.
+const MIN_REAL = argInt('min-real', 200);
+
+const ACT_TO_SAT = {
+  36: 1590, 35: 1540, 34: 1500, 33: 1460, 32: 1430, 31: 1400, 30: 1370, 29: 1340,
+  28: 1310, 27: 1280, 26: 1240, 25: 1210, 24: 1180, 23: 1140, 22: 1110, 21: 1080,
+  20: 1020, 19: 980, 18: 940, 17: 910, 16: 880, 15: 850, 14: 820, 13: 780,
+};
+
 async function fetchCollegeStats() {
   const pool = dbManager.getDatabase();
   const { rows } = await pool.query(
@@ -55,6 +65,41 @@ async function fetchCollegeStats() {
         AND acceptance_rate > 0 AND acceptance_rate < 1 AND median_sat BETWEEN 600 AND 1600`,
   );
   return rows;
+}
+
+// REAL labeled outcomes captured via POST /api/chancing/outcome. Joined to
+// college_admissions_stats for the per-college median_sat + acceptance_rate the
+// model needs. This closes the loop the honesty caveat promised: once enough real
+// rows exist the trainer fits on them automatically — no code change needed.
+async function fetchRealLabeledData() {
+  const pool = dbManager.getDatabase();
+  const { rows } = await pool.query(
+    `SELECT t.gpa::float AS gpa, t.sat_score::float AS sat, t.act_score::float AS act,
+            t.outcome, s.median_sat::float AS msat, s.acceptance_rate::float AS ar
+       FROM ml_training_data t
+       JOIN college_admissions_stats s ON s.college_id = t.college_id
+      WHERE t.outcome IN ('accepted','rejected')
+        AND s.median_sat IS NOT NULL AND s.acceptance_rate > 0 AND s.acceptance_rate < 1`,
+  );
+  return rows;
+}
+
+// Shape real rows into the same feature space the model + inference use. Rows
+// without a usable test score (no SAT and no convertible ACT) are dropped, not
+// guessed.
+function buildRealDataset(rows) {
+  const X = []; const y = [];
+  for (const r of rows) {
+    let sat = Number.isFinite(r.sat) ? r.sat : (Number.isFinite(r.act) ? ACT_TO_SAT[Math.round(r.act)] : null);
+    if (!Number.isFinite(sat)) continue;
+    const gpa = Number.isFinite(r.gpa) ? r.gpa : 3.5; // center if absent (rare)
+    const satZ = (sat - r.msat) / SAT_SIGMA;
+    const gpaCentered = (gpa - 3.5) / 0.4;
+    const la = logit(clamp(r.ar, 0.01, 0.99));
+    X.push(features(satZ, gpaCentered, la));
+    y.push(r.outcome === 'accepted' ? 1 : 0);
+  }
+  return { X, y };
 }
 
 // Feature vector the MODEL sees (also used at inference): standardized later.
@@ -142,10 +187,89 @@ function calibration(probs, y, bins = 10) {
   return out;
 }
 
+// Precision / recall / F1 at a probability threshold (default 0.5).
+function precisionRecall(probs, y, threshold = 0.5) {
+  let tp = 0; let fp = 0; let fn = 0; let tn = 0;
+  for (let i = 0; i < probs.length; i += 1) {
+    const pred = probs[i] >= threshold ? 1 : 0;
+    if (pred === 1 && y[i] === 1) tp += 1;
+    else if (pred === 1 && y[i] === 0) fp += 1;
+    else if (pred === 0 && y[i] === 1) fn += 1;
+    else tn += 1;
+  }
+  const precision = tp + fp === 0 ? null : tp / (tp + fp);
+  const recall = tp + fn === 0 ? null : tp / (tp + fn);
+  const f1 = precision && recall ? (2 * precision * recall) / (precision + recall) : null;
+  const r = (v) => (v == null ? null : +v.toFixed(4));
+  return { threshold, tp, fp, fn, tn, precision: r(precision), recall: r(recall), f1: r(f1) };
+}
+
+// Standardized-weight feature importance: |w_j| normalized to sum 1. Because
+// inputs are standardized, |w| is directly comparable across features.
+function featureImportance(weights, names) {
+  const abs = weights.map((w) => Math.abs(w));
+  const sum = abs.reduce((s, v) => s + v, 0) || 1;
+  return names
+    .map((name, j) => ({ feature: name, weight: +weights[j].toFixed(4), importance: +(abs[j] / sum).toFixed(4) }))
+    .sort((a, b) => b.importance - a.importance);
+}
+
+function gitSha() {
+  try {
+    return require('child_process').execSync('git rev-parse --short HEAD', { cwd: __dirname }).toString().trim();
+  } catch { return null; }
+}
+
+// Append-only version history so every retrain is auditable.
+function appendVersionLog(entry) {
+  const p = path.join(__dirname, 'model_versions.jsonl');
+  let nextVersion = 1;
+  try {
+    const lines = fs.readFileSync(p, 'utf8').trim().split('\n').filter(Boolean);
+    if (lines.length) nextVersion = (JSON.parse(lines[lines.length - 1]).version || lines.length) + 1;
+  } catch { /* first version */ }
+  const row = { version: nextVersion, ...entry };
+  fs.appendFileSync(p, `${JSON.stringify(row)}\n`);
+  return nextVersion;
+}
+
 async function run() {
   const colleges = await fetchCollegeStats();
   if (colleges.length < 50) throw new Error(`Too few colleges with real stats (${colleges.length}) to train.`);
-  const { X, y } = buildDataset(colleges);
+
+  // Prefer REAL labeled outcomes once enough exist (both classes present);
+  // otherwise fall back to the stats-grounded simulation (the honest default).
+  const realRows = await fetchRealLabeledData();
+  const real = buildRealDataset(realRows);
+  const realPos = real.y.reduce((s, v) => s + v, 0);
+  const useReal = real.y.length >= MIN_REAL && realPos > 0 && realPos < real.y.length;
+
+  let X; let y; let datasetMeta;
+  if (useReal) {
+    ({ X, y } = real);
+    datasetMeta = {
+      source: 'REAL ml_training_data (user-submitted admission outcomes)',
+      synthetic: false,
+      real_rows_available: realRows.length,
+      real_rows_usable: real.y.length,
+      positive_rate: +(realPos / real.y.length).toFixed(4),
+    };
+    console.log(`Training on ${real.y.length} REAL labeled outcomes.`);
+  } else {
+    ({ X, y } = buildDataset(colleges));
+    datasetMeta = {
+      source: 'SIMULATED from real college_admissions_stats (acceptance_rate + median_sat)',
+      synthetic: true,
+      colleges_used: colleges.length,
+      applicants_per_college: PER_COLLEGE,
+      total_cases: X.length,
+      positive_rate: +(y.reduce((s, v) => s + v, 0) / y.length).toFixed(4),
+      gpa_note: 'median_gpa_admitted is unavailable in the data; GPA simulated from a generic SAT-correlated population prior.',
+      real_rows_available: realRows.length,
+      real_rows_needed: MIN_REAL,
+    };
+    console.log(`Only ${real.y.length} usable real rows (<${MIN_REAL}); training on simulation.`);
+  }
 
   // 80/20 split
   const idx = X.map((_, i) => i).sort(() => Math.random() - 0.5);
@@ -161,37 +285,65 @@ async function run() {
   const model = trainLogistic(Ztr, ytr, EPOCHS);
   const pTe = predictProba(model, Zte);
 
+  const featureNames = ['sat_z', 'gpa_centered', 'logit_acceptance_rate'];
+  const importance = featureImportance(model.w, featureNames);
+  const pr = precisionRecall(pTe, yte, 0.5);
+  const trainedAt = new Date().toISOString();
+  const sha = gitSha();
+
   const metrics = {
     model: 'logistic_regression',
-    feature_names: ['sat_z', 'gpa_centered', 'logit_acceptance_rate'],
-    dataset: {
-      source: 'SIMULATED from real college_admissions_stats (acceptance_rate + median_sat)',
-      colleges_used: colleges.length,
-      applicants_per_college: PER_COLLEGE,
-      total_cases: X.length,
-      positive_rate: +(y.reduce((s, v) => s + v, 0) / y.length).toFixed(4),
-      gpa_note: 'median_gpa_admitted is unavailable in the data; GPA simulated from a generic SAT-correlated population prior.',
-    },
+    feature_names: featureNames,
+    dataset: datasetMeta,
     holdout: {
       n: yte.length,
       roc_auc: +(rocAuc(pTe, yte) ?? 0).toFixed(4),
       brier: +brier(pTe, yte).toFixed(4),
+      precision: pr.precision,
+      recall: pr.recall,
+      f1: pr.f1,
+      confusion_at_0_5: { tp: pr.tp, fp: pr.fp, fn: pr.fn, tn: pr.tn },
       calibration: calibration(pTe, yte),
     },
-    caveat: 'SYNTHETIC-HOLDOUT metrics — measure recovery of the stats-grounded simulation, NOT real predictive accuracy against actual admissions. Re-train on prediction_logs.actual_outcome when real labels exist.',
-    trained_at: new Date().toISOString(),
+    feature_importance: importance,
+    caveat: datasetMeta.synthetic
+      ? 'SYNTHETIC-HOLDOUT metrics — measure recovery of the stats-grounded simulation, NOT real predictive accuracy against actual admissions. Trainer auto-switches to REAL labels once ml_training_data has >= MIN_REAL accepted/rejected rows.'
+      : 'REAL-HOLDOUT metrics — measured on a held-out split of user-submitted admission outcomes. Still limited by sample size and self-report bias; treat as an estimate.',
+    git_sha: sha,
+    trained_at: trainedAt,
   };
 
-  const artifact = { ...model, mean, std, feature_names: metrics.feature_names, sat_sigma: SAT_SIGMA, version: 1, trained_at: metrics.trained_at };
+  const version = appendVersionLog({
+    trained_at: trainedAt,
+    git_sha: sha,
+    synthetic: datasetMeta.synthetic,
+    n_train: ytr.length,
+    n_holdout: yte.length,
+    roc_auc: metrics.holdout.roc_auc,
+    brier: metrics.holdout.brier,
+    precision: pr.precision,
+    recall: pr.recall,
+    f1: pr.f1,
+  });
+  metrics.version = version;
+
+  const artifact = { ...model, mean, std, feature_names: featureNames, sat_sigma: SAT_SIGMA, version, synthetic: datasetMeta.synthetic, git_sha: sha, trained_at: trainedAt };
   fs.mkdirSync(__dirname, { recursive: true });
   fs.writeFileSync(path.join(__dirname, 'chancing_model.json'), JSON.stringify(artifact, null, 2));
   fs.writeFileSync(path.join(__dirname, 'model_metrics.json'), JSON.stringify(metrics, null, 2));
+  fs.writeFileSync(path.join(__dirname, 'feature_importance.json'), JSON.stringify({ version, trained_at: trainedAt, feature_importance: importance }, null, 2));
 
-  console.log('Trained on', X.length, 'simulated cases from', colleges.length, 'real colleges.');
-  console.log('Holdout: ROC-AUC=%s Brier=%s', metrics.holdout.roc_auc, metrics.holdout.brier);
-  console.log('Weights (standardized):', JSON.stringify(model.w.map((v) => +v.toFixed(3))), 'bias=', +model.b.toFixed(3));
+  console.log(`Trained ${datasetMeta.synthetic ? 'SIMULATED' : 'REAL'} model v${version} on ${X.length} cases.`);
+  console.log('Holdout: ROC-AUC=%s Brier=%s Precision=%s Recall=%s F1=%s', metrics.holdout.roc_auc, metrics.holdout.brier, pr.precision, pr.recall, pr.f1);
+  console.log('Feature importance:', JSON.stringify(importance));
   await dbManager.close();
   process.exit(0);
 }
 
-run().catch(async (e) => { console.error('train failed:', e.message); try { await dbManager.close(); } catch (_) {} process.exit(1); });
+// Pure helpers exported for unit testing (no DB/network). The trainer only runs
+// when invoked directly, so requiring this module for tests does not train.
+module.exports = { precisionRecall, featureImportance, buildRealDataset, ACT_TO_SAT };
+
+if (require.main === module) {
+  run().catch(async (e) => { console.error('train failed:', e.message); try { await dbManager.close(); } catch (_) {} process.exit(1); });
+}

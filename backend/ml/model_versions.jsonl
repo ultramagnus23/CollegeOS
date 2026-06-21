@@ -1,0 +1,1 @@
+{"version":1,"trained_at":"2026-06-21T17:49:58.184Z","git_sha":"ee2d318","synthetic":true,"n_train":38160,"n_holdout":9540,"roc_auc":0.8553,"brier":0.1538,"precision":0.7551,"recall":0.7203,"f1":0.7373}

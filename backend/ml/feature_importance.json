@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "trained_at": "2026-06-21T17:49:58.184Z",
+  "feature_importance": [
+    {
+      "feature": "logit_acceptance_rate",
+      "weight": 1.1834,
+      "importance": 0.403
+    },
+    {
+      "feature": "sat_z",
+      "weight": 1.069,
+      "importance": 0.364
+    },
+    {
+      "feature": "gpa_centered",
+      "weight": 0.6842,
+      "importance": 0.233
+    }
+  ]
+}

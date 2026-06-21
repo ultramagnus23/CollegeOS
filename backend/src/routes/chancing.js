@@ -1193,65 +1193,85 @@ router.post('/outcome', authenticate, async (req, res, next) => {
     }
     
     const pool = dbManager.getDatabase();
-    
+
+    // Capture the real labeled outcome. This is the ONLY source of real training
+    // labels in the system, so the write must actually match the live schema and
+    // must be transactional — previously this INSERT targeted nonexistent columns
+    // (student_id/sat_total/decision/…) and silently 500'd, which is why
+    // ml_training_data / prediction_logs stayed empty. Real columns:
+    //   ml_training_data(user_id, college_id, outcome, gpa, sat_score, act_score,
+    //                    features jsonb, source, source_year, confidence_score,
+    //                    is_verified, major_applied, education_system, board_percentage)
     const activities = profile.activities || [];
-    const tier1Count = activities.filter(a => a.tier_rating === 1).length;
-    const tier2Count = activities.filter(a => a.tier_rating === 2).length;
-    const tier3Count = activities.filter(a => a.tier_rating === 3 || a.tier_rating === 4).length;
-    
-    const outcomeResult = await pool.query(
-      `INSERT INTO ml_training_data (
-        student_id, college_id, gpa, sat_total, act_composite,
-        class_rank_percentile, num_ap_courses, activity_tier_1_count,
-        activity_tier_2_count, activity_tier_3_count, is_first_gen, is_legacy,
-        state, college_acceptance_rate, decision, application_year,
-        source, is_verified, confidence_score, major_applied
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
-      RETURNING id`,
-      [
-        userId,
-        collegeId,
-        profile.gpa_unweighted || profile.gpa_weighted || null,
-        profile.sat_total || null,
-        profile.act_composite || null,
-        profile.class_rank_percentile || null,
-        profile.num_ap_courses || 0,
-        tier1Count,
-        tier2Count,
-        tier3Count,
-        !!profile.is_first_generation,
-        !!profile.is_legacy,
-        profile.state_province || null,
-        college.acceptance_rate || null,
-        decision,
-        applicationYear || new Date().getFullYear(),
-        'user_verified',
-        true,
-        0.95,
-        major || null
-      ]
-    );
-    
-    const trainingDataId = outcomeResult.rows[0].id;
-    
-    // Write to prediction_logs for Brier Score tracking
+    const client = await pool.connect();
+    let trainingDataId = null;
     try {
+      await client.query('BEGIN');
+
+      const gpa = profile.gpa_unweighted || profile.gpa_weighted || null;
+      const satScore = profile.sat_total || null;
+      const actScore = profile.act_composite || null;
+      const appYear = applicationYear || new Date().getFullYear();
+      const featuresJson = {
+        gpa,
+        sat: satScore,
+        act: actScore,
+        class_rank_percentile: profile.class_rank_percentile ?? null,
+        num_ap_courses: profile.num_ap_courses ?? null,
+        activities_count: activities.length,
+        tier1: activities.filter(a => a.tier_rating === 1).length,
+        college_acceptance_rate: college.acceptance_rate ?? null,
+        decision,
+        major: major || profile.intended_major || null,
+        application_year: appYear,
+      };
+
+      // Idempotent per (user, college) self-report: replace any prior submission so
+      // re-submitting a corrected outcome updates rather than duplicates (no unique
+      // constraint exists on this table, so we delete-then-insert inside the txn).
+      await client.query(
+        `DELETE FROM ml_training_data WHERE user_id = $1 AND college_id = $2 AND source = 'user_verified'`,
+        [userId, collegeId]
+      );
+      const outcomeResult = await client.query(
+        `INSERT INTO ml_training_data (
+          user_id, college_id, outcome, gpa, sat_score, act_score, features,
+          source, source_year, confidence_score, is_verified, major_applied,
+          education_system, board_percentage
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        RETURNING id`,
+        [
+          userId, collegeId, decision, gpa, satScore, actScore,
+          JSON.stringify(featuresJson), 'user_verified', appYear, 0.95, 1,
+          major || profile.intended_major || null,
+          profile.education_system || null,
+          profile.board_12th_percentage ?? profile.board_exam_percentage ?? null,
+        ]
+      );
+      trainingDataId = outcomeResult.rows[0].id;
+
+      // Label store for the trainer + Brier tracking. The partial unique index
+      // idx_prediction_logs_user_college is WHERE college_id IS NOT NULL, so the
+      // ON CONFLICT predicate must repeat that for PG to infer the index.
       const chancing = await consolidatedChancingService.calculateChance(profile, college);
       const actualOutcome = decision === 'accepted' ? 1 : 0;
-      await pool.query(
-        // The matching unique index (idx_prediction_logs_user_college) is PARTIAL
-        // (WHERE college_id IS NOT NULL); ON CONFLICT must repeat that predicate to
-        // infer it, otherwise PG throws "no unique or exclusion constraint matching".
+      await client.query(
         `INSERT INTO prediction_logs (user_id, college_id, predicted_probability, actual_outcome, engine)
          VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (user_id, college_id) WHERE college_id IS NOT NULL DO UPDATE SET
            predicted_probability = EXCLUDED.predicted_probability,
            actual_outcome = EXCLUDED.actual_outcome,
            updated_at = NOW()`,
-        [userId, collegeId, chancing.probability ?? null, actualOutcome, 'deterministic-sigmoid']
+        [userId, collegeId, chancing.probability ?? null, actualOutcome, chancing.probability_source || 'consolidated']
       );
-    } catch (brierErr) {
-      logger.debug('Prediction log insert failed (non-critical):', brierErr.message);
+
+      await client.query('COMMIT');
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      logger.error('Outcome capture transaction failed:', txErr.message);
+      return next(txErr);
+    } finally {
+      client.release();
     }
 
     // Track contribution for gamification

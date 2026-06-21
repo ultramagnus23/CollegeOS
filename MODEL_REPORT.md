@@ -32,14 +32,30 @@ prediction.
 
 ## Metrics (synthetic holdout — see honesty statement)
 
-- **Dataset:** 47,700 simulated cases from 795 real colleges; positive (admit) rate 44.6%.
-- **ROC-AUC:** **0.873** (discrimination on the simulated holdout).
-- **Brier score:** **0.144**.
-- **Calibration:** well-aligned — e.g. predicted 0.05 → observed 0.044; 0.25 → 0.255; 0.35 →
-  0.346 (full bins in `model_metrics.json`).
-- **Recovered weights (standardized):** sat_z 1.14, gpa 0.71, logit_acceptance_rate 1.26 — i.e.
-  the model correctly learned that both academic strength relative to the band and the school's
-  base selectivity drive the probability.
+- **Dataset:** ~47,700 simulated cases from 795 real colleges; positive (admit) rate ~44.6%.
+- **ROC-AUC:** ~**0.86** (discrimination on the simulated holdout).
+- **Brier score:** ~**0.15**.
+- **Precision / Recall / F1 @0.5:** ~**0.76 / 0.72 / 0.74** (confusion matrix in `model_metrics.json`).
+- **Calibration:** well-aligned across deciles (full bins in `model_metrics.json`).
+- **Feature importance** (standardized |w|, in `feature_importance.json`): logit_acceptance_rate
+  ~0.40, sat_z ~0.36, gpa_centered ~0.23 — the model learned that base selectivity and academic
+  strength relative to the band both drive the probability.
+
+(Exact numbers vary slightly per run because the simulation is stochastic; the trained
+`model_metrics.json` is the source of truth.)
+
+## Real-label path + versioning (closes the loop)
+
+- The trainer **auto-switches to REAL labels** once `ml_training_data` holds ≥ `MIN_REAL`
+  (default 200) `accepted`/`rejected` rows with both classes present — no code change needed.
+  Until then it trains on the simulation and says so (`dataset.synthetic: true`).
+- Real labels are captured by `POST /api/chancing/outcome`, which writes the **actual**
+  `ml_training_data` schema + upserts `prediction_logs` transactionally. (This endpoint
+  previously targeted nonexistent columns and silently failed — fixed, so labels can finally
+  accumulate.)
+- Every retrain appends an auditable row to `ml/model_versions.jsonl` (version, git sha,
+  synthetic flag, n, ROC-AUC, Brier, P/R/F1) and bumps the artifact `version`.
+- Run `node scripts/dataReadinessReport.js` for live coverage (including real-label count).
 
 ## How it's wired (hybrid, with fallback)
 
