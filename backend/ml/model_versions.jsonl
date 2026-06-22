@@ -1,1 +1,2 @@
 {"version":1,"trained_at":"2026-06-21T17:49:58.184Z","git_sha":"ee2d318","synthetic":true,"n_train":38160,"n_holdout":9540,"roc_auc":0.8553,"brier":0.1538,"precision":0.7551,"recall":0.7203,"f1":0.7373}
+{"version":2,"trained_at":"2026-06-22T13:21:36.710Z","git_sha":"2f5a27b","synthetic":true,"n_train":48960,"n_holdout":12240,"roc_auc":0.8608,"brier":0.1512,"precision":0.7702,"recall":0.7313,"f1":0.7503}

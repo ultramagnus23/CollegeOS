@@ -58,11 +58,16 @@ const ACT_TO_SAT = {
 
 async function fetchCollegeStats() {
   const pool = dbManager.getDatabase();
+  // Read from the CANONICAL source (mv_college_cards), which is what the live
+  // Scorecard refresh (refreshScorecard.js) actually populates. The trainer
+  // previously read the legacy `college_admissions_stats` table, which Scorecard
+  // does NOT update — so the simulation base was stuck (~795 colleges) no matter
+  // how much data we refreshed. Canonical grows with every Scorecard run.
   const { rows } = await pool.query(
-    `SELECT acceptance_rate::float AS ar, median_sat::float AS msat
-       FROM college_admissions_stats
-      WHERE acceptance_rate IS NOT NULL AND median_sat IS NOT NULL
-        AND acceptance_rate > 0 AND acceptance_rate < 1 AND median_sat BETWEEN 600 AND 1600`,
+    `SELECT acceptance_rate::float AS ar, sat_50::float AS msat
+       FROM canonical.mv_college_cards
+      WHERE acceptance_rate IS NOT NULL AND sat_50 IS NOT NULL
+        AND acceptance_rate > 0 AND acceptance_rate < 1 AND sat_50 BETWEEN 600 AND 1600`,
   );
   return rows;
 }
