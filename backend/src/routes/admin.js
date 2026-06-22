@@ -19,6 +19,10 @@ const logger = require('../utils/logger');
 const { authenticate, adminOnly } = require('../middleware/auth');
 const { getScraperHealthSnapshot } = require('../services/scraperHealthService');
 
+// Apply authentication and admin check to ALL routes in this file
+router.use(authenticate);
+router.use(adminOnly);
+
 // 60-second in-memory cache
 let _cachedResult = null;
 let _cacheExpiresAt = 0;
@@ -338,7 +342,7 @@ async function buildScraperHealthPayload() {
  * GET /api/admin/health
  * Requires authentication and admin role.
  */
-router.get('/health', authenticate, adminOnly, async (req, res) => {
+router.get('/health', async (req, res) => {
   const now = Date.now();
   if (_cachedResult && now < _cacheExpiresAt) {
     return res.json(_cachedResult);
@@ -359,7 +363,7 @@ router.get('/health', authenticate, adminOnly, async (req, res) => {
  * GET /api/admin/scraper-health
  * Requires authentication and admin role.
  */
-router.get('/scraper-health', authenticate, adminOnly, async (req, res) => {
+router.get('/scraper-health', async (req, res) => {
   const now = Date.now();
   if (_cachedScraperHealth && now < _scraperHealthCacheExpiresAt) {
     return res.json(_cachedScraperHealth);
