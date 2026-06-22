@@ -4,9 +4,11 @@ _Verified against codebase + live DB on 2026-06-22._
 
 ## Which model is actually used
 
-One chancing path, no legacy duplicates in use:
+> **Correction (2026-06-22):** there are in fact **three** chancing endpoints, not one — see `ML_EVALUATION.md` and `DEAD_CODE_REPORT.md`. `/api/chancing` + `/api/chance` both wrap the JS model below (the live engine); `/api/chances` is a **separate HuggingFace path used in onboarding that is NOT running** (`HF_SPACE_URL` unset → DB fallback). The JS model described here is the only real chancing logic running.
 
-- **Service:** `backend/src/services/consolidatedChancingService.js` (model-first, heuristic fallback). Legacy Flask/FastAPI chancing services were already removed; `cdsChancingService` removed.
+The live engine:
+
+- **Service:** `backend/src/services/consolidatedChancingService.js` (model-first, heuristic fallback). Legacy Flask/FastAPI chancing services were already removed; `cdsChancingService` removed. (Dead legacy `chancingService.js` still exists in the tree — see `DEAD_CODE_REPORT.md`.)
 - **Inference:** `backend/src/services/ml/chancingModel.js` loads the artifact `backend/ml/chancing_model.json`.
 - **Trainer:** `backend/ml/trainChancingModel.js` (dependency-free logistic regression via gradient descent).
 - **Route:** `backend/src/routes/chancing.js` (`/calculate`, `/batch`, `/outcome`, `/brier-score`, …).
