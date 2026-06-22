@@ -32,12 +32,21 @@ const arg = (name, def) => {
 
 const CURRENT_YEAR = new Date().getFullYear();
 
+const NAMED_ENTITIES = { amp: '&', rsquo: "'", lsquo: "'", apos: "'", quot: '"', nbsp: ' ', lt: '<', gt: '>' };
 function decode(s) {
+  // Single-pass entity decode: every &entity; is replaced exactly once and the
+  // output is NOT re-scanned, so a decoded '&' cannot start a second decode (no
+  // double-unescaping). Handles &#NN;, &#xNN;, and named entities.
   return String(s || '')
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => { try { return String.fromCodePoint(parseInt(h, 16)); } catch { return ' '; } })
-    .replace(/&#(\d+);/g, (_, d) => { try { return String.fromCodePoint(parseInt(d, 10)); } catch { return ' '; } })
-    .replace(/&amp;/gi, '&').replace(/&rsquo;|&lsquo;/gi, "'")
-    .replace(/&quot;/gi, '"').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim();
+    .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => {
+      if (e[0] === '#') {
+        const cp = (e[1] === 'x' || e[1] === 'X') ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+        try { return String.fromCodePoint(cp); } catch { return ' '; }
+      }
+      const k = e.toLowerCase();
+      return Object.prototype.hasOwnProperty.call(NAMED_ENTITIES, k) ? NAMED_ENTITIES[k] : ' ';
+    })
+    .replace(/\s+/g, ' ').trim();
 }
 
 // Pure extractor (unit-tested). Returns only confidently-found fields.
