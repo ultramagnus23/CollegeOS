@@ -3,6 +3,18 @@
 
 const dbManager = require('../config/database');
 
+// Map any country representation (display name, ISO-2, common alias) to the token
+// the generator branches on ('US' | 'UK' | 'Canada' | 'India' | original).
+function normalizeCountry(raw) {
+  const s = String(raw || '').trim().toLowerCase();
+  if (!s) return raw;
+  if (/^(us|usa|u\.s\.?a?\.?)$|united states|america/.test(s)) return 'US';
+  if (/^(uk|gb|gbr)$|united kingdom|britain|england|scotland|wales/.test(s)) return 'UK';
+  if (/^(ca|can)$|canada/.test(s)) return 'Canada';
+  if (/^(in|ind)$|india/.test(s)) return 'India';
+  return raw;
+}
+
 /**
  * Generate timeline actions for a user based on their applications
  * Called when user adds colleges or at the start of each month
@@ -350,6 +362,11 @@ async function getUserApplications(userId) {
     `, [userId])).rows;
   return rows.map(row => ({
     ...row,
+    // Normalize country so the generator's country branches ('US','UK',…) match.
+    // colleges_full.country stores display names like "United States" / "United
+    // Kingdom", but getActionsForCountryMonth() branches on 'US'/'UK'/'Canada'/
+    // 'India'. Without this, only generic actions were ever generated.
+    country: normalizeCountry(row.country),
     deadline_templates: {
       early_action: row.ea_deadline || null,
       early_decision: row.ed_deadline || null,
@@ -416,5 +433,6 @@ async function getMonthlyActions(userId, month, year) {
 
 module.exports = {
   generateTimelineActions,
-  getMonthlyActions
+  getMonthlyActions,
+  normalizeCountry,
 };
