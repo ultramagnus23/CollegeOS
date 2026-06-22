@@ -662,9 +662,6 @@ async function seedIfEmpty() {
     }
 
     console.log(`Scholarships seeded — Inserted: ${inserted}, Skipped: ${skipped}`);
-  } catch (err) {
-    throw err;
-  }
 }
 
 module.exports = { seedIfEmpty };

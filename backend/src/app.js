@@ -226,7 +226,7 @@ function gracefulShutdown(signal) {
   try { require('./jobs/mlRetraining').stop(); } catch (e) { logger.warn('Failed to stop mlRetraining job', { error: e?.message }); }
   try { require('./jobs/dataRefresh').stop(); } catch (e) { logger.warn('Failed to stop dataRefresh job', { error: e?.message }); }
   try { require('./jobs/scraperScheduler').stop(); } catch (e) { logger.warn('Failed to stop scraperScheduler job', { error: e?.message }); }
-  try { require('../../jobs/orchestrator').stop(); } catch (e) { logger.warn('Failed to stop orchestrator job', { error: e?.message }); }
+  try { require('../jobs/orchestrator').stop(); } catch (e) { logger.warn('Failed to stop orchestrator job', { error: e?.message }); }
   if (deadlineSchedulerInstance) {
     try { deadlineSchedulerInstance.stop(); } catch (e) { logger.warn('Failed to stop deadline scheduler', { error: e?.message }); }
   }
@@ -270,7 +270,7 @@ async function startServer() {
 
     // Seed colleges if the table is empty
     try {
-      const { seedIfEmpty } = require('../../scripts/seedColleges');
+      const { seedIfEmpty } = require('../scripts/seedColleges');
       await seedIfEmpty();
     } catch (seedErr) {
       logger.warn('College seeding skipped or failed:', { error: seedErr.message });
@@ -278,7 +278,7 @@ async function startServer() {
 
     // Seed scholarships if the table is empty
     try {
-      const { seedIfEmpty: seedScholarshipsIfEmpty } = require('../../scripts/seedScholarships');
+      const { seedIfEmpty: seedScholarshipsIfEmpty } = require('../scripts/seedScholarships');
       await seedScholarshipsIfEmpty();
     } catch (scholarshipSeedErr) {
       logger.warn('Scholarship seeding skipped or failed:', { error: scholarshipSeedErr.message });
@@ -361,7 +361,7 @@ async function startServer() {
 
         // Start Node orchestrator (additional Python scrapers + ML retrain)
         try {
-          const orchestrator = require('../../jobs/orchestrator');
+          const orchestrator = require('../jobs/orchestrator');
           orchestrator.start();
           logger.info('Orchestrator started');
         } catch (error) {
