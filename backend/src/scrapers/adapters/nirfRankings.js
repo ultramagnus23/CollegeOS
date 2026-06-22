@@ -21,10 +21,20 @@ const SOURCES = [
   { category: 'Overall', url: `https://www.nirfindia.org/Rankings/${YEAR}/OverallRanking.html` },
 ];
 
+const NAMED_ENTITIES = { amp: '&', rsquo: "'", lsquo: "'", apos: "'", quot: '"', nbsp: ' ', lt: '<', gt: '>' };
 function strip(s) {
+  // Single-pass entity decode (no double-unescaping): each &entity; replaced once,
+  // output not re-scanned, so a decoded '&' can't start a second decode.
   return String(s || '')
     .replace(/<[^>]+>/g, ' ')
-    .replace(/&amp;/gi, '&').replace(/&#0?39;|&rsquo;/gi, "'").replace(/&nbsp;/gi, ' ')
+    .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => {
+      if (e[0] === '#') {
+        const cp = (e[1] === 'x' || e[1] === 'X') ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+        try { return String.fromCodePoint(cp); } catch { return ' '; }
+      }
+      const k = e.toLowerCase();
+      return Object.prototype.hasOwnProperty.call(NAMED_ENTITIES, k) ? NAMED_ENTITIES[k] : ' ';
+    })
     .replace(/\s+/g, ' ').trim();
 }
 
