@@ -61,6 +61,16 @@ function extractFromHtml(html) {
     const y = parseInt(ym[1], 10);
     if (y >= 1000 && y <= CURRENT_YEAR) out.established_year = y;
   }
+
+  // acceptance rate — only when a page explicitly states it (rare; conservative).
+  // Stored as a 0-1 fraction. Tuition/fees are intentionally NOT extracted: too
+  // noisy (currency/unit/per-year ambiguity) -> high false-positive risk.
+  const RW = '(?:acceptance|admit(?:ted)?|admission)\\s+rate';
+  const am = new RegExp(`${RW}[^.%<>]{0,18}?([0-9]{1,2}(?:\\.[0-9])?)\\s*%|([0-9]{1,2}(?:\\.[0-9])?)\\s*%[^.<>]{0,18}?${RW}`, 'i').exec(h);
+  if (am) {
+    const r = parseFloat(am[1] || am[2]);
+    if (r > 0 && r <= 100) out.acceptance_rate = +(r / 100).toFixed(4);
+  }
   return out;
 }
 
@@ -101,8 +111,26 @@ async function main() {
     if (!res.ok) { stats.fetch_failed += 1; console.log(`  ✗ ${inst.canonical_name} (${inst.country_code}) — ${res.reason}`); continue; }
     stats.fetched += 1;
     const ex = extractFromHtml(res.html);
-    if (!ex.description && !ex.established_year) { stats.no_data += 1; console.log(`  – ${inst.canonical_name} — no extractable data`); continue; }
+    if (!ex.description && !ex.established_year && ex.acceptance_rate == null) { stats.no_data += 1; console.log(`  – ${inst.canonical_name} — no extractable data`); continue; }
     if (dryRun) { stats.enriched += 1; console.log(`  ~ ${inst.canonical_name}: ${JSON.stringify(ex)}`); continue; }
+
+    // Acceptance rate -> canonical.institution_admissions (where the app reads it).
+    // COALESCE on conflict so a website figure never overwrites authoritative
+    // Scorecard data.
+    if (ex.acceptance_rate != null) {
+      try {
+        await pool.query( // eslint-disable-line no-await-in-loop
+          `INSERT INTO canonical.institution_admissions
+             (institution_id, data_year, admissions_cycle, acceptance_rate, exam_requirements, source_attribution, raw_payload, created_at, updated_at)
+           VALUES ($1, $2, '2025-2026', $3, '{}'::jsonb, $4::jsonb, '{}'::jsonb, now(), now())
+           ON CONFLICT (institution_id, data_year, admissions_cycle) DO UPDATE SET
+             acceptance_rate = COALESCE(canonical.institution_admissions.acceptance_rate, EXCLUDED.acceptance_rate),
+             updated_at = now()`,
+          [inst.id, CURRENT_YEAR, ex.acceptance_rate, JSON.stringify({ source: 'website', source_url: url, confidence: 0.5 })]
+        );
+        stats.acceptance_rates = (stats.acceptance_rates || 0) + 1;
+      } catch (e) { console.warn(`  ! ${inst.canonical_name} acceptance_rate write failed: ${e.message.slice(0, 50)}`); }
+    }
     const meta = JSON.stringify({ website_enrichment: { source_url: url, fetched_at: new Date().toISOString(), found: Object.keys(ex) } });
     await pool.query( // eslint-disable-line no-await-in-loop
       `UPDATE canonical.institutions SET

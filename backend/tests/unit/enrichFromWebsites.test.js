@@ -32,4 +32,14 @@ describe('enrichFromWebsites.extractFromHtml (pure)', () => {
     const h = '<meta name="description" content="Arts &amp; Sciences at a world-class campus.">';
     expect(extractFromHtml(h).description).toBe('Arts & Sciences at a world-class campus.');
   });
+
+  test('extracts acceptance rate as a 0-1 fraction when stated', () => {
+    expect(extractFromHtml('Our acceptance rate is 7%.').acceptance_rate).toBe(0.07);
+    expect(extractFromHtml('With a 4.5% admit rate, admission is selective.').acceptance_rate).toBe(0.045);
+    expect(extractFromHtml('A 32% acceptance rate.').acceptance_rate).toBe(0.32);
+  });
+
+  test('does not invent an acceptance rate from unrelated percentages', () => {
+    expect(extractFromHtml('95% of graduates are employed within 6 months.').acceptance_rate).toBeUndefined();
+  });
 });
