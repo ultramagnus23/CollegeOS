@@ -273,8 +273,8 @@ Last Updated: June 20, 2026
 
 ## 6. CONTACT INFORMATION
 
-   Email: [PRIVACY EMAIL]
-   Address: [PRIVACY ADDRESS]
+   Email: suhsuhbros@gmail.com
+   Email: suhsuhbros@gmail.com
 
 ---
 

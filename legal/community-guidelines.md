@@ -172,7 +172,7 @@ When uploading documents:
 
 You can report violations of these Guidelines by:
    (a) Using the reporting tool within the Service;
-   (b) Emailing [SUPPORT EMAIL] with subject "Community Guidelines Violation Report";
+   (b) Emailing suhsuhbros@gmail.com with subject "Community Guidelines Violation Report";
    (c) Contacting customer support and requesting to report a violation.
 
 ### 5.2 What to Include
@@ -220,7 +220,7 @@ The following violations result in immediate permanent termination:
 
 If your account is suspended or terminated:
    (a) You may appeal within 30 days of the action;
-   (b) Appeals must be submitted in writing to [SUPPORT EMAIL];
+   (b) Appeals must be submitted in writing to suhsuhbros@gmail.com;
    (c) Appeals will be reviewed by a member of the CollegeOS team who was not involved in the original decision;
    (d) Appeals will be responded to within 15 business days;
    (e) The appeal decision is final.
@@ -251,8 +251,8 @@ If your account is suspended or terminated:
 
 ## 9. CONTACT INFORMATION
 
-   Email: [SUPPORT EMAIL]
-   Address: [COMPANY ADDRESS]
+   Email: suhsuhbros@gmail.com
+   Email: suhsuhbros@gmail.com
 
 ---
 

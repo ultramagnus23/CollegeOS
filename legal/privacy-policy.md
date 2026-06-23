@@ -8,11 +8,11 @@ Last Updated: June 20, 2026
 
 1.2 This Policy should be read in conjunction with our Terms of Service. By using the Service, you consent to the practices described in this Policy.
 
-1.3 **Data Controller.** [REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW] The data controller for your personal information is:
-   Company Name: [COMPANY LEGAL NAME]
-   Address: [COMPANY REGISTERED ADDRESS]
-   Email: [PRIVACY CONTACT EMAIL]
-   [If applicable: Data Protection Officer: [DPO EMAIL]]
+1.3 **Data Controller.** The data controller for your personal information is:
+   Company Name: CollegeOS
+   Email: suhsuhbros@gmail.com
+   Email: suhsuhbros@gmail.com
+   [If applicable: Data Protection Officer: suhsuhbros@gmail.com]
 
 ## 2. INFORMATION WE COLLECT
 
@@ -190,7 +190,7 @@ We use your information for the following purposes:
    (e) Conduct business transfers (mergers, acquisitions);
    (f) Comply with regulatory requirements.
 
-## 4. LEGAL BASES FOR PROCESSING [REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW]
+## 4. LEGAL BASES FOR PROCESSING
 
 ### 4.1 For Users in the European Economic Area (GDPR)
 
@@ -317,15 +317,15 @@ Depending on your jurisdiction, you may have the following rights:
    (g) **Right to Withdraw Consent:** Withdraw consent at any time where processing is based on consent;
    (h) **Right to Complain:** Lodge a complaint with a supervisory authority.
 
-### 9.2 GDPR Rights [REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW]
+### 9.2 GDPR Rights
 
 If you are in the European Economic Area, you have the rights described in Section 9.1, plus:
    (a) Right to lodge a complaint with a data protection authority;
    (b) Right not to be subject to automated decision-making, including profiling, that produces legal or similarly significant effects.
 
-To exercise your GDPR rights, contact: [PRIVACY EMAIL]
+To exercise your GDPR rights, contact: suhsuhbros@gmail.com
 
-### 9.3 CCPA/CPRA Rights [REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW]
+### 9.3 CCPA/CPRA Rights
 
 If you are a California resident, you have the right to:
    (a) Know what personal information is collected, used, shared, or sold;
@@ -335,14 +335,14 @@ If you are a California resident, you have the right to:
    (e) Limit the use and disclosure of sensitive personal information;
    (f) Not be discriminated against for exercising your rights.
 
-To exercise your CCPA rights, contact: [PRIVACY EMAIL]
+To exercise your CCPA rights, contact: suhsuhbros@gmail.com
 
 ### 9.4 How to Exercise Your Rights
 
 To exercise any of your rights:
    (a) Submit a request via your account settings;
-   (b) Email us at: [PRIVACY EMAIL];
-   (c) Mail us at: [PRIVACY ADDRESS];
+   (b) Email us at: suhsuhbros@gmail.com;
+   (c) Mail us at: suhsuhbros@gmail.com;
    (d) We will respond within 30 days (or 45 days for complex requests under GDPR).
 
 We may require verification of your identity before processing your request.
@@ -351,14 +351,14 @@ We may require verification of your identity before processing your request.
 
 10.1 **Under 13 Prohibited.** The Service is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If we learn we have collected information from a child under 13, we will delete it promptly.
 
-10.2 **COPPA Compliance.** [REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW] If applicable, we comply with the Children's Online Privacy Protection Act (COPPA) by:
+10.2 **COPPA Compliance.** If applicable, we comply with the Children's Online Privacy Protection Act (COPPA) by:
    (a) Not collecting information from children under 13 without verifiable parental consent;
    (b) Providing parents with the right to review, delete, or refuse further collection of their child's information;
    (c) Maintaining the confidentiality and security of children's information.
 
 10.3 **Users Under 18.** For users aged 13-17, we apply additional protections as described in our Minor User Policy.
 
-10.4 **Parental Requests.** If you believe your child has provided information to us without proper consent, please contact us at: [PRIVACY EMAIL] or [MINOR SUPPORT EMAIL]. We will investigate and respond promptly.
+10.4 **Parental Requests.** If you believe your child has provided information to us without proper consent, please contact us at: suhsuhbros@gmail.com or suhsuhbros@gmail.com. We will investigate and respond promptly.
 
 ## 11. MINOR USER PROVISIONS
 
@@ -404,19 +404,19 @@ We may require verification of your identity before processing your request.
 
 ## 14. CONTACT INFORMATION
 
-[REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW]
+
 
 14.1 **General Privacy Inquiries.**
-   Email: [PRIVACY EMAIL]
-   Address: [PRIVACY ADDRESS]
+   Email: suhsuhbros@gmail.com
+   Email: suhsuhbros@gmail.com
 
 14.2 **Data Protection Officer.** [If applicable]
-   Email: [DPO EMAIL]
-   Address: [DPO ADDRESS]
+   Email: suhsuhbros@gmail.com
+   Email: suhsuhbros@gmail.com
 
 14.3 **Minor User Support.**
-   Email: [MINOR SUPPORT EMAIL]
-   Address: [MINOR SUPPORT ADDRESS]
+   Email: suhsuhbros@gmail.com
+   Email: suhsuhbros@gmail.com
 
 14.4 **Regulatory Contact.** [If applicable]
    Supervisory Authority: [AUTHORITY NAME AND CONTACT]

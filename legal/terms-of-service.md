@@ -295,7 +295,7 @@ Last Updated: June 20, 2026
 
 16.1 **Account Deletion.** You may request deletion of your account and associated data at any time by:
    (a) Using the account deletion feature in your account settings;
-   (b) Contacting us at [CONTACT EMAIL].
+   (b) Contacting us at suhsuhbros@gmail.com.
 
 16.2 **Deletion Process.** Upon receiving a deletion request, we will:
    (a) Confirm your identity;
@@ -312,17 +312,17 @@ Last Updated: June 20, 2026
 
 ## 17. GOVERNING LAW AND DISPUTE RESOLUTION
 
-[REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW]
+
 
 17.1 **Governing Law.** These Terms shall be governed by and construed in accordance with the laws of India, without regard to its conflict of law principles.
 
-17.2 **Arbitration.** [REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW] Any dispute, claim, or controversy arising out of or relating to these Terms or the Service shall be finally settled by binding arbitration administered by a sole arbitrator appointed under the Arbitration and Conciliation Act, 1996 (India) in accordance with its rules. The arbitration shall be conducted in English in India. Judgment on the award may be entered in any court having jurisdiction.
+17.2 **Arbitration.** Any dispute, claim, or controversy arising out of or relating to these Terms or the Service shall be finally settled by binding arbitration administered by a sole arbitrator appointed under the Arbitration and Conciliation Act, 1996 (India) in accordance with its rules. The arbitration shall be conducted in English in India. Judgment on the award may be entered in any court having jurisdiction.
 
 17.3 **Class Action Waiver.** TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, YOU AGREE THAT ANY DISPUTE RESOLUTION PROCEEDINGS WILL BE CONDUCTED ONLY ON AN INDIVIDUAL BASIS AND NOT IN A CLASS, CONSOLIDATED, OR REPRESENTATIVE ACTION.
 
 17.4 **Opt-Out.** You may opt out of the arbitration and class action waiver provisions by providing written notice to us within 30 days of accepting these Terms.
 
-17.5 **Alternative Dispute Resolution.** We encourage you to contact us first to resolve any disputes informally. You may contact us at [CONTACT EMAIL] or [CONTACT ADDRESS]. We will attempt in good faith to resolve any dispute within thirty (30) days of receiving written notice before either party initiates formal proceedings.
+17.5 **Alternative Dispute Resolution.** We encourage you to contact us first to resolve any disputes informally. You may contact us at suhsuhbros@gmail.com or suhsuhbros@gmail.com. We will attempt in good faith to resolve any dispute within thirty (30) days of receiving written notice before either party initiates formal proceedings.
 
 17.6 **Minor Users — Arbitration Carve-Out.** The arbitration and class-action-waiver provisions in Sections 17.2–17.3 do **not** apply to a claim brought by or on behalf of a User who is a minor where, under applicable law, a minor cannot be bound to such provisions absent a parent or guardian's binding consent. In such cases the dispute may proceed in the courts of competent jurisdiction in India. Nothing in this Section limits any non-waivable statutory right of a minor or their parent/guardian. *(This carve-out is provided in good faith and is pending jurisdiction-specific legal review.)*
 
@@ -341,19 +341,19 @@ Last Updated: June 20, 2026
 
 ## 19. CONTACT INFORMATION
 
-[REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW]
+
 
 19.1 **General Inquiries.** For general questions about these Terms, please contact us at:
-   Email: [CONTACT EMAIL]
-   Address: [COMPANY ADDRESS]
+   Email: suhsuhbros@gmail.com
+   Email: suhsuhbros@gmail.com
 
 19.2 **Privacy Inquiries.** For privacy-related questions or data subject requests, please contact our Data Protection Officer at:
-   Email: [PRIVACY EMAIL]
-   Address: [PRIVACY ADDRESS]
+   Email: suhsuhbros@gmail.com
+   Email: suhsuhbros@gmail.com
 
 19.3 **Minor User Support.** For questions regarding Minor Users, please contact:
-   Email: [MINOR SUPPORT EMAIL]
-   Address: [MINOR SUPPORT ADDRESS]
+   Email: suhsuhbros@gmail.com
+   Email: suhsuhbros@gmail.com
 
 ## 20. MISCELLANEOUS
 
