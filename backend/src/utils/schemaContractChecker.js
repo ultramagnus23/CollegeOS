@@ -47,7 +47,6 @@ const ORPHAN_JOIN_RELATIONS = [
 const FRONTEND_CONSUMER_PATHS = [
   'src/lib/collegeService.ts',
   'backend/src/routes/discovery.js',
-  'backend/src/routes/search.js',
   'backend/src/routes/colleges.js',
   'backend/src/services/recommendation/recommendationPipelineService.js',
 ];
