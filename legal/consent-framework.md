@@ -1,6 +1,6 @@
 # COLLEGEOS — CONSENT FRAMEWORK
 
-Last Updated: [DATE]
+Last Updated: 2026-06-23
 
 ## 1. OVERVIEW
 
@@ -227,7 +227,7 @@ Terms acceptance must be recorded with:
 Important Update to CollegeOS Terms
 
 We have updated our [Terms of Service / Privacy Policy / AI Disclaimer].
-The changes took effect on [DATE].
+The changes took effect on 2026-06-23.
 
 Key changes:
   - [Summary of material change 1]
@@ -241,7 +241,7 @@ If you continue to use CollegeOS after [DATE + 30 days],
 you agree to the updated [document].
 
 To opt out of arbitration (if applicable), please contact:
-[PRIVACY EMAIL]
+suhsuhbros@gmail.com
 ```
 
 ### 7.2 Re-Consent Checkbox (For Highly Material Changes)
@@ -391,11 +391,11 @@ Consent Management Dashboard
 
 View and manage your consents:
 
-  Terms of Service: Accepted on [DATE] - Version [X.X] [View]
-  Privacy Policy: Accepted on [DATE] - Version [X.X] [View]
-  Cookie Policy: Accepted on [DATE] - Version [X.X] [View]
-  AI Disclaimer: Accepted on [DATE] - Version [X.X] [View]
-  Minor User Policy: Accepted on [DATE] - Version [X.X] [View]
+  Terms of Service: Accepted on 2026-06-23 - Version [X.X] [View]
+  Privacy Policy: Accepted on 2026-06-23 - Version [X.X] [View]
+  Cookie Policy: Accepted on 2026-06-23 - Version [X.X] [View]
+  AI Disclaimer: Accepted on 2026-06-23 - Version [X.X] [View]
+  Minor User Policy: Accepted on 2026-06-23 - Version [X.X] [View]
 
   AI Processing Consent: [Active / Withdrawn] [Manage]
   Analytics Consent: [Active / Withdrawn] [Manage]

@@ -174,10 +174,10 @@ If you block or delete cookies:
 
 ## 8. CONTACT INFORMATION
 
-[REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW]
 
-   Email: [PRIVACY EMAIL]
-   Address: [PRIVACY ADDRESS]
+
+   Email: suhsuhbros@gmail.com
+   Email: suhsuhbros@gmail.com
 
 ---
 

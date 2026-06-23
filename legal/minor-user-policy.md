@@ -100,8 +100,8 @@ Last Updated: June 20, 2026
 
 6.1 **Right to Request Deletion.** Parents and Guardians may request deletion of their Minor User's account and data at any time by:
    (a) Using the account deletion feature (with Minor User's access);
-   (b) Contacting us at [MINOR SUPPORT EMAIL];
-   (c) Submitting a written request to [MINOR SUPPORT ADDRESS].
+   (b) Contacting us at suhsuhbros@gmail.com;
+   (c) Submitting a request by email to suhsuhbros@gmail.com.
 
 6.2 **Verification.** For parent deletion requests, we may require:
    (a) Verification of parent/guardian relationship;
@@ -115,8 +115,8 @@ Last Updated: June 20, 2026
 ## 7. PARENT ACCESS REQUESTS
 
 7.1 **Right to Access.** Parents and Guardians may request access to all information we collect about their Minor User by:
-   (a) Contacting us at [MINOR SUPPORT EMAIL];
-   (b) Submitting a written request to [MINOR SUPPORT ADDRESS].
+   (a) Contacting us at suhsuhbros@gmail.com;
+   (b) Submitting a request by email to suhsuhbros@gmail.com.
 
 7.2 **Response Timeline.** We will respond to access requests within 30 days.
 
@@ -153,9 +153,9 @@ Last Updated: June 20, 2026
 ## 9. REPORTING CONCERNS
 
 9.1 **How to Report.** Concerns about Minor User safety may be reported by:
-   (a) Parents/Guardians: [MINOR SUPPORT EMAIL];
+   (a) Parents/Guardians: suhsuhbros@gmail.com;
    (b) Users: Reporting tool within the Service;
-   (c) General inquiries: [SUPPORT EMAIL].
+   (c) General inquiries: suhsuhbros@gmail.com.
 
 9.2 **Response Process.** Upon receiving a concern:
    (a) We will acknowledge receipt within 24 hours;
@@ -194,10 +194,10 @@ Last Updated: June 20, 2026
 
 ## 12. CONTACT INFORMATION
 
-[REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW]
 
-   Email: [MINOR SUPPORT EMAIL]
-   Address: [MINOR SUPPORT ADDRESS]
+
+   Email: suhsuhbros@gmail.com
+   Email: suhsuhbros@gmail.com
    Phone: [MINOR SUPPORT PHONE, IF APPLICABLE]
 
 ---

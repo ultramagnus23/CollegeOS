@@ -30,8 +30,8 @@ In certain cases, we may anonymize your data rather than delete it, removing all
 
 You may request deletion of your account and data by:
    (a) Using the account deletion feature in your account settings at any time;
-   (b) Emailing us at [PRIVACY EMAIL] with the subject line "Account Deletion Request";
-   (c) Mailing a written request to [PRIVACY ADDRESS] with the subject "Account Deletion Request";
+   (b) Emailing us at suhsuhbros@gmail.com with the subject line "Account Deletion Request";
+   (c) Emailing suhsuhbros@gmail.com with the subject "Account Deletion Request";
    (d) Contacting customer support and requesting account deletion.
 
 ### 3.2 Verification Process
@@ -103,8 +103,8 @@ A Parent or Guardian may request deletion of their Minor User's account and data
 
 Parents and Guardians may request deletion by:
    (a) Using the account deletion feature (with Minor User's access);
-   (b) Emailing [MINOR SUPPORT EMAIL] with the subject "Minor User Deletion Request";
-   (c) Mailing a written request to [MINOR SUPPORT ADDRESS];
+   (b) Emailing suhsuhbros@gmail.com with the subject "Minor User Deletion Request";
+   (c) Emailing suhsuhbros@gmail.com;
    (d) Contacting customer support and identifying themselves as the Parent or Guardian.
 
 ### 4.3 Verification Process
@@ -245,7 +245,7 @@ Before deleting your account, you have the right to export your data:
 ### 8.2 How to Request Export
 
    (a) Use the data export feature in account settings;
-   (b) Email [PRIVACY EMAIL] with subject "Data Export Request";
+   (b) Email suhsuhbros@gmail.com with subject "Data Export Request";
    (c) We will prepare the export within 30 days;
    (d) Export will be delivered via secure download link.
 
@@ -261,19 +261,19 @@ After deletion, you may verify that your data has been deleted by:
 ### 9.2 Dispute Resolution
 
 If you believe your data was not properly deleted:
-   (a) Contact us at [PRIVACY EMAIL];
+   (a) Contact us at suhsuhbros@gmail.com;
    (b) Provide your deletion confirmation ID;
    (c) We will investigate within 15 business days;
    (d) We will take corrective action if deletion was incomplete.
 
 ## 10. CONTACT INFORMATION
 
-[REQUIRES JURISDICTION-SPECIFIC LEGAL REVIEW]
 
-   Email: [PRIVACY EMAIL]
-   Address: [PRIVACY ADDRESS]
-   Minor Support: [MINOR SUPPORT EMAIL]
-   Minor Support Address: [MINOR SUPPORT ADDRESS]
+
+   Email: suhsuhbros@gmail.com
+   Email: suhsuhbros@gmail.com
+   Minor Support: suhsuhbros@gmail.com
+   Minor Support Email: suhsuhbros@gmail.com
 
 ---
 
