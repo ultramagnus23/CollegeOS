@@ -1,0 +1,76 @@
+name: Canonical Data Refresh
+
+# Runs the CANONICAL scrapers (the ones that write canonical.* — the schema the app
+# reads) on a rolling daily schedule. Previously these were standalone scripts wired
+# to nothing, so they never ran automatically. Each step is bounded (--batch) so it
+# refreshes a chunk per day and covers the catalog over time; continue-on-error so
+# one source failing doesn't block the others.
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+  SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+  COLLEGE_SCORECARD_API_KEY: ${{ secrets.COLLEGE_SCORECARD_API_KEY }}
+
+on:
+  schedule:
+    - cron: '0 4 * * *'   # daily 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canonical-data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Canonical scrapers (rolling)
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install backend deps
+        run: npm ci || npm install
+
+      - name: Scorecard refresh (US stats)
+        continue-on-error: true
+        run: node scripts/refreshScorecard.js --batch=1000
+
+      - name: Website enrichment (non-US descriptions/founding)
+        continue-on-error: true
+        run: node scripts/enrichFromWebsites.js --batch=120
+
+      - name: Admissions rolling (deadlines + requirements)
+        continue-on-error: true
+        run: node scripts/runAdmissionsRolling.js --batch=60
+
+  rankings:
+    name: NIRF rankings (weekly)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule')
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install backend deps
+        run: npm ci || npm install
+      - name: NIRF ingestion
+        continue-on-error: true
+        run: node scripts/runNirfRankings.js
