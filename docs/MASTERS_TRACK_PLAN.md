@@ -1,8 +1,10 @@
 # Masters / Graduate Track — Finalized Implementation Plan
 
 > **Status (2026-06-24):** Phases 0–7 implemented in PR #153 (branch `feat/masters-track`).
-> Migration 120 is **applied and verified on production** (executed 04:09 UTC; `program_track`
-> = 220 users / 100% `undergraduate` / 0 NULL; all 6 tables + MV + 3 CHECK constraints present).
+> Migration 120 was found **already recorded on production** (migrations table executed_at
+> 04:09 UTC) and **verified read-only** — it was not applied by this work, and the applying
+> process is unknown. Verification: `program_track` = 220 users / 100% `undergraduate` / 0 NULL;
+> all 6 tables + MV + 3 CHECK constraints present.
 > Backend services verified against the live schema (all queries valid; empty until Phase 2 scrape
 > populates data). Chancing engine: 19/19 unit tests. Frontend: tsc + eslint clean, flag-gated.
 > Remaining to fully *operate*: run the per-program scraper to populate data, run the latency
