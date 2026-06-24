@@ -19,7 +19,7 @@ import { OnboardingProvider } from "./contexts/OnboardingContext";
 
 // Pages
 import AuthPage from "./pages/Auth";
-import OnboardingPage from "./pages/Onboarding";
+import OnboardingRouter from "./pages/OnboardingRouter";
 
 // Dashboard Pages
 import Dashboard from "./pages/Dashboard";
@@ -44,6 +44,9 @@ import Chancing from "./pages/Chancing";
 import SuggestionsPage from "./pages/Suggestions";
 import SuggestedColleges from "./pages/SuggestedColleges";
 import Rankings from "./pages/Rankings";
+import MastersDashboard from "./pages/MastersDashboard";
+import MastersOnboarding from "./pages/MastersOnboarding";
+import { isMastersTrackEnabled } from "./config/featureFlags";
 import AuthErrorBoundary from "./components/errors/AuthErrorBoundary";
 // FinancialAid import removed — page merged into Scholarships; /financial-aid redirects to /scholarships
 
@@ -171,7 +174,7 @@ const AppContent = () => {
             path="/onboarding"
             element={
               <ProtectedRoute requireOnboarding={false}>
-                <OnboardingPage onComplete={handleOnboardingComplete} />
+                <OnboardingRouter onComplete={handleOnboardingComplete} />
               </ProtectedRoute>
             }
           />
@@ -207,6 +210,13 @@ const AppContent = () => {
             <Route path="/college-recommendations" element={<CollegeRecommendations />} />
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/chancing" element={<Chancing />} />
+            {/* Masters/grad track — only mounted when the feature flag is on (ships dark). */}
+            {isMastersTrackEnabled() && (
+              <>
+                <Route path="/masters" element={<MastersDashboard />} />
+                <Route path="/masters/onboarding" element={<MastersOnboarding />} />
+              </>
+            )}
             <Route path="/suggested-colleges" element={<SuggestedColleges />} />
             <Route path="/timeline" element={<Timeline />} />
             <Route path="/notifications" element={<NotificationsPage />} />
