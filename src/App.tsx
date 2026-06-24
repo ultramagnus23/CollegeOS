@@ -19,7 +19,7 @@ import { OnboardingProvider } from "./contexts/OnboardingContext";
 
 // Pages
 import AuthPage from "./pages/Auth";
-import OnboardingPage from "./pages/Onboarding";
+import OnboardingRouter from "./pages/OnboardingRouter";
 
 // Dashboard Pages
 import Dashboard from "./pages/Dashboard";
@@ -174,7 +174,7 @@ const AppContent = () => {
             path="/onboarding"
             element={
               <ProtectedRoute requireOnboarding={false}>
-                <OnboardingPage onComplete={handleOnboardingComplete} />
+                <OnboardingRouter onComplete={handleOnboardingComplete} />
               </ProtectedRoute>
             }
           />
