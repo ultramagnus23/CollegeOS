@@ -1515,6 +1515,29 @@ class ApiService {
     topBusiness: (limit = 20) => this.request(`/discovery/top-business?limit=${limit}`),
     topEngineering: (limit = 20) => this.request(`/discovery/top-engineering?limit=${limit}`),
   };
+
+  // Masters/grad track — dark behind MASTERS_TRACK_ENABLED; all calls 404 when off.
+  masters = {
+    getTrack: () => this.request('/masters/track'),
+    setTrack: (data: { programTrack?: string; enrollmentStatus?: string; yearOfStudy?: number }) =>
+      this.request('/masters/track', { method: 'PUT', body: JSON.stringify(data) }),
+    getProfile: () => this.request('/masters/profile'),
+    saveProfile: (data: Record<string, unknown>) =>
+      this.request('/masters/profile', { method: 'POST', body: JSON.stringify(data) }),
+    listPrograms: (params: { country?: string; degreeType?: string; q?: string; limit?: number } = {}) => {
+      const qs = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v != null && v !== '').map(([k, v]) => [k, String(v)]),
+      ).toString();
+      return this.request(`/masters/programs${qs ? `?${qs}` : ''}`);
+    },
+    getProgram: (id: string) => this.request(`/masters/programs/${encodeURIComponent(id)}`),
+    discover: (data: { field?: string; countries?: string[]; degreeType?: string; budgetMax?: number; limit?: number }) =>
+      this.request('/masters/discover', { method: 'POST', body: JSON.stringify(data) }),
+    getChances: (programId: string) => this.request(`/masters/chances/${encodeURIComponent(programId)}`),
+    listApplications: () => this.request('/masters/applications'),
+    saveApplication: (data: { mastersProgramId: string; status?: string; intakeTerm?: string; intakeYear?: number; priority?: string; notes?: string }) =>
+      this.request('/masters/applications', { method: 'POST', body: JSON.stringify(data) }),
+  };
 }
 
 // Export singleton instance

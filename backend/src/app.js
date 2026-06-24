@@ -58,6 +58,7 @@ const signalsRoutes = require('./routes/signals');
 const chancesRoutes = require('./routes/chances');
 const discoveryRoutes = require('./routes/discovery');
 const indiaRoutes = require('./routes/india');
+const mastersRoutes = require('./routes/masters');
 
 // Create Express app
 const app = express();
@@ -205,6 +206,8 @@ app.use('/api/signals', signalsRoutes);
 app.use('/api/chances', chancesRoutes);
 app.use('/api/discovery', discoveryRoutes);
 app.use('/api/india', indiaRoutes);
+// Masters/grad track — dark behind MASTERS_TRACK_ENABLED (router self-gates with 404 when off).
+app.use('/api/masters', mastersRoutes);
 
 // 404 handler
 app.use((req, res) => {

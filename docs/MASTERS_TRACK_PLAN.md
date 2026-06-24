@@ -1,8 +1,15 @@
 # Masters / Graduate Track — Finalized Implementation Plan
 
-> **Status:** Plan for approval. No code written yet. Supersedes the scope of the original
-> "Masters/Grad Track Addition" brief by incorporating CT's decisions (2026-06-24) and the
-> forward-looking additions agreed in the same session.
+> **Status (2026-06-24):** Phases 0–7 implemented in PR #153 (branch `feat/masters-track`).
+> Migration 120 is **applied and verified on production** (executed 04:09 UTC; `program_track`
+> = 220 users / 100% `undergraduate` / 0 NULL; all 6 tables + MV + 3 CHECK constraints present).
+> Backend services verified against the live schema (all queries valid; empty until Phase 2 scrape
+> populates data). Chancing engine: 19/19 unit tests. Frontend: tsc + eslint clean, flag-gated.
+> Remaining to fully *operate*: run the per-program scraper to populate data, run the latency
+> baseline against a live server (Appendix B), and manual click-through of the flag-on UI.
+>
+> Supersedes the scope of the original "Masters/Grad Track Addition" brief by incorporating CT's
+> decisions (2026-06-24) and the forward-looking additions agreed in the same session.
 >
 > **CT decisions baked in (2026-06-24):**
 > 1. Scope = **full**, including the new application-execution modules (LOR / SOP / CV / WES)
