@@ -84,5 +84,12 @@ module.exports = {
   // API Keys - validated at runtime
   apiKeys: {
     huggingFace: process.env.HUGGINGFACE_API_KEY || null
+  },
+
+  // Feature flags — the masters/grad track ships dark behind this flag so the
+  // existing undergrad flow is never exposed to it until explicitly enabled.
+  // See docs/MASTERS_TRACK_PLAN.md (Phase 0).
+  features: {
+    mastersTrackEnabled: process.env.MASTERS_TRACK_ENABLED === 'true'
   }
 };
