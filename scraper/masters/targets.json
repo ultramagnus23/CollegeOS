@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "note": "Target registry. Scaling to 100-120+ universities is a DATA edit here, not a code change. Each entry is identity + the live program URL the http adapter fetches. expected_model is for detected-vs-expected QA reporting only.",
+  "programs": [
+    {"institution_name": "University of California, San Diego", "institution_country": "US", "program_name": "MS in Computer Science", "degree_type": "MS", "department": "Computer Science & Engineering", "program_url": "https://cse.ucsd.edu/graduate/admissions", "expected_model": "gre_waived", "stem": true},
+    {"institution_name": "Georgia Institute of Technology", "institution_country": "US", "program_name": "MS in Computer Science", "degree_type": "MS", "department": "College of Computing", "program_url": "https://www.cc.gatech.edu/ms-computer-science-admission-requirements", "expected_model": "gre_optional", "stem": true},
+    {"institution_name": "Massachusetts Institute of Technology", "institution_country": "US", "program_name": "SM in Mechanical Engineering", "degree_type": "MS", "department": "Mechanical Engineering", "program_url": "https://meche.mit.edu/education/prospective-students/graduate/apply", "expected_model": "gre_waived", "stem": true},
+    {"institution_name": "Rice University", "institution_country": "US", "program_name": "Full-Time MBA", "degree_type": "MBA", "department": "Jones Graduate School of Business", "program_url": "https://business.rice.edu/mba-admissions/gmat-waiver", "expected_model": "work_experience", "stem": false},
+    {"institution_name": "Massachusetts Institute of Technology", "institution_country": "US", "program_name": "Master of Finance (MFin)", "degree_type": "MS", "department": "MIT Sloan", "program_url": "https://mitsloan.mit.edu/mfin/apply/how-to-apply", "expected_model": "standard_test", "stem": true},
+    {"institution_name": "University of Oxford", "institution_country": "UK", "program_name": "MSc in Advanced Computer Science", "degree_type": "MS", "department": "Department of Computer Science", "program_url": "https://www.cs.ox.ac.uk/admissions/postgraduate/courses/MSc_in_Advanced_Computer_Science/", "expected_model": "international", "stem": true},
+    {"institution_name": "Technical University of Munich", "institution_country": "DE", "program_name": "MSc Informatics", "degree_type": "MS", "department": "School of Computation, Information and Technology", "program_url": "https://www.cit.tum.de/en/cit/studies/degree-programs/master-informatics/", "expected_model": "international", "stem": true}
+  ]
+}

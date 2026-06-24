@@ -17,6 +17,9 @@ from dataclasses import dataclass
 from typing import Optional
 
 _SCRIPT_STYLE = re.compile(r"<(script|style|noscript)[^>]*>.*?</\1>", re.S | re.I)
+# Strip site chrome so cross-links (e.g. an "Executive MBA" nav item) don't
+# false-trigger pathway signals — scope extraction toward main content.
+_CHROME = re.compile(r"<(nav|header|footer|aside)[^>]*>.*?</\1>", re.S | re.I)
 _TAGS = re.compile(r"<[^>]+>")
 _WS = re.compile(r"\s+")
 _USER_AGENT = "CollegeOSBot/1.0 (+masters program research; respects robots)"
@@ -37,8 +40,8 @@ def fetch_program_text(url: str, timeout: int = 20) -> FetchResult:
         req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
         raw = urllib.request.urlopen(req, timeout=timeout, context=ssl.create_default_context()).read()
         html = raw.decode("utf-8", "ignore")
-        no_scripts = _SCRIPT_STYLE.sub(" ", html)
-        text = _WS.sub(" ", _TAGS.sub(" ", no_scripts)).strip()
+        cleaned = _CHROME.sub(" ", _SCRIPT_STYLE.sub(" ", html))
+        text = _WS.sub(" ", _TAGS.sub(" ", cleaned)).strip()
         return FetchResult(url=url, ok=True, text=text, bytes_len=len(raw))
     except Exception as exc:  # noqa: BLE001 - a single bad page must not kill the run
         return FetchResult(url=url, ok=False, error=f"{type(exc).__name__}: {exc}")

@@ -74,15 +74,16 @@ _SIGNALS: Dict[str, List[str]] = {
         "holistic review",
         "reviewed holistically",
     ],
+    # Format-language only. Bare "executive MBA"/"executive program" are usually
+    # cross-links to a DIFFERENT program, not this program's admission pathway, so
+    # they are deliberately excluded to cut false positives on multi-program pages.
     "executive_part_time": [
-        "executive program",
-        "executive ms",
-        "executive mba",
-        "part-time",
+        "part-time program",
         "part time program",
-        "for working professionals",
         "evening program",
         "weekend program",
+        "designed for executives",
+        "designed for working professionals",
     ],
     "portfolio_based": [
         "portfolio required",
@@ -120,6 +121,14 @@ _SIGNALS: Dict[str, List[str]] = {
 _YEARS_EXPERIENCE_RE = re.compile(
     r"\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s*\+?\s*"
     r"(?:or more\s+)?years?\b[^.]{0,40}\bexperience\b",
+    re.IGNORECASE,
+)
+
+# Regex catch for test-waived/optional language the fixed phrase list misses,
+# e.g. "GRE score is not required", "GRE/GMAT are optional". Allows words between
+# the test name and the verdict, within one sentence ([^.]{0,40}).
+_TEST_WAIVED_RE = re.compile(
+    r"\b(gre|gmat)\b[^.]{0,40}\b(not required|no longer required|optional|waived)\b",
     re.IGNORECASE,
 )
 
@@ -180,6 +189,9 @@ def classify_pathways(text: str | None) -> List[Pathway]:
             years = _YEARS_EXPERIENCE_RE.findall(text)
             if years:
                 matches.append(f"{years[0]} years experience (regex)")
+        if pathway_type == "test_waived_holistic":
+            for m in _TEST_WAIVED_RE.findall(text):
+                matches.append(" ".join(part for part in m if part))
         if matches:
             found.append(
                 Pathway(

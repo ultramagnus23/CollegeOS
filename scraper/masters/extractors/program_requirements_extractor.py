@@ -25,24 +25,21 @@ class ExtractedRequirements:
     raw_excerpts: list = field(default_factory=list)
 
 
-_GRE_NOT = ("gre not required", "gre is not required", "do not require the gre", "gre is waived")
-_GRE_OPT = ("gre optional", "gre is optional", "gre/gmat optional")
-_GRE_REQ = ("gre required", "gre is required", "submit gre", "official gre scores")
-
-_GMAT_NOT = ("gmat not required", "gmat is not required", "gmat is waived")
-_GMAT_OPT = ("gmat optional", "gmat is optional")
-_GMAT_REQ = ("gmat required", "gmat is required", "submit gmat")
-
 _STEM = ("stem-designated", "stem designated", "stem-eligible", "stem opt", "cip code")
 _GPA_RE = re.compile(r"minimum\s+(?:gpa|grade point average)\s+of\s+([0-9]\.[0-9]{1,2})", re.IGNORECASE)
 
 
-def _classify_requirement(low: str, not_phrases, opt_phrases, req_phrases) -> Optional[str]:
-    if any(p in low for p in not_phrases):
+def _classify_test(low: str, kind: str) -> Optional[str]:
+    """Regex test-policy detection for 'gre'/'gmat'. Order matters: waived/optional
+    are checked before required so 'GRE score is not required' is not mis-read as
+    'required'. Allows words between the test name and the verdict ([^.]{0,40} stays
+    within a sentence)."""
+    if re.search(rf"\b{kind}\b[^.]{{0,40}}\b(not required|no longer required|not require|is waived|waived)\b", low):
         return "waived"
-    if any(p in low for p in opt_phrases):
+    if re.search(rf"\b{kind}\b[^.]{{0,40}}\boptional\b", low) or re.search(rf"\boptional\b[^.]{{0,20}}\b{kind}\b", low):
         return "optional"
-    if any(p in low for p in req_phrases):
+    if re.search(rf"\b{kind}\b[^.]{{0,40}}\b(is required|are required|required|must be submitted)\b", low) \
+            or re.search(rf"\bmust submit\b[^.]{{0,25}}\b{kind}\b", low):
         return "required"
     return None
 
@@ -54,8 +51,8 @@ def extract_requirements(text: Optional[str]) -> ExtractedRequirements:
         return out
 
     low = text.lower()
-    out.gre_requirement = _classify_requirement(low, _GRE_NOT, _GRE_OPT, _GRE_REQ)
-    out.gmat_requirement = _classify_requirement(low, _GMAT_NOT, _GMAT_OPT, _GMAT_REQ)
+    out.gre_requirement = _classify_test(low, "gre")
+    out.gmat_requirement = _classify_test(low, "gmat")
 
     if any(s in low for s in _STEM):
         out.is_stem_designated = True
@@ -66,6 +63,11 @@ def extract_requirements(text: Optional[str]) -> ExtractedRequirements:
             out.min_gpa = float(gpa_match.group(1))
         except ValueError:
             out.min_gpa = None
+    # Plausibility bound: a published minimum GPA is on a 4.0 scale, so anything
+    # >4.3 is a mis-grab (e.g. an early-admission threshold) — drop it rather than
+    # store a wrong number.
+    if out.min_gpa is not None and not (0 < out.min_gpa <= 4.3):
+        out.min_gpa = None
 
     # The whole admissions passage is what the pathway taxonomy classifies.
     out.evaluation_text = text.strip()

@@ -168,4 +168,64 @@ router.post('/applications', authenticate, requireMastersTrackForWrite, async (r
   } catch (e) { fail(res, 500, 'Failed to save application', e); }
 });
 
+// ── Outcome collection (deliverable #6 — proprietary dataset for future models) ──
+const OUTCOME_TO_DECISION = { admit: 'admit', reject: 'reject', waitlist: 'waitlist', interview: 'interview' };
+const OUTCOME_TO_APP = { applied: 'pending', interview: 'interview', admit: 'admitted', reject: 'rejected', waitlist: 'waitlisted', deferred: 'pending' };
+
+router.post('/outcomes', authenticate, requireMastersTrackForWrite, async (req, res) => {
+  try {
+    const { mastersProgramId, intakeTerm, intakeYear, outcome } = req.body || {};
+    if (!mastersProgramId || !Object.prototype.hasOwnProperty.call(OUTCOME_TO_APP, outcome)) {
+      return fail(res, 400, 'mastersProgramId and a valid outcome (applied|interview|admit|reject|waitlist|deferred) are required');
+    }
+    const pool = dbManager.getDatabase();
+    const profile = await profileService.getProfile(req.user.userId);
+
+    // 1) Update the application lifecycle.
+    await pool.query(
+      `INSERT INTO public.masters_applications (user_id, masters_program_id, status, intake_term, intake_year, decision_outcome)
+         VALUES ($1,$2,$3,$4,$5,$6)
+       ON CONFLICT (user_id, masters_program_id) DO UPDATE SET
+         status = EXCLUDED.status, decision_outcome = EXCLUDED.decision_outcome,
+         intake_term = EXCLUDED.intake_term, intake_year = EXCLUDED.intake_year, updated_at = NOW()`,
+      [req.user.userId, mastersProgramId, outcome, intakeTerm || null, intakeYear ?? null, OUTCOME_TO_APP[outcome]],
+    );
+
+    // 2) Terminal outcomes capture a training datapoint (profile-feature snapshot + label),
+    //    stored as source='our_user' alongside scraped GradCafe data — the strategic asset.
+    let datapointCaptured = false;
+    if (OUTCOME_TO_DECISION[outcome] && profile) {
+      await pool.query(
+        `INSERT INTO canonical.masters_admission_datapoints
+           (masters_program_id, source, gre_verbal, gre_quant, gre_awa, gmat_total, gpa, gpa_scale, decision, intake_term, intake_year, scraped_at)
+         VALUES ($1,'our_user',$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW())`,
+        [mastersProgramId, profile.gre_verbal, profile.gre_quant, profile.gre_awa, profile.gmat_total,
+          profile.undergrad_gpa, profile.undergrad_gpa_scale, OUTCOME_TO_DECISION[outcome], intakeTerm || null, intakeYear ?? null],
+      );
+      datapointCaptured = true;
+    }
+    res.json({ success: true, data: { outcome, datapointCaptured }, message: 'Outcome recorded' });
+  } catch (e) { fail(res, 500, 'Failed to record outcome', e); }
+});
+
+// ── Application readiness (deliverable #7) ──
+router.get('/readiness', authenticate, async (req, res) => {
+  try {
+    const profile = await profileService.getProfile(req.user.userId);
+    if (!profile) {
+      return res.json({ success: true, data: { completion: 0, ready: false, items: [], message: 'Create your masters profile first.' } });
+    }
+    const items = [
+      { key: 'SOP', done: profile.sop_status === 'final', detail: profile.sop_status || 'not_started' },
+      { key: 'Recommendations', done: (profile.lors_secured || 0) >= (profile.lors_required || 3), detail: `${profile.lors_secured || 0}/${profile.lors_required || 3}` },
+      { key: 'GRE/GMAT', done: profile.gre_quant != null || profile.gmat_total != null || profile.gmat_focus_total != null, detail: profile.gre_quant != null ? 'GRE' : (profile.gmat_total || profile.gmat_focus_total) ? 'GMAT' : 'none' },
+      { key: 'English test', done: profile.toefl_score != null || profile.ielts_score != null || profile.duolingo_score != null, detail: profile.toefl_score != null ? 'TOEFL' : profile.ielts_score != null ? 'IELTS' : profile.duolingo_score != null ? 'Duolingo' : 'none' },
+      { key: 'Transcript / GPA', done: profile.undergrad_gpa != null, detail: profile.undergrad_gpa != null ? `${profile.undergrad_gpa}/${profile.undergrad_gpa_scale || '?'}` : 'missing' },
+      { key: 'Resume / experience', done: (Number(profile.work_experience_years) || 0) > 0 || (profile.research_experience || '').length > 0, detail: '' },
+    ];
+    const done = items.filter((i) => i.done).length;
+    res.json({ success: true, data: { completion: Math.round((100 * done) / items.length), ready: done === items.length, items } });
+  } catch (e) { fail(res, 500, 'Failed to compute readiness', e); }
+});
+
 module.exports = router;

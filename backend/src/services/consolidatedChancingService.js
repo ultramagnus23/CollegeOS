@@ -157,6 +157,14 @@ async function calculateChance(studentProfile, college, application = {}) {
   try {
     // ── Convenience aliases ─────────────────────────────────────────────────
     const sp   = studentProfile ?? {};
+
+    // Regression guard (docs/MASTERS_TRACK_PLAN.md #11): the undergrad chancing
+    // pipeline must NEVER receive a masters-track profile. Fail loud rather than
+    // silently scoring a masters applicant with SAT/ACT/GPA undergrad features.
+    if (sp.program_track === 'masters' || sp.target_degree_type) {
+      throw new Error('TRACK_VIOLATION: undergrad chancing received a masters-track profile');
+    }
+
     const col  = college ?? {};
     const app  = application ?? {};
 
