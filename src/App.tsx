@@ -188,6 +188,32 @@ const AppContent = () => {
             }
           />
 
+          {/* Masters/grad track — standalone, flag-gated. Mounted OUTSIDE the
+              DashboardLayout group because masters users have not completed the
+              undergrad onboarding (onboarding_complete=false). Requiring it here
+              would bounce them straight back to /onboarding, making the "select
+              masters track" flow appear dead. */}
+          {isMastersTrackEnabled() && (
+            <>
+              <Route
+                path="/masters"
+                element={
+                  <ProtectedRoute requireOnboarding={false}>
+                    <MastersDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/masters/onboarding"
+                element={
+                  <ProtectedRoute requireOnboarding={false}>
+                    <MastersOnboarding />
+                  </ProtectedRoute>
+                }
+              />
+            </>
+          )}
+
           <Route
             element={
               <ProtectedRoute>
@@ -210,13 +236,6 @@ const AppContent = () => {
             <Route path="/college-recommendations" element={<CollegeRecommendations />} />
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/chancing" element={<Chancing />} />
-            {/* Masters/grad track — only mounted when the feature flag is on (ships dark). */}
-            {isMastersTrackEnabled() && (
-              <>
-                <Route path="/masters" element={<MastersDashboard />} />
-                <Route path="/masters/onboarding" element={<MastersOnboarding />} />
-              </>
-            )}
             <Route path="/suggested-colleges" element={<SuggestedColleges />} />
             <Route path="/timeline" element={<Timeline />} />
             <Route path="/notifications" element={<NotificationsPage />} />

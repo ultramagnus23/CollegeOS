@@ -20,19 +20,19 @@ const COUNTRIES = ['US', 'UK', 'CA', 'DE', 'NL', 'AU', 'SG'];
 const num = (v: string): number | undefined => (v === '' ? undefined : Number(v));
 
 const MastersBadge: React.FC = () => (
-  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+  <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary">
     <GraduationCap className="h-3.5 w-3.5" /> Masters
   </span>
 );
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <label className="block">
-    <span className="mb-1 block text-sm font-medium text-gray-700">{label}</span>
+    <span className="mb-1 block text-sm font-medium text-foreground">{label}</span>
     {children}
   </label>
 );
 
-const inputCls = 'w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500';
+const inputCls = 'w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50';
 
 const MastersOnboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -97,11 +97,11 @@ const MastersOnboarding: React.FC = () => {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <div className="mb-6 flex items-center gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">Graduate Application Profile</h1>
+        <h1 className="text-2xl font-bold text-foreground">Graduate Application Profile</h1>
         <MastersBadge />
       </div>
 
-      <div className="space-y-6 rounded-2xl bg-white p-6 shadow">
+      <div className="space-y-6 rounded-2xl border border-border bg-card p-6 text-card-foreground shadow">
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Field label="Degree type">
             <select className={inputCls} value={form.target_degree_type} onChange={(e) => set('target_degree_type', e.target.value)}>
@@ -132,7 +132,7 @@ const MastersOnboarding: React.FC = () => {
         </section>
 
         <section>
-          <p className="mb-2 text-sm font-semibold text-gray-600">Tests (all optional — many programs waive them)</p>
+          <p className="mb-2 text-sm font-semibold text-muted-foreground">Tests (all optional — many programs waive them)</p>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             <Field label="GRE Verbal"><input className={inputCls} inputMode="numeric" value={form.gre_verbal} onChange={(e) => set('gre_verbal', e.target.value)} /></Field>
             <Field label="GRE Quant"><input className={inputCls} inputMode="numeric" value={form.gre_quant} onChange={(e) => set('gre_quant', e.target.value)} /></Field>
@@ -162,7 +162,7 @@ const MastersOnboarding: React.FC = () => {
         </section>
 
         <section>
-          <p className="mb-2 text-sm font-medium text-gray-700">Target countries</p>
+          <p className="mb-2 text-sm font-medium text-foreground">Target countries</p>
           <div className="flex flex-wrap gap-2">
             {COUNTRIES.map((c) => {
               const on = countries.includes(c);
@@ -171,7 +171,7 @@ const MastersOnboarding: React.FC = () => {
                   key={c}
                   type="button"
                   onClick={() => setCountries((prev) => (on ? prev.filter((x) => x !== c) : [...prev, c]))}
-                  className={`rounded-lg px-3 py-1.5 text-sm ${on ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${on ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}
                 >
                   {c}
                 </button>
@@ -180,11 +180,11 @@ const MastersOnboarding: React.FC = () => {
           </div>
         </section>
 
-        <div className="flex justify-end border-t pt-4">
+        <div className="flex justify-end border-t border-border pt-4">
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="rounded-lg bg-indigo-600 px-6 py-2.5 font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="rounded-lg bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {saving ? 'Saving…' : 'Save & continue'}
           </button>
