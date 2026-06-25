@@ -96,10 +96,24 @@ const MastersDashboard: React.FC = () => {
   const [programs, setPrograms] = useState<ProgramCard[]>([]);
   const [loading, setLoading] = useState(false);
   const [chances, setChances] = useState<Record<string, ChancingAssessment>>({});
+  // Budget captured at onboarding — fed into discovery so collected data is used.
+  const [budgetMax, setBudgetMax] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (!isMastersTrackEnabled()) navigate('/dashboard', { replace: true });
   }, [navigate]);
+
+  // Pull the saved profile budget once, so discovery honors it.
+  useEffect(() => {
+    let active = true;
+    api.masters.getProfile()
+      .then((res: any) => {
+        const b = Number(res?.data?.target_budget_max);
+        if (active && Number.isFinite(b) && b > 0) setBudgetMax(b);
+      })
+      .catch(() => { /* no profile / not fatal */ });
+    return () => { active = false; };
+  }, []);
 
   const search = async () => {
     setLoading(true);
@@ -108,6 +122,7 @@ const MastersDashboard: React.FC = () => {
         field: field || undefined,
         countries: country ? [country] : undefined,
         degreeType: degreeType || undefined,
+        budgetMax,
         limit: 25,
       });
       setPrograms((res?.data as ProgramCard[]) || []);

@@ -100,6 +100,24 @@ const Segmented: React.FC<{ options: readonly string[]; value: string; onChange:
   </div>
 );
 
+const TextArea: React.FC<{
+  label: string; value: string; onChange: (v: string) => void; accent: string; placeholder?: string;
+}> = ({ label, value, onChange, accent, placeholder }) => (
+  <label className="block">
+    <span className="mb-1.5 block text-[13px] font-medium text-white/70">{label}</span>
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={3}
+      className="w-full resize-y rounded-xl px-3.5 py-2.5 text-[14px] text-white outline-none transition-colors placeholder:text-white/30"
+      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)' }}
+      onFocus={(e) => (e.currentTarget.style.borderColor = hexToRgba(accent, 0.6))}
+      onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
+    />
+  </label>
+);
+
 const MastersOnboarding: React.FC = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
@@ -110,13 +128,16 @@ const MastersOnboarding: React.FC = () => {
     intended_specialization: '',
     undergrad_institution: '',
     undergrad_major: '',
+    undergrad_country: '',
     undergrad_gpa: '',
     undergrad_gpa_scale: '4',
     gre_verbal: '', gre_quant: '', gre_awa: '',
     gmat_total: '', gmat_focus_total: '',
     toefl_score: '', ielts_score: '',
     work_experience_years: '', publication_count: '',
+    research_experience: '', work_experience_desc: '',
     lors_secured: '', target_intake_term: 'fall', target_intake_year: '',
+    target_budget_max: '', target_budget_currency: 'USD',
   });
   const [countries, setCountries] = useState<string[]>([]);
 
@@ -133,11 +154,11 @@ const MastersOnboarding: React.FC = () => {
   const strength = useMemo(() => {
     const filled = [
       form.intended_program, form.intended_specialization, form.undergrad_institution,
-      form.undergrad_major, form.undergrad_gpa, form.gre_quant || form.gmat_total,
+      form.undergrad_major, form.undergrad_country, form.undergrad_gpa, form.gre_quant || form.gmat_total,
       form.toefl_score || form.ielts_score, form.work_experience_years, form.lors_secured,
-      form.target_intake_year,
+      form.research_experience || form.work_experience_desc, form.target_intake_year, form.target_budget_max,
     ].filter((v) => String(v).trim().length > 0).length;
-    const total = 10 + (countries.length > 0 ? 1 : 0);
+    const total = 13 + (countries.length > 0 ? 1 : 0);
     return Math.min(100, Math.round(((filled + (countries.length > 0 ? 1 : 0)) / total) * 100));
   }, [form, countries]);
 
@@ -151,8 +172,11 @@ const MastersOnboarding: React.FC = () => {
         intended_specialization: form.intended_specialization,
         undergrad_institution: form.undergrad_institution,
         undergrad_major: form.undergrad_major,
+        undergrad_country: form.undergrad_country,
         undergrad_gpa: num(form.undergrad_gpa),
         undergrad_gpa_scale: num(form.undergrad_gpa_scale),
+        research_experience: form.research_experience,
+        work_experience_desc: form.work_experience_desc,
         gre_verbal: num(form.gre_verbal),
         gre_quant: num(form.gre_quant),
         gre_awa: num(form.gre_awa),
@@ -166,6 +190,8 @@ const MastersOnboarding: React.FC = () => {
         target_intake_term: form.target_intake_term,
         target_intake_year: num(form.target_intake_year),
         target_countries: countries,
+        target_budget_max: num(form.target_budget_max),
+        target_budget_currency: form.target_budget_currency,
       });
       toast.success('Masters profile saved');
       navigate('/masters');
@@ -256,11 +282,19 @@ const MastersOnboarding: React.FC = () => {
           )}
 
           {step === 1 && (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <TextField label="Undergrad institution" value={form.undergrad_institution} onChange={(v) => set('undergrad_institution', v)} accent={theme.accent} />
-              <TextField label="Undergrad major" value={form.undergrad_major} onChange={(v) => set('undergrad_major', v)} accent={theme.accent} />
-              <TextField label="Undergrad GPA" value={form.undergrad_gpa} onChange={(v) => set('undergrad_gpa', v)} accent={theme.accent} decimal placeholder="3.6" />
-              <TextField label="GPA scale (4 / 10 / 100)" value={form.undergrad_gpa_scale} onChange={(v) => set('undergrad_gpa_scale', v)} accent={theme.accent} decimal />
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <TextField label="Undergrad institution" value={form.undergrad_institution} onChange={(v) => set('undergrad_institution', v)} accent={theme.accent} />
+                <TextField label="Undergrad major" value={form.undergrad_major} onChange={(v) => set('undergrad_major', v)} accent={theme.accent} />
+                <TextField label="Undergrad country" value={form.undergrad_country} onChange={(v) => set('undergrad_country', v)} accent={theme.accent} placeholder="India" />
+                <TextField label="Undergrad GPA" value={form.undergrad_gpa} onChange={(v) => set('undergrad_gpa', v)} accent={theme.accent} decimal placeholder="3.6" />
+                <TextField label="GPA scale (4 / 10 / 100)" value={form.undergrad_gpa_scale} onChange={(v) => set('undergrad_gpa_scale', v)} accent={theme.accent} decimal />
+              </div>
+              {/* Experience signals — the grad-level equivalent of undergrad
+                  extracurriculars/essays (free-text context, like undergrad's
+                  careerGoals/whyCollege). Persisted to masters_profile. */}
+              <TextArea label="Research experience (projects, labs, thesis)" value={form.research_experience} onChange={(v) => set('research_experience', v)} accent={theme.accent} placeholder="Briefly describe research projects, labs, or a thesis." />
+              <TextArea label="Work experience (roles, impact)" value={form.work_experience_desc} onChange={(v) => set('work_experience_desc', v)} accent={theme.accent} placeholder="Roles, companies, and what you owned." />
             </div>
           )}
 
@@ -291,6 +325,15 @@ const MastersOnboarding: React.FC = () => {
                   <Segmented options={TERMS} value={form.target_intake_term} onChange={(v) => set('target_intake_term', v)} accent={theme.accent} />
                 </div>
                 <TextField label="Target intake year" value={form.target_intake_year} onChange={(v) => set('target_intake_year', v)} accent={theme.accent} numeric placeholder="2027" />
+              </div>
+              {/* Budget — undergrad collects this; masters discovery already
+                  filters on budgetMax, so it's fed straight into matching. */}
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <TextField label="Max annual tuition budget" value={form.target_budget_max} onChange={(v) => set('target_budget_max', v)} accent={theme.accent} numeric placeholder="50000" />
+                <div>
+                  <span className="mb-1.5 block text-[13px] font-medium text-white/70">Currency</span>
+                  <Segmented options={['USD', 'EUR', 'GBP', 'INR']} value={form.target_budget_currency} onChange={(v) => set('target_budget_currency', v)} accent={theme.accent} />
+                </div>
               </div>
               <div>
                 <span className="mb-2 block text-[13px] font-medium text-white/70">Target countries</span>
