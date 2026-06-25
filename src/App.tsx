@@ -236,6 +236,13 @@ const AppContent = () => {
             <Route path="/college-recommendations" element={<CollegeRecommendations />} />
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/chancing" element={<Chancing />} />
+            {/* Masters/grad track — only mounted when the feature flag is on (ships dark). */}
+            {isMastersTrackEnabled() && (
+              <>
+                <Route path="/masters" element={<MastersDashboard />} />
+                <Route path="/masters/onboarding" element={<MastersOnboarding />} />
+              </>
+            )}
             <Route path="/suggested-colleges" element={<SuggestedColleges />} />
             <Route path="/timeline" element={<Timeline />} />
             <Route path="/notifications" element={<NotificationsPage />} />
