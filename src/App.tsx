@@ -236,6 +236,8 @@ const AppContent = () => {
             <Route path="/college-recommendations" element={<CollegeRecommendations />} />
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/chancing" element={<Chancing />} />
+            {/* Masters routes are mounted standalone above (outside DashboardLayout)
+                so they don't require completed undergrad onboarding. */}
             <Route path="/suggested-colleges" element={<SuggestedColleges />} />
             <Route path="/timeline" element={<Timeline />} />
             <Route path="/notifications" element={<NotificationsPage />} />
