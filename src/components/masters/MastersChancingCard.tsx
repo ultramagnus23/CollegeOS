@@ -12,6 +12,13 @@
  */
 import React from 'react';
 import MastersDisclosure from './MastersDisclosure';
+import ConfidenceBadge from '../ConfidenceBadge';
+
+// Self-reported confidence from real sample size (mirrors backend dataConfidence.js).
+// Below N=5 a band is not shown at all (matches the disclaimer's own rule).
+const SELF_REPORT_MIN_N = 5;
+const selfReportConfidence = (n: number): number =>
+  Math.max(10, Math.min(55, Math.round(55 * Math.min(1, n / 50))));
 
 type Band = 'below_typical' | 'within_typical' | 'above_typical' | 'insufficient_data';
 
@@ -79,15 +86,17 @@ const MastersChancingCard: React.FC<{ assessment: ChancingAssessment }> = ({ ass
 
   return (
     <div className="animate-fade-in rounded-xl border border-border bg-card p-5 text-card-foreground shadow-sm">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Competitiveness
         </h3>
-        {assessment.sampleSize > 0 && (
-          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-            self-reported · N={assessment.sampleSize}
-          </span>
-        )}
+        {/* Per-field confidence badge — self-reported source, driven by the real
+            sample size. Hidden below the N floor (no badge, no number). */}
+        <ConfidenceBadge
+          available={assessment.sampleSize >= SELF_REPORT_MIN_N}
+          confidence={selfReportConfidence(assessment.sampleSize)}
+          sampleSize={assessment.sampleSize}
+        />
       </div>
 
       {/* Headline band */}
@@ -147,20 +156,34 @@ const MastersChancingCard: React.FC<{ assessment: ChancingAssessment }> = ({ ass
         </div>
       )}
 
-      <div className="mt-5">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Stated requirements</p>
-        <ul className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-2">
-          {assessment.checklist.map((c) => (
-            <li
-              key={c.requirement}
-              className="flex items-center justify-between gap-2 border-b border-border/50 pb-1.5"
-            >
-              <span className="text-muted-foreground">{c.requirement}</span>
-              <span className="font-medium text-foreground">{c.value}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {assessment.checklist.length > 0 && (
+        <div className="mt-5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Stated requirements</p>
+            {/* Program-details source: official program page. Completeness only —
+                requirements are present; freshness isn't carried client-side. */}
+            <ConfidenceBadge completeness={100} source="official program page" />
+          </div>
+          <ul className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-2">
+            {assessment.checklist.map((c) => (
+              <li
+                key={c.requirement}
+                className="flex items-center justify-between gap-2 border-b border-border/50 pb-1.5"
+              >
+                <span className="text-muted-foreground">{c.requirement}</span>
+                <span className="font-medium text-foreground">{c.value}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Categories with no real public source — shown as explicitly unavailable,
+          never as a low-confidence number. */}
+      <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
+        Not available for graduate programs: admit probability, research/advisor fit, and funding likelihood —
+        no public data source exists for these, so we don’t show a number.
+      </p>
 
       <MastersDisclosure variant="inline" />
     </div>

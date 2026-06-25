@@ -27,6 +27,7 @@ const MastersDisclosure: React.FC<Props> = ({ variant = 'banner' }) => {
   const [dismissed, setDismissed] = useState<boolean>(
     () => variant === 'banner' && sessionStorage.getItem(SESSION_KEY) === '1',
   );
+  const [expanded, setExpanded] = useState(false);
 
   if (variant === 'inline') {
     return (
@@ -42,34 +43,37 @@ const MastersDisclosure: React.FC<Props> = ({ variant = 'banner' }) => {
 
   if (dismissed) return null;
 
+  // One short, permanent line — the honesty work is now done by the per-field
+  // confidence badges and the explicit "not available for graduate programs"
+  // treatment on each card (Phase 4). The full breakdown stays one click away.
   return (
-    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-700 dark:text-amber-200">
-      <div className="flex items-start gap-3">
-        <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" />
-        <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Before you trust any number here — what we honestly can’t do</h3>
-            <button
-              aria-label="Dismiss for this session"
-              onClick={() => {
-                sessionStorage.setItem(SESSION_KEY, '1');
-                setDismissed(true);
-              }}
-              className="text-amber-500 hover:text-amber-600 dark:hover:text-amber-300"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
-            {POINTS.map((p) => (
-              <li key={p}>{p}</li>
-            ))}
-          </ul>
-          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400/80">
-            This notice reappears next session — it’s too important to hide for good.
-          </p>
-        </div>
+    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
+      <div className="flex items-start gap-2.5">
+        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
+        <p className="flex-1">
+          Grad data works differently from undergrad: bands come from limited self-reported data, and
+          admit probability, research fit, and funding aren’t available for graduate programs.{' '}
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="font-medium underline underline-offset-2 hover:text-amber-600 dark:hover:text-amber-200"
+          >
+            {expanded ? 'Show less' : 'What we can’t do'}
+          </button>
+        </p>
+        <button
+          aria-label="Dismiss for this session"
+          onClick={() => { sessionStorage.setItem(SESSION_KEY, '1'); setDismissed(true); }}
+          className="text-amber-500 hover:text-amber-600 dark:hover:text-amber-300"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
+      {expanded && (
+        <ul className="mt-2 list-disc space-y-1 pl-9 text-[13px]">
+          {POINTS.map((p) => <li key={p}>{p}</li>)}
+        </ul>
+      )}
     </div>
   );
 };

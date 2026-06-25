@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { DataFreshnessIndicator } from '@/components/DataFreshnessIndicator';
 import { getCollegeById, isSupabaseConfigured, normalizeToDetail } from '../lib/collegeService';
 import { useAuth } from '../contexts/AuthContext';
+import ConfidenceBadge from '../components/ConfidenceBadge';
 import { usePreferredCurrency } from '../hooks/usePreferredCurrency';
 import { formatCountryName, getCountryTheme, normalizeCountryCode } from '../lib/country';
 const COLLEGE_SYNC_DEBUG = import.meta.env.DEV;
@@ -868,11 +869,12 @@ const CollegeDetail: React.FC = () => {
           collegeName={college.name}
         />
         {((college as any).completeness_score != null || (college as any).freshness_score != null || (college as any).data_quality_score != null) && (
-          <div className="mt-2 text-xs text-muted-foreground">
-            Completeness: {Math.round(Number((college as any).completeness_score ?? 0))}% ·
-            Freshness: {Math.round(Number((college as any).freshness_score ?? 0))}% ·
-            Confidence: {Math.round(Number((college as any).data_quality_score ?? 0))}%
-          </div>
+          <ConfidenceBadge
+            className="mt-2"
+            completeness={(college as any).completeness_score ?? null}
+            freshness={(college as any).freshness_score ?? null}
+            confidence={(college as any).data_quality_score ?? null}
+          />
         )}
         <div className="mt-3 text-xs text-muted-foreground">
           {college.data_source ? (
