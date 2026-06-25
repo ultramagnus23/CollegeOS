@@ -4,13 +4,71 @@
  * The masters home: persistent disclosure, program discovery, and inline
  * competitiveness bands. Reads only the masters API surface. Flag-gated.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, Search } from 'lucide-react';
+import { GraduationCap, Search, ChevronDown, Check } from 'lucide-react';
 import { api } from '../services/api';
 import { isMastersTrackEnabled } from '../config/featureFlags';
 import MastersDisclosure from '../components/masters/MastersDisclosure';
 import MastersChancingCard, { ChancingAssessment } from '../components/masters/MastersChancingCard';
+
+/**
+ * Theme-aware custom dropdown — replaces the native <select>, whose OS-rendered
+ * option list looked broken on the dark theme. Closes on outside click / Escape.
+ */
+const Dropdown: React.FC<{
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+  placeholder: string;
+}> = ({ value, options, onChange, placeholder }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
+  }, [open]);
+
+  const current = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-left text-foreground transition-colors hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+      >
+        <span className={current?.value ? '' : 'text-muted-foreground'}>{current?.label || placeholder}</span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1.5 max-h-64 w-full overflow-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg">
+          {options.map((o) => {
+            const active = o.value === value;
+            return (
+              <button
+                key={o.value || 'any'}
+                type="button"
+                onClick={() => { onChange(o.value); setOpen(false); }}
+                className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                  active ? 'bg-primary/15 text-primary' : 'hover:bg-muted'
+                }`}
+              >
+                {o.label}
+                {active && <Check className="h-4 w-4" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface ProgramCard {
   id: string;
@@ -91,13 +149,21 @@ const MastersDashboard: React.FC = () => {
           onChange={(e) => setField(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && search()}
         />
-        <select className={inputCls} value={country} onChange={(e) => setCountry(e.target.value)}>
-          {COUNTRIES.map((c) => <option key={c} value={c}>{c || 'Any country'}</option>)}
-        </select>
+        <Dropdown
+          value={country}
+          onChange={setCountry}
+          placeholder="Any country"
+          options={COUNTRIES.map((c) => ({ value: c, label: c || 'Any country' }))}
+        />
         <div className="flex gap-2">
-          <select className={`${inputCls} flex-1`} value={degreeType} onChange={(e) => setDegreeType(e.target.value)}>
-            {DEGREES.map((d) => <option key={d} value={d}>{d || 'Any degree'}</option>)}
-          </select>
+          <div className="flex-1">
+            <Dropdown
+              value={degreeType}
+              onChange={setDegreeType}
+              placeholder="Any degree"
+              options={DEGREES.map((d) => ({ value: d, label: d || 'Any degree' }))}
+            />
+          </div>
           <button
             onClick={search}
             className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground transition-colors hover:opacity-90"
