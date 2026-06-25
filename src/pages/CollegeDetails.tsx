@@ -841,9 +841,10 @@ const CollegeDetail: React.FC = () => {
               return tuitionStr && <QuickStat label="Tuition" value={tuitionStr} />;
             })()}
             
-            {/* Show retention rate if available */}
-            {resolvedRetentionRate != null && (
-              <QuickStat label="Retention Rate" value={`${(resolvedRetentionRate * 100).toFixed(1)}%`} />
+            {/* Show retention rate if available — asPct handles the mixed
+                0–1 / 0–100 storage scales (raw *100 produced e.g. 8051%). */}
+            {resolvedRetentionRate != null && asPct(resolvedRetentionRate) != null && (
+              <QuickStat label="Retention Rate" value={`${asPct(resolvedRetentionRate)!.toFixed(1)}%`} />
             )}
             
             {/* Show average GPA/SAT if available */}
@@ -1071,12 +1072,12 @@ const CollegeDetail: React.FC = () => {
                     />
                   )}
                   
-                  {/* Retention Rate */}
-                  {resolvedRetentionRate != null && (
-                    <StatItem 
-                      label="Retention Rate" 
-                      value={`${(resolvedRetentionRate * 100).toFixed(1)}%`} 
-                      icon={<Award />} 
+                  {/* Retention Rate — asPct normalizes mixed 0–1 / 0–100 scales */}
+                  {resolvedRetentionRate != null && asPct(resolvedRetentionRate) != null && (
+                    <StatItem
+                      label="Retention Rate"
+                      value={`${asPct(resolvedRetentionRate)!.toFixed(1)}%`}
+                      icon={<Award />}
                     />
                   )}
                   
