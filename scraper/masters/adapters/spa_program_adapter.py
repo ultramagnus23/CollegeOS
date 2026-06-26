@@ -29,8 +29,10 @@ from __future__ import annotations
 
 import re
 import time
+import urllib.error
+import urllib.request
 import urllib.robotparser
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse
 
 from scraper.masters.adapters.http_program_adapter import FetchResult
 
@@ -60,22 +62,40 @@ class SpaFetcher:
         self._pw = None
 
     # ── robots.txt ────────────────────────────────────────────────────────
+    # Cache values: a RobotFileParser (parsed rules), None (no robots ⇒ allow
+    # all), or the string "deny" (401/403 ⇒ disallow all, per the robots spec).
     def _allowed(self, url: str) -> bool:
         parts = urlparse(url)
-        origin = (parts.scheme, parts.netloc)
         key = f"{parts.scheme}://{parts.netloc}"
-        rp = self._robots.get(key)
+        if key not in self._robots:
+            self._robots[key] = self._load_robots(key)
+        rp = self._robots[key]
+        if rp == "deny":
+            return False
         if rp is None:
-            rp = urllib.robotparser.RobotFileParser()
-            rp.set_url(urlunparse((origin[0], origin[1], "/robots.txt", "", "", "")))
-            try:
-                rp.read()
-            except Exception:  # noqa: BLE001 - missing/broken robots ⇒ be conservative-permissive
-                rp = None
-            self._robots[key] = rp
-        if rp is None:
-            return True  # no robots.txt reachable → default allow (same as urllib adapter)
+            return True  # no robots.txt → allow (matches the urllib adapter default)
         return rp.can_fetch(_USER_AGENT, url)
+
+    def _load_robots(self, origin: str):
+        """Fetch robots.txt with OUR User-Agent and parse it.
+
+        Crucially we do NOT use RobotFileParser.read(), which fetches with
+        Python's default UA — many hosts answer that with 403, which the parser
+        then treats as 'disallow everything', wrongly blocking every URL.
+        """
+        robots_url = f"{origin}/robots.txt"
+        try:
+            req = urllib.request.Request(robots_url, headers={"User-Agent": _USER_AGENT})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                body = resp.read().decode("utf-8", "ignore")
+            rp = urllib.robotparser.RobotFileParser()
+            rp.parse(body.splitlines())
+            return rp
+        except urllib.error.HTTPError as exc:
+            # Spec: 4xx (except 401/403) ⇒ no restrictions; 401/403 ⇒ full deny.
+            return "deny" if exc.code in (401, 403) else None
+        except Exception:  # noqa: BLE001 - unreachable robots ⇒ allow (conservative-permissive)
+            return None
 
     # ── lazy browser ──────────────────────────────────────────────────────
     def _ensure_browser(self):
