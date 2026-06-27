@@ -3,21 +3,129 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CollegeOS — College Applications for Indian Students</title>
-    <meta name="description" content="Search 6,000+ universities, track deadlines, and calculate your admission chances. Built for Indian students applying abroad." />
-    <meta name="author" content="CollegeOS" />
 
-    <meta property="og:title" content="CollegeOS — College Applications for Indian Students" />
-    <meta property="og:description" content="Search 6,000+ universities, track deadlines, and calculate your admission chances. Built for Indian students applying abroad." />
+    <!-- ⚠️ SET YOUR REAL DOMAIN: replace every https://collegeos.app below with the
+         production URL (canonical, og:url, sitemap, JSON-LD all depend on it). -->
+    <title>CollegeOS — Find the Right College & Track Applications | For Indian Students</title>
+    <meta name="description" content="CollegeOS helps students find the right college and master's program: search 6,000+ universities, compare admission chances, costs and outcomes, and track every deadline. Built for Indian students applying abroad." />
+    <meta name="keywords" content="find good colleges, college search platform, best college finder, how to choose a college, university search, admission chances calculator, masters program finder, study abroad, college application tracker, CollegeOS" />
+    <meta name="author" content="CollegeOS" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="theme-color" content="#6C63FF" />
+    <link rel="canonical" href="https://collegeos.app/" />
+    <link rel="icon" href="/favicon.ico" />
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="CollegeOS" />
+    <meta property="og:title" content="CollegeOS — Find the Right College & Track Applications" />
+    <meta property="og:description" content="Search 6,000+ universities, compare admission chances, costs and outcomes, and track every deadline. For undergrad and master's applicants." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://collegeos.app/" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://collegeos.app/og-image.png" />
+
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="CollegeOS — Find the Right College & Track Applications" />
+    <meta name="twitter:description" content="Search 6,000+ universities, compare admission chances, costs and outcomes, and track every deadline." />
+    <meta name="twitter:image" content="https://collegeos.app/og-image.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
+
+    <!-- Structured data: machine-readable facts for Google + AI/answer engines.
+         JSON-LD is parsed WITHOUT running the app, so even non-JS crawlers get it. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://collegeos.app/#organization",
+          "name": "CollegeOS",
+          "url": "https://collegeos.app/",
+          "logo": "https://collegeos.app/favicon.ico",
+          "description": "A college discovery and application-intelligence platform that helps students find the right undergraduate or master's program and manage their applications."
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://collegeos.app/#website",
+          "url": "https://collegeos.app/",
+          "name": "CollegeOS",
+          "publisher": { "@id": "https://collegeos.app/#organization" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": { "@type": "EntryPoint", "urlTemplate": "https://collegeos.app/colleges?search={search_term_string}" },
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "WebApplication",
+          "name": "CollegeOS",
+          "url": "https://collegeos.app/",
+          "applicationCategory": "EducationApplication",
+          "operatingSystem": "Web",
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+          "description": "Search 6,000+ universities, compare admission chances, cost-after-aid and salary outcomes, find master's programs, and track every application deadline in one place.",
+          "featureList": [
+            "Search 6,000+ universities and colleges",
+            "Personalized college and master's program recommendations",
+            "Admission chance / competitiveness estimates",
+            "Net price after aid and salary-outcome comparison",
+            "Application deadline and requirement tracking"
+          ]
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is the best way to find the right college?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Compare colleges on the factors that actually decide fit: your academic profile versus each school's admitted range, net price after financial aid (not the sticker price), and graduate salary outcomes for your intended major. CollegeOS lets you search 6,000+ universities and ranks them by how well they fit your profile, scores and budget." }
+            },
+            {
+              "@type": "Question",
+              "name": "What platform can help me find good colleges?",
+              "acceptedAnswer": { "@type": "Answer", "text": "CollegeOS is a free platform to discover and compare colleges and master's programs. It surfaces personalized matches based on your grades, test scores, budget and location preferences, estimates your competitiveness, and tracks every application deadline." }
+            },
+            {
+              "@type": "Question",
+              "name": "Is CollegeOS free?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can search universities, get personalized recommendations, and track applications for free." }
+            },
+            {
+              "@type": "Question",
+              "name": "Can CollegeOS help with master's and graduate program applications?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Yes. CollegeOS has a dedicated master's track that helps you find graduate programs by field, country and budget, shows real salary outcomes by field of study, and tracks GRE/GMAT and deadline requirements." }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
   </head>
 
   <body>
-    <div id="root"></div>
+    <!-- Crawlable fallback: visible to crawlers/AI engines that do not execute
+         JavaScript, and to users with JS disabled. The React app replaces #root
+         on mount, so users with JS never see it. Real, honest, descriptive copy
+         — this is what answer engines extract. -->
+    <div id="root">
+      <noscript>
+        <h1>CollegeOS — Find the Right College &amp; Track Your Applications</h1>
+        <p>
+          CollegeOS is a free college discovery and application-intelligence platform.
+          Search 6,000+ universities, get personalized college and master's-program
+          recommendations based on your academic profile, test scores, budget and
+          location, estimate your admission competitiveness, compare net price after
+          aid and salary outcomes, and track every application deadline in one place.
+          Built for students applying to undergraduate and graduate programs, with a
+          focus on Indian students applying abroad.
+        </p>
+        <p>Enable JavaScript to use the full CollegeOS app.</p>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
