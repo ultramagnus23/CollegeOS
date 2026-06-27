@@ -65,14 +65,27 @@ BEGIN
   FROM information_schema.columns
   WHERE table_schema = 'canonical' AND table_name = 'institution_identity_map';
 
-  -- 2. Backfill the two canonical-UUID alias columns to each other.
+  -- 2. Backfill canonical_institution_id from institution_id (the same canonical
+  --    UUID). CAUTION: canonical_institution_id is UNIQUE, but the 079 schema
+  --    allows MANY identity_map rows per institution (different source_table/
+  --    source_pk). So we can only populate ONE row per institution — pick the
+  --    earliest, and only where no row already claims that canonical id. A
+  --    blanket UPDATE would violate institution_identity_map_canonical_unique.
   IF has_institution_id AND has_canonical_id THEN
-    UPDATE canonical.institution_identity_map
-      SET canonical_institution_id = institution_id
-      WHERE canonical_institution_id IS NULL AND institution_id IS NOT NULL;
-    UPDATE canonical.institution_identity_map
-      SET institution_id = canonical_institution_id
-      WHERE institution_id IS NULL AND canonical_institution_id IS NOT NULL;
+    WITH pick AS (
+      SELECT DISTINCT ON (institution_id) id, institution_id
+      FROM canonical.institution_identity_map
+      WHERE canonical_institution_id IS NULL AND institution_id IS NOT NULL
+      ORDER BY institution_id, created_at NULLS LAST, id
+    )
+    UPDATE canonical.institution_identity_map m
+      SET canonical_institution_id = pick.institution_id
+      FROM pick
+      WHERE m.id = pick.id
+        AND NOT EXISTS (
+          SELECT 1 FROM canonical.institution_identity_map x
+          WHERE x.canonical_institution_id = pick.institution_id
+        );
   END IF;
 
   -- 3. Sane DEFAULTS for 079's provenance columns so future inserts that omit
