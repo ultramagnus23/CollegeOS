@@ -31,6 +31,7 @@ function sanitizeProfile(body = {}) {
     'toefl_score', 'ielts_score', 'duolingo_score', 'pte_score',
     'undergrad_gpa', 'undergrad_gpa_scale', 'publication_count',
     'work_experience_years', 'lors_secured', 'lors_required', 'target_intake_year',
+    'target_budget_max',
   ];
   for (const k of numeric) {
     if (body[k] !== undefined && body[k] !== null && body[k] !== '') {
@@ -39,7 +40,8 @@ function sanitizeProfile(body = {}) {
     }
   }
   const text = ['intended_program', 'intended_specialization', 'undergrad_institution',
-    'undergrad_major', 'undergrad_country', 'research_experience', 'work_experience_desc'];
+    'undergrad_major', 'undergrad_country', 'research_experience', 'work_experience_desc',
+    'target_budget_currency'];
   for (const k of text) {
     if (typeof body[k] === 'string') out[k] = body[k].slice(0, 2000);
   }

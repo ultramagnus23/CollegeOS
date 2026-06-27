@@ -1,9 +1,0 @@
-[
-  "config/DatabaseManager",
-  "config/security",
-  "controllers/CollegeController",
-  "controllers/collegeController",
-  "middleware/security",
-  "models/College",
-  "services/CollegeService"
-]

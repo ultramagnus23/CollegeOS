@@ -18,6 +18,7 @@ import {
 } from '../lib/collegeService';
 import { formatCountryName, getCountryTheme } from '../lib/country';
 import { getRecommendations as getQualityRecommendations } from '../services/recommendationService';
+import { useAddCollege } from '../hooks/useAddCollege';
 
 /* ─── Design tokens ──────────────────────────────────────────────── */
 const h2r = (hex: string, a: number) => {
@@ -108,6 +109,7 @@ const Colleges: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addingCollegeId, setAddingCollegeId] = useState<string | number | null>(null);
+  const { addCollege } = useAddCollege();
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -446,42 +448,13 @@ const Colleges: React.FC = () => {
 
 /* ==================== ACTIONS ==================== */
 
+  // Delegates to the shared useAddCollege hook so Browse and the Suggestions
+  // page use one add-flow (and one createApplication contract). Local
+  // addingCollegeId is kept only to drive the per-card button state.
   const handleAddCollege = async (collegeId: string | number) => {
-    if (!user) {
-      toast.info('Create a free account to save colleges.');
-      navigate('/auth');
-      return;
-    }
+    setAddingCollegeId(collegeId);
     try {
-      setAddingCollegeId(collegeId);
-      const payload = {
-        college_id: collegeId,
-        canonical_institution_id: collegeId,
-        application_type: 'regular',
-      };
-
-      try {
-        await api.applications.create(payload);
-      } catch (firstErr: any) {
-        // Retry once for transient failures.
-        if (String(firstErr?.message ?? '').toLowerCase().includes('network')) {
-          await api.applications.create(payload);
-        } else {
-          throw firstErr;
-        }
-      }
-
-      toast.success('Added to your list!');
-      navigate('/applications');
-    } catch (err: any) {
-      console.error('Add college error:', err);
-      
-      // Duplicate-safe UX
-      if (err?.message && String(err.message).toLowerCase().includes('already')) {
-        toast.info('Already in your list');
-      } else {
-        toast.error('Failed to add college');
-      }
+      await addCollege(collegeId, { navigateTo: '/applications' });
     } finally {
       setAddingCollegeId(null);
     }

@@ -1402,6 +1402,10 @@ class ApiService {
     return this.request('/admin/health');
   }
 
+  async adminScraperHealth() {
+    return this.request('/admin/scraper-health');
+  }
+
   // ==================== FINANCIAL AID ENDPOINTS ====================
 
   financial = {

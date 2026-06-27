@@ -133,8 +133,32 @@ function fmt(ts: string | null): string {
   try { return new Date(ts).toLocaleString(); } catch { return ts; }
 }
 
+interface ScraperHealthJob {
+  jobName: string;
+  lastSuccessfulRun: string | null;
+  lastFoundDataAt: string | null;
+  rowsInserted: number;
+  rowsUpdated: number;
+  rowsFailed: number;
+  health: 'healthy' | 'stale' | 'silently_failing' | 'failing' | 'never_run';
+}
+interface ScraperHealthPayload {
+  staleness: { thresholdDays: number; stalePercent: number | null; staleColleges: number; totalColleges: number; source: string | null };
+  healthCounts: Record<string, number>;
+  jobs: ScraperHealthJob[];
+}
+
+const HEALTH_STYLE: Record<string, { bg: string; color: string; label: string }> = {
+  healthy:          { bg: 'rgba(16,185,129,0.15)', color: '#34d399', label: 'Healthy' },
+  stale:            { bg: 'rgba(245,158,11,0.15)', color: '#fbbf24', label: 'Stale' },
+  silently_failing: { bg: 'rgba(239,68,68,0.15)',  color: '#f87171', label: 'Ran, 0 rows' },
+  failing:          { bg: 'rgba(239,68,68,0.18)',  color: '#f87171', label: 'Failing' },
+  never_run:        { bg: 'rgba(100,116,139,0.15)',color: '#94a3b8', label: 'Never run' },
+};
+
 export default function AdminDashboard() {
   const [health, setHealth] = useState<HealthPayload | null>(null);
+  const [scraperHealth, setScraperHealth] = useState<ScraperHealthPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -148,6 +172,10 @@ export default function AdminDashboard() {
         setError(e.message || 'Failed to load health data');
         setLoading(false);
       });
+    // Richer per-source health + staleness rollup (non-fatal if unavailable).
+    api.adminScraperHealth()
+      .then((res: any) => setScraperHealth((res?.data ?? res) as ScraperHealthPayload))
+      .catch(() => { /* section simply hides */ });
   }, []);
 
   if (loading) {
@@ -257,6 +285,73 @@ export default function AdminDashboard() {
           </div>
         )}
       </section>
+
+      {/* Scraper health & freshness — per-source status + staleness rollup */}
+      {scraperHealth && (
+        <section style={S.card}>
+          <h2 style={S.h2}>🩺 Scraper Health &amp; Freshness</h2>
+
+          {/* Staleness rollup */}
+          {scraperHealth.staleness && (
+            <div style={{ marginBottom: 16 }}>
+              <Stat
+                label={`Colleges stale (> ${scraperHealth.staleness.thresholdDays}d)`}
+                value={
+                  scraperHealth.staleness.stalePercent != null
+                    ? `${scraperHealth.staleness.stalePercent}%  (${scraperHealth.staleness.staleColleges.toLocaleString()} / ${scraperHealth.staleness.totalColleges.toLocaleString()})`
+                    : '—'
+                }
+              />
+              {scraperHealth.staleness.source && (
+                <div style={{ color: '#64748b', fontSize: 11, marginTop: 4 }}>
+                  source: {scraperHealth.staleness.source}
+                </div>
+              )}
+            </div>
+          )}
+
+          {scraperHealth.jobs.length === 0 ? (
+            <div style={{ color: '#64748b', fontSize: 13 }}>
+              No scraper run logs found. Once scrapers write to <code>scraper_run_logs</code>, per-source health appears here.
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={S.table}>
+                <thead>
+                  <tr>
+                    {['Source', 'Health', 'Last Success', 'Last New Data', 'Inserted', 'Updated', 'Failed'].map(h => (
+                      <th key={h} style={S.th}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {scraperHealth.jobs.map(j => {
+                    const hs = HEALTH_STYLE[j.health] ?? HEALTH_STYLE.never_run;
+                    return (
+                      <tr key={j.jobName}>
+                        <td style={{ ...S.td, fontWeight: 600, color: '#f1f5f9' }}>{j.jobName}</td>
+                        <td style={S.td}>
+                          <span style={{ background: hs.bg, color: hs.color, padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 700 }}>
+                            {hs.label}
+                          </span>
+                        </td>
+                        <td style={S.td}>{fmt(j.lastSuccessfulRun)}</td>
+                        <td style={S.td}>{fmt(j.lastFoundDataAt)}</td>
+                        <td style={S.td}>{j.rowsInserted.toLocaleString()}</td>
+                        <td style={S.td}>{j.rowsUpdated.toLocaleString()}</td>
+                        <td style={S.td}>{j.rowsFailed.toLocaleString()}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div style={{ color: '#64748b', fontSize: 11, marginTop: 8 }}>
+                “Ran, 0 rows” = the job completed cleanly but inserted/updated nothing — a likely silent failure (source structure changed).
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Database counts */}
       <section style={S.card}>

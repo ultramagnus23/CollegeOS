@@ -14,6 +14,7 @@ const PROFILE_COLUMNS = [
   'research_experience', 'publication_count', 'work_experience_years', 'work_experience_desc',
   'sop_status', 'lors_secured', 'lors_required',
   'target_intake_term', 'target_intake_year',
+  'target_budget_max', 'target_budget_currency',
 ];
 
 async function getTrack(userId) {
