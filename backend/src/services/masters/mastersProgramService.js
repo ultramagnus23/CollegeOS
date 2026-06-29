@@ -9,9 +9,9 @@
 const dbManager = require('../../config/database');
 
 const CARD_COLUMNS = [
-  'id', 'institution_name', 'institution_country', 'city', 'program_name', 'degree_type',
+  'id', 'institution_name', 'institution_country AS country', 'city', 'program_name', 'degree_type',
   'specialization', 'is_stem_designated', 'gre_requirement', 'gmat_requirement',
-  'funding_availability', 'tuition_total', 'tuition_currency', 'program_length_months',
+  'funding_availability', 'tuition_total', 'tuition_currency', 'program_length_months AS duration_months',
   'median_earnings', 'median_debt', 'data_quality_score', 'last_scraped_at',
   'pathway_count', 'datapoint_count',
 ].join(', ');
@@ -44,11 +44,25 @@ async function listProgramCards({ country, degreeType, q, limit = 30, offset = 0
   return rows;
 }
 
-/** Full program detail = program row + pathways + deadlines (+ datapoint count). */
+/**
+ * Full program detail = program row + pathways + deadlines (+ datapoint count).
+ * Column list is explicit (not SELECT *) so the contract with the frontend is
+ * stable and uses the same `country`/`duration_months`/`website` aliases as the
+ * card endpoints — these are real columns under different names, not invented data.
+ */
 async function getProgramDetail(programId) {
   const pool = dbManager.getDatabase();
   const program = (await pool.query(
-    `SELECT * FROM canonical.masters_programs WHERE id = $1`, [programId],
+    `SELECT
+        id, institution_name, institution_country AS country, city, department,
+        program_name, degree_type, specialization, cip_code, is_stem_designated,
+        language_of_instruction, intake_term, intake_year,
+        gre_requirement, gmat_requirement, min_gpa, min_gpa_scale, min_toefl, min_ielts,
+        funding_availability, assistantship_types, tuition_waiver_available,
+        tuition_total, tuition_currency, program_length_months AS duration_months,
+        median_earnings, median_debt, roi_source,
+        program_url AS official_website, data_source, data_quality_score, last_scraped_at
+      FROM canonical.masters_programs WHERE id = $1`, [programId],
   )).rows[0];
   if (!program) return null;
 
@@ -56,7 +70,7 @@ async function getProgramDetail(programId) {
     pool.query(`SELECT id, pathway_type, description, weighted_fields, min_requirements, confidence, source_url
                   FROM canonical.masters_program_pathways WHERE masters_program_id = $1
                   ORDER BY confidence DESC NULLS LAST`, [programId]),
-    pool.query(`SELECT id, deadline_type, deadline_date, is_rolling, intake_term, intake_year, source_url
+    pool.query(`SELECT id, deadline_type, deadline_date, is_rolling, intake_term, intake_year, notes, source_url
                   FROM canonical.masters_program_deadlines WHERE masters_program_id = $1
                   ORDER BY deadline_date ASC NULLS LAST`, [programId]),
     pool.query(`SELECT COUNT(*)::int AS n FROM canonical.masters_admission_datapoints WHERE masters_program_id = $1`, [programId]),
@@ -68,6 +82,34 @@ async function getProgramDetail(programId) {
     deadlines: deadlines.rows,
     datapoint_count: datapointAgg.rows[0].n,
   };
+}
+
+/**
+ * Catalog-wide deadlines for the Timeline page — distinct from GET /api/masters/deadlines,
+ * which is scoped to the user's saved applications. This is browse-all, not personal.
+ */
+async function listAllDeadlines({ country, degreeType, limit = 200 } = {}) {
+  const pool = dbManager.getDatabase();
+  const where = [];
+  const params = [];
+  if (country) { params.push(country); where.push(`mp.institution_country = $${params.length}`); }
+  if (degreeType) { params.push(degreeType); where.push(`mp.degree_type = $${params.length}`); }
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  params.push(Math.min(Number(limit) || 200, 500));
+
+  const { rows } = await pool.query(
+    `SELECT
+        d.id, mp.id AS program_id, mp.institution_name, mp.institution_country AS country,
+        mp.program_name, mp.degree_type, d.deadline_type, d.deadline_date, d.is_rolling,
+        d.intake_term, d.intake_year
+      FROM canonical.masters_program_deadlines d
+      JOIN canonical.masters_programs mp ON mp.id = d.masters_program_id
+      ${whereSql}
+      ORDER BY CASE WHEN d.deadline_date IS NULL THEN 1 ELSE 0 END, d.deadline_date ASC
+      LIMIT $${params.length}`,
+    params,
+  );
+  return rows;
 }
 
 /** Pathways + datapoints needed by the chancing service for one program. */
@@ -126,4 +168,5 @@ module.exports = {
   getProgramDetail,
   getChancingInputs,
   discoverPrograms,
+  listAllDeadlines,
 };

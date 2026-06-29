@@ -400,6 +400,206 @@ New, raised by this plan:
 
 ---
 
+## 8. Excel→Supabase Bulk Ingestion (Phase 8)
+
+### 8A0 — Recon
+- **Status:** Completed. Zero `.xlsx`/`.xls` files found in repo. Loader built with `--recon` and `--file` flags for when CT provides the file.
+- **Command:** `python -m scraper.masters.pipelines.excel_loader --recon --file path/to/file.xlsx`
+
+### 8A1 — Excel Loader
+- **File:** `scraper/masters/pipelines/excel_loader.py`
+- **Modes:** `--recon` (sheet names, row counts, headers, sample rows, degree_type/country flags), `--dry-run` (prints column mapping and what would be loaded), `--file` + `--limit` (actual DB upsert)
+- **Column mapping table** for program/deadline/pathway fields
+- **Data coercion helpers:** bool, int, float, JSONB lists
+- **Degree_type validation:** excludes non-MS/MA/MBA (enforces CHECK constraint)
+- **Institution ID resolution:** via `canonical.institutions` normalized_name join, with fuzzy fallback
+- **Scrape log entry** on completion via `canonical.masters_scrape_log`
+- **MV refresh** after load via `materializedViewManager`
+
+### 8A2 — Verification (pending)
+- Row counts, spot-check 5 programs, verify scrape_log entries
+- **Blocked on:** Excel file from CT
+
+---
+
+## 9. Navigation Parity — 5 New Pages + 2 Endpoints (Phase 9)
+
+### 9B1 — MastersLayout
+- **File:** `src/layouts/MastersLayout.tsx` (180 lines)
+- Sidebar navigation with 7 items: Dashboard, Programs, Timeline, Deadlines, Funding, Applications, Settings
+- Mobile responsive (sidebar overlay on mobile, permanent on desktop)
+- Uses `Outlet` from react-router-dom for child routes
+- Same visual style as DashboardLayout
+
+### 9B2 — Backend Endpoints
+- **File:** `backend/src/routes/masters.js` (updated, 283 lines)
+- **GET /api/masters/deadlines** (line 232): joins `masters_applications` → `masters_program_deadlines` → `masters_programs`, sorted by deadline_date ASC with nulls/rolling last
+- **GET /api/masters/funding** (line 262): reads from `mv_masters_program_cards` including `assistantship_types` and `tuition_waiver_available`, sorted by data_quality_score
+
+### 9B3 — MV Migration
+- **File:** `backend/migrations/122_masters_mv_funding_columns.sql` (new)
+- Drops and recreates `mv_masters_program_cards` with 2 new columns: `assistantship_types` (JSONB), `tuition_waiver_available` (BOOLEAN)
+- Same 3 indexes preserved (UNIQUE on id, index on country, index on degree_type)
+
+### 9B4 — Frontend Pages (5 new)
+| Page | File | Lines | API Calls |
+|------|------|-------|-----------|
+| MastersPrograms | `src/pages/MastersPrograms.tsx` | 364 | `api.masters.listPrograms()` |
+| MastersProgramDetails | `src/pages/MastersProgramDetails.tsx` | 329 | `api.masters.getProgram()`, `api.masters.getChances()` |
+| MastersTimeline | `src/pages/MastersTimeline.tsx` | 198 | `api.masters.listPrograms()` |
+| MastersDeadlines | `src/pages/MastersDeadlines.tsx` | 288 | `api.masters.getDeadlines()` |
+| MastersFunding | `src/pages/MastersFunding.tsx` | 289 | `api.masters.getFunding()` |
+
+All pages use the dark editorial design system (`ACCENT = '#3B9EFF'`, `S` tokens, `GLOBAL` CSS with `fadeUp`/`spin` animations), loading/error/empty states, and lucide-react icons.
+
+### 9B5 — api.ts Updates
+- Added `getDeadlines()` and `getFunding()` methods to the `masters` namespace in `src/services/api.ts`
+
+### 9B6 — App.tsx Consolidation
+- Replaced standalone `/masters` routes with nested structure under `MastersLayout`
+- Removed duplicate masters routes from inside `DashboardLayout` route group
+- All masters routes now gated by `isMastersTrackEnabled()`
+
+---
+
+## 10. Isolation Contract Compliance (Phase 10)
+
+### 10B1 — Isolation Check Results
+- **Verified:** No joins to `mv_college_cards` or undergrad tables in any masters route or service
+- All references to `institution_name` / `institution_country` are within `canonical.masters_programs` table — NOT undergrad `colleges` table
+- Frontend pages: zero references to undergrad data structures
+- **Result: PASS**
+
+### 10B2 — Latency Baseline (pending)
+- To be measured after Excel loader populates data
+- **Gate:** >5% regression on undergrad-only requests stops the phase
+- **Endpoints to measure:** `GET /api/masters/deadlines`, `GET /api/masters/funding`, `GET /api/masters/programs`
+
+### 10B3 — Feature Flag Gating
+- All masters routes gated by `VITE_MASTERS_TRACK_ENABLED` in `src/config/featureFlags.ts`
+- Backend routes gated by `mastersFeatureGate` middleware in `backend/src/middleware/requireMastersTrack.js` (returns 404 when off)
+- **Result: PASS**
+
+---
+
+## 11. Onboarding Expansion + Dashboard Insights + Applications Page (Phase 11)
+
+Closes the gap flagged in CT review: masters onboarding was a single flat form (2 fields'
+worth of structure vs. undergrad's 7-step flow), the dashboard was a plain light-themed search
+box with no readiness signal, and the sidebar linked to `/masters/applications` with no route
+behind it (404).
+
+### 11A — MastersOnboarding.tsx rewritten as 7-step wizard
+- **File:** `src/pages/MastersOnboarding.tsx`
+- Steps: Program Intent → Academic Background → Standardized Tests → Experience & Research →
+  Recommendations → Target Countries → Review
+- Collects the full field set `sanitizeProfile` in `backend/src/routes/masters.js` already
+  accepted but the old single-form UI never surfaced: `undergrad_country`, `research_experience`,
+  `work_experience_desc`, `lors_required`, `sop_status`, `duolingo_score`, `pte_score`
+- Deliberately drops essay/recommender *drafting* — only readiness counters (LORs secured/required,
+  SOP status as an enum), matching CT's instruction to keep masters lighter than undergrad on the
+  essay-heavy steps while still collecting structured data
+- Draft persisted to `localStorage` (`masters_onboarding_draft`), cleared on successful submit
+- Dark editorial design tokens, consistent with the Phase 9 pages
+
+### 11B — MastersDashboard.tsx redesigned
+- **File:** `src/pages/MastersDashboard.tsx`
+- Replaced light Tailwind theme with the dark editorial design system from Phase 9
+- New real-data insight surfaces: readiness ring + checklist from `GET /api/masters/readiness`,
+  upcoming-deadlines preview (top 3, links to `/masters/deadlines`), funding snapshot (top 3,
+  links to `/masters/funding`), quick-link tiles to all 5 sub-pages
+- Program discovery search and chancing-card flow preserved, restyled
+
+### 11C — MastersApplications.tsx (new)
+- **File:** `src/pages/MastersApplications.tsx`
+- The sidebar (`MastersLayout.tsx`) already linked to `/masters/applications`; `App.tsx` had
+  pointed that route at the **undergrad** `Applications` component, which calls undergrad
+  endpoints — a real isolation-contract violation, not just a missing page. Replaced with a
+  masters-native page calling `api.masters.listApplications()` / `saveApplication()`.
+
+### 11D — Dark-theme pass on shared masters components
+- **Files:** `src/components/masters/MastersDisclosure.tsx`, `MastersChancingCard.tsx`
+- Both hardcoded light Tailwind colors (amber/white/gray); converted to inline styles using
+  the same CSS variables (`--color-bg-surface`, `--color-text-secondary`, etc.) as the rest of
+  the masters track, since they're embedded directly in the now-dark dashboard.
+
+### 11E — api.ts additions
+- `masters.getReadiness()`, `masters.recordOutcome()` added to `src/services/api.ts` (existing
+  `getDeadlines`/`getFunding`/`listApplications`/`saveApplication` were already present).
+
+### Known issue carried forward (not fixed in this phase)
+- `MastersDeadlines.tsx`'s `MastersDeadline` interface expects `country`, `confidence_tier`,
+  `is_estimated`, `source_count` etc. that `GET /api/masters/deadlines` never returns (it only
+  selects `program_id, program_name, institution_name, degree_type, deadline_type,
+  deadline_date, is_rolling, intake_term, intake_year, source_url`). Country filter and
+  confidence badges on that page are silent no-ops. Needs its own fix pass against the real
+  `masters_program_deadlines` schema (see `backend/migrations/120_masters_track_foundation.sql`)
+  — tracked as a separate follow-up, not bundled into this phase to avoid scope creep.
+
+---
+
+## 12. Field Contract Fixes Across Masters Pages (Phase 12)
+
+Closes the issue flagged at the end of Phase 11. The root cause was systemic, not a single
+endpoint: every backend query against `canonical.masters_programs` /
+`canonical.mv_masters_program_cards` was returning real column names
+(`institution_country`, `program_length_months`, `program_url`) while five different frontend
+pages had each independently guessed at different, friendlier names (`country`,
+`duration_months`, `official_website`) — and in `confidence_tier`/`scholarship_amount`/
+`stipend_amount`/`start_date`/`delivery_mode`/`description` cases, names for columns that
+**don't exist anywhere in the schema at all**. None of these were caught because every failure
+mode is silent (`undefined` renders as nothing, not an error).
+
+**Severity ranking of what was actually broken in production right now, before this fix:**
+1. **Timeline page (`MastersTimeline.tsx`) was permanently empty.** It called `listPrograms()`
+   and read `program.deadlines` off each card — but card endpoints never embed deadlines (by
+   design, for MV performance). This wasn't a missing field, it was calling the wrong shape of
+   endpoint entirely. No amount of seeded data would have ever made this page show anything.
+2. **Catalog page (`MastersPrograms.tsx`) country filter and Duration field were always
+   empty/"N/A".** The backend returned `institution_country`/`program_length_months`; the page
+   read `country`/`duration_months`.
+3. **Chancing display on the program details page (`MastersProgramDetails.tsx`) rendered
+   `undefined` everywhere.** Its `ChancingResult` interface (`tier`, `category`, `confidence`,
+   `probabilityRange`) didn't match what `mastersChancingService.assessProgram()` actually
+   returns (`{ overall: { band, label }, pathways, checklist, sampleSize, disclosures }`).
+4. **Funding card colors/country badge were always wrong.** `MastersFunding.tsx` compared
+   against `'full_funding'`/`'United States'` when the schema's real enum values are
+   `fully_funded|partial|unfunded|varies|unknown` and country codes are `US|UK|CA|DE|NL|AU|SG`.
+   It also rendered a `Stipend` field and `scholarship_amount`/`stipend_amount` fields that have
+   no backing column anywhere in `canonical.masters_programs`.
+5. Deadlines/funding/program-detail pages also lacked `country`, which is a legitimate
+   denormalized column on `masters_programs` simply never joined/selected by the route.
+
+**Fix approach taken (per-case, not blanket):**
+- Where the frontend wanted a real column under a friendlier name (`country` for
+  `institution_country`, `duration_months` for `program_length_months`, `official_website` for
+  `program_url`), the fix was a SQL alias — `mastersProgramService.js`'s `CARD_COLUMNS` and
+  `getProgramDetail()` now alias these consistently everywhere a "program card" or "program
+  detail" shape is returned, so every page sees the same contract.
+- Where the frontend invented a field with **no backing column** (`scholarship_amount`,
+  `stipend_amount`, `start_date`, `delivery_mode`, `description` on programs;
+  `confidence_tier`/`is_estimated`/`source_count`/`last_verified` on deadlines — the deadlines
+  table has no confidence-scoring columns at all, that concept doesn't exist for masters
+  deadlines), the UI for it was removed rather than stubbed.
+- Where the frontend needed data that genuinely didn't exist as an endpoint
+  (Timeline's catalog-wide deadline browse), a new read-only endpoint was added:
+  `GET /api/masters/programs/deadlines/all` (`mastersProgramService.listAllDeadlines`) —
+  distinct from the user-scoped `GET /api/masters/deadlines`, which stays scoped to saved
+  applications per its original Phase 9 spec.
+- The chancing display on program details now reuses the existing `MastersChancingCard`
+  component (already correct, already dark-themed) instead of a second, wrong, hand-rolled
+  renderer.
+
+**Files touched:** `backend/src/routes/masters.js` (`/deadlines`, `/funding`, new
+`/programs/deadlines/all`), `backend/src/services/masters/mastersProgramService.js`
+(`CARD_COLUMNS`, `getProgramDetail`, new `listAllDeadlines`), `src/services/api.ts`
+(`listAllDeadlines`), `src/pages/MastersDeadlines.tsx`, `src/pages/MastersFunding.tsx`,
+`src/pages/MastersTimeline.tsx`, `src/pages/MastersProgramDetails.tsx`,
+`src/pages/MastersDashboard.tsx` (ProgramCard interface follow-on fix for the same alias
+change). Typecheck, lint, and production build all pass clean after the change.
+
+---
+
 ## Appendix A — New files/tables at a glance
 
 | Layer | New artifact |

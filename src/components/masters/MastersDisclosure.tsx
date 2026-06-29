@@ -28,11 +28,13 @@ const MastersDisclosure: React.FC<Props> = ({ variant = 'banner' }) => {
     () => variant === 'banner' && sessionStorage.getItem(SESSION_KEY) === '1',
   );
 
+  const amber = '#F59E0B';
+
   if (variant === 'inline') {
     return (
-      <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-        <p className="font-medium">How to read this</p>
-        <p className="mt-1">
+      <div style={{ marginTop: 12, borderRadius: 10, border: `1px solid ${amber}40`, background: `${amber}14`, padding: 12, fontSize: 12, color: 'var(--color-text-primary)' }}>
+        <p style={{ fontWeight: 600, margin: 0 }}>How to read this</p>
+        <p style={{ marginTop: 4, color: 'var(--color-text-secondary)' }}>
           This is a competitiveness band, not an admit probability. It is based on a limited,
           self-selected sample and cannot account for research fit, your SOP, recommendations, or interviews.
         </p>
@@ -43,29 +45,29 @@ const MastersDisclosure: React.FC<Props> = ({ variant = 'banner' }) => {
   if (dismissed) return null;
 
   return (
-    <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
-      <div className="flex items-start gap-3">
-        <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
-        <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Before you trust any number here — what we honestly can’t do</h3>
+    <div style={{ borderRadius: 16, border: `1px solid ${amber}50`, background: `${amber}12`, padding: 16, color: 'var(--color-text-primary)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <AlertTriangle style={{ marginTop: 2, height: 18, width: 18, flexShrink: 0, color: amber }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>Before you trust any number here — what we honestly can’t do</h3>
             <button
               aria-label="Dismiss for this session"
               onClick={() => {
                 sessionStorage.setItem(SESSION_KEY, '1');
                 setDismissed(true);
               }}
-              className="text-amber-500 hover:text-amber-700"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: amber }}
             >
-              <X className="h-4 w-4" />
+              <X style={{ height: 16, width: 16 }} />
             </button>
           </div>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+          <ul style={{ marginTop: 8, listStyle: 'disc', display: 'flex', flexDirection: 'column', gap: 4, paddingLeft: 20, fontSize: 13, color: 'var(--color-text-secondary)' }}>
             {POINTS.map((p) => (
               <li key={p}>{p}</li>
             ))}
           </ul>
-          <p className="mt-2 text-xs text-amber-700">
+          <p style={{ marginTop: 8, fontSize: 11, color: 'var(--color-text-disabled)' }}>
             This notice reappears next session — it’s too important to hide for good.
           </p>
         </div>

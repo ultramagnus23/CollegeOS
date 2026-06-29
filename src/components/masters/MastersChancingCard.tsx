@@ -30,10 +30,10 @@ export interface ChancingAssessment {
 }
 
 const BAND_STYLE: Record<Band, { bg: string; text: string; dot: string }> = {
-  above_typical: { bg: 'bg-green-50 border-green-200', text: 'text-green-800', dot: 'bg-green-500' },
-  within_typical: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-800', dot: 'bg-blue-500' },
-  below_typical: { bg: 'bg-orange-50 border-orange-200', text: 'text-orange-800', dot: 'bg-orange-500' },
-  insufficient_data: { bg: 'bg-gray-50 border-gray-200', text: 'text-gray-700', dot: 'bg-gray-400' },
+  above_typical: { bg: 'rgba(16,185,129,0.1)', text: '#10B981', dot: '#10B981' },
+  within_typical: { bg: 'rgba(59,158,255,0.1)', text: '#3B9EFF', dot: '#3B9EFF' },
+  below_typical: { bg: 'rgba(251,146,60,0.1)', text: '#FB923C', dot: '#FB923C' },
+  insufficient_data: { bg: 'var(--color-surface-subtle)', text: 'var(--color-text-secondary)', dot: 'var(--color-text-disabled)' },
 };
 
 const prettyPathway = (t: string) =>
@@ -44,40 +44,40 @@ const MastersChancingCard: React.FC<{ assessment: ChancingAssessment }> = ({ ass
   const hasBand = assessment.overall.band !== 'insufficient_data';
 
   return (
-    <div className="rounded-xl border bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Competitiveness</h3>
+    <div style={{ borderRadius: 16, border: '1px solid var(--color-border)', background: 'var(--color-bg-surface)', padding: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h3 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-text-secondary)', margin: 0 }}>Competitiveness</h3>
         {assessment.sampleSize > 0 && (
-          <span className="text-xs text-gray-400">self-reported data, N={assessment.sampleSize}</span>
+          <span style={{ fontSize: 11, color: 'var(--color-text-disabled)' }}>self-reported data, N={assessment.sampleSize}</span>
         )}
       </div>
 
-      <div className={`mt-3 flex items-center gap-3 rounded-lg border px-4 py-3 ${style.bg}`}>
-        <span className={`h-2.5 w-2.5 rounded-full ${style.dot}`} />
-        <span className={`font-semibold ${style.text}`}>{assessment.overall.label}</span>
+      <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10, borderRadius: 10, border: '1px solid transparent', padding: '12px 16px', background: style.bg }}>
+        <span style={{ height: 10, width: 10, borderRadius: '50%', background: style.dot, flexShrink: 0 }} />
+        <span style={{ fontWeight: 700, color: style.text, fontSize: 14 }}>{assessment.overall.label}</span>
       </div>
 
       {hasBand && assessment.pathways.length > 0 && (
-        <div className="mt-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-400">By pathway</p>
-          <ul className="mt-2 space-y-1.5">
+        <div style={{ marginTop: 16 }}>
+          <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-disabled)', margin: 0 }}>By pathway</p>
+          <ul style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6, listStyle: 'none', padding: 0 }}>
             {assessment.pathways.map((p) => (
-              <li key={p.pathwayType} className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">{prettyPathway(p.pathwayType)}</span>
-                <span className="text-gray-500">{p.label || '—'}</span>
+              <li key={p.pathwayType} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
+                <span style={{ color: 'var(--color-text-secondary)' }}>{prettyPathway(p.pathwayType)}</span>
+                <span style={{ color: 'var(--color-text-disabled)' }}>{p.label || '—'}</span>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <div className="mt-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">Stated requirements</p>
-        <ul className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+      <div style={{ marginTop: 16 }}>
+        <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-disabled)', margin: 0 }}>Stated requirements</p>
+        <ul style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', listStyle: 'none', padding: 0, fontSize: 13 }}>
           {assessment.checklist.map((c) => (
-            <li key={c.requirement} className="flex justify-between">
-              <span className="text-gray-500">{c.requirement}</span>
-              <span className="font-medium text-gray-800">{c.value}</span>
+            <li key={c.requirement} style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--color-text-disabled)' }}>{c.requirement}</span>
+              <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{c.value}</span>
             </li>
           ))}
         </ul>

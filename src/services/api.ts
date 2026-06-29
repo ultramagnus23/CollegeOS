@@ -1531,12 +1531,33 @@ class ApiService {
       return this.request(`/masters/programs${qs ? `?${qs}` : ''}`);
     },
     getProgram: (id: string) => this.request(`/masters/programs/${encodeURIComponent(id)}`),
+    listAllDeadlines: (params: { country?: string; degreeType?: string; limit?: number } = {}) => {
+      const qs = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v != null && v !== '').map(([k, v]) => [k, String(v)]),
+      ).toString();
+      return this.request(`/masters/programs/deadlines/all${qs ? `?${qs}` : ''}`);
+    },
     discover: (data: { field?: string; countries?: string[]; degreeType?: string; budgetMax?: number; limit?: number }) =>
       this.request('/masters/discover', { method: 'POST', body: JSON.stringify(data) }),
     getChances: (programId: string) => this.request(`/masters/chances/${encodeURIComponent(programId)}`),
     listApplications: () => this.request('/masters/applications'),
     saveApplication: (data: { mastersProgramId: string; status?: string; intakeTerm?: string; intakeYear?: number; priority?: string; notes?: string }) =>
       this.request('/masters/applications', { method: 'POST', body: JSON.stringify(data) }),
+    recordOutcome: (data: { mastersProgramId: string; intakeTerm?: string; intakeYear?: number; outcome: string }) =>
+      this.request('/masters/outcomes', { method: 'POST', body: JSON.stringify(data) }),
+    getReadiness: () => this.request('/masters/readiness'),
+    getDeadlines: (params: { country?: string; type?: string; limit?: number } = {}) => {
+      const qs = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v != null && v !== '').map(([k, v]) => [k, String(v)]),
+      ).toString();
+      return this.request(`/masters/deadlines${qs ? `?${qs}` : ''}`);
+    },
+    getFunding: (params: { country?: string; degreeType?: string; fundingAvailability?: string; limit?: number } = {}) => {
+      const qs = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v != null && v !== '').map(([k, v]) => [k, String(v)]),
+      ).toString();
+      return this.request(`/masters/funding${qs ? `?${qs}` : ''}`);
+    },
   };
 }
 

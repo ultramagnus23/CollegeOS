@@ -109,6 +109,15 @@ router.get('/programs/:id', authenticate, async (req, res) => {
   } catch (e) { fail(res, 500, 'Failed to fetch program', e); }
 });
 
+// Catalog-wide deadlines for the Timeline page (browse-all, not scoped to saved applications).
+router.get('/programs/deadlines/all', authenticate, async (req, res) => {
+  try {
+    const { country, degreeType, limit } = req.query;
+    const rows = await programService.listAllDeadlines({ country, degreeType, limit });
+    res.json({ success: true, data: rows });
+  } catch (e) { fail(res, 500, 'Failed to list catalog deadlines', e); }
+});
+
 router.post('/discover', authenticate, async (req, res) => {
   try {
     const { field, countries, degreeType, budgetMax, limit } = req.body || {};
@@ -226,6 +235,63 @@ router.get('/readiness', authenticate, async (req, res) => {
     const done = items.filter((i) => i.done).length;
     res.json({ success: true, data: { completion: Math.round((100 * done) / items.length), ready: done === items.length, items } });
   } catch (e) { fail(res, 500, 'Failed to compute readiness', e); }
+});
+
+// ── Deadlines for user's saved programs ───────────────────────────────────────
+router.get('/deadlines', authenticate, async (req, res) => {
+  try {
+    const pool = dbManager.getDatabase();
+    const { rows } = await pool.query(
+      `SELECT
+        d.id,
+        mp.id AS program_id,
+        mp.program_name,
+        mp.institution_name,
+        mp.institution_country AS country,
+        mp.degree_type,
+        d.deadline_type,
+        d.deadline_date,
+        d.is_rolling,
+        d.intake_term,
+        d.intake_year,
+        d.notes,
+        d.source_url
+      FROM public.masters_applications a
+      JOIN canonical.masters_program_deadlines d ON d.masters_program_id = a.masters_program_id
+      JOIN canonical.masters_programs mp ON mp.id = a.masters_program_id
+      WHERE a.user_id = $1
+      ORDER BY
+        CASE WHEN d.deadline_date IS NULL THEN 1 ELSE 0 END,
+        d.deadline_date ASC,
+        CASE WHEN d.is_rolling THEN 1 ELSE 0 END`,
+      [req.user.userId],
+    );
+    res.json({ success: true, data: rows });
+  } catch (e) { fail(res, 500, 'Failed to fetch deadlines', e); }
+});
+
+// ── Funding data per program ──────────────────────────────────────────────────
+router.get('/funding', authenticate, async (req, res) => {
+  try {
+    const pool = dbManager.getDatabase();
+    const { rows } = await pool.query(
+      `SELECT
+        id AS program_id,
+        program_name,
+        institution_name,
+        institution_country AS country,
+        degree_type,
+        funding_availability,
+        assistantship_types,
+        tuition_waiver_available,
+        tuition_total,
+        tuition_currency,
+        data_quality_score
+      FROM canonical.mv_masters_program_cards
+      ORDER BY data_quality_score DESC NULLS LAST`,
+    );
+    res.json({ success: true, data: rows });
+  } catch (e) { fail(res, 500, 'Failed to fetch funding data', e); }
 });
 
 module.exports = router;
