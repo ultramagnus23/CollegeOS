@@ -4,15 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- ⚠️ SET YOUR REAL DOMAIN: replace every https://collegeos.app below with the
-         production URL (canonical, og:url, sitemap, JSON-LD all depend on it). -->
+    <!-- Canonical domain: https://college-os.vercel.app (update here, in robots.txt
+         and sitemap.xml if you ever move to a custom domain). -->
     <title>CollegeOS — Find the Right College & Track Applications | For Indian Students</title>
     <meta name="description" content="CollegeOS helps students find the right college and master's program: search 6,000+ universities, compare admission chances, costs and outcomes, and track every deadline. Built for Indian students applying abroad." />
     <meta name="keywords" content="find good colleges, college search platform, best college finder, how to choose a college, university search, admission chances calculator, masters program finder, study abroad, college application tracker, CollegeOS" />
     <meta name="author" content="CollegeOS" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="theme-color" content="#6C63FF" />
-    <link rel="canonical" href="https://collegeos.app/" />
+    <link rel="canonical" href="https://college-os.vercel.app/" />
     <link rel="icon" href="/favicon.ico" />
 
     <!-- Open Graph -->
@@ -20,15 +20,15 @@
     <meta property="og:title" content="CollegeOS — Find the Right College & Track Applications" />
     <meta property="og:description" content="Search 6,000+ universities, compare admission chances, costs and outcomes, and track every deadline. For undergrad and master's applicants." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://collegeos.app/" />
+    <meta property="og:url" content="https://college-os.vercel.app/" />
     <meta property="og:locale" content="en_US" />
-    <meta property="og:image" content="https://collegeos.app/og-image.png" />
+    <meta property="og:image" content="https://college-os.vercel.app/og-image.png" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="CollegeOS — Find the Right College & Track Applications" />
     <meta name="twitter:description" content="Search 6,000+ universities, compare admission chances, costs and outcomes, and track every deadline." />
-    <meta name="twitter:image" content="https://collegeos.app/og-image.png" />
+    <meta name="twitter:image" content="https://college-os.vercel.app/og-image.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
@@ -42,28 +42,28 @@
       "@graph": [
         {
           "@type": "Organization",
-          "@id": "https://collegeos.app/#organization",
+          "@id": "https://college-os.vercel.app/#organization",
           "name": "CollegeOS",
-          "url": "https://collegeos.app/",
-          "logo": "https://collegeos.app/favicon.ico",
+          "url": "https://college-os.vercel.app/",
+          "logo": "https://college-os.vercel.app/favicon.ico",
           "description": "A college discovery and application-intelligence platform that helps students find the right undergraduate or master's program and manage their applications."
         },
         {
           "@type": "WebSite",
-          "@id": "https://collegeos.app/#website",
-          "url": "https://collegeos.app/",
+          "@id": "https://college-os.vercel.app/#website",
+          "url": "https://college-os.vercel.app/",
           "name": "CollegeOS",
-          "publisher": { "@id": "https://collegeos.app/#organization" },
+          "publisher": { "@id": "https://college-os.vercel.app/#organization" },
           "potentialAction": {
             "@type": "SearchAction",
-            "target": { "@type": "EntryPoint", "urlTemplate": "https://collegeos.app/colleges?search={search_term_string}" },
+            "target": { "@type": "EntryPoint", "urlTemplate": "https://college-os.vercel.app/colleges?search={search_term_string}" },
             "query-input": "required name=search_term_string"
           }
         },
         {
           "@type": "WebApplication",
           "name": "CollegeOS",
-          "url": "https://collegeos.app/",
+          "url": "https://college-os.vercel.app/",
           "applicationCategory": "EducationApplication",
           "operatingSystem": "Web",
           "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },

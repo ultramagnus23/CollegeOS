@@ -1,5 +1,4 @@
-# CollegeOS robots.txt
-# ⚠️ Update the Sitemap URL below to your real production domain.
+# CollegeOS robots.txt — domain: https://college-os.vercel.app
 
 # --- Search engines ---
 User-agent: Googlebot
@@ -54,4 +53,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://collegeos.app/sitemap.xml
+Sitemap: https://college-os.vercel.app/sitemap.xml
