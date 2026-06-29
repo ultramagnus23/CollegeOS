@@ -227,14 +227,19 @@ async function calculateChance(studentProfile, college, application = {}) {
       }
     }
 
-    // Combine SAT + GPA
+    // Combine SAT + GPA. When only one is available, use it at full strength
+    // instead of blending in an assumed-median 0.50 for the missing one — that
+    // imputation silently dragged every test-optional / GPA-missing applicant's
+    // score toward the middle, which is what produced the "mid-band students
+    // get under-predicted" complaint (a strong SAT-only profile was being
+    // penalized for a GPA it never claimed to have).
     let academicScore = null;
     if (satScore != null && gpaScore != null) {
       academicScore = satScore * 0.52 + gpaScore * 0.48;
     } else if (satScore != null) {
-      academicScore = satScore * 0.60 + 0.50 * 0.40;
+      academicScore = satScore;
     } else if (gpaScore != null) {
-      academicScore = gpaScore * 0.60 + 0.50 * 0.40;
+      academicScore = gpaScore;
     }
 
     if (sp.sat_total == null && sp.act_composite == null) missingDataFields.push('sat_total / act_composite');
@@ -410,16 +415,14 @@ async function calculateChance(studentProfile, college, application = {}) {
     // If domestic, skip F4 (redistribute to F1 below)
 
     // ── FACTOR 5 — Application Strategy (weight 0.12) ──────────────────────
+    // NOTE: the ED/REA/EA bonus is intentionally NOT folded into strategyScore
+    // here. Burying it in a 0.12-weighted, weight-normalized, profile-
+    // multiplied composite diluted a ~9-12pp advertised bonus down to <1pp of
+    // actual displayed effect — and had ZERO effect whenever the ML model
+    // path was active, since the model never sees this factor at all. It is
+    // instead applied once, directly, to the final probability below
+    // (see "decision-type adjustment"), so the number always matches the text.
     const decisionType = app.decision_type ?? null;
-    let decisionBonus  = 0;
-    if (decisionType === 'ED') {
-      decisionBonus = selTier.edBonus;
-      if (sp.need_based_aid && col.need_aware_intl) decisionBonus *= 0.5;
-    } else if (decisionType === 'REA') {
-      decisionBonus = selTier.edBonus * 0.55;
-    } else if (decisionType === 'EA') {
-      decisionBonus = selTier.edBonus * 0.35;
-    }
 
     const tracksInterest = col.tracks_demonstrated_interest === true;
     const diBonus = tracksInterest && app.demonstrated_interest ? 0.04 : 0;
@@ -429,13 +432,13 @@ async function calculateChance(studentProfile, college, application = {}) {
       ? (yieldRate > 0.75 ? -0.02 : yieldRate < 0.40 ? 0.02 : 0)
       : 0;
 
-    const strategyScore = clamp(0.50 + decisionBonus + diBonus + yieldAdjustment, 0.20, 0.80);
+    const strategyScore = clamp(0.50 + diBonus + yieldAdjustment, 0.20, 0.80);
 
     factorScores.applicationStrategy = {
       score: strategyScore,
       weight: 0.12,
       contribution: strategyScore * 0.12,
-      detail: `Decision: ${decisionType ?? 'RD'}, ED bonus: ${(selTier.edBonus * 100).toFixed(0)}pp`,
+      detail: `Decision: ${decisionType ?? 'RD'} (decision-type effect applied directly to final probability, not this factor)`,
     };
 
     // ── FACTOR 6 — Institutional Fit (weight 0.08) ─────────────────────────
@@ -589,6 +592,24 @@ async function calculateChance(studentProfile, college, application = {}) {
       logger.warn('chancing model inference failed; using heuristic', { error: sanitizeForLog(mlError?.message) });
     }
 
+    // ── Decision-type adjustment — applied once, after heuristic/model probability
+    // is finalized, so ED/REA/EA has the SAME real effect (and the recommendation
+    // text below always reports the actual realized delta, never an unapplied one).
+    let edPPBonus = 0;
+    if (decisionType === 'ED') {
+      edPPBonus = selTier.edBonus;
+      if (sp.need_based_aid && col.need_aware_intl) edPPBonus *= 0.5;
+    } else if (decisionType === 'REA') {
+      edPPBonus = selTier.edBonus * 0.55;
+    } else if (decisionType === 'EA') {
+      edPPBonus = selTier.edBonus * 0.35;
+    }
+    if (edPPBonus > 0) {
+      const preDecisionProbability = probability;
+      probability = clamp(Math.min(probability + edPPBonus, selectivityCeiling), 0.01, 0.95);
+      factorScores.applicationStrategy.realizedDecisionDeltaPP = Math.round((probability - preDecisionProbability) * 1000) / 10;
+    }
+
     // Probability range
     const probabilityRange = {
       low:  clamp(probability - rangeHalfWidth, 0.01, 0.93),
@@ -655,9 +676,16 @@ async function calculateChance(studentProfile, college, application = {}) {
     }
     if (!decisionType || decisionType === 'RD') {
       if (selTier.tier === 'highly' || selTier.tier === 'selective') {
-        recommendedActions.push(
-          `Applying ED would increase your estimated probability by ~${(selTier.edBonus * 100).toFixed(0)}pp at this school.`
-        );
+        // Report the REAL delta this would produce (capped by the selectivity
+        // ceiling, same as the live adjustment above), not the raw tier bonus —
+        // those used to disagree, which read as the model lying about itself.
+        const counterfactual = clamp(Math.min(probability + selTier.edBonus, selectivityCeiling), 0.01, 0.95);
+        const realDeltaPP = Math.round((counterfactual - probability) * 100);
+        if (realDeltaPP >= 1) {
+          recommendedActions.push(
+            `Applying ED would increase your estimated probability by ~${realDeltaPP}pp at this school.`
+          );
+        }
       }
     }
     if (!isDomestic && intlScore != null && intlScore < 0.25) {

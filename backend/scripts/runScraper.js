@@ -13,6 +13,10 @@ const { runScraper } = require('../src/scrapers/scraperFramework');
 
 const ADAPTERS = {
   wikidata: require('../src/scrapers/adapters/wikidataEnrichment'),
+  usDeadlines: require('../src/scrapers/adapters/usOfficialDeadlines').adapter,
+  usRequirements: require('../src/scrapers/adapters/usOfficialRequirements').adapter,
+  nirfRankings: require('../src/scrapers/adapters/nirfRankings').adapter,
+  institutionPlacements: require('../src/scrapers/adapters/institutionPlacements').adapter,
 };
 
 async function main() {

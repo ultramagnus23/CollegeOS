@@ -108,12 +108,24 @@ const MastersDashboard: React.FC = () => {
   useEffect(() => {
     (async () => {
       try {
-        const [readinessRes, deadlinesRes, fundingRes] = await Promise.all([
-          api.masters.getReadiness(),
+        const readinessRes = await api.masters.getReadiness();
+        const readinessData = (readinessRes?.data as ReadinessData) || null;
+        // getReadiness returns items:[] when no masters profile exists yet
+        // (see backend/src/routes/masters.js GET /readiness) — that's the
+        // signal that this user never finished masters onboarding. Login was
+        // routing straight to this dashboard regardless, so the onboarding
+        // step was effectively skippable. Send them there instead of showing
+        // an empty dashboard.
+        if (!readinessData || readinessData.items.length === 0) {
+          navigate('/masters/onboarding', { replace: true });
+          return;
+        }
+        setReadiness(readinessData);
+
+        const [deadlinesRes, fundingRes] = await Promise.all([
           api.masters.getDeadlines({ limit: 3 }),
           api.masters.getFunding({ limit: 3 }),
         ]);
-        setReadiness((readinessRes?.data as ReadinessData) || null);
         setDeadlines(((deadlinesRes?.data as DeadlineRow[]) || []).slice(0, 3));
         setFunding(((fundingRes?.data as FundingRow[]) || []).slice(0, 3));
       } catch {
@@ -122,7 +134,7 @@ const MastersDashboard: React.FC = () => {
         setLoadingInsights(false);
       }
     })();
-  }, []);
+  }, [navigate]);
 
   const search = async () => {
     setSearching(true);

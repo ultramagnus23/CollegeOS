@@ -1,11 +1,22 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GraduationCap, Target, Calendar } from 'lucide-react';
 import { LegalFooter } from '../components/legal/LegalFooter';
+import { api } from '../services/api';
+import { formatCountryName } from '../lib/country';
+
+interface ComprehensiveStats {
+  total: number;
+  countries: { country: string; count: number }[];
+}
+
+const FALLBACK_TOTAL = 6000;
+const FALLBACK_COUNTRY_BLURB = 'US, UK & Germany';
 
 const features = [
   {
     title: 'College Explorer',
-    description: 'Search and filter 6,000+ universities. See acceptance rates, cost of attendance in INR, median scores, and what Indian applicants actually need.',
+    description: 'Search and filter universities. See acceptance rates, cost of attendance in INR, median scores, and what Indian applicants actually need.',
     icon: GraduationCap,
   },
   {
@@ -27,6 +38,32 @@ const steps = [
 ];
 
 export default function Landing() {
+  const [stats, setStats] = useState<ComprehensiveStats | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res: any = await api.colleges.getStats();
+        const data = res?.data ?? res;
+        if (!cancelled && data?.total) setStats(data);
+      } catch {
+        /* fall back to the static copy below */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const totalLabel = stats?.total ? `${Math.floor(stats.total / 100) * 100}+` : `${FALLBACK_TOTAL}+`;
+  const countryBlurb = stats?.countries?.length
+    ? (() => {
+        const names = stats.countries.slice(0, 3).map((c) => formatCountryName(c.country)).filter(Boolean);
+        if (names.length === 0) return FALLBACK_COUNTRY_BLURB;
+        if (stats.countries.length > 3) return `${names.join(', ')} & ${stats.countries.length - 3} more countries`;
+        return names.join(', ').replace(/, ([^,]*)$/, ' & $1');
+      })()
+    : FALLBACK_COUNTRY_BLURB;
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-6xl mx-auto px-6 py-20">
@@ -38,7 +75,7 @@ export default function Landing() {
             Your entire college application, in one OS.
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mb-10">
-            Built for Indian students applying to US, UK &amp; Germany universities. Search 6,000+ colleges, track deadlines, compare financial aid, and see your real admission chances.
+            Built for Indian students applying to {countryBlurb} universities. Search {totalLabel} colleges, track deadlines, compare financial aid, and see your real admission chances.
           </p>
           <div className="flex flex-wrap gap-4">
             <Link

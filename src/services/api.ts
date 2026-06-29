@@ -835,6 +835,7 @@ class ApiService {
 
     getCountries: () => this.request('/colleges/filters/countries'),
     getPrograms: () => this.request('/colleges/filters/programs'),
+    getStats: () => this.request('/colleges/comprehensive/stats'),
 
     checkEligibility: (id: number, program?: string) =>
       this.request(`/colleges/${id}/eligibility${program ? `?program=${encodeURIComponent(program)}` : ''}`),
