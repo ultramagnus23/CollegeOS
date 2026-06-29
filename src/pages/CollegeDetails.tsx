@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { DataFreshnessIndicator } from '@/components/DataFreshnessIndicator';
 import { getCollegeById, isSupabaseConfigured, normalizeToDetail } from '../lib/collegeService';
 import { useAuth } from '../contexts/AuthContext';
+import ConfidenceBadge from '../components/ConfidenceBadge';
 import { usePreferredCurrency } from '../hooks/usePreferredCurrency';
 import { formatCountryName, getCountryTheme, normalizeCountryCode } from '../lib/country';
 const COLLEGE_SYNC_DEBUG = import.meta.env.DEV;
@@ -841,9 +842,10 @@ const CollegeDetail: React.FC = () => {
               return tuitionStr && <QuickStat label="Tuition" value={tuitionStr} />;
             })()}
             
-            {/* Show retention rate if available */}
-            {resolvedRetentionRate != null && (
-              <QuickStat label="Retention Rate" value={`${(resolvedRetentionRate * 100).toFixed(1)}%`} />
+            {/* Show retention rate if available — asPct handles the mixed
+                0–1 / 0–100 storage scales (raw *100 produced e.g. 8051%). */}
+            {resolvedRetentionRate != null && asPct(resolvedRetentionRate) != null && (
+              <QuickStat label="Retention Rate" value={`${asPct(resolvedRetentionRate)!.toFixed(1)}%`} />
             )}
             
             {/* Show average GPA/SAT if available */}
@@ -867,11 +869,12 @@ const CollegeDetail: React.FC = () => {
           collegeName={college.name}
         />
         {((college as any).completeness_score != null || (college as any).freshness_score != null || (college as any).data_quality_score != null) && (
-          <div className="mt-2 text-xs text-muted-foreground">
-            Completeness: {Math.round(Number((college as any).completeness_score ?? 0))}% ·
-            Freshness: {Math.round(Number((college as any).freshness_score ?? 0))}% ·
-            Confidence: {Math.round(Number((college as any).data_quality_score ?? 0))}%
-          </div>
+          <ConfidenceBadge
+            className="mt-2"
+            completeness={(college as any).completeness_score ?? null}
+            freshness={(college as any).freshness_score ?? null}
+            confidence={(college as any).data_quality_score ?? null}
+          />
         )}
         <div className="mt-3 text-xs text-muted-foreground">
           {college.data_source ? (
@@ -1071,12 +1074,12 @@ const CollegeDetail: React.FC = () => {
                     />
                   )}
                   
-                  {/* Retention Rate */}
-                  {resolvedRetentionRate != null && (
-                    <StatItem 
-                      label="Retention Rate" 
-                      value={`${(resolvedRetentionRate * 100).toFixed(1)}%`} 
-                      icon={<Award />} 
+                  {/* Retention Rate — asPct normalizes mixed 0–1 / 0–100 scales */}
+                  {resolvedRetentionRate != null && asPct(resolvedRetentionRate) != null && (
+                    <StatItem
+                      label="Retention Rate"
+                      value={`${asPct(resolvedRetentionRate)!.toFixed(1)}%`}
+                      icon={<Award />}
                     />
                   )}
                   
@@ -1123,6 +1126,87 @@ const CollegeDetail: React.FC = () => {
                   )}
                 </div>
               </Card>
+
+              {/* ── Decision support (Phase 4): your academic fit + cost reality.
+                  Rendered only when the data exists — no placeholders. ─────── */}
+              {(() => {
+                const studentSat = Number((user as any)?.test_status?.sat_score) || null;
+                const studentAct = Number((user as any)?.test_status?.act_score) || null;
+                const npLow = (college as any).netPriceLowIncome ?? (college as any).financial?.net_price_low_income ?? null;
+                const npMid = (college as any).netPriceMidIncome ?? (college as any).financial?.net_price_mid_income ?? null;
+                const npHigh = (college as any).netPriceHighIncome ?? (college as any).financial?.net_price_high_income ?? null;
+
+                const fitFor = (score: number | null, range: { low: number; high: number } | null) => {
+                  if (!score || !range) return null;
+                  const band = score < range.low ? 'Below' : score > range.high ? 'Within or above' : 'Within';
+                  const within = score >= range.low && score <= range.high;
+                  return { score, range, band, within, above: score > range.high };
+                };
+                const satFit = fitFor(studentSat, resolvedSATRange);
+                const actFit = fitFor(studentAct, resolvedACTRange);
+                const fit = satFit || actFit;
+                const fitMax = fit === satFit ? 1600 : 36;
+                const fitMin = fit === satFit ? 400 : 1;
+                const pos = (v: number) => `${Math.max(0, Math.min(100, ((v - fitMin) / (fitMax - fitMin)) * 100))}%`;
+
+                const hasCost = npLow != null || npMid != null || npHigh != null;
+                if (!fit && !hasCost) return null;
+
+                const brackets = [
+                  { label: '< $48k income', v: npLow },
+                  { label: '$48k–$110k', v: npMid },
+                  { label: '> $110k income', v: npHigh },
+                ].filter((b) => b.v != null);
+
+                return (
+                  <Card title="Will this college fit you?">
+                    {fit && (
+                      <div className="mb-5">
+                        <div className="mb-1 flex items-center justify-between text-sm">
+                          <span className="font-medium text-foreground">
+                            Your {fit === satFit ? 'SAT' : 'ACT'} {fit.score} vs middle 50%
+                          </span>
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            fit.above ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                            : fit.within ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                            : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'}`}>
+                            {fit.above ? 'Above 75th %ile' : fit.within ? 'In the middle 50%' : 'Below 25th %ile'}
+                          </span>
+                        </div>
+                        <div className="relative mt-3 h-2 rounded-full bg-muted">
+                          {/* 25th–75th band */}
+                          <div className="absolute h-2 rounded-full bg-primary/30"
+                               style={{ left: pos(fit.range.low), right: `calc(100% - ${pos(fit.range.high)})` }} />
+                          {/* student's marker */}
+                          <div className="absolute -top-1 h-4 w-1 rounded bg-foreground"
+                               style={{ left: pos(fit.score) }} />
+                        </div>
+                        <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
+                          <span>25th: {fit.range.low}</span>
+                          <span>75th: {fit.range.high}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {hasCost && (
+                      <div>
+                        <p className="mb-2 text-sm font-medium text-foreground">Net price after aid, by family income</p>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                          {brackets.map((b) => (
+                            <div key={b.label} className="rounded-lg border border-border bg-muted/40 p-3">
+                              <div className="text-[11px] text-muted-foreground">{b.label}</div>
+                              <div className="text-lg font-bold text-foreground">${Number(b.v).toLocaleString()}</div>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="mt-2 text-[11px] text-muted-foreground">
+                          Net price = what families actually pay after grants/scholarships — often far below the sticker price.
+                        </p>
+                      </div>
+                    )}
+                  </Card>
+                );
+              })()}
 
               {/* Academic Strengths */}
               {academicStrengths.length > 0 && (

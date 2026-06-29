@@ -147,15 +147,41 @@ class Application {
 
     // Try canonical → identity map → legacy integer id
     try {
+      // (a) 087-style mapping: canonical_institution_id → legacy_id.
       const { rows: identityRows } = await pool.query(
         `SELECT im.legacy_id
          FROM canonical.institutions i
          JOIN canonical.institution_identity_map im ON i.id = im.canonical_institution_id
-         WHERE i.id = $1
+         WHERE i.id = $1 AND im.legacy_id IS NOT NULL
          LIMIT 1`,
         [strId]
       );
       if (identityRows.length > 0) return Number(identityRows[0].legacy_id);
+
+      // (b) 079-style mapping: institution_id + source_pk. These are the rows
+      // that actually exist in production (legacy_id is ~0% populated; the
+      // mapping lives in source_pk). Reuse them instead of creating a duplicate
+      // legacy `colleges` row. Best-effort: ignored if those columns are absent.
+      try {
+        const { rows: legacyRows } = await pool.query(
+          `SELECT c.id
+             FROM canonical.institution_identity_map im
+             JOIN colleges c ON c.id = im.source_pk::int
+            WHERE im.institution_id = $1
+              AND im.source_table = 'colleges'
+              AND im.source_pk ~ '^[0-9]+$'
+            LIMIT 1`,
+          [strId]
+        );
+        if (legacyRows.length > 0) {
+          const legacyId = Number(legacyRows[0].id);
+          // Backfill the fast 087-path mapping for next time.
+          await this._recordIdentityMapping(pool, strId, legacyId);
+          return legacyId;
+        }
+      } catch (e) {
+        logger.debug('079-style identity lookup unavailable', { error: e?.message });
+      }
 
       // UUID not in identity map — fetch canonical data and find/create a legacy record
       const { rows: canonRows } = await pool.query(
@@ -183,23 +209,107 @@ class Application {
         legacyId = inserted[0].id;
       }
 
-      // Record the mapping so future lookups are fast.
-      // Use WHERE NOT EXISTS instead of ON CONFLICT to avoid 42P10 when the unique
-      // constraint doesn't exist (table pre-dated migration 087/091).
-      await pool.query(
-        `INSERT INTO canonical.institution_identity_map (canonical_institution_id, legacy_id, source)
-         SELECT $1, $2, 'auto'
-         WHERE NOT EXISTS (
-           SELECT 1 FROM canonical.institution_identity_map WHERE canonical_institution_id = $1
-         )`,
-        [strId, legacyId]
-      );
+      // At this point the college DOES exist (we have a canonical row + a legacy
+      // row). Recording the identity-map mapping is a cache for fast future
+      // lookups — it must not be allowed to masquerade as "college not found".
+      // It is wrapped in its OWN try/catch so a schema/constraint failure is
+      // surfaced distinctly in the logs and never collapses into COLLEGE_NOT_FOUND.
+      await this._recordIdentityMapping(pool, strId, legacyId);
       return legacyId;
     } catch (err) {
-      logger.warn('resolveCollegeId UUID lookup failed:', { uuid: strId, error: err?.message });
+      // This outer catch only covers the canonical/legacy *lookup*. A failure
+      // here means we could not determine whether the college exists — distinct
+      // from "the college genuinely does not exist" (which returns null above).
+      logger.warn('resolveCollegeId lookup failed:', { uuid: strId, error: err?.message });
     }
 
     return null;
+  }
+
+  /**
+   * Record a canonical-UUID → legacy-INTEGER mapping in
+   * canonical.institution_identity_map.
+   *
+   * The live table is a known schema-drift hotspot: two migrations
+   * (079 canonical-rebuild and 087 college-id-compatibility) both declared a
+   * table of this name with DIFFERENT, non-overlapping columns, and `CREATE
+   * TABLE IF NOT EXISTS` means whichever ran first won — leaving production with
+   * a hybrid that carries 079's NOT-NULL columns (institution_id, source_table,
+   * source_pk, source_tier, source_priority, match_method) AND 087's columns
+   * (canonical_institution_id, legacy_id, source). The previous insert only
+   * populated 087's columns, so 079's `institution_id NOT NULL` blew up.
+   *
+   * Rather than hard-code one schema's column list, introspect the table's
+   * actual columns and populate every column we know a correct value for. This
+   * is resilient to whichever variant a given deployment actually has.
+   *
+   * @param {string} canonicalUuid canonical.institutions.id (UUID)
+   * @param {number} legacyId      legacy colleges.id (INTEGER)
+   */
+  static async _recordIdentityMapping(pool, canonicalUuid, legacyId) {
+    try {
+      const cols = await this._identityMapColumns(pool);
+
+      // Correct values for an application-created ("auto") mapping row.
+      // institution_id and canonical_institution_id are the SAME value — both
+      // are FKs to canonical.institutions(id); 079 named it institution_id,
+      // 087 named it canonical_institution_id.
+      const colExpr = {
+        institution_id: '$1::uuid',                                        // 079 (== canonical id)
+        canonical_institution_id: '$1::uuid',                              // 087
+        legacy_id: '$2::int',                                              // 087
+        source: `'auto'`,                                                  // 087
+        source_table: `'colleges'`,                                        // 079 (legacy row lives in colleges)
+        source_pk: '$2::text',                                             // 079 (legacy PK, as text)
+        source_tier: `'inferred_generated'::canonical.source_tier`,        // 079 (app-derived ⇒ lowest tier)
+        source_priority: '6',                                              // 079 (CHECK 1..6; lowest)
+        match_method: `'auto'`,                                            // 079
+      };
+
+      const present = Object.keys(colExpr).filter((c) => cols.has(c));
+      if (present.length === 0) {
+        logger.error('identity_map auto-insert skipped: no known columns present', {
+          canonicalUuid, tableColumns: [...cols],
+        });
+        return;
+      }
+
+      // Guard against duplicates without relying on a specific unique
+      // constraint existing (constraints also drifted across 087/091).
+      const dedupeKey = cols.has('canonical_institution_id')
+        ? 'canonical_institution_id'
+        : 'institution_id';
+
+      const sql =
+        `INSERT INTO canonical.institution_identity_map (${present.join(', ')})\n` +
+        `SELECT ${present.map((c) => colExpr[c]).join(', ')}\n` +
+        `WHERE NOT EXISTS (\n` +
+        `  SELECT 1 FROM canonical.institution_identity_map WHERE ${dedupeKey} = $1::uuid\n` +
+        `)`;
+
+      await pool.query(sql, [canonicalUuid, legacyId]);
+    } catch (err) {
+      // Distinct, loud log — this is a schema/constraint failure, NOT a missing
+      // college. The add itself still succeeds (the mapping is only a cache).
+      logger.error('identity_map auto-insert failed (schema/constraint drift)', {
+        canonicalUuid,
+        legacyId,
+        pgCode: err?.code,
+        detail: err?.detail,
+        error: err?.message,
+      });
+    }
+  }
+
+  /** Cached set of columns actually present on canonical.institution_identity_map. */
+  static async _identityMapColumns(pool) {
+    if (this._identityMapColsCache) return this._identityMapColsCache;
+    const { rows } = await pool.query(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_schema = 'canonical' AND table_name = 'institution_identity_map'`
+    );
+    this._identityMapColsCache = new Set(rows.map((r) => r.column_name));
+    return this._identityMapColsCache;
   }
 
   static async findByUserAndCollege(userId, collegeId) {

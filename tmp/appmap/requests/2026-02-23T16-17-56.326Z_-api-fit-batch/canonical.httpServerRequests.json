@@ -1,7 +1,0 @@
-[
-  {
-    "route": "POST /batch",
-    "parameters": "(collegeIds)",
-    "status": 200
-  }
-]

@@ -68,56 +68,107 @@ async function upsertUserProfile(userId, studentProfile) {
   }
 }
 
-// ── Fallback: top colleges from DB by popularity_score ────────────────────
+// ── Rules-based ranking (used when the ML Space is unreachable) ────────────
+
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 /**
- * Return the top 10 colleges ordered by popularity_score (or ranking_us_news)
- * as a fallback when the HuggingFace Space is unreachable.
- * Never returns an empty list — it falls back further to any 10 colleges.
- *
- * @returns {Promise<Array<{college_id, college_name, probability, label, acceptance_rate, isFallback}>>}
+ * Normalize a student's academic profile to a single 0..1 strength index from
+ * whichever of SAT / ACT / GPA they provided.
  */
-async function _fallbackColleges() {
+function academicIndex(p = {}) {
+  const parts = [];
+  const sat = Number(p.sat_score);
+  if (Number.isFinite(sat) && sat >= 400) parts.push(clamp((sat - 400) / 1200, 0, 1));
+  const act = Number(p.act_score);
+  if (Number.isFinite(act) && act >= 1) parts.push(clamp((act - 1) / 35, 0, 1));
+  const gpa = Number(p.gpa_unweighted ?? p.gpa_weighted);
+  if (Number.isFinite(gpa) && gpa > 0) parts.push(clamp((gpa - 2) / 2, 0, 1)); // 2.0→0, 4.0→1
+  if (parts.length === 0) return 0.5; // no academic signal → neutral
+  return parts.reduce((a, b) => a + b, 0) / parts.length;
+}
+
+function labelFor(prob) {
+  if (prob >= 0.7) return 'Likely';
+  if (prob >= 0.35) return 'Target';
+  return 'Reach';
+}
+
+/**
+ * Profile-aware rules-based ranking. Replaces the old popularity-only list that
+ * ignored the student entirely (every user got the same colleges with a flat
+ * 0.5 probability). Each college's admission probability is anchored on its
+ * acceptance_rate and adjusted by how the student's academic index compares to
+ * the school's selectivity — so the list visibly reflects what the student
+ * entered. Returns a curated spread of Likely / Target / Reach.
+ *
+ * @param {Object} studentProfile  flat feature dict (sat_score, act_score, gpa_*)
+ * @returns {Promise<Array<{college_id, college_name, probability, label, acceptance_rate}>>}
+ */
+async function _rulesBasedRanking(studentProfile) {
   const pool = dbManager.getDatabase();
+  const student = academicIndex(studentProfile);
 
-  const queries = [
-    // Attempt 1: colleges with popularity_score
-    `SELECT id, name, acceptance_rate
-       FROM colleges
-      WHERE acceptance_rate IS NOT NULL
-      ORDER BY COALESCE(popularity_score, 0) DESC NULLS LAST
-      LIMIT 10`,
-    // Attempt 2: colleges by US News ranking
-    `SELECT id, name, acceptance_rate
-       FROM colleges
-      WHERE acceptance_rate IS NOT NULL
-      ORDER BY ranking_us_news ASC NULLS LAST
-      LIMIT 10`,
-    // Attempt 3: any 10 colleges
-    `SELECT id, name, acceptance_rate
-       FROM colleges
-      LIMIT 10`,
-  ];
-
-  for (const sql of queries) {
-    try {
-      const { rows } = await pool.query(sql);
-      if (rows.length > 0) {
-        return rows.map(r => ({
-          college_id: r.id,
-          college_name: r.name,
-          probability: null,
-          label: 'Unknown',
-          acceptance_rate: r.acceptance_rate,
-          isFallback: true,
-        }));
-      }
-    } catch (err) {
-      logger.warn('mlService fallback query failed:', { error: err.message });
-    }
+  // Pull a pool of well-known colleges that have an acceptance rate. act_avg is
+  // used to refine the school's academic level where present.
+  let rows = [];
+  try {
+    ({ rows } = await pool.query(
+      `SELECT id, name, acceptance_rate, act_avg
+         FROM colleges
+        WHERE acceptance_rate IS NOT NULL AND acceptance_rate > 0
+        ORDER BY COALESCE(popularity_score, 0) DESC NULLS LAST,
+                 ranking_us_news ASC NULLS LAST
+        LIMIT 400`
+    ));
+  } catch (err) {
+    logger.warn('rules-based ranking pool query failed; using minimal fallback', { error: err.message });
+    const { rows: any } = await pool.query('SELECT id, name, acceptance_rate FROM colleges LIMIT 10');
+    return any.map((r) => ({
+      college_id: r.id, college_name: r.name, probability: null, label: 'Unknown',
+      acceptance_rate: r.acceptance_rate,
+    }));
   }
 
-  return [];
+  const scored = rows.map((r) => {
+    const accept = clamp(Number(r.acceptance_rate), 0.01, 0.99);
+    // School selectivity 0..1 (higher = harder). Blend acceptance rate with the
+    // school's own academic level (act_avg) when available.
+    let selectivity = 1 - accept;
+    const actAvg = Number(r.act_avg);
+    if (Number.isFinite(actAvg) && actAvg >= 1) {
+      selectivity = 0.6 * (1 - accept) + 0.4 * clamp((actAvg - 1) / 35, 0, 1);
+    }
+    // Anchor on the base acceptance rate, then scale by the student's standing
+    // relative to the school. At parity (student == selectivity) probability ≈
+    // the school's acceptance rate, which is the honest baseline.
+    const probability = clamp(accept * Math.exp(3 * (student - selectivity)), 0.02, 0.98);
+    return {
+      college_id: r.id,
+      college_name: r.name,
+      probability: Math.round(probability * 100) / 100,
+      label: labelFor(probability),
+      acceptance_rate: r.acceptance_rate,
+      _selectivity: selectivity,
+    };
+  });
+
+  // Curate a useful spread instead of only safeties: take some of each band,
+  // preferring the most selective schools within each band (more aspirational).
+  const byBand = { Reach: [], Target: [], Likely: [] };
+  for (const c of scored) byBand[c.label].push(c);
+  for (const band of Object.values(byBand)) band.sort((a, b) => b._selectivity - a._selectivity);
+
+  const pick = [
+    ...byBand.Target.slice(0, 8),
+    ...byBand.Likely.slice(0, 6),
+    ...byBand.Reach.slice(0, 6),
+  ];
+  const chosen = (pick.length >= 5 ? pick : scored).slice(0, 20);
+  // Strip internal field and order by probability (strongest matches first).
+  return chosen
+    .map(({ _selectivity, ...c }) => c) // eslint-disable-line no-unused-vars
+    .sort((a, b) => b.probability - a.probability);
 }
 
 // ── HuggingFace call ──────────────────────────────────────────────────────
@@ -220,14 +271,16 @@ async function getChances(userId, studentProfile) {
     });
   }
 
-  // 3. DB fallback
-  const fallback = await _fallbackColleges();
-  logger.info(`mlService DB fallback for user ${userId}: ${fallback.length} colleges`);
-  if (fallback.length > 0) {
-    await cache.set(cacheKey, fallback, FALLBACK_TTL_SEC);
-    await _persistSuggestions(userId, fallback, true);
+  // 3. Rules-based ranking (personalized; not the old popularity-only list).
+  const ranked = await _rulesBasedRanking(studentProfile);
+  logger.info(`mlService rules-based ranking for user ${userId}: ${ranked.length} colleges`);
+  if (ranked.length > 0) {
+    await cache.set(cacheKey, ranked, FALLBACK_TTL_SEC);
+    // isFallback:false — this IS a personalized ranking (by academic fit), not a
+    // generic popularity list. `source` records that the ML Space wasn't used.
+    await _persistSuggestions(userId, ranked, false);
   }
-  return { results: fallback, isFallback: true, source: 'db_fallback' };
+  return { results: ranked, isFallback: false, source: 'rules_based' };
 }
 
 /**

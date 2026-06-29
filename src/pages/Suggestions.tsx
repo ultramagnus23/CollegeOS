@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { SUGGESTED_COLLEGE_COUNT } from '../constants/ml';
 import { SuggestionsPayload, SuggestionResult } from '../types/student';
 import { api } from '../services/api';
+import { useAddCollege } from '../hooks/useAddCollege';
 
 const LS_KEY = 'collegeos_suggestions';
 
@@ -33,9 +34,18 @@ function timeAgo(iso: string): string {
 
 const SuggestionsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { addCollege, addingId } = useAddCollege();
   const [payload, setPayload] = useState<SuggestionsPayload | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [added, setAdded] = useState<Record<string, boolean>>({});
+
+  const handleAdd = async (c: SuggestionResult) => {
+    const result = await addCollege(c.college_id);
+    if (result === 'added' || result === 'duplicate') {
+      setAdded((prev) => ({ ...prev, [String(c.college_id)]: true }));
+    }
+  };
 
   useEffect(() => {
     const raw = localStorage.getItem(LS_KEY);
@@ -108,19 +118,30 @@ const SuggestionsPage: React.FC = () => {
     <div className="min-h-screen bg-slate-950 px-4 py-8 md:px-8">
       <div className="mx-auto max-w-3xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">
-            Your Top {SUGGESTED_COLLEGE_COUNT} Colleges
-          </h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Ranked by your personal admission probability.
-          </p>
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white">
+              Your Top {SUGGESTED_COLLEGE_COUNT} Colleges
+            </h1>
+            <p className="mt-1 text-sm text-slate-400">
+              Ranked by your personal admission probability — add any to your list, or head to your dashboard.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
+            >
+              Continue to Dashboard →
+            </button>
+          </div>
         </div>
 
-        {/* Fallback banner */}
-        {payload.isFallback && (
+        {/* Fallback banner — only for the generic popularity list, not the
+            personalized rules-based ranking. */}
+        {payload.isFallback && payload.source === 'db_fallback' && (
           <div className="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
-            <strong>Note:</strong> Personalized ML predictions are temporarily unavailable. Showing
+            <strong>Note:</strong> Personalized predictions are temporarily unavailable. Showing
             popular colleges instead. Refresh to retry.
           </div>
         )}
@@ -134,50 +155,66 @@ const SuggestionsPage: React.FC = () => {
 
         {/* College cards */}
         <div className="space-y-3">
-          {colleges.map((c, idx) => (
-            <button
-              key={c.college_id}
-              onClick={() => navigate(`/colleges/${c.college_id}`)}
-              className="group w-full rounded-xl border border-slate-800 bg-slate-900 p-4 text-left hover:border-indigo-500/50 hover:bg-slate-800 transition-all duration-200"
-            >
-              <div className="flex items-start justify-between gap-4">
-                {/* Left — rank + name */}
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-400 group-hover:bg-indigo-900 group-hover:text-indigo-300 transition-colors">
-                    {idx + 1}
-                  </span>
-                  <div>
-                    <h3 className="font-semibold text-white">{c.college_name}</h3>
-                    {c.state && (
-                      <p className="text-xs text-slate-500">{c.state}</p>
-                    )}
+          {colleges.map((c, idx) => {
+            const isAdded = !!added[String(c.college_id)];
+            const isAdding = addingId === c.college_id;
+            return (
+              <div
+                key={c.college_id}
+                className="group w-full rounded-xl border border-slate-800 bg-slate-900 p-4 transition-all duration-200 hover:border-indigo-500/50"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  {/* Left — rank + name (clickable → detail) */}
+                  <button
+                    onClick={() => navigate(`/colleges/${c.college_id}`)}
+                    className="flex flex-1 items-start gap-3 text-left"
+                  >
+                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-400 group-hover:bg-indigo-900 group-hover:text-indigo-300 transition-colors">
+                      {idx + 1}
+                    </span>
+                    <div>
+                      <h3 className="font-semibold text-white hover:text-indigo-300">{c.college_name}</h3>
+                      {c.state && <p className="text-xs text-slate-500">{c.state}</p>}
+                    </div>
+                  </button>
+
+                  {/* Right — probability + label */}
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className={`text-2xl font-black ${pctColor(c.probability)}`}>
+                      {formatPct(c.probability)}
+                    </span>
+                    <span
+                      className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${labelColor(c.label)}`}
+                    >
+                      {c.label}
+                    </span>
                   </div>
                 </div>
 
-                {/* Right — probability + label */}
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  <span className={`text-2xl font-black ${pctColor(c.probability)}`}>
-                    {formatPct(c.probability)}
-                  </span>
-                  <span
-                    className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${labelColor(c.label)}`}
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  {/* Acceptance rate footer */}
+                  {c.acceptance_rate !== null && c.acceptance_rate !== undefined ? (
+                    <span className="text-xs text-slate-500">
+                      College acceptance rate: {Math.round(c.acceptance_rate * 100)}%
+                    </span>
+                  ) : <span />}
+
+                  {/* Inline add — stays on the page */}
+                  <button
+                    onClick={() => handleAdd(c)}
+                    disabled={isAdding || isAdded}
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                      isAdded
+                        ? 'cursor-default bg-emerald-500/15 text-emerald-400'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-50'
+                    }`}
                   >
-                    {c.label}
-                  </span>
+                    {isAdded ? '✓ Added' : isAdding ? 'Adding…' : '+ Add to My List'}
+                  </button>
                 </div>
               </div>
-
-              {/* Acceptance rate footer */}
-              {c.acceptance_rate !== null && c.acceptance_rate !== undefined && (
-                <div className="mt-2 flex items-center gap-1.5">
-                  <div className="h-1 w-1 rounded-full bg-slate-600" />
-                  <span className="text-xs text-slate-500">
-                    College acceptance rate: {Math.round(c.acceptance_rate * 100)}%
-                  </span>
-                </div>
-              )}
-            </button>
-          ))}
+            );
+          })}
         </div>
 
         {/* Footer row */}

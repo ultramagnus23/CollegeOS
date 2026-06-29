@@ -2,12 +2,23 @@
  * MastersChancingCard.tsx — Phase 5 UI of docs/MASTERS_TRACK_PLAN.md.
  *
  * Renders the rules-based competitiveness band from GET /api/masters/chances/:id.
- * Shows a band (never a percentage), the per-pathway breakdown, the stated-
- * requirements checklist, and an inline honesty disclosure. When the band is
- * 'insufficient_data' it shows the checklist only — never a guessed number.
+ * Shows a band (never a percentage) on an interactive three-segment meter, the
+ * per-pathway breakdown, the stated-requirements checklist, and an inline honesty
+ * disclosure. When the band is 'insufficient_data' it shows the checklist only —
+ * never a guessed number.
+ *
+ * Theme-aware: uses semantic design tokens (bg-card / text-foreground / …) plus
+ * dark-safe band accents, so it reads correctly in both light and dark mode.
  */
 import React from 'react';
 import MastersDisclosure from './MastersDisclosure';
+import ConfidenceBadge from '../ConfidenceBadge';
+
+// Self-reported confidence from real sample size (mirrors backend dataConfidence.js).
+// Below N=5 a band is not shown at all (matches the disclaimer's own rule).
+const SELF_REPORT_MIN_N = 5;
+const selfReportConfidence = (n: number): number =>
+  Math.max(10, Math.min(55, Math.round(55 * Math.min(1, n / 50))));
 
 type Band = 'below_typical' | 'within_typical' | 'above_typical' | 'insufficient_data';
 
@@ -29,59 +40,150 @@ export interface ChancingAssessment {
   disclosures: string[];
 }
 
-const BAND_STYLE: Record<Band, { bg: string; text: string; dot: string }> = {
-  above_typical: { bg: 'rgba(16,185,129,0.1)', text: '#10B981', dot: '#10B981' },
-  within_typical: { bg: 'rgba(59,158,255,0.1)', text: '#3B9EFF', dot: '#3B9EFF' },
-  below_typical: { bg: 'rgba(251,146,60,0.1)', text: '#FB923C', dot: '#FB923C' },
-  insufficient_data: { bg: 'var(--color-surface-subtle)', text: 'var(--color-text-secondary)', dot: 'var(--color-text-disabled)' },
+/** Band visual language — tuned to read on both light and dark surfaces. */
+const BAND_STYLE: Record<Band, { pill: string; dot: string; bar: string; chip: string }> = {
+  above_typical: {
+    pill: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30',
+    dot: 'bg-emerald-500',
+    bar: 'bg-emerald-500',
+    chip: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+  },
+  within_typical: {
+    pill: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 ring-1 ring-blue-500/30',
+    dot: 'bg-blue-500',
+    bar: 'bg-blue-500',
+    chip: 'bg-blue-500/15 text-blue-700 dark:text-blue-300',
+  },
+  below_typical: {
+    pill: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/30',
+    dot: 'bg-amber-500',
+    bar: 'bg-amber-500',
+    chip: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+  },
+  insufficient_data: {
+    pill: 'bg-muted text-muted-foreground ring-1 ring-border',
+    dot: 'bg-muted-foreground/50',
+    bar: 'bg-muted-foreground/40',
+    chip: 'bg-muted text-muted-foreground',
+  },
 };
+
+/** Left→right meter order; index of the active band drives the highlight + marker. */
+const METER: { band: Exclude<Band, 'insufficient_data'>; short: string }[] = [
+  { band: 'below_typical', short: 'Below' },
+  { band: 'within_typical', short: 'Within' },
+  { band: 'above_typical', short: 'Above' },
+];
 
 const prettyPathway = (t: string) =>
   t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 const MastersChancingCard: React.FC<{ assessment: ChancingAssessment }> = ({ assessment }) => {
-  const style = BAND_STYLE[assessment.overall.band];
-  const hasBand = assessment.overall.band !== 'insufficient_data';
+  const band = assessment.overall.band;
+  const style = BAND_STYLE[band];
+  const hasBand = band !== 'insufficient_data';
+  const activeIdx = METER.findIndex((m) => m.band === band);
 
   return (
-    <div style={{ borderRadius: 16, border: '1px solid var(--color-border)', background: 'var(--color-bg-surface)', padding: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h3 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-text-secondary)', margin: 0 }}>Competitiveness</h3>
-        {assessment.sampleSize > 0 && (
-          <span style={{ fontSize: 11, color: 'var(--color-text-disabled)' }}>self-reported data, N={assessment.sampleSize}</span>
-        )}
+    <div className="animate-fade-in rounded-xl border border-border bg-card p-5 text-card-foreground shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Competitiveness
+        </h3>
+        {/* Per-field confidence badge — self-reported source, driven by the real
+            sample size. Hidden below the N floor (no badge, no number). */}
+        <ConfidenceBadge
+          available={assessment.sampleSize >= SELF_REPORT_MIN_N}
+          confidence={selfReportConfidence(assessment.sampleSize)}
+          sampleSize={assessment.sampleSize}
+        />
       </div>
 
-      <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10, borderRadius: 10, border: '1px solid transparent', padding: '12px 16px', background: style.bg }}>
-        <span style={{ height: 10, width: 10, borderRadius: '50%', background: style.dot, flexShrink: 0 }} />
-        <span style={{ fontWeight: 700, color: style.text, fontSize: 14 }}>{assessment.overall.label}</span>
+      {/* Headline band */}
+      <div className="mt-3 flex items-center gap-2.5">
+        <span className={`inline-flex h-2.5 w-2.5 rounded-full ${style.dot} ${hasBand ? 'animate-pulse' : ''}`} />
+        <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${style.pill}`}>
+          {assessment.overall.label}
+        </span>
       </div>
+
+      {/* Interactive three-segment meter (hidden when we have no band) */}
+      {hasBand && (
+        <div className="mt-4">
+          <div className="flex gap-1.5">
+            {METER.map((seg, i) => {
+              const isActive = i === activeIdx;
+              return (
+                <div key={seg.band} className="flex-1">
+                  <div
+                    className={`rounded-full transition-all duration-500 ${
+                      isActive ? `h-2.5 ${BAND_STYLE[seg.band].bar}` : 'h-2 bg-muted'
+                    }`}
+                  />
+                  <div
+                    className={`mt-1.5 text-center text-[11px] font-medium transition-colors ${
+                      isActive ? 'text-foreground' : 'text-muted-foreground/60'
+                    }`}
+                  >
+                    {seg.short}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {hasBand && assessment.pathways.length > 0 && (
-        <div style={{ marginTop: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-disabled)', margin: 0 }}>By pathway</p>
-          <ul style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6, listStyle: 'none', padding: 0 }}>
-            {assessment.pathways.map((p) => (
-              <li key={p.pathwayType} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
-                <span style={{ color: 'var(--color-text-secondary)' }}>{prettyPathway(p.pathwayType)}</span>
-                <span style={{ color: 'var(--color-text-disabled)' }}>{p.label || '—'}</span>
+        <div className="mt-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">By pathway</p>
+          <ul className="mt-2 space-y-1.5">
+            {assessment.pathways.map((p) => {
+              const ps = BAND_STYLE[(p.band ?? 'insufficient_data') as Band];
+              return (
+                <li
+                  key={p.pathwayType}
+                  className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-sm transition-colors hover:bg-muted/70"
+                >
+                  <span className="text-foreground">{prettyPathway(p.pathwayType)}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ps.chip}`}>
+                    {p.label || '—'}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {assessment.checklist.length > 0 && (
+        <div className="mt-5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Stated requirements</p>
+            {/* Program-details source: official program page. Completeness only —
+                requirements are present; freshness isn't carried client-side. */}
+            <ConfidenceBadge completeness={100} source="official program page" />
+          </div>
+          <ul className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-2">
+            {assessment.checklist.map((c) => (
+              <li
+                key={c.requirement}
+                className="flex items-center justify-between gap-2 border-b border-border/50 pb-1.5"
+              >
+                <span className="text-muted-foreground">{c.requirement}</span>
+                <span className="font-medium text-foreground">{c.value}</span>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <div style={{ marginTop: 16 }}>
-        <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-disabled)', margin: 0 }}>Stated requirements</p>
-        <ul style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', listStyle: 'none', padding: 0, fontSize: 13 }}>
-          {assessment.checklist.map((c) => (
-            <li key={c.requirement} style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--color-text-disabled)' }}>{c.requirement}</span>
-              <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{c.value}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {/* Categories with no real public source — shown as explicitly unavailable,
+          never as a low-confidence number. */}
+      <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
+        Not available for graduate programs: admit probability, research/advisor fit, and funding likelihood —
+        no public data source exists for these, so we don’t show a number.
+      </p>
 
       <MastersDisclosure variant="inline" />
     </div>
