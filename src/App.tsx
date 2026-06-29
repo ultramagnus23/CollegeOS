@@ -46,6 +46,13 @@ import SuggestedColleges from "./pages/SuggestedColleges";
 import Rankings from "./pages/Rankings";
 import MastersDashboard from "./pages/MastersDashboard";
 import MastersOnboarding from "./pages/MastersOnboarding";
+import MastersLayout from "./layouts/MastersLayout";
+import MastersPrograms from "./pages/MastersPrograms";
+import MastersProgramDetails from "./pages/MastersProgramDetails";
+import MastersTimeline from "./pages/MastersTimeline";
+import MastersDeadlines from "./pages/MastersDeadlines";
+import MastersFunding from "./pages/MastersFunding";
+import MastersApplications from "./pages/MastersApplications";
 import { isMastersTrackEnabled } from "./config/featureFlags";
 import AuthErrorBoundary from "./components/errors/AuthErrorBoundary";
 // FinancialAid import removed — page merged into Scholarships; /financial-aid redirects to /scholarships
@@ -188,29 +195,27 @@ const AppContent = () => {
             }
           />
 
-          {/* Masters/grad track — standalone, flag-gated. Mounted OUTSIDE the
-              DashboardLayout group because masters users have not completed the
-              undergrad onboarding (onboarding_complete=false). Requiring it here
-              would bounce them straight back to /onboarding, making the "select
-              masters track" flow appear dead. */}
+          {/* Masters/grad track — consolidated nested routes, flag-gated. */}
           {isMastersTrackEnabled() && (
             <>
               <Route
                 path="/masters"
                 element={
                   <ProtectedRoute requireOnboarding={false}>
-                    <MastersDashboard />
+                    <MastersLayout />
                   </ProtectedRoute>
                 }
-              />
-              <Route
-                path="/masters/onboarding"
-                element={
-                  <ProtectedRoute requireOnboarding={false}>
-                    <MastersOnboarding />
-                  </ProtectedRoute>
-                }
-              />
+              >
+                <Route index element={<MastersDashboard />} />
+                <Route path="onboarding" element={<MastersOnboarding />} />
+                <Route path="programs" element={<MastersPrograms />} />
+                <Route path="programs/:id" element={<MastersProgramDetails />} />
+                <Route path="timeline" element={<MastersTimeline />} />
+                <Route path="deadlines" element={<MastersDeadlines />} />
+                <Route path="funding" element={<MastersFunding />} />
+                <Route path="applications" element={<MastersApplications />} />
+                <Route path="settings" element={<Settings />} />
+              </Route>
             </>
           )}
 
@@ -236,8 +241,6 @@ const AppContent = () => {
             <Route path="/college-recommendations" element={<CollegeRecommendations />} />
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/chancing" element={<Chancing />} />
-            {/* Masters routes are mounted standalone above (outside DashboardLayout)
-                so they don't require completed undergrad onboarding. */}
             <Route path="/suggested-colleges" element={<SuggestedColleges />} />
             <Route path="/timeline" element={<Timeline />} />
             <Route path="/notifications" element={<NotificationsPage />} />

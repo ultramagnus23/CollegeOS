@@ -1,96 +1,117 @@
-/**
- * MastersOnboarding.tsx — Phase 3 of docs/MASTERS_TRACK_PLAN.md.
- *
- * Sibling to the undergrad onboarding, NOT a modification of it — the validated
- * undergrad flow is untouched. Rebuilt as a premium, always-dark MULTI-STEP flow
- * that mirrors StudentOnboarding's visual language (per-step accent themes, a
- * constellation stepper, segmented controls, country cards, a live profile
- * preview) so the masters track feels like the same product rather than a plain
- * form. Collects masters_profile fields and persists via /api/masters. Flag-gated:
- * redirects out when MASTERS_TRACK_ENABLED is off.
- */
+// src/pages/MastersOnboarding.tsx — 7-step wizard, dark editorial parity with undergrad onboarding.
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { GraduationCap, ArrowLeft, ArrowRight, Check, Sparkles } from 'lucide-react';
+import { GraduationCap, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { api } from '../services/api';
 import { isMastersTrackEnabled } from '../config/featureFlags';
 
-const num = (v: string): number | undefined => (v === '' ? undefined : Number(v));
-
-const hexToRgba = (hex: string, a: number) => {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+/* ─── Design tokens (matches MastersPrograms/Deadlines/Funding) ──────────── */
+const ACCENT = '#3B9EFF';
+const h2r = (hex: string, a: number) => {
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${a})`;
 };
-
-const STEPS = [
-  { label: 'Goal', accent: '#7A73F0', title: 'Your masters goal', sub: 'What degree, and in what field?' },
-  { label: 'Background', accent: '#5BA9F8', title: 'Academic background', sub: 'Where you studied, and how you did.' },
-  { label: 'Scores', accent: '#B06CF0', title: 'Test scores', sub: 'All optional — many programs waive these.' },
-  { label: 'Targets', accent: '#3FC495', title: 'Where & when', sub: 'Your intake and target countries.' },
-] as const;
-
-const COUNTRY_CARDS = [
-  { code: 'US', flag: '🇺🇸', name: 'United States' },
-  { code: 'UK', flag: '🇬🇧', name: 'United Kingdom' },
-  { code: 'CA', flag: '🇨🇦', name: 'Canada' },
-  { code: 'DE', flag: '🇩🇪', name: 'Germany' },
-  { code: 'NL', flag: '🇳🇱', name: 'Netherlands' },
-  { code: 'AU', flag: '🇦🇺', name: 'Australia' },
-  { code: 'SG', flag: '🇸🇬', name: 'Singapore' },
-];
+const S = {
+  bg: 'var(--color-bg-primary)',
+  surface: 'var(--color-bg-surface)',
+  surface2: 'var(--color-surface-subtle)',
+  border: 'var(--color-border)',
+  border2: 'var(--color-border-strong)',
+  muted: 'var(--color-text-secondary)',
+  dim: 'var(--color-text-disabled)',
+  text: 'var(--color-text-primary)',
+  font: "'Inter', system-ui, sans-serif",
+};
+const GLOBAL = `
+  *{box-sizing:border-box;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  input::placeholder,textarea::placeholder{color:var(--color-text-disabled)!important;}
+  select option{background:var(--color-bg-surface);color:var(--color-text-primary);}
+`;
 
 const DEGREES = ['MS', 'MA', 'MBA'] as const;
 const TERMS = ['fall', 'spring', 'summer', 'winter'] as const;
+const COUNTRIES = ['US', 'UK', 'CA', 'DE', 'NL', 'AU', 'SG'];
+const SOP_STATUSES = ['not_started', 'drafting', 'reviewing', 'final'] as const;
 
-// ── Small styled primitives (scoped, always-dark to match StudentOnboarding) ──
-const TextField: React.FC<{
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  accent: string;
-  placeholder?: string;
-  numeric?: boolean;
-  decimal?: boolean;
-}> = ({ label, value, onChange, accent, placeholder, numeric, decimal }) => (
-  <label className="block">
-    <span className="mb-1.5 block text-[13px] font-medium text-white/70">{label}</span>
-    <input
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      inputMode={decimal ? 'decimal' : numeric ? 'numeric' : undefined}
-      className="w-full rounded-xl px-3.5 py-2.5 text-[15px] text-white outline-none transition-colors placeholder:text-white/30"
-      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)' }}
-      onFocus={(e) => (e.currentTarget.style.borderColor = hexToRgba(accent, 0.6))}
-      onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
-    />
+const STEPS = [
+  'Program Intent',
+  'Academic Background',
+  'Standardized Tests',
+  'Experience & Research',
+  'Recommendations',
+  'Target Countries',
+  'Review',
+];
+
+const num = (v: string): number | undefined => (v === '' || v === undefined ? undefined : Number(v));
+
+interface FormState {
+  target_degree_type: string;
+  intended_program: string;
+  intended_specialization: string;
+  target_intake_term: string;
+  target_intake_year: string;
+  undergrad_institution: string;
+  undergrad_major: string;
+  undergrad_country: string;
+  undergrad_gpa: string;
+  undergrad_gpa_scale: string;
+  gre_verbal: string; gre_quant: string; gre_awa: string;
+  gmat_total: string; gmat_focus_total: string;
+  toefl_score: string; ielts_score: string; duolingo_score: string; pte_score: string;
+  work_experience_years: string; work_experience_desc: string;
+  research_experience: string; publication_count: string;
+  lors_secured: string; lors_required: string; sop_status: string;
+}
+
+const DEFAULT_FORM: FormState = {
+  target_degree_type: 'MS', intended_program: '', intended_specialization: '',
+  target_intake_term: 'fall', target_intake_year: '',
+  undergrad_institution: '', undergrad_major: '', undergrad_country: '',
+  undergrad_gpa: '', undergrad_gpa_scale: '4',
+  gre_verbal: '', gre_quant: '', gre_awa: '', gmat_total: '', gmat_focus_total: '',
+  toefl_score: '', ielts_score: '', duolingo_score: '', pte_score: '',
+  work_experience_years: '', work_experience_desc: '', research_experience: '', publication_count: '',
+  lors_secured: '', lors_required: '3', sop_status: 'not_started',
+};
+
+const DRAFT_KEY = 'masters_onboarding_draft';
+
+const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: S.muted, marginBottom: 6, fontFamily: S.font, letterSpacing: '0.02em' }}>{children}</span>
+);
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '11px 14px', background: S.surface2, border: `1px solid ${S.border2}`,
+  borderRadius: 10, color: S.text, fontSize: 14, outline: 'none', fontFamily: S.font, boxSizing: 'border-box',
+};
+
+const Field: React.FC<{ label: string; hint?: string; children: React.ReactNode }> = ({ label, hint, children }) => (
+  <label style={{ display: 'block' }}>
+    <Label>{label}</Label>
+    {children}
+    {hint && <span style={{ display: 'block', fontSize: 11, color: S.dim, marginTop: 4, fontFamily: S.font }}>{hint}</span>}
   </label>
 );
 
-const Segmented: React.FC<{ options: readonly string[]; value: string; onChange: (v: string) => void; accent: string }> = ({
-  options,
-  value,
-  onChange,
-  accent,
-}) => (
-  <div
-    className="flex gap-1 rounded-xl p-1"
-    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
-  >
+const ChipGroup: React.FC<{ options: readonly string[]; value: string; onChange: (v: string) => void; multi?: boolean }> = ({ options, value, onChange }) => (
+  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
     {options.map((opt) => {
-      const on = value.toLowerCase() === opt.toLowerCase();
+      const selected = value === opt;
       return (
         <button
           key={opt}
           type="button"
           onClick={() => onChange(opt)}
-          className="flex-1 rounded-lg px-3 py-2 text-[13px] font-semibold capitalize transition-all"
           style={{
-            background: on ? accent : 'transparent',
-            color: on ? '#0B0B16' : 'rgba(255,255,255,0.6)',
+            padding: '9px 16px', borderRadius: 100,
+            border: `1px solid ${selected ? ACCENT : S.border2}`,
+            background: selected ? h2r(ACCENT, 0.18) : 'transparent',
+            color: selected ? ACCENT : S.muted,
+            fontSize: 13, fontWeight: selected ? 700 : 500, cursor: 'pointer',
+            fontFamily: S.font, transition: 'all 0.12s ease', textTransform: 'capitalize',
           }}
         >
           {opt}
@@ -100,67 +121,74 @@ const Segmented: React.FC<{ options: readonly string[]; value: string; onChange:
   </div>
 );
 
-const TextArea: React.FC<{
-  label: string; value: string; onChange: (v: string) => void; accent: string; placeholder?: string;
-}> = ({ label, value, onChange, accent, placeholder }) => (
-  <label className="block">
-    <span className="mb-1.5 block text-[13px] font-medium text-white/70">{label}</span>
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      rows={3}
-      className="w-full resize-y rounded-xl px-3.5 py-2.5 text-[14px] text-white outline-none transition-colors placeholder:text-white/30"
-      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)' }}
-      onFocus={(e) => (e.currentTarget.style.borderColor = hexToRgba(accent, 0.6))}
-      onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
-    />
-  </label>
+const StepProgress: React.FC<{ step: number }> = ({ step }) => (
+  <div style={{ marginBottom: 32 }}>
+    <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+      {STEPS.map((_, i) => (
+        <div key={i} style={{
+          flex: 1, height: 4, borderRadius: 4,
+          background: i < step ? ACCENT : i === step ? h2r(ACCENT, 0.4) : S.border2,
+          transition: 'background 0.25s ease',
+        }} />
+      ))}
+    </div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+      <span style={{ fontSize: 13, fontWeight: 700, color: ACCENT, fontFamily: S.font }}>{STEPS[step]}</span>
+      <span style={{ fontSize: 12, color: S.dim, fontFamily: S.font }}>Step {step + 1} of {STEPS.length}</span>
+    </div>
+  </div>
+);
+
+const SummaryRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${S.border}`, fontSize: 13, fontFamily: S.font }}>
+    <span style={{ color: S.muted }}>{label}</span>
+    <span style={{ color: S.text, fontWeight: 600, textAlign: 'right' }}>{value || '—'}</span>
+  </div>
 );
 
 const MastersOnboarding: React.FC = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<Record<string, string>>({
-    target_degree_type: 'MS',
-    intended_program: '',
-    intended_specialization: '',
-    undergrad_institution: '',
-    undergrad_major: '',
-    undergrad_country: '',
-    undergrad_gpa: '',
-    undergrad_gpa_scale: '4',
-    gre_verbal: '', gre_quant: '', gre_awa: '',
-    gmat_total: '', gmat_focus_total: '',
-    toefl_score: '', ielts_score: '',
-    work_experience_years: '', publication_count: '',
-    research_experience: '', work_experience_desc: '',
-    lors_secured: '', target_intake_term: 'fall', target_intake_year: '',
-    target_budget_max: '', target_budget_currency: 'USD',
+  const [form, setForm] = useState<FormState>(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      return raw ? { ...DEFAULT_FORM, ...JSON.parse(raw) } : DEFAULT_FORM;
+    } catch {
+      return DEFAULT_FORM;
+    }
   });
-  const [countries, setCountries] = useState<string[]>([]);
+  const [countries, setCountries] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(`${DRAFT_KEY}_countries`);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
 
   useEffect(() => {
     if (!isMastersTrackEnabled()) navigate('/dashboard', { replace: true });
   }, [navigate]);
 
-  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const theme = STEPS[step];
-  const isLast = step === STEPS.length - 1;
-  const canContinue = step === 0 ? form.intended_program.trim().length > 0 : true;
+  useEffect(() => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+  }, [form]);
 
-  // Live profile-strength meter — light heuristic, purely for feedback.
-  const strength = useMemo(() => {
-    const filled = [
-      form.intended_program, form.intended_specialization, form.undergrad_institution,
-      form.undergrad_major, form.undergrad_country, form.undergrad_gpa, form.gre_quant || form.gmat_total,
-      form.toefl_score || form.ielts_score, form.work_experience_years, form.lors_secured,
-      form.research_experience || form.work_experience_desc, form.target_intake_year, form.target_budget_max,
-    ].filter((v) => String(v).trim().length > 0).length;
-    const total = 13 + (countries.length > 0 ? 1 : 0);
-    return Math.min(100, Math.round(((filled + (countries.length > 0 ? 1 : 0)) / total) * 100));
-  }, [form, countries]);
+  useEffect(() => {
+    localStorage.setItem(`${DRAFT_KEY}_countries`, JSON.stringify(countries));
+  }, [countries]);
+
+  const set = (k: keyof FormState, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const canAdvance = useMemo(() => {
+    if (step === 0) return form.intended_program.trim().length > 0;
+    if (step === 1) return form.undergrad_institution.trim().length > 0 && form.undergrad_major.trim().length > 0;
+    return true;
+  }, [step, form]);
+
+  const next = () => setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  const back = () => setStep((s) => Math.max(s - 1, 0));
 
   const handleSubmit = async () => {
     setSaving(true);
@@ -170,13 +198,13 @@ const MastersOnboarding: React.FC = () => {
         target_degree_type: form.target_degree_type,
         intended_program: form.intended_program,
         intended_specialization: form.intended_specialization,
+        target_intake_term: form.target_intake_term,
+        target_intake_year: num(form.target_intake_year),
         undergrad_institution: form.undergrad_institution,
         undergrad_major: form.undergrad_major,
         undergrad_country: form.undergrad_country,
         undergrad_gpa: num(form.undergrad_gpa),
         undergrad_gpa_scale: num(form.undergrad_gpa_scale),
-        research_experience: form.research_experience,
-        work_experience_desc: form.work_experience_desc,
         gre_verbal: num(form.gre_verbal),
         gre_quant: num(form.gre_quant),
         gre_awa: num(form.gre_awa),
@@ -184,15 +212,19 @@ const MastersOnboarding: React.FC = () => {
         gmat_focus_total: num(form.gmat_focus_total),
         toefl_score: num(form.toefl_score),
         ielts_score: num(form.ielts_score),
+        duolingo_score: num(form.duolingo_score),
+        pte_score: num(form.pte_score),
         work_experience_years: num(form.work_experience_years),
+        work_experience_desc: form.work_experience_desc,
+        research_experience: form.research_experience,
         publication_count: num(form.publication_count),
         lors_secured: num(form.lors_secured),
-        target_intake_term: form.target_intake_term,
-        target_intake_year: num(form.target_intake_year),
+        lors_required: num(form.lors_required),
+        sop_status: form.sop_status,
         target_countries: countries,
-        target_budget_max: num(form.target_budget_max),
-        target_budget_currency: form.target_budget_currency,
       });
+      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(`${DRAFT_KEY}_countries`);
       toast.success('Masters profile saved');
       navigate('/masters');
     } catch {
@@ -202,201 +234,219 @@ const MastersOnboarding: React.FC = () => {
     }
   };
 
-  const next = () => (isLast ? handleSubmit() : setStep((s) => Math.min(s + 1, STEPS.length - 1)));
+  const renderStep = () => {
+    switch (step) {
+      case 0:
+        return (
+          <div style={{ display: 'grid', gap: 18 }}>
+            <Field label="Degree type">
+              <ChipGroup options={DEGREES} value={form.target_degree_type} onChange={(v) => set('target_degree_type', v)} />
+            </Field>
+            <Field label="Intended program (e.g. Computer Science) *">
+              <input style={inputStyle} value={form.intended_program} onChange={(e) => set('intended_program', e.target.value)} placeholder="e.g. Computer Science" />
+            </Field>
+            <Field label="Specialization (optional)">
+              <input style={inputStyle} value={form.intended_specialization} onChange={(e) => set('intended_specialization', e.target.value)} placeholder="e.g. Machine Learning" />
+            </Field>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+              <Field label="Target intake term">
+                <ChipGroup options={TERMS} value={form.target_intake_term} onChange={(v) => set('target_intake_term', v)} />
+              </Field>
+              <Field label="Target intake year">
+                <input style={inputStyle} inputMode="numeric" value={form.target_intake_year} onChange={(e) => set('target_intake_year', e.target.value)} placeholder="2027" />
+              </Field>
+            </div>
+          </div>
+        );
+      case 1:
+        return (
+          <div style={{ display: 'grid', gap: 18 }}>
+            <Field label="Undergrad institution *">
+              <input style={inputStyle} value={form.undergrad_institution} onChange={(e) => set('undergrad_institution', e.target.value)} />
+            </Field>
+            <Field label="Undergrad major *">
+              <input style={inputStyle} value={form.undergrad_major} onChange={(e) => set('undergrad_major', e.target.value)} />
+            </Field>
+            <Field label="Undergrad country">
+              <input style={inputStyle} value={form.undergrad_country} onChange={(e) => set('undergrad_country', e.target.value)} placeholder="e.g. India" />
+            </Field>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+              <Field label="Undergrad GPA">
+                <input style={inputStyle} inputMode="decimal" value={form.undergrad_gpa} onChange={(e) => set('undergrad_gpa', e.target.value)} />
+              </Field>
+              <Field label="GPA scale">
+                <ChipGroup options={['4', '10', '100']} value={form.undergrad_gpa_scale} onChange={(v) => set('undergrad_gpa_scale', v)} />
+              </Field>
+            </div>
+          </div>
+        );
+      case 2:
+        return (
+          <div style={{ display: 'grid', gap: 18 }}>
+            <p style={{ fontSize: 13, color: S.muted, fontFamily: S.font, margin: 0 }}>
+              All optional — many masters programs waive standardized tests. Fill in whichever you have.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+              <Field label="GRE Verbal"><input style={inputStyle} inputMode="numeric" value={form.gre_verbal} onChange={(e) => set('gre_verbal', e.target.value)} /></Field>
+              <Field label="GRE Quant"><input style={inputStyle} inputMode="numeric" value={form.gre_quant} onChange={(e) => set('gre_quant', e.target.value)} /></Field>
+              <Field label="GRE AWA"><input style={inputStyle} inputMode="decimal" value={form.gre_awa} onChange={(e) => set('gre_awa', e.target.value)} /></Field>
+              <Field label="GMAT (classic /800)"><input style={inputStyle} inputMode="numeric" value={form.gmat_total} onChange={(e) => set('gmat_total', e.target.value)} /></Field>
+              <Field label="GMAT Focus (/805)"><input style={inputStyle} inputMode="numeric" value={form.gmat_focus_total} onChange={(e) => set('gmat_focus_total', e.target.value)} /></Field>
+              <Field label="TOEFL"><input style={inputStyle} inputMode="numeric" value={form.toefl_score} onChange={(e) => set('toefl_score', e.target.value)} /></Field>
+              <Field label="IELTS"><input style={inputStyle} inputMode="decimal" value={form.ielts_score} onChange={(e) => set('ielts_score', e.target.value)} /></Field>
+              <Field label="Duolingo English Test"><input style={inputStyle} inputMode="numeric" value={form.duolingo_score} onChange={(e) => set('duolingo_score', e.target.value)} /></Field>
+              <Field label="PTE Academic"><input style={inputStyle} inputMode="numeric" value={form.pte_score} onChange={(e) => set('pte_score', e.target.value)} /></Field>
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div style={{ display: 'grid', gap: 18 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+              <Field label="Years of work experience">
+                <input style={inputStyle} inputMode="decimal" value={form.work_experience_years} onChange={(e) => set('work_experience_years', e.target.value)} />
+              </Field>
+              <Field label="Publications">
+                <input style={inputStyle} inputMode="numeric" value={form.publication_count} onChange={(e) => set('publication_count', e.target.value)} />
+              </Field>
+            </div>
+            <Field label="Work experience" hint="A few lines — roles, companies, what you actually did.">
+              <textarea style={{ ...inputStyle, minHeight: 90, resize: 'vertical' }} value={form.work_experience_desc} onChange={(e) => set('work_experience_desc', e.target.value)} />
+            </Field>
+            <Field label="Research experience" hint="Labs, projects, papers in progress — skip if not applicable.">
+              <textarea style={{ ...inputStyle, minHeight: 90, resize: 'vertical' }} value={form.research_experience} onChange={(e) => set('research_experience', e.target.value)} />
+            </Field>
+          </div>
+        );
+      case 4:
+        return (
+          <div style={{ display: 'grid', gap: 18 }}>
+            <p style={{ fontSize: 13, color: S.muted, fontFamily: S.font, margin: 0 }}>
+              We track readiness, not content — no essay or recommender drafting here.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+              <Field label="Letters of recommendation secured">
+                <input style={inputStyle} inputMode="numeric" value={form.lors_secured} onChange={(e) => set('lors_secured', e.target.value)} />
+              </Field>
+              <Field label="Letters required by programs">
+                <input style={inputStyle} inputMode="numeric" value={form.lors_required} onChange={(e) => set('lors_required', e.target.value)} />
+              </Field>
+            </div>
+            <Field label="Statement of purpose status">
+              <ChipGroup options={SOP_STATUSES} value={form.sop_status} onChange={(v) => set('sop_status', v)} />
+            </Field>
+          </div>
+        );
+      case 5:
+        return (
+          <div style={{ display: 'grid', gap: 18 }}>
+            <Field label="Target countries">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {COUNTRIES.map((c) => {
+                  const on = countries.includes(c);
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setCountries((prev) => (on ? prev.filter((x) => x !== c) : [...prev, c]))}
+                      style={{
+                        padding: '9px 16px', borderRadius: 100,
+                        border: `1px solid ${on ? ACCENT : S.border2}`,
+                        background: on ? h2r(ACCENT, 0.18) : 'transparent',
+                        color: on ? ACCENT : S.muted, fontSize: 13, fontWeight: on ? 700 : 500,
+                        cursor: 'pointer', fontFamily: S.font,
+                      }}
+                    >
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
+          </div>
+        );
+      case 6:
+      default:
+        return (
+          <div>
+            <div style={{ display: 'grid', gap: 2 }}>
+              <SummaryRow label="Degree" value={form.target_degree_type} />
+              <SummaryRow label="Program" value={form.intended_program} />
+              <SummaryRow label="Specialization" value={form.intended_specialization} />
+              <SummaryRow label="Target intake" value={`${form.target_intake_term} ${form.target_intake_year}`} />
+              <SummaryRow label="Undergrad" value={`${form.undergrad_institution} — ${form.undergrad_major}`} />
+              <SummaryRow label="GPA" value={form.undergrad_gpa ? `${form.undergrad_gpa}/${form.undergrad_gpa_scale}` : ''} />
+              <SummaryRow label="Tests" value={[form.gre_quant && 'GRE', form.gmat_total && 'GMAT', form.toefl_score && 'TOEFL', form.ielts_score && 'IELTS'].filter(Boolean).join(', ')} />
+              <SummaryRow label="Work experience" value={form.work_experience_years ? `${form.work_experience_years} yrs` : ''} />
+              <SummaryRow label="Recommendations" value={`${form.lors_secured || 0}/${form.lors_required || 3}`} />
+              <SummaryRow label="SOP" value={form.sop_status.replace('_', ' ')} />
+              <SummaryRow label="Target countries" value={countries.join(', ')} />
+            </div>
+          </div>
+        );
+    }
+  };
 
   return (
-    <div
-      className="min-h-screen w-full"
-      style={{ background: `radial-gradient(120% 70% at 50% -10%, ${hexToRgba(theme.accent, 0.16)} 0%, #0B0B16 55%)`, transition: 'background 0.4s ease' }}
-    >
-      <div className="mx-auto max-w-2xl px-5 py-10">
-        {/* Top bar: badge + stepper */}
-        <div className="mb-2 flex items-center justify-between">
-          <span
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold text-white"
-            style={{ background: hexToRgba(theme.accent, 0.18), border: `1px solid ${hexToRgba(theme.accent, 0.4)}` }}
-          >
-            <GraduationCap className="h-3.5 w-3.5" /> Masters
-          </span>
-          <span className="text-xs text-white/40">Step {step + 1} of {STEPS.length}</span>
+    <div style={{ minHeight: '100vh', background: S.bg, padding: '40px 24px', fontFamily: S.font }}>
+      <style>{GLOBAL}</style>
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
+          <GraduationCap size={22} style={{ color: ACCENT }} />
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: S.text, fontFamily: S.font, margin: 0 }}>Graduate Application Profile</h1>
         </div>
 
-        {/* Stepper */}
-        <div className="relative mb-8 mt-4 flex items-center justify-between">
-          <div className="absolute left-0 right-0 top-1.5 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
-          <div
-            className="absolute left-0 top-1.5 h-px transition-all duration-500"
-            style={{ width: `${(step / (STEPS.length - 1)) * 100}%`, background: theme.accent }}
-          />
-          {STEPS.map((s, i) => {
-            const done = i < step;
-            const active = i === step;
-            return (
-              <button
-                key={s.label}
-                type="button"
-                onClick={() => i <= step && setStep(i)}
-                className="relative z-10 flex flex-col items-center gap-2"
-                style={{ cursor: i <= step ? 'pointer' : 'default' }}
-              >
-                <span
-                  className="flex items-center justify-center rounded-full transition-all"
-                  style={{
-                    width: active ? 16 : 12,
-                    height: active ? 16 : 12,
-                    background: done || active ? s.accent : 'rgba(255,255,255,0.18)',
-                    boxShadow: active ? `0 0 12px ${hexToRgba(s.accent, 0.5)}` : 'none',
-                  }}
-                >
-                  {done && <Check className="h-2.5 w-2.5 text-[#0B0B16]" strokeWidth={3} />}
-                </span>
-                <span
-                  className="text-[10px] font-semibold uppercase tracking-wide"
-                  style={{ color: active ? s.accent : 'rgba(255,255,255,0.4)' }}
-                >
-                  {s.label}
-                </span>
-              </button>
-            );
-          })}
+        <StepProgress step={step} />
+
+        <div style={{
+          background: S.surface, border: `1px solid ${S.border}`, borderRadius: 20,
+          padding: 28, animation: 'fadeUp 0.25s ease both',
+        }} key={step}>
+          {renderStep()}
         </div>
 
-        {/* Heading */}
-        <h1 className="text-[26px] font-extrabold leading-tight text-white">{theme.title}</h1>
-        <p className="mt-1.5 text-[15px] text-white/55">{theme.sub}</p>
-
-        {/* Card */}
-        <div
-          className="mt-6 rounded-2xl p-6"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.09)' }}
-        >
-          {step === 0 && (
-            <div className="space-y-5">
-              <div>
-                <span className="mb-1.5 block text-[13px] font-medium text-white/70">Degree type</span>
-                <Segmented options={DEGREES} value={form.target_degree_type} onChange={(v) => set('target_degree_type', v)} accent={theme.accent} />
-              </div>
-              <TextField label="Intended program (e.g. Computer Science)" value={form.intended_program} onChange={(v) => set('intended_program', v)} accent={theme.accent} placeholder="Computer Science" />
-              <TextField label="Specialization (optional)" value={form.intended_specialization} onChange={(v) => set('intended_specialization', v)} accent={theme.accent} placeholder="Machine Learning" />
-            </div>
-          )}
-
-          {step === 1 && (
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <TextField label="Undergrad institution" value={form.undergrad_institution} onChange={(v) => set('undergrad_institution', v)} accent={theme.accent} />
-                <TextField label="Undergrad major" value={form.undergrad_major} onChange={(v) => set('undergrad_major', v)} accent={theme.accent} />
-                <TextField label="Undergrad country" value={form.undergrad_country} onChange={(v) => set('undergrad_country', v)} accent={theme.accent} placeholder="India" />
-                <TextField label="Undergrad GPA" value={form.undergrad_gpa} onChange={(v) => set('undergrad_gpa', v)} accent={theme.accent} decimal placeholder="3.6" />
-                <TextField label="GPA scale (4 / 10 / 100)" value={form.undergrad_gpa_scale} onChange={(v) => set('undergrad_gpa_scale', v)} accent={theme.accent} decimal />
-              </div>
-              {/* Experience signals — the grad-level equivalent of undergrad
-                  extracurriculars/essays (free-text context, like undergrad's
-                  careerGoals/whyCollege). Persisted to masters_profile. */}
-              <TextArea label="Research experience (projects, labs, thesis)" value={form.research_experience} onChange={(v) => set('research_experience', v)} accent={theme.accent} placeholder="Briefly describe research projects, labs, or a thesis." />
-              <TextArea label="Work experience (roles, impact)" value={form.work_experience_desc} onChange={(v) => set('work_experience_desc', v)} accent={theme.accent} placeholder="Roles, companies, and what you owned." />
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-5">
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                <TextField label="GRE Verbal" value={form.gre_verbal} onChange={(v) => set('gre_verbal', v)} accent={theme.accent} numeric />
-                <TextField label="GRE Quant" value={form.gre_quant} onChange={(v) => set('gre_quant', v)} accent={theme.accent} numeric />
-                <TextField label="GRE AWA" value={form.gre_awa} onChange={(v) => set('gre_awa', v)} accent={theme.accent} decimal />
-                <TextField label="GMAT (/800)" value={form.gmat_total} onChange={(v) => set('gmat_total', v)} accent={theme.accent} numeric />
-                <TextField label="GMAT Focus (/805)" value={form.gmat_focus_total} onChange={(v) => set('gmat_focus_total', v)} accent={theme.accent} numeric />
-                <TextField label="TOEFL" value={form.toefl_score} onChange={(v) => set('toefl_score', v)} accent={theme.accent} numeric />
-                <TextField label="IELTS" value={form.ielts_score} onChange={(v) => set('ielts_score', v)} accent={theme.accent} decimal />
-              </div>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                <TextField label="Years of work exp." value={form.work_experience_years} onChange={(v) => set('work_experience_years', v)} accent={theme.accent} decimal />
-                <TextField label="Publications" value={form.publication_count} onChange={(v) => set('publication_count', v)} accent={theme.accent} numeric />
-                <TextField label="LORs secured" value={form.lors_secured} onChange={(v) => set('lors_secured', v)} accent={theme.accent} numeric />
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <div>
-                  <span className="mb-1.5 block text-[13px] font-medium text-white/70">Target intake term</span>
-                  <Segmented options={TERMS} value={form.target_intake_term} onChange={(v) => set('target_intake_term', v)} accent={theme.accent} />
-                </div>
-                <TextField label="Target intake year" value={form.target_intake_year} onChange={(v) => set('target_intake_year', v)} accent={theme.accent} numeric placeholder="2027" />
-              </div>
-              {/* Budget — undergrad collects this; masters discovery already
-                  filters on budgetMax, so it's fed straight into matching. */}
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <TextField label="Max annual tuition budget" value={form.target_budget_max} onChange={(v) => set('target_budget_max', v)} accent={theme.accent} numeric placeholder="50000" />
-                <div>
-                  <span className="mb-1.5 block text-[13px] font-medium text-white/70">Currency</span>
-                  <Segmented options={['USD', 'EUR', 'GBP', 'INR']} value={form.target_budget_currency} onChange={(v) => set('target_budget_currency', v)} accent={theme.accent} />
-                </div>
-              </div>
-              <div>
-                <span className="mb-2 block text-[13px] font-medium text-white/70">Target countries</span>
-                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                  {COUNTRY_CARDS.map((c) => {
-                    const on = countries.includes(c.code);
-                    return (
-                      <button
-                        key={c.code}
-                        type="button"
-                        onClick={() => setCountries((prev) => (on ? prev.filter((x) => x !== c.code) : [...prev, c.code]))}
-                        className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-all"
-                        style={{
-                          background: on ? hexToRgba(theme.accent, 0.16) : 'rgba(255,255,255,0.04)',
-                          border: `1px solid ${on ? hexToRgba(theme.accent, 0.6) : 'rgba(255,255,255,0.1)'}`,
-                        }}
-                      >
-                        <span className="text-xl">{c.flag}</span>
-                        <span className="min-w-0">
-                          <span className="block text-[13px] font-semibold text-white">{c.code}</span>
-                          <span className="block truncate text-[11px] text-white/45">{c.name}</span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Profile strength */}
-        <div className="mt-5 flex items-center gap-3">
-          <span className="text-[11px] uppercase tracking-wide text-white/40">Profile</span>
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
-            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${strength}%`, background: theme.accent }} />
-          </div>
-          <span className="text-[11px] font-semibold text-white/50">{strength}%</span>
-        </div>
-
-        {/* Nav */}
-        <div className="mt-6 flex items-center justify-between">
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
           <button
             type="button"
-            onClick={() => setStep((s) => Math.max(s - 1, 0))}
+            onClick={back}
             disabled={step === 0}
-            className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium text-white/60 transition-colors hover:text-white disabled:opacity-30"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '11px 20px', borderRadius: 10,
+              background: 'transparent', border: `1px solid ${S.border2}`, color: S.muted,
+              fontSize: 13, fontWeight: 600, cursor: step === 0 ? 'default' : 'pointer',
+              opacity: step === 0 ? 0.4 : 1, fontFamily: S.font,
+            }}
           >
-            <ArrowLeft className="h-4 w-4" /> Back
+            <ChevronLeft size={16} /> Back
           </button>
-          <button
-            type="button"
-            onClick={next}
-            disabled={saving || !canContinue}
-            className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:opacity-50"
-            style={{ background: theme.accent, boxShadow: `0 8px 24px ${hexToRgba(theme.accent, 0.3)}` }}
-          >
-            {isLast ? (
-              <>{saving ? 'Saving…' : 'Save & finish'} <Sparkles className="h-4 w-4" /></>
-            ) : (
-              <>Continue <ArrowRight className="h-4 w-4" /></>
-            )}
-          </button>
+
+          {step < STEPS.length - 1 ? (
+            <button
+              type="button"
+              onClick={next}
+              disabled={!canAdvance}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '11px 22px', borderRadius: 10,
+                background: ACCENT, border: 'none', color: '#fff', fontSize: 13, fontWeight: 700,
+                cursor: canAdvance ? 'pointer' : 'default', opacity: canAdvance ? 1 : 0.5, fontFamily: S.font,
+              }}
+            >
+              Continue <ChevronRight size={16} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={saving}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '11px 22px', borderRadius: 10,
+                background: ACCENT, border: 'none', color: '#fff', fontSize: 13, fontWeight: 700,
+                cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1, fontFamily: S.font,
+              }}
+            >
+              <Check size={16} /> {saving ? 'Saving…' : 'Finish & view dashboard'}
+            </button>
+          )}
         </div>
       </div>
     </div>
