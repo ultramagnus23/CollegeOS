@@ -49,11 +49,23 @@ if not DB_URL:
 HEADERS = {"User-Agent": "Mozilla/5.0 (NCES educational research)"}
 
 NCES_FILES = {
+    "HD2022":    "https://nces.ed.gov/ipeds/datacenter/data/HD2022.zip",
     "IC2022_AY": "https://nces.ed.gov/ipeds/datacenter/data/IC2022_AY.zip",
     "IC2022":    "https://nces.ed.gov/ipeds/datacenter/data/IC2022.zip",
     "ADM2022":   "https://nces.ed.gov/ipeds/datacenter/data/ADM2022.zip",
     "EF2022D":   "https://nces.ed.gov/ipeds/datacenter/data/EF2022D.zip",
 }
+
+# LOCALE code → human-readable campus type
+LOCALE_MAP = {
+    11: "City", 12: "City", 13: "City",
+    21: "Suburb", 22: "Suburb", 23: "Suburb",
+    31: "Town", 32: "Town", 33: "Town",
+    41: "Rural", 42: "Rural", 43: "Rural",
+}
+
+# CONTROL code → institution control type string
+CONTROL_MAP = {1: "public", 2: "private_nonprofit", 3: "for_profit"}
 
 
 def safe(row: dict, *keys, default=None):
@@ -132,13 +144,14 @@ def load_ipeds_map(conn) -> dict[str, str]:
 
 def process_ic_ay(conn, data: dict, ipeds_map: dict):
     """IC2022_AY: tuition (in/out-state), room & board."""
-    # Key columns:
-    # TUITION1 = in-state tuition (undergrad, full-time)
-    # TUITION2 = out-of-state tuition
-    # TUITION3 = out-of-state (same as 2 for most)
-    # ROOMAMT  = room charge (academic year)
-    # BOARDAMT = board charge
-    # RMBRDAMT = combined room+board
+    # Correct IPEDS IC_AY column names:
+    # TUITION1  = in-district tuition
+    # TUITION2  = in-state tuition
+    # TUITION3  = out-of-state tuition
+    # CHG5AY3   = on-campus room charges (academic year, 2022-23)
+    # CHG6AY3   = on-campus board/meal plan charges
+    # CHG7AY3   = off-campus (not with family) room
+    # CHG8AY3   = off-campus board
     cur = conn.cursor()
     updated = 0
     for unitid, row in data.items():
@@ -146,44 +159,44 @@ def process_ic_ay(conn, data: dict, ipeds_map: dict):
         if not inst_id:
             continue
 
-        tuit_in  = safe_f(row, "TUITION1", "TUITION2")
-        tuit_out = safe_f(row, "TUITION2", "TUITION3")
-        room     = safe_f(row, "ROOMAMT")
-        board    = safe_f(row, "BOARDAMT")
-        rb       = safe_f(row, "RMBRDAMT")  # combined room+board
-
-        if rb and not room:
-            room  = rb * 0.55
-            board = rb * 0.45
+        tuit_in  = safe_f(row, "TUITION2", "TUITION1")
+        tuit_out = safe_f(row, "TUITION3", "TUITION2")
+        room     = safe_f(row, "CHG5AY3", "CHG7AY3")   # on-campus room, fallback off-campus
+        board    = safe_f(row, "CHG6AY3", "CHG8AY3")   # on-campus board, fallback off-campus
 
         if not any([tuit_in, tuit_out, room, board]):
             continue
 
         try:
             cur.execute("""
-                UPDATE canonical.institution_financials SET
-                  tuition_domestic      = COALESCE(tuition_domestic, %(td)s),
-                  tuition_international = COALESCE(tuition_international, %(ti)s),
-                  housing_cost          = COALESCE(housing_cost, %(h)s),
-                  meal_cost             = COALESCE(meal_cost, %(m)s)
-                WHERE institution_id = %(id)s AND data_year = 2024
+                INSERT INTO canonical.institution_financials
+                  (institution_id, tuition_domestic, tuition_international,
+                   housing_cost, meal_cost, data_year, academic_year)
+                VALUES
+                  (%(id)s, %(td)s, %(ti)s, %(h)s, %(m)s, 2024, '2023-2024')
+                ON CONFLICT ON CONSTRAINT uq_institution_financials DO UPDATE SET
+                  tuition_domestic      = COALESCE(EXCLUDED.tuition_domestic, institution_financials.tuition_domestic),
+                  tuition_international = COALESCE(EXCLUDED.tuition_international, institution_financials.tuition_international),
+                  housing_cost          = COALESCE(EXCLUDED.housing_cost, institution_financials.housing_cost),
+                  meal_cost             = COALESCE(EXCLUDED.meal_cost, institution_financials.meal_cost)
             """, {"id": inst_id, "td": tuit_in, "ti": tuit_out, "h": room, "m": board})
             updated += 1
         except Exception as e:
             log.debug(f"  IC_AY skip {unitid}: {e}")
 
     cur.close()
-    log.info(f"IC2022_AY: updated {updated} financial rows")
+    log.info(f"IC2022_AY: upserted {updated} financial rows")
 
 
 def process_ic(conn, data: dict, ipeds_map: dict):
-    """IC2022: housing guarantee, % on campus, student-faculty ratio."""
-    # STUFACR   = student-faculty ratio
-    # ROOM      = 1 if college provides on-campus housing
-    # ROOMCAP   = housing capacity
-    # PCTENRH   = pct full-time first-time students living in college housing
-    # TUITPL3   = tuition payment plan available
-    # ADMCON7   = test-optional flag (3 = neither required nor recommended = optional)
+    """IC2022: housing availability and charges.
+    Correct columns (STUFACR/PCTENRH/ADMCON7 are NOT in IC2022):
+      ROOM     = 1 if institution has on-campus housing (2=no)
+      ROOMCAP  = housing capacity
+      ROOMAMT  = on-campus room charge
+      BOARDAMT = on-campus board/meal charge
+      BOARD    = 1 if institution provides board plan
+    """
     cur = conn.cursor()
     updated = 0
     for unitid, row in data.items():
@@ -191,61 +204,50 @@ def process_ic(conn, data: dict, ipeds_map: dict):
         if not inst_id:
             continue
 
-        sfr         = safe_f(row, "STUFACR")
-        has_housing = safe_i(row, "ROOM")           # 1=yes, 2=no
-        pct_housing = safe_f(row, "PCTENRH")        # 0-100
-        test_opt_v  = safe_i(row, "ADMCON7")        # 1=req, 2=rec, 3=neither, 5=not-considered
-
-        test_optional = (test_opt_v in (3, 5)) if test_opt_v else None
+        has_housing = safe_i(row, "ROOM")       # 1=yes, 2=no
         housing_guarantee = (has_housing == 1) if has_housing else None
+        room_charge = safe_f(row, "ROOMAMT")    # per-semester room charge
+        board_charge = safe_f(row, "BOARDAMT")  # per-semester board charge
 
         try:
-            if sfr:
-                cur.execute("""
-                    UPDATE canonical.institutions SET
-                      student_faculty_ratio = COALESCE(student_faculty_ratio, %(sfr)s)
-                    WHERE id = %(id)s
-                """, {"id": inst_id, "sfr": sfr})
-
             cur.execute("""
-                INSERT INTO canonical.institution_campus_life (institution_id)
-                VALUES (%(id)s)
-                ON CONFLICT ON CONSTRAINT institution_campus_life_institution_id_key DO NOTHING
-            """, {"id": inst_id})
+                INSERT INTO canonical.institution_campus_life (institution_id, housing_guarantee)
+                VALUES (%(id)s, %(hg)s)
+                ON CONFLICT ON CONSTRAINT institution_campus_life_institution_id_key DO UPDATE SET
+                  housing_guarantee = COALESCE(EXCLUDED.housing_guarantee,
+                                               institution_campus_life.housing_guarantee)
+            """, {"id": inst_id, "hg": housing_guarantee})
 
-            cur.execute("""
-                UPDATE canonical.institution_campus_life SET
-                  pct_living_on_campus = COALESCE(pct_living_on_campus, %(pct)s),
-                  housing_guarantee    = COALESCE(housing_guarantee, %(hg)s)
-                WHERE institution_id = %(id)s
-            """, {"id": inst_id, "pct": pct_housing, "hg": housing_guarantee})
-
-            if test_optional is not None:
+            # Also update financials with per-year room+board if not already set
+            if room_charge or board_charge:
+                room_yr  = (room_charge * 2) if room_charge else None   # semester → year
+                board_yr = (board_charge * 2) if board_charge else None
                 cur.execute("""
-                    UPDATE canonical.institution_admissions SET
-                      test_optional = COALESCE(test_optional, %(to)s)
+                    UPDATE canonical.institution_financials SET
+                      housing_cost = COALESCE(housing_cost, %(h)s),
+                      meal_cost    = COALESCE(meal_cost, %(m)s)
                     WHERE institution_id = %(id)s AND data_year = 2024
-                """, {"id": inst_id, "to": test_optional})
+                """, {"id": inst_id, "h": room_yr, "m": board_yr})
 
             updated += 1
         except Exception as e:
             log.debug(f"  IC skip {unitid}: {e}")
 
     cur.close()
-    log.info(f"IC2022: updated {updated} campus/admissions rows")
+    log.info(f"IC2022: updated {updated} campus life rows")
 
 
 def process_adm(conn, data: dict, ipeds_map: dict):
-    """ADM2022: SAT/ACT percentiles, GPA, submission rates."""
-    # SATVR25/75 = SAT reading 25/75th
-    # SATMT25/75 = SAT math 25/75th
-    # ACTCM25/75 = ACT composite 25/75th
-    # ACTCMMID   = ACT midpoint
-    # SATCMMID   = SAT composite midpoint
-    # APPLCNM    = applicants male, APPLCNW = female
-    # ADMSSN     = admitted
-    # ENRLT      = enrolled full-time
-    # PCTTRANM/W = % transfer admitted (male/female)
+    """ADM2022: SAT/ACT percentiles, GPA, submission rates, test-optional.
+    SATVR25/75  = SAT reading 25/75th
+    SATMT25/75  = SAT math 25/75th
+    ACTCM25/75  = ACT composite 25/75th
+    ACTCM50     = ACT midpoint
+    APPLCNM/W   = applicants male/female
+    ADMSSN      = admitted total
+    ENRLT       = enrolled full-time
+    ADMCON7     = test policy (1=req, 2=rec, 3=neither, 5=not considered)
+    """
     cur = conn.cursor()
     updated = 0
     for unitid, row in data.items():
@@ -260,14 +262,17 @@ def process_adm(conn, data: dict, ipeds_map: dict):
         accept_r  = (admitted / applied) if (admitted and applied and applied > 0) else None
 
         sat_r25 = safe_i(row, "SATVR25")
+        sat_r50 = safe_i(row, "SATVR50")
         sat_r75 = safe_i(row, "SATVR75")
         sat_m25 = safe_i(row, "SATMT25")
+        sat_m50 = safe_i(row, "SATMT50")
         sat_m75 = safe_i(row, "SATMT75")
         sat_25  = (sat_r25 + sat_m25) if (sat_r25 and sat_m25) else None
+        sat_50  = (sat_r50 + sat_m50) if (sat_r50 and sat_m50) else None
         sat_75  = (sat_r75 + sat_m75) if (sat_r75 and sat_m75) else None
 
         act_25 = safe_i(row, "ACTCM25")
-        act_50 = safe_i(row, "ACTCMMID")
+        act_50 = safe_i(row, "ACTCM50")   # midpoint column is ACTCM50 not ACTCMMID
         act_75 = safe_i(row, "ACTCM75")
 
         if accept_r is not None:
@@ -275,7 +280,10 @@ def process_adm(conn, data: dict, ipeds_map: dict):
         else:
             diff = None
 
-        if not any([sat_25, sat_75, act_25, act_75, accept_r]):
+        test_opt_v = safe_i(row, "ADMCON7")  # 1=req, 2=rec, 3=neither required, 5=not considered
+        test_optional = (test_opt_v in (3, 5)) if test_opt_v is not None else None
+
+        if not any([sat_25, sat_75, act_25, act_75, accept_r, test_optional is not None]):
             continue
 
         try:
@@ -283,21 +291,26 @@ def process_adm(conn, data: dict, ipeds_map: dict):
                 INSERT INTO canonical.institution_admissions
                   (institution_id, acceptance_rate, applied_count, admitted_count,
                    enrolled_count, yield_rate,
+                   sat_25, sat_50, sat_75,
                    sat_total_25, sat_total_75, sat_ebrw_25, sat_ebrw_75,
                    sat_math_25, sat_math_75, act_25, act_50, act_75,
-                   admission_difficulty, data_year, admissions_cycle)
+                   test_optional, admission_difficulty, data_year, admissions_cycle)
                 VALUES
                   (%(id)s, %(ar)s, %(app)s, %(adm)s,
                    %(enr)s, %(yr)s,
+                   %(s25)s, %(s50)s, %(s75)s,
                    %(s25)s, %(s75)s, %(er25)s, %(er75)s,
                    %(em25)s, %(em75)s, %(a25)s, %(a50)s, %(a75)s,
-                   %(diff)s, 2024, 'RD')
+                   %(to)s, %(diff)s, 2024, 'regular')
                 ON CONFLICT ON CONSTRAINT uq_institution_admissions DO UPDATE SET
                   acceptance_rate      = COALESCE(EXCLUDED.acceptance_rate, institution_admissions.acceptance_rate),
                   applied_count        = COALESCE(EXCLUDED.applied_count, institution_admissions.applied_count),
                   admitted_count       = COALESCE(EXCLUDED.admitted_count, institution_admissions.admitted_count),
                   enrolled_count       = COALESCE(EXCLUDED.enrolled_count, institution_admissions.enrolled_count),
                   yield_rate           = COALESCE(EXCLUDED.yield_rate, institution_admissions.yield_rate),
+                  sat_25               = COALESCE(EXCLUDED.sat_25, institution_admissions.sat_25),
+                  sat_50               = COALESCE(EXCLUDED.sat_50, institution_admissions.sat_50),
+                  sat_75               = COALESCE(EXCLUDED.sat_75, institution_admissions.sat_75),
                   sat_total_25         = COALESCE(EXCLUDED.sat_total_25, institution_admissions.sat_total_25),
                   sat_total_75         = COALESCE(EXCLUDED.sat_total_75, institution_admissions.sat_total_75),
                   sat_ebrw_25          = COALESCE(EXCLUDED.sat_ebrw_25, institution_admissions.sat_ebrw_25),
@@ -307,13 +320,15 @@ def process_adm(conn, data: dict, ipeds_map: dict):
                   act_25               = COALESCE(EXCLUDED.act_25, institution_admissions.act_25),
                   act_50               = COALESCE(EXCLUDED.act_50, institution_admissions.act_50),
                   act_75               = COALESCE(EXCLUDED.act_75, institution_admissions.act_75),
+                  test_optional        = COALESCE(EXCLUDED.test_optional, institution_admissions.test_optional),
                   admission_difficulty = COALESCE(EXCLUDED.admission_difficulty, institution_admissions.admission_difficulty)
             """, {
                 "id": inst_id, "ar": accept_r,
                 "app": applied or None, "adm": admitted, "enr": enrolled, "yr": yield_r,
-                "s25": sat_25, "s75": sat_75,
+                "s25": sat_25, "s50": sat_50, "s75": sat_75,
                 "er25": sat_r25, "er75": sat_r75, "em25": sat_m25, "em75": sat_m75,
-                "a25": act_25, "a50": act_50, "a75": act_75, "diff": diff,
+                "a25": act_25, "a50": act_50, "a75": act_75,
+                "to": test_optional, "diff": diff,
             })
             updated += 1
         except Exception as e:
@@ -352,6 +367,43 @@ def process_ef(conn, data: dict, ipeds_map: dict):
     log.info(f"EF2022D: updated {updated} enrollment rows")
 
 
+def process_hd(conn, data: dict, ipeds_map: dict):
+    """HD2022: institutional characteristics — lat/lng, control type, locale/campus type, HBCU."""
+    cur = conn.cursor()
+    updated = 0
+    for unitid, row in data.items():
+        inst_id = ipeds_map.get(unitid)
+        if not inst_id:
+            continue
+
+        lat      = safe_f(row, "LATITUDE")
+        lng      = safe_f(row, "LONGITUD")
+        control  = safe_i(row, "CONTROL")   # 1=public, 2=private np, 3=for-profit
+        locale   = safe_i(row, "LOCALE")    # 11-43, city/suburb/town/rural
+        hbcu     = safe_i(row, "HBCU")      # 1=yes, 2=no
+
+        control_type = CONTROL_MAP.get(control)
+        campus_type  = LOCALE_MAP.get(locale)
+        is_hbcu      = (hbcu == 1) if hbcu else None
+
+        try:
+            cur.execute("""
+                UPDATE canonical.institutions SET
+                  latitude     = COALESCE(latitude, %(lat)s),
+                  longitude    = COALESCE(longitude, %(lng)s),
+                  control_type = COALESCE(control_type, %(ct)s),
+                  campus_type  = COALESCE(campus_type, %(ctype)s)
+                WHERE id = %(id)s
+            """, {"id": inst_id, "lat": lat, "lng": lng,
+                  "ct": control_type, "ctype": campus_type})
+            updated += 1
+        except Exception as e:
+            log.debug(f"  HD skip {unitid}: {e}")
+
+    cur.close()
+    log.info(f"HD2022: updated {updated} institution rows")
+
+
 def main():
     conn = psycopg2.connect(DB_URL)
     conn.autocommit = True
@@ -367,6 +419,8 @@ def main():
         time.sleep(0.5)
 
     # Process each
+    if datasets.get("HD2022"):
+        process_hd(conn, datasets["HD2022"], ipeds_map)
     if datasets.get("IC2022_AY"):
         process_ic_ay(conn, datasets["IC2022_AY"], ipeds_map)
     if datasets.get("IC2022"):

@@ -84,9 +84,12 @@ FIELDS = ",".join([
     "latest.cost.avg_net_price.private",
     "latest.aid.median_debt.completers.overall",
     "latest.aid.pell_grant_rate",
+    "latest.aid.students_with_any_loan",
     "latest.earnings.6_yrs_after_entry.median",
     "latest.earnings.10_yrs_after_entry.median_earnings",
     "latest.completion.rate_suppressed.overall",
+    "latest.completion.retention_rate.four_year.full_time",
+    "latest.completion.retention_rate.lt_four_year.full_time",
 ])
 
 
@@ -210,43 +213,50 @@ def upsert_admissions(cur, inst_id, r):
 
     adm_rate = safe_f(r, "latest.admissions.admission_rate.overall")
     diff = round(max(1.0, min(99.0, 100 * (1 - adm_rate ** 0.4))), 1) if adm_rate is not None else None
+    sat_50 = (sat_25 + sat_75) // 2 if (sat_25 and sat_75) else None
+    act_25 = safe_i(r, "latest.admissions.act_scores.25th_percentile.cumulative")
+    act_50 = safe_i(r, "latest.admissions.act_scores.midpoint.cumulative")
+    act_75 = safe_i(r, "latest.admissions.act_scores.75th_percentile.cumulative")
 
     # unique key: (institution_id, data_year, admissions_cycle)
     cur.execute("""
         INSERT INTO canonical.institution_admissions
           (institution_id, acceptance_rate, applied_count, admitted_count, enrolled_count,
-           yield_rate, sat_total_25, sat_total_75, sat_ebrw_25, sat_ebrw_75,
+           yield_rate, sat_25, sat_50, sat_75,
+           sat_total_25, sat_total_75, sat_ebrw_25, sat_ebrw_75,
            sat_math_25, sat_math_75,
            act_25, act_50, act_75, admission_difficulty, data_year, admissions_cycle)
         VALUES
           (%(id)s, %(ar)s, %(app)s, %(adm)s, %(enr)s,
-           %(yr)s, %(s25)s, %(s75)s, %(er25)s, %(er75)s,
+           %(yr)s, %(s25)s, %(s50)s, %(s75)s,
+           %(s25)s, %(s75)s, %(er25)s, %(er75)s,
            %(em25)s, %(em75)s,
-           %(a25)s, %(a50)s, %(a75)s, %(diff)s, 2024, 'RD')
+           %(a25)s, %(a50)s, %(a75)s, %(diff)s, 2024, 'regular')
         ON CONFLICT ON CONSTRAINT uq_institution_admissions DO UPDATE SET
-          acceptance_rate      = EXCLUDED.acceptance_rate,
-          applied_count        = EXCLUDED.applied_count,
-          admitted_count       = EXCLUDED.admitted_count,
-          enrolled_count       = EXCLUDED.enrolled_count,
-          yield_rate           = EXCLUDED.yield_rate,
-          sat_total_25         = EXCLUDED.sat_total_25,
-          sat_total_75         = EXCLUDED.sat_total_75,
-          sat_ebrw_25          = EXCLUDED.sat_ebrw_25,
-          sat_ebrw_75          = EXCLUDED.sat_ebrw_75,
-          sat_math_25          = EXCLUDED.sat_math_25,
-          sat_math_75          = EXCLUDED.sat_math_75,
-          act_25               = EXCLUDED.act_25,
-          act_50               = EXCLUDED.act_50,
-          act_75               = EXCLUDED.act_75,
-          admission_difficulty = EXCLUDED.admission_difficulty
+          acceptance_rate      = COALESCE(EXCLUDED.acceptance_rate, institution_admissions.acceptance_rate),
+          applied_count        = COALESCE(EXCLUDED.applied_count, institution_admissions.applied_count),
+          admitted_count       = COALESCE(EXCLUDED.admitted_count, institution_admissions.admitted_count),
+          enrolled_count       = COALESCE(EXCLUDED.enrolled_count, institution_admissions.enrolled_count),
+          yield_rate           = COALESCE(EXCLUDED.yield_rate, institution_admissions.yield_rate),
+          sat_25               = COALESCE(EXCLUDED.sat_25, institution_admissions.sat_25),
+          sat_50               = COALESCE(EXCLUDED.sat_50, institution_admissions.sat_50),
+          sat_75               = COALESCE(EXCLUDED.sat_75, institution_admissions.sat_75),
+          sat_total_25         = COALESCE(EXCLUDED.sat_total_25, institution_admissions.sat_total_25),
+          sat_total_75         = COALESCE(EXCLUDED.sat_total_75, institution_admissions.sat_total_75),
+          sat_ebrw_25          = COALESCE(EXCLUDED.sat_ebrw_25, institution_admissions.sat_ebrw_25),
+          sat_ebrw_75          = COALESCE(EXCLUDED.sat_ebrw_75, institution_admissions.sat_ebrw_75),
+          sat_math_25          = COALESCE(EXCLUDED.sat_math_25, institution_admissions.sat_math_25),
+          sat_math_75          = COALESCE(EXCLUDED.sat_math_75, institution_admissions.sat_math_75),
+          act_25               = COALESCE(EXCLUDED.act_25, institution_admissions.act_25),
+          act_50               = COALESCE(EXCLUDED.act_50, institution_admissions.act_50),
+          act_75               = COALESCE(EXCLUDED.act_75, institution_admissions.act_75),
+          admission_difficulty = COALESCE(EXCLUDED.admission_difficulty, institution_admissions.admission_difficulty)
     """, {
         "id": inst_id, "ar": adm_rate,
         "app": applied, "adm": admitted, "enr": enrolled, "yr": yield_rate,
-        "s25": sat_25, "s75": sat_75,
+        "s25": sat_25, "s50": sat_50, "s75": sat_75,
         "er25": sat_r25, "er75": sat_r75, "em25": sat_m25, "em75": sat_m75,
-        "a25": safe_i(r, "latest.admissions.act_scores.25th_percentile.cumulative"),
-        "a50": safe_i(r, "latest.admissions.act_scores.midpoint.cumulative"),
-        "a75": safe_i(r, "latest.admissions.act_scores.75th_percentile.cumulative"),
+        "a25": act_25, "a50": act_50, "a75": act_75,
         "diff": diff,
     })
 
@@ -255,23 +265,25 @@ def upsert_financials(cur, inst_id, r):
     ownership = safe_i(r, "school.ownership")
     is_public = ownership == 1
     net_p = safe_f(r, "latest.cost.avg_net_price.public" if is_public else "latest.cost.avg_net_price.private")
+    pell = safe_f(r, "latest.aid.pell_grant_rate")
+    pell_pct = round(pell * 100, 1) if pell is not None else None
 
     # unique key: (institution_id, data_year_key, academic_year_key)
-    # both are generated from data_year and academic_year respectively
     cur.execute("""
         INSERT INTO canonical.institution_financials
           (institution_id, tuition_domestic, tuition_international,
            cost_of_attendance, net_price, avg_debt_at_graduation,
-           data_year, academic_year)
+           percent_receiving_aid, data_year, academic_year)
         VALUES
-          (%(id)s, %(td)s, %(ti)s, %(coa)s, %(np)s, %(debt)s,
+          (%(id)s, %(td)s, %(ti)s, %(coa)s, %(np)s, %(debt)s, %(pell)s,
            2024, '2023-2024')
         ON CONFLICT ON CONSTRAINT uq_institution_financials DO UPDATE SET
-          tuition_domestic        = EXCLUDED.tuition_domestic,
-          tuition_international   = EXCLUDED.tuition_international,
-          cost_of_attendance      = EXCLUDED.cost_of_attendance,
-          net_price               = EXCLUDED.net_price,
-          avg_debt_at_graduation  = EXCLUDED.avg_debt_at_graduation
+          tuition_domestic        = COALESCE(EXCLUDED.tuition_domestic, institution_financials.tuition_domestic),
+          tuition_international   = COALESCE(EXCLUDED.tuition_international, institution_financials.tuition_international),
+          cost_of_attendance      = COALESCE(EXCLUDED.cost_of_attendance, institution_financials.cost_of_attendance),
+          net_price               = COALESCE(EXCLUDED.net_price, institution_financials.net_price),
+          avg_debt_at_graduation  = COALESCE(EXCLUDED.avg_debt_at_graduation, institution_financials.avg_debt_at_graduation),
+          percent_receiving_aid   = COALESCE(EXCLUDED.percent_receiving_aid, institution_financials.percent_receiving_aid)
     """, {
         "id": inst_id,
         "td": safe_f(r, "latest.cost.tuition.in_state"),
@@ -279,25 +291,34 @@ def upsert_financials(cur, inst_id, r):
         "coa": safe_f(r, "latest.cost.attendance.academic_year"),
         "np": net_p,
         "debt": safe_f(r, "latest.aid.median_debt.completers.overall"),
+        "pell": pell_pct,
     })
 
 
 def upsert_outcomes(cur, inst_id, r):
+    ret = safe_f(r, "latest.completion.retention_rate.four_year.full_time") or \
+          safe_f(r, "latest.completion.retention_rate.lt_four_year.full_time")
+    ret_pct = round(ret * 100, 1) if ret is not None else None
+    gr = safe_f(r, "latest.completion.rate_suppressed.overall")
+    gr_pct = round(gr * 100, 1) if gr is not None else None
+
     cur.execute("""
         INSERT INTO canonical.institution_outcomes
           (institution_id, median_salary_1yr, median_salary_5yr,
-           graduation_rate_4yr, data_year)
+           graduation_rate_4yr, retention_rate, data_year)
         VALUES
-          (%(id)s, %(s1)s, %(s5)s, %(gr)s, 2024)
+          (%(id)s, %(s1)s, %(s5)s, %(gr)s, %(ret)s, 2024)
         ON CONFLICT ON CONSTRAINT uq_institution_outcomes DO UPDATE SET
-          median_salary_1yr   = EXCLUDED.median_salary_1yr,
-          median_salary_5yr   = EXCLUDED.median_salary_5yr,
-          graduation_rate_4yr = EXCLUDED.graduation_rate_4yr
+          median_salary_1yr   = COALESCE(EXCLUDED.median_salary_1yr, institution_outcomes.median_salary_1yr),
+          median_salary_5yr   = COALESCE(EXCLUDED.median_salary_5yr, institution_outcomes.median_salary_5yr),
+          graduation_rate_4yr = COALESCE(EXCLUDED.graduation_rate_4yr, institution_outcomes.graduation_rate_4yr),
+          retention_rate      = COALESCE(EXCLUDED.retention_rate, institution_outcomes.retention_rate)
     """, {
         "id": inst_id,
         "s1": safe_f(r, "latest.earnings.6_yrs_after_entry.median"),
         "s5": safe_f(r, "latest.earnings.10_yrs_after_entry.median_earnings"),
-        "gr": safe_f(r, "latest.completion.rate_suppressed.overall"),
+        "gr": gr_pct,
+        "ret": ret_pct,
     })
 
 
