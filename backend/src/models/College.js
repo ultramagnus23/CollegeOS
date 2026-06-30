@@ -60,6 +60,14 @@ const LEGACY_DEADLINE_LATERAL = `
       AND im.source_table IN ('public.colleges', 'public.colleges_comprehensive')
   ) dl ON true`;
 
+// canonical.mv_college_cards has no quality-score column of its own, so the
+// real score lives in canonical.institution_quality_scores (0-100 scale).
+// Joining it here (instead of the `1::numeric` stub this used to be) is what
+// makes the frontend's `Math.round(data_quality_score)%` show a real number
+// instead of a literal "1%" for every canonical college.
+const CANONICAL_QUALITY_LATERAL = `
+  LEFT JOIN canonical.institution_quality_scores qs ON qs.institution_id = c.id`;
+
 class College {
   static async create(data) {
     const pool = dbManager.getDatabase();
@@ -189,7 +197,7 @@ class College {
            c.metadata->'major_categories' AS top_majors,
            'canonical.mv_college_cards'::text AS data_source,
            NULL::text AS data_source_url,
-           1::numeric AS data_quality_score,
+           qs.final_quality_score AS data_quality_score,
            NULL::timestamptz AS last_data_refresh,
            c.updated_at AS last_updated_at,
            c.updated_at,
@@ -200,7 +208,7 @@ class College {
            dl.ea_deadline,
            LOWER(REGEXP_REPLACE(c.canonical_name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
            (SELECT ARRAY_AGG(cp.program_name) FROM canonical.institution_programs cp WHERE cp.institution_id = c.id) AS program_names
-         FROM canonical.mv_college_cards c${CANONICAL_DEADLINE_LATERAL}
+         FROM canonical.mv_college_cards c${CANONICAL_DEADLINE_LATERAL}${CANONICAL_QUALITY_LATERAL}
          WHERE c.id = $1::uuid`,
         [id]
       );
@@ -238,7 +246,7 @@ class College {
            NULL::int AS ranking_us_news_legacy,
            NULL::text AS data_source,
            NULL::text AS data_source_url,
-           1::numeric AS data_quality_score,
+           NULL::numeric AS data_quality_score,
            c.updated_at AS last_updated_at,
            c.updated_at,
            c.created_at,
@@ -285,7 +293,7 @@ class College {
              NULL::int AS ranking_us_news_legacy,
              NULL::text AS data_source,
              NULL::text AS data_source_url,
-             1::numeric AS data_quality_score,
+             NULL::numeric AS data_quality_score,
              c.updated_at AS last_updated_at,
              c.updated_at,
              c.created_at,
@@ -346,7 +354,7 @@ class College {
         c.metadata->'major_categories' AS top_majors,
         'canonical.mv_college_cards'::text AS data_source,
         NULL::text AS data_source_url,
-        1::numeric AS data_quality_score,
+        qs.final_quality_score AS data_quality_score,
         NULL::timestamptz AS last_data_refresh,
         c.updated_at AS last_updated_at,
         c.updated_at,
@@ -358,7 +366,7 @@ class College {
         LOWER(REGEXP_REPLACE(c.canonical_name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
         COALESCE(c.popularity_score, 0)::numeric AS relevance_score,
         (SELECT ARRAY_AGG(cp.program_name) FROM canonical.institution_programs cp WHERE cp.institution_id = c.id) AS program_names
-      FROM canonical.mv_college_cards c${CANONICAL_DEADLINE_LATERAL}
+      FROM canonical.mv_college_cards c${CANONICAL_DEADLINE_LATERAL}${CANONICAL_QUALITY_LATERAL}
       WHERE c.canonical_name IS NOT NULL
         AND LENGTH(TRIM(c.canonical_name)) > 1
     `;

@@ -62,6 +62,17 @@ interface ProgramDetail {
   official_website?: string;
   pathways?: Pathway[];
   deadlines?: MastersDeadline[];
+  gre_requirement?: string;
+  gmat_requirement?: string;
+  min_gpa?: number;
+  min_gpa_scale?: number;
+  min_toefl?: number;
+  min_ielts?: number;
+  assistantship_types?: string[];
+  tuition_waiver_available?: boolean;
+  median_earnings?: number;
+  median_debt?: number;
+  roi_source?: string;
 }
 
 /* ==================== MAIN ==================== */
@@ -208,6 +219,79 @@ const MastersProgramDetails: React.FC = () => {
           ) : chancingResult && (
             <MastersChancingCard assessment={chancingResult} />
           )}
+        </div>
+
+        {/* Admission requirements + outcomes — already returned by the API, just
+            not rendered before. These are the fields students actually need to
+            self-filter (test minimums, GPA, funding, ROI). */}
+        <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 48px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <div style={{ padding: '20px', background: S.surface, border: `1px solid ${S.border}`, borderRadius: 16 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, fontFamily: S.font, marginBottom: 16 }}>Admission Requirements</h3>
+            {(program.gre_requirement || program.gmat_requirement || program.min_gpa != null || program.min_toefl != null || program.min_ielts != null) ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {program.gre_requirement && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontFamily: S.font }}>
+                    <span style={{ color: S.muted }}>GRE</span><span style={{ fontWeight: 700 }}>{program.gre_requirement}</span>
+                  </div>
+                )}
+                {program.gmat_requirement && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontFamily: S.font }}>
+                    <span style={{ color: S.muted }}>GMAT</span><span style={{ fontWeight: 700 }}>{program.gmat_requirement}</span>
+                  </div>
+                )}
+                {program.min_gpa != null && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontFamily: S.font }}>
+                    <span style={{ color: S.muted }}>Minimum GPA</span><span style={{ fontWeight: 700 }}>{program.min_gpa}{program.min_gpa_scale ? ` / ${program.min_gpa_scale}` : ''}</span>
+                  </div>
+                )}
+                {program.min_toefl != null && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontFamily: S.font }}>
+                    <span style={{ color: S.muted }}>Minimum TOEFL</span><span style={{ fontWeight: 700 }}>{program.min_toefl}</span>
+                  </div>
+                )}
+                {program.min_ielts != null && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontFamily: S.font }}>
+                    <span style={{ color: S.muted }}>Minimum IELTS</span><span style={{ fontWeight: 700 }}>{program.min_ielts}</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, color: S.dim, fontFamily: S.font }}>No requirements data available</div>
+            )}
+          </div>
+
+          <div style={{ padding: '20px', background: S.surface, border: `1px solid ${S.border}`, borderRadius: 16 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, fontFamily: S.font, marginBottom: 16 }}>Outcomes &amp; Funding</h3>
+            {(program.median_earnings != null || program.median_debt != null || program.tuition_waiver_available || (program.assistantship_types && program.assistantship_types.length > 0)) ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {program.median_earnings != null && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontFamily: S.font }}>
+                    <span style={{ color: S.muted }}>Median earnings</span><span style={{ fontWeight: 700 }}>${program.median_earnings.toLocaleString()}</span>
+                  </div>
+                )}
+                {program.median_debt != null && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontFamily: S.font }}>
+                    <span style={{ color: S.muted }}>Median debt</span><span style={{ fontWeight: 700 }}>${program.median_debt.toLocaleString()}</span>
+                  </div>
+                )}
+                {program.tuition_waiver_available != null && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontFamily: S.font }}>
+                    <span style={{ color: S.muted }}>Tuition waiver</span><span style={{ fontWeight: 700 }}>{program.tuition_waiver_available ? 'Available' : 'Not available'}</span>
+                  </div>
+                )}
+                {program.assistantship_types && program.assistantship_types.length > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontFamily: S.font }}>
+                    <span style={{ color: S.muted }}>Assistantships</span><span style={{ fontWeight: 700, textAlign: 'right' }}>{program.assistantship_types.join(', ')}</span>
+                  </div>
+                )}
+                {program.roi_source && (
+                  <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font, marginTop: 4 }}>Source: {program.roi_source}</div>
+                )}
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, color: S.dim, fontFamily: S.font }}>No outcomes data available</div>
+            )}
+          </div>
         </div>
 
         {/* Content */}

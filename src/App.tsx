@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
+import PublicOrDashboardLayout from "./layouts/PublicOrDashboardLayout";
 import { profileService } from "./services/profileService";
 import { api } from "./services/api";
 import { fetchWithResilience } from "./services/networkManager";
@@ -219,6 +220,14 @@ const AppContent = () => {
             </>
           )}
 
+          {/* Public browsing — no login required (landing page promise + SEO indexability).
+              Logged-in users still get full DashboardLayout chrome here via
+              PublicOrDashboardLayout; guests get a minimal header instead. */}
+          <Route element={<PublicOrDashboardLayout />}>
+            <Route path="/colleges" element={<Colleges />} />
+            <Route path="/colleges/:id" element={<CollegeDetails />} />
+          </Route>
+
           <Route
             element={
               <ProtectedRoute>
@@ -227,8 +236,6 @@ const AppContent = () => {
             }
           >
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/colleges" element={<Colleges />} />
-            <Route path="/colleges/:id" element={<CollegeDetails />} />
             <Route path="/applications" element={<Applications />} />
             <Route path="/requirements" element={<Requirements />} />
             <Route path="/deadlines" element={<Deadlines />} />
