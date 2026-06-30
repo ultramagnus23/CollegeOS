@@ -187,10 +187,11 @@ def parse_nirf_xlsx(content: bytes, category: str) -> list[dict]:
 
 
 def upsert_nirf(cur, inst_id: str, rank: int, category: str = "Overall"):
+    # ranking_year_key is generated — omit from INSERT
     cur.execute("""
         INSERT INTO canonical.institution_rankings
-          (institution_id, ranking_year_key, ranking_body, national_rank, ranking_year)
-        VALUES (%(id)s, '2024', %(body)s, %(rank)s, 2024)
+          (institution_id, ranking_body, national_rank, ranking_year)
+        VALUES (%(id)s, %(body)s, %(rank)s, 2024)
         ON CONFLICT ON CONSTRAINT uq_institution_rankings DO UPDATE SET
           national_rank = EXCLUDED.national_rank,
           nirf_rank = EXCLUDED.national_rank

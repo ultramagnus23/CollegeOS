@@ -275,13 +275,14 @@ def upsert_ranking(cur, inst_id: str, body: str, rank: int | None, year: str = "
     """Upsert into institution_rankings (one row per institution+year+body)."""
     if rank is None:
         return
+    # ranking_year_key is a generated column — do not include in INSERT
     cur.execute("""
         INSERT INTO canonical.institution_rankings
-          (institution_id, ranking_year_key, ranking_body, global_rank, ranking_year)
-        VALUES (%(id)s, %(yk)s, %(body)s, %(rank)s, %(yr)s)
+          (institution_id, ranking_body, global_rank, ranking_year)
+        VALUES (%(id)s, %(body)s, %(rank)s, %(yr)s)
         ON CONFLICT ON CONSTRAINT uq_institution_rankings DO UPDATE SET
           global_rank = EXCLUDED.global_rank
-    """, {"id": inst_id, "yk": year, "body": body, "rank": rank, "yr": int(year)})
+    """, {"id": inst_id, "body": body, "rank": rank, "yr": int(year)})
 
     # Also update denormalized convenience column if present
     if denorm_col:

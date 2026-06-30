@@ -87,9 +87,9 @@ def load_programs(conn) -> list[dict]:
     cur = conn.cursor()
     cur.execute("""
         SELECT mp.id, mp.program_name, mp.degree_type,
-               i.canonical_name AS university
+               COALESCE(i.canonical_name, mp.institution_name) AS university
         FROM canonical.masters_programs mp
-        JOIN canonical.institutions i ON i.id = mp.institution_id
+        LEFT JOIN canonical.institutions i ON i.id = mp.canonical_institution_id
         WHERE mp.avg_gpa IS NULL OR mp.avg_gre_quant IS NULL
         ORDER BY i.canonical_name, mp.program_name
     """)
