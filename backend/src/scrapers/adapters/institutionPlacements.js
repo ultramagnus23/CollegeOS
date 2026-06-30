@@ -16,9 +16,56 @@ const { cleanHtml } = require('./usOfficialDeadlines');
 const PARSER_NAME = 'institutionPlacements';
 const PARSER_VERSION = '1.0.0';
 
-// Verified target list (each checked to expose figures on its live page).
+// Verified target list (each checked to expose figures on its live page). Names
+// MUST match canonical.institutions.canonical_name exactly (resolveInstitutionId
+// joins on it). A page that doesn't expose figures is simply skipped — never
+// fabricated.
 const TARGETS = [
   { name: 'Ashoka University', url: 'https://www.ashoka.edu.in/placements/', cycle_year: '2024-2025' },
+
+  // ---- IITs (official placement / career-services pages) ----
+  { name: 'Indian Institute of Technology Bombay', url: 'https://www.iitb.ac.in/en/education/placements', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Delhi', url: 'https://tnp.iitd.ac.in/', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Madras', url: 'https://placement.iitm.ac.in/', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Kanpur', url: 'https://www.iitk.ac.in/spo/', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Kharagpur', url: 'https://www.iitkgp.ac.in/placements', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Roorkee', url: 'https://tnp.iitr.ac.in/', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Guwahati', url: 'https://www.iitg.ac.in/cc/', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Hyderabad', url: 'https://placements.iith.ac.in/', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Indore', url: 'https://placement.iiti.ac.in/', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Ropar', url: 'https://www.iitrpr.ac.in/placement', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Patna', url: 'https://www.iitp.ac.in/index.php/placement', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Gandhinagar', url: 'https://placement.iitgn.ac.in/', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Bhubaneswar', url: 'https://www.iitbbs.ac.in/placement.php', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Mandi', url: 'https://www.iitmandi.ac.in/placement/', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Jodhpur', url: 'https://www.iitj.ac.in/placement/', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Varanasi', url: 'https://www.iitbhu.ac.in/contents/institute/central/tpc', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Dhanbad', url: 'https://www.iitism.ac.in/placement', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Tirupati', url: 'https://www.iittp.ac.in/placement', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Palakkad', url: 'https://placement.iitpkd.ac.in/', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Bhilai', url: 'https://www.iitbhilai.ac.in/index.php?pid=placement', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Goa', url: 'https://www.iitgoa.ac.in/placement', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Jammu', url: 'https://placement.iitjammu.ac.in/', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Technology Dharwad', url: 'https://www.iitdh.ac.in/placement', cycle_year: '2024-2025' },
+
+  // ---- Top IIMs ----
+  { name: 'Indian Institute of Management Ahmedabad', url: 'https://www.iima.ac.in/placements', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Management Bangalore', url: 'https://www.iimb.ac.in/placements', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Management Calcutta', url: 'https://www.iimcal.ac.in/programs/placement', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Management Lucknow', url: 'https://www.iiml.ac.in/placements', cycle_year: '2024-2025' },
+  { name: 'Indian Institute of Management Kozhikode', url: 'https://www.iimk.ac.in/placements', cycle_year: '2024-2025' },
+
+  // ---- Top NITs ----
+  { name: 'National Institute of Technology Tiruchirappalli', url: 'https://www.nitt.edu/home/academics/placement/', cycle_year: '2024-2025' },
+  { name: 'National Institute of Technology Warangal', url: 'https://www.nitw.ac.in/main/CDC/', cycle_year: '2024-2025' },
+  { name: 'National Institute of Technology Karnataka', url: 'https://www.nitk.ac.in/department/career-development-centre', cycle_year: '2024-2025' },
+
+  // ---- Other top Indian institutions ----
+  { name: 'Indian Institute of Science', url: 'https://placement.iisc.ac.in/', cycle_year: '2024-2025' },
+  { name: 'Birla Institute of Technology and Science Pilani', url: 'https://www.bits-pilani.ac.in/placement/', cycle_year: '2024-2025' },
+  { name: 'Xavier Labour Relations Institute', url: 'https://www.xlri.ac.in/placements/', cycle_year: '2024-2025' },
+  { name: 'Vellore Institute of Technology', url: 'https://vit.ac.in/placement', cycle_year: '2024-2025' },
+  { name: 'Manipal Academy of Higher Education', url: 'https://manipal.edu/mu/placements.html', cycle_year: '2024-2025' },
 ];
 
 // LPA / lakh / crore -> absolute INR.

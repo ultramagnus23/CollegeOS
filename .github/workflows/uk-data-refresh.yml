@@ -1,0 +1,42 @@
+name: UK Data Refresh
+
+on:
+  schedule:
+    - cron: '0 4 15 * *'  # 15th of each month, 04:00 UTC
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uk-data-refresh
+  cancel-in-progress: false
+
+jobs:
+  uk-enrich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests psycopg2-binary SPARQLWrapper python-dotenv
+      - name: Preflight
+        run: |
+          set -euo pipefail
+          [ -n "${DATABASE_URL:-}" ] || { echo "::error title=MissingSecret::DATABASE_URL not configured"; exit 1; }
+          test -f scraper/sources/wikidata_enrich.py || { echo "::error::wikidata_enrich.py missing"; exit 1; }
+      # Wikidata enrichment covers UK institutions (enrollment, founded, geo,
+      # website) and writes demographics rows. Country-scoped UK scrapers can be
+      # added here as they come online.
+      - name: Run Wikidata enrichment (UK coverage)
+        run: python scraper/sources/wikidata_enrich.py
