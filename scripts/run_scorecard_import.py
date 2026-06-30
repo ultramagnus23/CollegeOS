@@ -131,28 +131,67 @@ def fetch_all_pages():
     return results
 
 
-def load_institution_name_map(conn):
-    """Returns dict: normalized_name -> institution_id (UUID as str)."""
+def _norm(name: str) -> str:
+    """Normalize institution name for fuzzy matching."""
+    n = name.lower().strip()
+    n = n.replace("&", "and").replace("-", " ")
+    n = re.sub(r'[.,\'"]', '', n)
+    n = re.sub(r'\b(the|of|at|a)\b', '', n)
+    n = re.sub(r'\s+', ' ', n).strip()
+    # common abbreviations
+    n = re.sub(r'\bst\.?\b', 'saint', n)
+    n = re.sub(r'\bmt\.?\b', 'mount', n)
+    n = re.sub(r'\bft\.?\b', 'fort', n)
+    return n
+
+
+def load_institution_maps(conn):
+    """Returns (ipeds_map, name_map, norm_map)."""
     cur = conn.cursor()
-    cur.execute("SELECT id, canonical_name FROM canonical.institutions")
+    cur.execute("""
+        SELECT id, canonical_name,
+               canonical_external_ids->>'ipeds' AS ipeds_id
+        FROM canonical.institutions
+    """)
     rows = cur.fetchall()
     cur.close()
-    name_map = {}
-    for (iid, name) in rows:
+
+    ipeds_map = {}   # ipeds_unitid_str -> inst_id
+    name_map = {}    # lower name -> inst_id
+    norm_map = {}    # normalized name -> inst_id
+
+    for (iid, name, ipeds_id) in rows:
+        sid = str(iid)
+        if ipeds_id:
+            ipeds_map[ipeds_id.strip()] = sid
         if name:
-            name_map[name.lower().strip()] = str(iid)
-    return name_map
+            name_map[name.lower().strip()] = sid
+            norm_map[_norm(name)] = sid
+
+    return ipeds_map, name_map, norm_map
 
 
-def match_name(raw_name: str, name_map: dict):
-    """Try exact normalized match, then strip common suffixes."""
+def match_record(r: dict, ipeds_map: dict, name_map: dict, norm_map: dict):
+    """Match Scorecard record to canonical institution. IPEDS ID first, then name."""
+    # Primary: IPEDS unit ID (exact, fast)
+    ipeds_id = str(r.get("id", ""))
+    if ipeds_id and ipeds_id in ipeds_map:
+        return ipeds_map[ipeds_id]
+
+    raw_name = (r.get("school.name") or "").strip()
+    if not raw_name:
+        return None
+
+    # Secondary: exact lowercase name
     key = raw_name.lower().strip()
     if key in name_map:
         return name_map[key]
-    # strip trailing Inc / LLC / etc
-    stripped = re.sub(r'\s+(inc\.?|llc|corp\.?|university$|college$)$', '', key).strip()
-    if stripped in name_map:
-        return name_map[stripped]
+
+    # Tertiary: normalized (handles & vs and, st. vs saint, punctuation)
+    norm = _norm(raw_name)
+    if norm in norm_map:
+        return norm_map[norm]
+
     return None
 
 
@@ -217,12 +256,16 @@ def upsert_financials(cur, inst_id, r):
     is_public = ownership == 1
     net_p = safe_f(r, "latest.cost.avg_net_price.public" if is_public else "latest.cost.avg_net_price.private")
 
+    # unique key: (institution_id, data_year_key, academic_year_key)
+    # both are generated from data_year and academic_year respectively
     cur.execute("""
         INSERT INTO canonical.institution_financials
           (institution_id, tuition_domestic, tuition_international,
-           cost_of_attendance, net_price, avg_debt_at_graduation, data_year, data_year_key, academic_year_key)
+           cost_of_attendance, net_price, avg_debt_at_graduation,
+           data_year, academic_year)
         VALUES
-          (%(id)s, %(td)s, %(ti)s, %(coa)s, %(np)s, %(debt)s, 2024, '2024', '2023-2024')
+          (%(id)s, %(td)s, %(ti)s, %(coa)s, %(np)s, %(debt)s,
+           2024, '2023-2024')
         ON CONFLICT ON CONSTRAINT uq_institution_financials DO UPDATE SET
           tuition_domestic        = EXCLUDED.tuition_domestic,
           tuition_international   = EXCLUDED.tuition_international,
@@ -243,9 +286,9 @@ def upsert_outcomes(cur, inst_id, r):
     cur.execute("""
         INSERT INTO canonical.institution_outcomes
           (institution_id, median_salary_1yr, median_salary_5yr,
-           graduation_rate_4yr, data_year, data_year_key)
+           graduation_rate_4yr, data_year)
         VALUES
-          (%(id)s, %(s1)s, %(s5)s, %(gr)s, 2024, '2024')
+          (%(id)s, %(s1)s, %(s5)s, %(gr)s, 2024)
         ON CONFLICT ON CONSTRAINT uq_institution_outcomes DO UPDATE SET
           median_salary_1yr   = EXCLUDED.median_salary_1yr,
           median_salary_5yr   = EXCLUDED.median_salary_5yr,
@@ -289,19 +332,15 @@ def main():
     conn.autocommit = True
     cur = conn.cursor()
 
-    log.info("Loading institution name map…")
-    name_map = load_institution_name_map(conn)
-    log.info(f"  {len(name_map)} institutions in DB")
+    log.info("Loading institution maps…")
+    ipeds_map, name_map, norm_map = load_institution_maps(conn)
+    log.info(f"  {len(ipeds_map)} IPEDS IDs, {len(name_map)} names in DB")
 
     matched = 0
     unmatched = 0
 
     for i, rec in enumerate(records):
-        name = (rec.get("school.name") or "").strip()
-        if not name:
-            continue
-
-        inst_id = match_name(name, name_map)
+        inst_id = match_record(rec, ipeds_map, name_map, norm_map)
         if not inst_id:
             unmatched += 1
             continue
