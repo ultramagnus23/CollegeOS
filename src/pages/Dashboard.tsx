@@ -191,88 +191,93 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     const startedAt = Date.now();
     try {
-      // Unified command-center payload (profile, reach/target/safety, nextAction).
-      // Authoritative for aggregates + "what should I do next"; detail lists below
-      // still come from their endpoints (they carry college names etc.).
-      try {
-        const dash: any = await api.getDashboard();
-        if (dash?.success && dash.data) {
-          const d = dash.data;
-          if (d.nextAction) setNextAction(d.nextAction);
-          if (d.applications?.distribution) setDistribution(d.applications.distribution);
-        }
-      } catch { /* fall back to per-endpoint aggregates below */ }
-
-      const [collegesReq, applicationsReq, deadlinesReq, essaysReq] = await Promise.allSettled([
-        api.getColleges({ limit:5 }), api.getApplications(), api.getDeadlines(30), api.getEssays()
+      // All data fetched in a single parallel batch — one network layer instead of 4+.
+      // getDashboard already contains applications, deadlines, tasks, essays aggregates.
+      // We fetch essays detail and risk alerts alongside it, not after it.
+      const profile = { gpa:user?.gpa||3.5, satScore:user?.sat_score, actScore:user?.act_score, activities:[], grade:user?.grade||'Grade 12', curriculum:user?.curriculum||'CBSE' };
+      const [dashReq, essaysReq, alertsReq, tasksReq, actionsReq] = await Promise.allSettled([
+        api.getDashboard(),
+        api.getEssays(),
+        api.risk.alerts(),
+        api.tasks.getAll({ status:'pending' }),
+        api.automation.getRecommendedActions(profile),
       ]);
-      const collegesRes = collegesReq.status === 'fulfilled' ? collegesReq.value : { data: [] as any[] };
-      const applicationsRes = applicationsReq.status === 'fulfilled' ? applicationsReq.value : { data: [] as any[] };
-      const deadlinesRes = deadlinesReq.status === 'fulfilled' ? deadlinesReq.value : { data: [] as any[] };
-      const essaysRes = essaysReq.status === 'fulfilled' ? essaysReq.value : { data: [] as any[] };
-      const applications = applicationsRes.data || [];
-      const deadlines = deadlinesRes.data || [];
-      const essays = essaysRes.data || [];
 
-      if (collegesReq.status === 'rejected') trackMetric('dashboard.endpoint_failed', { endpoint: 'colleges' });
-      if (applicationsReq.status === 'rejected') trackMetric('dashboard.endpoint_failed', { endpoint: 'applications' });
-      if (deadlinesReq.status === 'rejected') trackMetric('dashboard.endpoint_failed', { endpoint: 'deadlines' });
-      if (essaysReq.status === 'rejected') trackMetric('dashboard.endpoint_failed', { endpoint: 'essays' });
+      // ── getDashboard ────────────────────────────────────────────────────────
+      const dash = dashReq.status === 'fulfilled' ? dashReq.value : null;
+      const d = dash?.success && dash.data ? dash.data : null;
+      if (dashReq.status === 'rejected') trackMetric('dashboard.endpoint_failed', { endpoint: 'dashboard' });
+
+      const dashApps: any[] = d?.applications?.items || [];
+      const dashDeadlines: any[] = d?.deadlines?.upcoming || [];
+      const dashTasks: any[] = d?.tasks?.dueThisWeek || [];
+
+      if (d?.nextAction) setNextAction(d.nextAction);
+      if (d?.applications?.distribution) setDistribution(d.applications.distribution);
+
+      const calcDays = (s:string)=>Math.ceil((new Date(s+'T00:00:00').getTime()-Date.now())/86400000);
 
       setStats({
-        applications: applications.length,
-        deadlines: deadlines.filter((d:any)=>!d.is_completed).length,
-        essays: essays.length,
-        colleges: collegesRes.data?.length || 0,
-        completed: applications.filter((a:any)=>a.status==='submitted'||a.status==='accepted').length,
-        inProgress: applications.filter((a:any)=>a.status==='preparing'||a.status==='researching').length,
+        applications: d?.applications?.total ?? dashApps.length,
+        deadlines: dashDeadlines.length,
+        essays: d?.essays?.total ?? 0,
+        colleges: d?.applications?.total ?? 0,
+        completed: d?.applications?.byStatus
+          ? ((d.applications.byStatus.submitted||0)+(d.applications.byStatus.accepted||0))
+          : dashApps.filter((a:any)=>a.status==='submitted'||a.status==='accepted').length,
+        inProgress: d?.applications?.byStatus
+          ? ((d.applications.byStatus.preparing||0)+(d.applications.byStatus.researching||0))
+          : dashApps.filter((a:any)=>a.status==='preparing'||a.status==='researching').length,
       });
 
-      setUpcomingDeadlines(deadlines.slice(0,5));
-      setRecentApplications(applications.slice(0,5));
+      setUpcomingDeadlines(dashDeadlines.slice(0,5).map((dl:any)=>({
+        ...dl, college_name: dl.title?.split(' - ')[1] || dl.title, deadline_date: dl.deadline_date,
+      })));
+      setRecentApplications(dashApps.slice(0,5).map((a:any)=>({
+        id:a.id, college_name:a.collegeName||a.college_name, status:a.status,
+        deadline_type:a.applicationType||a.application_type, deadline:a.deadline,
+      })));
+      setDecisionDates(dashApps.filter((a:any)=>a.status==='submitted'&&a.notificationDate).map((a:any)=>({
+        collegeName:a.collegeName, deadlineType:a.applicationType||'Regular Decision',
+        notificationDate:a.notificationDate, applicationDate:a.deadline, collegeId:a.collegeId,
+      })));
+      setCollegeList(dashApps.map((a:any)=>({
+        id:a.id, name:a.collegeName||a.college_name, category:a.category||'target',
+        country:a.country||'United States', deadline:a.deadline, status:a.status,
+      })));
+
+      // ── essays detail ───────────────────────────────────────────────────────
+      const essays = essaysReq.status === 'fulfilled' ? (essaysReq.value?.data || []) : [];
+      if (essaysReq.status === 'rejected') trackMetric('dashboard.endpoint_failed', { endpoint: 'essays' });
       setEssayProgress(essays.slice(0,3));
 
-      const decisions = applications.filter((a:any)=>a.status==='submitted'&&a.notification_date).map((a:any)=>({
-        collegeName:a.college_name, deadlineType:a.deadline_type||'Regular Decision',
-        notificationDate:a.notification_date, applicationDate:a.application_date||a.created_at, collegeId:a.college_id,
-      }));
-      setDecisionDates(decisions);
-      setCollegeList(applications.map((a:any)=>({ id:a.id, name:a.college_name, category:a.category||'target', country:a.country||'United States', deadline:a.deadline, status:a.status })));
-
-      const calcDays = (d:string)=>Math.ceil((new Date(d+'T00:00:00').getTime()-Date.now())/86400000);
-
-      // Alerts
-      try {
-        const rr = await api.risk.alerts();
-        if (rr.success&&rr.data&&Array.isArray(rr.data)) {
-          setUrgentAlerts(rr.data.map((a:any)=>({ id:a.id, type:a.type||'warning', severity:a.severity||'warning', title:a.title||a.message, description:a.description||'', college:a.college_name, daysRemaining:a.days_remaining, action:{label:'View',href:'/deadlines'} })));
-        } else throw new Error();
-      } catch {
-        setUrgentAlerts(deadlines.filter((d:any)=>!d.is_completed).slice(0,5).map((d:any)=>{
-          const n=calcDays(d.deadline_date);
-          return { id:d.id, type:'deadline', severity:n<=1?'critical':n<=3?'warning':n<=7?'info':'success', title:`${d.deadline_type} - ${d.college_name}`, description:`Due ${n<=0?'today':`in ${n} days`}`, college:d.college_name, daysRemaining:n, action:{label:'View',href:'/deadlines'} };
+      // ── risk alerts ─────────────────────────────────────────────────────────
+      const rr = alertsReq.status === 'fulfilled' ? alertsReq.value : null;
+      if (rr?.success && Array.isArray(rr.data) && rr.data.length > 0) {
+        setUrgentAlerts(rr.data.map((a:any)=>({ id:a.id, type:a.type||'warning', severity:a.severity||'warning', title:a.title||a.message, description:a.description||'', college:a.college_name, daysRemaining:a.days_remaining, action:{label:'View',href:'/deadlines'} })));
+      } else {
+        setUrgentAlerts(dashDeadlines.slice(0,5).map((dl:any)=>{
+          const n=calcDays(dl.deadline_date);
+          return { id:dl.id, type:'deadline', severity:n<=1?'critical':n<=3?'warning':n<=7?'info':'success', title:dl.title, description:`Due ${n<=0?'today':`in ${n} days`}`, daysRemaining:n, action:{label:'View',href:'/deadlines'} };
         }));
       }
 
-      // Tasks
-      try {
-        const tr = await api.tasks.getAll({ status:'pending' });
-        if (tr.success&&tr.data&&Array.isArray(tr.data)) {
-          setTodaysTasks(tr.data.slice(0,5).map((t:any)=>({ id:t.id, title:t.title||t.type, category:t.type||'deadline', priority:t.priority||'medium', dueDate:t.due_date, college:t.college_name, status:t.status||'pending', estimatedTime:t.estimated_time||30 })));
-        } else throw new Error();
-      } catch {
-        setTodaysTasks(deadlines.filter((d:any)=>!d.is_completed).slice(0,5).map((d:any)=>{
-          const n=calcDays(d.deadline_date);
-          return { id:d.id, title:d.deadline_type, category:'deadline', priority:n<=1?'critical':n<=3?'high':n<=7?'medium':'low', dueDate:d.deadline_date, college:d.college_name, status:'pending', estimatedTime:30 };
-        }));
+      // ── tasks ────────────────────────────────────────────────────────────────
+      const tr = tasksReq.status === 'fulfilled' ? tasksReq.value : null;
+      if (tr?.success && Array.isArray(tr.data) && tr.data.length > 0) {
+        setTodaysTasks(tr.data.slice(0,5).map((t:any)=>({ id:t.id, title:t.title||t.type, category:t.type||'deadline', priority:t.priority||'medium', dueDate:t.due_date, college:t.college_name, status:t.status||'pending', estimatedTime:t.estimated_time||30 })));
+      } else {
+        setTodaysTasks(dashTasks.slice(0,5).map((t:any)=>({
+          id:t.id, title:t.title||'Task', category:'deadline',
+          priority:t.priority||'medium', dueDate:t.deadline, status:'pending', estimatedTime:30,
+        })));
       }
 
-      // Automation — recommended actions only (profile strength comes from useProfileCompletion hook)
-      try {
-        const profile = { gpa:user?.gpa||3.5, satScore:user?.sat_score, actScore:user?.act_score, activities:[], grade:user?.grade||'Grade 12', curriculum:user?.curriculum||'CBSE' };
-        const act = await api.automation.getRecommendedActions(profile);
-        if (act.success&&act.data) setRecommendedActions(act.data.map((a:any,i:number)=>({ id:`action-${i}`, ...a, impactScore:a.impact==='Unlocks personalized college recommendations'?20:a.impact==='Better reach/target/safety classification'?15:10 })));
-      } catch {
+      // ── recommended actions ──────────────────────────────────────────────────
+      const act = actionsReq.status === 'fulfilled' ? actionsReq.value : null;
+      if (act?.success && act.data) {
+        setRecommendedActions(act.data.map((a:any,i:number)=>({ id:`action-${i}`, ...a, impactScore:a.impact==='Unlocks personalized college recommendations'?20:a.impact==='Better reach/target/safety classification'?15:10 })));
+      } else {
         setRecommendedActions([
           { id:'a1', priority:'high', category:'profile', action:'Complete your profile', reason:'Unlocks personalized recommendations', impact:'Unlocks personalized college recommendations', impactScore:20 },
           { id:'a2', priority:'medium', category:'applications', action:'Add colleges to your list', reason:'Build a balanced reach/target/safety list', impact:'Better application strategy', impactScore:15 },
