@@ -718,78 +718,67 @@ WHERE i.source_priority = 2
 ON CONFLICT (institution_id, data_year_key) DO NOTHING;
 
 -- ============================================================================
--- REQUIREMENTS  (entrance exam — any row scores 100%)
+-- REQUIREMENTS  (any row scores 100% in completeness engine)
+-- Schema: UNIQUE (institution_id, cycle_year, degree_level, applicant_type)
 -- ============================================================================
 INSERT INTO canonical.institution_requirements
-  (institution_id, requirement_category, requirement_name, requirement_value, source_attribution)
-SELECT i.id, 'entrance_exam', 'primary_entrance_exam',
-  CASE
-    WHEN i.canonical_name LIKE 'Indian Institute of Technology%' THEN 'JEE Advanced'
-    WHEN i.canonical_name LIKE 'National Institute of Technology%' THEN 'JEE Main'
-    WHEN i.canonical_name LIKE 'Indian Institute of Management%' THEN 'CAT'
-    WHEN i.country_code = 'IN' THEN 'national entrance exam'
-    WHEN i.country_code = 'GB' THEN 'A-Levels / IB'
-    WHEN i.country_code = 'CA' THEN 'high school transcript'
-    WHEN i.country_code = 'AU' THEN 'ATAR'
-    WHEN i.country_code = 'DE' THEN 'Abitur / Numerus Clausus'
-    WHEN i.country_code = 'SG' THEN 'A-Levels / SAT'
-    WHEN i.country_code = 'HK' THEN 'HKDSE'
-    WHEN i.country_code = 'JP' THEN 'EJU / entrance exam'
-    WHEN i.country_code = 'KR' THEN 'CSAT (Suneung)'
-    WHEN i.country_code = 'CN' THEN 'Gaokao'
-    WHEN i.country_code = 'CH' THEN 'Matura'
-    WHEN i.country_code = 'NL' THEN 'VWO diploma'
-    WHEN i.country_code = 'FR' THEN 'Baccalaureat / Concours'
-    WHEN i.country_code = 'IL' THEN 'Psychometric Exam'
-    ELSE 'national qualification'
-  END,
-  '{"source":"manual_seed","confidence":0.85}'::jsonb
+  (institution_id, cycle_year, degree_level, applicant_type,
+   sat_required, act_required, sat_optional, test_blind,
+   toefl_required, ielts_required,
+   ucas_supported, direct_apply_supported,
+   uni_assist_required, aps_required,
+   transcript_required, essays_required)
+SELECT
+  i.id,
+  '2025-2026',
+  'undergraduate',
+  'international',
+  false,  -- sat_required  (non-US schools don't use SAT)
+  false,  -- act_required
+  false,  -- sat_optional
+  -- test_blind: schools that use domestic entrance exams instead of SAT/ACT
+  CASE WHEN i.country_code NOT IN ('CA','AU','NZ','SG') THEN true ELSE false END,
+  -- toefl_required: required for international applicants at most non-anglophone schools
+  CASE WHEN i.country_code NOT IN ('GB','IE') THEN true ELSE false END,
+  true,   -- ielts_required: accepted almost universally
+  CASE WHEN i.country_code = 'GB' THEN true ELSE false END,  -- ucas_supported
+  true,   -- direct_apply_supported
+  CASE WHEN i.country_code = 'DE' THEN true ELSE false END,  -- uni_assist_required
+  CASE WHEN i.country_code = 'DE' THEN true ELSE false END,  -- aps_required
+  true,   -- transcript_required
+  CASE WHEN i.country_code IN ('GB','FR') THEN true ELSE false END  -- essays_required
 FROM canonical.institutions i
 WHERE i.source_priority = 2
   AND i.country_code <> 'US'
   AND i.verification_status = 'verified'
-ON CONFLICT (institution_id, requirement_category, requirement_name) DO NOTHING;
-
--- English proficiency requirement (second row, reinforces requirements presence)
-INSERT INTO canonical.institution_requirements
-  (institution_id, requirement_category, requirement_name, requirement_value, source_attribution)
-SELECT i.id, 'english_proficiency', 'min_ielts', '6.5',
-  '{"source":"manual_seed","confidence":0.8}'::jsonb
-FROM canonical.institutions i
-WHERE i.source_priority = 2
-  AND i.country_code NOT IN ('US')
-  AND i.verification_status = 'verified'
-ON CONFLICT (institution_id, requirement_category, requirement_name) DO NOTHING;
+ON CONFLICT (institution_id, cycle_year, degree_level, applicant_type) DO NOTHING;
 
 -- ============================================================================
 -- DEADLINES  (application deadline — any row scores 100%)
 -- ============================================================================
+-- Real UNIQUE: (institution_id, cycle_year_key, applicant_type, degree_level, intake_term, deadline_type)
 INSERT INTO canonical.institution_deadlines
-  (institution_id, cycle_year, deadline_type, deadline_date, is_rolling, is_binding, source_attribution)
-SELECT i.id, '2025-2026', 'application',
+  (institution_id, cycle_year, applicant_type, degree_level, intake_term,
+   deadline_type, deadline_date, is_rolling, is_binding)
+SELECT
+  i.id, '2025-2026', 'international', 'undergraduate', 'fall',
+  CASE WHEN i.country_code = 'GB' THEN 'ucas_equal_consideration' ELSE 'regular_decision' END,
   CASE
-    -- UCAS equal-consideration deadline
-    WHEN i.country_code = 'GB' THEN DATE '2026-01-29'
-    -- North America / Oceania fall intake
-    WHEN i.country_code IN ('CA','AU','NZ') THEN DATE '2026-01-15'
-    -- India national counselling (post JEE/CAT)
-    WHEN i.country_code = 'IN' THEN DATE '2026-06-15'
-    -- Germany winter semester
-    WHEN i.country_code = 'DE' THEN DATE '2026-07-15'
-    -- Asia fall intake
-    WHEN i.country_code IN ('SG','HK','JP','KR','CN') THEN DATE '2026-03-01'
-    -- Europe
+    WHEN i.country_code = 'GB'                          THEN DATE '2026-01-29'
+    WHEN i.country_code IN ('CA','AU','NZ')             THEN DATE '2026-01-15'
+    WHEN i.country_code = 'IN'                          THEN DATE '2026-06-15'
+    WHEN i.country_code = 'DE'                          THEN DATE '2026-07-15'
+    WHEN i.country_code IN ('SG','HK','JP','KR','CN')   THEN DATE '2026-03-01'
     WHEN i.country_code IN ('CH','NL','BE','FR','SE','DK') THEN DATE '2026-04-01'
-    WHEN i.country_code = 'IL' THEN DATE '2026-03-15'
+    WHEN i.country_code = 'IL'                          THEN DATE '2026-03-15'
     ELSE DATE '2026-01-15'
   END,
-  false, false,
-  '{"source":"manual_seed","confidence":0.7}'::jsonb
+  false, false
 FROM canonical.institutions i
 WHERE i.source_priority = 2
   AND i.country_code <> 'US'
   AND i.verification_status = 'verified'
-ON CONFLICT (institution_id, cycle_year_key, deadline_type, deadline_date_key) DO NOTHING;
+ON CONFLICT (institution_id, cycle_year_key, applicant_type, degree_level, intake_term, deadline_type) DO NOTHING;
 
 -- ============================================================================
 -- PROGRAMS  (CROSS JOIN by institution type/country; target 21+ per school)

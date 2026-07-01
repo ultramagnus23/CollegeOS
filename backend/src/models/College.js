@@ -387,7 +387,7 @@ class College {
       const p = `%${rawSearch}%`;
       const lowerSearch = rawSearch.toLowerCase();
       query = query.replace(
-        '0::numeric AS relevance_score,',
+        'COALESCE(c.popularity_score, 0)::numeric AS relevance_score,',
         `(CASE
           WHEN LOWER(c.canonical_name) = LOWER($${idx + 1}) THEN 400
           WHEN LOWER(c.canonical_name) LIKE LOWER($${idx + 2}) THEN 250
