@@ -28,6 +28,14 @@ async function listProgramCards({ country, degreeType, q, limit = 30, offset = 0
     where.push(`(program_name ILIKE $${params.length} OR specialization ILIKE $${params.length})`);
   }
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+  const countParams = params.slice();
+  const { rows: countRows } = await pool.query(
+    `SELECT COUNT(*)::int AS n FROM canonical.mv_masters_program_cards ${whereSql}`,
+    countParams,
+  );
+  const total = countRows[0].n;
+
   params.push(Math.min(Number(limit) || 30, 100));
   const limitIdx = params.length;
   params.push(Math.max(Number(offset) || 0, 0));
@@ -41,7 +49,7 @@ async function listProgramCards({ country, degreeType, q, limit = 30, offset = 0
        LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
     params,
   );
-  return rows;
+  return { rows, total };
 }
 
 /**

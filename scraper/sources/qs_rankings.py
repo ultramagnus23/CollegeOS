@@ -137,13 +137,18 @@ def insert_institution(cur, name: str, country_code: str) -> str | None:
 
 
 def upsert_ranking(cur, institution_id: str, global_rank: int) -> None:
+    # verification_status/last_verified_at (docs/data_provenance_design.md, migration
+    # 130): QS is a real published ranking body -> 'scraped'.
     cur.execute(
         """
         INSERT INTO canonical.institution_rankings
-          (institution_id, ranking_year, ranking_body, global_rank, source_attribution)
-        VALUES (%s, %s, %s, %s, %s::jsonb)
+          (institution_id, ranking_year, ranking_body, global_rank, source_attribution,
+           verification_status, last_verified_at)
+        VALUES (%s, %s, %s, %s, %s::jsonb, 'scraped', NOW())
         ON CONFLICT (institution_id, ranking_year_key, ranking_body) DO UPDATE
-          SET global_rank = EXCLUDED.global_rank
+          SET global_rank = EXCLUDED.global_rank,
+              verification_status = 'scraped',
+              last_verified_at = NOW()
         """,
         (
             institution_id, RANKING_YEAR, RANKING_BODY, global_rank,

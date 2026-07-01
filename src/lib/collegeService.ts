@@ -9,6 +9,7 @@ import {
 } from '../contracts/collegeContracts';
 import type { FrontendCollegeCard } from '../contracts/frontendCollegeCardContract';
 import { parseSearchQuery } from './searchQuery';
+import type { VerificationStatus } from './verified_data_guards';
 
 type CanonicalId = string | number;
 
@@ -96,6 +97,17 @@ function num(value: unknown): number | null {
 
 function bool(value: unknown): boolean | null {
   return typeof value === 'boolean' ? value : null;
+}
+
+// canonical.institution_campus_life.housing_guarantee is stored as TEXT ('true'/'false'),
+// not BOOLEAN — a migration 127 ADD COLUMN ... BOOLEAN silently no-op'd against the
+// existing TEXT column. Parse explicitly here rather than passing the raw string through
+// str(), which would make the literal string 'false' render as truthy in the UI.
+function textBool(value: unknown): boolean | null {
+  if (typeof value === 'boolean') return value;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return null;
 }
 
 async function resolveInstitutionId(id: CanonicalId): Promise<CanonicalId | null> {
@@ -638,6 +650,10 @@ export function normalizeToDetail(input: CollegeRecord): Record<string, unknown>
         applicationVolume: num(admissions.application_volume),
         admitVolume: num(admissions.admit_volume),
         enrollmentVolume: num(admissions.enrollment_volume),
+        // Provenance (docs/data_provenance_design.md, migration 130) - optional
+        // since existing rows default to 'unknown' until a backfill pass runs.
+        verificationStatus: str(admissions.verification_status) as VerificationStatus | null,
+        lastVerifiedAt: str(admissions.last_verified_at),
       },
       financialData: {
         tuitionInState: num(financials.tuition_in_state),
@@ -651,6 +667,9 @@ export function normalizeToDetail(input: CollegeRecord): Record<string, unknown>
         netPriceLowIncome: num(financials.net_price_low_income),
         netPriceMidIncome: num(financials.net_price_mid_income),
         netPriceHighIncome: num(financials.net_price_high_income),
+        // Provenance (docs/data_provenance_design.md, migration 130).
+        verificationStatus: str(financials.verification_status) as VerificationStatus | null,
+        lastVerifiedAt: str(financials.last_verified_at),
       },
       academicOutcomes: {
         graduationRate4yr: num(outcomes.graduation_rate_4yr),
@@ -670,7 +689,7 @@ export function normalizeToDetail(input: CollegeRecord): Record<string, unknown>
         percentFirstGen: num(demographics.percent_first_gen),
       },
       campusLife: {
-        housingGuarantee: str(campusLife.housing_guarantee),
+        housingGuarantee: textBool(campusLife.housing_guarantee),
         campusSafetyScore: num(campusLife.campus_safety_score),
         athleticsDivision: str(campusLife.athletics_division),
         clubCount: num(campusLife.club_count),

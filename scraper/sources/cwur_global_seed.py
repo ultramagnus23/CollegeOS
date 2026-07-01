@@ -197,14 +197,20 @@ def insert_institution(cur, name: str, country_code: str, city: str | None) -> s
 
 
 def upsert_ranking(cur, institution_id: str, global_rank: int, national_rank: int | None) -> None:
+    # verification_status/last_verified_at (docs/data_provenance_design.md, migration
+    # 130): CWUR is a real published ranking body, so 'scraped' is correct here rather
+    # than leaving the column at its 'unknown' default.
     cur.execute(
         """
         INSERT INTO canonical.institution_rankings
-          (institution_id, ranking_year, ranking_body, global_rank, national_rank, source_attribution)
-        VALUES (%s, %s, %s, %s, %s, %s::jsonb)
+          (institution_id, ranking_year, ranking_body, global_rank, national_rank, source_attribution,
+           verification_status, last_verified_at)
+        VALUES (%s, %s, %s, %s, %s, %s::jsonb, 'scraped', NOW())
         ON CONFLICT (institution_id, ranking_year_key, ranking_body) DO UPDATE
           SET global_rank = EXCLUDED.global_rank,
-              national_rank = EXCLUDED.national_rank
+              national_rank = EXCLUDED.national_rank,
+              verification_status = 'scraped',
+              last_verified_at = NOW()
         """,
         (
             institution_id, RANKING_YEAR, RANKING_BODY, global_rank, national_rank,
