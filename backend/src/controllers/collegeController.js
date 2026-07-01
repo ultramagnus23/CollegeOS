@@ -164,7 +164,7 @@ class CollegeController {
   static async getCountries(req, res, next) {
     try {
       const College = require('../models/College');
-      const countryFilters = College.getCountryFilters();
+      const countryFilters = await College.getCountryFilters();
       res.json({
         success: true,
         data: countryFilters

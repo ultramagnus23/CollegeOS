@@ -168,7 +168,14 @@ async function calculateChance(studentProfile, college, application = {}) {
     const col  = college ?? {};
     const app  = application ?? {};
 
-    const acceptRate = clamp(col.acceptance_rate ?? 0.50, 0.001, 0.999);
+    // college.acceptance_rate is the single most load-bearing real input in this
+    // whole formula (selectivity ceiling, chance label, tier are all derived from
+    // it). Defaulting a MISSING rate to 0.50 was a fabrication - it silently
+    // invented a "moderately selective" college out of nothing and fed that
+    // fake number into every downstream layer. Track whether it's real so we can
+    // refuse to produce a probability when it isn't (see insufficientData below).
+    const hasRealAcceptRate = col.acceptance_rate != null && Number.isFinite(Number(col.acceptance_rate));
+    const acceptRate = clamp(hasRealAcceptRate ? Number(col.acceptance_rate) : 0.50, 0.001, 0.999);
     const selTier    = selectivityTier(acceptRate);
 
     const missingDataFields = [];
@@ -512,10 +519,15 @@ async function calculateChance(studentProfile, college, application = {}) {
     const activeFactors = rawFactors.filter(f => f.score != null && f.weight > 0);
     const totalWeight   = activeFactors.reduce((s, f) => s + f.weight, 0);
 
+    // No real signal to derive a probability from: either (a) zero student/profile
+    // factors matched, or (b) the college itself has no real acceptance_rate, in
+    // which case selectivity/tier/ceiling would all be built on the fabricated
+    // 0.50 default above. Either case means we cannot honestly show a probability.
+    const insufficientData = activeFactors.length === 0 || !hasRealAcceptRate;
+
     let rawComposite = 0;
-    if (activeFactors.length === 0) {
-      // Absolute fallback
-      rawComposite = clamp(acceptRate * 0.5, 0.01, 0.75);
+    if (insufficientData) {
+      rawComposite = clamp(acceptRate, 0.01, 0.75); // neutral placeholder only for downstream math; overridden below
     } else {
       // Normalise weights and sum
       for (const f of activeFactors) {
@@ -570,27 +582,31 @@ async function calculateChance(studentProfile, college, application = {}) {
     const ceilingApplied    = cappedProbability < rawComposite;
 
     let probability = clamp(cappedProbability, 0.01, 0.95);
-    let probabilitySource = 'heuristic';
-    let modelProbability = null;
+    const probabilitySource = 'heuristic';
+    const modelProbability = null;
 
-    // Model-first with heuristic fallback: when the calibrated chancing model can run
-    // (college acceptance_rate + median SAT present, student SAT/ACT present) use its
-    // probability as primary, still bounded by the selectivity ceiling for safety. If
-    // the model can't produce a value (missing stats / artifact not built), keep the
-    // heuristic. See backend/ml/ + MODEL_REPORT.md.
-    try {
-      const ml = chancingModel.predictAdmitProbability(
-        { sat: studentSATRaw, act: studentACT, gpa: effectiveStudentGPA },
-        { acceptanceRate: col.acceptance_rate, medianSat: colSatMid },
-      );
-      if (ml && Number.isFinite(ml.probability)) {
-        modelProbability = ml.probability;
-        probability = clamp(Math.min(ml.probability, selectivityCeiling), 0.01, 0.95);
-        probabilitySource = 'model';
-      }
-    } catch (mlError) {
-      logger.warn('chancing model inference failed; using heuristic', { error: sanitizeForLog(mlError?.message) });
-    }
+    // EMERGENCY PATCH (see docs/chancing_model_emergency_patch.md): the calibrated
+    // chancingModel.js artifact was fit on SIMULATED applicants, not real admission
+    // outcomes (see backend/src/services/ml/chancingModel.js line 8-9). Showing its
+    // output as a probability violates the project's zero-synthetic-data policy.
+    // The model call is disabled until a model trained on real outcome data
+    // (chancing_audit_log / real decisions) exists. Do not re-enable by simply
+    // uncommenting this block — see chancing_model_v2_design.md for the gated
+    // replacement plan.
+    //
+    // try {
+    //   const ml = chancingModel.predictAdmitProbability(
+    //     { sat: studentSATRaw, act: studentACT, gpa: effectiveStudentGPA },
+    //     { acceptanceRate: col.acceptance_rate, medianSat: colSatMid },
+    //   );
+    //   if (ml && Number.isFinite(ml.probability)) {
+    //     modelProbability = ml.probability;
+    //     probability = clamp(Math.min(ml.probability, selectivityCeiling), 0.01, 0.95);
+    //     probabilitySource = 'model';
+    //   }
+    // } catch (mlError) {
+    //   logger.warn('chancing model inference failed; using heuristic', { error: sanitizeForLog(mlError?.message) });
+    // }
 
     // ── Decision-type adjustment — applied once, after heuristic/model probability
     // is finalized, so ED/REA/EA has the SAME real effect (and the recommendation
@@ -723,6 +739,36 @@ async function calculateChance(studentProfile, college, application = {}) {
     };
 
     // ── RETURN (backward-compatible shape + new fields) ──────────────────────
+    if (insufficientData) {
+      // No real academic/profile/financial signal for this student+college pair —
+      // return an honest "can't compute" state rather than a fabricated probability.
+      return {
+        tier: 'Insufficient Data',
+        category: 'unknown',
+        probability: null,
+        chance_percentage: null,
+        chance_label: 'Insufficient Data',
+        confidence: 'Low',
+        probability_source: 'none',
+        model_probability: null,
+        explanation: {
+          summary: 'Not enough profile data to estimate admission chances for this school. Add your test scores, GPA, or extracurriculars to see an estimate.',
+          factors: {},
+          probabilityRange: null,
+          missingDataFields,
+          recommendedActions: ['Complete your academic profile (SAT/ACT, GPA) to unlock chancing for this school.'],
+        },
+        studentSAT: studentSATRaw,
+        collegeSAT: colSatMid,
+        studentGPA: effectiveStudentGPA,
+        collegeGPA: colGpaMid,
+        probabilityRange: null,
+        factorScores: {},
+        missingDataFields,
+        recommendedActions: ['Complete your academic profile (SAT/ACT, GPA) to unlock chancing for this school.'],
+      };
+    }
+
     return {
       tier,
       category: tierBucket(tier),

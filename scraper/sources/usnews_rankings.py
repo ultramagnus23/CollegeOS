@@ -151,12 +151,17 @@ def main():
 
             # Upsert ranking
             try:
+                # verification_status/last_verified_at (docs/data_provenance_design.md,
+                # migration 130): US News is a real published ranking body -> 'scraped'.
                 cur.execute("""
                     INSERT INTO canonical.institution_rankings
-                      (institution_id, ranking_body, national_rank, ranking_year)
-                    VALUES (%s, %s, %s, 2025)
+                      (institution_id, ranking_body, national_rank, ranking_year,
+                       verification_status, last_verified_at)
+                    VALUES (%s, %s, %s, 2025, 'scraped', NOW())
                     ON CONFLICT ON CONSTRAINT uq_institution_rankings DO UPDATE SET
-                      national_rank = EXCLUDED.national_rank
+                      national_rank = EXCLUDED.national_rank,
+                      verification_status = 'scraped',
+                      last_verified_at = NOW()
                 """, (inst_id, body_label, rec["rank"]))
                 written += 1
             except Exception as e:
@@ -168,11 +173,14 @@ def main():
                 try:
                     cur.execute("""
                         INSERT INTO canonical.institution_admissions
-                          (institution_id, gpa_avg, acceptance_rate, data_year, admissions_cycle)
-                        VALUES (%s, %s, %s, 2024, 'regular')
+                          (institution_id, gpa_avg, acceptance_rate, data_year, admissions_cycle,
+                           verification_status, last_verified_at)
+                        VALUES (%s, %s, %s, 2024, 'regular', 'scraped', NOW())
                         ON CONFLICT ON CONSTRAINT uq_institution_admissions DO UPDATE SET
                           gpa_avg         = COALESCE(EXCLUDED.gpa_avg, institution_admissions.gpa_avg),
-                          acceptance_rate = COALESCE(EXCLUDED.acceptance_rate, institution_admissions.acceptance_rate)
+                          acceptance_rate = COALESCE(EXCLUDED.acceptance_rate, institution_admissions.acceptance_rate),
+                          verification_status = 'scraped',
+                          last_verified_at = NOW()
                     """, (inst_id, rec["gpa"], ar))
                     if rec["gpa"] is not None:
                         total_gpa += 1

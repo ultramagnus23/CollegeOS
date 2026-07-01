@@ -82,16 +82,27 @@ def infer_stem(program_name: str, cip_code: Optional[str]) -> Optional[bool]:
 
 
 def infer_opt_eligible(country: str, is_stem: Optional[bool]) -> tuple[Optional[bool], Optional[bool]]:
-    """Return (opt_eligible, stem_opt_eligible) based on country + STEM status."""
+    """Return (opt_eligible, stem_opt_eligible) based on country + STEM status.
+
+    stem_opt_eligible must stay None when is_stem is unknown - `bool(None)` used to
+    silently turn "we don't know" into a false "not STEM-OPT-eligible" claim, which is
+    itself a small fabrication (a confident negative where the real answer is unknown).
+    """
     if country.upper() != "US":
         return None, None
-    return True, bool(is_stem)
+    if is_stem is None:
+        return True, None
+    return True, is_stem
 
 
 def compute_admission_difficulty(acceptance_rate: Optional[float], avg_gpa: Optional[float],
                                   avg_gre_quant: Optional[int]) -> Optional[float]:
-    """0–100 composite: higher = harder."""
-    score = 50.0  # baseline
+    """0–100 composite: higher = harder. Returns None (not a fabricated 50.0 baseline)
+    when none of the three real inputs are available - there is nothing to derive a
+    difficulty score from, so we must not display one."""
+    if acceptance_rate is None and avg_gpa is None and avg_gre_quant is None:
+        return None
+    score = 50.0  # neutral prior only used once at least one real signal exists below
     if acceptance_rate is not None:
         # 5% acceptance → 90 points, 50% → 30 points, 90% → 10 points
         score = max(5.0, min(95.0, 100 * (1 - acceptance_rate ** 0.4)))
@@ -107,8 +118,12 @@ def compute_admission_difficulty(acceptance_rate: Optional[float], avg_gpa: Opti
 def compute_funding_attractiveness(funding_avail: Optional[str],
                                     ta: Optional[bool], ra: Optional[bool],
                                     stipend: Optional[float],
-                                    full_prob: Optional[float]) -> float:
-    """0–100 composite: higher = more funding."""
+                                    full_prob: Optional[float]) -> Optional[float]:
+    """0–100 composite: higher = more funding. Returns None (not a fabricated 0.0)
+    when none of the five real inputs are available - a bare 0 previously read as a
+    confident "no funding at all" when the truth was "we don't know"."""
+    if funding_avail is None and ta is None and ra is None and stipend is None and full_prob is None:
+        return None
     score = 0.0
     if funding_avail == "fully_funded":
         score += 60

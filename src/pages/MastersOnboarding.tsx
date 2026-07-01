@@ -45,6 +45,19 @@ const STEPS = [
   'Review',
 ];
 
+// Per-step background/accent, mirroring the undergrad STEP_THEMES pattern
+// (src/pages/Onboarding.tsx) so masters onboarding shifts color across the
+// flow instead of staying on one static accent for all 7 steps.
+const STEP_THEMES = [
+  { bg: '#0C0C1B', accent: '#3B9EFF' },  // Program Intent
+  { bg: '#0B1220', accent: '#38BDF8' },  // Academic Background
+  { bg: '#0E1512', accent: '#34D399' },  // Standardized Tests
+  { bg: '#160F1D', accent: '#A78BFA' },  // Experience & Research
+  { bg: '#1A130C', accent: '#F59E0B' },  // Recommendations
+  { bg: '#12131A', accent: '#60A5FA' },  // Target Countries
+  { bg: '#07070B', accent: '#E3C66A' },  // Review
+];
+
 const num = (v: string): number | undefined => (v === '' || v === undefined ? undefined : Number(v));
 
 interface FormState {
@@ -121,19 +134,19 @@ const ChipGroup: React.FC<{ options: readonly string[]; value: string; onChange:
   </div>
 );
 
-const StepProgress: React.FC<{ step: number }> = ({ step }) => (
+const StepProgress: React.FC<{ step: number; accent?: string }> = ({ step, accent = ACCENT }) => (
   <div style={{ marginBottom: 32 }}>
     <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
       {STEPS.map((_, i) => (
         <div key={i} style={{
           flex: 1, height: 4, borderRadius: 4,
-          background: i < step ? ACCENT : i === step ? h2r(ACCENT, 0.4) : S.border2,
-          transition: 'background 0.25s ease',
+          background: i < step ? accent : i === step ? h2r(accent, 0.4) : S.border2,
+          transition: 'background 0.4s ease',
         }} />
       ))}
     </div>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-      <span style={{ fontSize: 13, fontWeight: 700, color: ACCENT, fontFamily: S.font }}>{STEPS[step]}</span>
+      <span style={{ fontSize: 13, fontWeight: 700, color: accent, fontFamily: S.font, transition: 'color 0.4s ease' }}>{STEPS[step]}</span>
       <span style={{ fontSize: 12, color: S.dim, fontFamily: S.font }}>Step {step + 1} of {STEPS.length}</span>
     </div>
   </div>
@@ -148,7 +161,19 @@ const SummaryRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label
 
 const MastersOnboarding: React.FC = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
+  // Restore the step position on remount (e.g. after a page refresh) - found via
+  // browser QA that form values were correctly persisted but the user was still
+  // dropped back to step 1 every time, forcing them to re-click through steps
+  // they'd already completed.
+  const [step, setStep] = useState<number>(() => {
+    try {
+      const raw = localStorage.getItem(`${DRAFT_KEY}_step`);
+      const parsed = raw ? Number(raw) : 0;
+      return Number.isInteger(parsed) && parsed >= 0 && parsed < STEPS.length ? parsed : 0;
+    } catch {
+      return 0;
+    }
+  });
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(() => {
     try {
@@ -178,6 +203,10 @@ const MastersOnboarding: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(`${DRAFT_KEY}_countries`, JSON.stringify(countries));
   }, [countries]);
+
+  useEffect(() => {
+    localStorage.setItem(`${DRAFT_KEY}_step`, String(step));
+  }, [step]);
 
   const set = (k: keyof FormState, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -225,6 +254,7 @@ const MastersOnboarding: React.FC = () => {
       });
       localStorage.removeItem(DRAFT_KEY);
       localStorage.removeItem(`${DRAFT_KEY}_countries`);
+      localStorage.removeItem(`${DRAFT_KEY}_step`);
       toast.success('Masters profile saved');
       navigate('/masters');
     } catch {
@@ -387,16 +417,18 @@ const MastersOnboarding: React.FC = () => {
     }
   };
 
+  const theme = STEP_THEMES[Math.min(step, STEP_THEMES.length - 1)];
+
   return (
-    <div style={{ minHeight: '100vh', background: S.bg, padding: '40px 24px', fontFamily: S.font }}>
+    <div style={{ minHeight: '100vh', background: theme.bg, padding: '40px 24px', fontFamily: S.font, transition: 'background 0.5s ease' }}>
       <style>{GLOBAL}</style>
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
-          <GraduationCap size={22} style={{ color: ACCENT }} />
+          <GraduationCap size={22} style={{ color: theme.accent, transition: 'color 0.5s ease' }} />
           <h1 style={{ fontSize: 24, fontWeight: 800, color: S.text, fontFamily: S.font, margin: 0 }}>Graduate Application Profile</h1>
         </div>
 
-        <StepProgress step={step} />
+        <StepProgress step={step} accent={theme.accent} />
 
         <div style={{
           background: S.surface, border: `1px solid ${S.border}`, borderRadius: 20,

@@ -192,6 +192,18 @@ const AppContent = () => {
             {/* Masters/grad track — consolidated nested routes, flag-gated. */}
             {isMastersTrackEnabled() && (
               <>
+                {/* Onboarding is a sibling of MastersLayout, not a child - it must own the
+                    full viewport the same way undergrad's /onboarding does (line 174-181
+                    above), not render next to the persistent masters sidebar/nav chrome. */}
+                <Route
+                  path="/masters/onboarding"
+                  element={
+                    <ProtectedRoute requireOnboarding={false}>
+                      <MastersOnboarding />
+                    </ProtectedRoute>
+                  }
+                />
+
                 <Route
                   path="/masters"
                   element={
@@ -201,7 +213,6 @@ const AppContent = () => {
                   }
                 >
                   <Route index element={<MastersDashboard />} />
-                  <Route path="onboarding" element={<MastersOnboarding />} />
                   <Route path="programs" element={<MastersPrograms />} />
                   <Route path="programs/:id" element={<MastersProgramDetails />} />
                   <Route path="timeline" element={<MastersTimeline />} />

@@ -665,10 +665,13 @@ const Colleges: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Admit chance + tier */}
+                        {/* Tier (the underlying admit_chance % is an unvalidated internal
+                            heuristic, not a calibrated probability - see
+                            docs/chancing_model_emergency_patch.md - so only the
+                            reach/target/safety classification is shown here) */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                           <span style={{ fontSize: 12, color: tierColor, fontWeight: 700, fontFamily: S.font }}>
-                            {tierKey === 'long_shot' ? 'Long Shot' : tierKey.charAt(0).toUpperCase() + tierKey.slice(1)} · {rec.admit_chance}% chance
+                            {tierKey === 'long_shot' ? 'Long Shot' : tierKey.charAt(0).toUpperCase() + tierKey.slice(1)}
                           </span>
                           <button
                             style={{ fontSize: 10, color: S.muted, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontFamily: S.font }}
