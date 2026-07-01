@@ -122,6 +122,10 @@ app.use(securityValidation);
 // Rate limiting for all API routes
 app.use('/api/', apiLimiter);
 
+// Instant ping — no DB query. Used by the frontend warmup probe to detect
+// when the Render free-tier process is up before making authenticated calls.
+app.get('/ping', (_req, res) => res.json({ ok: true }));
+
 // Health check — used by Render as the service health check URL.
 // Returns DB connectivity status for operational monitoring.
 // Rate-limited to prevent DB-query abuse from unauthenticated callers.
