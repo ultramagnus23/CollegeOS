@@ -252,6 +252,7 @@ async function main() {
     console.log(`Refreshing ${targets.length} least-recently-updated US institutions (data_year ${DATA_YEAR})${DRY ? ' [DRY RUN]' : ''}`);
 
     const ids = [...byIpeds.keys()];
+    const touchedIpeds = new Set();
     for (let i = 0; i < ids.length; i += CHUNK) {
       const chunk = ids.slice(i, i + CHUNK);
       let results;
@@ -262,6 +263,7 @@ async function main() {
         const d = mapRow(r);
         const institutionId = byIpeds.get(d.ipeds);
         if (!institutionId) continue;
+        touchedIpeds.add(d.ipeds);
         const hasData = d.acceptance_rate != null || d.cost_of_attendance != null || d.median_start_salary != null || d.enrollment != null || d.sat_50 != null;
         if (!hasData) { summary.noData += 1; }
         if (DRY) { if (hasData) console.log(`  ${d.ipeds} ${d.name}: accept=${d.acceptance_rate} cost=${d.cost_of_attendance} enroll=${d.enrollment} sal10=${d.median_mid_career_salary}`); continue; }
@@ -269,6 +271,20 @@ async function main() {
         catch (e) { summary.errors += 1; console.error(`  upsert ${d.ipeds} failed:`, e.message); }
       }
       process.stdout.write(`  progress ${Math.min(i + CHUNK, ids.length)}/${ids.length}\r`);
+    }
+
+    // Institutions Scorecard never returned (bad/stale ipeds id, closed
+    // school, etc.) previously never got updated_at bumped, so they stuck
+    // permanently at the front of the "oldest" queue and starved every
+    // subsequent run from ever reaching real institutions past them. Bump
+    // them too (no data written) so the rolling cycle actually advances.
+    const untouched = targets.filter((t) => t.ipeds && !touchedIpeds.has(String(t.ipeds)));
+    if (!DRY && untouched.length > 0) {
+      await client.query(
+        `UPDATE canonical.institutions SET updated_at = now() WHERE id = ANY($1::uuid[])`,
+        [untouched.map((t) => t.id)],
+      );
+      summary.skippedNoMatch = untouched.length;
     }
 
     if (!DRY && summary.upserted > 0) {
