@@ -41,6 +41,16 @@ const TARGETS = [
   { name: 'University of Pennsylvania', url: 'https://admissions.upenn.edu/how-to-apply/first-year-applicants/application-requirements' },
   { name: 'Case Western Reserve University', url: 'https://case.edu/admission/apply' },
   { name: 'Rensselaer Polytechnic Institute', url: 'https://admissions.rpi.edu/undergraduate/apply' },
+  { name: 'Princeton University', url: 'https://admission.princeton.edu/apply' },
+  { name: 'Yale University', url: 'https://admissions.yale.edu/apply' },
+  { name: 'The University of Texas at Austin', url: 'https://admissions.utexas.edu/apply/freshman' },
+  { name: 'University of Virginia-Main Campus', url: 'https://admission.virginia.edu/apply' },
+  { name: 'Tufts University', url: 'https://admissions.tufts.edu/apply' },
+  { name: 'Pennsylvania State University-Main Campus', url: 'https://admissions.psu.edu/apply' },
+  { name: 'University of Georgia', url: 'https://admissions.uga.edu' },
+  { name: 'University of Maryland-College Park', url: 'https://admissions.umd.edu' },
+  { name: 'Wake Forest University', url: 'https://admissions.wfu.edu/apply' },
+  { name: 'Lehigh University', url: 'https://admissions.lehigh.edu/apply' },
 ];
 
 const MONTHS = {

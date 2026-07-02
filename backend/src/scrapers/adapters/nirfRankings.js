@@ -129,7 +129,10 @@ async function fetchRows({ pool, logger = console }) {
       rows.push({
         institution_id: institutionId,
         ranking_year: String(YEAR),
-        ranking_year_key: YEAR,
+        // ranking_year_key is GENERATED ALWAYS AS (COALESCE(ranking_year, -1))
+        // STORED — Postgres rejects an explicit value in the INSERT column
+        // list. It's still valid as an ON CONFLICT target below since that
+        // only needs to match the real unique constraint, not the insert list.
         ranking_body: RANKING_BODY,
         national_rank: r.rank,
         ranking_score: r.score,
@@ -154,7 +157,7 @@ const adapter = {
   source: 'NIRF — nirfindia.org (open government rankings)',
   table: 'canonical.institution_rankings',
   columns: [
-    'institution_id', 'ranking_year', 'ranking_year_key', 'ranking_body',
+    'institution_id', 'ranking_year', 'ranking_body',
     'national_rank', 'ranking_score', 'source_attribution', 'raw_payload', 'created_at',
   ],
   conflictColumns: ['institution_id', 'ranking_year_key', 'ranking_body'],
