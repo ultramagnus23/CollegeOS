@@ -39,6 +39,9 @@ const FIELDS = [
   'latest.cost.tuition.out_of_state',
   'latest.aid.median_debt.completers.overall',
   'latest.student.size',
+  'latest.student.enrollment.undergrad_12_month',
+  'latest.cost.avg_net_price.public',
+  'latest.cost.avg_net_price.private',
   'latest.completion.completion_rate_4yr_100nt',
   'latest.completion.completion_rate_4yr_150nt',
   'latest.earnings.6_yrs_after_entry.median',
@@ -100,7 +103,9 @@ function mapRow(r) {
     tuition_out_state: tuitionOut,
     tuition_domestic: tuitionIn,
     avg_debt_at_graduation: num(r['latest.aid.median_debt.completers.overall']),
+    net_price: num(r['latest.cost.avg_net_price.public']) ?? num(r['latest.cost.avg_net_price.private']),
     enrollment: num(r['latest.student.size']),
+    undergraduate_enrollment: num(r['latest.student.enrollment.undergrad_12_month']),
     graduation_rate_4yr: pct(r['latest.completion.completion_rate_4yr_100nt']),
     graduation_rate_6yr: pct(r['latest.completion.completion_rate_4yr_150nt']),
     median_start_salary: num(r['latest.earnings.6_yrs_after_entry.median']),
@@ -146,21 +151,22 @@ async function upsert(client, institutionId, d) {
     );
   }
 
-  if (d.cost_of_attendance != null || d.tuition_in_state != null || d.tuition_out_state != null) {
+  if (d.cost_of_attendance != null || d.tuition_in_state != null || d.tuition_out_state != null || d.net_price != null) {
     await client.query(
       `INSERT INTO canonical.institution_financials
          (institution_id, data_year, cost_of_attendance, tuition_in_state, tuition_out_state,
-          tuition_domestic, avg_debt_at_graduation, source_attribution, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb, now())
+          tuition_domestic, avg_debt_at_graduation, net_price, source_attribution, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb, now())
        ON CONFLICT ON CONSTRAINT uq_institution_financials DO UPDATE SET
          cost_of_attendance=COALESCE(EXCLUDED.cost_of_attendance, canonical.institution_financials.cost_of_attendance),
          tuition_in_state=COALESCE(EXCLUDED.tuition_in_state, canonical.institution_financials.tuition_in_state),
          tuition_out_state=COALESCE(EXCLUDED.tuition_out_state, canonical.institution_financials.tuition_out_state),
          tuition_domestic=COALESCE(EXCLUDED.tuition_domestic, canonical.institution_financials.tuition_domestic),
          avg_debt_at_graduation=COALESCE(EXCLUDED.avg_debt_at_graduation, canonical.institution_financials.avg_debt_at_graduation),
+         net_price=COALESCE(EXCLUDED.net_price, canonical.institution_financials.net_price),
          source_attribution=EXCLUDED.source_attribution, updated_at=now()`,
       [institutionId, DATA_YEAR, d.cost_of_attendance, d.tuition_in_state, d.tuition_out_state,
-        d.tuition_domestic, d.avg_debt_at_graduation, attribution],
+        d.tuition_domestic, d.avg_debt_at_graduation, d.net_price, attribution],
     );
   }
 
@@ -183,15 +189,17 @@ async function upsert(client, institutionId, d) {
     );
   }
 
-  // enrollment lives in institutions.metadata.total_enrollment (read by the card);
-  // always bump updated_at so the rolling cycle advances.
+  // total_enrollment lives in institutions.metadata (read by the card);
+  // undergraduate_enrollment is a real migration-127 column. Always bump
+  // updated_at so the rolling refresh cycle advances regardless.
   await client.query(
     `UPDATE canonical.institutions
        SET metadata = CASE WHEN $2::int IS NULL THEN metadata
                            ELSE jsonb_set(coalesce(metadata,'{}'::jsonb), '{total_enrollment}', to_jsonb($2::int)) END,
+           undergraduate_enrollment = COALESCE($3::int, undergraduate_enrollment),
            updated_at = now()
      WHERE id = $1`,
-    [institutionId, d.enrollment],
+    [institutionId, d.enrollment, d.undergraduate_enrollment],
   );
 }
 
