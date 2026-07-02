@@ -128,11 +128,13 @@ async function fetchRows({ pool, logger = console }) {
       matched += 1;
       rows.push({
         institution_id: institutionId,
-        ranking_year: String(YEAR),
+        ranking_year: YEAR,
         // ranking_year_key is GENERATED ALWAYS AS (COALESCE(ranking_year, -1))
         // STORED — Postgres rejects an explicit value in the INSERT column
-        // list. It's still valid as an ON CONFLICT target below since that
-        // only needs to match the real unique constraint, not the insert list.
+        // list, so it's deliberately absent from `columns` below. Conflict
+        // target uses institution_rankings_uq_institution_body_year
+        // (institution_id, ranking_body, ranking_year) instead, matching
+        // arwuRankings.js's pattern.
         ranking_body: RANKING_BODY,
         national_rank: r.rank,
         ranking_score: r.score,
@@ -160,7 +162,7 @@ const adapter = {
     'institution_id', 'ranking_year', 'ranking_body',
     'national_rank', 'ranking_score', 'source_attribution', 'raw_payload', 'created_at',
   ],
-  conflictColumns: ['institution_id', 'ranking_year_key', 'ranking_body'],
+  conflictColumns: ['institution_id', 'ranking_body', 'ranking_year'],
   fetchRows,
   validateRow,
   requireNewRows: true,
