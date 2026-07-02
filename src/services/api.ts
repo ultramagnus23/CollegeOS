@@ -292,10 +292,10 @@ class ApiService {
     return response;
   }
 
-  async googleLogin(googleId: string, email: string, name: string) {
+  async googleLogin(googleId: string, email: string, name: string, idToken?: string | null) {
     const response = await this.request('/auth/google', {
       method: 'POST',
-      body: JSON.stringify({ googleId, email, name }),
+      body: JSON.stringify({ googleId, email, name, idToken }),
     });
 
     if ((response as any).data?.tokens) {

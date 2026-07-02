@@ -149,8 +149,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return response;
   };
 
-  const loginWithGoogle = async (googleId: string, email: string, name: string) => {
-    const response = await api.googleLogin(googleId, email, name);
+  const loginWithGoogle = async (googleId: string, email: string, name: string, idToken?: string | null) => {
+    const response = await api.googleLogin(googleId, email, name, idToken);
     const tokens = (response as any)?.data?.tokens;
     if (tokens?.accessToken) {
       api.setToken(tokens.accessToken);
