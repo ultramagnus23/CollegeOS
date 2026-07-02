@@ -24,6 +24,9 @@ const MIN_SIGNALS = 2; // need at least this many confidently-extracted fields t
 const TARGETS = [
   { name: 'Massachusetts Institute of Technology', url: 'https://mitadmissions.org/apply/firstyear/deadlines-requirements/' },
   { name: 'University of Notre Dame', url: 'https://admissions.nd.edu/apply/' },
+  { name: 'University of Pennsylvania', url: 'https://admissions.upenn.edu/how-to-apply/first-year-applicants/application-requirements' },
+  { name: 'Case Western Reserve University', url: 'https://case.edu/admission/apply' },
+  { name: 'Rensselaer Polytechnic Institute', url: 'https://admissions.rpi.edu/undergraduate/apply' },
 ];
 
 // Returns { fields:{...}, signals:int, snippets:[...] }. Only confidently-stated
