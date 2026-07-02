@@ -37,6 +37,7 @@ const FIELDS = [
   'latest.cost.attendance.academic_year',
   'latest.cost.tuition.in_state',
   'latest.cost.tuition.out_of_state',
+  'latest.aid.median_debt.completers.overall',
   'latest.student.size',
   'latest.completion.completion_rate_4yr_100nt',
   'latest.completion.completion_rate_4yr_150nt',
@@ -64,24 +65,48 @@ async function fetchChunk(ids) {
 }
 
 function mapRow(r) {
+  const sat25r = num(r['latest.admissions.sat_scores.25th_percentile.critical_reading']);
+  const sat75r = num(r['latest.admissions.sat_scores.75th_percentile.critical_reading']);
+  const sat25m = num(r['latest.admissions.sat_scores.25th_percentile.math']);
+  const sat75m = num(r['latest.admissions.sat_scores.75th_percentile.math']);
+  const tuitionIn = num(r['latest.cost.tuition.in_state']);
+  const tuitionOut = num(r['latest.cost.tuition.out_of_state']);
+
   return {
     ipeds: String(r.id),
     name: r['school.name'],
     acceptance_rate: num(r['latest.admissions.admission_rate.overall']),
     sat_50: num(r['latest.admissions.sat_scores.average.overall']),
-    sat_25: sumOrNull(r['latest.admissions.sat_scores.25th_percentile.critical_reading'], r['latest.admissions.sat_scores.25th_percentile.math']),
-    sat_75: sumOrNull(r['latest.admissions.sat_scores.75th_percentile.critical_reading'], r['latest.admissions.sat_scores.75th_percentile.math']),
+    sat_25: sumOrNull(sat25r, sat25m),
+    sat_75: sumOrNull(sat75r, sat75m),
+    // migration-127 fields: canonical.v_college_cards_extended reads these
+    // names, not the sat_25/sat_75/tuition_in_state/median_start_salary
+    // columns above (those feed older, pre-127 readers only).
+    sat_total_25: sumOrNull(sat25r, sat25m),
+    sat_total_75: sumOrNull(sat75r, sat75m),
+    sat_ebrw_25: sat25r,
+    sat_ebrw_75: sat75r,
+    sat_math_25: sat25m,
+    sat_math_75: sat75m,
     act_50: num(r['latest.admissions.act_scores.midpoint.cumulative']),
     act_25: num(r['latest.admissions.act_scores.25th_percentile.cumulative']),
     act_75: num(r['latest.admissions.act_scores.75th_percentile.cumulative']),
+    // NOTE: applicants.total/admitted.total/enrolled.total (and thus yield_rate)
+    // are no longer exposed by the College Scorecard API (verified live 2026-07-02
+    // against known institutions — the fields return nothing) — do not resurrect
+    // this without confirming the current API data dictionary first.
     cost_of_attendance: num(r['latest.cost.attendance.academic_year']),
-    tuition_in_state: num(r['latest.cost.tuition.in_state']),
-    tuition_out_state: num(r['latest.cost.tuition.out_of_state']),
+    tuition_in_state: tuitionIn,
+    tuition_out_state: tuitionOut,
+    tuition_domestic: tuitionIn,
+    avg_debt_at_graduation: num(r['latest.aid.median_debt.completers.overall']),
     enrollment: num(r['latest.student.size']),
     graduation_rate_4yr: pct(r['latest.completion.completion_rate_4yr_100nt']),
     graduation_rate_6yr: pct(r['latest.completion.completion_rate_4yr_150nt']),
     median_start_salary: num(r['latest.earnings.6_yrs_after_entry.median']),
     median_mid_career_salary: num(r['latest.earnings.10_yrs_after_entry.median']),
+    median_salary_1yr: num(r['latest.earnings.6_yrs_after_entry.median']),
+    median_salary_5yr: num(r['latest.earnings.10_yrs_after_entry.median']),
   };
 }
 
@@ -94,8 +119,12 @@ async function upsert(client, institutionId, d) {
   if (d.acceptance_rate != null || d.sat_50 != null || d.act_50 != null) {
     await client.query(
       `INSERT INTO canonical.institution_admissions
-         (institution_id, data_year, admissions_cycle, acceptance_rate, sat_25, sat_50, sat_75, act_25, act_50, act_75, source_attribution, updated_at)
-       VALUES ($1,$2,'regular',$3,$4,$5,$6,$7,$8,$9,$10::jsonb, now())
+         (institution_id, data_year, admissions_cycle, acceptance_rate, sat_25, sat_50, sat_75, act_25, act_50, act_75,
+          sat_total_25, sat_total_75, sat_ebrw_25, sat_ebrw_75, sat_math_25, sat_math_75,
+          source_attribution, updated_at)
+       VALUES ($1,$2,'regular',$3,$4,$5,$6,$7,$8,$9,
+               $10,$11,$12,$13,$14,$15,
+               $16::jsonb, now())
        ON CONFLICT (institution_id, data_year, admissions_cycle) DO UPDATE SET
          acceptance_rate=COALESCE(EXCLUDED.acceptance_rate, canonical.institution_admissions.acceptance_rate),
          sat_25=COALESCE(EXCLUDED.sat_25, canonical.institution_admissions.sat_25),
@@ -104,37 +133,53 @@ async function upsert(client, institutionId, d) {
          act_25=COALESCE(EXCLUDED.act_25, canonical.institution_admissions.act_25),
          act_50=COALESCE(EXCLUDED.act_50, canonical.institution_admissions.act_50),
          act_75=COALESCE(EXCLUDED.act_75, canonical.institution_admissions.act_75),
+         sat_total_25=COALESCE(EXCLUDED.sat_total_25, canonical.institution_admissions.sat_total_25),
+         sat_total_75=COALESCE(EXCLUDED.sat_total_75, canonical.institution_admissions.sat_total_75),
+         sat_ebrw_25=COALESCE(EXCLUDED.sat_ebrw_25, canonical.institution_admissions.sat_ebrw_25),
+         sat_ebrw_75=COALESCE(EXCLUDED.sat_ebrw_75, canonical.institution_admissions.sat_ebrw_75),
+         sat_math_25=COALESCE(EXCLUDED.sat_math_25, canonical.institution_admissions.sat_math_25),
+         sat_math_75=COALESCE(EXCLUDED.sat_math_75, canonical.institution_admissions.sat_math_75),
          source_attribution=EXCLUDED.source_attribution, updated_at=now()`,
-      [institutionId, DATA_YEAR, d.acceptance_rate, d.sat_25, d.sat_50, d.sat_75, d.act_25, d.act_50, d.act_75, attribution],
+      [institutionId, DATA_YEAR, d.acceptance_rate, d.sat_25, d.sat_50, d.sat_75, d.act_25, d.act_50, d.act_75,
+        d.sat_total_25, d.sat_total_75, d.sat_ebrw_25, d.sat_ebrw_75, d.sat_math_25, d.sat_math_75,
+        attribution],
     );
   }
 
   if (d.cost_of_attendance != null || d.tuition_in_state != null || d.tuition_out_state != null) {
     await client.query(
       `INSERT INTO canonical.institution_financials
-         (institution_id, data_year, cost_of_attendance, tuition_in_state, tuition_out_state, source_attribution, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6::jsonb, now())
+         (institution_id, data_year, cost_of_attendance, tuition_in_state, tuition_out_state,
+          tuition_domestic, avg_debt_at_graduation, source_attribution, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb, now())
        ON CONFLICT ON CONSTRAINT uq_institution_financials DO UPDATE SET
          cost_of_attendance=COALESCE(EXCLUDED.cost_of_attendance, canonical.institution_financials.cost_of_attendance),
          tuition_in_state=COALESCE(EXCLUDED.tuition_in_state, canonical.institution_financials.tuition_in_state),
          tuition_out_state=COALESCE(EXCLUDED.tuition_out_state, canonical.institution_financials.tuition_out_state),
+         tuition_domestic=COALESCE(EXCLUDED.tuition_domestic, canonical.institution_financials.tuition_domestic),
+         avg_debt_at_graduation=COALESCE(EXCLUDED.avg_debt_at_graduation, canonical.institution_financials.avg_debt_at_graduation),
          source_attribution=EXCLUDED.source_attribution, updated_at=now()`,
-      [institutionId, DATA_YEAR, d.cost_of_attendance, d.tuition_in_state, d.tuition_out_state, attribution],
+      [institutionId, DATA_YEAR, d.cost_of_attendance, d.tuition_in_state, d.tuition_out_state,
+        d.tuition_domestic, d.avg_debt_at_graduation, attribution],
     );
   }
 
   if (d.graduation_rate_4yr != null || d.graduation_rate_6yr != null || d.median_start_salary != null || d.median_mid_career_salary != null) {
     await client.query(
       `INSERT INTO canonical.institution_outcomes
-         (institution_id, data_year, graduation_rate_4yr, graduation_rate_6yr, median_start_salary, median_mid_career_salary, source_attribution, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb, now())
+         (institution_id, data_year, graduation_rate_4yr, graduation_rate_6yr, median_start_salary, median_mid_career_salary,
+          median_salary_1yr, median_salary_5yr, source_attribution, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb, now())
        ON CONFLICT ON CONSTRAINT uq_institution_outcomes DO UPDATE SET
          graduation_rate_4yr=COALESCE(EXCLUDED.graduation_rate_4yr, canonical.institution_outcomes.graduation_rate_4yr),
          graduation_rate_6yr=COALESCE(EXCLUDED.graduation_rate_6yr, canonical.institution_outcomes.graduation_rate_6yr),
          median_start_salary=COALESCE(EXCLUDED.median_start_salary, canonical.institution_outcomes.median_start_salary),
          median_mid_career_salary=COALESCE(EXCLUDED.median_mid_career_salary, canonical.institution_outcomes.median_mid_career_salary),
+         median_salary_1yr=COALESCE(EXCLUDED.median_salary_1yr, canonical.institution_outcomes.median_salary_1yr),
+         median_salary_5yr=COALESCE(EXCLUDED.median_salary_5yr, canonical.institution_outcomes.median_salary_5yr),
          source_attribution=EXCLUDED.source_attribution, updated_at=now()`,
-      [institutionId, DATA_YEAR, d.graduation_rate_4yr, d.graduation_rate_6yr, d.median_start_salary, d.median_mid_career_salary, attribution],
+      [institutionId, DATA_YEAR, d.graduation_rate_4yr, d.graduation_rate_6yr, d.median_start_salary, d.median_mid_career_salary,
+        d.median_salary_1yr, d.median_salary_5yr, attribution],
     );
   }
 
