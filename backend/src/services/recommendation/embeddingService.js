@@ -95,20 +95,23 @@ async function generateInstitutionEmbedding(institution) {
 async function upsertInstitutionEmbedding(institution) {
   const pool = dbManager.getDatabase();
   const embedding = await generateInstitutionEmbedding(institution);
+  // model_name/embedding_dim are the original (NOT NULL) columns; embedding_model/
+  // embedding_version were added by migration 135 to match this service's actual
+  // write shape. uq_institution_embeddings is UNIQUE(institution_id, model_name),
+  // not institution_id alone -- the ON CONFLICT target must match it exactly or
+  // Postgres rejects the upsert with "no unique or exclusion constraint matching".
   const sql = `INSERT INTO canonical.institution_embeddings
-      (institution_id, embedding, embedding_model, embedding_version, updated_at)
-     VALUES ($1, $2::vector, $3, $4, NOW())
-     ON CONFLICT (institution_id)
+      (institution_id, embedding, model_name, embedding_dim, embedding_model, embedding_version, updated_at)
+     VALUES ($1, $2::vector, $3, $4, $3, $5, NOW())
+     ON CONFLICT (institution_id, model_name)
      DO UPDATE SET
        embedding = EXCLUDED.embedding,
+       embedding_dim = EXCLUDED.embedding_dim,
        embedding_model = EXCLUDED.embedding_model,
        embedding_version = EXCLUDED.embedding_version,
        updated_at = NOW()`;
-  const params = [institution.id, vectorToPgLiteral(embedding), EMBEDDING_MODEL, EMBEDDING_VERSION];
-  console.log('SQL:', sql);
-  console.log('PARAMS:', params);
+  const params = [institution.id, vectorToPgLiteral(embedding), EMBEDDING_MODEL, EMBEDDING_DIM, EMBEDDING_VERSION];
   await pool.query(sql, params);
-  console.log('QUERY RESULT:', { count: null, error: null });
 }
 
 async function generateStudentEmbedding(studentProfile) {
@@ -128,34 +131,19 @@ async function findSimilarInstitutions(studentEmbedding, limit = 200) {
        ORDER BY ie.embedding <=> $1::vector
        LIMIT $2`;
     const params = [vectorLiteral, safeLimit];
-    console.log('SQL:', sql);
-    console.log('PARAMS:', params);
     const { rows } = await pool.query(sql, params);
-    console.log('QUERY RESULT:', { count: rows?.length || 0, error: null });
     return rows.map((r) => ({
       institution_id: r.institution_id,
       similarity: Number(r.similarity) || 0,
     }));
   } catch (error) {
-    console.error('==============================');
-    console.error('RECOMMENDATION PIPELINE ERROR');
-    console.error('==============================');
-    console.error('MESSAGE:', error?.message);
-    console.error('STACK:', error?.stack);
-    console.error('FULL ERROR:', error);
-    if (error?.details) console.error('DETAILS:', error.details);
-    if (error?.hint) console.error('HINT:', error.hint);
-    if (error?.code) console.error('CODE:', error.code);
-    logger.warn('findSimilarInstitutions fallback activated', { error: error.message });
+    logger.warn('findSimilarInstitutions fallback activated', { error: error.message, code: error.code });
     const fallbackSql = `SELECT id AS institution_id, 0.5::numeric AS similarity
          FROM canonical.institutions
          ORDER BY id
          LIMIT $1`;
     const fallbackParams = [safeLimit];
-    console.log('SQL:', fallbackSql);
-    console.log('PARAMS:', fallbackParams);
     const { rows } = await pool.query(fallbackSql, fallbackParams);
-    console.log('QUERY RESULT:', { count: rows?.length || 0, error: null });
     return rows.map((r) => ({
       institution_id: r.institution_id,
       similarity: Number(r.similarity),

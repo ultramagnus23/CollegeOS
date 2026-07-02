@@ -23,24 +23,6 @@ function passesMetadataFilters(row = {}, filters = {}) {
   return true;
 }
 
-function logRawSql(sql, params) {
-  console.log('SQL:', sql);
-  console.log('PARAMS:', params);
-}
-
-function logRecommendationPipelineError(err, context = {}) {
-  console.error('==============================');
-  console.error('RECOMMENDATION PIPELINE ERROR');
-  console.error('==============================');
-  console.error('MESSAGE:', err?.message);
-  console.error('STACK:', err?.stack);
-  console.error('FULL ERROR:', err);
-  if (err?.details) console.error('DETAILS:', err.details);
-  if (err?.hint) console.error('HINT:', err.hint);
-  if (err?.code) console.error('CODE:', err.code);
-  if (Object.keys(context).length > 0) console.error('CONTEXT:', context);
-}
-
 async function retrieveHybridCandidates({ embeddingLiteral, terms = [], subjectTargets = [], metadataFilters = {}, limit = 220 }) {
   const stageStartedAt = nowMs();
   logStageStart('candidate_retrieval', { service: 'embedding_retrieval', limit });
@@ -80,21 +62,9 @@ async function retrieveHybridCandidates({ embeddingLiteral, terms = [], subjectT
   let rows = [];
 
   try {
-    logRawSql(query, payload);
     ({ rows } = await pool.query(query, payload));
-    console.log('QUERY RESULT:', { count: rows?.length || 0, error: null });
     logStageComplete('candidate_retrieval', stageStartedAt, { service: 'embedding_retrieval', rows: rows?.length || 0 });
   } catch (error) {
-    console.log('QUERY RESULT:', {
-      count: null,
-      error: {
-        message: error?.message || null,
-        code: error?.code || null,
-        details: error?.details || null,
-        hint: error?.hint || null,
-      },
-    });
-    logRecommendationPipelineError(error, { stage: 'retrieveHybridCandidates' });
     logStageFailure('candidate_retrieval', error, { service: 'embedding_retrieval', startedAt: stageStartedAt });
     return [];
   }
