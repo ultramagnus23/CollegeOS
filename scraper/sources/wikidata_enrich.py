@@ -155,11 +155,20 @@ def enrich(cur, rec: dict) -> bool:
     )
 
     # Ensure a demographics row exists so the domain scores > 0.
+    # NOTE (flagged during provenance rollout, not fixed here - see
+    # docs/final_regression_audit.md): this creates a row with NO actual
+    # demographic fields populated, purely so a completeness score counts the
+    # domain as present. verification_status is set to 'scraped' (real source,
+    # wikidata) rather than 'estimated'/'unknown' because the ROW's existence is
+    # attributed correctly - but an empty row inflating a completeness score is
+    # itself worth a second look outside this pass's scope (patching the scraper
+    # logic that decides *when* to create placeholder rows is a product decision,
+    # not a mechanical provenance-tagging fix).
     cur.execute(
         """
         INSERT INTO canonical.institution_demographics
-          (institution_id, data_year, source_attribution)
-        VALUES (%s, 2024, %s::jsonb)
+          (institution_id, data_year, source_attribution, verification_status, last_verified_at)
+        VALUES (%s, 2024, %s::jsonb, 'scraped', NOW())
         ON CONFLICT (institution_id, data_year_key) DO NOTHING
         """,
         (inst_id, '{"source":"wikidata","confidence":0.6}'),

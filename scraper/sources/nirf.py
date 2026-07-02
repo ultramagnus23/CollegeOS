@@ -188,13 +188,18 @@ def parse_nirf_xlsx(content: bytes, category: str) -> list[dict]:
 
 def upsert_nirf(cur, inst_id: str, rank: int, category: str = "Overall"):
     # ranking_year_key is generated — omit from INSERT
+    # verification_status/last_verified_at (docs/data_provenance_design.md, migration
+    # 130): NIRF is an official Indian government ranking -> 'government_verified'.
     cur.execute("""
         INSERT INTO canonical.institution_rankings
-          (institution_id, ranking_body, national_rank, ranking_year)
-        VALUES (%(id)s, %(body)s, %(rank)s, 2024)
+          (institution_id, ranking_body, national_rank, ranking_year,
+           verification_status, last_verified_at)
+        VALUES (%(id)s, %(body)s, %(rank)s, 2024, 'government_verified', NOW())
         ON CONFLICT ON CONSTRAINT uq_institution_rankings DO UPDATE SET
           national_rank = EXCLUDED.national_rank,
-          nirf_rank = EXCLUDED.national_rank
+          nirf_rank = EXCLUDED.national_rank,
+          verification_status = 'government_verified',
+          last_verified_at = NOW()
     """, {"id": inst_id, "rank": rank, "body": f"NIRF {category}"})
 
     # Also set the denormalized column for the Overall category

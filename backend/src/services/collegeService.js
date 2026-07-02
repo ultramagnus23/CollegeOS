@@ -108,7 +108,8 @@ class CollegeService {
       SELECT
         institution_id, data_year, acceptance_rate, yield_rate,
         sat_25, sat_50, sat_75, act_25, act_50, act_75, test_optional,
-        application_volume, admit_volume, enrollment_volume
+        application_volume, admit_volume, enrollment_volume,
+        verification_status, last_verified_at
       FROM canonical.institution_admissions
       WHERE institution_id = $1::uuid
       ORDER BY data_year DESC NULLS LAST, updated_at DESC
@@ -123,7 +124,8 @@ class CollegeService {
         institution_id, data_year, tuition_in_state, tuition_out_state,
         tuition_international, cost_of_attendance, avg_financial_aid, avg_debt,
         percent_receiving_aid, merit_scholarship_flag, need_blind_flag,
-        net_price_low_income, net_price_mid_income, net_price_high_income
+        net_price_low_income, net_price_mid_income, net_price_high_income,
+        verification_status, last_verified_at
       FROM canonical.institution_financials
       WHERE institution_id = $1::uuid
       ORDER BY data_year DESC NULLS LAST, updated_at DESC
@@ -292,6 +294,17 @@ class CollegeService {
       });
     }
 
+    const campusLifeRow = campusLife.rows[0] || {};
+    if ('housing_guarantee' in campusLifeRow) {
+      // canonical.institution_campus_life.housing_guarantee is TEXT ('true'/'false'), not
+      // BOOLEAN - a migration 127 ADD COLUMN ... BOOLEAN silently no-op'd against the
+      // existing column. Coerce here so API consumers never see the literal string 'false'
+      // (which is truthy in JS).
+      campusLifeRow.housing_guarantee =
+        campusLifeRow.housing_guarantee === 'true' ? true :
+        campusLifeRow.housing_guarantee === 'false' ? false : null;
+    }
+
     return {
       institution: institutionRow,
       admissions: admissions.rows[0] || {},
@@ -301,7 +314,7 @@ class CollegeService {
       requirements: requirements.rows || [],
       rankings: rankings.rows || [],
       demographics: demographics.rows[0] || {},
-      campus_life: campusLife.rows[0] || {},
+      campus_life: campusLifeRow,
       programs: programs.rows || [],
       completeness: completeness.rows[0] || {},
       quality_scores: qualityScores.rows[0] || {},

@@ -24,9 +24,9 @@ const consolidatedChancingService = require('../services/consolidatedChancingSer
 router.get('/:collegeId', authenticate, async (req, res) => {
   try {
     const userId = req.user.id;
-    const collegeId = parseInt(req.params.collegeId);
+    const collegeId = req.params.collegeId;
 
-    if (isNaN(collegeId)) {
+    if (!collegeId) {
       return res.status(400).json({
         success: false,
         message: 'Invalid college ID'
@@ -58,9 +58,9 @@ router.get('/:collegeId', authenticate, async (req, res) => {
 router.get('/:collegeId/explain', authenticate, async (req, res) => {
   try {
     const userId = req.user.id;
-    const collegeId = parseInt(req.params.collegeId);
+    const collegeId = req.params.collegeId;
 
-    if (isNaN(collegeId)) {
+    if (!collegeId) {
       return res.status(400).json({
         success: false,
         message: 'Invalid college ID'
@@ -112,7 +112,7 @@ router.post('/batch', authenticate, batchLimiter, async (req, res) => {
       });
     }
 
-    const validIds = collegeIds.map(id => parseInt(id)).filter(id => !isNaN(id));
+    const validIds = collegeIds.map(id => String(id)).filter(id => id && id !== 'undefined' && id !== 'null');
 
     const results = await Promise.all(
       validIds.map(async (collegeId) => {
@@ -155,10 +155,10 @@ router.post('/batch', authenticate, batchLimiter, async (req, res) => {
 router.post('/:collegeId/override', authenticate, async (req, res) => {
   try {
     const userId = req.user.id;
-    const collegeId = parseInt(req.params.collegeId);
+    const collegeId = req.params.collegeId;
     const { fitCategory, reason } = req.body;
 
-    if (isNaN(collegeId)) {
+    if (!collegeId) {
       return res.status(400).json({
         success: false,
         message: 'Invalid college ID'

@@ -234,7 +234,7 @@ interface College {
   percent_asian?: number | null;
   percent_international?: number | null;
   campusLife?: {
-    housingGuarantee?: string | null;
+    housingGuarantee?: boolean | null;
     campusSafetyScore?: number | null;
     athleticsDivision?: string | null;
     clubCount?: number | null;
@@ -1961,13 +1961,13 @@ const CollegeDetail: React.FC = () => {
                       </div>
                     )}
                     
-                    {college.campusLife?.housingGuarantee && (
+                    {college.campusLife?.housingGuarantee != null && (
                       <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                         <div className="flex items-center gap-2">
                           <Home className="w-4 h-4 text-primary" />
                           <span className="text-sm text-muted-foreground">Housing Guarantee</span>
                         </div>
-                        <span className="font-semibold text-foreground">{college.campusLife.housingGuarantee}</span>
+                        <span className="font-semibold text-foreground">{college.campusLife.housingGuarantee ? 'Yes' : 'No'}</span>
                       </div>
                     )}
                     {college.campusLife?.athleticsDivision && (
@@ -1999,8 +1999,8 @@ const CollegeDetail: React.FC = () => {
                     )}
                     
                     {/* Show message if no data */}
-                    {!college.campusLife?.housingGuarantee && 
-                     !college.campusLife?.athleticsDivision && 
+                    {college.campusLife?.housingGuarantee == null &&
+                     !college.campusLife?.athleticsDivision &&
                      !college.campusLife?.clubCount &&
                      !college.comprehensiveData?.urbanClassification &&
                      !college.comprehensiveData?.city && (

@@ -104,10 +104,14 @@ def upsert_housing(cur, inst_id: str, rec: dict):
     if not (housing or meal):
         return
 
+    # verification_status/last_verified_at (docs/data_provenance_design.md, migration
+    # 130): IPEDS is a real US Dept. of Education source -> 'government_verified'.
     cur.execute("""
         UPDATE canonical.institution_financials SET
           housing_cost = COALESCE(housing_cost, %(h)s),
-          meal_cost    = COALESCE(meal_cost, %(m)s)
+          meal_cost    = COALESCE(meal_cost, %(m)s),
+          verification_status = 'government_verified',
+          last_verified_at = NOW()
         WHERE institution_id = (
           SELECT id FROM canonical.institution_financials WHERE institution_id = %(id)s LIMIT 1
         )
@@ -117,7 +121,9 @@ def upsert_housing(cur, inst_id: str, rec: dict):
     cur.execute("""
         UPDATE canonical.institution_financials SET
           housing_cost = COALESCE(housing_cost, %(h)s),
-          meal_cost    = COALESCE(meal_cost, %(m)s)
+          meal_cost    = COALESCE(meal_cost, %(m)s),
+          verification_status = 'government_verified',
+          last_verified_at = NOW()
         WHERE institution_id = %(id)s AND data_year = 2024
     """, {"id": inst_id, "h": housing, "m": meal})
 
@@ -137,7 +143,9 @@ def upsert_campus_life(cur, inst_id: str, rec: dict):
 
     cur.execute("""
         UPDATE canonical.institution_campus_life SET
-          pct_living_on_campus = COALESCE(pct_living_on_campus, %(pct)s)
+          pct_living_on_campus = COALESCE(pct_living_on_campus, %(pct)s),
+          verification_status = 'government_verified',
+          last_verified_at = NOW()
         WHERE institution_id = %(id)s
     """, {"id": inst_id, "pct": pct_housing})
 
@@ -256,7 +264,9 @@ def fetch_and_upsert_admissions(conn, ipeds_map: dict, name_map: dict):
                 cur.execute("""
                     UPDATE canonical.institution_admissions SET
                       test_optional = COALESCE(test_optional, %(to)s),
-                      essays_required = COALESCE(essays_required, %(es)s)
+                      essays_required = COALESCE(essays_required, %(es)s),
+                      verification_status = 'government_verified',
+                      last_verified_at = NOW()
                     WHERE institution_id = %(id)s AND data_year = 2024
                 """, {
                     "id": inst_id,

@@ -273,22 +273,22 @@ class College {
              c.country,
              c.state,
              c.city,
-             c.official_website,
-             c.acceptance_rate,
-             c.tuition_domestic,
-             c.tuition_international,
+             c.website_url AS official_website,
+             NULL::numeric AS acceptance_rate,
+             NULL::numeric AS tuition_domestic,
+             NULL::numeric AS tuition_international,
              c.qs_rank,
-             c.ranking_us_news,
+             NULL::int AS ranking_us_news,
              c.type,
              c.size_category,
              c.description,
-             NULL::numeric AS sat_25,
-             NULL::numeric AS sat_75,
-             NULL::numeric AS act_25,
-             NULL::numeric AS act_75,
-             NULL::numeric AS gpa_25,
-             NULL::numeric AS gpa_75,
-             NULL::int AS total_enrollment,
+             c.sat_25,
+             c.sat_75,
+             c.act_25,
+             c.act_75,
+             c.gpa_25,
+             c.gpa_75,
+             c.total_enrollment,
              NULL::int AS qs_rank_legacy,
              NULL::int AS ranking_us_news_legacy,
              NULL::text AS data_source,
@@ -301,7 +301,7 @@ class College {
              dl.rd_deadline,
              dl.ed_deadline,
              dl.ea_deadline,
-             c.slug,
+             LOWER(REGEXP_REPLACE(c.name, '\\s+', '-', 'g')) || '-' || c.id AS slug,
              NULL::text[] AS program_names
            FROM colleges_comprehensive c${LEGACY_DEADLINE_LATERAL}
            WHERE c.id = $1`,
@@ -501,18 +501,20 @@ class College {
   }
 
   static async getCountryFilters() {
-    const [us, india, uk, europe] = await Promise.all([
-      this.getCountByRegion('United States'),
-      this.getCountByRegion('India'),
-      this.getCountByRegion('United Kingdom'),
-      this.getCountByRegion('Europe'),
-    ]);
-    return [
-      { value: 'United States', label: 'United States', count: us },
-      { value: 'India', label: 'India', count: india },
-      { value: 'United Kingdom', label: 'United Kingdom', count: uk },
-      { value: 'Europe', label: 'Europe', count: europe },
-    ];
+    // Was previously a hardcoded 4-region list (US/India/UK/"Europe" as one lumped
+    // bucket) that predates the global institution expansion (migrations 128/129)
+    // and doesn't reflect the real country coverage (Canada, Australia, Singapore,
+    // Germany, etc. each collapsed into "Europe" or omitted entirely). Query real
+    // distinct countries instead, so the filter list matches actual data.
+    const pool = dbManager.getDatabase();
+    const { rows } = await pool.query(`
+      SELECT country_code, COUNT(*)::int AS count
+      FROM canonical.mv_college_cards
+      WHERE country_code IS NOT NULL
+      GROUP BY country_code
+      ORDER BY count DESC
+    `);
+    return rows.map((r) => ({ value: r.country_code, label: r.country_code, count: r.count }));
   }
 
   static async getAllMajors() {

@@ -276,12 +276,17 @@ def upsert_ranking(cur, inst_id: str, body: str, rank: int | None, year: str = "
     if rank is None:
         return
     # ranking_year_key is a generated column — do not include in INSERT
+    # verification_status/last_verified_at (docs/data_provenance_design.md, migration
+    # 130): QS and THE are real published ranking bodies -> 'scraped'.
     cur.execute("""
         INSERT INTO canonical.institution_rankings
-          (institution_id, ranking_body, global_rank, ranking_year)
-        VALUES (%(id)s, %(body)s, %(rank)s, %(yr)s)
+          (institution_id, ranking_body, global_rank, ranking_year,
+           verification_status, last_verified_at)
+        VALUES (%(id)s, %(body)s, %(rank)s, %(yr)s, 'scraped', NOW())
         ON CONFLICT ON CONSTRAINT uq_institution_rankings DO UPDATE SET
-          global_rank = EXCLUDED.global_rank
+          global_rank = EXCLUDED.global_rank,
+          verification_status = 'scraped',
+          last_verified_at = NOW()
     """, {"id": inst_id, "body": body, "rank": rank, "yr": int(year)})
 
     # Also update denormalized convenience column if present

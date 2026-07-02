@@ -79,12 +79,14 @@ def write_financials(cur) -> int:
         r = cur.fetchone()
         if not r:
             continue
+        # verification_status/last_verified_at (docs/data_provenance_design.md,
+        # migration 130): DPIIT is an official Indian government source -> 'government_verified'.
         cur.execute(
             """
             INSERT INTO canonical.institution_financials
               (institution_id, data_year, currency_code, tuition_international,
-               cost_of_attendance, source_attribution)
-            VALUES (%s, 2024, %s, %s, %s, %s::jsonb)
+               cost_of_attendance, source_attribution, verification_status, last_verified_at)
+            VALUES (%s, 2024, %s, %s, %s, %s::jsonb, 'government_verified', NOW())
             ON CONFLICT (institution_id, data_year_key, academic_year_key) DO NOTHING
             """,
             (r[0], curr, tuition, coa, '{"source":"dpiit_official","confidence":0.95}'),

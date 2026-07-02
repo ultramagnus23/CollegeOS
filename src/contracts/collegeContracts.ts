@@ -23,9 +23,9 @@ export const COLLEGE_DETAIL_SECTION_COLUMNS = {
   institution:
     'id, canonical_name, normalized_name, slug, aliases, short_name, country_code, region_code, state_region, city, latitude, longitude, institution_type, control_type, established_year, website, logo_url, canonical_external_ids, metadata, description, popularity_score, completeness_score, updated_at',
   admissions:
-    'institution_id, data_year, acceptance_rate, yield_rate, sat_25, sat_50, sat_75, act_25, act_50, act_75, test_optional, application_volume, admit_volume, enrollment_volume',
+    'institution_id, data_year, acceptance_rate, yield_rate, sat_25, sat_50, sat_75, act_25, act_50, act_75, test_optional, application_volume, admit_volume, enrollment_volume, verification_status, last_verified_at',
   financials:
-    'institution_id, data_year, tuition_in_state, tuition_out_state, tuition_international, cost_of_attendance, avg_financial_aid, avg_debt, percent_receiving_aid, merit_scholarship_flag, need_blind_flag, net_price_low_income, net_price_mid_income, net_price_high_income',
+    'institution_id, data_year, tuition_in_state, tuition_out_state, tuition_international, cost_of_attendance, avg_financial_aid, avg_debt, percent_receiving_aid, merit_scholarship_flag, need_blind_flag, net_price_low_income, net_price_mid_income, net_price_high_income, verification_status, last_verified_at',
   outcomes:
     'institution_id, data_year, graduation_rate_4yr, graduation_rate_6yr, retention_rate, employment_rate, median_start_salary, median_mid_career_salary, grad_school_rate',
   deadlines:

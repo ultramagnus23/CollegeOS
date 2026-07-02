@@ -97,9 +97,12 @@ router.post('/profile', authenticate, requireMastersTrackForWrite, async (req, r
 // ── Programs ──────────────────────────────────────────────────────────────────
 router.get('/programs', authenticate, async (req, res) => {
   try {
-    const { country, degreeType, q, limit, offset } = req.query;
-    const rows = await programService.listProgramCards({ country, degreeType, q, limit, offset });
-    res.json({ success: true, data: rows });
+    const { country, degreeType, q } = req.query;
+    const limit = Math.min(Number(req.query.limit) || 30, 100);
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const offset = req.query.offset != null ? Number(req.query.offset) : (page - 1) * limit;
+    const { rows, total } = await programService.listProgramCards({ country, degreeType, q, limit, offset });
+    res.json({ success: true, data: rows, count: total, totalPages: Math.max(Math.ceil(total / limit), 1) });
   } catch (e) { fail(res, 500, 'Failed to list masters programs', e); }
 });
 

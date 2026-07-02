@@ -168,17 +168,26 @@ def process_ic_ay(conn, data: dict, ipeds_map: dict):
             continue
 
         try:
+            # verification_status/last_verified_at (docs/data_provenance_design.md,
+            # migration 130): IPEDS is a real US Dept. of Education government
+            # source, so 'government_verified' is correct here - this is the pattern
+            # every other scraper writing to a provenance-bearing table should follow
+            # instead of leaving the column at its 'unknown' default.
             cur.execute("""
                 INSERT INTO canonical.institution_financials
                   (institution_id, tuition_domestic, tuition_international,
-                   housing_cost, meal_cost, data_year, academic_year)
+                   housing_cost, meal_cost, data_year, academic_year,
+                   verification_status, last_verified_at)
                 VALUES
-                  (%(id)s, %(td)s, %(ti)s, %(h)s, %(m)s, 2024, '2023-2024')
+                  (%(id)s, %(td)s, %(ti)s, %(h)s, %(m)s, 2024, '2023-2024',
+                   'government_verified', NOW())
                 ON CONFLICT ON CONSTRAINT uq_institution_financials DO UPDATE SET
                   tuition_domestic      = COALESCE(EXCLUDED.tuition_domestic, institution_financials.tuition_domestic),
                   tuition_international = COALESCE(EXCLUDED.tuition_international, institution_financials.tuition_international),
                   housing_cost          = COALESCE(EXCLUDED.housing_cost, institution_financials.housing_cost),
-                  meal_cost             = COALESCE(EXCLUDED.meal_cost, institution_financials.meal_cost)
+                  meal_cost             = COALESCE(EXCLUDED.meal_cost, institution_financials.meal_cost),
+                  verification_status   = 'government_verified',
+                  last_verified_at      = NOW()
             """, {"id": inst_id, "td": tuit_in, "ti": tuit_out, "h": room, "m": board})
             updated += 1
         except Exception as e:

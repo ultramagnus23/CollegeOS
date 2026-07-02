@@ -135,13 +135,18 @@ def main():
             continue
 
         try:
+            # verification_status/last_verified_at (docs/data_provenance_design.md,
+            # migration 130): CWUR is a real published ranking body -> 'scraped'.
             cur.execute("""
                 INSERT INTO canonical.institution_rankings
-                  (institution_id, ranking_body, global_rank, ranking_score, ranking_year)
-                VALUES (%s, 'CWUR', %s, %s, 2024)
+                  (institution_id, ranking_body, global_rank, ranking_score, ranking_year,
+                   verification_status, last_verified_at)
+                VALUES (%s, 'CWUR', %s, %s, 2024, 'scraped', NOW())
                 ON CONFLICT ON CONSTRAINT uq_institution_rankings DO UPDATE SET
                   global_rank   = EXCLUDED.global_rank,
-                  ranking_score = COALESCE(EXCLUDED.ranking_score, institution_rankings.ranking_score)
+                  ranking_score = COALESCE(EXCLUDED.ranking_score, institution_rankings.ranking_score),
+                  verification_status = 'scraped',
+                  last_verified_at = NOW()
             """, (inst_id, rec["rank"], rec["score"]))
             matched += 1
         except Exception as e:
