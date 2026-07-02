@@ -108,14 +108,22 @@ function isSuspiciouslyRoundMoneyValue(value) {
 /**
  * Checks a numeric value against the known-fabricated-values reference list
  * for a given field name. Returns { matched: boolean, hardReject: boolean }.
+ *
+ * `fabricatedValues`/`hardRejectFields` default to the module-level constants but
+ * MUST be passed explicitly by callers that merge in `extraFabricatedValues`/
+ * `extraHardRejectFields` via validateBeforeWrite's fieldConfig - this function
+ * previously ignored those per-call overrides entirely by always reading the
+ * module-level KNOWN_FABRICATED_VALUES/HARD_REJECT_FIELDS directly, silently
+ * defeating any caller-supplied extra fabricated-value rules (e.g. tuition
+ * placeholders like 12000/10000/50000, which aren't in the built-in table).
  */
-function matchesKnownFabricatedValue(fieldName, value) {
-  const knownValues = KNOWN_FABRICATED_VALUES[fieldName];
+function matchesKnownFabricatedValue(fieldName, value, fabricatedValues = KNOWN_FABRICATED_VALUES, hardRejectFields = HARD_REJECT_FIELDS) {
+  const knownValues = fabricatedValues[fieldName];
   if (!knownValues || typeof value !== 'number') {
     return { matched: false, hardReject: false };
   }
   const matched = knownValues.some((known) => value === known);
-  return { matched, hardReject: matched && HARD_REJECT_FIELDS.has(fieldName) };
+  return { matched, hardReject: matched && hardRejectFields.has(fieldName) };
 }
 
 /**
@@ -260,7 +268,7 @@ function validateBeforeWrite(record, fieldConfig = {}) {
   const dataFields = Object.keys(fabricatedValues);
   for (const fieldName of dataFields) {
     if (!(fieldName in record)) continue;
-    const { matched, hardReject } = matchesKnownFabricatedValue(fieldName, record[fieldName]);
+    const { matched, hardReject } = matchesKnownFabricatedValue(fieldName, record[fieldName], fabricatedValues, hardRejectFields);
     if (!matched) continue;
     if (hardRejectFields.has(fieldName) || hardReject) {
       hasReject = true;

@@ -1,5 +1,6 @@
 const dbManager = require('../config/database');
 const logger = require('../utils/logger');
+const { validateBeforeWrite } = require('../utils/verifiedDataGuards');
 
 const DEFAULT_PAGE_SIZE = 100;
 const MAX_PAGE_SIZE = 500;
@@ -72,6 +73,33 @@ class College {
   static async create(data) {
     const pool = dbManager.getDatabase();
     const acceptanceRate = normalizeAcceptanceRate(data.acceptanceRate || data.acceptance_rate);
+
+    // Guard against fabricated-looking values on the one write path where a user
+    // can type in arbitrary institutional data (see docs/data_guardrails.md).
+    // Manually-entered values are tagged 'user_supplied' - a real, non-'unknown'
+    // status - so the guard only rejects on the exact-known-fabricated-baseline
+    // check (e.g. an unexplained acceptance_rate of exactly 0.5), not on the
+    // missing-source rule (which would reject every manual entry outright).
+    const guardRecord = {
+      source: 'user_form_entry',
+      verification_status: 'user_supplied',
+      acceptance_rate: acceptanceRate,
+      tuition_domestic: data.tuitionDomestic || data.tuition_domestic || null,
+      tuition_international: data.tuitionInternational || data.tuition_international || null,
+    };
+    const guardVerdict = validateBeforeWrite(guardRecord, {
+      extraFabricatedValues: {
+        tuition_domestic: [10000, 12000, 50000],
+        tuition_international: [10000, 12000, 50000],
+      },
+      extraHardRejectFields: new Set(['tuition_domestic', 'tuition_international']),
+    });
+    if (guardVerdict.decision === 'reject') {
+      const err = new Error('Rejected: one or more fields look like fabricated placeholder values, not real figures.');
+      err.code = 'FABRICATED_VALUE_REJECTED';
+      err.guardReasons = guardVerdict.reasons;
+      throw err;
+    }
 
     const { rows } = await pool.query(
       // Only application_deadline exists on public.colleges; the rd/ed/ea
