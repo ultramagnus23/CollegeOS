@@ -62,12 +62,20 @@ const num = (v) => (v === null || v === undefined || v === '' || Number.isNaN(Nu
 const sumOrNull = (a, b) => (num(a) != null && num(b) != null ? num(a) + num(b) : null);
 const pct = (frac) => (num(frac) != null ? Math.round(num(frac) * 1000) / 10 : null); // 0-1 -> 0-100
 
-async function fetchChunk(ids) {
+async function fetchChunk(ids, attempt = 1) {
   const url = `${API_BASE}?id=${ids.join(',')}&per_page=100&fields=${FIELDS}&api_key=${API_KEY}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Scorecard API ${res.status} ${res.statusText}`);
-  const json = await res.json();
-  return json.results || [];
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Scorecard API ${res.status} ${res.statusText}`);
+    const json = await res.json();
+    return json.results || [];
+  } catch (e) {
+    // Transient network blips are common over a long-running batch; retry
+    // twice with backoff before letting the chunk fail for real.
+    if (attempt >= 3) throw e;
+    await new Promise((r) => setTimeout(r, attempt * 1500));
+    return fetchChunk(ids, attempt + 1);
+  }
 }
 
 function mapRow(r) {
@@ -200,8 +208,8 @@ async function upsert(client, institutionId, d) {
   if (d.percent_first_gen != null) {
     await client.query(
       `INSERT INTO canonical.institution_demographics
-         (institution_id, data_year, data_year_key, percent_first_gen, source_attribution, updated_at)
-       VALUES ($1,$2,$2,$3,$4::jsonb, now())
+         (institution_id, data_year, percent_first_gen, source_attribution, updated_at)
+       VALUES ($1,$2,$3,$4::jsonb, now())
        ON CONFLICT (institution_id, data_year_key) DO UPDATE SET
          percent_first_gen=COALESCE(EXCLUDED.percent_first_gen, canonical.institution_demographics.percent_first_gen),
          source_attribution=EXCLUDED.source_attribution, updated_at=now()`,
@@ -227,6 +235,10 @@ async function main() {
   if (!API_KEY) { console.error('Missing COLLEGE_SCORECARD_API_KEY'); process.exit(2); }
   const pool = dbManager.initialize();
   const client = await pool.connect();
+  // A checked-out client is its own EventEmitter; a failed statement (e.g. a
+  // constraint violation) can leave the underlying socket in a state that
+  // later drops with an unhandled 'error' event, crashing the whole batch.
+  client.on('error', (err) => console.error('  pg client error (continuing):', err.message));
   const summary = { selected: 0, fetched: 0, upserted: 0, noData: 0, errors: 0 };
   try {
     const { rows: targets } = await client.query(
@@ -261,7 +273,15 @@ async function main() {
 
     if (!DRY && summary.upserted > 0) {
       console.log('\nRefreshing materialized view...');
-      await client.query('REFRESH MATERIALIZED VIEW canonical.mv_college_cards');
+      // Long batches (many minutes) can outlive the checked-out client's
+      // connection (pooler idle/statement timeout); use a fresh query from
+      // the pool for this step rather than the same long-lived client so a
+      // dead connection here doesn't discard an otherwise-successful run.
+      try {
+        await pool.query('REFRESH MATERIALIZED VIEW canonical.mv_college_cards');
+      } catch (e) {
+        console.error('MV refresh failed (data was still written; refresh manually):', e.message);
+      }
     }
     console.log('\nDone:', JSON.stringify(summary));
   } catch (e) {
