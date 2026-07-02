@@ -83,3 +83,29 @@ jobs:
           test -f scraper/sources/wikidata_enrich.py || { echo "::error::wikidata_enrich.py missing"; exit 1; }
       - name: Run Wikidata enrichment
         run: python scraper/sources/wikidata_enrich.py
+
+  arwu-rankings:
+    # ARWU (Shanghai Ranking) — open, non-commercial global ranking. Node adapter
+    # (backend/src/scrapers/adapters/arwuRankings.js) run through the unified
+    # scraper framework, matching nirfRankings.js's shape. Independent of the
+    # Python cwur/qs/wikidata jobs above, so it does not need to wait on them.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci || npm install
+      - name: Preflight
+        run: |
+          set -euo pipefail
+          [ -n "${DATABASE_URL:-}" ] || { echo "::error title=MissingSecret::DATABASE_URL not configured"; exit 1; }
+          test -f backend/src/scrapers/adapters/arwuRankings.js || { echo "::error::arwuRankings.js missing"; exit 1; }
+      - name: Run ARWU rankings scraper
+        working-directory: backend
+        run: node scripts/runScraper.js arwuRankings

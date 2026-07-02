@@ -16,6 +16,7 @@ const ADAPTERS = {
   usDeadlines: require('../src/scrapers/adapters/usOfficialDeadlines').adapter,
   usRequirements: require('../src/scrapers/adapters/usOfficialRequirements').adapter,
   nirfRankings: require('../src/scrapers/adapters/nirfRankings').adapter,
+  arwuRankings: require('../src/scrapers/adapters/arwuRankings').adapter,
   institutionPlacements: require('../src/scrapers/adapters/institutionPlacements').adapter,
 };
 
