@@ -1,0 +1,79 @@
+name: Deadlines, Requirements & Placements Refresh
+
+# Runs the primary-source live scrapers for canonical.institution_deadlines,
+# canonical.institution_requirements, canonical.institution_rankings (NIRF), and
+# placement outcomes through the unified framework (fetch -> validate ->
+# idempotent upsert with source attribution). These adapters exist and are
+# verified working (backend/src/scrapers/adapters/usOfficialDeadlines.js,
+# usOfficialRequirements.js, nirfRankings.js, institutionPlacements.js) but were
+# previously only runnable manually via workflow_dispatch on scraper-enrich.yml,
+# whose SCHEDULED trigger only ever ran the wikidata adapter. This workflow gives
+# each of the other adapters its own schedule.
+#
+# Re-running is safe (ON CONFLICT upserts, requireNewRows guards). Rows that
+# cannot be confidently sourced from the live page are skipped, never fabricated
+# — see each adapter's file header for its sourcing posture.
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  schedule:
+    - cron: '0 6 * * 3'   # weekly, Wednesday 06:00 UTC (offset from scraper-enrich's Tuesday run)
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Max institutions to process per adapter'
+        required: false
+        default: '200'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deadlines-requirements-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Run deadlines/requirements/rankings/placements adapters
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci || npm install
+
+      - name: Run us-official-deadlines
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/runScraper.js usDeadlines --limit="${{ github.event.inputs.limit || '200' }}"
+        continue-on-error: true
+
+      - name: Run us-official-requirements
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/runScraper.js usRequirements --limit="${{ github.event.inputs.limit || '200' }}"
+        continue-on-error: true
+
+      - name: Run nirf-rankings
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/runScraper.js nirfRankings --limit="${{ github.event.inputs.limit || '200' }}"
+        continue-on-error: true
+
+      - name: Run institution-placements
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/runScraper.js institutionPlacements --limit="${{ github.event.inputs.limit || '200' }}"
+        continue-on-error: true
