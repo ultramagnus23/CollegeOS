@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const config = require('../config/env');
 const { hashIdentifier, safeError, sanitizeForLog } = require('../utils/safeLogger');
+const sentry = require('../utils/sentry');
 
 // Generate a unique request ID for tracking
 function generateRequestId() {
@@ -22,6 +23,13 @@ const errorHandler = (err, req, res, next) => {
     userId: req.user?.userId ? hashIdentifier(req.user.userId) : null,
     ip: sanitizeForLog(req.ip),
     error: err,
+  });
+
+  sentry.captureException(err, {
+    requestId,
+    method: req.method,
+    path: req.originalUrl,
+    userId: req.user?.userId ? hashIdentifier(req.user.userId) : null,
   });
 
   if (req.body && Object.keys(req.body).length > 0) {

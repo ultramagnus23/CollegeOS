@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { captureException } from '@/lib/sentry';
 
 interface AuthErrorBoundaryState {
   hasError: boolean;
@@ -36,6 +37,7 @@ export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErr
       stack: error instanceof Error ? error.stack : undefined,
       componentStack: stack,
     });
+    captureException(error, { boundary: 'auth', componentStack: stack });
   }
 
   handleRetry() {

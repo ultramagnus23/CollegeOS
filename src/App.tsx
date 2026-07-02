@@ -19,6 +19,7 @@ import { TutorialProvider, TutorialOverlay } from "./components/tutorial/Tutoria
 import { OnboardingProvider } from "./contexts/OnboardingContext";
 import { isMastersTrackEnabled } from "./config/featureFlags";
 import AuthErrorBoundary from "./components/errors/AuthErrorBoundary";
+import { captureException } from "./lib/sentry";
 
 // Eagerly loaded — on the critical path for first render
 import Landing from "./pages/Landing";
@@ -82,6 +83,10 @@ class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryStat
   static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
     const message = error instanceof Error ? error.message : String(error);
     return { hasError: true, message };
+  }
+
+  componentDidCatch(error: unknown) {
+    captureException(error);
   }
 
   render() {
