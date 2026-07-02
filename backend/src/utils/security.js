@@ -8,6 +8,11 @@ const path = require('path');
 const LOG_ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*m/g;
 const LOG_CONTROL_PATTERN = /[\r\n\t]/g;
 const PROTOTYPE_POLLUTION_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const DANGEROUS_KEY_PATTERN = /^(__proto__|constructor|prototype)$/;
+
+function isDangerousKey(key) {
+  return DANGEROUS_KEY_PATTERN.test(key) || PROTOTYPE_POLLUTION_KEYS.has(key);
+}
 
 /**
  * Sanitize any value for safe logging.
@@ -45,9 +50,14 @@ function safeAssign(target, source, allowedKeys = null) {
     : null;
 
   for (const key of Object.keys(source)) {
-    if (PROTOTYPE_POLLUTION_KEYS.has(key)) continue;
+    if (isDangerousKey(key)) continue;
     if (allowSet && !allowSet.has(key)) continue;
-    target[key] = source[key];
+    Object.defineProperty(target, key, {
+      value: source[key],
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
   }
   return target;
 }
@@ -91,11 +101,14 @@ function sanitizeObject(obj) {
   const cleaned = Object.create(null);
 
   for (const key of Object.keys(obj)) {
-    if (PROTOTYPE_POLLUTION_KEYS.has(key)) continue;
+    if (isDangerousKey(key)) continue;
     const value = obj[key];
-    cleaned[key] = (typeof value === 'object' && value !== null)
-      ? sanitizeObject(value)
-      : value;
+    Object.defineProperty(cleaned, key, {
+      value: (typeof value === 'object' && value !== null) ? sanitizeObject(value) : value,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
   }
 
   return cleaned;

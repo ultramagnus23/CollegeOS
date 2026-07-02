@@ -17,6 +17,7 @@ const PASSWORD_PATTERN = /\b(?:password|passwd|pwd)\s*[:=]\s*[^,\s]+/gi;
 const SENSITIVE_KEY_PATTERN = /(authorization|cookie|email|jwt|password|profile|secret|session|token|body|headers?)/i;
 const HASHED_IDENTIFIER_KEY_PATTERN = /(?:^|_)(user(?:id)?|account(?:id)?|owner(?:id)?|actor(?:id)?)(?:$|_)/i;
 const OMIT_IN_PRODUCTION_KEY_PATTERN = /(^sql$|params|payload|stack|fullError)/i;
+const DANGEROUS_KEY_PATTERN = /^(__proto__|constructor|prototype)$/;
 
 function hashIdentifier(value) {
   if (value === null || value === undefined || value === '') return null;
@@ -97,18 +98,18 @@ function sanitizeForLog(value, options = {}) {
       }));
     }
 
-    const sanitizedObject = {};
+    const sanitizedObject = Object.create(null);
     for (const [objectKey, objectValue] of Object.entries(value)) {
-      if (config.nodeEnv === 'production' && OMIT_IN_PRODUCTION_KEY_PATTERN.test(objectKey)) {
-        sanitizedObject[objectKey] = '[OMITTED_IN_PRODUCTION]';
-        continue;
-      }
+      if (DANGEROUS_KEY_PATTERN.test(objectKey)) continue;
 
-      sanitizedObject[objectKey] = sanitizeForLog(objectValue, {
-        key: objectKey,
-        maxLength,
-        depth: depth + 1,
-        seen,
+      const isOmitted = config.nodeEnv === 'production' && OMIT_IN_PRODUCTION_KEY_PATTERN.test(objectKey);
+      Object.defineProperty(sanitizedObject, objectKey, {
+        value: isOmitted
+          ? '[OMITTED_IN_PRODUCTION]'
+          : sanitizeForLog(objectValue, { key: objectKey, maxLength, depth: depth + 1, seen }),
+        writable: true,
+        enumerable: true,
+        configurable: true,
       });
     }
     return sanitizedObject;

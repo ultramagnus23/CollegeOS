@@ -24,6 +24,7 @@ const path = require('path');
 const pQueue = require('p-queue').default;
 const Bottleneck = require('bottleneck');
 const { HttpsProxyAgent } = require('https-proxy-agent');
+const { sanitizeLogInput } = require('../src/utils/security');
 
 // Use stealth plugin to avoid bot detection
 puppeteer.use(StealthPlugin());
@@ -565,30 +566,44 @@ async function scrapeCDSData(college) {
       };
     }
 
-    // Download and parse PDF
-    const pdfPath = path.join(CONFIG.PDF_CACHE_DIR, `cds_${college.id}.pdf`);
-    
+    // Download and parse PDF. college.id must be a safe filename component
+    // (internal DB primary key, never raw scraped text) before it touches the filesystem.
+    const safeId = String(college.id).replace(/[^a-zA-Z0-9_-]/g, '');
+    if (!safeId) {
+      throw new Error('Invalid college id for PDF cache path');
+    }
+    const pdfPath = path.join(CONFIG.PDF_CACHE_DIR, `cds_${safeId}.pdf`);
+
     // Validate the resolved path stays within the cache directory
     const resolvedPath = path.resolve(pdfPath);
     if (!resolvedPath.startsWith(path.resolve(CONFIG.PDF_CACHE_DIR) + path.sep)) {
       throw new Error('Invalid PDF cache path');
     }
-    
-    // Check cache first
+
+    // Download unless already cached. Write via a exclusive-create temp file +
+    // atomic rename so a concurrent run can't read a partially-written file
+    // (avoids the check-then-write TOCTOU race of existsSync + writeFile).
     if (!fsSync.existsSync(pdfPath)) {
-      logger.info(`Downloading CDS PDF for ${college.name}`);
+      logger.info(`Downloading CDS PDF for ${sanitizeLogInput(college.name)}`);
       const pdfResponse = await axios.get(pdfUrl, {
         responseType: 'arraybuffer',
         maxContentLength: 50 * 1024 * 1024, // 50MB max
         ...getAxiosConfig(college.country, pdfUrl)
       });
-      
+
       // Validate response before writing to disk
       if (!pdfResponse.data || pdfResponse.data.length === 0) {
         throw new Error('Empty PDF response');
       }
-      
-      await fs.writeFile(pdfPath, pdfResponse.data);
+
+      const tmpPath = `${pdfPath}.${process.pid}.${Date.now()}.tmp`;
+      try {
+        await fs.writeFile(tmpPath, pdfResponse.data, { flag: 'wx' });
+        await fs.rename(tmpPath, pdfPath);
+      } catch (writeError) {
+        await fs.unlink(tmpPath).catch(() => {});
+        if (!fsSync.existsSync(pdfPath)) throw writeError;
+      }
     }
 
     // Parse PDF
