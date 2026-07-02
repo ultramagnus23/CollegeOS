@@ -5,6 +5,7 @@
 import { apiFetch } from '../utils/apiClient';
 import { sanitizeOnboardingPayload } from '../utils/sanitizeOnboardingPayload';
 import { trackDuration, trackMetric } from '../observability';
+import { trackEvent } from '../lib/analytics';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
@@ -615,10 +616,12 @@ class ApiService {
   }
 
   async createApplication(data: any) {
-    return this.request('/applications', {
+    const response = await this.request('/applications', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    trackEvent('application_created', { collegeId: data?.collegeId ?? data?.college_id });
+    return response;
   }
 
   async updateApplication(id: number, data: any) {

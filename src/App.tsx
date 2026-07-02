@@ -1,6 +1,6 @@
 // FILE: src/App.tsx
 import React, { lazy, Suspense, useState, useEffect, Component, ReactNode } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { Toaster } from "@/components/ui/toaster";
@@ -20,6 +20,15 @@ import { OnboardingProvider } from "./contexts/OnboardingContext";
 import { isMastersTrackEnabled } from "./config/featureFlags";
 import AuthErrorBoundary from "./components/errors/AuthErrorBoundary";
 import { captureException } from "./lib/sentry";
+import { trackPageview } from "./lib/analytics";
+
+function PageviewTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    trackPageview(location.pathname);
+  }, [location.pathname]);
+  return null;
+}
 
 // Eagerly loaded — on the critical path for first render
 import Landing from "./pages/Landing";
@@ -155,6 +164,7 @@ const AppContent = () => {
       <Sonner />
 
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <PageviewTracker />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Landing />} />
