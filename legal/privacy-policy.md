@@ -418,8 +418,8 @@ We may require verification of your identity before processing your request.
    Email: suhsuhbros@gmail.com
    Email: suhsuhbros@gmail.com
 
-14.4 **Regulatory Contact.** [If applicable]
-   Supervisory Authority: [AUTHORITY NAME AND CONTACT]
+14.4 **Regulatory Contact.**
+   Supervisory Authority: Data Protection Board of India, established under the Digital Personal Data Protection Act, 2023, Ministry of Electronics and Information Technology, Government of India (meity.gov.in)
 
 ---
 
