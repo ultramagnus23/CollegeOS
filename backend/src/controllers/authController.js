@@ -5,6 +5,8 @@ const { getSnapshot, logSnapshot } = require('../services/onboardingMetrics');
 const { safeError, safeLog } = require('../utils/safeLogger');
 const logger = require('../utils/logger');
 const { reportError } = require('../utils/errorReporter');
+const config = require('../config/env');
+const firebaseAdmin = require('../utils/firebaseAdmin');
 
 class AuthController {
   // Register
@@ -253,12 +255,41 @@ class AuthController {
   // Google login / register via Firebase
   static async googleLogin(req, res, next) {
     try {
-      const { googleId, email, name } = req.body;
+      const { idToken } = req.body;
+      let { googleId, email, name } = req.body;
+
+      // SECURITY: Prefer a verified Firebase ID token. Never trust a raw
+      // client-supplied googleId/email — that is an account-takeover vector.
+      if (idToken && firebaseAdmin.isVerificationAvailable()) {
+        const claims = await firebaseAdmin.verifyIdToken(idToken);
+        googleId = claims.uid;
+        email = claims.email;
+        name = claims.name || name || 'Google User';
+      } else if (config.nodeEnv === 'production') {
+        // In production we must have a verifiable token. Refuse the legacy
+        // unverified path outright.
+        logger.error('GOOGLE_LOGIN_UNVERIFIED_BLOCKED', {
+          ip: req.ip,
+          hasIdToken: !!idToken,
+          verificationAvailable: firebaseAdmin.isVerificationAvailable()
+        });
+        return res.status(401).json({
+          success: false,
+          message: 'Google sign-in requires a verified token',
+          errorType: 'UNVERIFIED_GOOGLE_TOKEN'
+        });
+      } else {
+        // Non-production only: allow the legacy unverified path but warn loudly.
+        logger.warn('GOOGLE_LOGIN_UNVERIFIED_DEV', {
+          ip: req.ip,
+          reason: idToken ? 'firebase-admin not configured' : 'no idToken supplied'
+        });
+      }
 
       if (!googleId || !email) {
         return res.status(400).json({
           success: false,
-          message: 'googleId and email are required'
+          message: 'A verified Google identity (idToken) is required'
         });
       }
 

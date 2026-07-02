@@ -1,5 +1,7 @@
 'use strict';
 
+const { validateBeforeWrite } = require('./verifiedDataGuards');
+
 // ============================================================================
 // Reusable validated, idempotent, logged upsert — the anti-"silent overwrite"
 // writer. Scrapers/seeders MUST write through this instead of a blind INSERT or
@@ -9,6 +11,18 @@
 //
 // Distinguishing insert vs update uses Postgres' `xmax = 0` trick on the
 // RETURNING row: a freshly-inserted tuple has xmax 0, an updated one does not.
+//
+// verifiedDataGuards integration (docs/data_guardrails.md): pass
+// `enableFabricationGuard: true` to also run every row through
+// validateBeforeWrite, composed with any caller-supplied `validateRow` (both
+// must pass). OPT-IN, not opt-out: idempotentUpsert already serves several
+// existing callers/tables (deadlines, requirements, placements) that predate
+// the provenance schema and don't carry `source`/`verification_status` fields
+// on their rows - forcing the guard on by default would hard-reject every row
+// from those callers (rule 1/2 of the guard: no source / no verification_status
+// -> reject), silently breaking working scrapers. Callers writing to one of the
+// 14 provenance-bearing canonical.* tables (see docs/data_provenance_design.md)
+// should opt in explicitly once their rows are shaped to carry those fields.
 // ============================================================================
 
 function redactRow(row) {
@@ -39,6 +53,7 @@ async function idempotentUpsert(opts) {
   const {
     client, table, columns, conflictColumns, rows,
     validateRow, logger = console, label = table, dryRun = false,
+    enableFabricationGuard = false, guardConfig = {},
   } = opts;
 
   if (!client || !table || !Array.isArray(columns) || !columns.length || !Array.isArray(conflictColumns) || !conflictColumns.length) {
@@ -60,11 +75,23 @@ async function idempotentUpsert(opts) {
   const stats = { total: Array.isArray(rows) ? rows.length : 0, inserted: 0, updated: 0, rejected: 0, skipped: 0 };
 
   for (const row of (Array.isArray(rows) ? rows : [])) {
-    const verdict = validateRow ? validateRow(row) : { valid: true };
-    if (!verdict || !verdict.valid) {
+    const callerVerdict = validateRow ? validateRow(row) : { valid: true };
+    if (!callerVerdict || !callerVerdict.valid) {
       stats.rejected += 1;
-      logger.warn(`[${label}] REJECTED invalid row: ${verdict?.reason || 'failed validation'}`, redactRow(row));
+      logger.warn(`[${label}] REJECTED invalid row: ${callerVerdict?.reason || 'failed validation'}`, redactRow(row));
       continue;
+    }
+
+    if (enableFabricationGuard) {
+      const guardVerdict = validateBeforeWrite(row, guardConfig);
+      if (guardVerdict.decision === 'reject') {
+        stats.rejected += 1;
+        logger.warn(`[${label}] REJECTED by fabrication guard: ${guardVerdict.reasons.join('; ')}`, redactRow(row));
+        continue;
+      }
+      if (guardVerdict.decision === 'flag') {
+        logger.warn(`[${label}] FLAGGED (written, needs review): ${guardVerdict.reasons.join('; ')}`, redactRow(row));
+      }
     }
     if (dryRun) { stats.skipped += 1; continue; }
     const values = columns.map((c) => (row[c] === undefined ? null : row[c]));

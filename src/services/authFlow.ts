@@ -86,6 +86,22 @@ function toFirebaseIdentity(firebaseUser: unknown): FirebaseIdentity | null {
   };
 }
 
+/**
+ * Extract the signed Firebase ID token from the SDK user object so the backend
+ * can verify the identity server-side instead of trusting a raw uid/email.
+ */
+async function extractIdToken(firebaseUser: unknown): Promise<string | null> {
+  if (!firebaseUser || typeof firebaseUser !== 'object') return null;
+  const getIdToken = (firebaseUser as Record<string, unknown>).getIdToken;
+  if (typeof getIdToken !== 'function') return null;
+  try {
+    const token = await (getIdToken as () => Promise<unknown>).call(firebaseUser);
+    return typeof token === 'string' ? token : null;
+  } catch {
+    return null;
+  }
+}
+
 export function createAuthEventLogger(logger: AuthLogger = console.info): AuthLogger {
   const isDev = (() => {
     try {
@@ -120,7 +136,7 @@ export function normalizeGoogleLoginResponse(response: unknown): NormalizedLogin
 interface GoogleSignInParams {
   auth: unknown;
   getRedirectResultFn?: (auth: unknown) => Promise<unknown>;
-  loginWithGoogle: (uid: string, email: string, displayName: string | null) => Promise<LoginResponse>;
+  loginWithGoogle: (uid: string, email: string, displayName: string | null, idToken?: string | null) => Promise<LoginResponse>;
   log?: AuthLogger;
 }
 
@@ -141,7 +157,8 @@ export async function completeRedirectGoogleSignIn({
       return { status: 'noop', attemptId };
     }
 
-    const backendResponse = await loginWithGoogle(identity.uid, identity.email, identity.displayName);
+    const idToken = await extractIdToken((redirectResult as Record<string, unknown>)?.user);
+    const backendResponse = await loginWithGoogle(identity.uid, identity.email, identity.displayName, idToken);
     const normalized = normalizeGoogleLoginResponse(backendResponse);
     log('redirect_backend_sync_completed', {
       attemptId,
@@ -166,7 +183,7 @@ interface RunGoogleSignInParams {
   googleProvider: unknown;
   signInWithPopupFn: (auth: unknown, provider: unknown) => Promise<unknown>;
   signInWithRedirectFn: (auth: unknown, provider: unknown) => Promise<void>;
-  loginWithGoogle: (uid: string, email: string, displayName: string | null) => Promise<LoginResponse>;
+  loginWithGoogle: (uid: string, email: string, displayName: string | null, idToken?: string | null) => Promise<LoginResponse>;
   log?: AuthLogger;
 }
 
@@ -195,7 +212,8 @@ export async function runGoogleSignInFlow({
       };
     }
 
-    const backendResponse = await loginWithGoogle(identity.uid, identity.email, identity.displayName);
+    const idToken = await extractIdToken(popupResult?.user);
+    const backendResponse = await loginWithGoogle(identity.uid, identity.email, identity.displayName, idToken);
     const normalized = normalizeGoogleLoginResponse(backendResponse);
     log('backend_sync_completed', {
       attemptId,
