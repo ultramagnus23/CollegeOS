@@ -38,6 +38,9 @@ const FIELDS = [
   'latest.cost.tuition.in_state',
   'latest.cost.tuition.out_of_state',
   'latest.aid.median_debt.completers.overall',
+  'latest.aid.pell_grant_rate',
+  'latest.repayment.3_yr_default_rate',
+  'latest.student.share_firstgeneration',
   'latest.student.size',
   'latest.student.enrollment.undergrad_12_month',
   'latest.cost.avg_net_price.public',
@@ -104,6 +107,9 @@ function mapRow(r) {
     tuition_domestic: tuitionIn,
     avg_debt_at_graduation: num(r['latest.aid.median_debt.completers.overall']),
     net_price: num(r['latest.cost.avg_net_price.public']) ?? num(r['latest.cost.avg_net_price.private']),
+    pell_grant_rate: pct(r['latest.aid.pell_grant_rate']),
+    loan_default_rate_3yr: pct(r['latest.repayment.3_yr_default_rate']),
+    percent_first_gen: pct(r['latest.student.share_firstgeneration']),
     enrollment: num(r['latest.student.size']),
     undergraduate_enrollment: num(r['latest.student.enrollment.undergrad_12_month']),
     graduation_rate_4yr: pct(r['latest.completion.completion_rate_4yr_100nt']),
@@ -151,12 +157,12 @@ async function upsert(client, institutionId, d) {
     );
   }
 
-  if (d.cost_of_attendance != null || d.tuition_in_state != null || d.tuition_out_state != null || d.net_price != null) {
+  if (d.cost_of_attendance != null || d.tuition_in_state != null || d.tuition_out_state != null || d.net_price != null || d.pell_grant_rate != null) {
     await client.query(
       `INSERT INTO canonical.institution_financials
          (institution_id, data_year, cost_of_attendance, tuition_in_state, tuition_out_state,
-          tuition_domestic, avg_debt_at_graduation, net_price, source_attribution, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb, now())
+          tuition_domestic, avg_debt_at_graduation, net_price, pell_grant_rate, source_attribution, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb, now())
        ON CONFLICT ON CONSTRAINT uq_institution_financials DO UPDATE SET
          cost_of_attendance=COALESCE(EXCLUDED.cost_of_attendance, canonical.institution_financials.cost_of_attendance),
          tuition_in_state=COALESCE(EXCLUDED.tuition_in_state, canonical.institution_financials.tuition_in_state),
@@ -164,18 +170,19 @@ async function upsert(client, institutionId, d) {
          tuition_domestic=COALESCE(EXCLUDED.tuition_domestic, canonical.institution_financials.tuition_domestic),
          avg_debt_at_graduation=COALESCE(EXCLUDED.avg_debt_at_graduation, canonical.institution_financials.avg_debt_at_graduation),
          net_price=COALESCE(EXCLUDED.net_price, canonical.institution_financials.net_price),
+         pell_grant_rate=COALESCE(EXCLUDED.pell_grant_rate, canonical.institution_financials.pell_grant_rate),
          source_attribution=EXCLUDED.source_attribution, updated_at=now()`,
       [institutionId, DATA_YEAR, d.cost_of_attendance, d.tuition_in_state, d.tuition_out_state,
-        d.tuition_domestic, d.avg_debt_at_graduation, d.net_price, attribution],
+        d.tuition_domestic, d.avg_debt_at_graduation, d.net_price, d.pell_grant_rate, attribution],
     );
   }
 
-  if (d.graduation_rate_4yr != null || d.graduation_rate_6yr != null || d.median_start_salary != null || d.median_mid_career_salary != null) {
+  if (d.graduation_rate_4yr != null || d.graduation_rate_6yr != null || d.median_start_salary != null || d.median_mid_career_salary != null || d.loan_default_rate_3yr != null) {
     await client.query(
       `INSERT INTO canonical.institution_outcomes
          (institution_id, data_year, graduation_rate_4yr, graduation_rate_6yr, median_start_salary, median_mid_career_salary,
-          median_salary_1yr, median_salary_5yr, source_attribution, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb, now())
+          median_salary_1yr, median_salary_5yr, loan_default_rate_3yr, source_attribution, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb, now())
        ON CONFLICT ON CONSTRAINT uq_institution_outcomes DO UPDATE SET
          graduation_rate_4yr=COALESCE(EXCLUDED.graduation_rate_4yr, canonical.institution_outcomes.graduation_rate_4yr),
          graduation_rate_6yr=COALESCE(EXCLUDED.graduation_rate_6yr, canonical.institution_outcomes.graduation_rate_6yr),
@@ -183,9 +190,22 @@ async function upsert(client, institutionId, d) {
          median_mid_career_salary=COALESCE(EXCLUDED.median_mid_career_salary, canonical.institution_outcomes.median_mid_career_salary),
          median_salary_1yr=COALESCE(EXCLUDED.median_salary_1yr, canonical.institution_outcomes.median_salary_1yr),
          median_salary_5yr=COALESCE(EXCLUDED.median_salary_5yr, canonical.institution_outcomes.median_salary_5yr),
+         loan_default_rate_3yr=COALESCE(EXCLUDED.loan_default_rate_3yr, canonical.institution_outcomes.loan_default_rate_3yr),
          source_attribution=EXCLUDED.source_attribution, updated_at=now()`,
       [institutionId, DATA_YEAR, d.graduation_rate_4yr, d.graduation_rate_6yr, d.median_start_salary, d.median_mid_career_salary,
-        d.median_salary_1yr, d.median_salary_5yr, attribution],
+        d.median_salary_1yr, d.median_salary_5yr, d.loan_default_rate_3yr, attribution],
+    );
+  }
+
+  if (d.percent_first_gen != null) {
+    await client.query(
+      `INSERT INTO canonical.institution_demographics
+         (institution_id, data_year, data_year_key, percent_first_gen, source_attribution, updated_at)
+       VALUES ($1,$2,$2,$3,$4::jsonb, now())
+       ON CONFLICT (institution_id, data_year_key) DO UPDATE SET
+         percent_first_gen=COALESCE(EXCLUDED.percent_first_gen, canonical.institution_demographics.percent_first_gen),
+         source_attribution=EXCLUDED.source_attribution, updated_at=now()`,
+      [institutionId, DATA_YEAR, d.percent_first_gen, attribution],
     );
   }
 
