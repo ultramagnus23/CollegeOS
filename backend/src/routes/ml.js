@@ -103,7 +103,7 @@ router.post('/student-outcome', authenticate, async (req, res, next) => {
       ]
     );
     
-    logger.info(`ML training data recorded for user ${userId}, college ${sanitizeForLog(collegeId)}, decision: ${sanitizeForLog(decision)}`);
+    logger.info(`ML training data recorded for user ${sanitizeForLog(userId)}, college ${sanitizeForLog(collegeId)}, decision: ${sanitizeForLog(decision)}`);
     
     res.status(201).json({
       success: true,
@@ -422,7 +422,7 @@ router.put('/consent', authenticate, async (req, res, next) => {
     const pool = dbManager.getDatabase();
     await pool.query('UPDATE users SET ml_consent = $1 WHERE id = $2', [consent, req.user.userId]);
     
-    logger.info(`User ${req.user.userId} updated ML consent to: ${sanitizeForLog(consent)}`);
+    logger.info(`User ${sanitizeForLog(req.user.userId)} updated ML consent to: ${sanitizeForLog(consent)}`);
     
     res.json({
       success: true,

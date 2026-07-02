@@ -10,6 +10,7 @@ const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const { batchLimiter } = require('../middleware/rateLimiter');
 const logger = require('../utils/logger');
+const { sanitizeForLog } = require('../utils/security');
 
 // Use consolidated service (primary)
 const consolidatedChancingService = require('../services/consolidatedChancingService');
@@ -120,7 +121,7 @@ router.post('/batch', authenticate, batchLimiter, async (req, res) => {
           const fitData = await consolidatedChancingService.classifyFit(userId, collegeId);
           return { collegeId, fitData };
         } catch (err) {
-          logger.warn(`Fit classification failed for college ${collegeId}:`, err.message);
+          logger.warn(`Fit classification failed for college ${sanitizeForLog(collegeId)}:`, err.message);
           return { collegeId, fitData: null };
         }
       })

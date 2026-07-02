@@ -31,6 +31,8 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const Orchestrator = require('./scrapeOrchestrator');
+const { sanitizeForLog } = require('../src/utils/security');
+const { sensitiveLimiter } = require('../src/middleware/rateLimiter');
 
 const PORT = parseInt(process.env.SCRAPING_PORT || '3001');
 const SECRET = process.env.SCRAPING_SECRET || null;
@@ -64,15 +66,16 @@ async function callOrchestratorOrSkip(methodName, ...args) {
 // ── Job runner with lock ────────────────────────────────────────────────
 
 async function runJob(jobName, fn) {
+  const safeJobName = sanitizeForLog(jobName);
   if (state.isRunning) {
-    console.log(`[scraper] Skipping ${jobName} — another job is running (${state.currentJob})`);
+    console.log(`[scraper] Skipping ${safeJobName} — another job is running (${sanitizeForLog(state.currentJob)})`);
     return null;
   }
 
   state.isRunning = true;
   state.currentJob = jobName;
   const start = Date.now();
-  console.log(`\n[scraper] ▶ Starting: ${jobName}`);
+  console.log(`\n[scraper] ▶ Starting: ${safeJobName}`);
 
   try {
     const result = await fn();
@@ -80,13 +83,13 @@ async function runJob(jobName, fn) {
     state.lastRun = new Date().toISOString();
     state.lastResult = { job: jobName, result, elapsed: parseFloat(elapsed), success: true };
     state.runsCompleted++;
-    console.log(`[scraper] ✓ Done: ${jobName} (${elapsed}s)`);
+    console.log(`[scraper] ✓ Done: ${safeJobName} (${elapsed}s)`);
     return result;
   } catch (e) {
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
     state.lastResult = { job: jobName, error: e.message, elapsed: parseFloat(elapsed), success: false };
     state.runsFailed++;
-    console.error(`[scraper] ✗ Failed: ${jobName} — ${e.message}`);
+    console.error(`[scraper] ✗ Failed: ${safeJobName} — ${sanitizeForLog(e.message)}`);
     return null;
   } finally {
     state.isRunning = false;
@@ -208,7 +211,7 @@ function setupServer(jobs) {
    * Requires auth if SCRAPING_SECRET is set
    * Jobs: daily | scorecard | ipeds | admissions | intl | full
    */
-  app.post('/scraper/trigger/:job', requireAuth, async (req, res) => {
+  app.post('/scraper/trigger/:job', sensitiveLimiter, requireAuth, async (req, res) => {
     const { job } = req.params;
 
     const jobMap = {
@@ -327,7 +330,7 @@ async function start() {
     console.log(`\n[scraper] Received ${signal}, shutting down gracefully...`);
     jobs.forEach(j => j.job.stop());
     if (state.isRunning) {
-      console.log(`[scraper] Waiting for ${state.currentJob} to finish...`);
+      console.log(`[scraper] Waiting for ${sanitizeForLog(state.currentJob)} to finish...`);
       await new Promise(r => {
         const check = setInterval(() => { if (!state.isRunning) { clearInterval(check); r(); } }, 1000);
       });

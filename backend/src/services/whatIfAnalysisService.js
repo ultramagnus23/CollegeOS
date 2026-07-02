@@ -34,7 +34,14 @@ function applyChanges(originalProfile, changes) {
   Object.entries(safeChanges).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
       // Handle nested paths like 'sat_ebrw' or 'gpa_weighted'
-      modifiedProfile[key] = value;
+      // (key is already vetted by sanitizeObject above; defineProperty avoids
+      // the special __proto__ assignment semantics as defense in depth)
+      Object.defineProperty(modifiedProfile, key, {
+        value,
+        writable: true,
+        enumerable: true,
+        configurable: true,
+      });
       
       // Recalculate derived values
       if (key === 'sat_ebrw' || key === 'sat_math') {
