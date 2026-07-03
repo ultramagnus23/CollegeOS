@@ -3,6 +3,7 @@ import { api } from '@/services/api';
 import { Loader2, CheckCircle2, Circle, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { parseDateOnly } from '@/utils/dateOnly';
 
 const ACCENT_COLORS = ['#6C63FF', '#3B9EFF', '#A855F7', '#F97316', '#10B981', '#F59E0B'];
 
@@ -188,9 +189,9 @@ export function Timeline() {
                           <span className="font-bold text-foreground">{deadline.college_name}</span>
                           <span className="text-muted-foreground text-sm ml-2">{deadline.deadline_type}</span>
                         </div>
-                        {deadline.deadline_date && (
+                        {deadline.deadline_date && parseDateOnly(deadline.deadline_date) && (
                           <span className="text-xs text-muted-foreground flex-shrink-0">
-                            {format(new Date(deadline.deadline_date), 'MMM d')}
+                            {format(parseDateOnly(deadline.deadline_date)!, 'MMM d')}
                           </span>
                         )}
                       </div>

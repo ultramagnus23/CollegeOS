@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Calendar, Clock } from 'lucide-react';
 import { api } from '../services/api';
+import { parseDateOnly } from '../utils/dateOnly';
 
 /* ─── Design tokens ──────────────────────────────────────────────── */
 const ACCENT = '#3B9EFF';
@@ -85,7 +86,8 @@ export default function MastersTimeline() {
 
   // Group by month
   const grouped = dated.reduce<Record<string, TimelineDeadline[]>>((acc, dl) => {
-    const month = new Date(dl.deadline_date as string).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const parsed = parseDateOnly(dl.deadline_date as string);
+    const month = parsed ? parsed.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown';
     acc[month] = acc[month] || [];
     acc[month].push(dl);
     return acc;

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { List, CalendarDays, Calendar, ExternalLink, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+import { parseDateOnly } from '../utils/dateOnly';
 
 /* ─── Design tokens ──────────────────────────────────────────────── */
 const ACCENT = '#3B9EFF';
@@ -83,7 +84,7 @@ const MastersDeadlines: React.FC = () => {
       data.sort((a, b) => {
         if (!a.deadline_date) return 1;
         if (!b.deadline_date) return -1;
-        return new Date(a.deadline_date).getTime() - new Date(b.deadline_date).getTime();
+        return (parseDateOnly(a.deadline_date)?.getTime() ?? 0) - (parseDateOnly(b.deadline_date)?.getTime() ?? 0);
       });
       setDeadlines(data);
     } catch {
