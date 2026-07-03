@@ -59,6 +59,15 @@ const TARGETS = [
   { name: 'Rutgers University-New Brunswick', url: 'https://admissions.rutgers.edu/apply' },
   { name: 'University of Iowa', url: 'https://admissions.uiowa.edu/apply' },
   { name: 'Loyola Marymount University', url: 'https://admission.lmu.edu/apply' },
+  { name: 'Carnegie Mellon University', url: 'https://admission.enrollment.cmu.edu/admission/apply' },
+  { name: 'Boston University', url: 'https://www.bu.edu/admissions/apply' },
+  { name: 'Emory University', url: 'https://apply.emory.edu/apply' },
+  { name: 'Elon University', url: 'https://www.elon.edu/apply' },
+  { name: 'Denison University', url: 'https://www.denison.edu/apply' },
+  { name: 'Franklin and Marshall College', url: 'https://www.fandm.edu/apply' },
+  { name: 'Muhlenberg College', url: 'https://www.muhlenberg.edu/apply' },
+  { name: 'Macalester College', url: 'https://www.macalester.edu/apply' },
+  { name: 'Lawrence University', url: 'https://www.lawrence.edu/apply' },
 ];
 
 const MONTHS = {
