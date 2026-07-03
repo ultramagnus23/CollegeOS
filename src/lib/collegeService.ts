@@ -158,30 +158,48 @@ async function getSearchIndexInstitutionIds(query: string): Promise<CanonicalId[
   return (fb ?? []).map((row: { id: CanonicalId }) => row.id).filter(Boolean);
 }
 
+// UI sort values (Colleges.tsx's <select>) -> RPC p_sort values. 'name' has no
+// RPC case (alphabetical sort is only meaningful for the no-query browse path,
+// which uses the direct query builder's canonical_name ordering instead).
+const UI_SORT_TO_RPC_SORT: Record<string, string> = {
+  acceptance_rate: 'acceptance',
+  tuition: 'tuition',
+  ranking: 'ranking',
+  popularity: 'popularity',
+};
+
 // Discovery search: parse the natural-language query into structured params and
 // resolve ranked ids via canonical.search_colleges (entity + keyword/major +
 // filters + intent sort). Falls back to entity-only resolution if unavailable.
-async function resolveSearchIds(query: string, filters: CollegeFilters): Promise<CanonicalId[]> {
+// p_q may be null (used for the "browse with composite sort, no search text"
+// case — e.g. Popular sort with an empty search box — since the RPC's WHERE
+// clause treats a null/empty p_q as "match everything").
+async function resolveSearchIds(query: string | null, filters: CollegeFilters): Promise<CanonicalId[]> {
   const client = requireClient();
-  const parsed = parseSearchQuery(query);
+  const parsed = query ? parseSearchQuery(query) : null;
+  // An explicit sort the user picked from the dropdown always wins over the
+  // natural-language-guessed sort (e.g. typing "cheap mit" while "Ranking" is
+  // selected in the dropdown should still sort by ranking).
+  const explicitSort = filters.sortBy ? UI_SORT_TO_RPC_SORT[filters.sortBy] : undefined;
   const { data, error } = await client.schema('canonical').rpc('search_colleges', {
-    p_q: parsed.entity,
-    p_keywords: parsed.keywords,
-    p_country: filters.country ?? parsed.country ?? null,
-    p_max_tuition: filters.maxTuition ?? parsed.maxTuition ?? null,
+    p_q: parsed?.entity ?? null,
+    p_keywords: parsed?.keywords ?? null,
+    p_country: filters.country ?? parsed?.country ?? null,
+    p_max_tuition: filters.maxTuition ?? parsed?.maxTuition ?? null,
     p_min_acceptance: filters.minAcceptance ?? null,
     p_max_acceptance: filters.maxAcceptance ?? null,
-    p_test_optional: parsed.testOptional,
-    p_sort: parsed.sort,
+    p_test_optional: parsed?.testOptional ?? null,
+    p_sort: explicitSort ?? parsed?.sort ?? 'relevance',
     p_limit: 500,
     p_offset: 0,
+    p_program: filters.program ?? null,
   });
 
   if (!error && Array.isArray(data)) {
     return data.map((row: { institution_id: CanonicalId }) => row.institution_id).filter(Boolean);
   }
   if (error) debugCanonical('search_colleges_fallback', { message: error.message });
-  return getSearchIndexInstitutionIds(query);
+  return query ? getSearchIndexInstitutionIds(query) : [];
 }
 
 async function enrichCardRows(baseRows: CanonicalCardRow[]): Promise<Array<Record<string, unknown>>> {
@@ -241,6 +259,7 @@ export interface CollegeFilters {
   state?: string;
   type?: string;
   setting?: string;
+  program?: string;
   minAcceptance?: number;
   maxAcceptance?: number;
   maxTuition?: number;
@@ -277,9 +296,15 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
   return timed('searchColleges', async () => {
     // Relevance path: when a text query is present, resolve ranked ids first and
     // preserve that order (server-side .order would clobber relevance ranking).
+    // Also routed through the RPC (with p_q=null, matching everything) for
+    // 'popularity' sort and program filtering — neither has a real single-column
+    // equivalent the direct query builder below can express: popularity_score is
+    // 0 for 99.99% of institutions (no real signal to sort by directly), and the
+    // program filter needs an EXISTS join against institution_programs.
     let rankedIds: CanonicalId[] | null = null;
-    if (query?.trim()) {
-      rankedIds = await resolveSearchIds(query, filters);
+    const needsRpc = Boolean(query?.trim()) || sortBy === 'popularity' || Boolean(filters.program);
+    if (needsRpc) {
+      rankedIds = await resolveSearchIds(query?.trim() || null, filters);
       if (rankedIds.length === 0) {
         return { data: [], count: 0, page: safePage, pageSize: safePageSize, totalPages: 1 };
       }
@@ -326,7 +351,13 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
     const from = (safePage - 1) * safePageSize;
     const to = from + safePageSize - 1;
 
-    const { data, error, count } = await q.order(column, { ascending }).range(from, to);
+    // Secondary tiebreaker on `id` guarantees a deterministic row order across
+    // separate paginated calls — without it, ties on the primary sort column
+    // (e.g. many institutions sharing the same canonical_name-adjacent value,
+    // or NULL cost_of_attendance/acceptance_rate) can return overlapping or
+    // skipped rows between pages, since Postgres doesn't guarantee stable
+    // ordering among ties across independent query executions.
+    const { data, error, count } = await q.order(column, { ascending }).order('id', { ascending: true }).range(from, to);
     if (error) throw error;
 
     const parsedRows = (data ?? []).map((raw) => parseFrontendCollegeCardOrThrow(raw as unknown)) as CanonicalCardRow[];

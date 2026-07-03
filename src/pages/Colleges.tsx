@@ -217,11 +217,20 @@ const Colleges: React.FC = () => {
 
       if (isSupabaseConfigured) {
         // ── Supabase path: server-side filtering + correct pagination ────────
+        // sortBy and program are both resolved server-side now (searchColleges
+        // routes 'popularity' and any program filter through the search_colleges
+        // RPC, which has a real composite quality ordering and a real EXISTS
+        // filter against institution_programs) — previously this silently
+        // remapped every non-trivial sort to 'name' and only re-sorted the
+        // already-fetched ~20-row page client-side, so switching sort modes
+        // never changed WHICH colleges were fetched, only their order within
+        // an alphabetically-paginated slice (the "same colleges again and
+        // again" symptom).
         const result = await searchColleges({
           query:   debouncedSearchTerm   || undefined,
           country: selectedCountry || undefined,
-          // 'popularity' and 'ranking' are handled client-side on the page result
-          sortBy:  (sortBy === 'ranking' || sortBy === 'popularity') ? 'name' : sortBy,
+          program: selectedProgram || undefined,
+          sortBy,
           page:    currentPage,
         });
 
@@ -270,18 +279,13 @@ const Colleges: React.FC = () => {
           );
         }
 
-        // Client-side sort for modes the RPC doesn't natively support
-        const popularityScore = (c: any) =>
-          (c.popularity_score ?? 0) * 10 +
-          ((c.ranking != null ? Math.max(0, 300 - c.ranking) / 300 : 0) * 3) +
-          ((c.acceptanceRate != null ? (1 - c.acceptanceRate) : 0.3) * 2);
-
-        const sorted =
-          sortBy === 'ranking'
-            ? [...deduped].sort((a, b) => (a.ranking || 999) - (b.ranking || 999))
-            : sortBy === 'popularity'
-              ? [...deduped].sort((a, b) => popularityScore(b) - popularityScore(a))
-              : deduped.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        // No client-side re-sort here: searchColleges() already returns this
+        // page in the correct server-resolved order for whichever sort mode is
+        // active (see the comment above the searchColleges call). Re-sorting a
+        // single already-paginated page client-side can only make it locally
+        // consistent with itself, not with the other pages of the same sort —
+        // which was the actual bug.
+        const sorted = deduped;
 
         setTotalCount(result.count);
         setTotalPages(result.totalPages);
