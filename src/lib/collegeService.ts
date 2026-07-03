@@ -193,6 +193,7 @@ async function resolveSearchIds(query: string | null, filters: CollegeFilters): 
     p_limit: 500,
     p_offset: 0,
     p_program: filters.program ?? null,
+    p_institution_type: filters.type ?? null,
   });
 
   if (!error && Array.isArray(data)) {
@@ -302,7 +303,7 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
     // 0 for 99.99% of institutions (no real signal to sort by directly), and the
     // program filter needs an EXISTS join against institution_programs.
     let rankedIds: CanonicalId[] | null = null;
-    const needsRpc = Boolean(query?.trim()) || sortBy === 'popularity' || Boolean(filters.program);
+    const needsRpc = Boolean(query?.trim()) || sortBy === 'popularity' || Boolean(filters.program) || Boolean(filters.type);
     if (needsRpc) {
       rankedIds = await resolveSearchIds(query?.trim() || null, filters);
       if (rankedIds.length === 0) {
@@ -316,6 +317,10 @@ export async function searchColleges(filters: CollegeFilters = {}): Promise<Sear
     if (minAcceptance !== undefined) q = q.gte('acceptance_rate', minAcceptance);
     if (maxAcceptance !== undefined) q = q.lte('acceptance_rate', maxAcceptance);
     if (maxTuition !== undefined) q = q.lte('cost_of_attendance', maxTuition);
+    // institution_type casing is inconsistent across ingestion sources
+    // ("Public" vs "public") — ILIKE (no wildcards) does an exact,
+    // case-insensitive match instead of silently missing half the real rows.
+    if (filters.type && !rankedIds) q = q.ilike('institution_type', filters.type);
 
     if (rankedIds) {
       // The RPC already applied every filter and produced ranked ids, so hydrate
