@@ -49,7 +49,7 @@ Last Updated: June 20, 2026
 ## 4. ADMISSIONS CHANCE PREDICTIONS DISCLAIMER
 
 4.1 **Predictions Are Estimates, Not Facts.** Admissions chance percentages and probabilities:
-   (a) Are statistical estimates based on historical patterns;
+   (a) Are model estimates trained on applicants simulated from published per-college statistics (acceptance rate, median test scores) — not on real admission outcomes, because CollegeOS does not yet have a large enough set of real, labeled admission decisions;
    (b) Are NOT predictions of future events;
    (c) Are NOT guarantees of admission or rejection;
    (d) Are NOT endorsed by any college or university;
@@ -59,8 +59,8 @@ Last Updated: June 20, 2026
 
 4.2 **Factors Affecting Accuracy.** The accuracy of admissions predictions depends on:
    (a) The quality and completeness of your Academic Profile;
-   (b) The availability and accuracy of historical admissions data;
-   (c) The relevance of training data to your specific circumstances;
+   (b) The availability and accuracy of the published per-college statistics the simulation is built from;
+   (c) The relevance of simulated training data to your specific circumstances;
    (d) Changes in college admissions policies and practices;
    (e) The competitiveness of the applicant pool in any given year;
    (f) Non-quantifiable factors (essays, interviews, legacy status, etc.).

@@ -30,6 +30,7 @@ import { DataFreshnessIndicator } from '@/components/DataFreshnessIndicator';
 import { getCollegeById, isSupabaseConfigured, normalizeToDetail } from '../lib/collegeService';
 import { useAuth } from '../contexts/AuthContext';
 import ConfidenceBadge from '../components/ConfidenceBadge';
+import { AIDisclaimer } from '@/components/legal/AIDisclaimer';
 import { usePreferredCurrency } from '../hooks/usePreferredCurrency';
 import { formatCountryName, getCountryTheme, normalizeCountryCode } from '../lib/country';
 const COLLEGE_SYNC_DEBUG = import.meta.env.DEV;
@@ -989,8 +990,9 @@ const CollegeDetail: React.FC = () => {
                   })()}
                 </div>
                 </div>
-                <div className="text-xs text-muted-foreground max-w-xs">
-                  ⚠️ This is an estimate based on reported median stats for all applicants. International applicant pools are typically more selective.
+                <div className="text-xs text-muted-foreground max-w-xs space-y-1">
+                  <p>This is an estimate based on reported median stats for all applicants. International applicant pools are typically more selective.</p>
+                  <AIDisclaimer variant="estimate" />
                 </div>
               </div>
             </div>

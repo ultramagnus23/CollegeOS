@@ -4,7 +4,7 @@ A college discovery, recommendation, and application-intelligence platform for g
 
 CollegeOS combines structured university data, an admissions-chancing model, financial analysis, rankings, and a multi-stage recommendation pipeline. It is built on a canonical PostgreSQL/Supabase schema, a React/TypeScript frontend, a Node.js/Express backend, and Python + Node scraper infrastructure.
 
-> **Status & honesty note.** CollegeOS is under active development. This README describes what is **actually implemented today**, not aspirations. Where a capability is partial or not yet live, it says so. See `SYSTEM_STATUS_FINAL.md`, `DATA_STATUS.md`, `ML_STATUS.md`, and `SCRAPER_STATUS.md` for verified, point-in-time detail.
+> **Status & honesty note.** CollegeOS is under active development. This README describes what is **actually implemented today**, not aspirations. Where a capability is partial or not yet live, it says so. See `docs/audits/SYSTEM_STATUS_FINAL.md`, `docs/audits/DATA_STATUS.md`, `docs/audits/ML_STATUS.md`, and `docs/audits/SCRAPER_STATUS.md` for verified, point-in-time detail.
 
 ---
 
@@ -18,7 +18,7 @@ CollegeOS combines structured university data, an admissions-chancing model, fin
 
 ## What is partial / not yet live (so the README stays honest)
 
-- **Semantic / vector search is NOT enabled.** `pgvector` is not installed; an embeddings table exists but is not used for retrieval. Search is keyword + trigram + acronym matching today.
+- **Semantic / vector retrieval is live for recommendations, not for search.** `pgvector` is installed and `canonical.institution_embeddings` is backfilled for all ~8,500 institutions (see Recommendation Engine below). User-facing search (`canonical.search_colleges`) is still keyword + trigram + acronym matching, not vector-based.
 - **Deadlines & requirements coverage is sparse** (being populated from primary sources — see below). The *infrastructure* is in place; broad data is not yet.
 - **The chancing model is trained on simulated data**, because no labeled real admission outcomes exist in the system yet. It is honest and calibrated, but not validated against real admits/rejects.
 - **Scheduled GitHub Actions refresh is currently gated** (`action_required`) at the repo/org level and does not run automatically until an admin clears it.
@@ -35,7 +35,7 @@ The user-facing search is a Supabase RPC, `canonical.search_colleges` (plus `can
 - filters: country, acceptance-rate range, cost
 - relevance ranking: exact/entity match → institutional quality (`global_rank`, then selectivity) → keyword strength
 
-Semantic/embedding ranking is **planned, not implemented** (`pgvector` is not installed).
+Semantic/embedding ranking for search itself is **planned, not implemented**. (The recommendation pipeline below does use `pgvector` embeddings — that's a separate code path from search.)
 
 ---
 
@@ -43,10 +43,12 @@ Semantic/embedding ranking is **planned, not implemented** (`pgvector` is not in
 
 A multi-stage pipeline under `backend/src/services/recommendation/`:
 
-1. **Candidate retrieval** — filtered retrieval from the canonical schema (not vector/semantic retrieval today).
+1. **Candidate retrieval** — hybrid: `pgvector` cosine-similarity search over `canonical.institution_embeddings` (768-dim, backfilled for all ~8,500 institutions via a deterministic free hash-based embedding — `embeddingService.js`, model id `collegeos-text-hash-768`) blended with lexical/subject-relevance scoring (`embedding/hybridRetrieval.js`), gated on a live infra-health check (`pipelineDiagnostics.js` confirms the `vector` extension is installed and `embeddingCount > 0` before every request). Falls back to deterministic filtered retrieval if the vector infra check fails.
 2. **Ranking** — academic fit, major alignment, affordability, selectivity, outcomes, popularity.
 3. **Diversification** — Reach / Target / Safety / Wildcard buckets.
 4. **Explainability** — score breakdowns, reasoning summaries, confidence.
+
+Note: the embedding model is a deterministic hashed bag-of-words vectorizer, not a trained semantic model — it captures lexical/token overlap, not deep semantic meaning. Upgrading to a real sentence-embedding model is future work, tracked separately from "is pgvector wired in."
 
 ---
 
@@ -55,7 +57,7 @@ A multi-stage pipeline under `backend/src/services/recommendation/`:
 Admissions probability is produced by `backend/src/services/consolidatedChancingService.js` (the single chancing service — legacy Flask/FastAPI services were removed). It is **model-first with a heuristic fallback**:
 
 - **Model:** a calibrated logistic-regression model (`backend/ml/`, trained by `backend/ml/trainChancingModel.js`). Features: SAT vs college median, GPA, and college selectivity (logit of acceptance rate).
-- **Honesty:** there are currently **no labeled real admission outcomes** in the system, so the model is trained on applicants **simulated from real per-college statistics** (acceptance rate + median SAT). Reported ROC-AUC / Brier / precision-recall are **synthetic-holdout** metrics — they measure recovery of the stats-grounded relationship, not validated accuracy against real admits/rejects. See `ML_STATUS.md` and `MODEL_REPORT.md`.
+- **Honesty:** there are currently **no labeled real admission outcomes** in the system, so the model is trained on applicants **simulated from real per-college statistics** (acceptance rate + median SAT). Reported ROC-AUC / Brier / precision-recall are **synthetic-holdout** metrics — they measure recovery of the stats-grounded relationship, not validated accuracy against real admits/rejects. See `docs/audits/ML_STATUS.md` and `docs/audits/MODEL_REPORT.md`.
 - **Real-label path:** `POST /api/chancing/outcome` captures real outcomes into `ml_training_data` + `prediction_logs`; the trainer **auto-switches to real labels** once ≥200 accepted/rejected rows exist. Until then it uses the simulation and says so (`dataset.synthetic: true`).
 - **Fallback:** when a college lacks stats or the student lacks a test score, a 7-factor heuristic is used. Every result carries `probability_source` (`model` | `heuristic`).
 
@@ -65,7 +67,7 @@ Admissions probability is produced by `backend/src/services/consolidatedChancing
 
 A normalized schema under `canonical.*` (institutions, admissions, financials, outcomes, rankings, deadlines, requirements, demographics, programs, embeddings, popularity). The frontend read contract is the materialized view `canonical.mv_college_cards`. Migrations live in **`backend/migrations/`** and are applied by `backend/src/config/database.js`.
 
-Current coverage (point-in-time; see `DATA_STATUS.md` for live numbers):
+Current coverage (point-in-time; see `docs/audits/DATA_STATUS.md` for live numbers):
 
 | Domain | Status |
 |---|---|
@@ -92,7 +94,7 @@ Scrapers write through a single validated, idempotent path: `backend/src/scraper
 - `backend/scripts/refreshScorecard.js` — U.S. Dept. of Education College Scorecard API → `canonical.institutions` (+admissions/financials), idempotent, keyed on the IPEDS id.
 - `backend/src/scrapers/adapters/usOfficialDeadlines.js` — reads deadline dates live from universities' own admissions pages (never fabricated; skips pages it cannot parse).
 
-**Known-broken / legacy (not the source of truth):** the older deadline orchestrator, the Python `scraper/pipeline.py` (writes the legacy `colleges_comprehensive` tables), and `scrapers/run_deadline_refresh.py` all suffer schema drift. See `SCRAPER_STATUS.md`.
+**Known-broken / legacy (not the source of truth):** the older deadline orchestrator, the Python `scraper/pipeline.py` (writes the legacy `colleges_comprehensive` tables), and `scrapers/run_deadline_refresh.py` all suffer schema drift, but remain wired into `daily-data-refresh.yml`, `scrape-weekly.yml`, and `scrape-monthly.yml` — do not delete without first migrating those workflows onto the canonical scrapers. See `docs/audits/SCRAPER_STATUS.md`.
 
 **Sourcing policy:** primary + open sources only. Never fabricate; skipped institutions are logged with a reason.
 
@@ -102,7 +104,7 @@ Scrapers write through a single validated, idempotent path: `backend/src/scraper
 
 - **Frontend:** React, TypeScript, Vite, TailwindCSS (project root)
 - **Backend:** Node.js, Express (`backend/`)
-- **Database:** PostgreSQL + Supabase (with `pg_trgm`, `unaccent`; **no `pgvector`** yet)
+- **Database:** PostgreSQL + Supabase (with `pg_trgm`, `unaccent`, `pgvector`)
 - **Scrapers:** Python + Node (`scraper/`, `scrapers/`, `backend/src/scrapers/`)
 - **CI:** GitHub Actions (`.github/workflows/`) — currently gated pending admin approval
 
