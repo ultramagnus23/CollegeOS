@@ -103,6 +103,13 @@ const Colleges: React.FC = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('');
+  const [selectedType, setSelectedType] = useState('');
+  const [minAcceptance, setMinAcceptance] = useState('');
+  const [maxAcceptance, setMaxAcceptance] = useState('');
+  const [maxTuition, setMaxTuition] = useState('');
+  const [debouncedMinAcceptance, setDebouncedMinAcceptance] = useState('');
+  const [debouncedMaxAcceptance, setDebouncedMaxAcceptance] = useState('');
+  const [debouncedMaxTuition, setDebouncedMaxTuition] = useState('');
   const [sortBy, setSortBy] = useState('popularity');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -167,11 +174,20 @@ const Colleges: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedMinAcceptance(minAcceptance);
+      setDebouncedMaxAcceptance(maxAcceptance);
+      setDebouncedMaxTuition(maxTuition);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [minAcceptance, maxAcceptance, maxTuition]);
+
   /* ==================== LOAD COLLEGES ==================== */
 
   useEffect(() => {
     loadColleges();
-  }, [debouncedSearchTerm, selectedCountry, selectedProgram, sortBy, currentPage, user]);
+  }, [debouncedSearchTerm, selectedCountry, selectedProgram, selectedType, debouncedMinAcceptance, debouncedMaxAcceptance, debouncedMaxTuition, sortBy, currentPage, user]);
 
   /**
    * Fetch fit classifications for all college IDs using the batch endpoint.
@@ -217,11 +233,24 @@ const Colleges: React.FC = () => {
 
       if (isSupabaseConfigured) {
         // ── Supabase path: server-side filtering + correct pagination ────────
+        // sortBy and program are both resolved server-side now (searchColleges
+        // routes 'popularity' and any program filter through the search_colleges
+        // RPC, which has a real composite quality ordering and a real EXISTS
+        // filter against institution_programs) — previously this silently
+        // remapped every non-trivial sort to 'name' and only re-sorted the
+        // already-fetched ~20-row page client-side, so switching sort modes
+        // never changed WHICH colleges were fetched, only their order within
+        // an alphabetically-paginated slice (the "same colleges again and
+        // again" symptom).
         const result = await searchColleges({
           query:   debouncedSearchTerm   || undefined,
           country: selectedCountry || undefined,
-          // 'popularity' and 'ranking' are handled client-side on the page result
-          sortBy:  (sortBy === 'ranking' || sortBy === 'popularity') ? 'name' : sortBy,
+          program: selectedProgram || undefined,
+          type:    selectedType || undefined,
+          minAcceptance: debouncedMinAcceptance !== '' ? Number(debouncedMinAcceptance) / 100 : undefined,
+          maxAcceptance: debouncedMaxAcceptance !== '' ? Number(debouncedMaxAcceptance) / 100 : undefined,
+          maxTuition:    debouncedMaxTuition !== '' ? Number(debouncedMaxTuition) : undefined,
+          sortBy,
           page:    currentPage,
         });
 
@@ -270,18 +299,13 @@ const Colleges: React.FC = () => {
           );
         }
 
-        // Client-side sort for modes the RPC doesn't natively support
-        const popularityScore = (c: any) =>
-          (c.popularity_score ?? 0) * 10 +
-          ((c.ranking != null ? Math.max(0, 300 - c.ranking) / 300 : 0) * 3) +
-          ((c.acceptanceRate != null ? (1 - c.acceptanceRate) : 0.3) * 2);
-
-        const sorted =
-          sortBy === 'ranking'
-            ? [...deduped].sort((a, b) => (a.ranking || 999) - (b.ranking || 999))
-            : sortBy === 'popularity'
-              ? [...deduped].sort((a, b) => popularityScore(b) - popularityScore(a))
-              : deduped.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        // No client-side re-sort here: searchColleges() already returns this
+        // page in the correct server-resolved order for whichever sort mode is
+        // active (see the comment above the searchColleges call). Re-sorting a
+        // single already-paginated page client-side can only make it locally
+        // consistent with itself, not with the other pages of the same sort —
+        // which was the actual bug.
+        const sorted = deduped;
 
         setTotalCount(result.count);
         setTotalPages(result.totalPages);
@@ -581,6 +605,42 @@ const Colleges: React.FC = () => {
                   </select>
                 </div>
                 <div>
+                  <label style={{ fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font }}>Type</label>
+                  <select value={selectedType} onChange={(e) => { setSelectedType(e.target.value); setCurrentPage(1); }} style={sel}>
+                    <option value="">All Types</option>
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                    <option value="for-profit">For-Profit</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font }}>Min Acceptance %</label>
+                  <input
+                    type="number" min={0} max={100} placeholder="0"
+                    value={minAcceptance}
+                    onChange={(e) => { setMinAcceptance(e.target.value); setCurrentPage(1); }}
+                    style={sel}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font }}>Max Acceptance %</label>
+                  <input
+                    type="number" min={0} max={100} placeholder="100"
+                    value={maxAcceptance}
+                    onChange={(e) => { setMaxAcceptance(e.target.value); setCurrentPage(1); }}
+                    style={sel}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font }}>Max Tuition ($)</label>
+                  <input
+                    type="number" min={0} step={1000} placeholder="Any"
+                    value={maxTuition}
+                    onChange={(e) => { setMaxTuition(e.target.value); setCurrentPage(1); }}
+                    style={sel}
+                  />
+                </div>
+                <div>
                   <label style={{ fontSize: 11, color: S.dim, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6, fontWeight: 600, display: 'block', fontFamily: S.font }}>Sort By</label>
                   <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }} style={sel}>
                     <option value="popularity">Most Popular</option>
@@ -592,7 +652,7 @@ const Colleges: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                   <button
-                    onClick={() => { setSearchTerm(''); setSelectedCountry(''); setSelectedProgram(''); setSortBy('popularity'); setCurrentPage(1); }}
+                    onClick={() => { setSearchTerm(''); setSelectedCountry(''); setSelectedProgram(''); setSelectedType(''); setMinAcceptance(''); setMaxAcceptance(''); setMaxTuition(''); setSortBy('popularity'); setCurrentPage(1); }}
                     style={{ width: '100%', padding: '10px 14px', background: 'transparent', border: `1px solid ${S.border2}`, borderRadius: 10, color: S.muted, fontSize: 13, fontFamily: S.font, cursor: 'pointer' }}
                   >
                     Clear All

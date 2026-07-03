@@ -38,7 +38,13 @@ const FIELDS = [
   'latest.cost.tuition.in_state',
   'latest.cost.tuition.out_of_state',
   'latest.aid.median_debt.completers.overall',
+  'latest.aid.pell_grant_rate',
+  'latest.repayment.3_yr_default_rate',
+  'latest.student.share_firstgeneration',
   'latest.student.size',
+  'latest.student.enrollment.undergrad_12_month',
+  'latest.cost.avg_net_price.public',
+  'latest.cost.avg_net_price.private',
   'latest.completion.completion_rate_4yr_100nt',
   'latest.completion.completion_rate_4yr_150nt',
   'latest.earnings.6_yrs_after_entry.median',
@@ -56,12 +62,20 @@ const num = (v) => (v === null || v === undefined || v === '' || Number.isNaN(Nu
 const sumOrNull = (a, b) => (num(a) != null && num(b) != null ? num(a) + num(b) : null);
 const pct = (frac) => (num(frac) != null ? Math.round(num(frac) * 1000) / 10 : null); // 0-1 -> 0-100
 
-async function fetchChunk(ids) {
+async function fetchChunk(ids, attempt = 1) {
   const url = `${API_BASE}?id=${ids.join(',')}&per_page=100&fields=${FIELDS}&api_key=${API_KEY}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Scorecard API ${res.status} ${res.statusText}`);
-  const json = await res.json();
-  return json.results || [];
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Scorecard API ${res.status} ${res.statusText}`);
+    const json = await res.json();
+    return json.results || [];
+  } catch (e) {
+    // Transient network blips are common over a long-running batch; retry
+    // twice with backoff before letting the chunk fail for real.
+    if (attempt >= 3) throw e;
+    await new Promise((r) => setTimeout(r, attempt * 1500));
+    return fetchChunk(ids, attempt + 1);
+  }
 }
 
 function mapRow(r) {
@@ -100,7 +114,12 @@ function mapRow(r) {
     tuition_out_state: tuitionOut,
     tuition_domestic: tuitionIn,
     avg_debt_at_graduation: num(r['latest.aid.median_debt.completers.overall']),
+    net_price: num(r['latest.cost.avg_net_price.public']) ?? num(r['latest.cost.avg_net_price.private']),
+    pell_grant_rate: pct(r['latest.aid.pell_grant_rate']),
+    loan_default_rate_3yr: pct(r['latest.repayment.3_yr_default_rate']),
+    percent_first_gen: pct(r['latest.student.share_firstgeneration']),
     enrollment: num(r['latest.student.size']),
+    undergraduate_enrollment: num(r['latest.student.enrollment.undergrad_12_month']),
     graduation_rate_4yr: pct(r['latest.completion.completion_rate_4yr_100nt']),
     graduation_rate_6yr: pct(r['latest.completion.completion_rate_4yr_150nt']),
     median_start_salary: num(r['latest.earnings.6_yrs_after_entry.median']),
@@ -146,30 +165,32 @@ async function upsert(client, institutionId, d) {
     );
   }
 
-  if (d.cost_of_attendance != null || d.tuition_in_state != null || d.tuition_out_state != null) {
+  if (d.cost_of_attendance != null || d.tuition_in_state != null || d.tuition_out_state != null || d.net_price != null || d.pell_grant_rate != null) {
     await client.query(
       `INSERT INTO canonical.institution_financials
          (institution_id, data_year, cost_of_attendance, tuition_in_state, tuition_out_state,
-          tuition_domestic, avg_debt_at_graduation, source_attribution, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb, now())
+          tuition_domestic, avg_debt_at_graduation, net_price, pell_grant_rate, source_attribution, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb, now())
        ON CONFLICT ON CONSTRAINT uq_institution_financials DO UPDATE SET
          cost_of_attendance=COALESCE(EXCLUDED.cost_of_attendance, canonical.institution_financials.cost_of_attendance),
          tuition_in_state=COALESCE(EXCLUDED.tuition_in_state, canonical.institution_financials.tuition_in_state),
          tuition_out_state=COALESCE(EXCLUDED.tuition_out_state, canonical.institution_financials.tuition_out_state),
          tuition_domestic=COALESCE(EXCLUDED.tuition_domestic, canonical.institution_financials.tuition_domestic),
          avg_debt_at_graduation=COALESCE(EXCLUDED.avg_debt_at_graduation, canonical.institution_financials.avg_debt_at_graduation),
+         net_price=COALESCE(EXCLUDED.net_price, canonical.institution_financials.net_price),
+         pell_grant_rate=COALESCE(EXCLUDED.pell_grant_rate, canonical.institution_financials.pell_grant_rate),
          source_attribution=EXCLUDED.source_attribution, updated_at=now()`,
       [institutionId, DATA_YEAR, d.cost_of_attendance, d.tuition_in_state, d.tuition_out_state,
-        d.tuition_domestic, d.avg_debt_at_graduation, attribution],
+        d.tuition_domestic, d.avg_debt_at_graduation, d.net_price, d.pell_grant_rate, attribution],
     );
   }
 
-  if (d.graduation_rate_4yr != null || d.graduation_rate_6yr != null || d.median_start_salary != null || d.median_mid_career_salary != null) {
+  if (d.graduation_rate_4yr != null || d.graduation_rate_6yr != null || d.median_start_salary != null || d.median_mid_career_salary != null || d.loan_default_rate_3yr != null) {
     await client.query(
       `INSERT INTO canonical.institution_outcomes
          (institution_id, data_year, graduation_rate_4yr, graduation_rate_6yr, median_start_salary, median_mid_career_salary,
-          median_salary_1yr, median_salary_5yr, source_attribution, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb, now())
+          median_salary_1yr, median_salary_5yr, loan_default_rate_3yr, source_attribution, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb, now())
        ON CONFLICT ON CONSTRAINT uq_institution_outcomes DO UPDATE SET
          graduation_rate_4yr=COALESCE(EXCLUDED.graduation_rate_4yr, canonical.institution_outcomes.graduation_rate_4yr),
          graduation_rate_6yr=COALESCE(EXCLUDED.graduation_rate_6yr, canonical.institution_outcomes.graduation_rate_6yr),
@@ -177,21 +198,36 @@ async function upsert(client, institutionId, d) {
          median_mid_career_salary=COALESCE(EXCLUDED.median_mid_career_salary, canonical.institution_outcomes.median_mid_career_salary),
          median_salary_1yr=COALESCE(EXCLUDED.median_salary_1yr, canonical.institution_outcomes.median_salary_1yr),
          median_salary_5yr=COALESCE(EXCLUDED.median_salary_5yr, canonical.institution_outcomes.median_salary_5yr),
+         loan_default_rate_3yr=COALESCE(EXCLUDED.loan_default_rate_3yr, canonical.institution_outcomes.loan_default_rate_3yr),
          source_attribution=EXCLUDED.source_attribution, updated_at=now()`,
       [institutionId, DATA_YEAR, d.graduation_rate_4yr, d.graduation_rate_6yr, d.median_start_salary, d.median_mid_career_salary,
-        d.median_salary_1yr, d.median_salary_5yr, attribution],
+        d.median_salary_1yr, d.median_salary_5yr, d.loan_default_rate_3yr, attribution],
     );
   }
 
-  // enrollment lives in institutions.metadata.total_enrollment (read by the card);
-  // always bump updated_at so the rolling cycle advances.
+  if (d.percent_first_gen != null) {
+    await client.query(
+      `INSERT INTO canonical.institution_demographics
+         (institution_id, data_year, percent_first_gen, source_attribution, updated_at)
+       VALUES ($1,$2,$3,$4::jsonb, now())
+       ON CONFLICT (institution_id, data_year_key) DO UPDATE SET
+         percent_first_gen=COALESCE(EXCLUDED.percent_first_gen, canonical.institution_demographics.percent_first_gen),
+         source_attribution=EXCLUDED.source_attribution, updated_at=now()`,
+      [institutionId, DATA_YEAR, d.percent_first_gen, attribution],
+    );
+  }
+
+  // total_enrollment lives in institutions.metadata (read by the card);
+  // undergraduate_enrollment is a real migration-127 column. Always bump
+  // updated_at so the rolling refresh cycle advances regardless.
   await client.query(
     `UPDATE canonical.institutions
        SET metadata = CASE WHEN $2::int IS NULL THEN metadata
                            ELSE jsonb_set(coalesce(metadata,'{}'::jsonb), '{total_enrollment}', to_jsonb($2::int)) END,
+           undergraduate_enrollment = COALESCE($3::int, undergraduate_enrollment),
            updated_at = now()
      WHERE id = $1`,
-    [institutionId, d.enrollment],
+    [institutionId, d.enrollment, d.undergraduate_enrollment],
   );
 }
 
@@ -199,6 +235,10 @@ async function main() {
   if (!API_KEY) { console.error('Missing COLLEGE_SCORECARD_API_KEY'); process.exit(2); }
   const pool = dbManager.initialize();
   const client = await pool.connect();
+  // A checked-out client is its own EventEmitter; a failed statement (e.g. a
+  // constraint violation) can leave the underlying socket in a state that
+  // later drops with an unhandled 'error' event, crashing the whole batch.
+  client.on('error', (err) => console.error('  pg client error (continuing):', err.message));
   const summary = { selected: 0, fetched: 0, upserted: 0, noData: 0, errors: 0 };
   try {
     const { rows: targets } = await client.query(
@@ -212,6 +252,7 @@ async function main() {
     console.log(`Refreshing ${targets.length} least-recently-updated US institutions (data_year ${DATA_YEAR})${DRY ? ' [DRY RUN]' : ''}`);
 
     const ids = [...byIpeds.keys()];
+    const touchedIpeds = new Set();
     for (let i = 0; i < ids.length; i += CHUNK) {
       const chunk = ids.slice(i, i + CHUNK);
       let results;
@@ -222,6 +263,7 @@ async function main() {
         const d = mapRow(r);
         const institutionId = byIpeds.get(d.ipeds);
         if (!institutionId) continue;
+        touchedIpeds.add(d.ipeds);
         const hasData = d.acceptance_rate != null || d.cost_of_attendance != null || d.median_start_salary != null || d.enrollment != null || d.sat_50 != null;
         if (!hasData) { summary.noData += 1; }
         if (DRY) { if (hasData) console.log(`  ${d.ipeds} ${d.name}: accept=${d.acceptance_rate} cost=${d.cost_of_attendance} enroll=${d.enrollment} sal10=${d.median_mid_career_salary}`); continue; }
@@ -231,9 +273,31 @@ async function main() {
       process.stdout.write(`  progress ${Math.min(i + CHUNK, ids.length)}/${ids.length}\r`);
     }
 
+    // Institutions Scorecard never returned (bad/stale ipeds id, closed
+    // school, etc.) previously never got updated_at bumped, so they stuck
+    // permanently at the front of the "oldest" queue and starved every
+    // subsequent run from ever reaching real institutions past them. Bump
+    // them too (no data written) so the rolling cycle actually advances.
+    const untouched = targets.filter((t) => t.ipeds && !touchedIpeds.has(String(t.ipeds)));
+    if (!DRY && untouched.length > 0) {
+      await client.query(
+        `UPDATE canonical.institutions SET updated_at = now() WHERE id = ANY($1::uuid[])`,
+        [untouched.map((t) => t.id)],
+      );
+      summary.skippedNoMatch = untouched.length;
+    }
+
     if (!DRY && summary.upserted > 0) {
       console.log('\nRefreshing materialized view...');
-      await client.query('REFRESH MATERIALIZED VIEW canonical.mv_college_cards');
+      // Long batches (many minutes) can outlive the checked-out client's
+      // connection (pooler idle/statement timeout); use a fresh query from
+      // the pool for this step rather than the same long-lived client so a
+      // dead connection here doesn't discard an otherwise-successful run.
+      try {
+        await pool.query('REFRESH MATERIALIZED VIEW canonical.mv_college_cards');
+      } catch (e) {
+        console.error('MV refresh failed (data was still written; refresh manually):', e.message);
+      }
     }
     console.log('\nDone:', JSON.stringify(summary));
   } catch (e) {

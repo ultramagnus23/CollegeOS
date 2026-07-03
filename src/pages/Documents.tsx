@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ConfirmModal from '@/components/common/ConfirmModal';
+import { daysUntilDateOnly } from '@/utils/dateOnly';
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
 interface Document {
@@ -61,7 +62,7 @@ const GLOBAL = `
 `;
 
 const getDaysUntilExpiry = (dateStr:string) => {
-  const days = Math.ceil((new Date(dateStr).getTime()-Date.now())/86400000);
+  const days = daysUntilDateOnly(dateStr) ?? 0;
   if (days < 0) return { text:'Expired', color:'#F87171' };
   if (days === 0) return { text:'Expires today', color:'#F97316' };
   if (days === 1) return { text:'Expires tomorrow', color:'#FBBF24' };

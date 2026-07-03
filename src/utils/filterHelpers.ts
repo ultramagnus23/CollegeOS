@@ -2,6 +2,7 @@
  * Filter Helper Utilities
  * Provides filtering functions for deadlines, essays, and other data
  */
+import { parseDateOnly } from './dateOnly';
 
 /**
  * Get applicable deadlines for a college (only offered types)
@@ -54,9 +55,10 @@ export function filterDeadlinesByUrgency(deadlines: any[], urgency: string) {
   const now = new Date();
   
   return deadlines.filter(deadline => {
-    const deadlineDate = new Date(deadline.deadline_date);
+    const deadlineDate = parseDateOnly(deadline.deadline_date);
+    if (!deadlineDate) return false;
     const daysUntil = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     switch (urgency) {
       case 'urgent':
         return daysUntil >= 0 && daysUntil <= 7;
@@ -171,8 +173,8 @@ export function calculateTotalWordCount(essays: any[]) {
  */
 export function sortDeadlinesByDate(deadlines: any[], ascending = true) {
   return [...deadlines].sort((a, b) => {
-    const dateA = new Date(a.deadline_date).getTime();
-    const dateB = new Date(b.deadline_date).getTime();
+    const dateA = parseDateOnly(a.deadline_date)?.getTime() ?? 0;
+    const dateB = parseDateOnly(b.deadline_date)?.getTime() ?? 0;
     return ascending ? dateA - dateB : dateB - dateA;
   });
 }
@@ -188,8 +190,8 @@ export function getUpcomingDeadlines(deadlines: any[], days = 30) {
   const future = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
   
   return deadlines.filter(deadline => {
-    const deadlineDate = new Date(deadline.deadline_date);
-    return deadlineDate >= now && deadlineDate <= future && deadline.status !== 'submitted';
+    const deadlineDate = parseDateOnly(deadline.deadline_date);
+    return !!deadlineDate && deadlineDate >= now && deadlineDate <= future && deadline.status !== 'submitted';
   });
 }
 
@@ -216,9 +218,10 @@ export function isDataStale(lastUpdated: string, maxAgeDays = 30): boolean {
  */
 export function calculateDeadlineUrgency(deadlineDate: string): string {
   const now = new Date();
-  const deadline = new Date(deadlineDate);
+  const deadline = parseDateOnly(deadlineDate);
+  if (!deadline) return 'normal';
   const daysUntil = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  
+
   if (daysUntil < 0) return 'past';
   if (daysUntil <= 7) return 'urgent';
   if (daysUntil <= 30) return 'warning';
@@ -232,15 +235,14 @@ export function calculateDeadlineUrgency(deadlineDate: string): string {
  */
 export function formatDeadlineForDisplay(deadline: any) {
   const urgency = calculateDeadlineUrgency(deadline.deadline_date);
-  const daysUntil = Math.ceil(
-    (new Date(deadline.deadline_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-  );
-  
+  const parsed = parseDateOnly(deadline.deadline_date);
+  const daysUntil = parsed ? Math.ceil((parsed.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0;
+
   return {
     ...deadline,
     urgency,
     daysUntil,
-    formattedDate: new Date(deadline.deadline_date).toLocaleDateString(),
+    formattedDate: parsed ? parsed.toLocaleDateString() : '',
     isOverdue: daysUntil < 0
   };
 }

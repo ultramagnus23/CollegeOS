@@ -403,8 +403,15 @@ class CollegeService {
     try {
       const dbManager = require('../config/database');
       const pool = dbManager.getDatabase();
+      // canonical.institution_programs is the table the actual college cards/search
+      // read (47k+ rows, live-populated). The legacy public.college_programs table
+      // this used to query is a disconnected, unrelated dataset — selecting a
+      // program from it could never match anything in the real search results.
       const rows = (await pool.query(
-        'SELECT DISTINCT program_name as category, degree_type FROM college_programs WHERE program_name IS NOT NULL ORDER BY program_name'
+        `SELECT DISTINCT program_name AS category, degree_type
+           FROM canonical.institution_programs
+          WHERE program_name IS NOT NULL
+          ORDER BY program_name`
       )).rows;
 
       return rows;

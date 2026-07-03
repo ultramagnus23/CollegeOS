@@ -32,7 +32,7 @@ const path = require('path');
 const fs = require('fs');
 const Orchestrator = require('./scrapeOrchestrator');
 const { sanitizeForLog } = require('../src/utils/security');
-const { sensitiveLimiter } = require('../src/middleware/rateLimiter');
+const { sensitiveLimiter, pollingLimiter } = require('../src/middleware/rateLimiter');
 
 const PORT = parseInt(process.env.SCRAPING_PORT || '3001');
 const SECRET = process.env.SCRAPING_SECRET || null;
@@ -253,7 +253,7 @@ function setupServer(jobs) {
    * GET /scraper/logs
    * Return last N lines from today's log file
    */
-  app.get('/scraper/logs', requireAuth, (req, res) => {
+  app.get('/scraper/logs', pollingLimiter, requireAuth, (req, res) => {
     const n = parseInt(req.query.lines || '100');
     const logDir = path.join(__dirname, '..', 'data', 'logs');
     const today = new Date().toISOString().split('T')[0];

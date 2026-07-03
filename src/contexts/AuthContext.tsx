@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import { api } from '../services/api';
 import { profileService, UserProfile } from '../services/profileService';
+import { trackEvent, identifyUser, resetUser } from '../lib/analytics';
 
 // Complete User interface with ALL possible fields
 export interface User {
@@ -142,10 +143,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     const user = response.data.user;
     setUser(user);
-    
+
     // Sync to ProfileService
     profileService.syncFromBackend(user);
-    
+    identifyUser(String(user.id), { country: user.country });
+    trackEvent('user_logged_in', { method: 'password' });
+
     return response;
   };
 
@@ -163,6 +166,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Sync to ProfileService
     profileService.syncFromBackend(user);
+    identifyUser(String(user.id), { country: user.country });
+    trackEvent('user_logged_in', { method: 'google' });
 
     return response;
   };
@@ -178,19 +183,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     const user = response.data.user;
     setUser(user);
-    
+
     // Sync to ProfileService
     profileService.syncFromBackend(user);
-    
+    identifyUser(String(user.id), { country: user.country });
+    trackEvent('user_signed_up', { method: 'password', country });
+
     return response;
   };
 
   const logout = async () => {
     await api.logout();
     setUser(null);
-    
+
     // Clear ProfileService cache
     profileService.clearProfile();
+    trackEvent('user_logged_out');
+    resetUser();
   };
 
   const completeOnboarding = async (data: any) => {
@@ -200,7 +209,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Sync full user data from backend
     profileService.syncFromBackend(updatedUser);
-    
+    trackEvent('onboarding_completed');
+
     return response;
   };
 

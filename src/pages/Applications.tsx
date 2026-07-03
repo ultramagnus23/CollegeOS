@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { Loader2, X, Search, ExternalLink, Trash2, ChevronDown, ChevronUp, Plus, CheckCircle2, Circle } from 'lucide-react';
 import { toast } from 'sonner';
 import ConfirmModal from '@/components/common/ConfirmModal';
+import { daysUntilDateOnly } from '@/utils/dateOnly';
 
 /* ─── Design tokens ──────────────────────────────────────────────── */
 const h2r = (hex: string, a: number) => {
@@ -88,7 +89,7 @@ const TIER_CFG: Record<string, { label: string; color: string; bg: string }> = {
 /* ─── Helpers ────────────────────────────────────────────────────── */
 const daysUntil = (dateStr?: string) => {
   if (!dateStr) return null;
-  return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000);
+  return daysUntilDateOnly(dateStr);
 };
 const deadlineColor = (days: number | null) => {
   if (days === null) return S.dim;

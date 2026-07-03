@@ -1,4 +1,5 @@
 const express = require('express');
+const sentry = require('./utils/sentry');
 const { patchExpressAsyncHandling } = require('./middleware/safeAsyncHandler');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -62,6 +63,18 @@ const mastersRoutes = require('./routes/masters');
 
 // Create Express app
 const app = express();
+
+if (sentry.isEnabled()) {
+  logger.info('Sentry error monitoring active');
+  process.on('unhandledRejection', (reason) => {
+    sentry.captureException(reason instanceof Error ? reason : new Error(String(reason)));
+  });
+  process.on('uncaughtException', (err) => {
+    sentry.captureException(err);
+  });
+} else {
+  logger.warn('Sentry error monitoring inactive (SENTRY_DSN not set)');
+}
 
 // Job instances for graceful shutdown
 let deadlineSchedulerInstance = null;

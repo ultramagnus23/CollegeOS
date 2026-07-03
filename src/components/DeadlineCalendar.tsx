@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { parseDateOnly } from '@/utils/dateOnly';
 
 interface Deadline {
   id: number;
@@ -27,13 +28,16 @@ export const DeadlineCalendar = ({ deadlines, onDeadlineClick }: DeadlineCalenda
   };
   
   const getDeadlinesForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return deadlines.filter(d => d.deadline_date.startsWith(dateStr));
+    return deadlines.filter(d => {
+      const parsed = parseDateOnly(d.deadline_date);
+      return !!parsed && parsed.toDateString() === date.toDateString();
+    });
   };
   
   const getDaysUntil = (dateStr: string) => {
-    const days = Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    return days;
+    const parsed = parseDateOnly(dateStr);
+    if (!parsed) return 0;
+    return Math.ceil((parsed.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   };
   
   const getUrgencyColor = (dateStr: string) => {
@@ -111,8 +115,8 @@ export const DeadlineCalendar = ({ deadlines, onDeadlineClick }: DeadlineCalenda
   
   const renderListView = () => {
     // Sort deadlines by date
-    const sortedDeadlines = [...deadlines].sort((a, b) => 
-      new Date(a.deadline_date).getTime() - new Date(b.deadline_date).getTime()
+    const sortedDeadlines = [...deadlines].sort((a, b) =>
+      (parseDateOnly(a.deadline_date)?.getTime() ?? 0) - (parseDateOnly(b.deadline_date)?.getTime() ?? 0)
     );
     
     return (
@@ -145,7 +149,7 @@ export const DeadlineCalendar = ({ deadlines, onDeadlineClick }: DeadlineCalenda
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-bold text-gray-900">
-                    {new Date(deadline.deadline_date).toLocaleDateString()}
+                    {parseDateOnly(deadline.deadline_date)?.toLocaleDateString() ?? '—'}
                   </div>
                   {!deadline.is_completed && (
                     <div className={`text-sm font-medium ${

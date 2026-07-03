@@ -316,7 +316,7 @@ Last Updated: June 20, 2026
 
 17.1 **Governing Law.** These Terms shall be governed by and construed in accordance with the laws of India, without regard to its conflict of law principles.
 
-17.2 **Arbitration.** Any dispute, claim, or controversy arising out of or relating to these Terms or the Service shall be finally settled by binding arbitration administered by a sole arbitrator appointed under the Arbitration and Conciliation Act, 1996 (India) in accordance with its rules. The arbitration shall be conducted in English in India. Judgment on the award may be entered in any court having jurisdiction.
+17.2 **Arbitration.** Any dispute, claim, or controversy arising out of or relating to these Terms or the Service shall be finally settled by binding arbitration administered by a sole arbitrator appointed under the Arbitration and Conciliation Act, 1996 (India) in accordance with its rules. The seat and venue of arbitration shall be Jaipur, Rajasthan, India, and the arbitration shall be conducted in English. Judgment on the award may be entered in any court having jurisdiction, and the courts at Jaipur, Rajasthan shall have exclusive jurisdiction over any matters not subject to arbitration.
 
 17.3 **Class Action Waiver.** TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, YOU AGREE THAT ANY DISPUTE RESOLUTION PROCEEDINGS WILL BE CONDUCTED ONLY ON AN INDIVIDUAL BASIS AND NOT IN A CLASS, CONSOLIDATED, OR REPRESENTATIVE ACTION.
 
@@ -324,7 +324,7 @@ Last Updated: June 20, 2026
 
 17.5 **Alternative Dispute Resolution.** We encourage you to contact us first to resolve any disputes informally. You may contact us at suhsuhbros@gmail.com or suhsuhbros@gmail.com. We will attempt in good faith to resolve any dispute within thirty (30) days of receiving written notice before either party initiates formal proceedings.
 
-17.6 **Minor Users — Arbitration Carve-Out.** The arbitration and class-action-waiver provisions in Sections 17.2–17.3 do **not** apply to a claim brought by or on behalf of a User who is a minor where, under applicable law, a minor cannot be bound to such provisions absent a parent or guardian's binding consent. In such cases the dispute may proceed in the courts of competent jurisdiction in India. Nothing in this Section limits any non-waivable statutory right of a minor or their parent/guardian. *(This carve-out is provided in good faith and is pending jurisdiction-specific legal review.)*
+17.6 **Minor Users — Arbitration Carve-Out.** The arbitration and class-action-waiver provisions in Sections 17.2–17.3 do **not** apply to a claim brought by or on behalf of a User who is a minor where, under applicable law, a minor cannot be bound to such provisions absent a parent or guardian's binding consent. In such cases the dispute may proceed in the courts of competent jurisdiction at Jaipur, Rajasthan, India. Nothing in this Section limits any non-waivable statutory right of a minor or their parent/guardian.
 
 ## 18. CHANGES TO TERMS
 
