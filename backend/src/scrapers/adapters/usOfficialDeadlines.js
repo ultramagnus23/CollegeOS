@@ -51,6 +51,14 @@ const TARGETS = [
   { name: 'University of Maryland-College Park', url: 'https://admissions.umd.edu' },
   { name: 'Wake Forest University', url: 'https://admissions.wfu.edu/apply' },
   { name: 'Lehigh University', url: 'https://admissions.lehigh.edu/apply' },
+  { name: 'Pomona College', url: 'https://www.pomona.edu/how-to-apply' },
+  { name: 'Davidson College', url: 'https://www.davidson.edu/apply' },
+  { name: 'Colgate University', url: 'https://www.colgate.edu/apply' },
+  { name: 'Vassar College', url: 'https://www.vassar.edu/apply' },
+  { name: 'Bates College', url: 'https://www.bates.edu/apply' },
+  { name: 'Rutgers University-New Brunswick', url: 'https://admissions.rutgers.edu/apply' },
+  { name: 'University of Iowa', url: 'https://admissions.uiowa.edu/apply' },
+  { name: 'Loyola Marymount University', url: 'https://admission.lmu.edu/apply' },
 ];
 
 const MONTHS = {
