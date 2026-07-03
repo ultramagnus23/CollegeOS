@@ -1,5 +1,9 @@
 # CollegeOS
 
+[![Frontend Runtime Validation](https://github.com/ultramagnus23/CollegeOS/actions/workflows/frontend-runtime-validation.yml/badge.svg)](https://github.com/ultramagnus23/CollegeOS/actions/workflows/frontend-runtime-validation.yml)
+[![Onboarding E2E Smoke Validation](https://github.com/ultramagnus23/CollegeOS/actions/workflows/onboarding-smoke.yml/badge.svg)](https://github.com/ultramagnus23/CollegeOS/actions/workflows/onboarding-smoke.yml)
+[![CodeQL](https://github.com/ultramagnus23/CollegeOS/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/ultramagnus23/CollegeOS/actions/workflows/github-code-scanning/codeql)
+
 A college discovery, recommendation, and application-intelligence platform for global applicants, with first-class support for students applying from India to universities abroad.
 
 CollegeOS combines structured university data, an admissions-chancing model, financial analysis, rankings, and a multi-stage recommendation pipeline. It is built on a canonical PostgreSQL/Supabase schema, a React/TypeScript frontend, a Node.js/Express backend, and Python + Node scraper infrastructure.
