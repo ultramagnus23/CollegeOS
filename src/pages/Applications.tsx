@@ -4,6 +4,7 @@ import { Loader2, X, Search, ExternalLink, Trash2, ChevronDown, ChevronUp, Plus,
 import { toast } from 'sonner';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { daysUntilDateOnly } from '@/utils/dateOnly';
+import { AIDisclaimer } from '@/components/legal/AIDisclaimer';
 
 /* ─── Design tokens ──────────────────────────────────────────────── */
 const h2r = (hex: string, a: number) => {
@@ -572,6 +573,9 @@ const Applications = () => {
                   {target > 0 && <span style={{ fontSize: 13, color: '#FBBF24' }}>🟡 {target} target</span>}
                   {safety > 0 && <span style={{ fontSize: 13, color: '#10B981' }}>🟢 {safety} safety</span>}
                 </div>
+                {(reach > 0 || target > 0 || safety > 0) && (
+                  <AIDisclaimer variant="estimate" className="mt-2" />
+                )}
               </div>
               <button onClick={() => setShowAdd(true)} style={{ padding: '12px 24px', background: S.accent, border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: S.font, display: 'flex', alignItems: 'center', gap: 8, boxShadow: `0 0 20px ${h2r(S.accent,0.3)}` }}>
                 <Plus size={18} /> Add College

@@ -5,6 +5,7 @@ import { Search, Globe, MapPin, GraduationCap, DollarSign, Users, TrendingUp, Ch
 import { api } from '../services/api';
 import { normalizeCountryData, College, TestScores, GraduationRates } from '../types';
 import FitBadge from '../components/FitBadge';
+import ConfidenceBadge from '../components/ConfidenceBadge';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { usePreferredCurrency } from '../hooks/usePreferredCurrency';
@@ -1097,9 +1098,11 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
           </div>
         )}
         {(completenessScore > 0 || freshnessScore > 0) && (
-          <div style={{ marginTop: 4 }}>
-            Completeness: {Math.round(completenessScore)}% · Freshness: {Math.round(freshnessScore)}%
-          </div>
+          <ConfidenceBadge
+            completeness={completenessScore || null}
+            freshness={freshnessScore || null}
+            className="mt-1"
+          />
         )}
       </div>
 

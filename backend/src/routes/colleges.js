@@ -304,6 +304,40 @@ router.get('/comprehensive', async (req, res, next) => {
 });
 
 /**
+ * GET /api/colleges/comprehensive/stats
+ * Summary stats: total count, countries, states distribution.
+ *
+ * Registered before /comprehensive/:id so "stats" isn't swallowed as an :id param.
+ */
+router.get('/comprehensive/stats', async (req, res, next) => {
+  try {
+    const db = require('../config/database');
+    const pool = db.getDatabase();
+
+    const [total, countries, regions, completeness, quality] = await Promise.all([
+      pool.query('SELECT COUNT(*) AS total FROM canonical.institutions'),
+      pool.query('SELECT country_code AS country, COUNT(*) AS count FROM canonical.institutions WHERE country_code IS NOT NULL GROUP BY country_code ORDER BY count DESC LIMIT 20'),
+      pool.query("SELECT region_code AS state, COUNT(*) AS count FROM canonical.institutions WHERE region_code IS NOT NULL GROUP BY region_code ORDER BY count DESC"),
+      pool.query('SELECT AVG(overall_score)::numeric(10,2) AS avg_completeness FROM canonical.institution_completeness'),
+      pool.query('SELECT AVG(final_quality_score)::numeric(10,2) AS avg_quality FROM canonical.institution_quality_scores'),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        total: parseInt(total.rows[0].total),
+        countries: countries.rows,
+        states: regions.rows,
+        avgCompleteness: Number(completeness.rows[0]?.avg_completeness ?? 0),
+        avgQuality: Number(quality.rows[0]?.avg_quality ?? 0),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * GET /api/colleges/comprehensive/:id
   * Fetch a single college from clean_colleges with ALL related data.
  */
@@ -370,38 +404,6 @@ router.post('/comprehensive/compare', async (req, res, next) => {
     const rows = (await Promise.all(ids.map((id) => CollegeService.getCanonicalCollegeById(id)))).filter(Boolean);
 
     res.json({ success: true, data: rows });
-  } catch (err) {
-    next(err);
-  }
-});
-
-/**
- * GET /api/colleges/comprehensive/stats
- * Summary stats: total count, countries, states distribution.
- */
-router.get('/comprehensive/stats', async (req, res, next) => {
-  try {
-    const db = require('../config/database');
-    const pool = db.getDatabase();
-
-    const [total, countries, regions, completeness, quality] = await Promise.all([
-      pool.query('SELECT COUNT(*) AS total FROM canonical.institutions'),
-      pool.query('SELECT country_code AS country, COUNT(*) AS count FROM canonical.institutions WHERE country_code IS NOT NULL GROUP BY country_code ORDER BY count DESC LIMIT 20'),
-      pool.query("SELECT region_code AS state, COUNT(*) AS count FROM canonical.institutions WHERE region_code IS NOT NULL GROUP BY region_code ORDER BY count DESC"),
-      pool.query('SELECT AVG(overall_score)::numeric(10,2) AS avg_completeness FROM canonical.institution_completeness'),
-      pool.query('SELECT AVG(final_quality_score)::numeric(10,2) AS avg_quality FROM canonical.institution_quality_scores'),
-    ]);
-
-    res.json({
-      success: true,
-      data: {
-        total: parseInt(total.rows[0].total),
-        countries: countries.rows,
-        states: regions.rows,
-        avgCompleteness: Number(completeness.rows[0]?.avg_completeness ?? 0),
-        avgQuality: Number(quality.rows[0]?.avg_quality ?? 0),
-      },
-    });
   } catch (err) {
     next(err);
   }
