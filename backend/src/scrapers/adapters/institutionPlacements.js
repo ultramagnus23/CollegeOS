@@ -160,12 +160,52 @@ async function findBrochurePdfText(html, baseUrl, logger) {
       const pdfParse = require('pdf-parse');
       const parsed = await pdfParse(buf); // eslint-disable-line no-await-in-loop
       logger.info(`[${PARSER_NAME}] found brochure PDF: ${absUrl}`);
-      return { text: parsed.text, url: absUrl };
+
+      // If the plain text layer has no figures, many Indian brochures present
+      // the headline numbers as a designed infographic (image), not text --
+      // fall back to OCR on that specific PDF before giving up on it.
+      const plain = extractPlacements(parsed.text);
+      if (plain.fields.highest_package_inr != null || plain.fields.average_package_inr != null || plain.fields.median_package_inr != null) {
+        return { text: parsed.text, url: absUrl };
+      }
+      const ocrText = await ocrPdfBuffer(buf, logger); // eslint-disable-line no-await-in-loop
+      if (ocrText) return { text: ocrText, url: absUrl };
+      return { text: parsed.text, url: absUrl }; // let the caller's own extraction have a shot too
     } catch (e) {
       logger.debug && logger.debug(`[${PARSER_NAME}] brochure fetch/parse failed for ${absUrl}: ${e.message}`);
     }
   }
   return null;
+}
+
+// Shells out to scraper/tools/ocr_pdf.py (pytesseract/PyMuPDF have no
+// practical Node equivalent). Only OCRs pages whose direct text layer is
+// near-empty, so this is cheap for mostly-text brochures and only pays the
+// OCR cost on genuinely image-based pages.
+async function ocrPdfBuffer(buf, logger) {
+  const fs = require('fs'); // eslint-disable-line global-require
+  const os = require('os'); // eslint-disable-line global-require
+  const path = require('path'); // eslint-disable-line global-require
+  const { execFile } = require('child_process'); // eslint-disable-line global-require
+  const tmpPath = path.join(os.tmpdir(), `collegeos-brochure-${Date.now()}.pdf`);
+  fs.writeFileSync(tmpPath, buf);
+  try {
+    const text = await new Promise((resolve, reject) => {
+      execFile('python', [path.join(__dirname, '..', '..', '..', '..', 'scraper', 'tools', 'ocr_pdf.py'), tmpPath],
+        { timeout: 120000, maxBuffer: 1024 * 1024 * 20 },
+        (err, stdout, stderr) => {
+          if (stderr) logger.info(`[${PARSER_NAME}] ${stderr.trim()}`);
+          if (err) return reject(err);
+          resolve(stdout);
+        });
+    });
+    return text;
+  } catch (e) {
+    logger.warn(`[${PARSER_NAME}] OCR fallback failed: ${e.message}`);
+    return null;
+  } finally {
+    fs.unlink(tmpPath, () => {});
+  }
 }
 
 async function resolveInstitutionId(pool, name) {
