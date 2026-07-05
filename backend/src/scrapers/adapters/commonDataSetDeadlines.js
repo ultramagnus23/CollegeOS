@@ -28,6 +28,25 @@
 
 const PARSER_NAME = 'commonDataSetDeadlines';
 const PARSER_VERSION = '1.0.0';
+
+// Some schools' CDS PDFs use fonts whose ligature glyphs the PDF text layer
+// can't map to real characters, substituting a Unicode placeholder instead
+// -- verified live on Carnegie Mellon's CDS: "ti" collapses to U+019F "Ɵ"
+// ("insƟtuƟon", "applicaƟons") while "tt" collapses to a DIFFERENT
+// placeholder, U+01A9 "Ʃ" ("admiƩed"). (A naive ASCII-only debug print
+// renders both as a literal "?", which is misleading -- neither is the
+// ASCII question mark, and they are NOT interchangeable with each other.)
+// A regex looking for the literal word then silently never matches on any
+// affected school -- this is likely why several deadline extractions and
+// most admission-rate extractions were missing hits. fuzzyWord() makes each
+// bigram optionally collapse to its OWN specific placeholder so the same
+// pattern matches both clean and ligature-corrupted PDFs. fi/ffi/fl/ffl
+// placeholders haven't been observed in a live sample yet; they fall back to
+// accepting either of the two known placeholders as a best-effort guess.
+const LIGATURE_MAP = { ti: 'Ɵ', tt: 'Ʃ' };
+function fuzzyWord(word) {
+  return word.replace(/ti|tt|ffi|ffl|fi|fl/g, (m) => `(?:${m}|${LIGATURE_MAP[m] || '[ƟƩ]'})`);
+}
 const CYCLE_YEAR = '2025-2026';
 const CYCLE_YEAR_KEY = 2026;
 const CYCLE_START_YEAR = 2025;
@@ -158,17 +177,17 @@ function parseDateNear(text, windowChars = 150) {
 // extraction renders the same standardized question differently].
 const FIELD_PATTERNS = [
   ['regular_decision', false, [
-    /Application closing date \(fall\)/i,
-    /Does your institution have an application closing\s*date\?\s*Yes/i,
+    new RegExp(`${fuzzyWord('Application')} closing date \\(fall\\)`, 'i'),
+    new RegExp(`Does your ${fuzzyWord('institution')} have an ${fuzzyWord('application')} closing\\s*date\\?\\s*Yes`, 'i'),
   ]],
   ['early_decision_1', true, [
-    /First or only early decision plan closing date/i,
+    new RegExp('First or only early decision plan closing date', 'i'),
   ]],
   ['early_decision_2', true, [
-    /Other early decision plan closing date/i,
+    new RegExp('Other early decision plan closing date', 'i'),
   ]],
   ['early_action', false, [
-    /Early action closing date/i,
+    new RegExp(`Early ${fuzzyWord('action')} closing date`, 'i'),
   ]],
 ];
 
@@ -190,6 +209,50 @@ function extractDeadlines(text) {
       }
     }
   }
+  return out;
+}
+
+// CDS C21/C22 also state applicant/admit counts for ED/EA right next to the
+// deadline questions we already parse -- extracting these gives
+// early_decision_rate / early_action_rate for canonical.institution_admissions
+// with no new fetching (same PDFs, same TARGETS list).
+// Numbers can carry thousands-comma separators ("4,423") and the label is
+// sometimes followed by a colon before the value ("institution:     4,423").
+// Bounded to a short window: some schools leave the field blank (don't
+// publicly report the count), and an unbounded scan would skip right past
+// the blank field into the NEXT question's text and grab an unrelated
+// number (verified live: this produced impossible >100% "rates" for several
+// schools, e.g. Bowdoin's blank ED fields matching a stray "22" from the
+// following "C22." section header several dozen characters away).
+// The gap is bounded to WHITESPACE/COLON ONLY (never arbitrary characters),
+// so a blank field (no number reported) can't accidentally skip past real
+// words into the next question and grab an unrelated number -- but the gap
+// itself can be long, since these forms pad values with many spaces for
+// column alignment (CMU's admitted-count field has ~25 spaces before the
+// digits).
+const NUM_AFTER = /^[:\s]{0,60}([\d,]{2,7})\b/;
+
+function extractApplicationRates(text) {
+  const grab = (labelRe) => {
+    const m = labelRe.exec(text);
+    if (!m) return null;
+    const numMatch = NUM_AFTER.exec(text.slice(m.index + m[0].length, m.index + m[0].length + 70));
+    if (!numMatch) return null;
+    const n = parseInt(numMatch[1].replace(/,/g, ''), 10);
+    return Number.isFinite(n) ? n : null;
+  };
+  const applications = fuzzyWord('applications');
+  const institution = fuzzyWord('institution');
+  const admitted = fuzzyWord('admitted');
+  const action = fuzzyWord('action');
+  const edApplied = grab(new RegExp(`Number of early decision ${applications} received by your ${institution}`, 'i'));
+  const edAdmitted = grab(new RegExp(`Number of applicants ${admitted} under early decision plan`, 'i'));
+  const eaApplied = grab(new RegExp(`Number of early ${action} ${applications} received by your ${institution}`, 'i'));
+  const eaAdmitted = grab(new RegExp(`Number of applicants ${admitted} under early ${action} plan`, 'i'));
+
+  const out = {};
+  if (edApplied && edAdmitted != null && edApplied > 0) out.early_decision_rate = Math.round((10000 * edAdmitted) / edApplied) / 100;
+  if (eaApplied && eaAdmitted != null && eaApplied > 0) out.early_action_rate = Math.round((10000 * eaAdmitted) / eaApplied) / 100;
   return out;
 }
 
@@ -295,4 +358,6 @@ const adapter = {
   requireNewRows: true,
 };
 
-module.exports = { adapter, extractDeadlines, parseDateNear, TARGETS };
+module.exports = {
+  adapter, extractDeadlines, parseDateNear, TARGETS, extractApplicationRates, fetchPdfText, resolveInstitutionId,
+};
