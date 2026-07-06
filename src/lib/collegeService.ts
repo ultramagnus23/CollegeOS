@@ -506,22 +506,22 @@ export async function getCollegePrograms(collegeId: CanonicalId): Promise<Map<st
 
 export async function getDistinctStates(): Promise<string[]> {
   const client = requireClient();
-  const { data, error } = await client
-    .schema('canonical')
-    .from('institutions')
-    .select('state_region')
-    .not('state_region', 'is', null)
-    .limit(1000);
+  const { data, error } = await client.schema('canonical').rpc('get_distinct_state_regions');
   if (error) throw error;
-  return [...new Set((data ?? []).map((r: { state_region: string | null }) => r.state_region).filter(Boolean) as string[])].sort();
+  return (data ?? []).map((r: { state_region: string }) => r.state_region).filter(Boolean).sort();
 }
 
+// Uses a server-side SELECT DISTINCT RPC (migration 139) rather than sampling
+// raw rows client-side: with ~6,237/8,500 institutions being US and no ORDER
+// BY, a LIMIT-1000 sample could exhaust its budget on alphabetically-earlier
+// countries before ever reaching a US row (DE+FR+GB+IN+KR alone sum past
+// 1000), silently dropping "United States" from the filter dropdown.
 export async function getDistinctCountries(): Promise<string[]> {
   const client = requireClient();
-  const { data, error } = await client.schema('canonical').from('mv_college_cards').select('country_code').not('country_code', 'is', null).limit(1000);
+  const { data, error } = await client.schema('canonical').rpc('get_distinct_country_codes');
   if (error) throw error;
   debugCanonical('canonical_country_source', { relation: FRONTEND_CANONICAL_RELATION });
-  return [...new Set((data ?? []).map((r: { country_code: string | null }) => r.country_code).filter(Boolean) as string[])].sort();
+  return (data ?? []).map((r: { country_code: string }) => r.country_code).filter(Boolean).sort();
 }
 
 export { isSupabaseConfigured };
