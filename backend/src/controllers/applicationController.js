@@ -222,36 +222,39 @@ class ApplicationController {
               const tier1Count = activities.filter(a => a.tier_rating === 1).length;
               const tier2Count = activities.filter(a => a.tier_rating === 2).length;
               const apCourses = (profile.coursework || []).filter(c => c.course_level === 'AP' || c.course_level === 'IB').length;
-              
+
+              // NOTE: this table's real columns (verified live 2026-07-08) don't include
+              // every feature we want to capture -- class rank, activity tiers, first-gen/
+              // legacy flags, and the college-side context aren't their own columns. Those
+              // go in `features` (jsonb); only fields with a real dedicated column are bound
+              // as top-level params.
               await pool.query(`
                 INSERT INTO ml_training_data (
-                  student_id, college_id, gpa, sat_total, act_composite,
-                  class_rank_percentile, num_ap_courses, activity_tier_1_count,
-                  activity_tier_2_count, is_first_gen, is_legacy, state,
-                  college_acceptance_rate, college_sat_median, college_type,
-                  decision, enrolled, application_year
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+                  user_id, college_id, gpa, sat_score, act_score, outcome, source, source_year, features
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
               `, [
                 userId,
                 application.college_id,
                 profile.gpa_unweighted || profile.gpa_weighted || null,
                 profile.sat_total || null,
                 profile.act_composite || null,
-                profile.class_rank_percentile || null,
-                apCourses,
-                tier1Count,
-                tier2Count,
-                profile.is_first_generation ? true : false,
-                profile.is_legacy ? true : false,
-                profile.state_province || null,
-                college.acceptance_rate || null,
-                college.sat_total_median || null,
-                college.type || null,
                 data.status,
-                false, // enrolled - will be updated later
-                new Date().getFullYear()
+                'self_reported',
+                new Date().getFullYear(),
+                JSON.stringify({
+                  class_rank_percentile: profile.class_rank_percentile || null,
+                  num_ap_courses: apCourses,
+                  activity_tier_1_count: tier1Count,
+                  activity_tier_2_count: tier2Count,
+                  is_first_gen: !!profile.is_first_generation,
+                  is_legacy: !!profile.is_legacy,
+                  state: profile.state_province || null,
+                  college_acceptance_rate: college.acceptance_rate || null,
+                  college_sat_median: college.sat_total_median || null,
+                  college_type: college.type || null,
+                }),
               ]);
-              
+
               logger.info(`[${requestId}] ML training data auto-collected for application ${sanitizeForLog(id)}`);
             }
           }

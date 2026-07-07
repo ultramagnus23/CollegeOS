@@ -351,6 +351,17 @@ class ApiService {
     });
   }
 
+  async getMlConsent() {
+    return this.request('/ml/consent');
+  }
+
+  async updateMlConsent(consent: boolean) {
+    return this.request('/ml/consent', {
+      method: 'PUT',
+      body: JSON.stringify({ consent }),
+    });
+  }
+
   async googleOnboarding(payload: { googleId: string; email: string; name: string; profile: any }) {
     return this.request('/auth/google-onboarding', {
       method: 'POST',

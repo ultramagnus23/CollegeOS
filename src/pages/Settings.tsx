@@ -72,6 +72,8 @@ const Settings = () => {
   const { user, refreshUser } = useAuth();
   const { preferred: preferredCurrency, setPreferredCurrency, fxNote } = usePreferredCurrency();
   const [savingCurrency, setSavingCurrency] = useState(false);
+  const [mlConsent, setMlConsent] = useState(false);
+  const [savingMlConsent, setSavingMlConsent] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -137,6 +139,12 @@ const SCROLL_DELAY_MS = 100;
     navigate(`/settings#${sectionId}`, { replace: true });
     sectionRefs.current[sectionId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  useEffect(() => {
+    api.getMlConsent()
+      .then((res: any) => setMlConsent(!!res?.data?.mlConsent))
+      .catch(() => { /* default false, non-fatal */ });
+  }, []);
 
   // Load profile data
   useEffect(() => {
@@ -1354,6 +1362,43 @@ const SCROLL_DELAY_MS = 100;
                   </select>
                   <p className="text-xs text-muted-foreground mt-1">All costs show in this currency first. {fxNote}</p>
                 </div>
+              </div>
+
+              <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-4">
+                <div>
+                  <Label className="mb-1 block">Help improve chancing accuracy</Label>
+                  <p className="text-xs text-muted-foreground">
+                    When you record a decision (accepted/rejected/waitlisted) on an application, share an
+                    anonymized snapshot of your profile and that outcome so we can train the chancing model
+                    on real results instead of estimates. Off by default; you can turn this off anytime.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={mlConsent}
+                  disabled={savingMlConsent}
+                  onClick={async () => {
+                    const next = !mlConsent;
+                    setSavingMlConsent(true);
+                    try {
+                      await api.updateMlConsent(next);
+                      setMlConsent(next);
+                      showMessage('success', next ? 'Thanks — outcome sharing enabled' : 'Outcome sharing disabled');
+                    } catch {
+                      showMessage('error', 'Could not update this setting');
+                    } finally {
+                      setSavingMlConsent(false);
+                    }
+                  }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors
+                    ${mlConsent ? 'bg-primary' : 'bg-muted'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+                      ${mlConsent ? 'translate-x-6' : 'translate-x-1'}`}
+                  />
+                </button>
               </div>
 
               <div className="flex justify-end pt-4">
