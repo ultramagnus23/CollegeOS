@@ -163,6 +163,7 @@ const Dashboard = () => {
   const [collegeList, setCollegeList] = useState<any[]>([]);
   const [todaysTasks, setTodaysTasks] = useState<any[]>([]);
   const [nextAction, setNextAction] = useState<any>(null);
+  const [priorityActions, setPriorityActions] = useState<any[]>([]);
   const [distribution, setDistribution] = useState({ reach:0, target:0, safety:0, unclassified:0 });
 
   const { completionPercent: profileStrength } = useProfileCompletion();
@@ -213,6 +214,7 @@ const Dashboard = () => {
       const dashTasks: any[] = d?.tasks?.dueThisWeek || [];
 
       if (d?.nextAction) setNextAction(d.nextAction);
+      if (Array.isArray(d?.priorityActions) && d.priorityActions.length) setPriorityActions(d.priorityActions);
       if (d?.applications?.distribution) setDistribution(d.applications.distribution);
 
       const calcDays = (s:string)=>Math.ceil((new Date(s+'T00:00:00').getTime()-Date.now())/86400000);
@@ -364,24 +366,34 @@ const Dashboard = () => {
 
         <div style={{ maxWidth:1280, margin:'0 auto', padding:'36px 48px 80px' }}>
 
-          {/* ── What should I do next? (command center) ── */}
-          {nextAction && (() => {
-            const u = nextAction.urgency || 'medium';
-            const uc = u==='critical' ? '#EF4444' : u==='high' ? '#F97316' : u==='low' ? '#10B981' : S.accent;
+          {/* ── This week (command center) — up to 3 ranked priority actions ── */}
+          {(() => {
+            const items = priorityActions.length ? priorityActions : (nextAction ? [nextAction] : []);
+            if (!items.length) return null;
             const ctaRoutes: Record<string,string> = { profile:'/settings', explore:'/colleges', deadlines:'/deadlines', documents:'/documents', essays:'/essays', tasks:'/deadlines', timeline:'/timeline' };
+            const urgencyColor = (u: string) => u==='critical' ? '#EF4444' : u==='high' ? '#F97316' : u==='low' ? '#10B981' : S.accent;
             return (
-              <div style={{ marginBottom:24, padding:'20px 24px', borderRadius:16, border:`1px solid ${h2r(uc,0.35)}`, background:`linear-gradient(135deg, ${h2r(uc,0.10)} 0%, transparent 70%)`, display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:16 }}>
-                  <div style={{ width:44, height:44, borderRadius:12, background:h2r(uc,0.18), display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>🎯</div>
-                  <div>
-                    <div style={{ fontSize:11, color:h2r(uc,0.9), textTransform:'uppercase', letterSpacing:'0.1em', fontWeight:700, marginBottom:4 }}>Do this next</div>
-                    <div style={{ fontSize:18, fontWeight:800, color:S.text, lineHeight:1.2 }}>{nextAction.label}</div>
-                    {nextAction.why && <div style={{ fontSize:13, color:S.muted, marginTop:4 }}>{nextAction.why}</div>}
-                  </div>
+              <div style={{ marginBottom:24 }}>
+                <div style={{ fontSize:11, color:S.dim, textTransform:'uppercase', letterSpacing:'0.1em', fontWeight:700, marginBottom:10, paddingLeft:2 }}>This week</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  {items.map((action, i) => {
+                    const uc = urgencyColor(action.urgency || 'medium');
+                    return (
+                      <div key={i} style={{ padding:'18px 24px', borderRadius:16, border:`1px solid ${h2r(uc,0.35)}`, background:`linear-gradient(135deg, ${h2r(uc,0.10)} 0%, transparent 70%)`, display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+                          <div style={{ width:40, height:40, borderRadius:11, background:h2r(uc,0.18), display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>{i === 0 ? '🎯' : '▸'}</div>
+                          <div>
+                            <div style={{ fontSize:16, fontWeight:800, color:S.text, lineHeight:1.2 }}>{action.label}</div>
+                            {action.why && <div style={{ fontSize:12, color:S.muted, marginTop:3 }}>{action.why}</div>}
+                          </div>
+                        </div>
+                        <button onClick={()=>navigate(ctaRoutes[action.cta] || '/')} style={{ padding:'9px 18px', borderRadius:10, border:'none', background:uc, color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', fontFamily:S.font }}>
+                          Go →
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
-                <button onClick={()=>navigate(ctaRoutes[nextAction.cta] || '/')} style={{ padding:'10px 20px', borderRadius:10, border:'none', background:uc, color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', fontFamily:S.font }}>
-                  Go →
-                </button>
               </div>
             );
           })()}

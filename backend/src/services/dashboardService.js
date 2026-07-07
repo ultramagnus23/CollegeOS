@@ -29,11 +29,13 @@ class DashboardService {
       this._safe(() => this._tasks(userId), { dueThisWeek: [], pending: 0 }),
     ]);
 
-    const nextAction = this._nextAction({ profile, applications, deadlines, essays, documents, tasks });
+    const priorityActions = this._priorityActions({ profile, applications, deadlines, essays, documents, tasks });
+    const nextAction = priorityActions[0] || this._fallbackAction();
 
     return {
       profile, applications, deadlines, essays, documents, tasks,
       nextAction,
+      priorityActions,
       generatedAt: new Date().toISOString(),
     };
   }
@@ -142,29 +144,42 @@ class DashboardService {
     return { dueThisWeek: dueThisWeek.slice(0, 10), pending: rows.length };
   }
 
-  // The single most important prioritized next step, in journey order.
-  static _nextAction({ profile, applications, deadlines, essays, documents, tasks }) {
+  // Up to 3 highest-priority actions for the "This week" hero, ranked by urgency
+  // then journey order. Each check that would have returned the single legacy
+  // nextAction is preserved (same label/cta/why/urgency), just collected instead
+  // of returned early, so existing consumers of `nextAction` (== priorityActions[0])
+  // see identical output to before.
+  static _priorityActions({ profile, applications, deadlines, essays, documents, tasks }) {
+    const actions = [];
+    const urgencyRank = { critical: 0, high: 1, medium: 2, low: 3 };
+
     if ((profile.percentage ?? 0) < 60) {
       const next = profile.missing_critical?.[0];
-      return { label: next ? `Complete your profile — add ${next}` : 'Complete your profile', cta: 'profile', why: 'A complete profile powers accurate recommendations and chancing.', urgency: 'high' };
+      actions.push({ label: next ? `Complete your profile — add ${next}` : 'Complete your profile', cta: 'profile', why: 'A complete profile powers accurate recommendations and chancing.', urgency: 'high' });
     }
     if ((applications.total ?? 0) === 0) {
-      return { label: 'Add your first college', cta: 'explore', why: 'Adding a college auto-creates your deadlines, essays, documents and tasks.', urgency: 'high' };
+      actions.push({ label: 'Add your first college', cta: 'explore', why: 'Adding a college auto-creates your deadlines, essays, documents and tasks.', urgency: 'high' });
     }
     const soon = deadlines.upcoming?.[0];
     if (soon) {
       const days = Math.ceil((new Date(soon.deadline_date) - Date.now()) / 86400000);
-      if (days <= 14) return { label: `${soon.title} in ${days} day(s)`, cta: 'deadlines', why: 'This deadline is approaching — prioritize it.', urgency: days <= 5 ? 'critical' : 'high' };
+      if (days <= 14) actions.push({ label: `${soon.title} in ${days} day(s)`, cta: 'deadlines', why: 'This deadline is approaching — prioritize it.', urgency: days <= 5 ? 'critical' : 'high' });
     }
     if ((documents.missing ?? 0) > 0) {
-      return { label: `Upload ${documents.missing} missing document(s)`, cta: 'documents', why: 'Documents are required to submit applications.', urgency: 'medium' };
+      actions.push({ label: `Upload ${documents.missing} missing document(s)`, cta: 'documents', why: 'Documents are required to submit applications.', urgency: 'medium' });
     }
     if ((essays.remaining ?? 0) > 0) {
-      return { label: `Work on ${essays.remaining} remaining essay(s)`, cta: 'essays', why: 'Essays take the longest — start early.', urgency: 'medium' };
+      actions.push({ label: `Work on ${essays.remaining} remaining essay(s)`, cta: 'essays', why: 'Essays take the longest — start early.', urgency: 'medium' });
     }
     if ((tasks.dueThisWeek?.length ?? 0) > 0) {
-      return { label: `${tasks.dueThisWeek.length} task(s) due this week`, cta: 'tasks', why: 'Stay on track with this week’s checklist.', urgency: 'medium' };
+      actions.push({ label: `${tasks.dueThisWeek.length} task(s) due this week`, cta: 'tasks', why: 'Stay on track with this week’s checklist.', urgency: 'medium' });
     }
+
+    actions.sort((a, b) => (urgencyRank[a.urgency] ?? 9) - (urgencyRank[b.urgency] ?? 9));
+    return actions.slice(0, 3);
+  }
+
+  static _fallbackAction() {
     return { label: 'You’re on track — review your timeline', cta: 'timeline', why: 'Keep momentum toward submission.', urgency: 'low' };
   }
 }
