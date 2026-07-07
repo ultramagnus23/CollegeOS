@@ -128,6 +128,53 @@ Recommended order: WS1 → WS2 → WS3 (+WS4 in background) → WS5 → WS6 → 
 
 ---
 
-## 4. Fixed this session
-- `backend/src/routes/scholarships.js` — needBased/meritBased undefined-vs-false bug; the
-  Scholarships page now returns all 56 rows (verified live against the running backend).
+## 4. Done this session (2026-07-08, commits cfa84e2, 3d8e750, 3d546f5, f92aafb)
+
+- **WS1**: Scholarships empty-list bug fixed and verified live (50+ rows now return).
+  Migration 140 fixes `currency_rates` missing `source_api` (was erroring every boot).
+  CLAUDE.md stale facts corrected (migration count/status, dead-code table).
+- **WS5**: Removed `backend/archive/`, `scraper/archive/`, `deadlineGenerator.js`,
+  `FinancialAid.tsx`, and a dead `matchScholarships()` in `financialScoringService.js` that
+  silently preferred the orphaned `scholarships_new` table — all verified zero-reference
+  before deletion, tsc + backend boot both clean after.
+- **WS2**: Migration 141 nulls 54 scholarship deadlines stale since 2024. Masters program
+  detail pages now surface the department's own funding link/notes
+  (`raw_scholarships` → `funding_source_notes`, zero fabrication). Added Knight-Hennessy
+  Scholars (the one legitimate named scholarship found missing from the canonical table)
+  as a ready-to-run seed script.
+- **WS3**: Second-pass institution-link backfill (alias map + qualifier stripping, both
+  verified/explicit — no fuzzy-threshold guessing) linked 17 more masters_programs rows
+  live (251→268/648). 380 remain genuine data gaps, logged not guessed.
+- **WS7**: Found and fixed the ML outcome-capture loop, which had been **completely
+  broken** — `users.ml_consent` didn't exist as a column (migration 142 adds it) and the
+  `ml_training_data` INSERT used a column list that didn't match the live table at all.
+  Added a consent toggle in Settings → Preferences (didn't exist anywhere in the frontend
+  before). Verified end-to-end live: register → enable consent → create application → mark
+  accepted → a real row lands in `ml_training_data`. Masters' equivalent loop
+  (`POST /masters/outcomes` → `masters_admission_datapoints`) was already correct.
+- **WS6**: Dashboard "Do this next" hero now shows up to 3 ranked priority actions instead
+  of only 1 (verified live: fresh user now sees both "complete your profile" and "add your
+  first college" simultaneously). Full visual dead-section audit deferred — needs live
+  browser walkthrough, not done this pass.
+
+## 5. Major finding: an unmerged branch with real, already-prod-applied work
+
+`chore/launch-readiness-audit` (20 commits, diverged from `main`) contains work already
+verified and applied to the live DB that `main` doesn't have — including the **GradCafe
+scraper revival** and a **Common Data Set PDF deadline scraper** (the two things this doc's
+WS3/WS4 identify as the highest-leverage remaining gaps), plus new UK/Australia/India
+outcome scrapers, an IPEDS completions scraper, and an institution_programs backfill. It
+merges cleanly (`git merge-tree` shows zero conflicts) but was **not merged** this session —
+that's a scope decision for you, not something to do silently. This is also the direct cause
+of the migration-numbering collision hit this session (139 exists live from this branch;
+main's next free slot was actually 140).
+
+**Recommended next action:** review and merge `chore/launch-readiness-audit`, then re-run
+the E2E audit — several "empty data" findings in this doc may already be fixed there.
+
+## 6. Deferred (flagged, not attempted — needs explicit sign-off or more time)
+- `scraper/` vs `scrapers/` consolidation (touches live cron workflows).
+- `scholarships` vs `scholarships_new` DB-level table drop (destructive).
+- Full masters data re-verification at scale (WS3 remainder, 380 rows).
+- Visual dashboard dead-section removal + masters dashboard parity (needs live browser QA).
+- Merging `chore/launch-readiness-audit`.
