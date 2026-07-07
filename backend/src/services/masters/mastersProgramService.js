@@ -69,7 +69,8 @@ async function getProgramDetail(programId) {
         funding_availability, assistantship_types, tuition_waiver_available,
         tuition_total, tuition_currency, program_length_months AS duration_months,
         median_earnings, median_debt, roi_source,
-        program_url AS official_website, data_source, data_quality_score, last_scraped_at
+        program_url AS official_website, data_source, data_quality_score, last_scraped_at,
+        raw_scholarships AS funding_source_notes
       FROM canonical.masters_programs WHERE id = $1`, [programId],
   )).rows[0];
   if (!program) return null;

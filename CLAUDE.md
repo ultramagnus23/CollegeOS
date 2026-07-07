@@ -8,9 +8,10 @@ CollegeOS is a college discovery and application intelligence platform with a Re
 
 ## Canonical Schema Status
 
-- **Migration driver:** `backend/src/config/database.js` applies files from `backend/migrations/` (the canonical directory, ~98 SQL files, numbered up to 070+).
-- **Migration state tracked in:** `migrations` table in PostgreSQL/Supabase.
-- **Pending:** Migration `070_chancing_audit_log.sql` — creates `chancing_audit_log` table with indexes on `user_id` and `created_at DESC`. Must be applied in Supabase SQL editor or via `npm run migrate`.
+- **Migration driver:** `backend/src/config/database.js` applies files from `backend/migrations/` (the canonical directory, 150 SQL files as of 2026-07-08, numbered up to 140). Runs automatically on backend boot.
+- **Migration state tracked in:** `migrations` table in PostgreSQL/Supabase (153 rows applied live as of 2026-07-08).
+- Migration `070_chancing_audit_log.sql` is APPLIED (executed 2026-05-12) — the old "pending" note here was stale.
+- **Numbering gotcha (found 2026-07-08):** `139_canonical_distinct_country_rpc.sql` is applied live but lives only on the unmerged branch `chore/launch-readiness-audit`/PR, not on `main`. `140_fix_currency_rates_source_api.sql` was added on `main` and had to skip past the 139 slot to avoid a collision. Before adding a new migration, check the live `migrations` table's max filename, not just what's in your local `main` checkout — branches can be ahead.
 - **Integer booleans:** `is_completed`, `is_active`, etc. are still `INTEGER` columns (not `BOOLEAN`). Frontend comparisons use `=== 1`, not `=== true`. Do not change without a coordinated migration + frontend update.
 - **JSON TEXT columns:** `major_categories`, `academic_strengths`, `requirements`, etc. remain as `TEXT` with JS-side `JSON.parse()`. No current migration to `JSONB`.
 
@@ -18,17 +19,23 @@ CollegeOS is a college discovery and application intelligence platform with a Re
 
 ## Dead / Duplicate Code — Do Not Touch or Extend
 
+**Removed 2026-07-08** (verified zero external references before deletion): `backend/archive/`
+(2.9 MB, old SQLite-era code), `scraper/archive/` (84 KB), `backend/src/services/deadlineGenerator.js`
+(builds objects but never persists — superseded by `deadlineAutoPopulationService.js`),
+`src/pages/FinancialAid.tsx` (unrouted; `/financial-aid` still redirects to `/scholarships`).
+`backend/db/migrations/` (1-file orphan), `backend/src/routes/search.js`,
+`backend/src/services/intelligentSearch.js`, and the legacy `chancingService.js` were already
+removed in PR #152 (2026-07-04) — this table previously listed them as still-present; that was stale.
+
 | Path | Status |
 |------|--------|
-| `backend/archive/` | Dead — old SQLite-era code, excluded from build. `better-sqlite3` references live here only. |
-| `scraper/archive/` | Dead — archived scraper code. Do not extend. |
-| `backend/db/migrations/` | **Orphan** — 1 file only; NOT the canonical migration path. Canonical is `backend/migrations/` (~98 files). |
-| `scraper/` | One of two parallel Python scraper trees. The README references this one (`scraper/pipeline.py`, `scraper/requirements.txt`). |
-| `scrapers/` | The other Python scraper tree. Do not add code to both trees — pick one and be explicit about which is active. |
+| `scraper/` | One of two parallel Python scraper trees. **Actively used** — 6 live workflows (`daily-data-refresh`, `global-data-refresh`, `india-weekly/monthly-refresh`, `uk-data-refresh`) call scripts under here, plus `scraper/masters/*` (masters track scrapers). |
+| `scrapers/` | The other Python scraper tree. Used by only 2 workflows (`scrape-weekly.yml`, `scrape-monthly.yml`), both calling `scrapers/run_deadline_refresh.py`, which is **confirmed broken** (schema drift — writes to nonexistent `institution_requirements` columns, has a test-placeholder institution in its queue, `ScrapeDiagnostic.__init__()` arg bug — finds 0 deadlines). Consolidation decision needed: point those 2 workflows at `scraper/`'s working deadline adapter (`backend/src/scrapers/adapters/usOfficialDeadlines.js` via the #139 framework) and delete `scrapers/`, or fix `run_deadline_refresh.py` in place. Not done yet — touches live cron jobs, needs explicit sign-off before changing workflow YAML. |
 | `backend/data/` | Large static data files. Do not grep/read in full. |
+| `scholarships` vs `scholarships_new` (DB tables) | Duplicate schemas, 56 vs 36 rows, neither is canonical yet. Consolidation tracked in `docs/SCOPE_OF_WORK_2026-07.md` WS2. |
 
 **Exclusion list — never grep these in full:**
-`backend/data/`, `backend/archive/`, `scraper/archive/`, `tmp/`, `node_modules/`
+`backend/data/`, `tmp/`, `node_modules/`
 
 ---
 
