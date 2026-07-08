@@ -1562,6 +1562,22 @@ class ApiService {
     listApplications: () => this.request('/masters/applications'),
     saveApplication: (data: { mastersProgramId: string; status?: string; intakeTerm?: string; intakeYear?: number; priority?: string; notes?: string }) =>
       this.request('/masters/applications', { method: 'POST', body: JSON.stringify(data) }),
+    updateApplication: (id: number, data: { applicationPortalLink?: string; applicationFee?: number; applicationFeeCurrency?: string; priority?: string; notes?: string }) =>
+      this.request(`/masters/applications/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    listApplicationDocuments: (appId: number) => this.request(`/masters/applications/${appId}/documents`),
+    addApplicationDocument: (appId: number, data: { documentType: string; status?: string; documentId?: number; notes?: string }) =>
+      this.request(`/masters/applications/${appId}/documents`, { method: 'POST', body: JSON.stringify(data) }),
+    updateApplicationDocument: (appId: number, docId: number, data: { status?: string; documentId?: number; notes?: string }) =>
+      this.request(`/masters/applications/${appId}/documents/${docId}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteApplicationDocument: (appId: number, docId: number) =>
+      this.request(`/masters/applications/${appId}/documents/${docId}`, { method: 'DELETE' }),
+    listApplicationRecommenders: (appId: number) => this.request(`/masters/applications/${appId}/recommenders`),
+    addApplicationRecommender: (appId: number, data: { recommenderId: number; status?: string; notes?: string }) =>
+      this.request(`/masters/applications/${appId}/recommenders`, { method: 'POST', body: JSON.stringify(data) }),
+    updateApplicationRecommender: (appId: number, recId: number, data: { status?: string; notes?: string }) =>
+      this.request(`/masters/applications/${appId}/recommenders/${recId}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteApplicationRecommender: (appId: number, recId: number) =>
+      this.request(`/masters/applications/${appId}/recommenders/${recId}`, { method: 'DELETE' }),
     recordOutcome: (data: { mastersProgramId: string; intakeTerm?: string; intakeYear?: number; outcome: string }) =>
       this.request('/masters/outcomes', { method: 'POST', body: JSON.stringify(data) }),
     getReadiness: () => this.request('/masters/readiness'),
