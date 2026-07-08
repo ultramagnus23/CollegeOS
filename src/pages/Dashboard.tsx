@@ -418,9 +418,14 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* ── Tasks + Recommended Actions ── */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
-            <TodaysTasks tasks={todaysTasks} onTaskClick={()=>navigate('/deadlines')} onTaskComplete={async (id)=>{ try { await api.tasks.update(id,{status:'completed'}); setTodaysTasks(prev=>prev.filter(t=>t.id!==id)); } catch { toast.error('Failed to complete task'); } }} />
+          {/* ── Tasks + Recommended Actions ──
+              TodaysTasks' empty state ("You're all caught up! No pending tasks") reads as
+              a direct contradiction sitting right below the "This week" hero when that
+              hero has real items — so only render it once there's something real to show. */}
+          <div style={{ display:'grid', gridTemplateColumns: todaysTasks.length ? '1fr 1fr' : '1fr', gap:20, marginBottom:24 }}>
+            {todaysTasks.length > 0 && (
+              <TodaysTasks tasks={todaysTasks} onTaskClick={()=>navigate('/deadlines')} onTaskComplete={async (id)=>{ try { await api.tasks.update(id,{status:'completed'}); setTodaysTasks(prev=>prev.filter(t=>t.id!==id)); } catch { toast.error('Failed to complete task'); } }} />
+            )}
             <RecommendedActions actions={recommendedActions} profileStrength={profileStrength} onActionClick={(a)=>{
               const routes: Record<string,string> = { profile:'/settings', testing:'/settings', essays:'/essays', applications:'/applications', recommendations:'/recommendations', deadlines:'/deadlines' };
               navigate(routes[a.category]||'/');
