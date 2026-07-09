@@ -8,12 +8,9 @@ import AIChatbot from '../components/AIChatbot';
 import ProfileStrength from '../components/chancing/ProfileStrength';
 import TodaysTasks from '../components/dashboard/TodaysTasks';
 import UrgentAlerts from '../components/dashboard/UrgentAlerts';
-import RecommendedActions from '../components/dashboard/RecommendedActions';
 import CollegeListOverview from '../components/dashboard/CollegeListOverview';
-import ProfileCompleteness from '../components/ProfileCompleteness';
 import { CompactDecisionCountdown } from '@/components/DecisionCountdown';
 import { useTutorial } from '../components/tutorial/TutorialOverlay';
-import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import { trackDuration, trackMetric } from '@/observability';
 
 /* ─── Design tokens ──────────────────────────────────────────────────── */
@@ -158,7 +155,6 @@ const Dashboard = () => {
   const [essayProgress, setEssayProgress] = useState<any[]>([]);
   const [decisionDates, setDecisionDates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [recommendedActions, setRecommendedActions] = useState<any[]>([]);
   const [urgentAlerts, setUrgentAlerts] = useState<any[]>([]);
   const [collegeList, setCollegeList] = useState<any[]>([]);
   const [todaysTasks, setTodaysTasks] = useState<any[]>([]);
@@ -166,7 +162,6 @@ const Dashboard = () => {
   const [priorityActions, setPriorityActions] = useState<any[]>([]);
   const [distribution, setDistribution] = useState({ reach:0, target:0, safety:0, unclassified:0 });
 
-  const { completionPercent: profileStrength } = useProfileCompletion();
 
   // /auth/* now returns these already parsed (arrays). Stay tolerant of a
   // legacy JSON-string shape from cached data without forcing a re-parse.
@@ -195,13 +190,11 @@ const Dashboard = () => {
       // All data fetched in a single parallel batch — one network layer instead of 4+.
       // getDashboard already contains applications, deadlines, tasks, essays aggregates.
       // We fetch essays detail and risk alerts alongside it, not after it.
-      const profile = { gpa:user?.gpa||3.5, satScore:user?.sat_score, actScore:user?.act_score, activities:[], grade:user?.grade||'Grade 12', curriculum:user?.curriculum||'CBSE' };
-      const [dashReq, essaysReq, alertsReq, tasksReq, actionsReq] = await Promise.allSettled([
+      const [dashReq, essaysReq, alertsReq, tasksReq] = await Promise.allSettled([
         api.getDashboard(),
         api.getEssays(),
         api.risk.alerts(),
         api.tasks.getAll({ status:'pending' }),
-        api.automation.getRecommendedActions(profile),
       ]);
 
       // ── getDashboard ────────────────────────────────────────────────────────
@@ -273,17 +266,6 @@ const Dashboard = () => {
           id:t.id, title:t.title||'Task', category:'deadline',
           priority:t.priority||'medium', dueDate:t.deadline, status:'pending', estimatedTime:30,
         })));
-      }
-
-      // ── recommended actions ──────────────────────────────────────────────────
-      const act = actionsReq.status === 'fulfilled' ? actionsReq.value : null;
-      if (act?.success && act.data) {
-        setRecommendedActions(act.data.map((a:any,i:number)=>({ id:`action-${i}`, ...a, impactScore:a.impact==='Unlocks personalized college recommendations'?20:a.impact==='Better reach/target/safety classification'?15:10 })));
-      } else {
-        setRecommendedActions([
-          { id:'a1', priority:'high', category:'profile', action:'Complete your profile', reason:'Unlocks personalized recommendations', impact:'Unlocks personalized college recommendations', impactScore:20 },
-          { id:'a2', priority:'medium', category:'applications', action:'Add colleges to your list', reason:'Build a balanced reach/target/safety list', impact:'Better application strategy', impactScore:15 },
-        ]);
       }
     } catch (e) {
       console.error('Dashboard load error:', e);
@@ -418,19 +400,22 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* ── Tasks + Recommended Actions ──
+          {/* ── Today's tasks ──
               TodaysTasks' empty state ("You're all caught up! No pending tasks") reads as
               a direct contradiction sitting right below the "This week" hero when that
-              hero has real items — so only render it once there's something real to show. */}
-          <div style={{ display:'grid', gridTemplateColumns: todaysTasks.length ? '1fr 1fr' : '1fr', gap:20, marginBottom:24 }}>
-            {todaysTasks.length > 0 && (
+              hero has real items — so only render it once there's something real to show.
+              The old "Recommended Actions" card that used to sit next to this fed a
+              hardcoded fallback profile (gpa: 3.5, curriculum: 'CBSE') into a separate
+              client-side heuristic whenever real data was missing, and its ranking
+              routinely contradicted the "This week" hero above (both claim to be the
+              #1 priority, backed by different logic). Removed rather than reconciled —
+              "This week" is server-derived from the user's real profile/deadlines/docs
+              and is the single source of truth for prioritization now. */}
+          {todaysTasks.length > 0 && (
+            <div style={{ marginBottom:24 }}>
               <TodaysTasks tasks={todaysTasks} onTaskClick={()=>navigate('/deadlines')} onTaskComplete={async (id)=>{ try { await api.tasks.update(id,{status:'completed'}); setTodaysTasks(prev=>prev.filter(t=>t.id!==id)); } catch { toast.error('Failed to complete task'); } }} />
-            )}
-            <RecommendedActions actions={recommendedActions} profileStrength={profileStrength} onActionClick={(a)=>{
-              const routes: Record<string,string> = { profile:'/settings', testing:'/settings', essays:'/essays', applications:'/applications', recommendations:'/recommendations', deadlines:'/deadlines' };
-              navigate(routes[a.category]||'/');
-            }} />
-          </div>
+            </div>
+          )}
 
           {/* ── College list overview ── */}
           <div style={{ marginBottom:24 }}>
@@ -517,12 +502,13 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          {/* ── Profile completeness ── */}
-          <div style={{ marginBottom:24 }}>
-            <ProfileCompleteness />
-          </div>
-
-          {/* ── Deadlines + Applications ── */}
+          {/* ── Deadlines + Applications ──
+              (ProfileCompleteness used to render here too, but it's driven by the exact
+              same useProfileCompletion() data as the "This week" hero at the top of the
+              page -- same missing-field list, just as a full checklist instead of the
+              single top-priority item. Redundant on this page; kept on Chancing.tsx
+              where "here's what's missing before we can chance you" is directly in
+              context.) ── */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
             <Card>
               <SectionHead emoji="⏰" title="Upcoming Deadlines" href="/deadlines" linkLabel="View all" />
