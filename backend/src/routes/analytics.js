@@ -42,7 +42,7 @@ router.post('/profile-strength', authenticate, async (req, res, next) => {
     const userId = req.user.userId;
     
     // Get complete profile
-    const profile = StudentProfile.getCompleteProfile(userId);
+    const profile = await StudentProfile.getCompleteProfile(userId);
     
     if (!profile) {
       return res.status(404).json({

@@ -236,8 +236,10 @@ const Dashboard = () => {
         collegeName:a.collegeName, deadlineType:a.applicationType||'Regular Decision',
         notificationDate:a.notificationDate, applicationDate:a.deadline, collegeId:a.collegeId,
       })));
+      const validCategory = (c: string) => c === 'reach' || c === 'target' || c === 'safety';
       setCollegeList(dashApps.map((a:any)=>({
-        id:a.id, name:a.collegeName||a.college_name, category:a.category||'target',
+        id:a.id, name:a.collegeName||a.college_name,
+        category: validCategory(a.category) ? a.category : 'target', // 'target' = unknown acceptance rate, not "definitely a match"
         country:a.country||'United States', deadline:a.deadline, status:a.status,
       })));
 

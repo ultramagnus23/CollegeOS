@@ -69,13 +69,23 @@ class DashboardService {
     );
     const byStatus = {};
     const distribution = { reach: 0, target: 0, safety: 0, unclassified: 0 };
+    // Acceptance-rate-only heuristic (not personalized to this student's own stats —
+    // a real reach-vs-target-vs-safety call needs the chancing engine's per-student,
+    // per-college computation, which is too expensive to run for every dashboard load).
+    // This was previously only used for the aggregate `distribution` counts; every
+    // individual item was left uncategorized, so the frontend's `category || 'target'`
+    // fallback always fired and every college showed as "Match" regardless of its real
+    // acceptance rate. Now applied per-item too, consistent with the aggregate.
+    const categorize = (rate) => {
+      if (rate === null) return 'unclassified';
+      if (rate < 0.15) return 'reach';
+      if (rate <= 0.4) return 'target';
+      return 'safety';
+    };
     for (const r of rows) {
       byStatus[r.status] = (byStatus[r.status] || 0) + 1;
       const rate = normRate(r.acceptance_rate);
-      if (rate === null) distribution.unclassified += 1;
-      else if (rate < 0.15) distribution.reach += 1;
-      else if (rate <= 0.4) distribution.target += 1;
-      else distribution.safety += 1;
+      distribution[categorize(rate)] += 1;
     }
     return {
       total: rows.length,
@@ -84,6 +94,7 @@ class DashboardService {
       items: rows.slice(0, 10).map((r) => ({
         id: r.id, collegeId: r.college_id, collegeName: r.college_name,
         status: r.status, applicationType: r.application_type, deadline: r.deadline,
+        category: categorize(normRate(r.acceptance_rate)),
       })),
     };
   }
