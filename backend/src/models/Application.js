@@ -121,22 +121,26 @@ class Application {
     // Case 1: numeric ID — use directly
     const numeric = Number(rawId);
     if (Number.isInteger(numeric) && numeric > 0) {
-      // Verify the numeric ID exists in the legacy colleges table
+      // Verify the numeric ID exists in the legacy colleges table.
+      //
+      // IMPORTANT: `colleges` and `colleges_comprehensive` are two independent
+      // tables with unrelated, coincidentally-overlapping SERIAL id ranges --
+      // colleges.id=5 and colleges_comprehensive.id=5 are two completely
+      // different schools (verified live: 0 of 2344 overlapping ids matched by
+      // name). applications.college_id's FK now references `colleges` only
+      // (migration 144), which is also what every read path (College.findById,
+      // colleges_full, dashboardService) treats as primary. There used to be a
+      // fallback here that accepted an id purely because it existed in
+      // colleges_comprehensive -- that silently created applications pointing
+      // at a row that satisfied the (old) FK but whose *displayed* name/data
+      // (always read from `colleges`) was for a totally unrelated college. Do
+      // not resurrect that fallback; a numeric id must exist in `colleges` to
+      // resolve, same as every other read path.
       const { rows } = await pool.query(
         'SELECT id FROM colleges WHERE id = $1 LIMIT 1',
         [numeric]
       );
       if (rows.length > 0) return numeric;
-      // Try colleges_comprehensive
-      try {
-        const { rows: ccRows } = await pool.query(
-          'SELECT id FROM colleges_comprehensive WHERE id = $1 LIMIT 1',
-          [numeric]
-        );
-        if (ccRows.length > 0) return numeric;
-      } catch {
-        // Table may not exist
-      }
       return null;
     }
 
