@@ -1,0 +1,16 @@
+node_modules/
+backend/node_modules/
+.git/
+dist/
+build/
+coverage/
+*.log
+
+# Large static data — see CLAUDE.md "Exclusion list", do not grep in full
+backend/data/
+tmp/
+
+# Editor/OS cruft
+.DS_Store
+*.min.js
+*.map
