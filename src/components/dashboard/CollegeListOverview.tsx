@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { AIDisclaimer } from '@/components/legal/AIDisclaimer';
 
 interface CollegeListItem {
   id: string;
@@ -172,6 +173,8 @@ const CollegeListOverview: React.FC<CollegeListOverviewProps> = ({
           );
         })}
       </div>
+
+      {colleges.length > 0 && <AIDisclaimer variant="estimate" className="mb-4" />}
 
       {/* Health indicator */}
       <div className={`p-3 rounded-lg mb-4 ${

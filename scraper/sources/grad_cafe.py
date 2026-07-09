@@ -8,13 +8,19 @@ Scrapes Grad Cafe (thegradcafe.com) admission results to extract:
   - Average work experience years
   - Cohort size estimates
 
-Uses their public results API (no auth required).
+Uses the site's own server-rendered survey page (no auth required). The old
+`/api/v1/results` REST endpoint was retired when the site was rebuilt on
+Laravel + Inertia.js (now returns 404). Inertia server-renders the full page
+props -- including the actual results array -- as JSON in the root div's
+`data-page` attribute, so the real data is still readable without executing
+any client-side JS; this scraper parses that JSON instead of the dead API.
 Matches programs against canonical.masters_programs by university + program name.
 
 Updates: canonical.masters_programs (acceptance_rate, avg_gpa, avg_gre_quant,
          avg_gre_verbal, avg_gre_awa, avg_work_exp_years, cohort_size)
 """
 
+import json
 import logging
 import os
 import re
@@ -35,8 +41,9 @@ except ImportError:
 try:
     import requests
     import psycopg2
+    from bs4 import BeautifulSoup
 except ImportError:
-    sys.exit("pip install requests psycopg2-binary")
+    sys.exit("pip install requests psycopg2-binary beautifulsoup4")
 
 DB_URL = os.environ.get("DATABASE_URL")
 if not DB_URL:
@@ -49,7 +56,8 @@ HEADERS = {
     "Referer": "https://www.thegradcafe.com/",
 }
 
-GRADCAFE_API = "https://www.thegradcafe.com/api/v1/results"
+GRADCAFE_SURVEY_URL = "https://www.thegradcafe.com/survey"
+GRADCAFE_PAGE_SIZE = 20  # the site ignores the legacy `pp` param; fixed at 20/page now
 
 # Top programs to fetch data for (matching institution + program keyword)
 TARGET_PROGRAMS = [
@@ -108,25 +116,41 @@ def normalize_program(name: str) -> str:
     return name.strip()
 
 
-def fetch_gradcafe_results(query: str, program: str, page: int = 1) -> list[dict]:
-    """Fetch results from Grad Cafe API."""
+def fetch_gradcafe_results(query: str, program: str = "", page: int = 1) -> list[dict]:
+    """Fetch one page of results from the live GradCafe survey page (real,
+    current data -- see module docstring for why this replaced the API call).
+    Normalizes field names to the schema the rest of this file already
+    expects (institution/school, gpa, gre_q, gre_v, gre_aw, decision)."""
     try:
         resp = requests.get(
-            GRADCAFE_API,
-            params={
-                "query": query,
-                "program": program,
-                "page": page,
-                "per_page": 100,
-            },
+            GRADCAFE_SURVEY_URL,
+            params={"q": query, "t": "m", "page": page},
             headers=HEADERS,
             timeout=20,
         )
-        if resp.status_code == 200:
-            return resp.json().get("results", [])
+        if resp.status_code != 200:
+            return []
+        soup = BeautifulSoup(resp.text, "html.parser")
+        div = soup.find(attrs={"data-page": True})
+        if not div:
+            return []
+        data = json.loads(div["data-page"])
+        rows = data.get("props", {}).get("results", {}).get("data", [])
+        out = []
+        for r in rows:
+            out.append({
+                "school": r.get("school"),
+                "program": r.get("program"),
+                "decision": r.get("decision"),
+                "gpa": r.get("ugpa"),
+                "gre_q": r.get("greq"),
+                "gre_v": r.get("grev"),
+                "gre_aw": r.get("grew"),
+            })
+        return out
     except Exception as e:
         log.debug(f"  gradcafe fetch error: {e}")
-    return []
+        return []
 
 
 def extract_stats(results: list[dict]) -> dict:
@@ -238,55 +262,56 @@ def main():
     log.info(f"  {len(programs)} programs to enrich")
 
     cur = conn.cursor()
-
-    # Fetch Grad Cafe data by program type (to avoid N×M API calls)
-    # Group programs by normalized program name, fetch once per keyword
-    results_cache: dict[str, dict[str, list]] = {}  # keyword → {univ: [results]}
     updated = 0
+    # Committed to the DB after EACH keyword (not batched to the end) so a
+    # slow/stalled keyword never loses already-fetched progress from earlier
+    # ones -- rerunning is also cheap since already-updated programs are
+    # excluded by load_programs' WHERE clause.
+    already_updated_ids: set[str] = set()
 
     for keyword in TARGET_PROGRAMS:
         log.info(f"Fetching Grad Cafe: {keyword}…")
         all_results = []
 
-        for page in range(1, 4):  # max 3 pages per keyword = 300 results
+        for page in range(1, 6):  # max 5 pages * 20/page = 100 results (enough for stats)
             batch = fetch_gradcafe_results(keyword, "", page)
             if not batch:
                 break
             all_results.extend(batch)
-            if len(batch) < 100:
+            if len(batch) < GRADCAFE_PAGE_SIZE:
                 break
             time.sleep(0.3)
 
-        # Index by university name
         by_univ: dict[str, list] = defaultdict(list)
         for r in all_results:
             univ = (r.get("institution") or r.get("school") or "").lower().strip()
             if univ:
                 by_univ[univ].append(r)
 
-        results_cache[keyword] = dict(by_univ)
         log.info(f"  {len(all_results)} results across {len(by_univ)} schools")
+
+        keyword_updated = 0
+        for prog in programs:
+            if prog["id"] in already_updated_ids:
+                continue
+            prog_name = normalize_program(prog["program"])
+            if not (keyword[:10] in prog_name or prog_name[:10] in keyword):
+                continue
+            matched_results = match_program(prog, by_univ)
+            if not matched_results:
+                continue
+            stats = extract_stats(matched_results)
+            if not stats:
+                continue
+            try:
+                upsert_program_stats(cur, prog["id"], stats)
+                already_updated_ids.add(prog["id"])
+                updated += 1
+                keyword_updated += 1
+            except Exception as e:
+                log.warning(f"  skip {prog['program']} @ {prog['university']}: {e}")
+        log.info(f"  updated {keyword_updated} program(s) so far (running total {updated})")
         time.sleep(0.5)
-
-    # Now match each program to cached results
-    for prog in programs:
-        prog_name = normalize_program(prog["program"])
-
-        # Find best keyword match
-        for keyword in TARGET_PROGRAMS:
-            if keyword[:10] in prog_name or prog_name[:10] in keyword:
-                univ_results = results_cache.get(keyword, {})
-                matched_results = match_program(prog, univ_results)
-
-                if matched_results:
-                    stats = extract_stats(matched_results)
-                    if stats:
-                        try:
-                            upsert_program_stats(cur, prog["id"], stats)
-                            updated += 1
-                        except Exception as e:
-                            log.warning(f"  skip {prog['program']} @ {prog['university']}: {e}")
-                break
 
     cur.close()
     conn.close()

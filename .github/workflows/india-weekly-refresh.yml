@@ -132,7 +132,7 @@ jobs:
           p = Path('scraper_diagnostics/india_health_summary.json')
           if p.exists():
             status = json.loads(p.read_text(encoding='utf-8')).get('status', 'failed')
-          exit_code = int('${{ steps.run_ingestion.outputs.exit_code || "1" }}')
+          exit_code = int('${{ steps.run_ingestion.outputs.exit_code || '1' }}')
           if status == 'failed' or exit_code != 0:
             print('::error::India weekly ingestion failed')
             raise SystemExit(1)

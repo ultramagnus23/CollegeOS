@@ -45,6 +45,9 @@ const FIELDS = [
   'latest.student.enrollment.undergrad_12_month',
   'latest.cost.avg_net_price.public',
   'latest.cost.avg_net_price.private',
+  'latest.cost.booksupply',
+  'latest.cost.roomboard.oncampus',
+  'latest.cost.otherexpense.oncampus',
   'latest.completion.completion_rate_4yr_100nt',
   'latest.completion.completion_rate_4yr_150nt',
   'latest.earnings.6_yrs_after_entry.median',
@@ -115,6 +118,9 @@ function mapRow(r) {
     tuition_domestic: tuitionIn,
     avg_debt_at_graduation: num(r['latest.aid.median_debt.completers.overall']),
     net_price: num(r['latest.cost.avg_net_price.public']) ?? num(r['latest.cost.avg_net_price.private']),
+    books_cost: num(r['latest.cost.booksupply']),
+    housing_cost: num(r['latest.cost.roomboard.oncampus']),
+    personal_expenses: num(r['latest.cost.otherexpense.oncampus']),
     pell_grant_rate: pct(r['latest.aid.pell_grant_rate']),
     loan_default_rate_3yr: pct(r['latest.repayment.3_yr_default_rate']),
     percent_first_gen: pct(r['latest.student.share_firstgeneration']),
@@ -165,12 +171,13 @@ async function upsert(client, institutionId, d) {
     );
   }
 
-  if (d.cost_of_attendance != null || d.tuition_in_state != null || d.tuition_out_state != null || d.net_price != null || d.pell_grant_rate != null) {
+  if (d.cost_of_attendance != null || d.tuition_in_state != null || d.tuition_out_state != null || d.net_price != null || d.pell_grant_rate != null || d.books_cost != null || d.housing_cost != null || d.personal_expenses != null) {
     await client.query(
       `INSERT INTO canonical.institution_financials
          (institution_id, data_year, cost_of_attendance, tuition_in_state, tuition_out_state,
-          tuition_domestic, avg_debt_at_graduation, net_price, pell_grant_rate, source_attribution, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb, now())
+          tuition_domestic, avg_debt_at_graduation, net_price, pell_grant_rate,
+          books_cost, housing_cost, personal_expenses, source_attribution, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb, now())
        ON CONFLICT ON CONSTRAINT uq_institution_financials DO UPDATE SET
          cost_of_attendance=COALESCE(EXCLUDED.cost_of_attendance, canonical.institution_financials.cost_of_attendance),
          tuition_in_state=COALESCE(EXCLUDED.tuition_in_state, canonical.institution_financials.tuition_in_state),
@@ -179,9 +186,13 @@ async function upsert(client, institutionId, d) {
          avg_debt_at_graduation=COALESCE(EXCLUDED.avg_debt_at_graduation, canonical.institution_financials.avg_debt_at_graduation),
          net_price=COALESCE(EXCLUDED.net_price, canonical.institution_financials.net_price),
          pell_grant_rate=COALESCE(EXCLUDED.pell_grant_rate, canonical.institution_financials.pell_grant_rate),
+         books_cost=COALESCE(EXCLUDED.books_cost, canonical.institution_financials.books_cost),
+         housing_cost=COALESCE(EXCLUDED.housing_cost, canonical.institution_financials.housing_cost),
+         personal_expenses=COALESCE(EXCLUDED.personal_expenses, canonical.institution_financials.personal_expenses),
          source_attribution=EXCLUDED.source_attribution, updated_at=now()`,
       [institutionId, DATA_YEAR, d.cost_of_attendance, d.tuition_in_state, d.tuition_out_state,
-        d.tuition_domestic, d.avg_debt_at_graduation, d.net_price, d.pell_grant_rate, attribution],
+        d.tuition_domestic, d.avg_debt_at_graduation, d.net_price, d.pell_grant_rate,
+        d.books_cost, d.housing_cost, d.personal_expenses, attribution],
     );
   }
 

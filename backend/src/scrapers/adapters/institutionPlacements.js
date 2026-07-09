@@ -121,6 +121,93 @@ async function fetchText(url, logger) {
   } catch (e) { logger.warn(`[${PARSER_NAME}] fetch failed for ${url}: ${e.message}; skipping`); return null; }
 }
 
+// Many institutions publish their real stats in a linked PDF "placement
+// brochure/report" rather than in the HTML page itself. Finds candidate PDF
+// links whose URL or link text mentions placement/brochure/report keywords,
+// fetches each, and returns the extracted text of the first one that parses.
+// Unlike the Common Data Set (one standardized format), brochures have NO
+// standard layout -- this is a best-effort fallback, not a guaranteed hit.
+const BROCHURE_LINK_RE = /brochure|placement.*report|annual.*report|placement.*statistic|career.*report/i;
+
+async function findBrochurePdfText(html, baseUrl, logger) {
+  let cheerio;
+  try {
+    // eslint-disable-next-line global-require
+    cheerio = require('cheerio');
+  } catch (e) {
+    return null;
+  }
+  const $ = cheerio.load(html);
+  const candidates = [];
+  $('a[href$=".pdf"], a[href*=".pdf?"]').each((_, el) => {
+    const href = $(el).attr('href');
+    const text = $(el).text();
+    if (!href) return;
+    if (BROCHURE_LINK_RE.test(href) || BROCHURE_LINK_RE.test(text)) candidates.push(href);
+  });
+  for (const href of candidates.slice(0, 3)) {
+    let absUrl;
+    try { absUrl = new URL(href, baseUrl).toString(); } catch { continue; } // eslint-disable-line no-continue
+    try {
+      const res = await fetch(absUrl, { // eslint-disable-line no-await-in-loop
+        headers: { 'User-Agent': 'CollegeOS-PlacementsBot/1.0 (+https://collegeos.app/bot)' },
+        redirect: 'follow', signal: AbortSignal.timeout(30000),
+      });
+      if (!res.ok) continue; // eslint-disable-line no-continue
+      const buf = Buffer.from(await res.arrayBuffer()); // eslint-disable-line no-await-in-loop
+      if (buf.length < 2000) continue; // eslint-disable-line no-continue
+      // eslint-disable-next-line global-require
+      const pdfParse = require('pdf-parse');
+      const parsed = await pdfParse(buf); // eslint-disable-line no-await-in-loop
+      logger.info(`[${PARSER_NAME}] found brochure PDF: ${absUrl}`);
+
+      // If the plain text layer has no figures, many Indian brochures present
+      // the headline numbers as a designed infographic (image), not text --
+      // fall back to OCR on that specific PDF before giving up on it.
+      const plain = extractPlacements(parsed.text);
+      if (plain.fields.highest_package_inr != null || plain.fields.average_package_inr != null || plain.fields.median_package_inr != null) {
+        return { text: parsed.text, url: absUrl };
+      }
+      const ocrText = await ocrPdfBuffer(buf, logger); // eslint-disable-line no-await-in-loop
+      if (ocrText) return { text: ocrText, url: absUrl };
+      return { text: parsed.text, url: absUrl }; // let the caller's own extraction have a shot too
+    } catch (e) {
+      logger.debug && logger.debug(`[${PARSER_NAME}] brochure fetch/parse failed for ${absUrl}: ${e.message}`);
+    }
+  }
+  return null;
+}
+
+// Shells out to scraper/tools/ocr_pdf.py (pytesseract/PyMuPDF have no
+// practical Node equivalent). Only OCRs pages whose direct text layer is
+// near-empty, so this is cheap for mostly-text brochures and only pays the
+// OCR cost on genuinely image-based pages.
+async function ocrPdfBuffer(buf, logger) {
+  const fs = require('fs'); // eslint-disable-line global-require
+  const os = require('os'); // eslint-disable-line global-require
+  const path = require('path'); // eslint-disable-line global-require
+  const { execFile } = require('child_process'); // eslint-disable-line global-require
+  const tmpPath = path.join(os.tmpdir(), `collegeos-brochure-${Date.now()}.pdf`);
+  fs.writeFileSync(tmpPath, buf);
+  try {
+    const text = await new Promise((resolve, reject) => {
+      execFile('python', [path.join(__dirname, '..', '..', '..', '..', 'scraper', 'tools', 'ocr_pdf.py'), tmpPath],
+        { timeout: 120000, maxBuffer: 1024 * 1024 * 20 },
+        (err, stdout, stderr) => {
+          if (stderr) logger.info(`[${PARSER_NAME}] ${stderr.trim()}`);
+          if (err) return reject(err);
+          resolve(stdout);
+        });
+    });
+    return text;
+  } catch (e) {
+    logger.warn(`[${PARSER_NAME}] OCR fallback failed: ${e.message}`);
+    return null;
+  } finally {
+    fs.unlink(tmpPath, () => {});
+  }
+}
+
 async function resolveInstitutionId(pool, name) {
   const r = await pool.query(`SELECT id FROM canonical.institutions WHERE canonical_name = $1 LIMIT 1`, [name]);
   return r.rows[0] ? r.rows[0].id : null;
@@ -134,9 +221,26 @@ async function fetchRows({ pool, logger = console }) {
     if (!institutionId) { logger.warn(`[${PARSER_NAME}] no match for "${target.name}"; skipping`); continue; }
     const html = await fetchText(target.url, logger); // eslint-disable-line no-await-in-loop
     if (!html) continue;
-    const { fields, snippets } = extractPlacements(cleanHtml(html));
+    let { fields, snippets } = extractPlacements(cleanHtml(html)); // eslint-disable-line prefer-const
+    let sourceUrl = target.url;
+    let confidence = 0.85;
+
     if (fields.highest_package_inr == null && fields.average_package_inr == null && fields.median_package_inr == null) {
-      logger.warn(`[${PARSER_NAME}] no package figures from ${target.url}; skipping (not fabricating)`);
+      // HTML page has no inline figures -- try a linked placement brochure PDF.
+      const brochure = await findBrochurePdfText(html, target.url, logger); // eslint-disable-line no-await-in-loop
+      if (brochure) {
+        const extracted = extractPlacements(brochure.text);
+        if (extracted.fields.highest_package_inr != null || extracted.fields.average_package_inr != null || extracted.fields.median_package_inr != null) {
+          fields = extracted.fields;
+          snippets = extracted.snippets;
+          sourceUrl = brochure.url;
+          confidence = 0.75; // brochures are less standardized than a live stats page
+        }
+      }
+    }
+
+    if (fields.highest_package_inr == null && fields.average_package_inr == null && fields.median_package_inr == null) {
+      logger.warn(`[${PARSER_NAME}] no package figures from ${target.url} (incl. brochure fallback); skipping (not fabricating)`);
       continue;
     }
     rows.push({
@@ -144,9 +248,9 @@ async function fetchRows({ pool, logger = console }) {
       cycle_year: target.cycle_year,
       ...fields,
       currency: 'INR',
-      source_url: target.url,
+      source_url: sourceUrl,
       source_type: 'official',
-      confidence_score: 0.85,
+      confidence_score: confidence,
       raw_payload: JSON.stringify({ institution: target.name, matched: snippets }),
       created_at: now,
       updated_at: now,
