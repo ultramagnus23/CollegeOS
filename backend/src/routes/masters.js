@@ -150,6 +150,7 @@ router.get('/applications', authenticate, async (req, res) => {
     const { rows } = await pool.query(
       `SELECT a.id, a.masters_program_id, a.status, a.intake_term, a.intake_year, a.priority,
               a.notes, a.decision_outcome, a.created_at,
+              a.application_portal_link, a.application_fee, a.application_fee_currency,
               p.institution_name, p.program_name, p.degree_type
          FROM public.masters_applications a
          JOIN canonical.masters_programs p ON p.id = a.masters_program_id
@@ -180,6 +181,178 @@ router.post('/applications', authenticate, requireMastersTrackForWrite, async (r
     );
     res.status(201).json({ success: true, data: rows[0], message: 'Application saved' });
   } catch (e) { fail(res, 500, 'Failed to save application', e); }
+});
+
+// ── Per-application document + recommender tracking ─────────────────────────
+// Closes the gap that forced users into a manual spreadsheet: which documents does
+// each application need and are they done, who's writing each LoR and have they
+// submitted, plus the portal link/fee. See migration 143.
+
+/** Verify `masters_application_id` belongs to req.user.userId; returns the row or null. */
+async function ownedApplication(pool, userId, applicationId) {
+  const { rows } = await pool.query(
+    'SELECT id FROM public.masters_applications WHERE id = $1 AND user_id = $2',
+    [applicationId, userId],
+  );
+  return rows[0] || null;
+}
+
+router.put('/applications/:id', authenticate, requireMastersTrackForWrite, async (req, res) => {
+  try {
+    const pool = dbManager.getDatabase();
+    const owned = await ownedApplication(pool, req.user.userId, req.params.id);
+    if (!owned) return fail(res, 404, 'Application not found');
+    const { applicationPortalLink, applicationFee, applicationFeeCurrency, priority, notes } = req.body || {};
+    const { rows } = await pool.query(
+      `UPDATE public.masters_applications SET
+         application_portal_link  = COALESCE($2, application_portal_link),
+         application_fee          = COALESCE($3, application_fee),
+         application_fee_currency = COALESCE($4, application_fee_currency),
+         priority                 = COALESCE($5, priority),
+         notes                    = COALESCE($6, notes),
+         updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [req.params.id, applicationPortalLink ?? null, applicationFee ?? null,
+        applicationFeeCurrency ?? null, priority ?? null, notes ?? null],
+    );
+    res.json({ success: true, data: rows[0] });
+  } catch (e) { fail(res, 500, 'Failed to update application', e); }
+});
+
+router.get('/applications/:id/documents', authenticate, async (req, res) => {
+  try {
+    const pool = dbManager.getDatabase();
+    const owned = await ownedApplication(pool, req.user.userId, req.params.id);
+    if (!owned) return fail(res, 404, 'Application not found');
+    const { rows } = await pool.query(
+      `SELECT id, document_type, status, document_id, notes, created_at, updated_at
+         FROM public.masters_application_documents
+        WHERE masters_application_id = $1 ORDER BY created_at ASC`,
+      [req.params.id],
+    );
+    res.json({ success: true, data: rows });
+  } catch (e) { fail(res, 500, 'Failed to fetch documents', e); }
+});
+
+router.post('/applications/:id/documents', authenticate, requireMastersTrackForWrite, async (req, res) => {
+  try {
+    const pool = dbManager.getDatabase();
+    const owned = await ownedApplication(pool, req.user.userId, req.params.id);
+    if (!owned) return fail(res, 404, 'Application not found');
+    const { documentType, status, documentId, notes } = req.body || {};
+    if (!documentType) return fail(res, 400, 'documentType is required');
+    const { rows } = await pool.query(
+      `INSERT INTO public.masters_application_documents
+         (masters_application_id, document_type, status, document_id, notes)
+       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+      [req.params.id, documentType, status || 'not_started', documentId || null, notes || null],
+    );
+    res.status(201).json({ success: true, data: rows[0] });
+  } catch (e) { fail(res, 500, 'Failed to add document', e); }
+});
+
+router.put('/applications/:id/documents/:docId', authenticate, requireMastersTrackForWrite, async (req, res) => {
+  try {
+    const pool = dbManager.getDatabase();
+    const owned = await ownedApplication(pool, req.user.userId, req.params.id);
+    if (!owned) return fail(res, 404, 'Application not found');
+    const { status, documentId, notes } = req.body || {};
+    const { rows } = await pool.query(
+      `UPDATE public.masters_application_documents SET
+         status = COALESCE($3, status), document_id = COALESCE($4, document_id),
+         notes = COALESCE($5, notes), updated_at = NOW()
+       WHERE id = $1 AND masters_application_id = $2 RETURNING *`,
+      [req.params.docId, req.params.id, status ?? null, documentId ?? null, notes ?? null],
+    );
+    if (!rows[0]) return fail(res, 404, 'Document not found');
+    res.json({ success: true, data: rows[0] });
+  } catch (e) { fail(res, 500, 'Failed to update document', e); }
+});
+
+router.delete('/applications/:id/documents/:docId', authenticate, requireMastersTrackForWrite, async (req, res) => {
+  try {
+    const pool = dbManager.getDatabase();
+    const owned = await ownedApplication(pool, req.user.userId, req.params.id);
+    if (!owned) return fail(res, 404, 'Application not found');
+    await pool.query(
+      'DELETE FROM public.masters_application_documents WHERE id = $1 AND masters_application_id = $2',
+      [req.params.docId, req.params.id],
+    );
+    res.json({ success: true });
+  } catch (e) { fail(res, 500, 'Failed to delete document', e); }
+});
+
+router.get('/applications/:id/recommenders', authenticate, async (req, res) => {
+  try {
+    const pool = dbManager.getDatabase();
+    const owned = await ownedApplication(pool, req.user.userId, req.params.id);
+    if (!owned) return fail(res, 404, 'Application not found');
+    const { rows } = await pool.query(
+      `SELECT ar.id, ar.recommender_id, ar.status, ar.request_date, ar.notes,
+              r.name, r.email, r.relationship, r.institution
+         FROM public.masters_application_recommenders ar
+         JOIN public.recommenders r ON r.id = ar.recommender_id
+        WHERE ar.masters_application_id = $1 ORDER BY ar.created_at ASC`,
+      [req.params.id],
+    );
+    res.json({ success: true, data: rows });
+  } catch (e) { fail(res, 500, 'Failed to fetch recommenders', e); }
+});
+
+router.post('/applications/:id/recommenders', authenticate, requireMastersTrackForWrite, async (req, res) => {
+  try {
+    const pool = dbManager.getDatabase();
+    const owned = await ownedApplication(pool, req.user.userId, req.params.id);
+    if (!owned) return fail(res, 404, 'Application not found');
+    const { recommenderId, status, notes } = req.body || {};
+    if (!recommenderId) return fail(res, 400, 'recommenderId is required');
+    // Ownership check on the recommender itself -- must belong to this user.
+    const { rows: recRows } = await pool.query(
+      'SELECT id FROM public.recommenders WHERE id = $1 AND user_id = $2', [recommenderId, req.user.userId],
+    );
+    if (!recRows[0]) return fail(res, 404, 'Recommender not found');
+    const { rows } = await pool.query(
+      `INSERT INTO public.masters_application_recommenders
+         (masters_application_id, recommender_id, status, request_date, notes)
+       VALUES ($1,$2,$3, CASE WHEN $3 != 'not_requested' THEN NOW() ELSE NULL END, $4)
+       ON CONFLICT (masters_application_id, recommender_id) DO UPDATE SET
+         status = EXCLUDED.status, notes = EXCLUDED.notes, updated_at = NOW()
+       RETURNING *`,
+      [req.params.id, recommenderId, status || 'not_requested', notes || null],
+    );
+    res.status(201).json({ success: true, data: rows[0] });
+  } catch (e) { fail(res, 500, 'Failed to add recommender', e); }
+});
+
+router.put('/applications/:id/recommenders/:recId', authenticate, requireMastersTrackForWrite, async (req, res) => {
+  try {
+    const pool = dbManager.getDatabase();
+    const owned = await ownedApplication(pool, req.user.userId, req.params.id);
+    if (!owned) return fail(res, 404, 'Application not found');
+    const { status, notes } = req.body || {};
+    const { rows } = await pool.query(
+      `UPDATE public.masters_application_recommenders SET
+         status = COALESCE($3, status), notes = COALESCE($4, notes), updated_at = NOW()
+       WHERE id = $1 AND masters_application_id = $2 RETURNING *`,
+      [req.params.recId, req.params.id, status ?? null, notes ?? null],
+    );
+    if (!rows[0]) return fail(res, 404, 'Recommender link not found');
+    res.json({ success: true, data: rows[0] });
+  } catch (e) { fail(res, 500, 'Failed to update recommender', e); }
+});
+
+router.delete('/applications/:id/recommenders/:recId', authenticate, requireMastersTrackForWrite, async (req, res) => {
+  try {
+    const pool = dbManager.getDatabase();
+    const owned = await ownedApplication(pool, req.user.userId, req.params.id);
+    if (!owned) return fail(res, 404, 'Application not found');
+    await pool.query(
+      'DELETE FROM public.masters_application_recommenders WHERE id = $1 AND masters_application_id = $2',
+      [req.params.recId, req.params.id],
+    );
+    res.json({ success: true });
+  } catch (e) { fail(res, 500, 'Failed to delete recommender', e); }
 });
 
 // ── Outcome collection (deliverable #6 — proprietary dataset for future models) ──

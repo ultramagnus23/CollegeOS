@@ -8,12 +8,9 @@ import AIChatbot from '../components/AIChatbot';
 import ProfileStrength from '../components/chancing/ProfileStrength';
 import TodaysTasks from '../components/dashboard/TodaysTasks';
 import UrgentAlerts from '../components/dashboard/UrgentAlerts';
-import RecommendedActions from '../components/dashboard/RecommendedActions';
 import CollegeListOverview from '../components/dashboard/CollegeListOverview';
-import ProfileCompleteness from '../components/ProfileCompleteness';
 import { CompactDecisionCountdown } from '@/components/DecisionCountdown';
 import { useTutorial } from '../components/tutorial/TutorialOverlay';
-import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import { trackDuration, trackMetric } from '@/observability';
 
 /* ─── Design tokens ──────────────────────────────────────────────────── */
@@ -158,14 +155,13 @@ const Dashboard = () => {
   const [essayProgress, setEssayProgress] = useState<any[]>([]);
   const [decisionDates, setDecisionDates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [recommendedActions, setRecommendedActions] = useState<any[]>([]);
   const [urgentAlerts, setUrgentAlerts] = useState<any[]>([]);
   const [collegeList, setCollegeList] = useState<any[]>([]);
   const [todaysTasks, setTodaysTasks] = useState<any[]>([]);
   const [nextAction, setNextAction] = useState<any>(null);
+  const [priorityActions, setPriorityActions] = useState<any[]>([]);
   const [distribution, setDistribution] = useState({ reach:0, target:0, safety:0, unclassified:0 });
 
-  const { completionPercent: profileStrength } = useProfileCompletion();
 
   // /auth/* now returns these already parsed (arrays). Stay tolerant of a
   // legacy JSON-string shape from cached data without forcing a re-parse.
@@ -194,13 +190,11 @@ const Dashboard = () => {
       // All data fetched in a single parallel batch — one network layer instead of 4+.
       // getDashboard already contains applications, deadlines, tasks, essays aggregates.
       // We fetch essays detail and risk alerts alongside it, not after it.
-      const profile = { gpa:user?.gpa||3.5, satScore:user?.sat_score, actScore:user?.act_score, activities:[], grade:user?.grade||'Grade 12', curriculum:user?.curriculum||'CBSE' };
-      const [dashReq, essaysReq, alertsReq, tasksReq, actionsReq] = await Promise.allSettled([
+      const [dashReq, essaysReq, alertsReq, tasksReq] = await Promise.allSettled([
         api.getDashboard(),
         api.getEssays(),
         api.risk.alerts(),
         api.tasks.getAll({ status:'pending' }),
-        api.automation.getRecommendedActions(profile),
       ]);
 
       // ── getDashboard ────────────────────────────────────────────────────────
@@ -213,6 +207,7 @@ const Dashboard = () => {
       const dashTasks: any[] = d?.tasks?.dueThisWeek || [];
 
       if (d?.nextAction) setNextAction(d.nextAction);
+      if (Array.isArray(d?.priorityActions) && d.priorityActions.length) setPriorityActions(d.priorityActions);
       if (d?.applications?.distribution) setDistribution(d.applications.distribution);
 
       const calcDays = (s:string)=>Math.ceil((new Date(s+'T00:00:00').getTime()-Date.now())/86400000);
@@ -241,8 +236,10 @@ const Dashboard = () => {
         collegeName:a.collegeName, deadlineType:a.applicationType||'Regular Decision',
         notificationDate:a.notificationDate, applicationDate:a.deadline, collegeId:a.collegeId,
       })));
+      const validCategory = (c: string) => c === 'reach' || c === 'target' || c === 'safety';
       setCollegeList(dashApps.map((a:any)=>({
-        id:a.id, name:a.collegeName||a.college_name, category:a.category||'target',
+        id:a.id, name:a.collegeName||a.college_name,
+        category: validCategory(a.category) ? a.category : 'target', // 'target' = unknown acceptance rate, not "definitely a match"
         country:a.country||'United States', deadline:a.deadline, status:a.status,
       })));
 
@@ -271,17 +268,6 @@ const Dashboard = () => {
           id:t.id, title:t.title||'Task', category:'deadline',
           priority:t.priority||'medium', dueDate:t.deadline, status:'pending', estimatedTime:30,
         })));
-      }
-
-      // ── recommended actions ──────────────────────────────────────────────────
-      const act = actionsReq.status === 'fulfilled' ? actionsReq.value : null;
-      if (act?.success && act.data) {
-        setRecommendedActions(act.data.map((a:any,i:number)=>({ id:`action-${i}`, ...a, impactScore:a.impact==='Unlocks personalized college recommendations'?20:a.impact==='Better reach/target/safety classification'?15:10 })));
-      } else {
-        setRecommendedActions([
-          { id:'a1', priority:'high', category:'profile', action:'Complete your profile', reason:'Unlocks personalized recommendations', impact:'Unlocks personalized college recommendations', impactScore:20 },
-          { id:'a2', priority:'medium', category:'applications', action:'Add colleges to your list', reason:'Build a balanced reach/target/safety list', impact:'Better application strategy', impactScore:15 },
-        ]);
       }
     } catch (e) {
       console.error('Dashboard load error:', e);
@@ -364,24 +350,34 @@ const Dashboard = () => {
 
         <div style={{ maxWidth:1280, margin:'0 auto', padding:'36px 48px 80px' }}>
 
-          {/* ── What should I do next? (command center) ── */}
-          {nextAction && (() => {
-            const u = nextAction.urgency || 'medium';
-            const uc = u==='critical' ? '#EF4444' : u==='high' ? '#F97316' : u==='low' ? '#10B981' : S.accent;
+          {/* ── This week (command center) — up to 3 ranked priority actions ── */}
+          {(() => {
+            const items = priorityActions.length ? priorityActions : (nextAction ? [nextAction] : []);
+            if (!items.length) return null;
             const ctaRoutes: Record<string,string> = { profile:'/settings', explore:'/colleges', deadlines:'/deadlines', documents:'/documents', essays:'/essays', tasks:'/deadlines', timeline:'/timeline' };
+            const urgencyColor = (u: string) => u==='critical' ? '#EF4444' : u==='high' ? '#F97316' : u==='low' ? '#10B981' : S.accent;
             return (
-              <div style={{ marginBottom:24, padding:'20px 24px', borderRadius:16, border:`1px solid ${h2r(uc,0.35)}`, background:`linear-gradient(135deg, ${h2r(uc,0.10)} 0%, transparent 70%)`, display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:16 }}>
-                  <div style={{ width:44, height:44, borderRadius:12, background:h2r(uc,0.18), display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>🎯</div>
-                  <div>
-                    <div style={{ fontSize:11, color:h2r(uc,0.9), textTransform:'uppercase', letterSpacing:'0.1em', fontWeight:700, marginBottom:4 }}>Do this next</div>
-                    <div style={{ fontSize:18, fontWeight:800, color:S.text, lineHeight:1.2 }}>{nextAction.label}</div>
-                    {nextAction.why && <div style={{ fontSize:13, color:S.muted, marginTop:4 }}>{nextAction.why}</div>}
-                  </div>
+              <div style={{ marginBottom:24 }}>
+                <div style={{ fontSize:11, color:S.dim, textTransform:'uppercase', letterSpacing:'0.1em', fontWeight:700, marginBottom:10, paddingLeft:2 }}>This week</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  {items.map((action, i) => {
+                    const uc = urgencyColor(action.urgency || 'medium');
+                    return (
+                      <div key={i} style={{ padding:'18px 24px', borderRadius:16, border:`1px solid ${h2r(uc,0.35)}`, background:`linear-gradient(135deg, ${h2r(uc,0.10)} 0%, transparent 70%)`, display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, flexWrap:'wrap' }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+                          <div style={{ width:40, height:40, borderRadius:11, background:h2r(uc,0.18), display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>{i === 0 ? '🎯' : '▸'}</div>
+                          <div>
+                            <div style={{ fontSize:16, fontWeight:800, color:S.text, lineHeight:1.2 }}>{action.label}</div>
+                            {action.why && <div style={{ fontSize:12, color:S.muted, marginTop:3 }}>{action.why}</div>}
+                          </div>
+                        </div>
+                        <button onClick={()=>navigate(ctaRoutes[action.cta] || '/')} style={{ padding:'9px 18px', borderRadius:10, border:'none', background:uc, color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', fontFamily:S.font }}>
+                          Go →
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
-                <button onClick={()=>navigate(ctaRoutes[nextAction.cta] || '/')} style={{ padding:'10px 20px', borderRadius:10, border:'none', background:uc, color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap', fontFamily:S.font }}>
-                  Go →
-                </button>
               </div>
             );
           })()}
@@ -406,14 +402,22 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* ── Tasks + Recommended Actions ── */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
-            <TodaysTasks tasks={todaysTasks} onTaskClick={()=>navigate('/deadlines')} onTaskComplete={async (id)=>{ try { await api.tasks.update(id,{status:'completed'}); setTodaysTasks(prev=>prev.filter(t=>t.id!==id)); } catch { toast.error('Failed to complete task'); } }} />
-            <RecommendedActions actions={recommendedActions} profileStrength={profileStrength} onActionClick={(a)=>{
-              const routes: Record<string,string> = { profile:'/settings', testing:'/settings', essays:'/essays', applications:'/applications', recommendations:'/recommendations', deadlines:'/deadlines' };
-              navigate(routes[a.category]||'/');
-            }} />
-          </div>
+          {/* ── Today's tasks ──
+              TodaysTasks' empty state ("You're all caught up! No pending tasks") reads as
+              a direct contradiction sitting right below the "This week" hero when that
+              hero has real items — so only render it once there's something real to show.
+              The old "Recommended Actions" card that used to sit next to this fed a
+              hardcoded fallback profile (gpa: 3.5, curriculum: 'CBSE') into a separate
+              client-side heuristic whenever real data was missing, and its ranking
+              routinely contradicted the "This week" hero above (both claim to be the
+              #1 priority, backed by different logic). Removed rather than reconciled —
+              "This week" is server-derived from the user's real profile/deadlines/docs
+              and is the single source of truth for prioritization now. */}
+          {todaysTasks.length > 0 && (
+            <div style={{ marginBottom:24 }}>
+              <TodaysTasks tasks={todaysTasks} onTaskClick={()=>navigate('/deadlines')} onTaskComplete={async (id)=>{ try { await api.tasks.update(id,{status:'completed'}); setTodaysTasks(prev=>prev.filter(t=>t.id!==id)); } catch { toast.error('Failed to complete task'); } }} />
+            </div>
+          )}
 
           {/* ── College list overview ── */}
           <div style={{ marginBottom:24 }}>
@@ -500,12 +504,13 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          {/* ── Profile completeness ── */}
-          <div style={{ marginBottom:24 }}>
-            <ProfileCompleteness />
-          </div>
-
-          {/* ── Deadlines + Applications ── */}
+          {/* ── Deadlines + Applications ──
+              (ProfileCompleteness used to render here too, but it's driven by the exact
+              same useProfileCompletion() data as the "This week" hero at the top of the
+              page -- same missing-field list, just as a full checklist instead of the
+              single top-priority item. Redundant on this page; kept on Chancing.tsx
+              where "here's what's missing before we can chance you" is directly in
+              context.) ── */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
             <Card>
               <SectionHead emoji="⏰" title="Upcoming Deadlines" href="/deadlines" linkLabel="View all" />

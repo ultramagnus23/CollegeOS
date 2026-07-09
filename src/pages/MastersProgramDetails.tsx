@@ -60,6 +60,7 @@ interface ProgramDetail {
   data_quality_score?: number;
   duration_months?: number;
   official_website?: string;
+  funding_source_notes?: string;
   pathways?: Pathway[];
   deadlines?: MastersDeadline[];
   gre_requirement?: string;
@@ -290,6 +291,27 @@ const MastersProgramDetails: React.FC = () => {
               </div>
             ) : (
               <div style={{ fontSize: 13, color: S.dim, fontFamily: S.font }}>No outcomes data available</div>
+            )}
+            {program.funding_source_notes && (
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${S.border}` }}>
+                <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font, marginBottom: 6 }}>
+                  Funding info from the department (verify before applying)
+                </div>
+                {/^https?:\/\/\S+$/.test(program.funding_source_notes.trim()) ? (
+                  <a
+                    href={program.funding_source_notes.trim()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: 13, color: ACCENT, fontFamily: S.font, wordBreak: 'break-all' }}
+                  >
+                    {program.funding_source_notes.trim()}
+                  </a>
+                ) : (
+                  <div style={{ fontSize: 13, color: 'var(--color-text-primary)', fontFamily: S.font, whiteSpace: 'pre-line' }}>
+                    {program.funding_source_notes}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

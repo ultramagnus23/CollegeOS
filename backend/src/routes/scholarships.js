@@ -172,8 +172,8 @@ router.get('/', async (req, res, next) => {
     
     const scholarships = await Scholarship.search({
       country,
-      needBased: needBased === 'true',
-      meritBased: meritBased === 'true',
+      needBased: needBased === undefined ? undefined : needBased === 'true',
+      meritBased: meritBased === undefined ? undefined : meritBased === 'true',
       minAmount: minAmount ? parseInt(minAmount) : undefined,
       deadline: deadlineAfter,
       search,

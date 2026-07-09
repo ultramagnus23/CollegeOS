@@ -307,7 +307,10 @@ router.get('/comprehensive', async (req, res, next) => {
  * GET /api/colleges/comprehensive/stats
  * Summary stats: total count, countries, states distribution.
  *
- * Registered before /comprehensive/:id so "stats" isn't swallowed as an :id param.
+ * Must be registered before /comprehensive/:id -- Express matches routes in
+ * registration order, so with :id first, a request to /comprehensive/stats
+ * matched :id="stats" and 404'd looking up a college named "stats" instead
+ * of ever reaching this handler.
  */
 router.get('/comprehensive/stats', async (req, res, next) => {
   try {

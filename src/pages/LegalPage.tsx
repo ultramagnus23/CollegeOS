@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { MarkdownView } from '../components/legal/MarkdownView';
+import { LEGAL_DOCS_META } from './legalDocsMeta';
 
 import termsRaw from '../../legal/terms-of-service.md?raw';
 import privacyRaw from '../../legal/privacy-policy.md?raw';
@@ -16,16 +17,23 @@ export interface LegalDoc { slug: string; path: string; title: string; source: s
 // from /legal/*.md so the live page can never drift from the source document. The three
 // internal/engineering docs (database-compliance-design, jurisdiction-review-checklist,
 // launch-readiness-report) are intentionally NOT routed.
-export const LEGAL_DOCS: LegalDoc[] = [
-  { slug: 'terms', path: '/terms', title: 'Terms of Service', source: termsRaw },
-  { slug: 'privacy', path: '/privacy', title: 'Privacy Policy', source: privacyRaw },
-  { slug: 'cookies', path: '/cookies', title: 'Cookie Policy', source: cookiesRaw },
-  { slug: 'data-retention', path: '/data-retention', title: 'Data Retention Policy', source: dataRetentionRaw },
-  { slug: 'account-deletion', path: '/account-deletion', title: 'Account Deletion Policy', source: accountDeletionRaw },
-  { slug: 'minor-policy', path: '/minor-policy', title: 'Minor User Policy', source: minorPolicyRaw },
-  { slug: 'community-guidelines', path: '/community-guidelines', title: 'Community Guidelines', source: communityRaw },
-  { slug: 'ai-disclaimer', path: '/ai-disclaimer', title: 'AI Disclaimer', source: aiDisclaimerRaw },
-];
+//
+// Metadata (slug/path/title) lives in ./legalDocsMeta.ts, imported below and merged with
+// the raw text here -- components that only need to link to these pages (LegalFooter)
+// should import LEGAL_DOCS_META directly instead of this array, so they don't pull ~120KB
+// of raw markdown into their chunk just to render a list of links.
+const RAW_BY_SLUG: Record<string, string> = {
+  terms: termsRaw,
+  privacy: privacyRaw,
+  cookies: cookiesRaw,
+  'data-retention': dataRetentionRaw,
+  'account-deletion': accountDeletionRaw,
+  'minor-policy': minorPolicyRaw,
+  'community-guidelines': communityRaw,
+  'ai-disclaimer': aiDisclaimerRaw,
+};
+
+export const LEGAL_DOCS: LegalDoc[] = LEGAL_DOCS_META.map((d) => ({ ...d, source: RAW_BY_SLUG[d.slug] }));
 
 const BY_SLUG = new Map(LEGAL_DOCS.map((d) => [d.slug, d]));
 

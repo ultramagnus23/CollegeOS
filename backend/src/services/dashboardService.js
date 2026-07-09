@@ -29,11 +29,13 @@ class DashboardService {
       this._safe(() => this._tasks(userId), { dueThisWeek: [], pending: 0 }),
     ]);
 
-    const nextAction = this._nextAction({ profile, applications, deadlines, essays, documents, tasks });
+    const priorityActions = this._priorityActions({ profile, applications, deadlines, essays, documents, tasks });
+    const nextAction = priorityActions[0] || this._fallbackAction();
 
     return {
       profile, applications, deadlines, essays, documents, tasks,
       nextAction,
+      priorityActions,
       generatedAt: new Date().toISOString(),
     };
   }
@@ -67,13 +69,23 @@ class DashboardService {
     );
     const byStatus = {};
     const distribution = { reach: 0, target: 0, safety: 0, unclassified: 0 };
+    // Acceptance-rate-only heuristic (not personalized to this student's own stats —
+    // a real reach-vs-target-vs-safety call needs the chancing engine's per-student,
+    // per-college computation, which is too expensive to run for every dashboard load).
+    // This was previously only used for the aggregate `distribution` counts; every
+    // individual item was left uncategorized, so the frontend's `category || 'target'`
+    // fallback always fired and every college showed as "Match" regardless of its real
+    // acceptance rate. Now applied per-item too, consistent with the aggregate.
+    const categorize = (rate) => {
+      if (rate === null) return 'unclassified';
+      if (rate < 0.15) return 'reach';
+      if (rate <= 0.4) return 'target';
+      return 'safety';
+    };
     for (const r of rows) {
       byStatus[r.status] = (byStatus[r.status] || 0) + 1;
       const rate = normRate(r.acceptance_rate);
-      if (rate === null) distribution.unclassified += 1;
-      else if (rate < 0.15) distribution.reach += 1;
-      else if (rate <= 0.4) distribution.target += 1;
-      else distribution.safety += 1;
+      distribution[categorize(rate)] += 1;
     }
     return {
       total: rows.length,
@@ -82,6 +94,7 @@ class DashboardService {
       items: rows.slice(0, 10).map((r) => ({
         id: r.id, collegeId: r.college_id, collegeName: r.college_name,
         status: r.status, applicationType: r.application_type, deadline: r.deadline,
+        category: categorize(normRate(r.acceptance_rate)),
       })),
     };
   }
@@ -142,29 +155,42 @@ class DashboardService {
     return { dueThisWeek: dueThisWeek.slice(0, 10), pending: rows.length };
   }
 
-  // The single most important prioritized next step, in journey order.
-  static _nextAction({ profile, applications, deadlines, essays, documents, tasks }) {
+  // Up to 3 highest-priority actions for the "This week" hero, ranked by urgency
+  // then journey order. Each check that would have returned the single legacy
+  // nextAction is preserved (same label/cta/why/urgency), just collected instead
+  // of returned early, so existing consumers of `nextAction` (== priorityActions[0])
+  // see identical output to before.
+  static _priorityActions({ profile, applications, deadlines, essays, documents, tasks }) {
+    const actions = [];
+    const urgencyRank = { critical: 0, high: 1, medium: 2, low: 3 };
+
     if ((profile.percentage ?? 0) < 60) {
       const next = profile.missing_critical?.[0];
-      return { label: next ? `Complete your profile — add ${next}` : 'Complete your profile', cta: 'profile', why: 'A complete profile powers accurate recommendations and chancing.', urgency: 'high' };
+      actions.push({ label: next ? `Complete your profile — add ${next}` : 'Complete your profile', cta: 'profile', why: 'A complete profile powers accurate recommendations and chancing.', urgency: 'high' });
     }
     if ((applications.total ?? 0) === 0) {
-      return { label: 'Add your first college', cta: 'explore', why: 'Adding a college auto-creates your deadlines, essays, documents and tasks.', urgency: 'high' };
+      actions.push({ label: 'Add your first college', cta: 'explore', why: 'Adding a college auto-creates your deadlines, essays, documents and tasks.', urgency: 'high' });
     }
     const soon = deadlines.upcoming?.[0];
     if (soon) {
       const days = Math.ceil((new Date(soon.deadline_date) - Date.now()) / 86400000);
-      if (days <= 14) return { label: `${soon.title} in ${days} day(s)`, cta: 'deadlines', why: 'This deadline is approaching — prioritize it.', urgency: days <= 5 ? 'critical' : 'high' };
+      if (days <= 14) actions.push({ label: `${soon.title} in ${days} day(s)`, cta: 'deadlines', why: 'This deadline is approaching — prioritize it.', urgency: days <= 5 ? 'critical' : 'high' });
     }
     if ((documents.missing ?? 0) > 0) {
-      return { label: `Upload ${documents.missing} missing document(s)`, cta: 'documents', why: 'Documents are required to submit applications.', urgency: 'medium' };
+      actions.push({ label: `Upload ${documents.missing} missing document(s)`, cta: 'documents', why: 'Documents are required to submit applications.', urgency: 'medium' });
     }
     if ((essays.remaining ?? 0) > 0) {
-      return { label: `Work on ${essays.remaining} remaining essay(s)`, cta: 'essays', why: 'Essays take the longest — start early.', urgency: 'medium' };
+      actions.push({ label: `Work on ${essays.remaining} remaining essay(s)`, cta: 'essays', why: 'Essays take the longest — start early.', urgency: 'medium' });
     }
     if ((tasks.dueThisWeek?.length ?? 0) > 0) {
-      return { label: `${tasks.dueThisWeek.length} task(s) due this week`, cta: 'tasks', why: 'Stay on track with this week’s checklist.', urgency: 'medium' };
+      actions.push({ label: `${tasks.dueThisWeek.length} task(s) due this week`, cta: 'tasks', why: 'Stay on track with this week’s checklist.', urgency: 'medium' });
     }
+
+    actions.sort((a, b) => (urgencyRank[a.urgency] ?? 9) - (urgencyRank[b.urgency] ?? 9));
+    return actions.slice(0, 3);
+  }
+
+  static _fallbackAction() {
     return { label: 'You’re on track — review your timeline', cta: 'timeline', why: 'Keep momentum toward submission.', urgency: 'low' };
   }
 }

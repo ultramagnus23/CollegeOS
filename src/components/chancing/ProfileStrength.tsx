@@ -1,11 +1,25 @@
 // src/components/chancing/ProfileStrength.tsx
-// Shows student profile strength analysis
+// Shows student profile strength analysis. Styled to match Dashboard.tsx's dark
+// editorial design system (only consumer of this component) instead of generic
+// shadcn/Tailwind defaults, which read poorly against the dark background.
 
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, AlertTriangle, CheckCircle, Target } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { TrendingUp, AlertTriangle, Target } from 'lucide-react';
 import { api } from '@/services/api';
+
+const h2r = (hex: string, a: number) => {
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${a})`;
+};
+const S = {
+  surface: 'var(--color-bg-surface)',
+  surface2: 'var(--color-surface-subtle)',
+  border: 'var(--color-border)',
+  text: 'var(--color-text-primary)',
+  muted: 'var(--color-text-secondary)',
+  dim: 'var(--color-text-disabled)',
+  font: "'Inter', system-ui, sans-serif",
+};
 
 interface Section {
   name: string;
@@ -28,6 +42,12 @@ interface ProfileStrengthData {
   };
 }
 
+function strengthColor(percentage: number) {
+  if (percentage >= 75) return '#10B981';
+  if (percentage >= 50) return '#FBBF24';
+  return '#F87171';
+}
+
 export default function ProfileStrength() {
   const [data, setData] = useState<ProfileStrengthData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,24 +60,13 @@ export default function ProfileStrength() {
   const fetchStrength = async () => {
     try {
       setLoading(true);
-      
-      // Try analytics.profileStrength first (new API)
-      try {
-        const response = await api.analytics.profileStrength();
-        if (response.success && response.data) {
-          setData({
-            overallStrength: response.data.overallStrength || response.data.overall || 0,
-            sections: response.data.sections || [],
-            recommendations: response.data.recommendations || response.data.suggestions || [],
-            profile: response.data.profile || {}
-          });
-          return;
-        }
-      } catch (analyticsError) {
-        console.warn('Analytics API not available, trying fallback:', analyticsError);
-      }
-      
-      // Fallback to old getProfileStrength method
+      // GET /chancing/profile-strength returns exactly the shape this component
+      // renders (overallStrength/sections/recommendations/profile). There used to
+      // be a first attempt at POST /analytics/profile-strength ("the new API"), but
+      // that endpoint returns a differently-shaped payload (overallScore +
+      // componentScores, not overallStrength + sections) that this component never
+      // actually read correctly -- it always silently fell through to 0/empty
+      // instead of erroring, which is why this card looked permanently stuck at 0%.
       const response = await api.getProfileStrength();
       if (response.success) {
         setData(response.data);
@@ -70,129 +79,119 @@ export default function ProfileStrength() {
     }
   };
 
+  const cardStyle: React.CSSProperties = {
+    background: S.surface, border: `1px solid ${S.border}`, borderRadius: 18, padding: '22px 24px',
+  };
+
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-        </CardContent>
-      </Card>
+      <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+        <div style={{ width: 32, height: 32, border: `3px solid ${S.border}`, borderTopColor: '#6C63FF', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center text-red-500">
-          {error}
-        </CardContent>
-      </Card>
+      <div style={{ ...cardStyle, textAlign: 'center', color: '#F87171', fontFamily: S.font, fontSize: 13 }}>
+        {error}
+      </div>
     );
   }
 
   if (!data) return null;
 
-  const getStrengthColor = (percentage: number) => {
-    if (percentage >= 75) return 'text-green-600';
-    if (percentage >= 50) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getProgressColor = (percentage: number) => {
-    if (percentage >= 75) return 'bg-green-500';
-    if (percentage >= 50) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
+  const strengthPct = data.overallStrength;
+  const color = strengthColor(strengthPct);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Target className="h-5 w-5" />
-          Profile Strength
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Overall Strength */}
-        <div className="text-center">
-          <div className={`text-5xl font-bold ${getStrengthColor(data.overallStrength)}`}>
-            {data.overallStrength}%
-          </div>
-          <p className="text-muted-foreground mt-1">Overall Profile Strength</p>
-        </div>
+    <div style={cardStyle}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+        <Target size={18} color={S.text} />
+        <h3 style={{ fontSize: 17, fontWeight: 800, color: S.text, fontFamily: S.font }}>Profile Strength</h3>
+      </div>
 
-        {/* Sections */}
-        <div className="space-y-4">
+      {/* Overall Strength */}
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <div style={{ fontSize: 44, fontWeight: 900, color, fontFamily: S.font, lineHeight: 1 }}>{strengthPct}%</div>
+        <p style={{ color: S.muted, fontSize: 13, fontFamily: S.font, marginTop: 6 }}>Overall Profile Strength</p>
+      </div>
+
+      {/* Sections */}
+      {data.sections.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
           {data.sections.map((section, index) => (
             <div key={index}>
-              <div className="flex justify-between mb-1">
-                <span className="text-sm font-medium">{section.name}</span>
-                <span className="text-sm text-muted-foreground">
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: S.text, fontFamily: S.font }}>{section.name}</span>
+                <span style={{ fontSize: 12, color: S.dim, fontFamily: S.font }}>
                   {section.score}/{section.maxScore} ({section.percentage}%)
                 </span>
               </div>
-              <Progress 
-                value={section.percentage} 
-                className={`h-2 ${getProgressColor(section.percentage)}`}
-              />
+              <div style={{ height: 6, background: S.surface2, borderRadius: 6, overflow: 'hidden' }}>
+                <div style={{
+                  width: `${Math.min(section.percentage, 100)}%`, height: '100%',
+                  background: strengthColor(section.percentage), borderRadius: 6, transition: 'width 0.8s ease',
+                }} />
+              </div>
             </div>
           ))}
         </div>
+      )}
 
-        {/* Quick Stats */}
-        {data.profile && (
-          <div className="grid grid-cols-3 gap-4 text-center pt-4 border-t">
-            {data.profile.gpa && (
-              <div>
-                <div className="text-2xl font-bold">{data.profile.gpa?.toFixed(2) ?? 'N/A'}</div>
-                <div className="text-xs text-muted-foreground">GPA</div>
-              </div>
-            )}
-            {data.profile.sat && (
-              <div>
-                <div className="text-2xl font-bold">{data.profile.sat}</div>
-                <div className="text-xs text-muted-foreground">SAT</div>
-              </div>
-            )}
-            {data.profile.act && (
-              <div>
-                <div className="text-2xl font-bold">{data.profile.act}</div>
-                <div className="text-xs text-muted-foreground">ACT</div>
-              </div>
-            )}
-            <div>
-              <div className="text-2xl font-bold">{data.profile.activitiesCount}</div>
-              <div className="text-xs text-muted-foreground">Activities</div>
+      {/* Quick Stats */}
+      {data.profile && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, paddingTop: 18, borderTop: `1px solid ${S.border}`, marginBottom: data.recommendations?.length ? 20 : 0 }}>
+          {data.profile.gpa != null && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: S.text, fontFamily: S.font }}>{data.profile.gpa.toFixed(2)}</div>
+              <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font }}>GPA</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-yellow-600">{data.profile.tier1Count}</div>
-              <div className="text-xs text-muted-foreground">Tier 1</div>
+          )}
+          {data.profile.sat != null && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: S.text, fontFamily: S.font }}>{data.profile.sat}</div>
+              <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font }}>SAT</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold">{data.profile.courseworkCount}</div>
-              <div className="text-xs text-muted-foreground">AP/IB</div>
+          )}
+          {data.profile.act != null && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: S.text, fontFamily: S.font }}>{data.profile.act}</div>
+              <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font }}>ACT</div>
             </div>
+          )}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: S.text, fontFamily: S.font }}>{data.profile.activitiesCount}</div>
+            <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font }}>Activities</div>
           </div>
-        )}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: '#FBBF24', fontFamily: S.font }}>{data.profile.tier1Count}</div>
+            <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font }}>Tier 1</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: S.text, fontFamily: S.font }}>{data.profile.courseworkCount}</div>
+            <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font }}>AP/IB</div>
+          </div>
+        </div>
+      )}
 
-        {/* Recommendations */}
-        {data.recommendations && data.recommendations.length > 0 && (
-          <div className="pt-4 border-t">
-            <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
-              Recommendations to Improve
-            </h4>
-            <ul className="space-y-2">
-              {data.recommendations.map((rec, index) => (
-                <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
-                  <span className="text-yellow-500">•</span>
-                  {typeof rec === 'string' ? rec : (rec as any).action || (rec as any).details || ''}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {/* Recommendations */}
+      {data.recommendations && data.recommendations.length > 0 && (
+        <div style={{ paddingTop: 18, borderTop: `1px solid ${S.border}` }}>
+          <h4 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: S.text, fontFamily: S.font, marginBottom: 10 }}>
+            <AlertTriangle size={14} color="#FBBF24" />
+            Recommendations to Improve
+          </h4>
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: 8, listStyle: 'none' }}>
+            {data.recommendations.map((rec, index) => (
+              <li key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: S.muted, fontFamily: S.font }}>
+                <TrendingUp size={13} color="#FBBF24" style={{ marginTop: 2, flexShrink: 0 }} />
+                {typeof rec === 'string' ? rec : (rec as any).action || (rec as any).details || ''}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
