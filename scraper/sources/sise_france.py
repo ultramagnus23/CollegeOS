@@ -235,14 +235,24 @@ def main():
         est_rows = by_establishment.get(norm_variant)
         if not est_rows:
             continue
+        # Multiple canonical rows can share one exact name -- confirmed real
+        # duplicate institution records for France (e.g. "University of
+        # Strasbourg" appears twice with different ids; verified every
+        # ambiguous case here is a same-name duplicate, not two distinct
+        # institutions colliding under the EN->FR heuristic). Since all
+        # candidates represent the same physical institution, the same SISE
+        # data is correct for each -- write to all of them.
         if len(candidates) != 1:
-            log.warning(f"Ambiguous variant '{norm_variant}' maps to {len(candidates)} institutions -- skipping")
-            continue
-        inst_id, canonical_name = candidates[0]
-        if inst_id in seen_inst:
-            continue
-        seen_inst.add(inst_id)
-        matched_pairs.append((inst_id, canonical_name, est_rows[0]["Établissement"], est_rows))
+            names = {name for _, name in candidates}
+            if len(names) != 1:
+                log.warning(f"Ambiguous variant '{norm_variant}' maps to institutions with DIFFERENT names {names} -- skipping (unsafe)")
+                continue
+            log.warning(f"Variant '{norm_variant}' matches {len(candidates)} duplicate rows for {names} -- writing to all")
+        for inst_id, canonical_name in candidates:
+            if inst_id in seen_inst:
+                continue
+            seen_inst.add(inst_id)
+            matched_pairs.append((inst_id, canonical_name, est_rows[0]["Établissement"], est_rows))
 
     log.info(f"Matched {len(matched_pairs)} France institutions to {latest_year} SISE establishment rows")
     for inst_id, canonical_name, est_name, _ in matched_pairs:
