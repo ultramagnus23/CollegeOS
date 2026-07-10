@@ -1,0 +1,63 @@
+name: Masters Scraper Weekly Refresh
+
+# scraper/masters/run_starter_ingest.py is a config-driven, confidence-gated ingest
+# pipeline (targets in scraper/masters/targets.json). By design it NEVER writes to
+# the database directly -- it only produces tmp/scrape_dryrun.json (accepted),
+# tmp/scrape_review.json (flagged/rejected), and tmp/scrape_inserts.sql (a staged
+# SQL script for a human to review and apply). That staging gate is intentional
+# (confidence-gated data quality review before anything touches
+# canonical.masters_programs), so this workflow runs the scrape and uploads the
+# three output files as an artifact for manual review -- it does not auto-apply
+# scrape_inserts.sql to prod. Applying it is a deliberate, separate, human step.
+
+on:
+  schedule:
+    - cron: '0 6 * * 3'  # weekly, Wednesday 06:00 UTC
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: masters-scraper-refresh
+  cancel-in-progress: false
+
+jobs:
+  masters-scraper-refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Preflight
+        run: |
+          set -euo pipefail
+          test -f scraper/masters/run_starter_ingest.py || { echo "::error::run_starter_ingest.py missing"; exit 1; }
+          test -f scraper/masters/targets.json || { echo "::error::targets.json missing"; exit 1; }
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 lxml python-dotenv
+
+      - name: Run masters starter ingest (staging output only, no DB writes)
+        run: python -m scraper.masters.run_starter_ingest
+
+      - name: Upload scrape review artifacts
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: masters-scraper-review
+          path: |
+            tmp/scrape_dryrun.json
+            tmp/scrape_review.json
+            tmp/scrape_inserts.sql
+          if-no-files-found: warn
+          retention-days: 30
