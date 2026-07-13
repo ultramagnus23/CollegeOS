@@ -185,6 +185,28 @@ recommend folding it into the same dedicated workstream as the `colleges`/`colle
 migration, since both are really "which of the two parallel systems wins" questions requiring
 live regression testing, not database housekeeping.
 
+## Phase 2 §8 finding (2026-07-13): index diet — none of the canonical-schema candidates are safe
+
+Checked all 4 non-legacy unused indexes against real query paths rather than trusting `idx_scan`
+alone (small user base — 148-407 users — means "0 scans" often just means "not exercised yet,"
+not "unused"; this instinct proved right every time it was checked this session):
+- `idx_search_index_tokens_gin` — used by `canonical.search_colleges`'s keyword-search branch
+  (`si.search_document @@ websearch_to_tsquery(...)`), just never hit because no live search has
+  passed the `p_keywords` param yet. **Keep.**
+- `idx_programs_name_trgm` — used by `backend/src/models/College.js`'s major/program ILIKE
+  filter (`cp.program_name ILIKE $n`), a real reachable code path. **Keep.**
+- `idx_inst_slug_btree` — used by `rankingResolver.ts`'s slug lookup. **Keep.**
+- `idx_inst_external_ids_gin` — only reference found is a plain SELECT column in
+  `collegeService.js`, not a JSONB containment query the GIN index would accelerate; genuinely
+  looks unused, but given the other 3 all turned out to be false positives, not dropping this on
+  a single check alone without a second look.
+
+The remaining ~26 unused indexes are all on legacy tables covered by the deferred `colleges`/
+`colleges_full` consolidation (§2 above) — they go away automatically if/when those tables are
+eventually dropped, not an independent action to take now.
+
+**No index drops executed this pass.**
+
 ## Recommendation before Phase 2
 
 The kill list in the master prompt is directionally right (the `colleges`/`college_majors`
