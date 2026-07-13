@@ -102,7 +102,7 @@ function checkWorkflows() {
   const requiredWorkflows = [
     'onboarding-smoke.yml',
     'frontend-runtime-validation.yml',
-    'daily-data-refresh.yml',
+    'scorecard-refresh.yml',
     'enrich-colleges.yml',
   ];
   const files = fs.readdirSync(wfDir).filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'));
