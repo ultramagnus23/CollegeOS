@@ -138,6 +138,31 @@ path. Reconciling these two into one table is real consolidation work (needs a m
 merges both into one schema and repoints ~10 call sites), not a one-line drop. Recommend scoping
 this as its own dedicated PR, not folding it into the Phase 2 kill-list sweep.
 
+## Phase 2 §2 finding (2026-07-13): `colleges`/`colleges_full` consolidation is NOT a simple drop
+
+Investigated before executing. `public.colleges` (5,336 rows) and the `colleges_full` view over
+it (migration 090) are read by **~18 files directly** and the `college_id` INTEGER FK that
+anchors them is referenced across **~40 files** total: every application-tracking model/service/
+route (`Application.js`, `CollegeDeadline.js`, `Deadline.js`, `Essay.js`, `Document.js`,
+`Recommender.js`, deadline dependency/risk/auto-population services, essay auto-loading,
+timeline, tasks, notifications, dashboard, chancing, requirements, warnings, financial scoring,
+recommendation engine, ML services). `applications.college_id` is an **INTEGER** FK into
+`public.colleges.id`, structurally incompatible with `canonical.institutions.id` (UUID) without
+a real migration of every one of those FKs — not a repoint, a type change cascading through the
+entire application-lifecycle subsystem. This is also the exact FK class that caused **real data
+corruption** last week per commit `0f037c5` ("college_id FK pointed at the wrong table"),
+already fixed once under pressure.
+
+**Decision: do not attempt this drop in a rushed pass.** The master prompt's own escape hatch
+applies verbatim: "Keep a single compatibility view ONLY if a live route still needs
+`colleges_full`, and mark it deprecated" — that condition is true here, by a wide margin.
+Recommend this become its own dedicated workstream (integer→UUID FK migration across ~40 files,
+with a full application/deadline/essay/timeline/chancing regression pass against real user data
+before any drop), not a Phase 2 sub-item executed alongside index diet and dead-table cleanup.
+`colleges_comprehensive` and `college_majors` still need their own separate usage audit before
+any decision (not yet done — `college_majors` is referenced by `collegeController.js`,
+`colleges_comprehensive` by `College.js`; neither confirmed safe to drop yet).
+
 ## Recommendation before Phase 2
 
 The kill list in the master prompt is directionally right (the `colleges`/`college_majors`
