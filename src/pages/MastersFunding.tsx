@@ -270,7 +270,7 @@ const FundingCard: React.FC<{ funding: Funding; index: number }> = ({ funding, i
         <div style={{ padding: '12px 16px', background: S.surface }}>
           <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font, marginBottom: 3 }}>Data quality</div>
           <div style={{ fontSize: 14, fontWeight: 700, color: funding.data_quality_score != null ? 'var(--color-text-primary)' : S.dim, fontFamily: S.font }}>
-            {funding.data_quality_score != null ? `${Math.round(funding.data_quality_score)}%` : 'N/A'}
+            {funding.data_quality_score != null ? `${Math.round(funding.data_quality_score * 100)}%` : 'N/A'}
           </div>
         </div>
         {funding.assistantship_types?.length > 0 && (

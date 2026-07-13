@@ -323,7 +323,7 @@ const ProgramCard: React.FC<{ program: MastersProgram; index: number; onClick: (
           </div>
           {program.data_quality_score != null && (
             <div style={{ padding: '3px 10px', background: h2r(accent, 0.12), border: `1px solid ${h2r(accent, 0.3)}`, borderRadius: 8, fontSize: 12, fontWeight: 700, color: accent, fontFamily: S.font, flexShrink: 0 }}>
-              Q: {Math.round(program.data_quality_score)}%
+              Q: {Math.round(program.data_quality_score * 100)}%
             </div>
           )}
         </div>

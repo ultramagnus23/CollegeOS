@@ -161,7 +161,7 @@ const MastersProgramDetails: React.FC = () => {
                     <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(16,185,129,0.18)', color: '#10B981', fontWeight: 600, fontFamily: S.font }}>STEM Designated</span>
                   )}
                   {program.data_quality_score != null && (
-                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(251,191,36,0.12)', color: '#FBBF24', fontWeight: 600, fontFamily: S.font }}>Quality: {Math.round(program.data_quality_score)}%</span>
+                    <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(251,191,36,0.12)', color: '#FBBF24', fontWeight: 600, fontFamily: S.font }}>Quality: {Math.round(program.data_quality_score * 100)}%</span>
                   )}
                 </div>
                 <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-0.02em', marginBottom: 4 }}>{program.program_name}</h1>
