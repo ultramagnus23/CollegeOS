@@ -317,12 +317,15 @@ router.get('/comprehensive/stats', async (req, res, next) => {
     const db = require('../config/database');
     const pool = db.getDatabase();
 
+    // Counts scoped to non-deprecated institutions only (mv_college_cards's
+    // WHERE clause, see migration 146) so soft-merged duplicates don't
+    // inflate the totals users see.
     const [total, countries, regions, completeness, quality] = await Promise.all([
-      pool.query('SELECT COUNT(*) AS total FROM canonical.institutions'),
-      pool.query('SELECT country_code AS country, COUNT(*) AS count FROM canonical.institutions WHERE country_code IS NOT NULL GROUP BY country_code ORDER BY count DESC LIMIT 20'),
-      pool.query("SELECT region_code AS state, COUNT(*) AS count FROM canonical.institutions WHERE region_code IS NOT NULL GROUP BY region_code ORDER BY count DESC"),
-      pool.query('SELECT AVG(overall_score)::numeric(10,2) AS avg_completeness FROM canonical.institution_completeness'),
-      pool.query('SELECT AVG(final_quality_score)::numeric(10,2) AS avg_quality FROM canonical.institution_quality_scores'),
+      pool.query('SELECT COUNT(*) AS total FROM canonical.institutions WHERE deprecated_duplicate_of IS NULL'),
+      pool.query('SELECT country_code AS country, COUNT(*) AS count FROM canonical.institutions WHERE country_code IS NOT NULL AND deprecated_duplicate_of IS NULL GROUP BY country_code ORDER BY count DESC LIMIT 20'),
+      pool.query("SELECT region_code AS state, COUNT(*) AS count FROM canonical.institutions WHERE region_code IS NOT NULL AND deprecated_duplicate_of IS NULL GROUP BY region_code ORDER BY count DESC"),
+      pool.query('SELECT AVG(overall_score)::numeric(10,2) AS avg_completeness FROM canonical.institution_completeness ic JOIN canonical.institutions i ON i.id = ic.institution_id WHERE i.deprecated_duplicate_of IS NULL'),
+      pool.query('SELECT AVG(final_quality_score)::numeric(10,2) AS avg_quality FROM canonical.institution_quality_scores iq JOIN canonical.institutions i ON i.id = iq.institution_id WHERE i.deprecated_duplicate_of IS NULL'),
     ]);
 
     res.json({
@@ -442,26 +445,22 @@ router.get('/suggested', authenticate, async (req, res, next) => {
     const effectiveGPA = studentGPA ?? (boardPct != null ? (boardPct / 100) * 4.0 : null);
 
     // Fetch colleges with canonical admissions and search-card metadata.
+    // Reads from mv_college_cards (not canonical.institutions directly) so
+    // deprecated/soft-merged duplicate institutions are automatically
+    // excluded -- see migration 146.
     const { rows: colleges } = await pool.query(
        `SELECT
-          i.id,
-          i.canonical_name AS name,
-          i.city,
-          i.state_region AS state,
-          i.country_code AS country,
-          a.acceptance_rate,
-          a.sat_50 AS median_sat,
-          0.0::numeric AS popularity_score
-        FROM canonical.institutions i
-        JOIN LATERAL (
-          SELECT acceptance_rate, sat_50
-          FROM canonical.institution_admissions
-          WHERE institution_id = i.id
-          ORDER BY data_year DESC NULLS LAST, updated_at DESC
-          LIMIT 1
-        ) a ON TRUE
-        WHERE a.acceptance_rate IS NOT NULL
-          AND a.acceptance_rate > 0
+          c.id,
+          c.canonical_name AS name,
+          c.city,
+          c.state_region AS state,
+          c.country_code AS country,
+          c.acceptance_rate,
+          c.sat_50 AS median_sat,
+          c.popularity_score
+        FROM canonical.mv_college_cards c
+        WHERE c.acceptance_rate IS NOT NULL
+          AND c.acceptance_rate > 0
         LIMIT 500`
     );
 
