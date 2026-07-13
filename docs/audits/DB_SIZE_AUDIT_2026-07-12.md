@@ -207,6 +207,20 @@ eventually dropped, not an independent action to take now.
 
 **No index drops executed this pass.**
 
+## Phase 2 §9 finding (2026-07-13): VACUUM FULL skipped, no benefit available
+
+Re-checked dead-tuple bloat after this session's drops (16 confirmed-dead tables + `scholarships_new`,
+migrations 147-148): still zero tables over the 10k dead-tuple threshold, max is 1,527
+(`institution_financials`) — autovacuum is genuinely keeping up, matching the original Phase 1
+finding. Postgres reclaims space immediately on `DROP TABLE` (unlike `DELETE`, which just marks
+dead tuples), so the drops already executed didn't need a VACUUM FULL to take effect. Running one
+now would only cost an `ACCESS EXCLUSIVE` lock per table for zero measurable benefit — skipped.
+
+**DB size: 616 MB → 615 MB.** Modest, because the one drop with real size (the `colleges`/
+`college_majors` family, ~100MB) is deferred pending its own dedicated migration (§2 above) — the
+tables actually dropped this session (16 dead tables + `scholarships_new`) were mostly at or near
+0 rows by design, so their disk footprint was already negligible.
+
 ## Recommendation before Phase 2
 
 The kill list in the master prompt is directionally right (the `colleges`/`college_majors`
