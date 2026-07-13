@@ -163,6 +163,28 @@ before any drop), not a Phase 2 sub-item executed alongside index diet and dead-
 any decision (not yet done — `college_majors` is referenced by `collegeController.js`,
 `colleges_comprehensive` by `College.js`; neither confirmed safe to drop yet).
 
+## Phase 2 §5 finding (2026-07-13): deadline/requirement table dedupe is NOT a simple drop either
+
+Same pattern as §2 above, found while investigating the "6 empty deadline tables + 3 requirement
+tables" kill-list item. `public.application_deadlines`, `college_deadlines`, `college_requirements`,
+`deadline_alerts`, `user_deadlines`, and `deadline_history` are all **live and reachable** — read/
+written by `collegeDeadlineIntelligenceService.js`, which is mounted at `/api/deadlines`
+(`backend/src/app.js:194`) — not dead code. Several call sites (`CollegeDeadline.js:7`,
+`deadlineRiskService.js:140`) query these tables with **no try/catch**; a couple of others
+(`applicationController.js:389-444`) do have defensive fallback-on-error logic. This is a
+dormant, parallel deadline-intelligence subsystem running alongside the real
+`canonical.institution_deadlines`/`canonical.institution_requirements`/`public.deadlines` system
+— architecturally the same class of problem as the `colleges`/`colleges_full` finding above, not
+a quick table drop. Dropping any of the unprotected-read tables would convert a currently-silent
+"no data yet" path into a live runtime error for real users hitting `/api/deadlines`.
+
+**Decision: defer, same as §2.** `course_requirements` (genuinely zero references) was already
+dropped in the confirmed-dead-tables migration (147). The rest of this cluster needs a proper
+audit of every call site's error handling before any table can safely go, not a bulk drop —
+recommend folding it into the same dedicated workstream as the `colleges`/`colleges_full`
+migration, since both are really "which of the two parallel systems wins" questions requiring
+live regression testing, not database housekeeping.
+
 ## Recommendation before Phase 2
 
 The kill list in the master prompt is directionally right (the `colleges`/`college_majors`
