@@ -93,6 +93,8 @@ async function readScraperRunLogs(pool) {
   const hasDuplicateSkips = await hasColumn(pool, 'scraper_run_logs', 'duplicate_skips');
   const hasSchemaMismatchFailures = await hasColumn(pool, 'scraper_run_logs', 'schema_mismatch_failures');
   const hasFinishedAt = await hasColumn(pool, 'scraper_run_logs', 'finished_at');
+  const hasError = await hasColumn(pool, 'scraper_run_logs', 'error');
+  const hasErrorMessage = await hasColumn(pool, 'scraper_run_logs', 'error_message');
 
   const sql = `
     SELECT
@@ -105,7 +107,7 @@ async function readScraperRunLogs(pool) {
       COALESCE(${hasRowsFailed ? 'rows_failed' : '0'}, 0) AS rows_failed,
       COALESCE(${hasDuplicateSkips ? 'duplicate_skips' : '0'}, 0) AS duplicate_skips,
       COALESCE(${hasSchemaMismatchFailures ? 'schema_mismatch_failures' : '0'}, 0) AS schema_mismatch_failures,
-      COALESCE(error, '') AS error
+      COALESCE(${hasError ? 'error' : hasErrorMessage ? 'error_message' : "''"}, '') AS error
     FROM scraper_run_logs
     ORDER BY started_at DESC
     LIMIT 500
