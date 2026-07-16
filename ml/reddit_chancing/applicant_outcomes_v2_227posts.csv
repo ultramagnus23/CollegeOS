@@ -1,0 +1,1456 @@
+applicant_id,university_raw,decision,round,gpa_uw,gpa_w,sat_total,act_composite,num_ap,ec_tier,gender,first_gen,income_band,geography_region,international_flag,extraction_method,completeness,needs_review
+962fdb68829d78c6ed0eb484,ED to Columbia,DEFER,UNKNOWN,4.0,4.4,,,8,,,,,,False,REGEX_PARTIAL,0.4,True
+827cd08f5112fae5b2dd4099,deferred,REJECT,UNKNOWN,,,,36,17,,,,,,False,REGEX_PARTIAL,0.4,True
+5f9ca6b77d785e6e355aa22e,UK,ACCEPT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,UAH,ACCEPT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,GT,ACCEPT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,UVA,ACCEPT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,MIT,DEFER,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,UCD,ACCEPT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,UCLA,ACCEPT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,CWRU,ACCEPT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,UCSD,ACCEPT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,UCI,ACCEPT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,UC Berkeley,REJECT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,UPenn,REJECT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,Princeton,REJECT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,Harvard,WAITLIST,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,Yale,WAITLIST,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,Dartmouth,WAITLIST,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,Brown,WAITLIST,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,Columbia,WAITLIST,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,Stanford,REJECT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,CalTech,REJECT,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+5f9ca6b77d785e6e355aa22e,UMich,WAITLIST,UNKNOWN,,,,35,11,,,,,,False,REGEX,0.4,True
+f676c96bfbe9257ead790662,UChicago,DEFER,UNKNOWN,3.97,4.28,,,8,,,,,,False,REGEX,0.4,True
+f676c96bfbe9257ead790662,USC,DEFER,UNKNOWN,3.97,4.28,,,8,,,,,,False,REGEX,0.4,True
+f676c96bfbe9257ead790662,UMich,DEFER,UNKNOWN,3.97,4.28,,,8,,,,,,False,REGEX,0.4,True
+f676c96bfbe9257ead790662,BU,WAITLIST,UNKNOWN,3.97,4.28,,,8,,,,,,False,REGEX,0.4,True
+f676c96bfbe9257ead790662,UCSD,WAITLIST,UNKNOWN,3.97,4.28,,,8,,,,,,False,REGEX,0.4,True
+001eda4b67b757f9ac7dbec7,Northwestern,REJECT,UNKNOWN,,,1420,,,,,,,,False,REGEX,0.4,True
+001eda4b67b757f9ac7dbec7,Umich,REJECT,UNKNOWN,,,1420,,,,,,,,False,REGEX,0.4,True
+001eda4b67b757f9ac7dbec7,Boston University,REJECT,UNKNOWN,,,1420,,,,,,,,False,REGEX,0.4,True
+001eda4b67b757f9ac7dbec7,Rice,REJECT,UNKNOWN,,,1420,,,,,,,,False,REGEX,0.4,True
+001eda4b67b757f9ac7dbec7,UC Berkely,REJECT,UNKNOWN,,,1420,,,,,,,,False,REGEX,0.4,True
+001eda4b67b757f9ac7dbec7,Northeastern,WAITLIST,UNKNOWN,,,1420,,,,,,,,False,REGEX,0.4,True
+001eda4b67b757f9ac7dbec7,UCLA,WAITLIST,UNKNOWN,,,1420,,,,,,,,False,REGEX,0.4,True
+001eda4b67b757f9ac7dbec7,UVA,WAITLIST,UNKNOWN,,,1420,,,,,,,,False,REGEX,0.4,True
+001eda4b67b757f9ac7dbec7,UCSD,ACCEPT,UNKNOWN,,,1420,,,,,,,,False,REGEX,0.4,True
+001eda4b67b757f9ac7dbec7,UCD,ACCEPT,UNKNOWN,,,1420,,,,,,,,False,REGEX,0.4,True
+001eda4b67b757f9ac7dbec7,Tulane,ACCEPT,UNKNOWN,,,1420,,,,,,,,False,REGEX,0.4,True
+90325cf0c6934ed4335cd702,Northwestern,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+90325cf0c6934ed4335cd702,Umich,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+90325cf0c6934ed4335cd702,Boston University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+90325cf0c6934ed4335cd702,Rice,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+90325cf0c6934ed4335cd702,Northeastern,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+90325cf0c6934ed4335cd702,Tulane,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+90325cf0c6934ed4335cd702,UVA,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+90325cf0c6934ed4335cd702,UCSD,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+90325cf0c6934ed4335cd702,UCD,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+90325cf0c6934ed4335cd702,UCLA,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+90325cf0c6934ed4335cd702,UC berkely,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a226052c2e7a7ca87157b8ca,Lehigh,REJECT,UNKNOWN,,,1500,,9,,,,,,False,REGEX,0.4,True
+a226052c2e7a7ca87157b8ca,UVA,REJECT,UNKNOWN,,,1500,,9,,,,,,False,REGEX,0.4,True
+a226052c2e7a7ca87157b8ca,Princeton,REJECT,UNKNOWN,,,1500,,9,,,,,,False,REGEX,0.4,True
+a226052c2e7a7ca87157b8ca,UIUC,REJECT,UNKNOWN,,,1500,,9,,,,,,False,REGEX,0.4,True
+a226052c2e7a7ca87157b8ca,UCLA,REJECT,UNKNOWN,,,1500,,9,,,,,,False,REGEX,0.4,True
+a226052c2e7a7ca87157b8ca,Def - WL,ACCEPT,UNKNOWN,,,1500,,9,,,,,,False,REGEX,0.4,True
+a226052c2e7a7ca87157b8ca,Def,REJECT,UNKNOWN,,,1500,,9,,,,,,False,REGEX,0.4,True
+a226052c2e7a7ca87157b8ca,SDSU,ACCEPT,UNKNOWN,,,1500,,9,,,,,,False,REGEX,0.4,True
+a226052c2e7a7ca87157b8ca,UMD,ACCEPT,UNKNOWN,,,1500,,9,,,,,,False,REGEX,0.4,True
+a226052c2e7a7ca87157b8ca,Rutgers,ACCEPT,UNKNOWN,,,1500,,9,,,,,,False,REGEX,0.4,True
+a226052c2e7a7ca87157b8ca,Pitt,ACCEPT,UNKNOWN,,,1500,,9,,,,,,False,REGEX,0.4,True
+562575a87b97a8693cd45065,UMass Amherst,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+562575a87b97a8693cd45065,RPI,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+562575a87b97a8693cd45065,Union,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+562575a87b97a8693cd45065,Harvey Mudd,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+562575a87b97a8693cd45065,WPI,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+562575a87b97a8693cd45065,Yale,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+562575a87b97a8693cd45065,Harvard,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+562575a87b97a8693cd45065,Stanford,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+562575a87b97a8693cd45065,CalTech,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+562575a87b97a8693cd45065,MIT,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+562575a87b97a8693cd45065,UPenn,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+562575a87b97a8693cd45065,Princeton,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+5d668af8dff920e7b9519c8b,University of Minnesota morris,REJECT,UNKNOWN,,,,,8,,,,,,False,REGEX_PARTIAL,0.2,True
+5d668af8dff920e7b9519c8b,University of Minnesota- twin cities,REJECT,UNKNOWN,,,,,8,,,,,,False,REGEX_PARTIAL,0.2,True
+fa2d8a6b9694ed3680258e55,UWash,ACCEPT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,UMich,DEFER,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,NYU,REJECT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,JHU,REJECT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,UCSD,ACCEPT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,UCLA,REJECT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,UC Berkeley,REJECT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,Duke,REJECT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,CMU,REJECT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,Rice,WAITLIST,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,Cornell,WAITLIST,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,UPenn,REJECT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,Princeton,REJECT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,Harvard,REJECT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,MIT,REJECT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,Columbia,ACCEPT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+fa2d8a6b9694ed3680258e55,Stanford,ACCEPT,UNKNOWN,3.95,4.56,,35,6,,,,,,False,REGEX,0.6,False
+0436ee589a6e7d96f885c074,Canada,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+fba11a0bf5e6022931adb099,auto,ACCEPT,UNKNOWN,4.0,4.75,,36,,,,,,,False,REGEX_PARTIAL,0.6,False
+c3f0ffaf745c638d91c9ed7a,Tennessee,ACCEPT,UNKNOWN,,,,35,15,,,,,,False,REGEX,0.4,True
+c3f0ffaf745c638d91c9ed7a,UNC Chapel,ACCEPT,UNKNOWN,,,,35,15,,,,,,False,REGEX,0.4,True
+c3f0ffaf745c638d91c9ed7a,Georgia Tech,DEFER,UNKNOWN,,,,35,15,,,,,,False,REGEX,0.4,True
+c3f0ffaf745c638d91c9ed7a,Alabama,ACCEPT,UNKNOWN,,,,35,15,,,,,,False,REGEX,0.4,True
+c3f0ffaf745c638d91c9ed7a,SCar,ACCEPT,UNKNOWN,,,,35,15,,,,,,False,REGEX,0.4,True
+c3f0ffaf745c638d91c9ed7a,Ga Southern,ACCEPT,UNKNOWN,,,,35,15,,,,,,False,REGEX,0.4,True
+c3f0ffaf745c638d91c9ed7a,UGA,ACCEPT,UNKNOWN,,,,35,15,,,,,,False,REGEX,0.4,True
+c3f0ffaf745c638d91c9ed7a,Emory,REJECT,UNKNOWN,,,,35,15,,,,,,False,REGEX,0.4,True
+c3f0ffaf745c638d91c9ed7a,John Hopkins,REJECT,UNKNOWN,,,,35,15,,,,,,False,REGEX,0.4,True
+c3f0ffaf745c638d91c9ed7a,Vanderbilt,REJECT,UNKNOWN,,,,35,15,,,,,,False,REGEX,0.4,True
+579317cd4edaf656a58874c3,all projected Valedictorians and Salutatorians are auto,ACCEPT,UNKNOWN,,,1560,,16,,,,,,False,REGEX_PARTIAL,0.4,True
+4c1d6828e134311070e21209,UMiami Frost EA,ACCEPT,UNKNOWN,,,,36,11,,,,,,False,REGEX,0.4,True
+4c1d6828e134311070e21209,Peabody RD,WAITLIST,UNKNOWN,,,,36,11,,,,,,False,REGEX,0.4,True
+4c1d6828e134311070e21209,Eastman RD,ACCEPT,UNKNOWN,,,,36,11,,,,,,False,REGEX,0.4,True
+4c1d6828e134311070e21209,Bienen RD,ACCEPT,UNKNOWN,,,,36,11,,,,,,False,REGEX,0.4,True
+4c1d6828e134311070e21209,Brown RD,ACCEPT,UNKNOWN,,,,36,11,,,,,,False,REGEX,0.4,True
+4c1d6828e134311070e21209,Columbia RD,ACCEPT,UNKNOWN,,,,36,11,,,,,,False,REGEX,0.4,True
+97dab8a4fe966e5bbfe6503e,Was rejected from every school besides UMass-,WAITLIST,UNKNOWN,,,,,8,,,,,,False,REGEX_PARTIAL,0.2,True
+ffcfa06807e74343d35a8988,Princeton REA,REJECT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,Georgia Tech,DEFER,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,University of Tennessee Knoxville,ACCEPT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,University of Alabama,ACCEPT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,Purdue,ACCEPT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,UCSD,ACCEPT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,UCLA,ACCEPT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,Johns Hopkins BME,ACCEPT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,University of Maryland,ACCEPT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,Duke,WAITLIST,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,Columbia,WAITLIST,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,Harvard,WAITLIST,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,University of Michigan,WAITLIST,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,Vanderbilt University,WAITLIST,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,Caltech,REJECT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,MIT,REJECT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,Yale,REJECT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,Cornell,REJECT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,UPenn,REJECT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,Stanford,REJECT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+ffcfa06807e74343d35a8988,Berkely,REJECT,UNKNOWN,,,,36,,,,,,,False,REGEX,0.4,True
+9bbb2f7b8c6ddca7392adbd7,Bates College,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9bbb2f7b8c6ddca7392adbd7,Williams College,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9bbb2f7b8c6ddca7392adbd7,College of the Holy Cross,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9bbb2f7b8c6ddca7392adbd7,Yale,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9bbb2f7b8c6ddca7392adbd7,Amherst,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9bbb2f7b8c6ddca7392adbd7,Cornell,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9bbb2f7b8c6ddca7392adbd7,Princeton,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9bbb2f7b8c6ddca7392adbd7,Brown,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9bbb2f7b8c6ddca7392adbd7,Swarthmore,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9bbb2f7b8c6ddca7392adbd7,Boston University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9bbb2f7b8c6ddca7392adbd7,Colby,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9bbb2f7b8c6ddca7392adbd7,Columbia,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+32c9eb6debb89d6d36466734,Harvard,DEFER,UNKNOWN,,,1540,,,,,,,,False,REGEX_PARTIAL,0.4,True
+c393ab0bee2dee378842cb78,REA,DEFER,UNKNOWN,,,,34,9,,,,,,False,REGEX_PARTIAL,0.4,True
+e0f6c17db434425c1cc2c310,CMU,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+b38b1d0cc9eb3c719adc78a7,Rice,ACCEPT,UNKNOWN,4.0,4.51,1510,,,,,,,,False,REGEX,0.6,False
+b38b1d0cc9eb3c719adc78a7,Northwestern,ACCEPT,UNKNOWN,4.0,4.51,1510,,,,,,,,False,REGEX,0.6,False
+b38b1d0cc9eb3c719adc78a7,University of Texas,ACCEPT,UNKNOWN,4.0,4.51,1510,,,,,,,,False,REGEX,0.6,False
+b38b1d0cc9eb3c719adc78a7,University of Houston,ACCEPT,UNKNOWN,4.0,4.51,1510,,,,,,,,False,REGEX,0.6,False
+b38b1d0cc9eb3c719adc78a7,University of Cincinnati,ACCEPT,UNKNOWN,4.0,4.51,1510,,,,,,,,False,REGEX,0.6,False
+b38b1d0cc9eb3c719adc78a7,Southern Methodist University,ACCEPT,UNKNOWN,4.0,4.51,1510,,,,,,,,False,REGEX,0.6,False
+b38b1d0cc9eb3c719adc78a7,Juilliard,WAITLIST,UNKNOWN,4.0,4.51,1510,,,,,,,,False,REGEX,0.6,False
+c78d21c97f51a49f61c588c8,Caltech RD,WAITLIST,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+c78d21c97f51a49f61c588c8,Georgia Tech,DEFER,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+c78d21c97f51a49f61c588c8,UC Santa Barbara,WAITLIST,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+c78d21c97f51a49f61c588c8,Northeastern RD,WAITLIST,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+c78d21c97f51a49f61c588c8,Georgia Tech EA,DEFER,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+c78d21c97f51a49f61c588c8,Purdue,DEFER,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+7da972186a7246001f57b0b3,Caltech RD,WAITLIST,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+7da972186a7246001f57b0b3,Georgia Tech,DEFER,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+7da972186a7246001f57b0b3,UC Santa Barbara,WAITLIST,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+7da972186a7246001f57b0b3,Northeastern RD,WAITLIST,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+7da972186a7246001f57b0b3,Georgia Tech EA,DEFER,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+7da972186a7246001f57b0b3,Purdue,DEFER,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+354f51817de6cfd639454132,yr scholarship,ACCEPT,UNKNOWN,3.89,4.58,,,8,,,,,,False,REGEX,0.4,True
+354f51817de6cfd639454132,UIUC - EA,DEFER,UNKNOWN,3.89,4.58,,,8,,,,,,False,REGEX,0.4,True
+354f51817de6cfd639454132,GTech - EA,DEFER,UNKNOWN,3.89,4.58,,,8,,,,,,False,REGEX,0.4,True
+d49b1b374ea1a475d023c5ce,University of Michigan EA,DEFER,UNKNOWN,4.0,5.24,,34,17,,,,,,False,REGEX_PARTIAL,0.6,False
+06f90daa9e572f5609b43038,. Startup,REJECT,UNKNOWN,,,,36,2,,,,,,False,REGEX_PARTIAL,0.4,True
+7f5fcba56b7162a3b0a68f14,nd Choice,DEFER,UNKNOWN,,,,,9,,,,,,False,REGEX_PARTIAL,0.2,True
+afdd583c684cb088cc6f8516,McGill,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+afdd583c684cb088cc6f8516,UBC,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+afdd583c684cb088cc6f8516,UofT,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+afdd583c684cb088cc6f8516,UNC OOS EA,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+f60fd4f6e64c3309ed6afa9f,Yale,WAITLIST,UNKNOWN,,,,26,,,,,,,False,REGEX,0.4,True
+f60fd4f6e64c3309ed6afa9f,UChicago,WAITLIST,UNKNOWN,,,,26,,,,,,,False,REGEX,0.4,True
+f60fd4f6e64c3309ed6afa9f,Tufts,REJECT,UNKNOWN,,,,26,,,,,,,False,REGEX,0.4,True
+f60fd4f6e64c3309ed6afa9f,Princeton,REJECT,UNKNOWN,,,,26,,,,,,,False,REGEX,0.4,True
+f60fd4f6e64c3309ed6afa9f,WashU,ACCEPT,UNKNOWN,,,,26,,,,,,,False,REGEX,0.4,True
+f60fd4f6e64c3309ed6afa9f,Wellesley,ACCEPT,UNKNOWN,,,,26,,,,,,,False,REGEX,0.4,True
+f60fd4f6e64c3309ed6afa9f,Smith,ACCEPT,UNKNOWN,,,,26,,,,,,,False,REGEX,0.4,True
+f60fd4f6e64c3309ed6afa9f,Williams,WAITLIST,UNKNOWN,,,,26,,,,,,,False,REGEX,0.4,True
+f60fd4f6e64c3309ed6afa9f,Bryn Mawr,ACCEPT,UNKNOWN,,,,26,,,,,,,False,REGEX,0.4,True
+f60fd4f6e64c3309ed6afa9f,Occidental,ACCEPT,UNKNOWN,,,,26,,,,,,,False,REGEX,0.4,True
+f60fd4f6e64c3309ed6afa9f,Brandies,WAITLIST,UNKNOWN,,,,26,,,,,,,False,REGEX,0.4,True
+f60fd4f6e64c3309ed6afa9f,U of I Chicago,ACCEPT,UNKNOWN,,,,26,,,,,,,False,REGEX,0.4,True
+9fc82074ea1252d4a6c99533,WashU,REJECT,UNKNOWN,,,,,16,,,,,,False,REGEX_PARTIAL,0.2,True
+9fc82074ea1252d4a6c99533,Smith,ACCEPT,UNKNOWN,,,,,16,,,,,,False,REGEX_PARTIAL,0.2,True
+f30c8dbf2c1f42399cde65fd,Covenant,ACCEPT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,Berry,ACCEPT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,GCSU,ACCEPT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,Mercer,ACCEPT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,Auburn,ACCEPT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,UGA,ACCEPT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,GT,DEFER,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,UF,DEFER,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,Hillsdale,REJECT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,FSU,ACCEPT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,Clemson,ACCEPT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,UF,REJECT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,Emory,REJECT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,Vanderbilt,REJECT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,Harvard,REJECT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,Duke,REJECT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+f30c8dbf2c1f42399cde65fd,GT,ACCEPT,UNKNOWN,4.0,4.15,1560,,4,,,,,,False,REGEX,0.6,False
+ee3b94e6ce1473836c1227ca,COLLEGE RESULTS,ACCEPT,UNKNOWN,,,,,10,,,,,,False,REGEX_PARTIAL,0.2,True
+49497ddee3044f4a5c1e96a7,random safety,ACCEPT,UNKNOWN,,,1580,,,,,,,,False,REGEX,0.4,True
+49497ddee3044f4a5c1e96a7,hypsm,REJECT,UNKNOWN,,,1580,,,,,,,,False,REGEX,0.4,True
+49497ddee3044f4a5c1e96a7,usc,REJECT,UNKNOWN,,,1580,,,,,,,,False,REGEX,0.4,True
+49497ddee3044f4a5c1e96a7,duke,WAITLIST,UNKNOWN,,,1580,,,,,,,,False,REGEX,0.4,True
+244b1b7e908c738194115948,did not apply for aid at need-aware because I would've been auto,REJECT,UNKNOWN,,,1550,,,,,,,,False,REGEX_PARTIAL,0.4,True
+4ca7e0f13aebfe1f2c00b4ea,Georgetown McDonough Business,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,Fordham,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,IU Kelly,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,Michigan Ross,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,Northeastern,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,American,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,Villanova,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,UW,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,Claremont McKenna,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,Boston College,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,UC Davis,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,UC Santa Cruz,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,UC Santa Barbara,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,UC San Diego,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,UC Irvine,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,UCLA,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,UC Berkeley Hass,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4ca7e0f13aebfe1f2c00b4ea,Boston University,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+6670acbd1af4699bb2966138,- univ of san francisco,ACCEPT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- univ of san diego,ACCEPT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- santa clara,ACCEPT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- gwu,ACCEPT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- south florida,ACCEPT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- loyola marymount,ACCEPT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- central florida,ACCEPT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- fsu,ACCEPT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- uf,ACCEPT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- umiami,ACCEPT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- georgia tech,ACCEPT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- boston univ,REJECT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- tufts,REJECT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- usc,REJECT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- nyu,WAITLIST,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- northeastern,WAITLIST,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- brown,ACCEPT,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- columbia,WAITLIST,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+6670acbd1af4699bb2966138,- harvard,WAITLIST,UNKNOWN,,,1440,,2,,,,,,False,REGEX,0.4,True
+275c6c4a1d309de2b0dd0120,Harvard,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,UPenn,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Columbia,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Dartmouth,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Brown,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Vanderbilt,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Rice,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Northeastern,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Emory Atlanta,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Emory Oxford,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Notre Dame,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,UChicago,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,WashU,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,USC,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Johns Hopkins,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Texas A&M,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Baylor,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Colby,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Trinity,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+275c6c4a1d309de2b0dd0120,Bates,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3d38193f47f46a0395780563,Amherst College,REJECT,UNKNOWN,,,1330,,30,,,,,,False,REGEX,0.4,True
+3d38193f47f46a0395780563,Boston University,ACCEPT,UNKNOWN,,,1330,,30,,,,,,False,REGEX,0.4,True
+3d38193f47f46a0395780563,Fairfield University,WAITLIST,UNKNOWN,,,1330,,30,,,,,,False,REGEX,0.4,True
+3d38193f47f46a0395780563,Rutgers University,ACCEPT,UNKNOWN,,,1330,,30,,,,,,False,REGEX,0.4,True
+3d38193f47f46a0395780563,Skidmore College,WAITLIST,UNKNOWN,,,1330,,30,,,,,,False,REGEX,0.4,True
+3d38193f47f46a0395780563,Binghamton University,ACCEPT,UNKNOWN,,,1330,,30,,,,,,False,REGEX,0.4,True
+3d38193f47f46a0395780563,New Paltz,ACCEPT,UNKNOWN,,,1330,,30,,,,,,False,REGEX,0.4,True
+3d38193f47f46a0395780563,Oneonta,ACCEPT,UNKNOWN,,,1330,,30,,,,,,False,REGEX,0.4,True
+3d38193f47f46a0395780563,University at Buffalo,ACCEPT,UNKNOWN,,,1330,,30,,,,,,False,REGEX,0.4,True
+3d38193f47f46a0395780563,University at Albany,ACCEPT,UNKNOWN,,,1330,,30,,,,,,False,REGEX,0.4,True
+3d38193f47f46a0395780563,GWU,WAITLIST,UNKNOWN,,,1330,,30,,,,,,False,REGEX,0.4,True
+3d38193f47f46a0395780563,University of Delaware,ACCEPT,UNKNOWN,,,1330,,30,,,,,,False,REGEX,0.4,True
+4755e44e479409802a847a05,tamu,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+d5ace037c3c3726c2e43b15e,george mason,ACCEPT,UNKNOWN,,,,,1,,,,,,False,REGEX,0.2,True
+d5ace037c3c3726c2e43b15e,umass boston,ACCEPT,UNKNOWN,,,,,1,,,,,,False,REGEX,0.2,True
+d5ace037c3c3726c2e43b15e,west virginia,ACCEPT,UNKNOWN,,,,,1,,,,,,False,REGEX,0.2,True
+d5ace037c3c3726c2e43b15e,virginia commonwealth,ACCEPT,UNKNOWN,,,,,1,,,,,,False,REGEX,0.2,True
+d5ace037c3c3726c2e43b15e,virginia tech,WAITLIST,UNKNOWN,,,,,1,,,,,,False,REGEX,0.2,True
+d5ace037c3c3726c2e43b15e,uni of virginia,REJECT,UNKNOWN,,,,,1,,,,,,False,REGEX,0.2,True
+d5ace037c3c3726c2e43b15e,william and mary,REJECT,UNKNOWN,,,,,1,,,,,,False,REGEX,0.2,True
+d5ace037c3c3726c2e43b15e,boston uni,REJECT,UNKNOWN,,,,,1,,,,,,False,REGEX,0.2,True
+d5ace037c3c3726c2e43b15e,boston college,REJECT,UNKNOWN,,,,,1,,,,,,False,REGEX,0.2,True
+d5ace037c3c3726c2e43b15e,brown uni,REJECT,UNKNOWN,,,,,1,,,,,,False,REGEX,0.2,True
+951b0c3d952d8e6aa014b67c,MIT,DEFER,UNKNOWN,,,,,9,,,,,,False,REGEX_PARTIAL,0.2,True
+afb755c33e233f511a3f26c2,- Georgia Tech,REJECT,UNKNOWN,,4.0,1520,,,,,,,,False,REGEX,0.6,False
+afb755c33e233f511a3f26c2,- Purdue,ACCEPT,UNKNOWN,,4.0,1520,,,,,,,,False,REGEX,0.6,False
+afb755c33e233f511a3f26c2,- Vanderbilt,REJECT,UNKNOWN,,4.0,1520,,,,,,,,False,REGEX,0.6,False
+afb755c33e233f511a3f26c2,- Rice,WAITLIST,UNKNOWN,,4.0,1520,,,,,,,,False,REGEX,0.6,False
+afb755c33e233f511a3f26c2,- Yale,REJECT,UNKNOWN,,4.0,1520,,,,,,,,False,REGEX,0.6,False
+afb755c33e233f511a3f26c2,- Northwestern,ACCEPT,UNKNOWN,,4.0,1520,,,,,,,,False,REGEX,0.6,False
+afb755c33e233f511a3f26c2,- Cornell,ACCEPT,UNKNOWN,,4.0,1520,,,,,,,,False,REGEX,0.6,False
+4d5300024e4b77149dbd32e9,Georgia State University,ACCEPT,UNKNOWN,,,1240,,,,,,,,False,REGEX,0.4,True
+4d5300024e4b77149dbd32e9,Kennesaw State University,ACCEPT,UNKNOWN,,,1240,,,,,,,,False,REGEX,0.4,True
+198163f4689fab51debcee6d,Applications,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX_PARTIAL,0.2,True
+31a04388cafe5c58ce31d0db,defer,WAITLIST,UNKNOWN,3.8,4.3,1400,,10,,,,,,False,REGEX_PARTIAL,0.6,False
+16e3a22b0058077ed50493a4,cmu cs,WAITLIST,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+16e3a22b0058077ed50493a4,udub cs,WAITLIST,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+16e3a22b0058077ed50493a4,ucsd cs,WAITLIST,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+16e3a22b0058077ed50493a4,cornell cs,WAITLIST,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+16e3a22b0058077ed50493a4,princeton cs,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+16e3a22b0058077ed50493a4,jhu cs,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+16e3a22b0058077ed50493a4,dartmouth cs,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+16e3a22b0058077ed50493a4,berkeley eecs,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+5747a71de471dfa39cfadde9,SDSU,ACCEPT,UNKNOWN,,,,,8,,,,,,False,REGEX,0.2,True
+5747a71de471dfa39cfadde9,Cal Poly SLO,REJECT,UNKNOWN,,,,,8,,,,,,False,REGEX,0.2,True
+5747a71de471dfa39cfadde9,UCSC,ACCEPT,UNKNOWN,,,,,8,,,,,,False,REGEX,0.2,True
+5747a71de471dfa39cfadde9,UCD,REJECT,UNKNOWN,,,,,8,,,,,,False,REGEX,0.2,True
+5747a71de471dfa39cfadde9,UCSB,REJECT,UNKNOWN,,,,,8,,,,,,False,REGEX,0.2,True
+5747a71de471dfa39cfadde9,UCSD,REJECT,UNKNOWN,,,,,8,,,,,,False,REGEX,0.2,True
+5747a71de471dfa39cfadde9,UCLA,REJECT,UNKNOWN,,,,,8,,,,,,False,REGEX,0.2,True
+5747a71de471dfa39cfadde9,UCB,REJECT,UNKNOWN,,,,,8,,,,,,False,REGEX,0.2,True
+a8752382790bc7bfcdb6f1ee,UNC,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a8752382790bc7bfcdb6f1ee,UCLA,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a8752382790bc7bfcdb6f1ee,Barnard,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a8752382790bc7bfcdb6f1ee,UCSD,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a8752382790bc7bfcdb6f1ee,Richmond,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a8752382790bc7bfcdb6f1ee,Northeastern,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a8752382790bc7bfcdb6f1ee,UWash,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a8752382790bc7bfcdb6f1ee,St Andrews-William and Mary Joint Degree,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0cd0f04201a045ee5927d420,Brown,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0cd0f04201a045ee5927d420,Texas A&M,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0cd0f04201a045ee5927d420,UT Austin,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0cd0f04201a045ee5927d420,MIT,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0cd0f04201a045ee5927d420,Johns Hopkins,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0cd0f04201a045ee5927d420,WashU,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0cd0f04201a045ee5927d420,Vanderbilt,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0cd0f04201a045ee5927d420,USC,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+16899798d9d11d00f33845df,In dire need of a miracle,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+f7ef8eb1fcd0588bcb881ea9,UChicago,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+c1aab31ffd24011a49dcd81c,caltech,WAITLIST,UNKNOWN,,,1590,,,,,,,,False,REGEX,0.4,True
+c1aab31ffd24011a49dcd81c,cmu,WAITLIST,UNKNOWN,,,1590,,,,,,,,False,REGEX,0.4,True
+c1aab31ffd24011a49dcd81c,fordham,REJECT,UNKNOWN,,,1590,,,,,,,,False,REGEX,0.4,True
+c1aab31ffd24011a49dcd81c,jhu,REJECT,UNKNOWN,,,1590,,,,,,,,False,REGEX,0.4,True
+152a5f33fd4a2ed7637062d3,so far,REJECT,UNKNOWN,,,1580,,,,,,,,False,REGEX_PARTIAL,0.4,True
+a8fe9811974861259333d962,. Penn is the same,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+1cd9f694b57c476e3c4317d7,Northeastern,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+1cd9f694b57c476e3c4317d7,UChicago,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+1cd9f694b57c476e3c4317d7,Fordham,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+31ea74250af6f230c60d200e,Caltech,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+31ea74250af6f230c60d200e,UChicago,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+31ea74250af6f230c60d200e,Columbia,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+cf4e08de4c5efe3aa7c7b039,Caltech RD,WAITLIST,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+cf4e08de4c5efe3aa7c7b039,Northeastern RD,WAITLIST,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+cf4e08de4c5efe3aa7c7b039,Georgia Tech EA,DEFER,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+cf4e08de4c5efe3aa7c7b039,Purdue EA,DEFER,UNKNOWN,,,1540,,3,,,,,,False,REGEX,0.4,True
+b08e6712eeb090454590428f,Caltech RD,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b08e6712eeb090454590428f,Georgia Tech EA,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b08e6712eeb090454590428f,Purdue EA,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b08e6712eeb090454590428f,Northeastern EA,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2b354603a312b17d23f9eb6e,FIT,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,EFSC,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,Stetson,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,FL Polytechnic,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,FAU,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,Eckerd,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,UCF,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,Nova Southeastern,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,Gulf Coast,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,New College of FL,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,UWF,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,UNF,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,Saint Leo,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,UWF,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,FIU,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,UF,ACCEPT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,UMiami,REJECT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+2b354603a312b17d23f9eb6e,Ringling,REJECT,UNKNOWN,,,1420,,20,,,,,,False,REGEX,0.4,True
+01870b7f3c3eb42da980210f,Georgia State University,ACCEPT,UNKNOWN,,,1240,,,,,,,,False,REGEX,0.4,True
+01870b7f3c3eb42da980210f,Kennesaw State University,ACCEPT,UNKNOWN,,,1240,,,,,,,,False,REGEX,0.4,True
+534201d104bba8d950843f06,Georgia State University,ACCEPT,UNKNOWN,,,1240,,,,,,,,False,REGEX,0.4,True
+534201d104bba8d950843f06,Kennesaw State University,ACCEPT,UNKNOWN,,,1240,,,,,,,,False,REGEX,0.4,True
+c794c91b20e3edd098cb973e,Literally speechless,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+08bce96b5602f00660157b72,. LaunchX Entrepreneurship,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+6d8d94587ad04f7d533ad8fd,gtech,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+6d8d94587ad04f7d533ad8fd,uiuc,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+1db66968dbbcd399b99942da,University of Texas at Austin,REJECT,UNKNOWN,,,,,7,,,,,,False,REGEX,0.2,True
+db588607e3a5b0aa7c514ec7,Georgetown EA,DEFER,UNKNOWN,,,,,10,,,,,,False,REGEX,0.2,True
+db588607e3a5b0aa7c514ec7,Colorado College EA,REJECT,UNKNOWN,,,,,10,,,,,,False,REGEX,0.2,True
+db588607e3a5b0aa7c514ec7,UTK EA,ACCEPT,UNKNOWN,,,,,10,,,,,,False,REGEX,0.2,True
+7dd73d8894b1977fd3aad732,. University of Texas Austin RD,REJECT,UNKNOWN,,,,,7,,,,,,False,REGEX,0.2,True
+859f279dcac4a603b226b32e,WashU EDII,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+8c9fdfd91841fe55ea370f12,WashU Ed II,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+8c9fdfd91841fe55ea370f12,Rutgers,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+8c9fdfd91841fe55ea370f12,Fordham,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+8c9fdfd91841fe55ea370f12,Montclair,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+8c9fdfd91841fe55ea370f12,Northeastern,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4514c074510cf6288ce79012,George Mason EA,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+4514c074510cf6288ce79012,JMU EA,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+4514c074510cf6288ce79012,UVA ED,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+4514c074510cf6288ce79012,University of Tennessee Knoxville EA,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+4514c074510cf6288ce79012,University of Florida EA,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+4514c074510cf6288ce79012,University of Texas Austin EA,DEFER,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+4514c074510cf6288ce79012,UNC Chappell Hill EA,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+4514c074510cf6288ce79012,Coastal Carolina University EA,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+4514c074510cf6288ce79012,Rutgers New Brunswick EA,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+93b2613b2fd8d27776fe07ed,Brandeis,ACCEPT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+93b2613b2fd8d27776fe07ed,Rutgers New Brunswick,ACCEPT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+93b2613b2fd8d27776fe07ed,UPitt,ACCEPT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+93b2613b2fd8d27776fe07ed,UMass Amherst,ACCEPT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+93b2613b2fd8d27776fe07ed,Binghamton,ACCEPT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+93b2613b2fd8d27776fe07ed,Cornell,DEFER,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+93b2613b2fd8d27776fe07ed,UMich,DEFER,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+93b2613b2fd8d27776fe07ed,UNC,WAITLIST,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+93b2613b2fd8d27776fe07ed,UVA,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e26a1a04c3390f4571ca32a2,VCU,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX_PARTIAL,0.2,True
+e26a1a04c3390f4571ca32a2,ODU,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX_PARTIAL,0.2,True
+c6dbd83cddd05b7d73e6a33c,UNC,WAITLIST,UNKNOWN,3.93,4.37,,,7,,,,,,False,REGEX,0.4,True
+c6dbd83cddd05b7d73e6a33c,Georgetown,DEFER,UNKNOWN,3.93,4.37,,,7,,,,,,False,REGEX,0.4,True
+c6dbd83cddd05b7d73e6a33c,Umich,DEFER,UNKNOWN,3.93,4.37,,,7,,,,,,False,REGEX,0.4,True
+c6dbd83cddd05b7d73e6a33c,Tulane,DEFER,UNKNOWN,3.93,4.37,,,7,,,,,,False,REGEX,0.4,True
+0f66603d0602195321df9f79,UMich,ACCEPT,UNKNOWN,,,,,3,,,,,,False,REGEX,0.2,True
+0f66603d0602195321df9f79,UFlorida,ACCEPT,UNKNOWN,,,,,3,,,,,,False,REGEX,0.2,True
+0f66603d0602195321df9f79,UMD,ACCEPT,UNKNOWN,,,,,3,,,,,,False,REGEX,0.2,True
+0f66603d0602195321df9f79,Pitt,ACCEPT,UNKNOWN,,,,,3,,,,,,False,REGEX,0.2,True
+0f66603d0602195321df9f79,UVA,REJECT,UNKNOWN,,,,,3,,,,,,False,REGEX,0.2,True
+62efe879f488b69940e6512e,Texas A&M,ACCEPT,UNKNOWN,,,1540,,,,,,,,False,REGEX_PARTIAL,0.4,True
+e290123f3d377593acfbeeaa,McGill,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e290123f3d377593acfbeeaa,UBC,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e290123f3d377593acfbeeaa,UofT,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e290123f3d377593acfbeeaa,UNC OOS EA,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+deb96088adcac8b882a501ee,gt,REJECT,UNKNOWN,,,1520,,12,,,,,,False,REGEX,0.4,True
+deb96088adcac8b882a501ee,cwru,ACCEPT,UNKNOWN,,,1520,,12,,,,,,False,REGEX,0.4,True
+deb96088adcac8b882a501ee,state schools,ACCEPT,UNKNOWN,,,1520,,12,,,,,,False,REGEX,0.4,True
+099b1fa4f7a360d7dd17e21d,K-State,ACCEPT,UNKNOWN,3.8,3.9,,26,,,,,,,False,REGEX,0.6,False
+099b1fa4f7a360d7dd17e21d,Missouri S&T,ACCEPT,UNKNOWN,3.8,3.9,,26,,,,,,,False,REGEX,0.6,False
+099b1fa4f7a360d7dd17e21d,U of Arkansas,ACCEPT,UNKNOWN,3.8,3.9,,26,,,,,,,False,REGEX,0.6,False
+099b1fa4f7a360d7dd17e21d,Mizzou,ACCEPT,UNKNOWN,3.8,3.9,,26,,,,,,,False,REGEX,0.6,False
+099b1fa4f7a360d7dd17e21d,Auburn,DEFER,UNKNOWN,3.8,3.9,,26,,,,,,,False,REGEX,0.6,False
+099b1fa4f7a360d7dd17e21d,CU Boulder,DEFER,UNKNOWN,3.8,3.9,,26,,,,,,,False,REGEX,0.6,False
+099b1fa4f7a360d7dd17e21d,Virginia Tech,ACCEPT,UNKNOWN,3.8,3.9,,26,,,,,,,False,REGEX,0.6,False
+9ee6ec5a8135ae650db8b57a,auto,ACCEPT,UNKNOWN,,,,35,11,,,,,,False,REGEX_PARTIAL,0.4,True
+cc40088b5d64d8d2f3f49179,Honors College,DEFER,UNKNOWN,,,,,11,,,,,,False,REGEX_PARTIAL,0.2,True
+7bf930e840ea84116140dac4,CWRU,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7bf930e840ea84116140dac4,Binghamton,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7bf930e840ea84116140dac4,UBuffalo,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7bf930e840ea84116140dac4,Buff State,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7bf930e840ea84116140dac4,RIT,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7bf930e840ea84116140dac4,Rutgers,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7bf930e840ea84116140dac4,Stony Brook,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+605094caccf75df829db4b96,International student torn between U.S. and Europe,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+29ddd189a711545cd5341bf0,Miami Uni,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+29ddd189a711545cd5341bf0,Temple uni,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+29ddd189a711545cd5341bf0,Uni of richmond,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+29ddd189a711545cd5341bf0,Uni of connecticut,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+87dcf1b6eab8487afbb4d478,UF vs. FSU,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+e438bc72de7f7874077dc541,Case Western Reserve University,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e438bc72de7f7874077dc541,Villanova University,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e438bc72de7f7874077dc541,USC,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+79089280ce4cde6f046f5c73,- UCF,ACCEPT,UNKNOWN,,,,,7,,,,,,False,REGEX,0.2,True
+79089280ce4cde6f046f5c73,- Iowa State,ACCEPT,UNKNOWN,,,,,7,,,,,,False,REGEX,0.2,True
+79089280ce4cde6f046f5c73,- FSU,DEFER,UNKNOWN,,,,,7,,,,,,False,REGEX,0.2,True
+79089280ce4cde6f046f5c73,- UVM,ACCEPT,UNKNOWN,,,,,7,,,,,,False,REGEX,0.2,True
+79089280ce4cde6f046f5c73,- Temple University,ACCEPT,UNKNOWN,,,,,7,,,,,,False,REGEX,0.2,True
+79089280ce4cde6f046f5c73,- Florida Tech,ACCEPT,UNKNOWN,,,,,7,,,,,,False,REGEX,0.2,True
+79089280ce4cde6f046f5c73,- Mount Holyoke College,ACCEPT,UNKNOWN,,,,,7,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,UT Austin McCombs,REJECT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,Texas A&M Mays,REJECT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,Honors College,ACCEPT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,Penn State Smeal,REJECT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,Honors College,ACCEPT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,Michigan State Broad,REJECT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,Indiana Kelley,REJECT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,University of Washington Foster,REJECT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,Oregon Lundquist,ACCEPT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,Colorado Boulder Leeds,REJECT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,Honors college,ACCEPT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,Southern Methodist,REJECT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,University of Illinois UC Gies,REJECT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,Florida Warrington,REJECT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+e4e30090542305e16bf2199d,Georgia Terry,REJECT,UNKNOWN,,,,,2,,,,,,False,REGEX,0.2,True
+21e49cff24138f733e3e49ad,UPitt Rolling,ACCEPT,UNKNOWN,,,,35,12,,,,,,False,REGEX,0.4,True
+21e49cff24138f733e3e49ad,UMinn Twin cities,ACCEPT,UNKNOWN,,,,35,12,,,,,,False,REGEX,0.4,True
+21e49cff24138f733e3e49ad,Harvard REA,ACCEPT,UNKNOWN,,,,35,12,,,,,,False,REGEX,0.4,True
+23184a6c40e0727b88d4e619,Texas A&M and UT are safeties since I'm auto,ACCEPT,UNKNOWN,,,1540,,13,,,,,,False,REGEX_PARTIAL,0.4,True
+35f1637f6d1c1a5891473098,UPenn Wharton ED --,ACCEPT,UNKNOWN,,,1570,,5,,,,,,False,REGEX_PARTIAL,0.4,True
+d3e58025a1772a76ac223050,University of Minnesota,ACCEPT,UNKNOWN,,98.0,,,,,,,,,False,REGEX,0.4,True
+d3e58025a1772a76ac223050,Binghamton University,ACCEPT,UNKNOWN,,98.0,,,,,,,,,False,REGEX,0.4,True
+d3e58025a1772a76ac223050,Indiana University,ACCEPT,UNKNOWN,,98.0,,,,,,,,,False,REGEX,0.4,True
+d3e58025a1772a76ac223050,Baruch,ACCEPT,UNKNOWN,,98.0,,,,,,,,,False,REGEX,0.4,True
+80f27ffaefac2f288ace7028,Macalester college,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+80f27ffaefac2f288ace7028,St. Olaf college,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+80f27ffaefac2f288ace7028,Illinois tech,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+80f27ffaefac2f288ace7028,Wheaton college Massachusetts,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+80f27ffaefac2f288ace7028,Pacific Lutheran University,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+80f27ffaefac2f288ace7028,Augustana university,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ae2755d7e695c763b8bea051,State school. I am not applying to any other safeties because I am an auto,ACCEPT,UNKNOWN,,,,,15,,,,,,False,REGEX_PARTIAL,0.2,True
+12a30d727b2927f1337d6005,tamu,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+971bf9da67ef9532e0c55bd2,Texas A&M,ACCEPT,UNKNOWN,,,1340,35,8,,,,,,False,REGEX,0.4,True
+971bf9da67ef9532e0c55bd2,UGA,ACCEPT,UNKNOWN,,,1340,35,8,,,,,,False,REGEX,0.4,True
+971bf9da67ef9532e0c55bd2,Georgia Tech,ACCEPT,UNKNOWN,,,1340,35,8,,,,,,False,REGEX,0.4,True
+215fa3bbaab92e6314511f8d,USC ED,DEFER,UNKNOWN,3.9,4.4,,,5,,,,,,False,REGEX_PARTIAL,0.4,True
+8f6de57fa840ac37d3ea79dc,Here's the college results,ACCEPT,UNKNOWN,,,,,8,,,,,,False,REGEX_PARTIAL,0.2,True
+d70d67776956d5b9feb5c248,Case Western Reserve University,ACCEPT,UNKNOWN,3.93,4.43,,,13,,,,,,False,REGEX,0.4,True
+d70d67776956d5b9feb5c248,University of Chicago,REJECT,UNKNOWN,3.93,4.43,,,13,,,,,,False,REGEX,0.4,True
+d70d67776956d5b9feb5c248,WashU in St. Louis,REJECT,UNKNOWN,3.93,4.43,,,13,,,,,,False,REGEX,0.4,True
+d70d67776956d5b9feb5c248,Amherst College,REJECT,UNKNOWN,3.93,4.43,,,13,,,,,,False,REGEX,0.4,True
+d70d67776956d5b9feb5c248,Bowdoin College,REJECT,UNKNOWN,3.93,4.43,,,13,,,,,,False,REGEX,0.4,True
+d70d67776956d5b9feb5c248,Colgate University,REJECT,UNKNOWN,3.93,4.43,,,13,,,,,,False,REGEX,0.4,True
+d70d67776956d5b9feb5c248,Wake Forest University,WAITLIST,UNKNOWN,3.93,4.43,,,13,,,,,,False,REGEX,0.4,True
+d70d67776956d5b9feb5c248,University of Notre Dame,REJECT,UNKNOWN,3.93,4.43,,,13,,,,,,False,REGEX,0.4,True
+7d836261f1ab6eaf563541ae,Depaul Univ,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7d836261f1ab6eaf563541ae,Univ of Illinois Chicago,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7d836261f1ab6eaf563541ae,Univ of Iowa,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7d836261f1ab6eaf563541ae,Univ of Texas Dallas,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7d836261f1ab6eaf563541ae,IU Bloomington Kelley,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7d836261f1ab6eaf563541ae,Ohio State,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7d836261f1ab6eaf563541ae,Texas A&M University,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7d836261f1ab6eaf563541ae,University of Michigan,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7d836261f1ab6eaf563541ae,University of Texas Austin,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7d836261f1ab6eaf563541ae,Univ of Wisconsin Madison,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7d836261f1ab6eaf563541ae,UIUC,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7d836261f1ab6eaf563541ae,Purdue University,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+1b8cafb20563050753639c78,TAMU,ACCEPT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+1b8cafb20563050753639c78,Stanford,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+1b8cafb20563050753639c78,Duke,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+1b8cafb20563050753639c78,JHU,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+1b8cafb20563050753639c78,CMU,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+1b8cafb20563050753639c78,MIT,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+1b8cafb20563050753639c78,UNC,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+1b8cafb20563050753639c78,Caltech,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+1b8cafb20563050753639c78,CO Mines,ACCEPT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+1b8cafb20563050753639c78,UChicago,WAITLIST,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+9df4e79db40eacc46c7c6a1b,Applied ED,DEFER,UNKNOWN,,,1410,,,,,,,,False,REGEX_PARTIAL,0.4,True
+1b9ac588f6ed22182db4a0e9,UC Berkeley,REJECT,UNKNOWN,,,,36,12,,,,,,False,REGEX,0.4,True
+1b9ac588f6ed22182db4a0e9,UCLA,WAITLIST,UNKNOWN,,,,36,12,,,,,,False,REGEX,0.4,True
+1b9ac588f6ed22182db4a0e9,UC Irvine,ACCEPT,UNKNOWN,,,,36,12,,,,,,False,REGEX,0.4,True
+1b9ac588f6ed22182db4a0e9,UCSD,ACCEPT,UNKNOWN,,,,36,12,,,,,,False,REGEX,0.4,True
+1b9ac588f6ed22182db4a0e9,Vanderbilt,REJECT,UNKNOWN,,,,36,12,,,,,,False,REGEX,0.4,True
+1b9ac588f6ed22182db4a0e9,Emory,WAITLIST,UNKNOWN,,,,36,12,,,,,,False,REGEX,0.4,True
+1b9ac588f6ed22182db4a0e9,Rice,WAITLIST,UNKNOWN,,,,36,12,,,,,,False,REGEX,0.4,True
+1b9ac588f6ed22182db4a0e9,WashU,WAITLIST,UNKNOWN,,,,36,12,,,,,,False,REGEX,0.4,True
+1b9ac588f6ed22182db4a0e9,Wake Forest,ACCEPT,UNKNOWN,,,,36,12,,,,,,False,REGEX,0.4,True
+1b9ac588f6ed22182db4a0e9,NYU,ACCEPT,UNKNOWN,,,,36,12,,,,,,False,REGEX,0.4,True
+564acf4d6eedd681559abf66,Duke,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+564acf4d6eedd681559abf66,JHU,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+564acf4d6eedd681559abf66,Cornell,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+564acf4d6eedd681559abf66,UCSD,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+564acf4d6eedd681559abf66,University of Kansas,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+564acf4d6eedd681559abf66,Kansas state,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+564acf4d6eedd681559abf66,Wichita state,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+564acf4d6eedd681559abf66,UC Merced,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+564acf4d6eedd681559abf66,UC Santa Barbara,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+564acf4d6eedd681559abf66,Rice,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3bca4c9b7759b6f38a9b1cbe,deferred,REJECT,UNKNOWN,4.0,4.6,1580,,9,,,,,,False,REGEX_PARTIAL,0.6,False
+a1d66a3ab8379144d293e914,Providence College,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,UMass Amherst,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,UMD College Park,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,UNC Chapel Hill,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,UT Austin CSB program,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,UT Austin,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,MIT,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,CMU,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,Tufts,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,JHU,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,Vandy,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,Northwestern,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,Cornell,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,Columbia,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,Dartmouth,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,Yale,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,Princeton,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,Harvard,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,Duke,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a1d66a3ab8379144d293e914,GT,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+73710182b60518d409faac8c,waitlist,ACCEPT,UNKNOWN,,,1560,,,,,,,,False,REGEX_PARTIAL,0.4,True
+3e5f79e5564b2af88f26d821,Cornell Dyson,REJECT,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+3e5f79e5564b2af88f26d821,Dartmouth,REJECT,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+3e5f79e5564b2af88f26d821,UT Austin McCombs,REJECT,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+3e5f79e5564b2af88f26d821,UNC Kenan-Flagler,WAITLIST,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+3e5f79e5564b2af88f26d821,NYU Stern,WAITLIST,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+3e5f79e5564b2af88f26d821,UVA McIntire,REJECT,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+3e5f79e5564b2af88f26d821,Georgia Tech Scheller,REJECT,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+3e5f79e5564b2af88f26d821,Emory Goizeuta,WAITLIST,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+3e5f79e5564b2af88f26d821,IU Kelley,ACCEPT,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+3e5f79e5564b2af88f26d821,Williams,REJECT,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+3e5f79e5564b2af88f26d821,Rice,REJECT,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+3e5f79e5564b2af88f26d821,CMU Tepper,WAITLIST,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+3e5f79e5564b2af88f26d821,Boston College,WAITLIST,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+3e5f79e5564b2af88f26d821,UMich Ross,DEFER,UNKNOWN,,3.85,1510,,,,,,,,False,REGEX,0.6,False
+7e8110b40519b32282153635,Rocketry,WAITLIST,UNKNOWN,3.61,3.92,,,6,,,,,,False,REGEX_PARTIAL,0.4,True
+3c64e62e1a25940564e9d57f,so I assumed I was going to get auto,REJECT,UNKNOWN,3.95,4.59,,,,,,,,,False,REGEX_PARTIAL,0.4,True
+90546000fef3cb6f8e059bf1,Yale,ACCEPT,UNKNOWN,,,,35,,,,,,,False,REGEX,0.4,True
+90546000fef3cb6f8e059bf1,Cornell,ACCEPT,UNKNOWN,,,,35,,,,,,,False,REGEX,0.4,True
+90546000fef3cb6f8e059bf1,Northwestern,REJECT,UNKNOWN,,,,35,,,,,,,False,REGEX,0.4,True
+90546000fef3cb6f8e059bf1,Uchicago,ACCEPT,UNKNOWN,,,,35,,,,,,,False,REGEX,0.4,True
+90546000fef3cb6f8e059bf1,Rice,WAITLIST,UNKNOWN,,,,35,,,,,,,False,REGEX,0.4,True
+90546000fef3cb6f8e059bf1,Duke,REJECT,UNKNOWN,,,,35,,,,,,,False,REGEX,0.4,True
+90546000fef3cb6f8e059bf1,WashU,ACCEPT,UNKNOWN,,,,35,,,,,,,False,REGEX,0.4,True
+90546000fef3cb6f8e059bf1,UIUC,ACCEPT,UNKNOWN,,,,35,,,,,,,False,REGEX,0.4,True
+90546000fef3cb6f8e059bf1,UMich,DEFER,UNKNOWN,,,,35,,,,,,,False,REGEX,0.4,True
+90546000fef3cb6f8e059bf1,UMN,ACCEPT,UNKNOWN,,,,35,,,,,,,False,REGEX,0.4,True
+90546000fef3cb6f8e059bf1,UW Madison,ACCEPT,UNKNOWN,,,,35,,,,,,,False,REGEX,0.4,True
+90546000fef3cb6f8e059bf1,Carleton,ACCEPT,UNKNOWN,,,,35,,,,,,,False,REGEX,0.4,True
+90546000fef3cb6f8e059bf1,IU Bloomington,ACCEPT,UNKNOWN,,,,35,,,,,,,False,REGEX,0.4,True
+b66caca69a20a5909def1c90,Northeastern,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+e8e183a8bdc53ed16e461ec5,CSULB,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e8e183a8bdc53ed16e461ec5,SDSU,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e8e183a8bdc53ed16e461ec5,CSUF,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e8e183a8bdc53ed16e461ec5,SJSU,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e8e183a8bdc53ed16e461ec5,UCLA,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e8e183a8bdc53ed16e461ec5,UCD,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e8e183a8bdc53ed16e461ec5,UCB,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e8e183a8bdc53ed16e461ec5,UCI,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3552f7211bbfdce5b22cbfc2,UCLA - CL&S,WAITLIST,UNKNOWN,,,1530,34,14,,,,,,False,REGEX_PARTIAL,0.4,True
+0dff6ec374eaea21ff0ba765,Wayne state,ACCEPT,UNKNOWN,,,1370,,1,,,,,,False,REGEX,0.4,True
+0dff6ec374eaea21ff0ba765,Albion,ACCEPT,UNKNOWN,,,1370,,1,,,,,,False,REGEX,0.4,True
+0dff6ec374eaea21ff0ba765,Kalamazoo College,ACCEPT,UNKNOWN,,,1370,,1,,,,,,False,REGEX,0.4,True
+0dff6ec374eaea21ff0ba765,Michigan State,ACCEPT,UNKNOWN,,,1370,,1,,,,,,False,REGEX,0.4,True
+0dff6ec374eaea21ff0ba765,Kenyon College,ACCEPT,UNKNOWN,,,1370,,1,,,,,,False,REGEX,0.4,True
+0dff6ec374eaea21ff0ba765,University of Miami Ohio,ACCEPT,UNKNOWN,,,1370,,1,,,,,,False,REGEX,0.4,True
+0dff6ec374eaea21ff0ba765,University of Vermont,ACCEPT,UNKNOWN,,,1370,,1,,,,,,False,REGEX,0.4,True
+0dff6ec374eaea21ff0ba765,Macalester,ACCEPT,UNKNOWN,,,1370,,1,,,,,,False,REGEX,0.4,True
+0dff6ec374eaea21ff0ba765,University of Rochester,ACCEPT,UNKNOWN,,,1370,,1,,,,,,False,REGEX,0.4,True
+0dff6ec374eaea21ff0ba765,University of Wisconsin Madison,ACCEPT,UNKNOWN,,,1370,,1,,,,,,False,REGEX,0.4,True
+0dff6ec374eaea21ff0ba765,University of Minnesota Twin Cities,ACCEPT,UNKNOWN,,,1370,,1,,,,,,False,REGEX,0.4,True
+0dff6ec374eaea21ff0ba765,University of Pittsburgh,ACCEPT,UNKNOWN,,,1370,,1,,,,,,False,REGEX,0.4,True
+0dff6ec374eaea21ff0ba765,University of Michigan,DEFER,UNKNOWN,,,1370,,1,,,,,,False,REGEX,0.4,True
+741b8e396e91cb98208cfc29,. UT Austin,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+741b8e396e91cb98208cfc29,. CU Boulder,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+741b8e396e91cb98208cfc29,. UIUC,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+741b8e396e91cb98208cfc29,. UC Berkeley,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+741b8e396e91cb98208cfc29,. UCLA,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+741b8e396e91cb98208cfc29,. Cornell,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+741b8e396e91cb98208cfc29,. Rice,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+741b8e396e91cb98208cfc29,. MIT,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+741b8e396e91cb98208cfc29,. Purdue,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. Michigan,DEFER,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. Maryland,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. Binghamton,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. UIUC,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. Georgia Tech,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. Drexel,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. UT Austin,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. Northeastern,DEFER,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. UC Berkeley,WAITLIST,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. UCLA,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. UCSD,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. UPenn,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. WashU,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. UF,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. Penn,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+74e3c5d38d1d7c7bb7d5a68f,. Columbia,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+48ed0feb980237748b2aff16,. Purdue,ACCEPT,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. USC,DEFER,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. Georgia Tech,REJECT,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. UIUC,ACCEPT,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. UC Berkeley,REJECT,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. UCLA,REJECT,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. UCSD,WAITLIST,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. UCI,WAITLIST,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. UCD,WAITLIST,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. UCSB,ACCEPT,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. UCSC,ACCEPT,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. Northwestern,REJECT,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. UPenn,REJECT,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. CMU,REJECT,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. UT Austin,ACCEPT,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. UT Dallas,ACCEPT,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+48ed0feb980237748b2aff16,. TAMU,ACCEPT,UNKNOWN,,,1570,,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. Notre Dame,DEFER,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. Purdue,REJECT,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. UMich,DEFER,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. UC Berkeley,REJECT,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. UCLA,WAITLIST,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. Case Western,WAITLIST,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. Northeastern University,WAITLIST,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. NYU,REJECT,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. Northwestern,REJECT,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. WashU,WAITLIST,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. Stanford,REJECT,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. Harvard,REJECT,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. Columbia,REJECT,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. UPenn,REJECT,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. Johns Hopkins,REJECT,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+a442353f5be3941df33ea34f,. Boston University,WAITLIST,UNKNOWN,,,,35,9,,,,,,False,REGEX,0.4,True
+eb49dfe058f42b4f1fbef49b,uf,ACCEPT,UNKNOWN,,,1470,34,5,,,,,,False,REGEX_PARTIAL,0.4,True
+5cd5c557da1869209bfb1f2b,UC Berkeley,ACCEPT,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+5cd5c557da1869209bfb1f2b,Georgia Tech,ACCEPT,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+5cd5c557da1869209bfb1f2b,CMU,ACCEPT,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+5cd5c557da1869209bfb1f2b,UCI,ACCEPT,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+5cd5c557da1869209bfb1f2b,UCSB,ACCEPT,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+5cd5c557da1869209bfb1f2b,UCSD,ACCEPT,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+5cd5c557da1869209bfb1f2b,Purdue,ACCEPT,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+5cd5c557da1869209bfb1f2b,Case Western,ACCEPT,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+5cd5c557da1869209bfb1f2b,UCLA,WAITLIST,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+5cd5c557da1869209bfb1f2b,Michigan,WAITLIST,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+5cd5c557da1869209bfb1f2b,Cornell,WAITLIST,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+5cd5c557da1869209bfb1f2b,UPenn,REJECT,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+5cd5c557da1869209bfb1f2b,Brown,REJECT,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+5cd5c557da1869209bfb1f2b,Northwestern,REJECT,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+25d0a1e458bb55e137dd5baf,University of Michigan,ACCEPT,UNKNOWN,,,,,3,,,,,,False,REGEX_PARTIAL,0.2,True
+085cb56c3c9d1ff7ce0fc7af,schools due to financial restraints,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+a04f9c085303422693f7422f,Rowan University,ACCEPT,UNKNOWN,,,1490,,,,,,,,False,REGEX,0.4,True
+a04f9c085303422693f7422f,Stevens Institute of Technology,WAITLIST,UNKNOWN,,,1490,,,,,,,,False,REGEX,0.4,True
+a04f9c085303422693f7422f,New Jersey Insitute of Technology,ACCEPT,UNKNOWN,,,1490,,,,,,,,False,REGEX,0.4,True
+a04f9c085303422693f7422f,Caldwell University,ACCEPT,UNKNOWN,,,1490,,,,,,,,False,REGEX,0.4,True
+a04f9c085303422693f7422f,Gregorian Court University,ACCEPT,UNKNOWN,,,1490,,,,,,,,False,REGEX,0.4,True
+a04f9c085303422693f7422f,Drew University,ACCEPT,UNKNOWN,,,1490,,,,,,,,False,REGEX,0.4,True
+a04f9c085303422693f7422f,Rensselaer Polytechnic Institute,ACCEPT,UNKNOWN,,,1490,,,,,,,,False,REGEX,0.4,True
+a04f9c085303422693f7422f,FDU,ACCEPT,UNKNOWN,,,1490,,,,,,,,False,REGEX,0.4,True
+a04f9c085303422693f7422f,Montclair,ACCEPT,UNKNOWN,,,1490,,,,,,,,False,REGEX,0.4,True
+927eee4c6cb7e6c102ca3b62,Harvard,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+927eee4c6cb7e6c102ca3b62,Yale,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+927eee4c6cb7e6c102ca3b62,Princeton,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+927eee4c6cb7e6c102ca3b62,Stanford,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+927eee4c6cb7e6c102ca3b62,Columbia,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+927eee4c6cb7e6c102ca3b62,Carleton,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+927eee4c6cb7e6c102ca3b62,UC Berkeley,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+927eee4c6cb7e6c102ca3b62,UCLA,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+927eee4c6cb7e6c102ca3b62,UC San Diego,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+927eee4c6cb7e6c102ca3b62,UC Davis,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+927eee4c6cb7e6c102ca3b62,UC Irvine,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+05e82fe520c39b6cc11e76bc,UCLA,WAITLIST,UNKNOWN,,,1530,34,14,,,,,,False,REGEX_PARTIAL,0.4,True
+77e3ff7b59825bcdeef6b60f,Yale SCEA,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+77e3ff7b59825bcdeef6b60f,Dartmouth RD,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+77e3ff7b59825bcdeef6b60f,Princeton SCEA,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+77e3ff7b59825bcdeef6b60f,UMich EA,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+77e3ff7b59825bcdeef6b60f,UVM EA,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+77e3ff7b59825bcdeef6b60f,UChicago RD,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+55a53d14309f6de883c7ca12,sonoma state,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+55a53d14309f6de883c7ca12,CSULB,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+55a53d14309f6de883c7ca12,SDSU,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+55a53d14309f6de883c7ca12,cal poly,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+55a53d14309f6de883c7ca12,UC Santa Cruz,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+55a53d14309f6de883c7ca12,UC Davis,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+55a53d14309f6de883c7ca12,UC Irvine,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+55a53d14309f6de883c7ca12,UC Santa Barbara,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+55a53d14309f6de883c7ca12,UC Berkeley,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+5fe13a83b77a1e429d371f32,Seattle University,ACCEPT,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,Creighton University,ACCEPT,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,Loyola Marymount University,ACCEPT,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,Northeastern University,REJECT,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,Ann Arbor,DEFER,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,Case Western Reserve University,DEFER,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,UC Merced,ACCEPT,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,UC Riverside,ACCEPT,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,UC Davis,ACCEPT,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,UC Irvine,WAITLIST,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,UC San Diego,WAITLIST,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,UC Berkeley,WAITLIST,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,UCLA,WAITLIST,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,Tufts University,ACCEPT,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,Boston College,ACCEPT,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,Georgetown University,ACCEPT,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+5fe13a83b77a1e429d371f32,University of Notre Dame,ACCEPT,UNKNOWN,,,1510,,5,,,,,,False,REGEX,0.4,True
+572ac6bae5832a30815bb520,Duquesne - EA,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,App State - Rolling,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,St. Joes - EA,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,Catholic - EA,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,Iona - EA,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,Susquehanna - EA,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,James Madison - EA,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,Wagner - EA,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,Furman - EA,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,Syracuse - RD,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,Lafayette - EA,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,Lehigh - RD,REJECT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,Richmond - EA,DEFER,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,Penn State - EA,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,Reconsidered,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+572ac6bae5832a30815bb520,Pitt - Rolling,WAITLIST,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+0ae483d9c8c48c1e1cd11dfc,School List,ACCEPT,UNKNOWN,,,,,16,,,,,,False,REGEX_PARTIAL,0.2,True
+4a5012d9bc99ba80790db052,Duke,REJECT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+4a5012d9bc99ba80790db052,JHU,REJECT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+4a5012d9bc99ba80790db052,Texas A and M,ACCEPT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+4a5012d9bc99ba80790db052,UT Austin,ACCEPT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+936f57d4e7865f4456b91d9e,Southern Miss,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+bcc0d60a587f6844109165cb,Decided,DEFER,UNKNOWN,,4.8,,,19,,,,,,False,REGEX_PARTIAL,0.4,True
+ded9baec13439cede7f1913c,MIT,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ded9baec13439cede7f1913c,UC Berkeley,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ded9baec13439cede7f1913c,CalArt,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ded9baec13439cede7f1913c,Oxford,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ded9baec13439cede7f1913c,UWisconsin,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ded9baec13439cede7f1913c,Syracuse,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ded9baec13439cede7f1913c,UMich,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ded9baec13439cede7f1913c,Case Western,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ded9baec13439cede7f1913c,UNC CH,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ded9baec13439cede7f1913c,Boston College,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ded9baec13439cede7f1913c,RB & BB Clown College,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+bd4b00128796667be5a1455b,University of Michigan,DEFER,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+bd4b00128796667be5a1455b,University of Virginia,DEFER,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+bd4b00128796667be5a1455b,Georgetown University,DEFER,UNKNOWN,,,,,11,,,,,,False,REGEX,0.2,True
+b781e17aa803f059a4f58fe3,UF,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+04802a6ff249172c44e3d25b,University of Pittsburgh,ACCEPT,UNKNOWN,,,,,5,,,,,,False,REGEX,0.2,True
+04802a6ff249172c44e3d25b,UIUC,ACCEPT,UNKNOWN,,,,,5,,,,,,False,REGEX,0.2,True
+04802a6ff249172c44e3d25b,Umich,REJECT,UNKNOWN,,,,,5,,,,,,False,REGEX,0.2,True
+04802a6ff249172c44e3d25b,Villanova,ACCEPT,UNKNOWN,,,,,5,,,,,,False,REGEX,0.2,True
+04802a6ff249172c44e3d25b,Virginia Tech,ACCEPT,UNKNOWN,,,,,5,,,,,,False,REGEX,0.2,True
+04802a6ff249172c44e3d25b,UC Berkeley and UCLA,REJECT,UNKNOWN,,,,,5,,,,,,False,REGEX,0.2,True
+04802a6ff249172c44e3d25b,Lehigh,WAITLIST,UNKNOWN,,,,,5,,,,,,False,REGEX,0.2,True
+04802a6ff249172c44e3d25b,Cornell,REJECT,UNKNOWN,,,,,5,,,,,,False,REGEX,0.2,True
+04802a6ff249172c44e3d25b,Swarthmore,REJECT,UNKNOWN,,,,,5,,,,,,False,REGEX,0.2,True
+04802a6ff249172c44e3d25b,UPenn,REJECT,UNKNOWN,,,,,5,,,,,,False,REGEX,0.2,True
+04802a6ff249172c44e3d25b,Boston University,ACCEPT,UNKNOWN,,,,,5,,,,,,False,REGEX,0.2,True
+04802a6ff249172c44e3d25b,Lafayette College,ACCEPT,UNKNOWN,,,,,5,,,,,,False,REGEX,0.2,True
+04802a6ff249172c44e3d25b,Bryn Mawr,ACCEPT,UNKNOWN,,,,,5,,,,,,False,REGEX,0.2,True
+dedadd134668bdfca5685462,University of Illinois at Chicago,ACCEPT,UNKNOWN,3.8,4.7,,,8,,,,,,False,REGEX,0.4,True
+dedadd134668bdfca5685462,Depaul,ACCEPT,UNKNOWN,3.8,4.7,,,8,,,,,,False,REGEX,0.4,True
+dedadd134668bdfca5685462,University of Minnesota Twin Cities,ACCEPT,UNKNOWN,3.8,4.7,,,8,,,,,,False,REGEX,0.4,True
+e2a3994ee123c13296a2966d,University of Illinois at Chicago,ACCEPT,UNKNOWN,3.83,4.7,,,8,,,,,,False,REGEX,0.4,True
+e2a3994ee123c13296a2966d,Depaul,ACCEPT,UNKNOWN,3.83,4.7,,,8,,,,,,False,REGEX,0.4,True
+e2a3994ee123c13296a2966d,University of Minnesota Twin Cities,ACCEPT,UNKNOWN,3.83,4.7,,,8,,,,,,False,REGEX,0.4,True
+bed06550163610a803e489c8,UPenn -,WAITLIST,UNKNOWN,,,,35,14,,,,,,False,REGEX,0.4,True
+bed06550163610a803e489c8,Duke -,WAITLIST,UNKNOWN,,,,35,14,,,,,,False,REGEX,0.4,True
+bed06550163610a803e489c8,Cornell -,WAITLIST,UNKNOWN,,,,35,14,,,,,,False,REGEX,0.4,True
+bed06550163610a803e489c8,NYU -,WAITLIST,UNKNOWN,,,,35,14,,,,,,False,REGEX,0.4,True
+bed06550163610a803e489c8,UCLA -,WAITLIST,UNKNOWN,,,,35,14,,,,,,False,REGEX,0.4,True
+7ea3ef278211c1559419e7f4,dr,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+408aac707546f9c64845a402,VTech,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+408aac707546f9c64845a402,CU Boulder,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+408aac707546f9c64845a402,Cal Poly SLO,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+408aac707546f9c64845a402,Gonzaga,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+408aac707546f9c64845a402,Wash State,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+408aac707546f9c64845a402,Oregon,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+408aac707546f9c64845a402,Oregon State,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+408aac707546f9c64845a402,Oklahoma,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+408aac707546f9c64845a402,Chapman,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+408aac707546f9c64845a402,Santa Clara,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+408aac707546f9c64845a402,Clemson,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+467d79ffea2bab4fbe01942f,Cincinnati,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+469b708e2d42bec44d0e7d15,brown,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+469b708e2d42bec44d0e7d15,Columbia,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+469b708e2d42bec44d0e7d15,harvard,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+469b708e2d42bec44d0e7d15,Princeton,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+469b708e2d42bec44d0e7d15,stanford,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+469b708e2d42bec44d0e7d15,uc berkeley,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+469b708e2d42bec44d0e7d15,UCLA,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+469b708e2d42bec44d0e7d15,yale,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+469b708e2d42bec44d0e7d15,georgia tech,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+469b708e2d42bec44d0e7d15,UCI and UCSD,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+068554a622315f2cd0d312cc,Auto,ACCEPT,UNKNOWN,,,1570,34,13,,,,,,False,REGEX_PARTIAL,0.4,True
+068554a622315f2cd0d312cc,Auto,ACCEPT,UNKNOWN,,,1570,34,13,,,,,,False,REGEX_PARTIAL,0.4,True
+91dc87c8b7cadfdbff7ac1b1,with music pre,ACCEPT,UNKNOWN,,,1540,36,5,,,,,,False,REGEX_PARTIAL,0.4,True
+948a83bfa0d4c305be6adbe5,Stanford ED,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX_PARTIAL,0.2,True
+948a83bfa0d4c305be6adbe5,UT Austin EA,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX_PARTIAL,0.2,True
+a72246f5174f9e88fa40b723,. Oxford,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Imperial,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. UCL,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. University of Glasgow,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. University of Warwick,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Harvard,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Yale,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Princeton,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Upenn,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Dartmouth,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Columbia,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Brown,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Cornell,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. MIT,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Stanford,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Caltech,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. UChicago,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Amherst,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. NYU,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Duke,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Northwestern,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Rice,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. JHU,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Bryn Mawr,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a72246f5174f9e88fa40b723,. Flagler College,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ae4bf5fc97215adb22d66556,Cornell,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ae4bf5fc97215adb22d66556,Purdue,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ae4bf5fc97215adb22d66556,UW-Madison,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ae4bf5fc97215adb22d66556,UGA,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ae4bf5fc97215adb22d66556,Ohio State,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ae4bf5fc97215adb22d66556,UIUC,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ae4bf5fc97215adb22d66556,University of Minnesota Twin Cities,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ae4bf5fc97215adb22d66556,Michigan State,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ae4bf5fc97215adb22d66556,Oregon State,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ae4bf5fc97215adb22d66556,NC State,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,ASU,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,RIT,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,Gtech EA,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,Purdue EA,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,UNC EA,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,UIUC EA,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,Northeastern EA,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,UPenn,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,Cornell,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,Harvard,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,Columbia,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,Northwestern,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,CMU,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,Duke,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,Stanford,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,USC,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,UCSB,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,UCI,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,UCSD,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,UDub,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,Cal Poly Slo,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,SJSU,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,SDSU,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,UCR,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2246f3250f899f2ace725dad,UCSC,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+1d30344caccbf6e949fc0edc,th grade summer,REJECT,UNKNOWN,,,,,13,,,,,,False,REGEX_PARTIAL,0.2,True
+7d76346d7e94325aeade63a1,UMN EA,ACCEPT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,Northwestern ED,REJECT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,UChicago EA,DEFER,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,IU Kelley EA,ACCEPT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,UT Austin EA,DEFER,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,USC EA,DEFER,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,UMich EA,DEFER,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,UNC EA,REJECT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,UW Madison EA,ACCEPT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,Brown,WAITLIST,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,Cornell,WAITLIST,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,Dartmouth,WAITLIST,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,Duke,REJECT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,Northeastern,ACCEPT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,Princeton,REJECT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,Vanderbilt,REJECT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,WashU,ACCEPT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,Berkeley,WAITLIST,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+7d76346d7e94325aeade63a1,UCLA,ACCEPT,UNKNOWN,,,,33,5,,,,,,False,REGEX,0.4,True
+01949598f03c9b206c10c4e6,UGA,WAITLIST,UNKNOWN,,,,34,5,,,,,,False,REGEX_PARTIAL,0.4,True
+9ab110705fd2c183223e9211,CWRU,ACCEPT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,MIT,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,University of Chicago,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,WashU,WAITLIST,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Notre Dame,WAITLIST,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Johns Hopkins,WAITLIST,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,UCLA,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,UC Berkeley,ACCEPT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Columbia University,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Vanderbilt University,WAITLIST,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Princeton University,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Harvard University,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Northwestern University,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Duke University,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Dartmouth College,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Yale University,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Cornell University,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Brown University,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Rice University,WAITLIST,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,Stanford University,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+9ab110705fd2c183223e9211,University of Pennsylvania,REJECT,UNKNOWN,,,,,15,,,,,,False,REGEX,0.2,True
+0f28d3da35d6e189b1b46113,CU Boulder,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+0f28d3da35d6e189b1b46113,Rutgers,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+a46e8d0fb79f2175c5bb745c,Deferred,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a46e8d0fb79f2175c5bb745c,Deferred,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a46e8d0fb79f2175c5bb745c,Deferred,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a46e8d0fb79f2175c5bb745c,Deferred,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+a46e8d0fb79f2175c5bb745c,Deferred,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+232749d1c5b11a666a39defd,Reaches,ACCEPT,UNKNOWN,,,1540,,80,,,,,,False,REGEX,0.4,True
+232749d1c5b11a666a39defd,RPI,ACCEPT,UNKNOWN,,,1540,,80,,,,,,False,REGEX,0.4,True
+232749d1c5b11a666a39defd,MIT,REJECT,UNKNOWN,,,1540,,80,,,,,,False,REGEX,0.4,True
+232749d1c5b11a666a39defd,Northwestern,ACCEPT,UNKNOWN,,,1540,,80,,,,,,False,REGEX,0.4,True
+232749d1c5b11a666a39defd,Cornell,ACCEPT,UNKNOWN,,,1540,,80,,,,,,False,REGEX,0.4,True
+232749d1c5b11a666a39defd,Yale,ACCEPT,UNKNOWN,,,1540,,80,,,,,,False,REGEX,0.4,True
+781f44199873db9edffe107d,UW Madison EA,DEFER,UNKNOWN,,,,,10,,,,,,False,REGEX_PARTIAL,0.2,True
+ef7ed691347f09e196cf674c,Harvard College,WAITLIST,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+ef7ed691347f09e196cf674c,Massachusetts Institute of Technology,ACCEPT,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+ef7ed691347f09e196cf674c,University of Cambridge,ACCEPT,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+ef7ed691347f09e196cf674c,Imperial College London,ACCEPT,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+ef7ed691347f09e196cf674c,University of St Andrew's,ACCEPT,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+ef7ed691347f09e196cf674c,University College London,ACCEPT,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+ef7ed691347f09e196cf674c,University of Exeter,ACCEPT,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+536fd3244d7d41214bf7c898,Harvard College,WAITLIST,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+536fd3244d7d41214bf7c898,Massachusetts Institute of Technology,ACCEPT,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+536fd3244d7d41214bf7c898,University of Cambridge,ACCEPT,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+536fd3244d7d41214bf7c898,Imperial College London,ACCEPT,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+536fd3244d7d41214bf7c898,University of St Andrew's,ACCEPT,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+536fd3244d7d41214bf7c898,University College London,ACCEPT,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+536fd3244d7d41214bf7c898,University of Exeter,ACCEPT,UNKNOWN,,,1600,36,,,,,,,False,REGEX,0.4,True
+b1b17382de5ca6e54aef087e,Recognition by JHU,ACCEPT,UNKNOWN,,,1550,,,,,,,,False,REGEX_PARTIAL,0.4,True
+7c2ebc1c9b65308bf1ab4a55,- Accepted to Villanova For Electrical Engineering,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+7c2ebc1c9b65308bf1ab4a55,for Babson and UMich,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+d9c933b3ede3346cbee10530,- Accepted to Villanova For Electrical Engineering,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+d9c933b3ede3346cbee10530,for Babson and UMich,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+75947da5632e394963aa1ebb,Tulane,ACCEPT,UNKNOWN,,99.0,,,2,,,,,,False,REGEX_PARTIAL,0.4,True
+97eebdeaed8416c5c4b1931a,Brown University,REJECT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+97eebdeaed8416c5c4b1931a,Fordham,REJECT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+97eebdeaed8416c5c4b1931a,University of Alabama,REJECT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+97eebdeaed8416c5c4b1931a,Princeton,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+97eebdeaed8416c5c4b1931a,MIT,REJECT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+97eebdeaed8416c5c4b1931a,Stanford,REJECT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+97eebdeaed8416c5c4b1931a,UPenn,REJECT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+97eebdeaed8416c5c4b1931a,Kentucky State University,ACCEPT,UNKNOWN,,,,,4,,,,,,False,REGEX,0.2,True
+d11aa19a4a3e813c7474e917,Amherst,WAITLIST,UNKNOWN,3.8,4.98,,,12,,,,,,False,REGEX,0.4,True
+d11aa19a4a3e813c7474e917,Harvard,REJECT,UNKNOWN,3.8,4.98,,,12,,,,,,False,REGEX,0.4,True
+d11aa19a4a3e813c7474e917,Princeton,WAITLIST,UNKNOWN,3.8,4.98,,,12,,,,,,False,REGEX,0.4,True
+d11aa19a4a3e813c7474e917,Colombia,REJECT,UNKNOWN,3.8,4.98,,,12,,,,,,False,REGEX,0.4,True
+d11aa19a4a3e813c7474e917,UPenn,WAITLIST,UNKNOWN,3.8,4.98,,,12,,,,,,False,REGEX,0.4,True
+d11aa19a4a3e813c7474e917,MIT,WAITLIST,UNKNOWN,3.8,4.98,,,12,,,,,,False,REGEX,0.4,True
+d11aa19a4a3e813c7474e917,Bowdoin,REJECT,UNKNOWN,3.8,4.98,,,12,,,,,,False,REGEX,0.4,True
+d11aa19a4a3e813c7474e917,Duke,ACCEPT,UNKNOWN,3.8,4.98,,,12,,,,,,False,REGEX,0.4,True
+d11aa19a4a3e813c7474e917,Rice,REJECT,UNKNOWN,3.8,4.98,,,12,,,,,,False,REGEX,0.4,True
+d11aa19a4a3e813c7474e917,Stanford,REJECT,UNKNOWN,3.8,4.98,,,12,,,,,,False,REGEX,0.4,True
+d11aa19a4a3e813c7474e917,University of Notre dame,REJECT,UNKNOWN,3.8,4.98,,,12,,,,,,False,REGEX,0.4,True
+d11aa19a4a3e813c7474e917,Uchicago,REJECT,UNKNOWN,3.8,4.98,,,12,,,,,,False,REGEX,0.4,True
+ab7e5dcc895130e793858d4c,waitlisted,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+b5701d9ca7e47088ad1fad7e,Rutgers University,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,Texas A&M University,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,University Park,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,University of Colorado Boulder,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,Madison,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,Ann Harbor,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,UT Austin,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,Amherst,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,University of Illinois Urbana-Champaign,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,Duke University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,University of Washington- Seattle,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,Virginia Tech,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,Northwestern University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,Johns Hopkins University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,Cornell University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+b5701d9ca7e47088ad1fad7e,Vanderbilt University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+17d3a229d75d087167118423,- Princeton,DEFER,UNKNOWN,,,,,56,,,,,,False,REGEX_PARTIAL,0.2,True
+ebcf0ca549495751bdee332b,UMich,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ebcf0ca549495751bdee332b,MIT,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ebcf0ca549495751bdee332b,Purdue,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ebcf0ca549495751bdee332b,Vanderbilt,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ebcf0ca549495751bdee332b,Northwestern,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ebcf0ca549495751bdee332b,Rice,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ebcf0ca549495751bdee332b,UK,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ebcf0ca549495751bdee332b,UCinci,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ebcf0ca549495751bdee332b,Penn State,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ebcf0ca549495751bdee332b,UW Seattle,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ebcf0ca549495751bdee332b,UT Austin,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ebcf0ca549495751bdee332b,Ohio State,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+ebcf0ca549495751bdee332b,Georgia Tech,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+32b1e5563bb58d5d4670a341,CMC,REJECT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,UVA,REJECT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,SMU,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,Fordham,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,University of Richmond,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,IU Kelley,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,Northeastern,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,Notre Dame,REJECT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,WashU,REJECT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,BC,WAITLIST,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,Lehigh,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,USD,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,Kenyon,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,UCLA,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,UCSB,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+32b1e5563bb58d5d4670a341,UC Berkeley,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+bb011092e3015ef004bc357e,Purdue,DEFER,UNKNOWN,,,,,12,,,,,,False,REGEX_PARTIAL,0.2,True
+fb43c87a8e679e024fe95e47,NYU,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,USC,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,IU Bloomington,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,University of Richmond,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,Middlebury,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,Claremont McKenna,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,UW Seattle,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,UC Davis,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,UC Merced,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,UCSC,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,UCSB,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,UCR,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,UCI,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,UCSD,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fb43c87a8e679e024fe95e47,Western WA University,ACCEPT,UNKNOWN,,,1530,,15,,,,,,False,REGEX,0.4,True
+fe0b83b4e437e2691246be3f,Florida Atlantic University,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Uni. of North Florida,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Temple University,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Drexel University,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,The New School,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Muhlenberg College,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Bucknell University,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Clark University,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Lafayette,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Fordham,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Bard College,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Skidmore College,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Lehigh University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Hamilton College,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Williams College,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Swarthmore College,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Colgate University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Boston University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Wesleyan University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,Vassar College,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+fe0b83b4e437e2691246be3f,NYU,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+504ed89cd5d284ccd5c5383d,Harvard,REJECT,UNKNOWN,3.94,4.71,,35,,,,,,,False,REGEX,0.6,False
+504ed89cd5d284ccd5c5383d,Yale,REJECT,UNKNOWN,3.94,4.71,,35,,,,,,,False,REGEX,0.6,False
+504ed89cd5d284ccd5c5383d,Dartmouth,WAITLIST,UNKNOWN,3.94,4.71,,35,,,,,,,False,REGEX,0.6,False
+504ed89cd5d284ccd5c5383d,Cornell,ACCEPT,UNKNOWN,3.94,4.71,,35,,,,,,,False,REGEX,0.6,False
+504ed89cd5d284ccd5c5383d,Brown,ACCEPT,UNKNOWN,3.94,4.71,,35,,,,,,,False,REGEX,0.6,False
+504ed89cd5d284ccd5c5383d,Princeton,ACCEPT,UNKNOWN,3.94,4.71,,35,,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,CMC,REJECT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,UVA,REJECT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,SMU,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,Fordham,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,University of Richmond,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,IU Kelley,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,Northeastern,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,Notre Dame,REJECT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,WashU,REJECT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,BC,WAITLIST,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,Lehigh,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,USD,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,Kenyon,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,UCLA,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,UCSB,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+0910fbe18b2bc79c39ab4fcf,UC Berkeley,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+2758fbe407d3a88ec6ec0a24,NC State,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2758fbe407d3a88ec6ec0a24,Cornell,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2758fbe407d3a88ec6ec0a24,Georgia Tech,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+2758fbe407d3a88ec6ec0a24,MIT,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,UW-Madison College of Engineering,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,University of Michigan College of Engineering OOS,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Georgia Institute of Technology,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,University of Alabama,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,University of South Carolina,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,University of Florida,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Harvard University,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Harvard University,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Dartmouth College,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Williams College,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Colgate University,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Georgia Institute of Technology,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,University of Florida,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Florida State University,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,UCSB,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,College of the Holy Cross,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Hamilton College,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,UC Berkeley,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Northwestern University,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Vanderbilt University,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,UCSD,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,WashU St. Louis,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Colby College,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,UCLA,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Colorado College,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Georgetown University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,UT-Austin,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Stanford University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3427772f8480de3f3e439d89,Emory University,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+89d625594e8dee2a8724eec0,Illinois institute of technology EA - applied math,ACCEPT,UNKNOWN,,,1440,,,,,,,,False,REGEX,0.4,True
+89d625594e8dee2a8724eec0,math,REJECT,UNKNOWN,,,1440,,,,,,,,False,REGEX,0.4,True
+89d625594e8dee2a8724eec0,Udub RD - applied math,ACCEPT,UNKNOWN,,,1440,,,,,,,,False,REGEX,0.4,True
+89d625594e8dee2a8724eec0,UF - astrophysics,ACCEPT,UNKNOWN,,,1440,,,,,,,,False,REGEX,0.4,True
+89d625594e8dee2a8724eec0,UVA - astrophysics,ACCEPT,UNKNOWN,,,1440,,,,,,,,False,REGEX,0.4,True
+89d625594e8dee2a8724eec0,physics,ACCEPT,UNKNOWN,,,1440,,,,,,,,False,REGEX,0.4,True
+89d625594e8dee2a8724eec0,Stanford - math,REJECT,UNKNOWN,,,1440,,,,,,,,False,REGEX,0.4,True
+89d625594e8dee2a8724eec0,UPenn - meche,REJECT,UNKNOWN,,,1440,,,,,,,,False,REGEX,0.4,True
+89d625594e8dee2a8724eec0,Georgia Tech - mechE,DEFER,UNKNOWN,,,1440,,,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,UMD,ACCEPT,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,Rutgers NB,ACCEPT,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,Drexel,ACCEPT,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,Penn State,ACCEPT,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,Stony Brook,ACCEPT,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,UIUC CS OOS,DEFER,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,GATECH CS OOS,DEFER,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,UMICH CS Engineering OOS,DEFER,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,CMU SCS ED,REJECT,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,MIT,REJECT,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,Cornell,WAITLIST,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,Columbia,WAITLIST,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,Harvard,REJECT,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,Yale,REJECT,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,Princeton,REJECT,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,UPenn,REJECT,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,Stanford CS,REJECT,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+5b3d7a9e89ab6c0a838ed8fb,UW-Madison,ACCEPT,UNKNOWN,,,1560,,16,,,,,,False,REGEX,0.4,True
+596f1980de6d8f72d4d8695a,Georgia Tech,DEFER,UNKNOWN,,,1470,34,8,,,,,,False,REGEX_PARTIAL,0.4,True
+596f1980de6d8f72d4d8695a,ichigan,DEFER,UNKNOWN,,,1470,34,8,,,,,,False,REGEX_PARTIAL,0.4,True
+e8acee3aaaab7949c81df5f0,University of Minnesota,ACCEPT,UNKNOWN,,98.0,,,,,,,,,False,REGEX,0.4,True
+e8acee3aaaab7949c81df5f0,Binghamton University,ACCEPT,UNKNOWN,,98.0,,,,,,,,,False,REGEX,0.4,True
+e8acee3aaaab7949c81df5f0,Indiana University,ACCEPT,UNKNOWN,,98.0,,,,,,,,,False,REGEX,0.4,True
+e8acee3aaaab7949c81df5f0,Baruch,ACCEPT,UNKNOWN,,98.0,,,,,,,,,False,REGEX,0.4,True
+0482bf86feb7a145c4b79d4c,d aka soft,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+d1bc2a6af5dab6159922703a,University of San Francisco EA,ACCEPT,UNKNOWN,,,,,8,,,,,,False,REGEX_PARTIAL,0.2,True
+59e8f4fbff4b05a583025dba,In-state wasn't considered for auto,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+45cc89204ca536a12bff1819,UCF,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+45cc89204ca536a12bff1819,FSU,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+45cc89204ca536a12bff1819,UF,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+45cc89204ca536a12bff1819,Upitt,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+45cc89204ca536a12bff1819,UGA,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+45cc89204ca536a12bff1819,Notre Dame,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+45cc89204ca536a12bff1819,Boston university,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+45cc89204ca536a12bff1819,NYU,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+45cc89204ca536a12bff1819,UPenn,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+45cc89204ca536a12bff1819,Cornell,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+45cc89204ca536a12bff1819,UMich,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+212f3a05944c0e36d1611da6,jmu,ACCEPT,UNKNOWN,,,,,13,,,,,,False,REGEX,0.2,True
+212f3a05944c0e36d1611da6,umass lowell,ACCEPT,UNKNOWN,,,,,13,,,,,,False,REGEX,0.2,True
+212f3a05944c0e36d1611da6,fordham,ACCEPT,UNKNOWN,,,,,13,,,,,,False,REGEX,0.2,True
+24f70cc42cb3688ff0840e70,jmu,ACCEPT,UNKNOWN,,,,,13,,,,,,False,REGEX,0.2,True
+24f70cc42cb3688ff0840e70,umass lowell,ACCEPT,UNKNOWN,,,,,13,,,,,,False,REGEX,0.2,True
+24f70cc42cb3688ff0840e70,fordham,ACCEPT,UNKNOWN,,,,,13,,,,,,False,REGEX,0.2,True
+d1c94c1cc583531b7f7a5f9e,University of Arizona,ACCEPT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,Queen Mary University of London,ACCEPT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,University of Edinburgh,ACCEPT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,OSU,ACCEPT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,King's College London,ACCEPT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,UMass Amherst,ACCEPT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,Cambridge,REJECT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,UIUC,ACCEPT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,UMD,ACCEPT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,Northeastern,ACCEPT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,UWash,WAITLIST,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,UCSD,ACCEPT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,UCLA,REJECT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,UC Berkeley,WAITLIST,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,Harvard,REJECT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,Princeton,REJECT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,Dartmouth,REJECT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,Yale,REJECT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,Brown,REJECT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,UPenn,REJECT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,Stanford,REJECT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,Wellesley,WAITLIST,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,Williams,REJECT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,Tufts,REJECT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,UMich,REJECT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+d1c94c1cc583531b7f7a5f9e,Cornell,ACCEPT,UNKNOWN,,,1590,,11,,,,,,False,REGEX,0.4,True
+e55d640ece3d21afae9b956c,RPI,ACCEPT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,STONY,ACCEPT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,Purdue,ACCEPT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,Macluay,ACCEPT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,Olin,ACCEPT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,NEU,WAITLIST,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,CMU,WAITLIST,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,UMICH,WAITLIST,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,Binghamton,WAITLIST,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,UIUC,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,JHU,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,UCLA,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,NYU,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,VANDY,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,USC,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,RICE,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,UCB,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,COLUMBIA,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,CORNELL,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,UPENN,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,UMD,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+e55d640ece3d21afae9b956c,STANFORD,REJECT,UNKNOWN,,,,,9,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,umich,WAITLIST,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,nyu stern,WAITLIST,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,vanderbilt,WAITLIST,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,emory,WAITLIST,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,usc,REJECT,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,georgetown,REJECT,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,cornell,REJECT,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,dartmouth,REJECT,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,nyu,REJECT,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,upenn,REJECT,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,unc chapel hill,REJECT,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,ut austin,REJECT,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,penn state,ACCEPT,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+47190163cda27ddbdc8724ae,villanova,ACCEPT,UNKNOWN,,,,,16,,,,,,False,REGEX,0.2,True
+011a84929054872e5d411fb7,Binghamton EA,ACCEPT,UNKNOWN,,,,,3,,,,,,False,REGEX_PARTIAL,0.2,True
+011a84929054872e5d411fb7,Michigan State University RD,ACCEPT,UNKNOWN,,,,,3,,,,,,False,REGEX_PARTIAL,0.2,True
+8ddcd76f143c0da9a624088a,Reach,REJECT,UNKNOWN,,,,,8,,,,,,False,REGEX_PARTIAL,0.2,True
+27e369d38acf9885345754e2,UCLA,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+5c470b783c586c1f21fda8d9,Harvard,REJECT,UNKNOWN,,,1510,,,,,,,,False,REGEX,0.4,True
+5c470b783c586c1f21fda8d9,Yale,REJECT,UNKNOWN,,,1510,,,,,,,,False,REGEX,0.4,True
+5c470b783c586c1f21fda8d9,Dartmouth,REJECT,UNKNOWN,,,1510,,,,,,,,False,REGEX,0.4,True
+5c470b783c586c1f21fda8d9,Brown,REJECT,UNKNOWN,,,1510,,,,,,,,False,REGEX,0.4,True
+5c470b783c586c1f21fda8d9,UPenn,REJECT,UNKNOWN,,,1510,,,,,,,,False,REGEX,0.4,True
+5c470b783c586c1f21fda8d9,Columbia,REJECT,UNKNOWN,,,1510,,,,,,,,False,REGEX,0.4,True
+5c470b783c586c1f21fda8d9,Vanderbilt,REJECT,UNKNOWN,,,1510,,,,,,,,False,REGEX,0.4,True
+5c470b783c586c1f21fda8d9,Northwestern,REJECT,UNKNOWN,,,1510,,,,,,,,False,REGEX,0.4,True
+5c470b783c586c1f21fda8d9,JHU,REJECT,UNKNOWN,,,1510,,,,,,,,False,REGEX,0.4,True
+5c470b783c586c1f21fda8d9,Cornell,REJECT,UNKNOWN,,,1510,,,,,,,,False,REGEX,0.4,True
+5c470b783c586c1f21fda8d9,Emory,REJECT,UNKNOWN,,,1510,,,,,,,,False,REGEX,0.4,True
+5c470b783c586c1f21fda8d9,WashU,REJECT,UNKNOWN,,,1510,,,,,,,,False,REGEX,0.4,True
+7e2d6abf16c2a579f9076c58,UC Riverside,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,UC Santa Cruz,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,UC Davis,WAITLIST,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,UC Irvine,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,UC sb,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,UC sd,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,UC la,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,UC Berkeley,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,CSLB,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,SJSU,WAITLIST,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,SDSU,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,Cal Poly Slo,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,UIUC,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,Virginia Tech,WAITLIST,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,Northwestern,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,Northeastern,WAITLIST,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,USC,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,NYU,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,BU,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,UVA,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,UW,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,Vandi,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+7e2d6abf16c2a579f9076c58,Wash U,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+015a4f6bcae40f0014af344d,renewable scholarship,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+5c7beaf5a8b862f3d1b4c02a,Marist College EA,ACCEPT,UNKNOWN,,,1130,,11,,,,,,False,REGEX_PARTIAL,0.4,True
+5c7beaf5a8b862f3d1b4c02a,Indiana EA,ACCEPT,UNKNOWN,,,1130,,11,,,,,,False,REGEX_PARTIAL,0.4,True
+8b18be3da7cb9e74a7d849fc,Direct,ACCEPT,UNKNOWN,3.9,4.39,,,3,,,,,,False,REGEX_PARTIAL,0.4,True
+873b4649b007423fdeedfa50,ucsb,WAITLIST,UNKNOWN,3.73,4.38,,,10,,,,,,False,REGEX,0.4,True
+873b4649b007423fdeedfa50,ucr,ACCEPT,UNKNOWN,3.73,4.38,,,10,,,,,,False,REGEX,0.4,True
+873b4649b007423fdeedfa50,ucsc,ACCEPT,UNKNOWN,3.73,4.38,,,10,,,,,,False,REGEX,0.4,True
+873b4649b007423fdeedfa50,northeastern,ACCEPT,UNKNOWN,3.73,4.38,,,10,,,,,,False,REGEX,0.4,True
+873b4649b007423fdeedfa50,cal poly slo,ACCEPT,UNKNOWN,3.73,4.38,,,10,,,,,,False,REGEX,0.4,True
+873b4649b007423fdeedfa50,sdsu,WAITLIST,UNKNOWN,3.73,4.38,,,10,,,,,,False,REGEX,0.4,True
+873b4649b007423fdeedfa50,santa clara,WAITLIST,UNKNOWN,3.73,4.38,,,10,,,,,,False,REGEX,0.4,True
+873b4649b007423fdeedfa50,sjsu,ACCEPT,UNKNOWN,3.73,4.38,,,10,,,,,,False,REGEX,0.4,True
+873b4649b007423fdeedfa50,usc,REJECT,UNKNOWN,3.73,4.38,,,10,,,,,,False,REGEX,0.4,True
+873b4649b007423fdeedfa50,stanford,REJECT,UNKNOWN,3.73,4.38,,,10,,,,,,False,REGEX,0.4,True
+873b4649b007423fdeedfa50,udub,WAITLIST,UNKNOWN,3.73,4.38,,,10,,,,,,False,REGEX,0.4,True
+873b4649b007423fdeedfa50,purdue,ACCEPT,UNKNOWN,3.73,4.38,,,10,,,,,,False,REGEX,0.4,True
+873b4649b007423fdeedfa50,indiana,ACCEPT,UNKNOWN,3.73,4.38,,,10,,,,,,False,REGEX,0.4,True
+195a0eea369341a3ac7b01b3,USC - EA,DEFER,UNKNOWN,4.0,4.2,1560,35,8,,,,,,False,REGEX_PARTIAL,0.6,False
+520ea67339d32b0e2c4ea352,UPitt,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+520ea67339d32b0e2c4ea352,UPortland,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+520ea67339d32b0e2c4ea352,Brandeis,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+520ea67339d32b0e2c4ea352,Occidental College,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+43b730c51d6eb6de6d61cf84,UPitt,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+43b730c51d6eb6de6d61cf84,UPortland,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+43b730c51d6eb6de6d61cf84,Brandeis,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+43b730c51d6eb6de6d61cf84,Occidental College,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+d5b439fd5b00e1c2677bf771,anyways results,ACCEPT,UNKNOWN,,,,,11,,,,,,False,REGEX_PARTIAL,0.2,True
+1fb8f520aad1703ebb20e502,Iowa state,ACCEPT,UNKNOWN,3.98,4.83,,34,11,,,,,,False,REGEX,0.6,False
+1fb8f520aad1703ebb20e502,University of Minnesota,ACCEPT,UNKNOWN,3.98,4.83,,34,11,,,,,,False,REGEX,0.6,False
+1fb8f520aad1703ebb20e502,Michigan State,ACCEPT,UNKNOWN,3.98,4.83,,34,11,,,,,,False,REGEX,0.6,False
+1fb8f520aad1703ebb20e502,University of Wisconsin-Madison,ACCEPT,UNKNOWN,3.98,4.83,,34,11,,,,,,False,REGEX,0.6,False
+1fb8f520aad1703ebb20e502,Rose-Hulman,ACCEPT,UNKNOWN,3.98,4.83,,34,11,,,,,,False,REGEX,0.6,False
+1fb8f520aad1703ebb20e502,Northeastern,DEFER,UNKNOWN,3.98,4.83,,34,11,,,,,,False,REGEX,0.6,False
+1fb8f520aad1703ebb20e502,MIT,DEFER,UNKNOWN,3.98,4.83,,34,11,,,,,,False,REGEX,0.6,False
+1fb8f520aad1703ebb20e502,Rice,ACCEPT,UNKNOWN,3.98,4.83,,34,11,,,,,,False,REGEX,0.6,False
+6fecef1110c0add6f24f6a4c,FIU,ACCEPT,UNKNOWN,,,,32,15,,,,,,False,REGEX,0.4,True
+6fecef1110c0add6f24f6a4c,UCF,DEFER,UNKNOWN,,,,32,15,,,,,,False,REGEX,0.4,True
+6fecef1110c0add6f24f6a4c,UF,DEFER,UNKNOWN,,,,32,15,,,,,,False,REGEX,0.4,True
+5b5d58bd71b746f9ccefeede,Texas A&M,ACCEPT,UNKNOWN,,,1570,,4,,,,,,False,REGEX,0.4,True
+5b5d58bd71b746f9ccefeede,Scripps College,REJECT,UNKNOWN,,,1570,,4,,,,,,False,REGEX,0.4,True
+5b5d58bd71b746f9ccefeede,Emory University,REJECT,UNKNOWN,,,1570,,4,,,,,,False,REGEX,0.4,True
+5b5d58bd71b746f9ccefeede,Rice University,REJECT,UNKNOWN,,,1570,,4,,,,,,False,REGEX,0.4,True
+5b5d58bd71b746f9ccefeede,Carleton College,ACCEPT,UNKNOWN,,,1570,,4,,,,,,False,REGEX,0.4,True
+5b5d58bd71b746f9ccefeede,Mount Holyoke,REJECT,UNKNOWN,,,1570,,4,,,,,,False,REGEX,0.4,True
+5b5d58bd71b746f9ccefeede,Reed College,REJECT,UNKNOWN,,,1570,,4,,,,,,False,REGEX,0.4,True
+5b5d58bd71b746f9ccefeede,Smith College,REJECT,UNKNOWN,,,1570,,4,,,,,,False,REGEX,0.4,True
+5b5d58bd71b746f9ccefeede,Trinity University,REJECT,UNKNOWN,,,1570,,4,,,,,,False,REGEX,0.4,True
+5b5d58bd71b746f9ccefeede,UT Austin,REJECT,UNKNOWN,,,1570,,4,,,,,,False,REGEX,0.4,True
+3ff0326e6ffa4a44f26cbc17,Fordham,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3ff0326e6ffa4a44f26cbc17,Rutgers,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3ff0326e6ffa4a44f26cbc17,Northeastern,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3ff0326e6ffa4a44f26cbc17,Hamilton,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3ff0326e6ffa4a44f26cbc17,BostonU,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+3ff0326e6ffa4a44f26cbc17,Reed,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4c6edb69ebfa18624e26662d,UMich,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4c6edb69ebfa18624e26662d,MIT,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4c6edb69ebfa18624e26662d,UT Austin,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4c6edb69ebfa18624e26662d,Purdue,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4c6edb69ebfa18624e26662d,UW Seattle,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4c6edb69ebfa18624e26662d,Georgia Tech,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4c6edb69ebfa18624e26662d,Ohio State,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4c6edb69ebfa18624e26662d,UK,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4c6edb69ebfa18624e26662d,Penn State,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+7f9b3fd61003347b3801cb97,Princeton,REJECT,UNKNOWN,,,,,14,,,,,,False,REGEX,0.2,True
+7f9b3fd61003347b3801cb97,Johns Hopkins,WAITLIST,UNKNOWN,,,,,14,,,,,,False,REGEX,0.2,True
+7f9b3fd61003347b3801cb97,Purdue,ACCEPT,UNKNOWN,,,,,14,,,,,,False,REGEX,0.2,True
+7f9b3fd61003347b3801cb97,UCLA,WAITLIST,UNKNOWN,,,,,14,,,,,,False,REGEX,0.2,True
+7f9b3fd61003347b3801cb97,Carnegie Mellon,WAITLIST,UNKNOWN,,,,,14,,,,,,False,REGEX,0.2,True
+7f9b3fd61003347b3801cb97,UC San Diego,WAITLIST,UNKNOWN,,,,,14,,,,,,False,REGEX,0.2,True
+7f9b3fd61003347b3801cb97,MIT,REJECT,UNKNOWN,,,,,14,,,,,,False,REGEX,0.2,True
+7f9b3fd61003347b3801cb97,UC Irvine,ACCEPT,UNKNOWN,,,,,14,,,,,,False,REGEX,0.2,True
+7f9b3fd61003347b3801cb97,Georgia Tech,REJECT,UNKNOWN,,,,,14,,,,,,False,REGEX,0.2,True
+7f9b3fd61003347b3801cb97,UMich,DEFER,UNKNOWN,,,,,14,,,,,,False,REGEX,0.2,True
+7f9b3fd61003347b3801cb97,UW-Madison,ACCEPT,UNKNOWN,,,,,14,,,,,,False,REGEX,0.2,True
+7f9b3fd61003347b3801cb97,UT Austin,REJECT,UNKNOWN,,,,,14,,,,,,False,REGEX,0.2,True
+de7011155f053bc4fa1c5da2,auto,ACCEPT,UNKNOWN,,,1380,,12,,,,,,False,REGEX_PARTIAL,0.4,True
+8c278eced55e4894b57ace53,- Johns Hopkins,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+8c278eced55e4894b57ace53,- NEU,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+8c278eced55e4894b57ace53,- Ucm,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+8c278eced55e4894b57ace53,- Ucr,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+8c278eced55e4894b57ace53,- Ucd,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+8c278eced55e4894b57ace53,- Ucsd,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+8c278eced55e4894b57ace53,- Uci,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+8c278eced55e4894b57ace53,- WashU,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+8c278eced55e4894b57ace53,- Case western,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+8c278eced55e4894b57ace53,- UWash,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+97e3cf7a528b6704868aacf6,UMass Amherst,ACCEPT,UNKNOWN,3.8,4.0,,,7,,,,,,False,REGEX,0.4,True
+97e3cf7a528b6704868aacf6,Clark University,ACCEPT,UNKNOWN,3.8,4.0,,,7,,,,,,False,REGEX,0.4,True
+97e3cf7a528b6704868aacf6,MIT,REJECT,UNKNOWN,3.8,4.0,,,7,,,,,,False,REGEX,0.4,True
+97e3cf7a528b6704868aacf6,UMB,ACCEPT,UNKNOWN,3.8,4.0,,,7,,,,,,False,REGEX,0.4,True
+97e3cf7a528b6704868aacf6,Northeastern,DEFER,UNKNOWN,3.8,4.0,,,7,,,,,,False,REGEX,0.4,True
+844ad406b1a42ed52f9e9e97,University of Puget Sound EA,ACCEPT,UNKNOWN,3.3,3.8,,,8,,,,,,False,REGEX,0.4,True
+844ad406b1a42ed52f9e9e97,Allegheny College EA,ACCEPT,UNKNOWN,3.3,3.8,,,8,,,,,,False,REGEX,0.4,True
+844ad406b1a42ed52f9e9e97,St. Catherine's University EA,ACCEPT,UNKNOWN,3.3,3.8,,,8,,,,,,False,REGEX,0.4,True
+844ad406b1a42ed52f9e9e97,SUNY Geneseo EA,ACCEPT,UNKNOWN,3.3,3.8,,,8,,,,,,False,REGEX,0.4,True
+844ad406b1a42ed52f9e9e97,Labor Relations ED,ACCEPT,UNKNOWN,3.3,3.8,,,8,,,,,,False,REGEX,0.4,True
+1574782751cacb7ad0388592,Oberlin,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+1574782751cacb7ad0388592,Haverford,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+1574782751cacb7ad0388592,Skidmore,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+1574782751cacb7ad0388592,Rochester,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+1574782751cacb7ad0388592,Fordham,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+4d639208e44b249dc11160d0,Ole miss,ACCEPT,UNKNOWN,,,,14,14,,,,,,False,REGEX,0.4,True
+4d639208e44b249dc11160d0,Ucf,ACCEPT,UNKNOWN,,,,14,14,,,,,,False,REGEX,0.4,True
+4d639208e44b249dc11160d0,FSU,ACCEPT,UNKNOWN,,,,14,14,,,,,,False,REGEX,0.4,True
+4d639208e44b249dc11160d0,UF,REJECT,UNKNOWN,,,,14,14,,,,,,False,REGEX,0.4,True
+791ab5042c1cc36145b949b2,USC,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+791ab5042c1cc36145b949b2,Irvine,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+9300aa8b0bdcdd64dcf7dfae,Duke ed,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9300aa8b0bdcdd64dcf7dfae,Georgia Tech ea,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9300aa8b0bdcdd64dcf7dfae,State school,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9300aa8b0bdcdd64dcf7dfae,UVA EA,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+9300aa8b0bdcdd64dcf7dfae,WashU Rd,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e0a7261f49123f7ead19a612,brown ed,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e0a7261f49123f7ead19a612,uchicago ea,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e0a7261f49123f7ead19a612,Umich ea,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e0a7261f49123f7ead19a612,UNC ea,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e0a7261f49123f7ead19a612,villanova ea,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e0a7261f49123f7ead19a612,northeastern rd,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+e0a7261f49123f7ead19a612,washu rd,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,usc,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,scripps,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,fordham,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,william and mary,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,tulane,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,northeastern,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,skidmore,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,ut austin,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,grinnell,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,occidental,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,george washington,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,kenyon,WAITLIST,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,bard,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0a7b0d75b2d02bb0639d8a40,carnegie mellon,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+0064364a12111ec99b926729,USD,ACCEPT,UNKNOWN,4.0,4.75,1480,,4,,,,,,False,REGEX,0.6,False
+8ff771183682535ab2b13401,instate EA,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+8ff771183682535ab2b13401,Stanford CS RD,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+8ff771183682535ab2b13401,Uc Berkley EECS,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+8ff771183682535ab2b13401,deferred,REJECT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+8ff771183682535ab2b13401,Purdue CS EA,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+8ff771183682535ab2b13401,UCLA CS,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+8ff771183682535ab2b13401,UMich CS EA,DEFER,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+8ff771183682535ab2b13401,UW madison EA,ACCEPT,UNKNOWN,,,,,12,,,,,,False,REGEX,0.2,True
+052d7e8b6cfd671644a88924,UW Madison,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+052d7e8b6cfd671644a88924,Purdue,DEFER,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+052d7e8b6cfd671644a88924,IU Bloomington,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+052d7e8b6cfd671644a88924,UIUC,REJECT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+052d7e8b6cfd671644a88924,Iowa,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+052d7e8b6cfd671644a88924,Many lesser colleges in my state,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX,0.2,True
+f91443800694bc30815a263c,Georgetown SFS,ACCEPT,UNKNOWN,,,1550,,,,,,,,False,REGEX,0.4,True
+f91443800694bc30815a263c,USC,ACCEPT,UNKNOWN,,,1550,,,,,,,,False,REGEX,0.4,True
+f91443800694bc30815a263c,RC,ACCEPT,UNKNOWN,,,1550,,,,,,,,False,REGEX,0.4,True
+f91443800694bc30815a263c,UVA,ACCEPT,UNKNOWN,,,1550,,,,,,,,False,REGEX,0.4,True
+f91443800694bc30815a263c,UCL,ACCEPT,UNKNOWN,,,1550,,,,,,,,False,REGEX,0.4,True
+f91443800694bc30815a263c,St. Andrews,ACCEPT,UNKNOWN,,,1550,,,,,,,,False,REGEX,0.4,True
+f91443800694bc30815a263c,UChicago,DEFER,UNKNOWN,,,1550,,,,,,,,False,REGEX,0.4,True
+f91443800694bc30815a263c,Oxford,REJECT,UNKNOWN,,,1550,,,,,,,,False,REGEX,0.4,True
+f91443800694bc30815a263c,LSE,REJECT,UNKNOWN,,,1550,,,,,,,,False,REGEX,0.4,True
+244243860a92cb510c4dccc8,Accepted,WAITLIST,UNKNOWN,,,,,9,,,,,,False,REGEX_PARTIAL,0.2,True
+998a252e2d7d6baccf25296f,SUNY at Binghamton,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True
+998a252e2d7d6baccf25296f,UChicago,ACCEPT,UNKNOWN,,,,,,,,,,,False,REGEX_PARTIAL,0.2,True

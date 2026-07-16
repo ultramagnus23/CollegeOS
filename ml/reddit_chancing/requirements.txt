@@ -1,0 +1,3 @@
+pydantic>=2
+anthropic>=0.40      # only needed for the LLM path (extract_llm)
+praw>=7              # only needed for live Reddit collection (run.py)
