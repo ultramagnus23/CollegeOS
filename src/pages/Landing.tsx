@@ -50,7 +50,7 @@ function Hero({ totalLabel, countryCount }: { totalLabel: string; countryCount: 
           The operating system for higher education decisions.
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-          One platform for undergraduate, masters, and PhD applicants worldwide — university
+          One platform for undergraduate, masters, and PhD applicants worldwide: university
           discovery, admissions strategy, financial planning, and career outcomes, backed by
           real data with no fabricated numbers.
         </p>
@@ -86,9 +86,9 @@ function Hero({ totalLabel, countryCount }: { totalLabel: string; countryCount: 
 
 /* ── 2. PRODUCT OVERVIEW ──────────────────────────────────────────────── */
 const productPillars = [
-  { title: 'University Discovery', description: 'Search and filter by cost, outcomes, admissions bar, and fit — not marketing copy.', icon: Compass },
+  { title: 'University Discovery', description: 'Search and filter by cost, outcomes, admissions bar, and fit, not marketing copy.', icon: Compass },
   { title: 'Admissions Intelligence', description: 'Reach/Match/Safety classification from real acceptance data and your actual profile.', icon: Target },
-  { title: 'Financial Intelligence', description: 'Total cost of attendance, aid, and net price — verified figures, never estimates shown as facts.', icon: Wallet },
+  { title: 'Financial Intelligence', description: 'Total cost of attendance, aid, and net price: verified figures, never estimates shown as facts.', icon: Wallet },
   { title: 'Application Tracking', description: 'Deadlines, essays, recommenders, and documents in one place across every school on your list.', icon: Calendar },
 ];
 
@@ -97,13 +97,9 @@ function ProductOverview() {
     <section className={sectionPad}>
       <div className={container}>
         <SectionLabel>What CollegeOS does</SectionLabel>
-        <h2 className="text-3xl md:text-4xl font-bold mb-4 max-w-2xl">
-          Everything a higher-education decision requires, in one place.
+        <h2 className="text-3xl md:text-4xl font-bold mb-12 max-w-2xl">
+          Four tools, one dataset, zero guesswork.
         </h2>
-        <p className="text-muted-foreground max-w-2xl mb-12">
-          Most tools cover one slice — a search engine, a spreadsheet, a forum thread. CollegeOS
-          connects discovery, strategy, money, and outcomes so decisions are made on evidence.
-        </p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {productPillars.map((p) => {
             const Icon = p.icon;
@@ -157,7 +153,7 @@ function JourneySplit() {
             <h3 className="text-xl font-bold mb-3">Masters &amp; PhD-track</h3>
             <ul className="space-y-2.5 text-sm text-muted-foreground mb-6">
               <li>• Program-level admissions signals: GRE/GPA bands, research vs. work-experience pathways</li>
-              <li>• Funding visibility — TA/RA availability, stipends, and tuition waivers where reported</li>
+              <li>• Funding visibility: TA/RA availability, stipends, and tuition waivers where reported</li>
               <li>• Faculty and research-fit context for research-track applicants</li>
               <li>• Immigration-relevant flags (OPT/STEM-OPT eligibility) where applicable</li>
             </ul>
@@ -179,7 +175,7 @@ function JourneySplit() {
 const intelligencePillars = [
   {
     title: 'Admissions Intelligence',
-    description: 'Chancing built from real acceptance rates, test-score bands, and your profile — labeled Insufficient Data rather than guessing when a school lacks verified admissions data.',
+    description: 'Chancing built from real acceptance rates, test-score bands, and your profile. Labeled Insufficient Data rather than guessing when a school lacks verified admissions data.',
     icon: Target,
   },
   {
@@ -189,7 +185,7 @@ const intelligencePillars = [
   },
   {
     title: 'Career Outcomes',
-    description: 'Graduation rates, employment rates, and reported salary data where institutions publish it — connecting a school choice to what happens after.',
+    description: 'Graduation rates, employment rates, and reported salary data where institutions publish it, connecting a school choice to what happens after.',
     icon: TrendingUp,
   },
   {
@@ -231,7 +227,7 @@ function IntelligencePillars() {
 /* ── 9. STUDENT PROFILES ──────────────────────────────────────────────── */
 function StudentProfiles() {
   const profiles = [
-    { icon: UserCircle, title: 'First-generation applicants', description: 'Clear explanations at every step — no assumed familiarity with the process.' },
+    { icon: UserCircle, title: 'First-generation applicants', description: 'Clear explanations at every step, no assumed familiarity with the process.' },
     { icon: Globe2, title: 'International applicants', description: 'Visa, currency, and country-specific admissions context built in, not bolted on.' },
     { icon: Briefcase, title: 'Career-changers & working professionals', description: 'Masters pathways that weigh work experience alongside test scores and GPA.' },
     { icon: Users2, title: 'Research-track students', description: 'Faculty and lab fit surfaced early, before an application is written.' },
@@ -275,7 +271,7 @@ function GlobalCoverage({ totalLabel, countries }: { totalLabel: string; countri
           Not a country-specific tool. A global one.
         </h2>
         <p className="text-muted-foreground max-w-2xl mb-10">
-          {totalLabel} universities tracked across every major study-abroad destination — the same
+          {totalLabel} universities tracked across every major study-abroad destination, with the same
           depth of admissions, financial, and outcomes data regardless of where a school is.
         </p>
         <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3 mb-10">
@@ -315,7 +311,7 @@ function WhyItExists() {
           <p>
             CollegeOS is built around a simple rule: if a number can't be traced to a real,
             checkable source, it doesn't get shown as one. Where we don't have verified data, we
-            say so — an admissions estimate that reads "Insufficient Data" is more useful than a
+            say so. An admissions estimate that reads "Insufficient Data" is more useful than a
             confident-looking number that's actually a guess.
           </p>
           <p>
@@ -337,7 +333,7 @@ function TrustSection() {
   // once they exist.
   const commitments = [
     { icon: ShieldCheck, title: 'No fabricated numbers', description: 'Every acceptance rate, tuition figure, and chancing estimate traces to a real source or is shown as missing.' },
-    { icon: BadgeCheck, title: 'Provenance on every data point', description: 'Financial and admissions data carries a verification status — verified, scraped, or unknown — not a single unlabeled number.' },
+    { icon: BadgeCheck, title: 'Provenance on every data point', description: 'Financial and admissions data carries a verification status: verified, scraped, or unknown, not a single unlabeled number.' },
     { icon: Rocket, title: 'Built in the open', description: 'Source available on GitHub. The data pipeline and its limitations are not hidden behind a black box.' },
   ];
   return (
@@ -372,7 +368,7 @@ const faqs = [
   },
   {
     q: 'How does chancing work if you refuse to guess?',
-    a: 'Chancing is computed from your real profile against a school\'s real, verified acceptance-rate and test-score data. When a school lacks verified data for a given factor, that factor is excluded rather than defaulted to an assumed value — and if there isn\'t enough real signal at all, you get an explicit "Insufficient Data" result instead of a fabricated percentage.',
+    a: 'Chancing is computed from your real profile against a school\'s real, verified acceptance-rate and test-score data. When a school lacks verified data for a given factor, that factor is excluded rather than defaulted to an assumed value, and if there isn\'t enough real signal at all, you get an explicit "Insufficient Data" result instead of a fabricated percentage.',
   },
   {
     q: 'Is this only for a specific country\'s applicants?',
@@ -380,7 +376,7 @@ const faqs = [
   },
   {
     q: 'What happens when data can\'t be verified?',
-    a: 'It\'s shown as missing, not filled in with an estimate. This is a deliberate product decision, not a limitation we\'re hiding — a missing tuition figure is more honest than a wrong one that looks correct.',
+    a: 'It\'s shown as missing, not filled in with an estimate. This is a deliberate product decision, not a limitation we\'re hiding. A missing tuition figure is more honest than a wrong one that looks correct.',
   },
   {
     q: 'Is CollegeOS free to use?',
@@ -436,7 +432,7 @@ function FinalCTA() {
         </h2>
         <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
           Browse universities with no account, or create a free profile to unlock chancing,
-          financial planning, and application tracking — undergraduate or graduate.
+          financial planning, and application tracking, undergraduate or graduate.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <Link

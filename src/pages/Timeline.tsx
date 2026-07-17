@@ -4,8 +4,7 @@ import { Loader2, CheckCircle2, Circle, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { parseDateOnly } from '@/utils/dateOnly';
-
-const ACCENT_COLORS = ['#6C63FF', '#3B9EFF', '#A855F7', '#F97316', '#10B981', '#F59E0B'];
+import { PAGE_ACCENTS } from '@/styles/pageAccents';
 
 interface TimelineTask {
   id: number;
@@ -110,8 +109,8 @@ export function Timeline() {
         <div className="absolute left-[11px] top-0 bottom-0 w-0.5 bg-border" />
 
         <div className="space-y-10">
-          {months.map((month, monthIndex) => {
-            const accentColor = ACCENT_COLORS[monthIndex % ACCENT_COLORS.length];
+          {months.map((month) => {
+            const accentColor = PAGE_ACCENTS.timeline;
             if (month.tasks.length === 0 && month.deadlines.length === 0) return null;
 
             return (

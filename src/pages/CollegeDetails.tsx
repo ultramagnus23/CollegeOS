@@ -836,7 +836,7 @@ const CollegeDetail: React.FC = () => {
             {/* Show net price prominently if available */}
             {(() => {
               if (resolvedAvgNetPrice) {
-                return <QuickStat label="Avg Net Price" value={formatCurrency(resolvedAvgNetPrice, countryCode) ?? '—'} />;
+                return <QuickStat label="Avg Net Price" value={formatCurrency(resolvedAvgNetPrice, countryCode) ?? 'N/A'} />;
               }
               // Fallback to tuition
                const tuitionStr = formatCurrency(college.tuition_cost, countryCode);
@@ -902,7 +902,7 @@ const CollegeDetail: React.FC = () => {
             <span>Data not yet verified</span>
           )}
           {(college.data_quality_score ?? 0) < 50 && (
-            <span className="ml-2 text-amber-600">⚠ Incomplete data — some fields may be missing.</span>
+            <span className="ml-2 text-amber-600">⚠ Incomplete data. Some fields may be missing.</span>
           )}
         </div>
       </div>
@@ -953,7 +953,7 @@ const CollegeDetail: React.FC = () => {
                     {chancingResult.confidence} confidence
                   </div>
                   {chancingResult.tier === 'Unknown' ? (
-                    <p className="text-sm text-muted-foreground">Chancing unavailable right now — check back in a moment.</p>
+                    <p className="text-sm text-muted-foreground">Chancing unavailable right now. Check back in a moment.</p>
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       {typeof chancingResult.explanation === 'string'
@@ -1202,7 +1202,7 @@ const CollegeDetail: React.FC = () => {
                           ))}
                         </div>
                         <p className="mt-2 text-[11px] text-muted-foreground">
-                          Net price = what families actually pay after grants/scholarships — often far below the sticker price.
+                          Net price = what families actually pay after grants/scholarships, often far below the sticker price.
                         </p>
                       </div>
                     )}
@@ -1617,7 +1617,7 @@ const CollegeDetail: React.FC = () => {
                           <div className="p-6 bg-muted rounded-xl text-center mb-4">
                             <DollarSign className="w-8 h-8 text-primary mx-auto mb-2" />
                             <div className="text-3xl font-bold text-primary/80">
-                              {formatCurrency(college.financialData.tuitionInState, countryCode) ?? '—'}
+                              {formatCurrency(college.financialData.tuitionInState, countryCode) ?? 'N/A'}
                             </div>
                             <p className="text-primary mt-2 font-medium">Annual Tuition</p>
                             <p className="text-xs text-blue-500 mt-1">
@@ -1634,7 +1634,7 @@ const CollegeDetail: React.FC = () => {
                             <div className="p-4 bg-primary/5 rounded-xl text-center">
                               <DollarSign className="w-6 h-6 text-primary mx-auto mb-2" />
                               <div className="text-2xl font-bold text-primary">
-                                {formatCurrency(college.financialData.tuitionInState, countryCode) ?? '—'}
+                                {formatCurrency(college.financialData.tuitionInState, countryCode) ?? 'N/A'}
                               </div>
                               <p className="text-sm text-primary/80 mt-1">In-State Tuition</p>
                             </div>
@@ -1643,7 +1643,7 @@ const CollegeDetail: React.FC = () => {
                             <div className="p-4 bg-purple-50 rounded-xl text-center">
                               <DollarSign className="w-6 h-6 text-purple-600 mx-auto mb-2" />
                               <div className="text-2xl font-bold text-purple-600">
-                                {formatCurrency(college.financialData.tuitionOutState, countryCode) ?? '—'}
+                                {formatCurrency(college.financialData.tuitionOutState, countryCode) ?? 'N/A'}
                               </div>
                               <p className="text-sm text-purple-700 mt-1">Out-of-State Tuition</p>
                             </div>
@@ -1652,7 +1652,7 @@ const CollegeDetail: React.FC = () => {
                             <div className="p-4 bg-indigo-50 rounded-xl text-center">
                               <DollarSign className="w-6 h-6 text-indigo-600 mx-auto mb-2" />
                               <div className="text-2xl font-bold text-indigo-600">
-                                {formatCurrency(college.financialData.tuitionInternational, countryCode) ?? '—'}
+                                {formatCurrency(college.financialData.tuitionInternational, countryCode) ?? 'N/A'}
                               </div>
                               <p className="text-sm text-indigo-700 mt-1">International Tuition</p>
                             </div>
@@ -1668,7 +1668,7 @@ const CollegeDetail: React.FC = () => {
                       <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Total Cost of Attendance</span>
                         <span className="text-xl font-bold text-foreground">
-                          {formatCurrency(college.financialData.costOfAttendance, countryCode) ?? '—'}
+                          {formatCurrency(college.financialData.costOfAttendance, countryCode) ?? 'N/A'}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground/70 mt-1">Includes tuition, room, board, and other fees</p>
@@ -1708,7 +1708,7 @@ const CollegeDetail: React.FC = () => {
                       <div className="p-4 bg-primary/5 rounded-lg">
                         <p className="text-sm text-primary mb-1">Average Net Price</p>
                         <p className="text-2xl font-bold text-primary/80">
-                          {formatCurrency(resolvedAvgNetPrice, countryCode) ?? '—'}
+                          {formatCurrency(resolvedAvgNetPrice, countryCode) ?? 'N/A'}
                         </p>
                         <p className="text-xs text-blue-500 mt-1">After grants and scholarships</p>
                       </div>
@@ -1726,7 +1726,7 @@ const CollegeDetail: React.FC = () => {
                       <div className="p-4 bg-orange-50 rounded-lg">
                         <p className="text-sm text-orange-600 mb-1">Median Student Debt</p>
                         <p className="text-2xl font-bold text-orange-700">
-                          {formatCurrency(resolvedMedianDebt, countryCode) ?? '—'}
+                          {formatCurrency(resolvedMedianDebt, countryCode) ?? 'N/A'}
                         </p>
                       </div>
                     )}
@@ -1741,19 +1741,19 @@ const CollegeDetail: React.FC = () => {
                     {college.financialData.netPriceLowIncome && (
                       <div className="flex items-center justify-between p-3 bg-emerald-500/10 rounded-lg">
                         <span className="text-sm text-emerald-500">Low Income ($0-$30k)</span>
-                        <span className="font-bold text-green-700">{formatCurrency(college.financialData.netPriceLowIncome, countryCode) ?? '—'}</span>
+                        <span className="font-bold text-green-700">{formatCurrency(college.financialData.netPriceLowIncome, countryCode) ?? 'N/A'}</span>
                       </div>
                     )}
                     {college.financialData.netPriceMidIncome && (
                       <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
                         <span className="text-sm text-yellow-600">Middle Income ($30k-$75k)</span>
-                        <span className="font-bold text-yellow-700">{formatCurrency(college.financialData.netPriceMidIncome, countryCode) ?? '—'}</span>
+                        <span className="font-bold text-yellow-700">{formatCurrency(college.financialData.netPriceMidIncome, countryCode) ?? 'N/A'}</span>
                       </div>
                     )}
                     {college.financialData.netPriceHighIncome && (
                       <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg">
                         <span className="text-sm text-primary">High Income ($75k+)</span>
-                        <span className="font-bold text-primary/80">{formatCurrency(college.financialData.netPriceHighIncome, countryCode) ?? '—'}</span>
+                        <span className="font-bold text-primary/80">{formatCurrency(college.financialData.netPriceHighIncome, countryCode) ?? 'N/A'}</span>
                       </div>
                     )}
                   </div>
@@ -1840,7 +1840,7 @@ const CollegeDetail: React.FC = () => {
                                 ? `${(resolvedPercentMale * 100).toFixed(0)}%`
                                 : college.demographics?.genderRatio?.split(':')[0]
                                   ? `${college.demographics.genderRatio.split(':')[0]}%`
-                                  : '—'}
+                                  : 'N/A'}
                             </div>
                             <div className="text-sm text-primary">Male</div>
                           </div>
@@ -1850,7 +1850,7 @@ const CollegeDetail: React.FC = () => {
                                 ? `${(resolvedPercentFemale * 100).toFixed(0)}%`
                                 : college.demographics?.genderRatio?.split(':')[1]
                                   ? `${college.demographics.genderRatio.split(':')[1]}%`
-                                  : '—'}
+                                  : 'N/A'}
                             </div>
                             <div className="text-sm text-pink-600">Female</div>
                           </div>
@@ -2208,8 +2208,8 @@ const CollegeDetail: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex justify-between text-xs text-muted-foreground/70 mt-1">
-                            <span>{formatCurrency(resolvedSalary6yr, countryCode) ?? '—'}</span>
-                            <span>{formatCurrency(resolvedSalary10yr, countryCode) ?? '—'}</span>
+                            <span>{formatCurrency(resolvedSalary6yr, countryCode) ?? 'N/A'}</span>
+                            <span>{formatCurrency(resolvedSalary10yr, countryCode) ?? 'N/A'}</span>
                           </div>
                         </div>
                       )}
@@ -2503,7 +2503,7 @@ const AcademicsTab: React.FC<AcademicsTabProps> = ({ college, majorCategories, a
         {/* Programs/Majors with Search */}
         {/* IPEDS-sourced data takes priority when available */}
         {ipedsMajors && ipedsMajors.length > 0 ? (
-          <Card title={`Majors Offered (${ipedsMajors.length}) — IPEDS verified`}>
+          <Card title={`Majors Offered (${ipedsMajors.length}): IPEDS verified`}>
             <div className="space-y-4">
               {/* Search bar */}
               <div className="relative">

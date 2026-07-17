@@ -44,13 +44,13 @@ interface Application {
   notes?: string;
   created_at: string;
 }
-interface CollegeResult { id: number; name: string; country?: string; location?: string; }
+interface CollegeResult { id: string; name: string; country?: string; location?: string; }
 interface Deadline { id: number; deadline_type: string; deadline_date?: string; completed: boolean; notes?: string; }
 interface Task { id: number; task_type: string; title: string; completed: boolean; due_date?: string; }
 
 const normalizeLegacyCollege = (row: any) => ({
   ...row,
-  id: Number(row?.id) || 0,
+  id: row?.id != null ? String(row.id) : '',
   name: String(row?.name || row?.college_name || 'Unknown College'),
   country: row?.country ?? null,
   city: row?.city ?? null,
@@ -100,7 +100,7 @@ const deadlineColor = (days: number | null) => {
   return '#10B981';
 };
 const fmtDate = (d?: string) => {
-  if (!d) return '—';
+  if (!d) return 'N/A';
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
@@ -336,7 +336,7 @@ const Applications = () => {
   const loadSeqRef = useRef(0);
   const searchSeqRef = useRef(0);
   const statusMutationRef = useRef(new Map<number, string>());
-  const pendingCreateCollegeIdsRef = useRef(new Set<number>());
+  const pendingCreateCollegeIdsRef = useRef(new Set<string>());
   const mountedRef = useRef(true);
 
   useEffect(() => () => { mountedRef.current = false; }, []);
@@ -358,7 +358,7 @@ const Applications = () => {
         if (!mountedRef.current || seq !== searchSeqRef.current) return;
         const normalized = (res.data || [])
           .map((row: any) => normalizeLegacyCollege(row))
-          .filter((row: any) => row.id > 0 && typeof row.name === 'string')
+          .filter((row: any) => Boolean(row.id) && typeof row.name === 'string')
           .map((row: any) => ({
             id: row.id,
             name: row.name,

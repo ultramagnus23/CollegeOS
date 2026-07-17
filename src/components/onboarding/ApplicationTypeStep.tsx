@@ -54,7 +54,7 @@ const ApplicationTypeStep: React.FC<Props> = ({ onUndergrad, onMasters }) => {
           </div>
           <h1 className="text-[28px] font-extrabold leading-tight text-white">What are you applying for?</h1>
           <p className="mt-2 text-[15px] text-white/55">
-            This decides the whole experience — we keep the two tracks separate.
+            This decides the whole experience. We keep the two tracks separate.
           </p>
         </div>
 
@@ -137,8 +137,8 @@ const ApplicationTypeStep: React.FC<Props> = ({ onUndergrad, onMasters }) => {
                 className="rounded-xl p-4 text-sm"
                 style={{ background: 'rgba(243,138,66,0.1)', border: '1px solid rgba(243,138,66,0.35)', color: '#f6b27a' }}
               >
-                You’re in your final undergraduate years, so we’ll set you up for <strong>master’s</strong> applications —
-                applying fresh to undergraduate isn’t a fit at this stage. (Transfer support is coming later.)
+                You’re in your final undergraduate years, so we’ll set you up for <strong>master’s</strong> applications.
+                Applying fresh to undergraduate isn’t a fit at this stage. (Transfer support is coming later.)
               </div>
               <button
                 onClick={() => onMasters('enrolled_yr3_4', 4)}

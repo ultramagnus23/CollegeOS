@@ -68,7 +68,7 @@ interface FinancingTableProps {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatUSD(value: number | null): string {
-  if (value === null) return '—';
+  if (value === null) return 'N/A';
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 }
 
@@ -134,7 +134,7 @@ function FinancingRow({ option }: { option: FinancingOption }) {
                 : formatUSD(option.amount_max_usd ?? option.amount_min_usd)}
             </>
           ) : (
-            <span className="text-gray-400">{option.amount_notes ?? '—'}</span>
+            <span className="text-gray-400">{option.amount_notes ?? 'N/A'}</span>
           )}
         </td>
 
@@ -170,7 +170,7 @@ function FinancingRow({ option }: { option: FinancingOption }) {
               </Tooltip>
             </TooltipProvider>
           ) : (
-            <span className="text-gray-400">—</span>
+            <span className="text-gray-400">N/A</span>
           )}
         </td>
 

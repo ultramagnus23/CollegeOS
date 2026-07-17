@@ -155,7 +155,7 @@ const StepProgress: React.FC<{ step: number; accent?: string }> = ({ step, accen
 const SummaryRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${S.border}`, fontSize: 13, fontFamily: S.font }}>
     <span style={{ color: S.muted }}>{label}</span>
-    <span style={{ color: S.text, fontWeight: 600, textAlign: 'right' }}>{value || '—'}</span>
+    <span style={{ color: S.text, fontWeight: 600, textAlign: 'right' }}>{value || 'N/A'}</span>
   </div>
 );
 
@@ -314,7 +314,7 @@ const MastersOnboarding: React.FC = () => {
         return (
           <div style={{ display: 'grid', gap: 18 }}>
             <p style={{ fontSize: 13, color: S.muted, fontFamily: S.font, margin: 0 }}>
-              All optional — many masters programs waive standardized tests. Fill in whichever you have.
+              All optional. Many masters programs waive standardized tests. Fill in whichever you have.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
               <Field label="GRE Verbal"><input style={inputStyle} inputMode="numeric" value={form.gre_verbal} onChange={(e) => set('gre_verbal', e.target.value)} /></Field>
@@ -340,10 +340,10 @@ const MastersOnboarding: React.FC = () => {
                 <input style={inputStyle} inputMode="numeric" value={form.publication_count} onChange={(e) => set('publication_count', e.target.value)} />
               </Field>
             </div>
-            <Field label="Work experience" hint="A few lines — roles, companies, what you actually did.">
+            <Field label="Work experience" hint="A few lines: roles, companies, what you actually did.">
               <textarea style={{ ...inputStyle, minHeight: 90, resize: 'vertical' }} value={form.work_experience_desc} onChange={(e) => set('work_experience_desc', e.target.value)} />
             </Field>
-            <Field label="Research experience" hint="Labs, projects, papers in progress — skip if not applicable.">
+            <Field label="Research experience" hint="Labs, projects, papers in progress. Skip if not applicable.">
               <textarea style={{ ...inputStyle, minHeight: 90, resize: 'vertical' }} value={form.research_experience} onChange={(e) => set('research_experience', e.target.value)} />
             </Field>
           </div>
@@ -352,7 +352,7 @@ const MastersOnboarding: React.FC = () => {
         return (
           <div style={{ display: 'grid', gap: 18 }}>
             <p style={{ fontSize: 13, color: S.muted, fontFamily: S.font, margin: 0 }}>
-              We track readiness, not content — no essay or recommender drafting here.
+              We track readiness, not content. No essay or recommender drafting here.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
               <Field label="Letters of recommendation secured">
@@ -404,7 +404,7 @@ const MastersOnboarding: React.FC = () => {
               <SummaryRow label="Program" value={form.intended_program} />
               <SummaryRow label="Specialization" value={form.intended_specialization} />
               <SummaryRow label="Target intake" value={`${form.target_intake_term} ${form.target_intake_year}`} />
-              <SummaryRow label="Undergrad" value={`${form.undergrad_institution} — ${form.undergrad_major}`} />
+              <SummaryRow label="Undergrad" value={`${form.undergrad_institution}: ${form.undergrad_major}`} />
               <SummaryRow label="GPA" value={form.undergrad_gpa ? `${form.undergrad_gpa}/${form.undergrad_gpa_scale}` : ''} />
               <SummaryRow label="Tests" value={[form.gre_quant && 'GRE', form.gmat_total && 'GMAT', form.toefl_score && 'TOEFL', form.ielts_score && 'IELTS'].filter(Boolean).join(', ')} />
               <SummaryRow label="Work experience" value={form.work_experience_years ? `${form.work_experience_years} yrs` : ''} />

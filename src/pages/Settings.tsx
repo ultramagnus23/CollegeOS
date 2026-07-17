@@ -819,7 +819,7 @@ const SCROLL_DELAY_MS = 100;
                   </select>
                 </div>
               </div>
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-4 sticky bottom-20 lg:bottom-4 z-10 bg-card">
                 <Button onClick={saveBasicInfo} disabled={saving}>
                   {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   <Save size={16} className="mr-2" />
@@ -968,7 +968,7 @@ const SCROLL_DELAY_MS = 100;
                   />
                 </div>
               </div>
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-4 sticky bottom-20 lg:bottom-4 z-10 bg-card">
                 <Button onClick={saveAcademicInfo} disabled={saving}>
                   {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   <Save size={16} className="mr-2" />
@@ -1203,7 +1203,7 @@ const SCROLL_DELAY_MS = 100;
                 </div>
               </div>
 
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-4 sticky bottom-20 lg:bottom-4 z-10 bg-card">
                 <Button onClick={saveTestScores} disabled={saving}>
                   {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   <Save size={16} className="mr-2" />
@@ -1401,7 +1401,7 @@ const SCROLL_DELAY_MS = 100;
                 </button>
               </div>
 
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-4 sticky bottom-20 lg:bottom-4 z-10 bg-card">
                 <Button onClick={savePreferences} disabled={saving}>
                   {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   <Save size={16} className="mr-2" />
@@ -1632,7 +1632,7 @@ const SCROLL_DELAY_MS = 100;
                     onChange={(e) => setFormData((prev: any) => ({ ...prev, life_goals_raw: e.target.value }))}
                   />
                 </div>
-                <div className="flex justify-end">
+                <div className="flex justify-end sticky bottom-20 lg:bottom-4 z-10 bg-card pt-2">
                   <Button
                     onClick={async () => {
                       setSaving(true);

@@ -147,7 +147,7 @@ const MastersChancingCard: React.FC<{ assessment: ChancingAssessment }> = ({ ass
                 >
                   <span className="text-foreground">{prettyPathway(p.pathwayType)}</span>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ps.chip}`}>
-                    {p.label || '—'}
+                    {p.label || 'N/A'}
                   </span>
                 </li>
               );
@@ -181,8 +181,8 @@ const MastersChancingCard: React.FC<{ assessment: ChancingAssessment }> = ({ ass
       {/* Categories with no real public source — shown as explicitly unavailable,
           never as a low-confidence number. */}
       <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
-        Not available for graduate programs: admit probability, research/advisor fit, and funding likelihood —
-        no public data source exists for these, so we don’t show a number.
+        Not available for graduate programs: admit probability, research/advisor fit, and funding likelihood.
+        No public data source exists for these, so we don’t show a number.
       </p>
 
       <MastersDisclosure variant="inline" />

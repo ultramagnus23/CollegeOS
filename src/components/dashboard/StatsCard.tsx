@@ -46,7 +46,7 @@ export function StatsCard({
               )}>
                 {trend === 'up' && '↑'}
                 {trend === 'down' && '↓'}
-                {trend === 'neutral' && '—'}
+                {trend === 'neutral' && '→'}
               </span>
             )}
           </div>

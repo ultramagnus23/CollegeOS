@@ -10,8 +10,8 @@ export function AIDisclaimer({
   const text = variant === 'chatbot'
     ? 'AI responses are informational, may be inaccurate or incomplete, and are not professional educational, financial, or immigration advice.'
     : variant === 'recommendations'
-      ? 'Recommendations are model estimates trained on simulated data from published statistics, not real admission outcomes — not a guarantee of admission, fit, or outcome, and not a substitute for a licensed counselor.'
-      : 'Probabilities are model estimates trained on simulated data from published statistics, not real admission outcomes — not a guarantee of admission, and not a substitute for a licensed educational counselor.';
+      ? 'Recommendations are model estimates trained on simulated data from published statistics, not real admission outcomes. They are not a guarantee of admission, fit, or outcome, and not a substitute for a licensed counselor.'
+      : 'Probabilities are model estimates trained on simulated data from published statistics, not real admission outcomes. They are not a guarantee of admission, and not a substitute for a licensed educational counselor.';
   return (
     <p className={`text-xs text-muted-foreground flex flex-wrap items-center gap-1 ${className}`}>
       <span aria-hidden="true">⚠️</span>

@@ -156,6 +156,7 @@ async function fetchCandidateInstitutionRows(institutionIds) {
        c.country_code AS country,
        c.city,
        c.institution_type,
+       c.website AS website_url,
        c.description,
        COALESCE(NULLIF((c.metadata->>'research_intensity_score'),'')::numeric, 0.4) AS research_intensity_score,
        COALESCE(
@@ -252,6 +253,7 @@ async function generateDeterministicFallbackRecommendations(normalizedStudent = 
       c.canonical_name AS name,
       c.country_code AS country,
       c.city,
+      c.website AS website_url,
       c.description,
       COALESCE(
         ARRAY(
@@ -310,6 +312,7 @@ async function generateDeterministicFallbackRecommendations(normalizedStudent = 
         college_id: row?.id || null,
         college_name: row?.name || 'Unknown institution',
         country: toCountryName(row?.country) || 'Unknown',
+        official_website: row?.website_url || null,
         overall_score: Number((prediction.score * 100).toFixed(2)),
         confidence_score: Number((prediction.confidence || 0.55).toFixed(4)),
         classification: bucket,
@@ -661,6 +664,7 @@ async function generateRecommendationsV2(userProfile, options = {}) {
             college_name: entry?.row?.name || 'Unknown institution',
             country: toCountryName(entry?.row?.country) || 'Unknown',
             city: entry?.row?.city || null,
+            official_website: entry?.row?.website_url || null,
             semantic_tags: Array.isArray(entry?.row?.semantic_tags) ? entry.row.semantic_tags : [],
             rankScore: adjustedScore,
             confidence: Math.max(0.25, (prediction?.confidence || 0.4) * (1 - uncertainty * 0.2)),
@@ -722,6 +726,7 @@ async function generateRecommendationsV2(userProfile, options = {}) {
           college_id: item?.college_id || null,
           college_name: item?.college_name || 'Unknown institution',
           country: item?.country || 'Unknown',
+          official_website: item?.official_website || null,
           overall_score: Number((safeFiniteNumber(item?.rankScore, 0) * 100).toFixed(2)),
           confidence_score: Number(safeFiniteNumber(item?.confidence, 0).toFixed(4)),
           classification: item?.bucket || 'target',

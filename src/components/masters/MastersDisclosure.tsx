@@ -11,10 +11,10 @@ import { AlertTriangle, X } from 'lucide-react';
 const SESSION_KEY = 'masters_disclosure_dismissed';
 
 const POINTS: string[] = [
-  'We cannot give you a real admit probability for most masters programs — that data does not exist publicly the way it does for undergrad.',
+  'We cannot give you a real admit probability for most masters programs. That data does not exist publicly the way it does for undergrad.',
   'We cannot assess research or advisor “fit”, which is often the single biggest factor in grad admissions.',
   'We cannot evaluate your SOP, your letters of recommendation, or interview performance.',
-  'Competitiveness bands come from self-reported data from a limited, self-selected sample — not official statistics — and are absent for programs without enough reports.',
+  'Competitiveness bands come from self-reported data from a limited, self-selected sample, not official statistics, and are absent for programs without enough reports.',
   'Funding and assistantship likelihood is not modeled at all in this version.',
 ];
 

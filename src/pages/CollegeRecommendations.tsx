@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { toast } from 'sonner';
+import { ExternalLink, Plus, Check, Loader2 } from 'lucide-react';
 import { formatCountryName } from '../lib/country';
 import { usePreferredCurrency } from '../hooks/usePreferredCurrency';
 import { AIDisclaimer } from '../components/legal/AIDisclaimer';
@@ -26,6 +27,7 @@ interface Recommendation {
   college_id:           number;
   college_name:         string;
   country?:             string;
+  official_website?:    string;
   acceptance_rate?:     number;
   overall_score:        number;
   score_breakdown?:     ScoreBreakdown;
@@ -95,10 +97,40 @@ const ScoreBar: React.FC<{ label: string; value: number; max: number; color: str
 };
 
 /* ─── College Card ────────────────────────────────────────────────────────── */
+const CLASSIFICATION_TO_PRIORITY: Record<string, string> = {
+  reach: 'reach', target: 'target', safety: 'safety', 'long shot': 'reach',
+};
+
 const CollegeCard: React.FC<{ rec: Recommendation; rank: number }> = ({ rec, rank }) => {
   const { formatMoney } = usePreferredCurrency();
   const [expanded, setExpanded] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
   const cls = CLASS_CFG[rec.classification?.toLowerCase()] || CLASS_CFG.target;
+
+  const handleAddToList = async () => {
+    if (adding || added || !rec.college_id) return;
+    setAdding(true);
+    try {
+      await api.applications.create({
+        college_id: rec.college_id,
+        college_name: rec.college_name,
+        priority: CLASSIFICATION_TO_PRIORITY[rec.classification?.toLowerCase() || ''] || 'medium',
+      });
+      setAdded(true);
+      toast.success(`${rec.college_name} added to your list!`);
+    } catch (err: any) {
+      const message = err?.message || 'Failed to add college';
+      if (typeof message === 'string' && message.toLowerCase().includes('already')) {
+        setAdded(true);
+        toast.error('College is already in your tracker');
+      } else {
+        toast.error(message);
+      }
+    } finally {
+      setAdding(false);
+    }
+  };
   const sb = rec.score_breakdown;
   const score = Math.round(rec.overall_score ?? 0);
   const ar = rec.acceptance_rate != null ? `${Math.round(rec.acceptance_rate * 100)}%` : 'N/A';
@@ -136,9 +168,24 @@ const CollegeCard: React.FC<{ rec: Recommendation; rank: number }> = ({ rec, ran
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)' }}>
-              {rec.college_name}
-            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                {rec.college_name}
+              </h3>
+              {rec.official_website && (
+                <a
+                  href={rec.official_website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Visit ${rec.college_name} website`}
+                  style={{ color: S.muted, display: 'inline-flex', flexShrink: 0 }}
+                  onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = ACCENT)}
+                  onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = S.muted)}
+                >
+                  <ExternalLink size={13} />
+                </a>
+              )}
+            </div>
             <span style={{ fontSize: 11, fontWeight: 700, color: ACCENT, background: `rgba(99,102,241,0.12)`, padding: '3px 10px', borderRadius: 20 }}>
               Score: {score}/100
             </span>
@@ -157,9 +204,25 @@ const CollegeCard: React.FC<{ rec: Recommendation; rank: number }> = ({ rec, ran
             )}
           </div>
         </div>
-        <span style={{ fontSize: 11, fontWeight: 600, color: cls.color, background: cls.bg, padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap' }}>
-          {cls.label}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: cls.color, background: cls.bg, padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+            {cls.label}
+          </span>
+          <button
+            onClick={handleAddToList}
+            disabled={adding || added}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600,
+              color: added ? '#10B981' : '#fff',
+              background: added ? 'rgba(16,185,129,0.12)' : ACCENT,
+              border: 'none', borderRadius: 20, padding: '4px 10px',
+              cursor: adding || added ? 'default' : 'pointer', fontFamily: S.font, whiteSpace: 'nowrap',
+            }}
+          >
+            {adding ? <Loader2 size={12} className="animate-spin" /> : added ? <Check size={12} /> : <Plus size={12} />}
+            {added ? 'Added' : 'Add to List'}
+          </button>
+        </div>
       </div>
 
       {/* Score breakdown */}
@@ -286,7 +349,7 @@ const CollegeRecommendations: React.FC = () => {
             <AIDisclaimer variant="recommendations" className="mt-2" />
             {data?.exchange_rate_estimated && (
               <p style={{ fontSize: 12, color: '#F59E0B', marginTop: 4 }}>
-                ⚠️ INR figures use an estimated exchange rate (₹{data.exchange_rate_used}/USD) — live rate unavailable.
+                ⚠️ INR figures use an estimated exchange rate (₹{data.exchange_rate_used}/USD). Live rate unavailable.
               </p>
             )}
           </div>

@@ -461,7 +461,7 @@ const Deadlines: React.FC = () => {
                 <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-text-primary)', fontFamily: S.font, marginBottom: 8 }}>No college deadlines found</h3>
                 <p style={{ fontSize: 14, color: S.muted, fontFamily: S.font }}>
-                  Add colleges to your applications list — verified deadlines will appear here once they're scraped.
+                  Add colleges to your applications list. Verified deadlines will appear here once they're scraped.
                 </p>
               </div>
             ) : (

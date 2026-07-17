@@ -402,7 +402,7 @@ const MastersApplications: React.FC = () => {
                         </div>
                         {!allRecommenders.length && (
                           <div style={{ fontSize: 11, color: S.dim, marginTop: 6 }}>
-                            No recommenders yet — add one from <button onClick={() => navigate('/recommenders')} style={{ background: 'none', border: 'none', color: ACCENT, cursor: 'pointer', fontSize: 11, padding: 0 }}>Recommenders</button>.
+                            No recommenders yet. Add one from <button onClick={() => navigate('/recommenders')} style={{ background: 'none', border: 'none', color: ACCENT, cursor: 'pointer', fontSize: 11, padding: 0 }}>Recommenders</button>.
                           </div>
                         )}
                       </div>
