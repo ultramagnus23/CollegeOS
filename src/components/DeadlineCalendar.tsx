@@ -149,7 +149,7 @@ export const DeadlineCalendar = ({ deadlines, onDeadlineClick }: DeadlineCalenda
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-bold text-gray-900">
-                    {parseDateOnly(deadline.deadline_date)?.toLocaleDateString() ?? '—'}
+                    {parseDateOnly(deadline.deadline_date)?.toLocaleDateString() ?? 'N/A'}
                   </div>
                   {!deadline.is_completed && (
                     <div className={`text-sm font-medium ${

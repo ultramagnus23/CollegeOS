@@ -223,7 +223,7 @@ const MastersDeadlines: React.FC = () => {
                         </>
                       ) : (
                         <span style={{ fontSize: 13, color: S.dim, fontFamily: S.font, fontStyle: 'italic' }}>
-                          {dl.is_rolling ? 'Rolling — no fixed date' : 'Date not yet available'}
+                          {dl.is_rolling ? 'Rolling: no fixed date' : 'Date not yet available'}
                         </span>
                       )}
                       {dl.country && (

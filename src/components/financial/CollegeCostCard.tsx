@@ -88,12 +88,12 @@ const STATUS_BADGE: Record<CostComponent['status'], { label: string; variant: 'd
 };
 
 function formatUSD(value: number | null): string {
-  if (value === null) return '—';
+  if (value === null) return 'N/A';
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 }
 
 function formatINR(value: number | null): string {
-  if (value === null) return '—';
+  if (value === null) return 'N/A';
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);
 }
 
@@ -167,7 +167,7 @@ export function CollegeCostCard({
     <Card className="w-full">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg leading-tight">{collegeName} — Cost of Attendance</CardTitle>
+          <CardTitle className="text-lg leading-tight">{collegeName}: Cost of Attendance</CardTitle>
           <div className="flex items-center gap-2 shrink-0">
             {/* Currency toggle */}
             <div className="flex rounded-md border overflow-hidden">
@@ -203,7 +203,7 @@ export function CollegeCostCard({
           <div className="flex items-start gap-1.5 mt-2 text-xs text-amber-700 bg-amber-50 rounded p-2">
             <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <span>
-              Partial data — missing: {coa.missingComponents.join(', ')}.
+              Partial data. Missing: {coa.missingComponents.join(', ')}.
               Total shown is incomplete.
             </span>
           </div>

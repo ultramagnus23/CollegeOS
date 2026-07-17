@@ -59,7 +59,7 @@ export default function LegalPage({ slug: slugProp }: { slug?: string }) {
         <Link to="/" className="text-sm text-primary underline">← Back to CollegeOS</Link>
         <h1 className="text-3xl font-bold mt-4 mb-1 text-foreground">{doc.title}</h1>
         <p className="text-xs text-muted-foreground mb-6">
-          Provided for transparency — not legal advice. These documents are a draft pending final
+          Provided for transparency, not legal advice. These documents are a draft pending final
           review by a licensed lawyer; sections marked “requires jurisdiction-specific legal review”
           and bracketed contact details (e.g. <code>[PRIVACY EMAIL]</code>) are intentionally not yet
           finalized. Other policies are linked at the bottom of this page.

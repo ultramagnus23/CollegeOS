@@ -24,12 +24,12 @@ const S = {
 };
 
 const TIER_META: Record<string, { color: string; bg: string; bar: string; label: string }> = {
-  'Safety':        { color: '#10B981', bg: 'rgba(16,185,129,0.1)',  bar: '#10B981', label: 'Safety — High confidence of admission' },
-  'Match':         { color: '#3B9EFF', bg: 'rgba(59,158,255,0.1)',  bar: '#3B9EFF', label: 'Match — Reasonable shot at admission' },
-  'Reach':         { color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',  bar: '#F59E0B', label: 'Reach — Challenging but possible' },
-  'Long Shot':     { color: '#EF4444', bg: 'rgba(239,68,68,0.1)',   bar: '#EF4444', label: 'Long Shot — Very selective, apply strategically' },
-  'Extreme Reach': { color: '#991B1B', bg: 'rgba(153,27,27,0.1)',   bar: '#991B1B', label: 'Extreme Reach — Highly unlikely; include only as a dream school' },
-  'Unknown':       { color: 'var(--color-text-secondary)', bg: 'var(--color-surface-subtle)', bar: 'var(--color-border)', label: 'Unknown — Add profile data for analysis' },
+  'Safety':        { color: '#10B981', bg: 'rgba(16,185,129,0.1)',  bar: '#10B981', label: 'Safety: High confidence of admission' },
+  'Match':         { color: '#3B9EFF', bg: 'rgba(59,158,255,0.1)',  bar: '#3B9EFF', label: 'Match: Reasonable shot at admission' },
+  'Reach':         { color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',  bar: '#F59E0B', label: 'Reach: Challenging but possible' },
+  'Long Shot':     { color: '#EF4444', bg: 'rgba(239,68,68,0.1)',   bar: '#EF4444', label: 'Long Shot: Very selective, apply strategically' },
+  'Extreme Reach': { color: '#991B1B', bg: 'rgba(153,27,27,0.1)',   bar: '#991B1B', label: 'Extreme Reach: Highly unlikely; include only as a dream school' },
+  'Unknown':       { color: 'var(--color-text-secondary)', bg: 'var(--color-surface-subtle)', bar: 'var(--color-border)', label: 'Unknown: Add profile data for analysis' },
 };
 
 interface ChancingResult {
@@ -125,7 +125,7 @@ function Recommendations({ result }: { result: ChancingResult }) {
     }
     if (tier === 'Reach' && result.college.acceptanceRate != null) {
       const pct = Math.round(result.college.acceptanceRate * 100);
-      recs.push(`This college admits ~${pct}% of applicants overall. International pools are more competitive — focus on differentiating your application.`);
+      recs.push(`This college admits ~${pct}% of applicants overall. International pools are more competitive, so focus on differentiating your application.`);
     }
     if (tier === 'Safety' || tier === 'Match') {
       recs.push('You are well-positioned for this college. Make sure your essays and recommendations reflect genuine interest and fit.');
@@ -324,7 +324,7 @@ export default function Chancing() {
                 </h1>
                 <p style={{ fontSize: 14, color: S.muted, maxWidth: 560 }}>
                   Probability estimates based on your academic profile vs. each college's reported median stats.
-                  International pools are factored in. Results are a guide — not a guarantee.
+                  International pools are factored in. Results are a guide, not a guarantee.
                 </p>
                 <div style={{ marginTop: 8 }}><AIDisclaimer variant="estimate" /></div>
               </div>

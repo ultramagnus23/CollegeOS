@@ -12,6 +12,7 @@ import CollegeListOverview from '../components/dashboard/CollegeListOverview';
 import { CompactDecisionCountdown } from '@/components/DecisionCountdown';
 import { useTutorial } from '../components/tutorial/TutorialOverlay';
 import { trackDuration, trackMetric } from '@/observability';
+import { PAGE_ACCENTS } from '@/styles/pageAccents';
 
 /* ─── Design tokens ──────────────────────────────────────────────────── */
 const h2r = (hex: string, a: number) => {
@@ -339,9 +340,9 @@ const Dashboard = () => {
 
             {/* Hero stats */}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:14 }}>
-              <HeroStat icon="📝" label="Applications" value={stats.applications} accent={S.accent} />
-              <HeroStat icon="📅" label="Deadlines"    value={stats.deadlines}    accent="#F97316" />
-              <HeroStat icon="✍️"  label="Essays"       value={stats.essays}       accent="#A855F7" />
+              <HeroStat icon="📝" label="Applications" value={stats.applications} accent={PAGE_ACCENTS.applications} />
+              <HeroStat icon="📅" label="Deadlines"    value={stats.deadlines}    accent={PAGE_ACCENTS.deadlines} />
+              <HeroStat icon="✍️"  label="Essays"       value={stats.essays}       accent={PAGE_ACCENTS.essays} />
               <HeroStat icon="✅" label="Completed"    value={stats.completed}    accent="#10B981" />
               <HeroStat icon="⚡" label="In Progress"  value={stats.inProgress}   accent="#FBBF24" />
             </div>
@@ -576,10 +577,10 @@ const Dashboard = () => {
 
           {/* ── Quick action nav cards ── */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16 }}>
-            <QuickAction emoji="🔭" title="Discover Colleges"  desc="Browse universities worldwide"  href="/colleges"      accent="#6C63FF" />
-            <QuickAction emoji="📋" title="My Applications"    desc="Track your progress"            href="/applications"  accent="#10B981" />
-            <QuickAction emoji="📅" title="Deadlines"          desc="Never miss a date"              href="/deadlines"     accent="#F97316" />
-            <QuickAction emoji="✍️"  title="Essays"            desc="Write and track your essays"    href="/essays"        accent="#A855F7" />
+            <QuickAction emoji="🔭" title="Discover Colleges"  desc="Browse universities worldwide"  href="/colleges"      accent={PAGE_ACCENTS.colleges} />
+            <QuickAction emoji="📋" title="My Applications"    desc="Track your progress"            href="/applications"  accent={PAGE_ACCENTS.applications} />
+            <QuickAction emoji="📅" title="Deadlines"          desc="Never miss a date"              href="/deadlines"     accent={PAGE_ACCENTS.deadlines} />
+            <QuickAction emoji="✍️"  title="Essays"            desc="Write and track your essays"    href="/essays"        accent={PAGE_ACCENTS.essays} />
           </div>
         </div>
       </div>

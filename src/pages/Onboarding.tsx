@@ -277,7 +277,7 @@ const GPADisplay: React.FC<{ value: string; accent: string; gpaType: string }> =
         fontSize: 72, fontWeight: 800, color: value ? '#fff' : 'rgba(255,255,255,0.15)',
         lineHeight: 1, marginBottom: 8, fontFamily: "'Inter', system-ui, sans-serif",
         transition: 'color 0.2s ease',
-      }}>{value || '—'}</div>
+      }}>{value || 'N/A'}</div>
       {label && (
         <div style={{ fontSize: 14, color: labelColor, fontWeight: 600, fontFamily: "'Inter', system-ui, sans-serif", transition: 'all 0.3s ease' }}>
           {label}
@@ -1544,7 +1544,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
                 <span style={{ fontSize: 13, color: studentData.majorCertain === true ? accent : 'rgba(255,255,255,0.4)', fontFamily: "'Inter', system-ui, sans-serif" }}>Decided</span>
               </div>
               <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 8, fontFamily: "'Inter', system-ui, sans-serif" }}>
-                {studentData.majorCertain ? "Great — select your intended major." : "No worries — pick a few you're curious about."}
+                {studentData.majorCertain ? "Great. Select your intended major." : "No worries, pick a few you're curious about."}
               </p>
             </div>
             <MajorSelector
@@ -1761,7 +1761,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
           <div style={{ marginTop: 40 }}>
             <label style={labelStyle}>Career Goals</label>
             <textarea value={studentData.careerGoals} onChange={e => updateData('careerGoals', e.target.value)}
-              placeholder="What do you want to do after college? Be specific — the more detail, the better your matches."
+              placeholder="What do you want to do after college? Be specific: the more detail, the better your matches."
               rows={5} style={{
                 ...inputFieldStyle(accent), marginTop: 10, resize: 'none', lineHeight: 1.7,
                 fontSize: 16, padding: '16px 20px',
@@ -1813,7 +1813,7 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete }) => 
             <span style={{ color: '#FFD700' }}>your matches are ready.</span>
           </h1>
           <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.5)', marginBottom: 48, lineHeight: 1.6, fontFamily: "'Inter', system-ui, sans-serif" }}>
-            Based on your academic profile, interests, and spike — we found universities that want exactly who you are.
+            Based on your academic profile, interests, and spike, we found universities that want exactly who you are.
           </p>
 
           {/* Blurred match cards */}

@@ -55,10 +55,24 @@ const DEFAULT_STEPS: TutorialStep[] = [
     placement: 'bottom',
   },
   {
+    id: 'profile',
+    title: 'Your Profile',
+    body: 'Start by building your student profile: activities, coursework, and awards. This is what the chancing engine uses for everything downstream.',
+    target: '[data-tutorial="profile-nav"]',
+    placement: 'bottom',
+  },
+  {
     id: 'college-search',
     title: 'College Search',
     body: 'Browse and filter 1,000+ colleges. Add any college to your list with one click.',
     target: '[data-tutorial="college-search"]',
+    placement: 'bottom',
+  },
+  {
+    id: 'chancing',
+    title: 'Chancing Calculator',
+    body: 'Once you\'ve added colleges, get an AI-powered Reach/Match/Safety tier for each one based on your profile.',
+    target: '[data-tutorial="chancing"]',
     placement: 'bottom',
   },
   {
@@ -67,13 +81,6 @@ const DEFAULT_STEPS: TutorialStep[] = [
     body: "Track every application's status, round type, and progress in one place.",
     target: '[data-tutorial="applications"]',
     placement: 'right',
-  },
-  {
-    id: 'chancing',
-    title: 'Chancing Calculator',
-    body: 'Enter your academic stats and get an AI-powered Reach/Match/Safety tier for each college.',
-    target: '[data-tutorial="chancing"]',
-    placement: 'bottom',
   },
   {
     id: 'essays',
@@ -88,13 +95,6 @@ const DEFAULT_STEPS: TutorialStep[] = [
     body: 'Never miss a date. All your application deadlines in one calendar view with smart reminders.',
     target: '[data-tutorial="deadlines"]',
     placement: 'right',
-  },
-  {
-    id: 'profile',
-    title: 'Your Profile',
-    body: 'Build your student profile — activities, coursework, awards — used by the chancing engine.',
-    target: '[data-tutorial="profile-nav"]',
-    placement: 'bottom',
   },
   {
     id: 'done',
@@ -114,7 +114,7 @@ const HELP_TOPICS: Record<string, { title: string; tips: string[] }> = {
       'Net cost = COA minus any scholarships already awarded to you.',
       'Fit Score reflects how well a loan matches your citizenship, income, and required amount.',
       'EMI is calculated using the standard formula: P × r × (1+r)^n / ((1+r)^n − 1).',
-      'All costs are sourced from official college pages — check source links for the latest figures.',
+      'All costs are sourced from official college pages. Check source links for the latest figures.',
     ],
   },
   chancing: {
@@ -139,7 +139,7 @@ const HELP_TOPICS: Record<string, { title: string; tips: string[] }> = {
     title: 'Profile Tips',
     tips: [
       'A complete profile unlocks personalized recommendations and chancing.',
-      'Add all your test scores — the system uses the best one for matching.',
+      'Add all your test scores. The system uses the best one for matching.',
       'Activities are tiered 1–4: Tier 1 = national/international level.',
       'International students: fill in your citizenship and home country for accurate scholarship matching.',
     ],

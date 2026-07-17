@@ -123,7 +123,7 @@ function StatusBadge({ status }: { status: string | null }) {
       fontSize: 13,
       fontFamily: "'Inter', system-ui, sans-serif",
     }}>
-      {status ?? '—'}
+      {status ?? 'N/A'}
     </span>
   );
 }
@@ -220,33 +220,33 @@ export default function AdminDashboard() {
       <section style={S.card}>
         <h2 style={S.h2}>🤖 ML Model</h2>
         <div style={S.grid}>
-          <Stat label="Version" value={ml.current_version ?? '—'} />
+          <Stat label="Version" value={ml.current_version ?? 'N/A'} />
           <Stat
             label="Accuracy"
-            value={ml.accuracy != null ? `${(ml.accuracy * 100).toFixed(1)}%` : '—'}
+            value={ml.accuracy != null ? `${(ml.accuracy * 100).toFixed(1)}%` : 'N/A'}
             accent="#6C63FF"
           />
           <Stat
             label="F1 Score"
-            value={ml.f1_score != null ? `${(ml.f1_score * 100).toFixed(1)}%` : '—'}
+            value={ml.f1_score != null ? `${(ml.f1_score * 100).toFixed(1)}%` : 'N/A'}
             accent="#3B9EFF"
           />
           <Stat
             label="AUC-ROC"
-            value={ml.auc_roc != null ? `${(ml.auc_roc * 100).toFixed(1)}%` : '—'}
+            value={ml.auc_roc != null ? `${(ml.auc_roc * 100).toFixed(1)}%` : 'N/A'}
             accent="#F59E0B"
           />
           <Stat
             label="Training Samples"
-            value={ml.training_samples != null ? ml.training_samples?.toLocaleString() : '—'}
+            value={ml.training_samples != null ? ml.training_samples?.toLocaleString() : 'N/A'}
           />
           <Stat
             label="New Rows Since Retrain"
-            value={ml.new_rows_since_last_train != null ? String(ml.new_rows_since_last_train) : '—'}
+            value={ml.new_rows_since_last_train != null ? String(ml.new_rows_since_last_train) : 'N/A'}
           />
           <Stat
             label="Next Retrain At"
-            value={ml.next_retrain_triggers_at ?? '—'}
+            value={ml.next_retrain_triggers_at ?? 'N/A'}
           />
           <Stat
             label="Last Trained"
@@ -276,7 +276,7 @@ export default function AdminDashboard() {
                     <td style={{ ...S.td, fontWeight: 600, color: '#f1f5f9' }}>{name}</td>
                     <td style={S.td}>{fmt(s.last_run)}</td>
                     <td style={S.td}><StatusBadge status={s.status} /></td>
-                    <td style={S.td}>{s.rows_upserted != null ? s.rows_upserted?.toLocaleString() : '—'}</td>
+                    <td style={S.td}>{s.rows_upserted != null ? s.rows_upserted?.toLocaleString() : 'N/A'}</td>
                     <td style={S.td}>{fmt(s.next_run)}</td>
                   </tr>
                 ))}
@@ -299,7 +299,7 @@ export default function AdminDashboard() {
                 value={
                   scraperHealth.staleness.stalePercent != null
                     ? `${scraperHealth.staleness.stalePercent}%  (${scraperHealth.staleness.staleColleges.toLocaleString()} / ${scraperHealth.staleness.totalColleges.toLocaleString()})`
-                    : '—'
+                    : 'N/A'
                 }
               />
               {scraperHealth.staleness.source && (
@@ -346,7 +346,7 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
               <div style={{ color: '#64748b', fontSize: 11, marginTop: 8 }}>
-                “Ran, 0 rows” = the job completed cleanly but inserted/updated nothing — a likely silent failure (source structure changed).
+                “Ran, 0 rows” = the job completed cleanly but inserted/updated nothing. This is a likely silent failure (source structure changed).
               </div>
             </div>
           )}

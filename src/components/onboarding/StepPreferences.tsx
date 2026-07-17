@@ -54,7 +54,7 @@ const StepPreferences: React.FC<StepPreferencesProps> = ({ onNext, onBack }) => 
       {/* Max tuition slider */}
       <div className="space-y-3">
         <Label className="text-slate-300">
-          Max Annual Tuition Budget —{' '}
+          Max Annual Tuition Budget:{' '}
           <span className="text-indigo-400 font-semibold">{fmt(profile.maxTuition)}</span>
         </Label>
         <Slider

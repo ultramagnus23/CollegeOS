@@ -50,7 +50,7 @@ const StepProfile: React.FC<StepProfileProps> = ({ onNext, onBack }) => {
       {/* Essay quality slider */}
       <div className="space-y-3">
         <Label className="text-slate-300">
-          Essays Quality — <span className="text-indigo-400">{ESSAY_LABELS[profile.essayQuality]}</span>
+          Essays Quality: <span className="text-indigo-400">{ESSAY_LABELS[profile.essayQuality]}</span>
         </Label>
         <Slider
           min={1}

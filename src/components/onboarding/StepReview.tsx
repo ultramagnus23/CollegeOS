@@ -24,10 +24,10 @@ const StepReview: React.FC<StepReviewProps> = ({ onBack, onComplete }) => {
   const [error, setError] = useState<string | null>(null);
 
   const rows = [
-    { label: 'SAT Score', value: profile.satScore ?? '—' },
-    { label: 'ACT Score', value: profile.actScore ?? '—' },
-    { label: 'Unweighted GPA', value: profile.gpaUnweighted || '—' },
-    { label: 'Weighted GPA', value: profile.gpaWeighted || '—' },
+    { label: 'SAT Score', value: profile.satScore ?? 'N/A' },
+    { label: 'ACT Score', value: profile.actScore ?? 'N/A' },
+    { label: 'Unweighted GPA', value: profile.gpaUnweighted || 'N/A' },
+    { label: 'Weighted GPA', value: profile.gpaWeighted || 'N/A' },
     { label: 'Essay Quality', value: `${profile.essayQuality}/5` },
     { label: 'Extracurriculars', value: profile.extracurriculars },
     { label: 'Leadership Positions', value: profile.leadershipPositions },
@@ -83,7 +83,7 @@ const StepReview: React.FC<StepReviewProps> = ({ onBack, onComplete }) => {
     } catch (err: unknown) {
       clearTimeout(timeoutId.id);
       if (err instanceof Error && (err.name === 'AbortError' || err.message === 'AbortError')) {
-        setError('The request timed out (90 s). The ML service may be waking up — please try again.');
+        setError('The request timed out (90 s). The ML service may be waking up, please try again.');
       } else if (err instanceof Error) {
         setError(err.message || 'Something went wrong. Please try again.');
       } else {

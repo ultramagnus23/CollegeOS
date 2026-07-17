@@ -668,7 +668,7 @@ const Colleges: React.FC = () => {
             <div style={{ marginBottom: 36 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: h2r(ACCENT,0.9), textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: S.font }}>✨ Recommended for You</span>
-                <span style={{ fontSize: 11, color: S.muted, fontFamily: S.font }}>Based on your profile — canonical quality recommendation engine</span>
+                <span style={{ fontSize: 11, color: S.muted, fontFamily: S.font }}>Based on your profile: canonical quality recommendation engine</span>
               </div>
 
               {recsLoading && (
@@ -1012,10 +1012,10 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
             );
             if (!aid.isInternational) return null;
             if (aid.needPolicy === 'need-blind-intl') {
-              return <span title="Need-blind for international applicants — verify on the college aid page" style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(16,185,129,0.18)', color: '#10B981', fontWeight: 600, fontFamily: S.font }}>Need-blind (Intl)</span>;
+              return <span title="Need-blind for international applicants. Verify on the college aid page" style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(16,185,129,0.18)', color: '#10B981', fontWeight: 600, fontFamily: S.font }}>Need-blind (Intl)</span>;
             }
             if (aid.needPolicy === 'need-aware-intl') {
-              return <span title="Need-aware admit, meets full need once admitted — verify on the college aid page" style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(59,158,255,0.18)', color: '#3B9EFF', fontWeight: 600, fontFamily: S.font }}>Meets full need (Intl)</span>;
+              return <span title="Need-aware admit, meets full need once admitted. Verify on the college aid page" style={{ fontSize: 11, padding: '2px 8px', borderRadius: 100, background: 'rgba(59,158,255,0.18)', color: '#3B9EFF', fontWeight: 600, fontFamily: S.font }}>Meets full need (Intl)</span>;
             }
             return null;
           })()}
@@ -1094,7 +1094,7 @@ const CollegeCard: React.FC<CollegeCardProps> = ({ college, index, onAdd, onView
         )}
         {dataQualityScore < 50 && (
           <div style={{ marginTop: 4, color: '#f59e0b' }}>
-            ⚠ Incomplete data — some fields may be missing.
+            ⚠ Incomplete data. Some fields may be missing.
           </div>
         )}
         {(completenessScore > 0 || freshnessScore > 0) && (
