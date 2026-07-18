@@ -18,8 +18,6 @@ Rate limits: adds 1–2s delay per institution to be polite to public APIs.
 
 import logging
 import os
-import re
-import time
 from typing import Optional
 
 log = logging.getLogger(__name__)

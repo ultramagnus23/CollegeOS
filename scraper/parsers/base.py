@@ -9,10 +9,8 @@ from __future__ import annotations
 import asyncio
 import random
 import re
-import traceback
 import urllib.parse
-from datetime import date, datetime, timedelta, timezone
-from typing import Any
+from datetime import date, datetime, timezone
 
 import aiohttp
 import structlog

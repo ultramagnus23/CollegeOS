@@ -596,18 +596,14 @@ const SCHOLARSHIPS = [
 async function seedIfEmpty() {
   const pool = dbManager.getDatabase();
 
-  // Determine which table to use
-  let tableName = 'scholarships';
+  // `scholarships` is the single canonical table. The former `scholarships_new`
+  // duplicate was consolidated into it and dropped in migration 148, so we no
+  // longer probe for it (that probe logged a failed_query on every run).
+  const tableName = 'scholarships';
   try {
-    await pool.query(`SELECT 1 FROM scholarships_new LIMIT 1`);
-    tableName = 'scholarships_new';
+    await pool.query(`SELECT 1 FROM scholarships LIMIT 1`);
   } catch {
-    try {
-      await pool.query(`SELECT 1 FROM scholarships LIMIT 1`);
-      tableName = 'scholarships';
-    } catch {
-      throw new Error('Neither scholarships nor scholarships_new table exists. Run migration 058 first.');
-    }
+    throw new Error('scholarships table does not exist. Run migrations first.');
   }
 
   // Skip if already seeded

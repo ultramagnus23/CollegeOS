@@ -12,7 +12,6 @@ Usage:
 import asyncio
 import os
 import sys
-import json
 from datetime import datetime, timezone
 
 import asyncpg

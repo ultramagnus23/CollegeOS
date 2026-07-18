@@ -13,7 +13,6 @@ from __future__ import annotations
 import re
 import traceback
 from datetime import date
-from typing import Any
 
 import structlog
 from bs4 import BeautifulSoup

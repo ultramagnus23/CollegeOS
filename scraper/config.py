@@ -7,7 +7,6 @@ Do not add new scrapers to both trees — pick the appropriate one.
 Configuration: all settings pulled from environment variables / .env
 """
 
-import os
 from pydantic_settings import BaseSettings
 from pydantic import Field
 

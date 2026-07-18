@@ -17,7 +17,6 @@ Updates: canonical.institutions (lat/lng, founded_year, total_enrollment,
          if present in Wikidata via P3395/P6608).
 """
 
-import json
 import logging
 import os
 import sys

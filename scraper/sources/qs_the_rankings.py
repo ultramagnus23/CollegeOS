@@ -16,7 +16,6 @@ Upserts into canonical.institution_rankings with:
   faculty_student_rank, citations_rank, intl_student_rank
 """
 
-import json
 import logging
 import os
 import re

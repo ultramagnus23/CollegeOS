@@ -18,12 +18,10 @@ import sys
 import logging
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, brier_score_loss
-from sklearn.calibration import CalibratedClassifierCV
 
 logging.basicConfig(
     level=logging.INFO,

@@ -45,7 +45,6 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 import psycopg2
 import psycopg2.extras
-from bs4 import BeautifulSoup
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 

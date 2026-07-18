@@ -9,12 +9,10 @@ Covers:
 
 from __future__ import annotations
 
-import json
 import re
 import traceback
 from datetime import date
-from typing import Any
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 import structlog
 from bs4 import BeautifulSoup

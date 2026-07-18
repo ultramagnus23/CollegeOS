@@ -6,7 +6,6 @@ Uses asyncpg for async, non-blocking I/O.
 
 from __future__ import annotations
 
-import asyncio
 import json
 import uuid
 from datetime import datetime, timezone

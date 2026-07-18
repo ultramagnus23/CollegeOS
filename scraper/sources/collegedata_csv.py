@@ -14,7 +14,6 @@ pipeline field names.
 
 import io
 import logging
-import os
 import zipfile
 from typing import Optional
 

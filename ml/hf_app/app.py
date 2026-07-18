@@ -28,7 +28,6 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any
 
 import gradio as gr
 import psycopg2
@@ -59,7 +58,7 @@ for _search_dir in _PREDICT_SEARCH:
             sys.path.insert(0, str(_search_dir))
         break
 
-from predict import predict_chances, PROB_MIN, PROB_MAX  # noqa: E402
+from predict import predict_chances  # noqa: E402
 
 # ── Startup: verify model loads once ─────────────────────────────────────────
 
