@@ -1,6 +1,6 @@
 # CollegeOS Full-System Audit — Report & Remediation Plan
 
-Branch: `audit/full-system-2026-07` · Date: 2026-07-18 · Scope: Phases 0–5 (READ-ONLY). No schema, file, or code changes were made. Every figure traces to a command in `audit/01_repo.md`–`audit/04_redundancy.md`.
+Branch: `audit/full-system-2026-07` · Date: 2026-07-18 · Scope: Phases 0–5 (READ-ONLY audit) **+ Phase 6 (implementation, approved)**. Every figure traces to a command in `audit/01_repo.md`–`audit/04_redundancy.md`. **Phase 6 results in §6 below.**
 
 > **Prompt premises that turned out to be wrong** (verified against the live repo/DB, per "verify, don't assume"): the stack is **Vite/React + Node/Express**, not Next.js/FastAPI; **pgvector is not used** (embeddings stored as data, cosine in app — matches the constraint); tables number **123**, not ~179; and **enrichment workflows are green**, not failing on Supabase connectivity.
 
@@ -64,3 +64,35 @@ Each batch = one migration file in `backend/migrations/` (the live migration dir
 Phases 0–5 complete and read-only. **I have not proceeded to Phase 6 (implementation).** Nothing in the DB, schema, or code was changed; the audit branch holds only the five `audit/*.md` artifacts + this report + a `.claude/launch.json` used to run the app.
 
 Please review and tell me: (a) approve the plan as-is, (b) approve a subset (e.g. fixes #1–#5 only), or (c) revise. I recommend starting with fixes **#1, #2, #3** — they are high-impact, low-risk, and don't touch the schema.
+
+---
+
+## 6. Phase 6 — Implementation results (approved, executed 2026-07-18)
+
+Worked the ranked fix list in impact order. Every code fix was verified before commit; DB work was backed up first and applied to the live production DB (there is no separate dev DB — local backend and migrations both target prod).
+
+| Fix | Status | Verification | Commit |
+|---|---|---|---|
+| **#1 Detail-page contract** | ✅ Done | Live browser: `/colleges/harvard-...` now renders **Harvard University, Cambridge MA, SAT 1553, ACT 35, canonical source** (was "Unknown"/blank). tsc unchanged at 103 baseline errors. | `1ffb790` |
+| **#2 Slug 404** | ✅ Done | Backend now extracts the trailing UUID from `<name>-<uuid>` slugs + matches `i.slug`; API returns **200 not 404**. | `1ffb790` |
+| **#3 Schedule CDS parser** | ✅ Done | `cdsDeadlines` step added to `deadlines-requirements-refresh.yml`; dry-run confirmed it extracts real deadlines (Adelphi, Agnes Scott). YAML validated. | `abb1e6b` |
+| **#4 Scraper hardening** | ✅ Done | `continue-on-error` on QS/CWUR/Wikidata/ARWU source steps so one dead source can't red the whole refresh (root cause of the 2026-07-15 failure). | `abb1e6b` |
+| **#5–6 DB consolidation** | ◐ Partial (safe subset only) | Migration 150: created `archive` schema, moved `colleges_legacy` (6,207 rows) → archive. **public tables 74 → 73**, app boots clean. Backed up first (schema dump + table dump; manifest committed). | `a736…` |
+| **#7 RLS** | ✅ No-op (correct as-is) | Verified no frontend/anon code queries `chancing_audit_log`; backend uses service role. Deny-by-default is correct for an audit log. | cleanup commit |
+| **#9 Code cleanup** | ✅ Done | `ruff --fix` removed 36 unused Python imports (20+ files, syntax-verified); removed the dead `scholarships_new` boot probe — **that boot error is now gone**. | cleanup commit |
+| **#8 Branch prune** | ⏸ Blocked on permission | Identified **89 fully-merged remote branches** (safe) vs 44 with unmerged work (keep). SHAs recorded in `audit/deleted_branches_2026-07.txt` for recoverability. The bulk `git push --delete` was **blocked by the safety classifier** (outward-facing irreversible). **Needs your go-ahead.** | — |
+| **#10 Institution dedup** | ⏸ Deferred (by design) | Auto-merging the 397 name+country groups risks collapsing legitimately-distinct campuses (data loss). Requires manual review against `institution_identity_map` before running `dedupeInstitutions.js`. Not run on live prod. | — |
+
+### Important correction to the audit (found only by hands-on Phase 6 verification)
+The static audit marked ~42 empty tables **ARCHIVE**. Direct verification proved this **wrong**: those tables are **live, unpopulated feature tables with active writers** (`INSERT INTO admission_outcomes`, `scraper_logs`, `college_data_contributions`, plus essays/notifications/student_activities routes), and the `*_merge_archive` tables are the live sink for `dedupeInstitutions.js`. Archiving any would break a runtime path. **Only `colleges_legacy` was safe to move.** The real consolidation win — retiring the `public.college*` legacy model (~47 MB) — remains gated on the **backend cutover** (migrating `College.js`, `Application.js`, `deadlines.js`, `signals.js`, `mlService.js`, schedulers off `public.colleges` → canonical), which is a staged code-migration project, not a schema move, and was correctly **not** rushed on live prod.
+
+### Before / after
+- **Public tables:** 74 → **73** (colleges_legacy archived; the deeper reduction needs the backend cutover).
+- **Duplication / dead code:** 36 unused imports removed; dead `scholarships_new` probe removed (boot error eliminated).
+- **Deadline coverage:** unchanged at 2.7% *today* — the fix (#3) takes effect when `deadlines-requirements-refresh` next runs the newly-wired `cdsDeadlines` step; re-measure after the next scheduled run.
+- **Detail page:** broken → **working** (the highest-impact user-facing fix).
+
+### Remaining (needs your decision)
+1. **Approve the 89 merged-branch deletion** (safe; SHAs recorded) — or I leave them.
+2. **Backend cutover** off `public.college*` → canonical (Batch D) — a scoped follow-up project; retires the dual data model and ~16 legacy tables.
+3. **Institution dedup** — manual review of the 397 groups before any merge.
