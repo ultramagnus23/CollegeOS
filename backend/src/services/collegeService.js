@@ -11,6 +11,15 @@ function isUuid(id) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 }
 
+// Card/list rows expose a slug of the form `<name>-<uuid>` (e.g.
+// "harvard-university-ceda6162-...-...."). When the frontend navigates by that
+// slug, pull the canonical UUID back out so the detail lookup resolves in one
+// hop instead of 404-ing. Returns the UUID string, or null if none is present.
+function extractTrailingUuid(value) {
+  const m = /([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.exec(String(value ?? ''));
+  return m ? m[1] : null;
+}
+
 class CollegeService {
   static async getColleges(filters = {}) {
     try {
@@ -49,8 +58,11 @@ class CollegeService {
     const dbManager = require('../config/database');
     const pool = dbManager.getDatabase();
 
-    const params = [normalizedId];
-    const lookupSql = isUuid(normalizedId)
+    // A card slug ("<name>-<uuid>") carries the UUID at its tail — prefer that
+    // over a full-slug lookup so the common navigation path resolves directly.
+    const uuidCandidate = isUuid(normalizedId) ? normalizedId : extractTrailingUuid(normalizedId);
+    const params = [uuidCandidate || normalizedId];
+    const lookupSql = uuidCandidate
       ? `
         SELECT i.id
         FROM canonical.institutions i
@@ -60,8 +72,8 @@ class CollegeService {
       : `
         SELECT DISTINCT i.id
         FROM canonical.institutions i
-        JOIN canonical.institution_identity_map m ON m.institution_id = i.id
-        WHERE m.source_pk = $1
+        LEFT JOIN canonical.institution_identity_map m ON m.institution_id = i.id
+        WHERE i.slug = $1 OR m.source_pk = $1
         LIMIT 1
       `;
 
