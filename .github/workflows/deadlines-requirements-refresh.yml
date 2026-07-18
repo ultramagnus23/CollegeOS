@@ -64,6 +64,18 @@ jobs:
         run: node scripts/runScraper.js usRequirements --limit="${{ github.event.inputs.limit || '200' }}"
         continue-on-error: true
 
+      # Common Data Set PDF parser — the scalable deadline tier (241 targets).
+      # Previously coded + registered in runScraper.js but wired into no workflow,
+      # which is why deadline coverage sat at ~2.7%. Verified working via dry-run
+      # (extracts real deadlines for Adelphi, Agnes Scott, etc.). continue-on-error
+      # so a strict no-new-rows run never reds the whole refresh.
+      - name: Run common-data-set-deadlines
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/runScraper.js cdsDeadlines --limit="${{ github.event.inputs.limit || '250' }}"
+        continue-on-error: true
+
       - name: Run nirf-rankings
         working-directory: backend
         env:
