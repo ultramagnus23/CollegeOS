@@ -45,6 +45,11 @@ class Application {
       throw err;
     }
 
+    // Anchor the new application to canonical at write time so it is not born
+    // depending on the legacy public.colleges integer id. Nullable: if the
+    // canonical UUID can't be resolved, the row falls back to college_id.
+    const canonicalInstitutionId = await this.resolveCanonicalUuid(pool, rawCollegeId, numericCollegeId);
+
     // Check for duplicate first
     const existingApp = await this.findByUserAndCollege(userId, numericCollegeId);
     if (existingApp) {
@@ -57,12 +62,13 @@ class Application {
     let rows;
     try {
       ({ rows } = await pool.query(
-        `INSERT INTO applications (user_id, college_id, status, application_type, priority, notes)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO applications (user_id, college_id, canonical_institution_id, status, application_type, priority, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id`,
         [
           userId,
           numericCollegeId,
+          canonicalInstitutionId,
           safeData.status || data.status || 'researching',
           safeData.application_type || data.application_type || data.applicationType || null,
           safeData.priority || data.priority || null,
@@ -227,6 +233,44 @@ class Application {
       logger.warn('resolveCollegeId lookup failed:', { uuid: strId, error: err?.message });
     }
 
+    return null;
+  }
+
+  /**
+   * Resolve the canonical institution UUID for a new application.
+   * - If the caller passed a canonical UUID directly, that IS the canonical id.
+   * - Otherwise map the resolved legacy integer id via the identity map's
+   *   source_pk/source_table path (the verified high-coverage path; see
+   *   migration 151). Returns null if no canonical mapping exists (the row then
+   *   falls back to college_id — acceptable during the dual-key transition).
+   */
+  static async resolveCanonicalUuid(pool, rawId, legacyId) {
+    const strId = String(rawId).trim();
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(strId)) return strId;
+
+    if (legacyId != null) {
+      try {
+        // source_pk carries the legacy colleges(_comprehensive) PK. The live
+        // identity map keys these under 'public.colleges_comprehensive' (the
+        // dominant, 8.3k-row source), with a handful under bare 'colleges' and
+        // none under 'public.colleges' — verified against prod. Cover all three;
+        // order deterministically so a source_pk present in multiple source
+        // tables always resolves to the same canonical institution.
+        const { rows } = await pool.query(
+          `SELECT institution_id
+             FROM canonical.institution_identity_map
+            WHERE source_pk = $1::text
+              AND source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+            ORDER BY source_table
+            LIMIT 1`,
+          [legacyId]
+        );
+        if (rows.length > 0) return rows[0].institution_id;
+      } catch (err) {
+        logger.debug('resolveCanonicalUuid lookup unavailable', { error: err?.message });
+      }
+    }
     return null;
   }
 
