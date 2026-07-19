@@ -545,14 +545,6 @@ class College {
     return rows.map((r) => ({ value: r.country_code, label: r.country_code, count: r.count }));
   }
 
-  static async getAllMajors() {
-    const pool = dbManager.getDatabase();
-    const { rows } = await pool.query(
-      'SELECT DISTINCT program_name FROM college_programs WHERE program_name IS NOT NULL ORDER BY program_name'
-    );
-    return rows.map((r) => r.program_name);
-  }
-
   static async update(id, data) {
     const pool = dbManager.getDatabase();
     const fieldMap = {

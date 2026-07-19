@@ -320,7 +320,7 @@ class Application {
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
       `SELECT a.*,
-              c.id AS canonical_institution_id,
+              COALESCE(a.canonical_institution_id, c.canonical_institution_id) AS canonical_institution_id,
               c.name AS college_name,
               c.country AS country,
               COALESCE(
@@ -340,7 +340,7 @@ class Application {
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
       `SELECT a.*,
-              c.id AS canonical_institution_id,
+              COALESCE(a.canonical_institution_id, c.canonical_institution_id) AS canonical_institution_id,
               c.name AS college_name,
               c.country AS country,
               COALESCE(
@@ -360,7 +360,7 @@ class Application {
     const pool = dbManager.getDatabase();
     let query = `
        SELECT a.*,
-              c.id AS canonical_institution_id,
+              COALESCE(a.canonical_institution_id, c.canonical_institution_id) AS canonical_institution_id,
               c.name AS college_name,
               c.country AS country,
               COALESCE(
