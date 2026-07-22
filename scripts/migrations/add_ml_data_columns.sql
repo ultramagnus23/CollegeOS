@@ -8,6 +8,11 @@
 -- ---------------------------------------------------------------------------
 
 ALTER TABLE colleges_comprehensive
+  -- acceptance_rate was missing entirely (colleges_comprehensive only ever had
+  -- intl_acceptance_rate) even though load-to-postgres.py writes to it and the
+  -- index below indexes it — this migration failed on the CREATE INDEX below
+  -- for that reason until this column was added (verified live 2026-07-22).
+  ADD COLUMN IF NOT EXISTS acceptance_rate           NUMERIC,
   ADD COLUMN IF NOT EXISTS median_sat_25             INT,
   ADD COLUMN IF NOT EXISTS median_sat_75             INT,
   ADD COLUMN IF NOT EXISTS median_act_25             INT,
