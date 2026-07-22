@@ -92,10 +92,19 @@ DROP POLICY IF EXISTS "chancing_own" ON chancing_inputs;
 CREATE POLICY "chancing_own" ON chancing_inputs FOR ALL USING (auth.uid() = user_id);
 
 -- saved_colleges
+-- NOTE: college_id is bigint, not uuid — colleges.id is a bigint SERIAL in this
+-- DB (confirmed live 2026-07-22), not a uuid as originally written here. That
+-- mismatch made `REFERENCES colleges(id)` fail with a foreign-key type error,
+-- which aborted this entire migration file (colleges/user_profiles columns
+-- above never got applied either, since a failed statement rolls back the
+-- whole implicit transaction). Neither saved_colleges nor chancing_inputs
+-- (below) has any code reference in the repo — dead scaffolding for a
+-- Supabase-Auth-flavored feature that was superseded by the custom JWT auth
+-- in backend/src/services/authService.js — but they're harmless to create.
 CREATE TABLE IF NOT EXISTS saved_colleges (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users(id),
-  college_id uuid REFERENCES colleges(id),
+  college_id bigint REFERENCES colleges(id),
   saved_at timestamptz DEFAULT now(),
   UNIQUE(user_id, college_id)
 );
