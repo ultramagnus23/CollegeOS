@@ -11,10 +11,13 @@ class DeadlineAutoPopulationService {
    * Auto-populate deadlines for a college application
    * @param {number} userId - User ID
    * @param {number} applicationId - Application ID
-   * @param {number} collegeId - College ID
+   * @param {number} collegeId - College ID (legacy numeric id, used for name lookup fallback)
+   * @param {string|null} canonicalInstitutionId - canonical.institutions UUID, if already
+   *   resolved by the caller (Application.create resolves this at write time). When absent,
+   *   it is looked up from collegeId via the identity map.
    * @returns {object} Result with populated deadlines and status
    */
-  static async populateDeadlinesForApplication(userId, applicationId, collegeId) {
+  static async populateDeadlinesForApplication(userId, applicationId, collegeId, canonicalInstitutionId = null) {
     const pool = dbManager.getDatabase();
     const currentYear = new Date().getFullYear();
     const result = {
@@ -25,16 +28,19 @@ class DeadlineAutoPopulationService {
     };
 
     try {
-      // Query college deadlines for current year
-      let collegeDeadlines = await this._getCollegeDeadlines(collegeId, currentYear);
-      
-      // Check if data exists with confidence_score >= 0.7
-      if (!collegeDeadlines || (collegeDeadlines.confidence_score && collegeDeadlines.confidence_score < 0.7)) {
-        logger.info(`No reliable current year data for college ${sanitizeForLog(collegeId)}, trying previous year`);
-        
-        // Try previous year as fallback
-        collegeDeadlines = await this._getCollegeDeadlines(collegeId, currentYear - 1);
-        
+      const institutionId = canonicalInstitutionId || await this._resolveInstitutionId(pool, collegeId);
+
+      // Query college deadlines for the current admission cycle (e.g. "2025-2026").
+      // canonical.institution_deadlines is one row per deadline_type, not a single
+      // row per college — _getCollegeDeadlines returns an array or null.
+      let collegeDeadlines = await this._getCollegeDeadlines(institutionId, this._cycleYear(currentYear));
+
+      if (!collegeDeadlines) {
+        logger.info(`No reliable current cycle data for college ${sanitizeForLog(collegeId)}, trying previous cycle`);
+
+        // Try previous cycle as fallback
+        collegeDeadlines = await this._getCollegeDeadlines(institutionId, this._cycleYear(currentYear - 1));
+
         if (!collegeDeadlines) {
           // No college-specific deadline data — still generate support task defaults
           await this._insertSupportDeadlines(pool, userId, applicationId, collegeId, null, result);
@@ -78,7 +84,8 @@ class DeadlineAutoPopulationService {
       }
 
       // Always add support deadlines (FAFSA, transcripts, rec letters, etc.)
-      const rdDate = collegeDeadlines.regular_decision_deadline || null;
+      const rdRow = collegeDeadlines.find(d => d.deadline_type === 'regular_decision');
+      const rdDate = rdRow ? rdRow.deadline_date : null;
       await this._insertSupportDeadlines(pool, userId, applicationId, collegeId, rdDate, result);
 
       result.success = true;
@@ -101,51 +108,79 @@ class DeadlineAutoPopulationService {
   }
 
   /**
-   * Get college deadlines from database
+   * Resolve a legacy numeric college id to its canonical.institutions UUID via
+   * the identity map. Mirrors Application.resolveCanonicalUuid's source_table
+   * filter so both paths agree on which institution a given legacy id maps to.
    * @private
    */
-  static async _getCollegeDeadlines(collegeId, year) {
-    const pool = dbManager.getDatabase();
-    // Column is academic_year (text), not application_year
-    return (await pool.query(
-      `SELECT * FROM application_deadlines WHERE college_id = $1 AND academic_year = $2`,
-      [collegeId, String(year)]
-    )).rows[0];
+  static async _resolveInstitutionId(pool, collegeId) {
+    const { rows } = await pool.query(
+      `SELECT institution_id
+         FROM canonical.institution_identity_map
+        WHERE source_pk = $1::text
+          AND source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+        ORDER BY source_table
+        LIMIT 1`,
+      [String(collegeId)]
+    );
+    return rows[0]?.institution_id || null;
   }
 
   /**
-   * Extract deadlines that are actually offered by the college
-   * Only returns deadline types where the database has offered = true
+   * Build the cycle_year string (e.g. "2025-2026") canonical.institution_deadlines
+   * uses for the admission cycle ending in `admissionYear`.
+   * @private
+   */
+  static _cycleYear(admissionYear) {
+    return `${admissionYear - 1}-${admissionYear}`;
+  }
+
+  /**
+   * Get a college's deadlines from canonical.institution_deadlines.
+   * One row per deadline_type, so this returns an array (or null if none/unresolved).
+   * @private
+   */
+  static async _getCollegeDeadlines(institutionId, cycleYear) {
+    if (!institutionId) return null;
+    const pool = dbManager.getDatabase();
+    const { rows } = await pool.query(
+      `SELECT deadline_type, deadline_date, notification_date, confidence_score
+         FROM canonical.institution_deadlines
+        WHERE institution_id = $1 AND cycle_year = $2
+          AND (confidence_score IS NULL OR confidence_score >= 0.7)`,
+      [institutionId, cycleYear]
+    );
+    return rows.length ? rows : null;
+  }
+
+  /**
+   * Extract the deadline types actually offered by the college from the rows
+   * returned by _getCollegeDeadlines. Some institutions (e.g. UCAS schools)
+   * carry duplicate rows per deadline_type — first one wins.
    * @private
    */
   static _extractOfferedDeadlines(collegeDeadlines) {
+    const labels = {
+      early_decision_1: 'Early Decision I deadline',
+      early_decision_2: 'Early Decision II deadline',
+      early_action: 'Early Action deadline',
+      restrictive_early_action: 'Restrictive Early Action deadline',
+      regular_decision: 'Regular Decision deadline',
+      rolling: 'Rolling admission deadline',
+      ucas_equal_consideration: 'UCAS Equal Consideration deadline',
+    };
+
+    const seen = new Set();
     const deadlines = [];
-    const currentYear = new Date().getFullYear();
-
-    // Actual column names in application_deadlines:
-    //   early_decision_1_deadline, early_decision_2_deadline,
-    //   early_action_deadline, restrictive_early_action_deadline,
-    //   regular_decision_deadline, priority_deadline, rolling_admission (INTEGER)
-    const d = collegeDeadlines;
-
-    if (d.early_decision_1_deadline) {
-      deadlines.push({ type: 'early_decision_1', date: d.early_decision_1_deadline, description: 'Early Decision I deadline', notificationDate: d.early_decision_1_notification });
-    }
-    if (d.early_decision_2_deadline) {
-      deadlines.push({ type: 'early_decision_2', date: d.early_decision_2_deadline, description: 'Early Decision II deadline', notificationDate: d.early_decision_2_notification });
-    }
-    if (d.early_action_deadline) {
-      deadlines.push({ type: 'early_action', date: d.early_action_deadline, description: 'Early Action deadline', notificationDate: d.early_action_notification });
-    }
-    if (d.restrictive_early_action_deadline) {
-      deadlines.push({ type: 'restrictive_early_action', date: d.restrictive_early_action_deadline, description: 'Restrictive Early Action deadline', notificationDate: d.restrictive_early_action_notification });
-    }
-    if (d.regular_decision_deadline) {
-      deadlines.push({ type: 'regular_decision', date: d.regular_decision_deadline, description: 'Regular Decision deadline', notificationDate: d.regular_decision_notification });
-    }
-    if (d.rolling_admission === 1 || d.rolling_admission === true) {
-      const rollingDate = d.priority_deadline || d.regular_decision_deadline || `${currentYear + 1}-06-01`;
-      deadlines.push({ type: 'rolling_admission', date: rollingDate, description: d.priority_deadline ? 'Priority deadline for rolling admission' : 'Rolling admission', notificationDate: null });
+    for (const row of collegeDeadlines) {
+      if (!row.deadline_date || seen.has(row.deadline_type)) continue;
+      seen.add(row.deadline_type);
+      deadlines.push({
+        type: row.deadline_type,
+        date: row.deadline_date,
+        description: labels[row.deadline_type] || row.deadline_type,
+        notificationDate: row.notification_date,
+      });
     }
 
     return deadlines;
@@ -218,10 +253,12 @@ class DeadlineAutoPopulationService {
    * @returns {boolean} True if deadlines exist
    */
   static async hasDeadlineData(collegeId) {
+    const pool = dbManager.getDatabase();
     const currentYear = new Date().getFullYear();
-    const current = await this._getCollegeDeadlines(collegeId, currentYear);
-    const previous = await this._getCollegeDeadlines(collegeId, currentYear - 1);
-    
+    const institutionId = await this._resolveInstitutionId(pool, collegeId);
+    const current = await this._getCollegeDeadlines(institutionId, this._cycleYear(currentYear));
+    const previous = await this._getCollegeDeadlines(institutionId, this._cycleYear(currentYear - 1));
+
     return !!(current || previous);
   }
 }
