@@ -34,24 +34,28 @@ class Application {
       throw err;
     }
 
-    // Resolve the college ID to a numeric value:
+    // Resolve the college ID to a legacy numeric value where one exists:
     // - If numeric, use it directly
-    // - If UUID string, look it up in canonical.mv_college_cards or canonical.institutions
+    // - If UUID string, look it up via the legacy identity map — may be null
+    //   for a canonical-only college with no legacy row (resolveCollegeId no
+    //   longer mints one; see its comments)
     const numericCollegeId = await this.resolveCollegeId(pool, rawCollegeId);
-    if (numericCollegeId == null) {
+
+    // Anchor the new application to canonical at write time. UUID inputs
+    // resolve directly; legacy-integer inputs map through the identity map.
+    const canonicalInstitutionId = await this.resolveCanonicalUuid(pool, rawCollegeId, numericCollegeId);
+
+    // A college is "found" if it resolved to EITHER anchor — a legacy row is
+    // no longer required to add a canonical-only college.
+    if (numericCollegeId == null && canonicalInstitutionId == null) {
       const err = new Error('College not found');
       err.statusCode = 400;
       err.code = 'COLLEGE_NOT_FOUND';
       throw err;
     }
 
-    // Anchor the new application to canonical at write time so it is not born
-    // depending on the legacy public.colleges integer id. Nullable: if the
-    // canonical UUID can't be resolved, the row falls back to college_id.
-    const canonicalInstitutionId = await this.resolveCanonicalUuid(pool, rawCollegeId, numericCollegeId);
-
     // Check for duplicate first
-    const existingApp = await this.findByUserAndCollege(userId, numericCollegeId);
+    const existingApp = await this.findByUserAndCollege(userId, numericCollegeId, canonicalInstitutionId);
     if (existingApp) {
       const error = new Error('College already added to your list');
       error.statusCode = 400;
@@ -193,37 +197,41 @@ class Application {
         logger.debug('079-style identity lookup unavailable', { error: e?.message });
       }
 
-      // UUID not in identity map — fetch canonical data and find/create a legacy record
+      // UUID not in identity map. Try a last-resort name match against the
+      // legacy table (reuses an existing legacy row if one coincidentally
+      // matches by name — doesn't mint anything).
+      //
+      // IMPORTANT: this used to fall back to `INSERT INTO colleges (...)`,
+      // minting a brand-new legacy row for every canonical college that had
+      // never been touched by the legacy system. That was the one remaining
+      // place still actively growing public.colleges — a real institution
+      // added via canonical (the frontend's actual source of truth) doesn't
+      // need or want a legacy row invented for it. Returns null instead; the
+      // caller (Application.create) treats a resolved canonical UUID as
+      // sufficient on its own — no legacy college_id required to add a
+      // college. See resolveCanonicalUuid, which returns this same UUID
+      // directly as the application's canonical anchor regardless of whether
+      // a legacy row exists.
       const { rows: canonRows } = await pool.query(
-        `SELECT canonical_name, country_code FROM canonical.institutions WHERE id = $1 LIMIT 1`,
+        `SELECT canonical_name FROM canonical.institutions WHERE id = $1 LIMIT 1`,
         [strId]
       );
       if (canonRows.length === 0) return null;
 
-      const { canonical_name, country_code } = canonRows[0];
+      const { canonical_name } = canonRows[0];
 
-      // Try matching by name in legacy colleges table
-      let legacyId;
       const { rows: byName } = await pool.query(
         `SELECT id FROM colleges WHERE LOWER(name) = LOWER($1) LIMIT 1`,
         [canonical_name]
       );
-      if (byName.length > 0) {
-        legacyId = byName[0].id;
-      } else {
-        // Create a minimal legacy record so this college can be added
-        const { rows: inserted } = await pool.query(
-          `INSERT INTO colleges (name, country) VALUES ($1, $2) RETURNING id`,
-          [canonical_name, country_code || 'Unknown']
-        );
-        legacyId = inserted[0].id;
-      }
+      if (byName.length === 0) return null;
 
-      // At this point the college DOES exist (we have a canonical row + a legacy
-      // row). Recording the identity-map mapping is a cache for fast future
-      // lookups — it must not be allowed to masquerade as "college not found".
-      // It is wrapped in its OWN try/catch so a schema/constraint failure is
-      // surfaced distinctly in the logs and never collapses into COLLEGE_NOT_FOUND.
+      const legacyId = byName[0].id;
+
+      // Cache the mapping for fast future lookups — the college DOES exist
+      // (we have a canonical row + a legacy row that matched by name).
+      // Wrapped in its own try/catch so a schema/constraint failure is
+      // surfaced distinctly in the logs, not collapsed into "not found".
       await this._recordIdentityMapping(pool, strId, legacyId);
       return legacyId;
     } catch (err) {
@@ -360,7 +368,14 @@ class Application {
     return this._identityMapColsCache;
   }
 
-  static async findByUserAndCollege(userId, collegeId) {
+  /**
+   * Look up an existing application for this user against either anchor.
+   * collegeId can be null now (a canonical-only college with no legacy row —
+   * see resolveCollegeId); canonicalInstitutionId can be null for legacy-only
+   * applications that predate migration 151. Match on whichever is present so
+   * duplicate-prevention still works for both origins.
+   */
+  static async findByUserAndCollege(userId, collegeId, canonicalInstitutionId = null) {
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
       `SELECT a.*,
@@ -374,8 +389,12 @@ class Application {
               ) AS official_website
        FROM applications a
        LEFT JOIN colleges_full c ON a.college_id = c.id
-       WHERE a.user_id = $1 AND a.college_id = $2`,
-      [userId, collegeId]
+       WHERE a.user_id = $1
+         AND (
+           ($2::int IS NOT NULL AND a.college_id = $2::int)
+           OR ($3::uuid IS NOT NULL AND a.canonical_institution_id = $3::uuid)
+         )`,
+      [userId, collegeId, canonicalInstitutionId]
     );
     return rows[0] || null;
   }
