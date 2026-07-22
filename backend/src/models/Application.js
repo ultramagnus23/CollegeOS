@@ -95,7 +95,7 @@ class Application {
     try {
       const DeadlineAutoPopulationService = require('../services/deadlineAutoPopulationService');
       const deadlineResult = await DeadlineAutoPopulationService.populateDeadlinesForApplication(
-        userId, applicationId, numericCollegeId
+        userId, applicationId, numericCollegeId, canonicalInstitutionId
       );
       logger.info('Auto-populated deadlines:', deadlineResult);
     } catch (error) {
