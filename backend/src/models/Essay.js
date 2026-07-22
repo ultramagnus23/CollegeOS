@@ -33,11 +33,17 @@ class Essay {
 
   static async findByUser(userId) {
     const pool = dbManager.getDatabase();
+    // Prefer the canonical name via applications.canonical_institution_id
+    // (populated for applications created after migration 151); fall back to
+    // the legacy colleges_full bridge view for applications that predate it
+    // or have no canonical mapping.
     const { rows } = await pool.query(
-      `SELECT e.*, a.college_id, c.name as college_name
+      `SELECT e.*, a.college_id,
+              COALESCE(ci.canonical_name, c.name) AS college_name
        FROM essays e
        JOIN applications a ON e.application_id = a.id
-       JOIN colleges_full c ON a.college_id = c.id
+       LEFT JOIN canonical.institutions ci ON ci.id = a.canonical_institution_id
+       LEFT JOIN colleges_full c ON a.college_id = c.id
        WHERE a.user_id = $1
        ORDER BY e.created_at DESC`,
       [userId]
