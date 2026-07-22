@@ -37,6 +37,7 @@ jobs:
           test -f scraper/sources/cwur_global_seed.py || { echo "::error::cwur_global_seed.py missing"; exit 1; }
       - name: Run CWUR global seed
         run: python scraper/sources/cwur_global_seed.py
+        continue-on-error: true
 
   qs-rankings:
     runs-on: ubuntu-latest
@@ -58,8 +59,12 @@ jobs:
           set -euo pipefail
           [ -n "${DATABASE_URL:-}" ] || { echo "::error title=MissingSecret::DATABASE_URL not configured"; exit 1; }
           test -f scraper/sources/qs_rankings.py || { echo "::error::qs_rankings.py missing"; exit 1; }
+      # A dead source (site change → 0 rows) must not red the whole refresh.
+      # continue-on-error keeps the step's failure visible without blocking the
+      # other sources. Root cause of the 2026-07-15 red run.
       - name: Run QS rankings seed
         run: python scraper/sources/qs_rankings.py
+        continue-on-error: true
 
   wikidata-enrich:
     runs-on: ubuntu-latest
@@ -83,6 +88,7 @@ jobs:
           test -f scraper/sources/wikidata_enrich.py || { echo "::error::wikidata_enrich.py missing"; exit 1; }
       - name: Run Wikidata enrichment
         run: python scraper/sources/wikidata_enrich.py
+        continue-on-error: true
 
   arwu-rankings:
     # ARWU (Shanghai Ranking) — open, non-commercial global ranking. Node adapter
@@ -109,3 +115,4 @@ jobs:
       - name: Run ARWU rankings scraper
         working-directory: backend
         run: node scripts/runScraper.js arwuRankings
+        continue-on-error: true

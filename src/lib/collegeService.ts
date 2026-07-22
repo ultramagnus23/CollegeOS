@@ -36,7 +36,7 @@ interface CanonicalCollegeDetail {
   quality_scores: Record<string, unknown>;
 }
 
-type CollegeRecord = CollegeWithRelations | CanonicalCollegeDetail;
+export type CollegeRecord = CollegeWithRelations | CanonicalCollegeDetail;
 
 function requireClient() {
   if (!supabase) {

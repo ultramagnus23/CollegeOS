@@ -52,7 +52,6 @@ Requires DATABASE_URL in backend/.env or the environment.
 
 import argparse
 import csv
-import io
 import logging
 import os
 import re

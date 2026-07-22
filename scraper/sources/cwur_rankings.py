@@ -14,7 +14,6 @@ import logging
 import os
 import re
 import sys
-import time
 import unicodedata
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")

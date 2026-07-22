@@ -15,6 +15,7 @@ const ADAPTERS = {
   wikidata: require('../src/scrapers/adapters/wikidataEnrichment'),
   usDeadlines: require('../src/scrapers/adapters/usOfficialDeadlines').adapter,
   usRequirements: require('../src/scrapers/adapters/usOfficialRequirements').adapter,
+  cdsDeadlines: require('../src/scrapers/adapters/commonDataSetDeadlines').adapter,
   nirfRankings: require('../src/scrapers/adapters/nirfRankings').adapter,
   arwuRankings: require('../src/scrapers/adapters/arwuRankings').adapter,
   institutionPlacements: require('../src/scrapers/adapters/institutionPlacements').adapter,

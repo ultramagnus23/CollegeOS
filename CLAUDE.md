@@ -17,6 +17,38 @@ CollegeOS is a college discovery and application intelligence platform with a Re
 
 ---
 
+## Deadline / Requirement / GPA Coverage (as of 2026-07-18 — re-verify before trusting, don't let this go stale)
+
+Full detail: `docs/audits/DB_SIZE_AUDIT_2026-07-18.md`. Live counts, not estimates:
+
+- `canonical.institution_deadlines`: **362 rows, 262 distinct institutions** (was 253/198 before the
+  2026-07-18 sprint). Primary source is the Common Data Set PDF parser
+  (`backend/src/scrapers/adapters/commonDataSetDeadlines.js`, 241 target institutions) — the scalable
+  mechanism; the two per-site HTML adapters (`usOfficialDeadlines.js`, `usOfficialRequirements.js`) are
+  fallback-only and don't scale past their hand-curated ~31/90-institution lists. UK coverage (57 rows,
+  `deadline_type='ucas_equal_consideration'`) comes from `phase3_seed_uk_ucas_deadlines.js`, a one-time
+  lookup against UCAS's own published dates (Oct 15 Oxbridge/med-dent-vet, Jan 14 everyone else) —
+  re-verify those two dates against ucas.com before reusing this script in a future cycle, they change
+  year to year.
+- `canonical.institution_requirements`: **271 rows, 271 distinct institutions** (was 268/268). Real
+  schema is a flat ~50-typed-column table (`sat_policy`, `toefl_required`, `essays_required`, etc.), NOT
+  a category/name/value EAV shape — don't assume otherwise from a future task description.
+- **Undergrad GPA**: `canonical.institution_admissions.gpa_avg`, 428/8,280 populated (5.2%, unchanged
+  this sprint — genuinely hard to source, see the audit doc §3). There is no `median_gpa_admitted`
+  column anywhere; if a task references one, that's a stale/incorrect premise.
+- **Masters track**: `canonical.masters_programs` — 510 programs, 74-ish institutions by name (112 by
+  `canonical_institution_id`, which is now 321/510 populated, was 216/510). Only 21/510 rows have a real
+  `program_url` — that's the actual ceiling on how much of this table can be deepened without a
+  dedicated per-program URL-sourcing effort (a separate, large task, not a quick follow-up).
+- **Known extraction gotcha**: linear PDF-text extraction of a CDS scrambles column-aligned tables (the
+  GPA distribution table, the C7 requirements-importance checkboxes) — don't add extraction logic for
+  those without verifying the label and its value stay adjacent in a real sample first. Also watch for
+  rolling-admission schools whose CDS still carries a blank "Application closing date" label; the
+  nearest nearby date is often the rolling-start date, not a real deadline (guarded in
+  `commonDataSetDeadlines.js`, but the same trap could recur in any similar per-institution parser).
+
+---
+
 ## Dead / Duplicate Code — Do Not Touch or Extend
 
 **Removed 2026-07-08** (verified zero external references before deletion): `backend/archive/`

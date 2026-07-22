@@ -125,6 +125,196 @@ const TARGETS = [
   ['East Carolina University', driveUrl('1de7FH5I8a0USlrRfFV2PKBJkznEwifZV')],
   ['Eckerd College', driveUrl('1moNC9WOY7sHso55hcW-0wq330tuqanEK')],
   ['Georgia Institute of Technology-Main Campus', 'https://irp.gatech.edu/files/CDS/CDS_2024-2025_FINAL_20FEB2025.pdf'],
+
+  // Added 2026-07-18: 178 more institutions discovered via the same College
+  // Transitions CDS repository, each individually resolved against
+  // canonical.institutions by IPEDS UnitID / verified name (not name-similarity
+  // alone -- see docs/audits/DATA_SEED_SPRINT_2026-07-18.md for the
+  // investigation; several institutions here would have matched the WRONG row
+  // under naive fuzzy matching, e.g. "Purdue University" -> "Purdue University
+  // Global", "Arizona State University" -> a branch campus). Two institutions
+  // from the source repository (Whitman College / Worcester Polytechnic
+  // Institute) shared an identical CDS file link in the source table -- a
+  // data error there, not resolvable safely, so only Whitman is included below
+  // and WPI is left out rather than guessed.
+  ['Arizona State University Campus Immersion', driveUrl('1MQ9KpAdeaF8NfcNMUjSFwbHlvh7NzmzF')],
+  ['CUNY Bernard M Baruch College', driveUrl('12Y-yqkMAUDhkjU3tuhYWJ6wTNPUvhlZl')],
+  ['Emory University', driveUrl('19af3S6BGFGf-5vx_UuSEpO585T_9XWgc')],
+  ['Fairfield University', driveUrl('1ISj2X8bGe3-Nltk9Sbe6vjfz3cQ6-ZFf')],
+  ['Florida Atlantic University', driveUrl('1yo9NmVY6J7LdFquTzPy9kyw5A0wQvJcF')],
+  ['Florida Gulf Coast University', driveUrl('1adQcqwkHToXN9XmWPSjI48GFgTTrV0ag')],
+  ['Florida Institute of Technology', driveUrl('1_XxPcyrnq6Z6X7IjQD3jAL5kcDH3wn8l')],
+  ['Florida International University', driveUrl('1Fm1ykRIK2RVMenQuPqY7O4SJUdU-Gsq7')],
+  ['Franklin and Marshall College', driveUrl('1NuyZFZDFBfRfRWDfEJT5Qvyecof6LODb')],
+  ['George Mason University', driveUrl('1Tqkqg-EwnGfBky0TDuoILMPR319va5A9')],
+  ['George Washington University', driveUrl('1AhearVT8y2coaAUoxoUqBpkM3-zWUhjV')],
+  ['Georgetown University', driveUrl('1msvBhqWzTph5m5dUBiyzH6ev4kwzYS03')],
+  ['Georgia State University', driveUrl('1Ap8NU-yVvU59DFPiAZjkIhQ0ldcLS6oB')],
+  ['Gettysburg College', driveUrl('1MrtGcaA7MCqYeY_a1mI02J2NQT219OOS')],
+  ['Gonzaga University', driveUrl('190xggcmt8TabAu-esMgX8_A5asG1Yf4p')],
+  ['Grinnell College', driveUrl('1VYF-nDPRFsRgSqcCKysq67uwp_LXeliM')],
+  ['Gustavus Adolphus College', driveUrl('1V8MmDkggCYsDCg2dVZ2at-R_vdHEAsbO')],
+  ['Hamilton College', driveUrl('1fCvhLgLv11Hdy14kJe9Co2TQbdOWJFz3')],
+  ['Harvard University', driveUrl('1oj6wK7sDYZWs2iyHGKkGALfKdxhkRWYY')],
+  ['Harvey Mudd College', driveUrl('1xrGZ8osuCGZZsOhXyyZG7fCxGAHJrKT6')],
+  ['Haverford College', driveUrl('1bmaI6uLUoLUsPBJjdmEqHTRj2thUSvmW')],
+  ['Hobart William Smith Colleges', driveUrl('1gl6pYr1fLrlJaC4m8weDH-OVPXtqFGC3')],
+  ['Hofstra University', driveUrl('1y74-oLPPqrwWUmEBaB0Yv5nasWNENRo0')],
+  ['Howard University', driveUrl('1lKdA81e3D2xorUbSQ1xsNHlcbMsDrcs8')],
+  ['Illinois Wesleyan University', driveUrl('1n2smyitAMGAXYMiFVJFa6IWE9kXfelqr')],
+  ['Indiana University-Bloomington', driveUrl('1XC4cMR7dtCX9EeDB2D8cCFD3C5m4XSer')],
+  ['Iowa State University', driveUrl('1FYwQEjtQSn3RhBfPJGzJM_rIF8Jp1KlU')],
+  ['Ithaca College', driveUrl('120jXX2ti-cerOxGj1kTvom9yik5kA-Ip')],
+  ['James Madison University', driveUrl('1kj_-0jXPoavgkukyQS2BYbdGNH47eUJo')],
+  ['Johns Hopkins University', driveUrl('1493J-a9EGTyGekgy-NAohQ_LSEQ3jtDp')],
+  ['Kansas State University', driveUrl('1P7ERuv7L9KSbuNr3xtcmQJNWaiCvkx8F')],
+  ['Kenyon College', driveUrl('1hfPzqGX73C93ypIbsy6kskZiKN7GQpyC')],
+  ['Lafayette College', driveUrl('1SVRu8JxPZePCIGvV85Fpk1KD2jOnVsuE')],
+  ['Lake Forest College', driveUrl('1_OrsgCRpIIkeTvaw2QfQPvJpiU6DkP32')],
+  ['Lawrence University', driveUrl('1vbpflMfSVh-tIqFcyxW2h3VcbrIY0mO1')],
+  ['Lehigh University', driveUrl('1hO8mSkkaq8yLmB3OgT12tef2aXjbEpXh')],
+  ['Lewis & Clark College', driveUrl('1YnyxrF1bQ5fXTFzVdbYaRT4yXpTIwm9f')],
+  ['Loyola Marymount University', driveUrl('1-NFEQb641NiDM3NHvckRSaX0IutJaFdg')],
+  ['Loyola University Chicago', driveUrl('1ib9bboKvy5ygQMjbhMnYDR-w819C4BSL')],
+  ['Loyola University Maryland', driveUrl('1kSz8TLd3h8ym74wCHD4AhFXye1mT0vOJ')],
+  ['Marquette University', driveUrl('1pMFO3GmBO9kB8qWC77zXPoZac4E6ZGdv')],
+  ['Michigan State University', driveUrl('1xASdIYvOH3Ef_BNyRTEtiw_ICgUenhjp')],
+  ['Michigan Technological University', driveUrl('1ACJsbWaW5AcEDqwaPiLRm3ykwi5W4z0c')],
+  ['Middlebury College', driveUrl('1h-ek-1m3tiN70uCse2JRNZMl5dJs6mQB')],
+  ['Milwaukee School of Engineering', driveUrl('1UfktquQ7-QoSXphcbISlNXBk_k3btZlI')],
+  ['Mississippi State University', driveUrl('10lH0gTtVe7I2lBcNzg6iQMd96E45Lfnw')],
+  ['Mount Holyoke College', driveUrl('1zsl-tIQenh5GI5u0qspsNbS9VFZumvMr')],
+  ['New College of Florida', driveUrl('1gSVEkP_B06RBTm7zMaoytyWfoBJNe9vb')],
+  ['New York University', driveUrl('1WxzME_JwpWRKEFabR7KhIW2vuOh8q0Dy')],
+  ['North Carolina State University at Raleigh', driveUrl('1XljFDDPmh4nxoQq2q4gT6qhq5pi_wFJ9')],
+  ['Northern Arizona University', driveUrl('1p4Qb-m3iDJ_2l0gQgYw7sHVbFSf-e2Oe')],
+  ['Northwestern University', driveUrl('1w2QtvSXBK8cuV3r10E4g3-beRqP0lilk')],
+  ['Oberlin College', driveUrl('1n6XHQfN6By8JTLmj1c69WMK71T2N-irU')],
+  ['Occidental College', driveUrl('16wnaErEtBPpbCQLXrtclCMe7bYk-GLxr')],
+  ['Ohio University', driveUrl('1eF4wMAxLPfHoS-AB0ONJ1EkJvFVHnU1l')],
+  ['Oklahoma State University-Main Campus', driveUrl('1On4y0LYs6PoF53v_KauQrfF1ywWMsyAo')],
+  ['Oregon State University', driveUrl('1PzNfPYjSWUw3Q5AKkX4TNLSnZgD11ayq')],
+  ['Pepperdine University', driveUrl('16KVLUw3ll1EXe0Xz5cuBjeHtDGMGGf8A')],
+  ['Pitzer College', driveUrl('1vzdUhj0H16b29zNeUCKb9JW2FC5_GY2S')],
+  ['Pomona College', driveUrl('1fNK-xuOFd68wURbzkvOqw4xasPPbs_MV')],
+  ['Princeton University', driveUrl('1-Bd6UWP4t5siS6G-i4TCpsHD5I0ymgPK')],
+  ['Providence College', driveUrl('1eoVemsrMuPO0W0u6_xOsnSBa0y9ITAbp')],
+  ['Purdue University-Main Campus', driveUrl('1lfbKE3X0Htyuj-rSDRiF90bDw98vVOHL')],
+  ['Ramapo College of New Jersey', driveUrl('1IVhYs7ZLtvCi5Yvj1SJMB8mbozXWb3-Z')],
+  ['Reed College', driveUrl('1o3FD7pfAbFDV4jkuw1HI0AzpIAkkNUKu')],
+  ['Rensselaer Polytechnic Institute', driveUrl('1tBAOw4poCLk_A2pajxqlq5EgjyClsQfK')],
+  ['Rhodes College', driveUrl('1MSFfcclrmrPBsNdS5VxBifCHXxgYRxx-')],
+  ['Rice University', driveUrl('1qmogyW7ArtG9IezDZdZ9XK8qSx08mboV')],
+  ['Rochester Institute of Technology', driveUrl('1TV7ziFnPLhVqwnaAMjBNF2BEFKhQcOsJ')],
+  ['Rollins College', driveUrl('1kuzTrfMGGpU6FncJ1kqxT6hav0ir20L5')],
+  ['Rose-Hulman Institute of Technology', driveUrl('1da72P1KPJhrKAU-fTEfM6zK4YMovnhhM')],
+  ['Saint Mary\'s College of California', driveUrl('1W7GgBPTshUk_CJUnwInhpoQ0Ko2RdrZ0')],
+  ['San Diego State University', driveUrl('1UMYUZhiVwgtg2d82M18BXQfD7oYFykTk')],
+  ['San Jose State University', driveUrl('1OgrHSD1Z3sYa7aAcQeRa2_kc6bfjXdOb')],
+  ['Santa Clara University', driveUrl('1vfbrOrkoUKUMqrcIBqcg60yigVWD3jTD')],
+  ['Sarah Lawrence College', driveUrl('19kkrFxuCWgjj1sBw3VUQ3F2azU1JPm6o')],
+  ['Scripps College', driveUrl('1MWZXiqPqf9z9qlQnJ6jOl4nSvUHS8l9p')],
+  ['Skidmore College', driveUrl('1bfHOPe7daJWmDOEREOIk_U4eRzrIplR5')],
+  ['Smith College', driveUrl('13nmysLrdi_X_Hv5O0iWFxIZiA6ht9i0r')],
+  ['Southern Methodist University', driveUrl('1wgLsYaj01l55rF2swI7cDGbNa2Thuq0E')],
+  ['Southwestern University', driveUrl('13fdsNdsBjbfUJzEXnrpI2zON74oeilHv')],
+  ['Spelman College', driveUrl('1RV_xwZPY2OHS3AkJSf-mf5p6q38-0zGi')],
+  ['St Lawrence University', driveUrl('1U0fX_eImG2cjZl1HjX4u3AYru7oWmMUE')],
+  ['St Olaf College', driveUrl('1-pnWyqC_p3XdjYDvKRMY_xDAyo9KCGj0')],
+  ['St. Mary\'s College of Maryland', driveUrl('1x-ulsS2LCvnaJM3xujIuBHIB-mwugRLV')],
+  ['Stanford University', driveUrl('1fF9sgzkK3Upmn-DUzfsNKpZm9uEWXUVY')],
+  ['Stetson University', driveUrl('1VcJ_hPkcy9edY2EXFcVrf_SzJyUOE-dY')],
+  ['Stevens Institute of Technology', driveUrl('1Cm2IelF4P_u-R5pua5V__zuUtK6S2-je')],
+  ['Stony Brook University', driveUrl('1Xau4LIrBSBCWtgZUPZ_HkjMcbduJBWg0')],
+  ['University at Albany, SUNY', driveUrl('1pbDA_iRgJAQoG1PF7_ANrr2m-wKcxyIC')],
+  ['SUNY at Purchase College', driveUrl('10GKLizwEpsBZPyzyFr-kOLQIHKT1VFn6')],
+  ['SUNY College at Geneseo', driveUrl('1LdTI380difIIPSGArsGEFxl1pYJKulzh')],
+  ['SUNY Oneonta', driveUrl('1ONOj6xLAnukWzgpdfP9VaJCFO8D57xmx')],
+  ['Swarthmore College', driveUrl('1oD9dzXLIxZnr0vtXXMsPkMqmE1SQA_Uv')],
+  ['Temple University', driveUrl('1aa95wCsAHPMHqTrxzY7KJ6drIfQ4WAaa')],
+  ['Texas A&M University-College Station', driveUrl('1Rm3p55-BQv7auVzQmWeZqpA2Kxbtc7yF')],
+  ['Texas Christian University', driveUrl('1b3XQP8__0DeifnlAwcvcGlpHQg9bnAlT')],
+  ['Texas Tech University', driveUrl('1pXFSa14XaZ8VVRBIhSgEtp-PpzMds2YF')],
+  ['The College of Wooster', driveUrl('1s15mPw4CPv-jsjrepmzMpykl8hS5Ftnt')],
+  ['Trinity College', driveUrl('1FWsepbbZ43xGI2pdckioWvT1wwBBgr9G')],
+  ['Tufts University', driveUrl('1hEj-ItSJm3HogJxkfPJ94oeHWFAGYEjK')],
+  ['Tulane University of Louisiana', driveUrl('1eFKI8ONkOBUJHoYwP7kd2oONKvmq0noX')],
+  ['United States Military Academy', driveUrl('174sqXbb9g2TngG1snmzJAMzIpxxxq7Xj')],
+  ['University at Buffalo', driveUrl('1pidFTY6XPoJz2IZOKLfxzqpAbEXoDZg5')],
+  ['The University of Alabama', driveUrl('1bsTUmnKckOHY60qYEJwLEyJFRqbuShkC')],
+  ['University of Alabama at Birmingham', driveUrl('1nB2mlDG1ZeLTIp_pQpu8moQJEvIaBm1F')],
+  ['University of Arizona', driveUrl('1PGoc4761a6S46OjcdyE9zBskCExkK_PF')],
+  ['University of Arkansas', driveUrl('1kZW2Nw-mbHq5XwahRohGTGIJggGXIYvc')],
+  ['University of California-Davis', driveUrl('1xd_2g4L1SqR_csHIwhIpBMTyhY_2E71l')],
+  ['University of California-Irvine', driveUrl('1E6CPsg5A5FC83Kl5AzRfhXifxSd5O2j9')],
+  ['University of California-Los Angeles', driveUrl('1eMo8pBZjLcqhav3k6uXL1qPmFwLE12FZ')],
+  ['University of California-Riverside', driveUrl('1JohMGxxpZKhv9l_iAdExlI5AV3b9GI6g')],
+  ['University of California-San Diego', driveUrl('1Be780xVVbU98euP4LPBud63QxodXxGd5')],
+  ['University of California-Santa Barbara', driveUrl('1992WqPbdNyHeaw0-sqQTw9kLNVXGSm8c')],
+  ['University of California-Santa Cruz', driveUrl('14YjGYXfskam0VrxaeYKGQqjlHmVpxKLA')],
+  ['University of Central Florida', driveUrl('1Dt0KgZS-C2-gJ5EYHYZQ8KdGZvSqx6LQ')],
+  ['University of Chicago', driveUrl('1j8fjxHqSZR2Z2S2fTV1pzd3bmtBWGD75')],
+  ['University of Cincinnati-Main Campus', driveUrl('1TFCKKp506jyfte-PPHa9fp_xTAYvkd9J')],
+  ['University of Colorado Boulder', driveUrl('1mt1VGZ8MZpVBVXvruAjglcNTHmOvz5bA')],
+  ['University of Connecticut', driveUrl('1BBILZKCO-i59J0oRpd2d3FK2NOzlMbIz')],
+  ['University of Delaware', driveUrl('1oiwhsiGKFpTRnaOBdnbVvK8Q9Z6FmmC4')],
+  ['University of Denver', driveUrl('1YDF8c3INLr3Ke6cidxKfJLGZNn2S-yi1')],
+  ['University of Florida', driveUrl('1supON3TTW5qWMXI8yaUjQ3WtIYNhRBS3')],
+  ['University of Georgia', driveUrl('1a8JnGMIdJH7D5xQtpO7LTJ7ojak0rLDf')],
+  ['University of Illinois at Chicago', driveUrl('1bAG_I6iDlDzwShrPDoRR8h5TbsMHya2f')],
+  ['University of Iowa', driveUrl('1MtghmvweQC5Wrgf0sQiTK8OZ_GDGpWbd')],
+  ['University of Kansas', driveUrl('1onbBmW6f0MChReH7rejG8yiVc2-Sg1bc')],
+  ['University of Kentucky', driveUrl('1vK2rYV9tNVcfcnXlkkQPxMP2Kjy5-c4U')],
+  ['University of Louisville', driveUrl('14lbBcIAcvM1hj6bU4hGVQ1FikU9K_jBe')],
+  ['University of Maine', driveUrl('1iIm6kbdpySc_APcfykY1gICTMkNIQHN0')],
+  ['University of Mary Washington', driveUrl('13VDoiHo8fuSDOt0iVvncycamqQ4dJ7CC')],
+  ['University of Maryland-Baltimore County', driveUrl('1O2Z4koVh6i8E1YxLhCvAy61RIpeL0-6m')],
+  ['University of Massachusetts-Amherst', driveUrl('1szAao2jFOzxBWnk9Ed1-OVIJP7IeqL6U')],
+  ['University of Massachusetts-Lowell', driveUrl('10UClTvfzWBDOnODkRzcM6kLRq4zBYrz4')],
+  ['University of Miami', driveUrl('1ZvslnFy0qAwmK6pGg354SpNDlWSHqxl8')],
+  ['University of Michigan-Ann Arbor', driveUrl('15mEFGiO9bUNcPutjIkWnVE4l4tPLtXWk')],
+  ['University of Minnesota-Twin Cities', driveUrl('1x8Pg9Po2_MoAoPgvdGcQSLNTOMT1g8Ou')],
+  ['University of Mississippi', driveUrl('1zkKqpes6AHDRsUFPDK37u39NIIgfMwdf')],
+  ['University of Missouri-Columbia', driveUrl('1NbaWvHf-4bYOTiKZcqYC01uraioI4u5q')],
+  ['University of Nevada-Las Vegas', driveUrl('1sjBRzIdfn0hrt99hjdNgyiTessBWtP9X')],
+  ['University of Nevada-Reno', driveUrl('1w7Dcw1jb2wOl1YyiKkgVMdjFIFLGxjfh')],
+  ['University of New Hampshire-Main Campus', driveUrl('1dVBJf19IOUasykgym79xz8CSeJEjyyBg')],
+  ['University of New Mexico-Main Campus', driveUrl('1i7ibnRlfy7PK5eEyGwbhMGjgLw75qSiW')],
+  ['University of North Carolina Asheville', driveUrl('1zkzFPegvFEr6iJR0rcB2O-S4wJT6g-iD')],
+  ['University of North Carolina at Chapel Hill', driveUrl('1Qgrv6eXLxN4sAnQHndYVNPgWshzBT22S')],
+  ['University of North Carolina Wilmington', driveUrl('1ZDufOKYw6zJgqvg-nR06RJK-CvOqMA6U')],
+  ['University of Notre Dame', driveUrl('1UbEUcDYK0qBNm3g5JoyeGjrP1W1ITCIS')],
+  ['University of Oklahoma-Norman Campus', driveUrl('1Rd_jXwuvVxhs2JC5gMB0nsAh5-QjdcQW')],
+  ['University of Oregon', driveUrl('1zwLGl0L_2NTWAc5L4ITKInrUXoDdbsiR')],
+  ['University of Pennsylvania', driveUrl('1KPBFxXtdM6jbBCbjPldiwisgb2uMoR69')],
+  ['University of Pittsburgh-Pittsburgh Campus', driveUrl('1-YIIa2QsxiCAGs_mTKItZ8M_lz3ekIAC')],
+  ['University of Portland', driveUrl('1prgfAP2B4e2ocRosGec0dk_9Q0xu_u6q')],
+  ['University of Puget Sound', driveUrl('1OaFaCV_d54yJCHVUmPKSu6C7Rermnahs')],
+  ['University of Richmond', driveUrl('1H7OYRSCi-ZdQoFbAGqs-mG5_SORO5DRH')],
+  ['University of San Diego', driveUrl('1iMnPz_OurBr8YPJrcgKQFekTlykchVRi')],
+  ['University of San Francisco', driveUrl('1zKU2_jGW_cQgxxQ74oHLkKlebIgyrjq3')],
+  ['University of South Carolina-Columbia', driveUrl('1NL9FMDkvcWRsIrwu26wWK1w2cLsdr-C1')],
+  ['University of South Florida', driveUrl('1kkmDK_SchRW-Z1SpRocTkpFRk9G7HOdH')],
+  ['University of Southern California', driveUrl('1TPSsXNRvdeFCI2Oeb4cYvx6A1uxl_EAP')],
+  ['The University of Tennessee-Knoxville', driveUrl('1VGqZ_eyOPG76Uh0LtPrJQHpaMlrbsdlQ')],
+  ['The University of Texas at Austin', driveUrl('1IfM-WLguczkEG1sfDhg4OhihHeQkchY9')],
+  ['University of Texas at Dallas', driveUrl('1cigaguVyYb-5dDGoizNviBdvfunLmx4n')],
+  ['University of Utah', driveUrl('1UwytoPwwp6jPanBxAuvQ6K_CxrvsaLS3')],
+  ['University of Vermont', driveUrl('12FCOjvosoqVjNMv_w0fhPmKzKgQvAuvm')],
+  ['University of Virginia-Main Campus', driveUrl('1_YeCKoq6qh9clB_COd1PsB7YmTQPhmFG')],
+  ['University of Washington-Seattle Campus', driveUrl('1PyXz0wOoGw86bFaA37RKvhGboKIkyMtx')],
+  ['University of Wisconsin-Madison', driveUrl('14UNcqVitOmVpukkpaj0kFv-4N4N_Df9v')],
+  ['Vassar College', driveUrl('1z0j5Kg3RM7etfiIlFsdEltI0i34IGGOf')],
+  ['Villanova University', driveUrl('1TJi4oOjU6bQQIdhnpeaPWgfwHb_tq_60')],
+  ['Virginia Commonwealth University', driveUrl('1xfH-y0pomGwS5DsfTjCmfEg2VnY8fkAj')],
+  ['Wake Forest University', driveUrl('1kAPUzBRf-egu4NIKQw_n4wl-7UJY_dRQ')],
+  ['Washington and Lee University', driveUrl('1_K2Y0eIfYNKULckC9h51h_FeGqJ0GyC7')],
+  ['Wellesley College', driveUrl('1CjYXubW4tfKsKnvHjgpU-kgvN6r3V1Bj')],
+  ['Wesleyan University', driveUrl('1Tu6btPPH-IrFDCQbFCmtwha7kLe8-enJ')],
+  ['West Virginia University', driveUrl('1HJqpIcCSMUMx4s6xX1AgegpamvtCkLm5')],
+  ['Whitman College', driveUrl('1IPdvZGD-gzDYjb8QUWKuj8UgZk-wgpFr')],
+  ['Williams College', driveUrl('1FTUbdWL56QfCfQCalPhJrHvq5NjOKNjr')],
+  ['Yale University', driveUrl('12eLoqgFEtiRqe8v8DX7UEu2rn1ZNmzsf')],
 ];
 
 // CDS PDFs vary in date format across schools: some use "MM-D" dash dates
@@ -199,8 +389,20 @@ function extractDeadlines(text) {
       const m = pattern.exec(text);
       if (!m) continue;
       const after = text.slice(m.index + m[0].length);
+      // Some schools' CDS carries the "Application closing date (fall)" label
+      // even when they use rolling admission (no fixed closing date) --
+      // verified live on Bradley University's CDS: the label is present, blank,
+      // and the nearest date in the linear text is actually the ROLLING START
+      // date from a different, nearby question ("On a rolling basis beginning
+      // (date): 10/1"), not a real regular-decision deadline. If "rolling
+      // basis" appears before the date we'd otherwise extract, skip this type
+      // rather than mislabel a rolling program's start date as a fixed
+      // closing date.
+      const rollingIdx = after.search(/rolling\s+basis/i);
       const found = parseDateNear(after);
       if (found) {
+        const dateIdx = after.indexOf(found.snippet);
+        if (rollingIdx !== -1 && dateIdx !== -1 && rollingIdx < dateIdx) continue; // eslint-disable-line no-continue
         if (!seen.has(type)) {
           out.push({ deadline_type: type, deadline_date: found.date, is_binding: binding, snippet: found.snippet });
           seen.add(type);
@@ -285,10 +487,16 @@ async function fetchPdfText(url, logger) {
   }
 }
 
-async function fetchRows({ pool, logger = console }) {
+async function fetchRows({ pool, logger = console, limit }) {
   const rows = [];
   const now = new Date().toISOString();
-  for (const [name, url] of TARGETS) {
+  // CDS_OFFSET lets a checkpointed sprint run this 241-institution list in
+  // batches (e.g. CDS_OFFSET=100 node scripts/runScraper.js cdsDeadlines
+  // --limit=100) without refetching earlier institutions each time.
+  const offset = Math.max(0, parseInt(process.env.CDS_OFFSET || '0', 10) || 0);
+  const batch = limit ? TARGETS.slice(offset, offset + limit) : TARGETS.slice(offset);
+  logger.info(`[${PARSER_NAME}] batch: offset=${offset}, size=${batch.length} (of ${TARGETS.length} total targets)`);
+  for (const [name, url] of batch) {
     const institutionId = await resolveInstitutionId(pool, name); // eslint-disable-line no-await-in-loop
     if (!institutionId) { logger.warn(`[${PARSER_NAME}] no institution match for "${name}"; skipping`); continue; }
     const text = await fetchPdfText(url, logger); // eslint-disable-line no-await-in-loop

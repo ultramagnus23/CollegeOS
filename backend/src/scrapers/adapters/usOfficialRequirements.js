@@ -158,7 +158,28 @@ function extractRequirements(text) {
   if ((m = /Common App(lication)?/i.exec(t))) { fields.common_app_supported = true; fields.application_platform = 'Common App'; note('common_app', m); }
   if ((m = /Coalition (App|Application)/i.exec(t))) { fields.coalition_app_supported = true; note('coalition', m); }
 
-  return { fields, signals: Object.keys(fields).length, snippets };
+  // Average GPA -- prose-stated on marketing admissions pages ("average GPA
+  // of admitted students is 3.9"), unlike the Common Data Set PDF where this
+  // figure sits in a column-aligned table that linear PDF-text extraction
+  // scrambles (verified live against a real CDS PDF -- see
+  // docs/audits/DATA_SEED_SPRINT_2026-07-18.md -- the label and its value land
+  // in different, non-adjacent table cells once flattened to plain text, so
+  // extracting it from CDS risked attributing the wrong number). Prose pages
+  // don't have that problem: the number directly follows the phrase. Written
+  // separately to canonical.institution_admissions.gpa_avg (a different table
+  // than the one this adapter otherwise writes to), not into `fields`.
+  const gpaMatch = /average\s+(?:high school\s+)?(?:un)?weighted\s+gpa[^.\d]{0,40}(\d\.\d{1,2})/i.exec(t)
+    || /average\s+(?:high school\s+)?gpa[^.\d]{0,40}(\d\.\d{1,2})/i.exec(t);
+  let gpaAvg = null;
+  if (gpaMatch) {
+    const val = parseFloat(gpaMatch[1]);
+    // Sanity bound: unweighted/weighted HS GPA on a 4.0-ish scale; reject
+    // obvious mis-parses (e.g. a stray "3.9" that's actually a percentage or
+    // an SAT-adjacent decimal) outside a plausible GPA range.
+    if (val >= 2.0 && val <= 4.5) { gpaAvg = val; note('gpa', gpaMatch); }
+  }
+
+  return { fields, signals: Object.keys(fields).length, snippets, gpaAvg };
 }
 
 async function fetchText(url, logger) {
@@ -193,17 +214,36 @@ async function existingRequirementInstitutions(pool) {
   return new Set(r.rows.map((x) => x.institution_id));
 }
 
-async function fetchRows({ pool, logger = console }) {
+// GPA is written directly to canonical.institution_admissions (a different
+// table than this adapter's primary target) rather than through the generic
+// upsert framework, and only fills a currently-NULL gpa_avg -- never
+// overwrites a real existing value, and never on the institution_requirements
+// clobber-guard, since GPA is a separate signal from requirements and an
+// institution can be missing one while already having the other.
+async function writeGpaIfMissing(pool, institutionId, gpaAvg, logger, name, dryRun) {
+  if (gpaAvg == null) return;
+  if (dryRun) { logger.info(`[${PARSER_NAME}] [DRY RUN] ${name}: would write gpa_avg=${gpaAvg} if currently null`); return; }
+  const r = await pool.query(
+    `UPDATE canonical.institution_admissions SET gpa_avg = $1, updated_at = now()
+     WHERE institution_id = $2 AND gpa_avg IS NULL
+     RETURNING id`,
+    [gpaAvg, institutionId]
+  );
+  if (r.rowCount > 0) logger.info(`[${PARSER_NAME}] ${name}: wrote gpa_avg=${gpaAvg} (${r.rowCount} row(s))`);
+}
+
+async function fetchRows({ pool, logger = console, dryRun }) {
   const rows = [];
   const now = new Date().toISOString();
   const existing = await existingRequirementInstitutions(pool);
   for (const target of TARGETS) {
     const institutionId = await resolveInstitutionId(pool, target.name); // eslint-disable-line no-await-in-loop
     if (!institutionId) { logger.warn(`[${PARSER_NAME}] no institution match for "${target.name}"; skipping`); continue; }
-    if (existing.has(institutionId)) { logger.info(`[${PARSER_NAME}] ${target.name} already has requirements; skipping (won't clobber)`); continue; }
     const html = await fetchText(target.url, logger); // eslint-disable-line no-await-in-loop
     if (!html) continue;
-    const { fields, signals, snippets } = extractRequirements(cleanHtml(html));
+    const { fields, signals, snippets, gpaAvg } = extractRequirements(cleanHtml(html));
+    await writeGpaIfMissing(pool, institutionId, gpaAvg, logger, target.name, dryRun); // eslint-disable-line no-await-in-loop
+    if (existing.has(institutionId)) { logger.info(`[${PARSER_NAME}] ${target.name} already has requirements; skipping requirements row (won't clobber)`); continue; }
     if (signals < MIN_SIGNALS) {
       logger.warn(`[${PARSER_NAME}] only ${signals} signal(s) from ${target.url}; skipping (not fabricating)`);
       continue;

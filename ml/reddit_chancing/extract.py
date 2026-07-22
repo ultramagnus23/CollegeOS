@@ -1,7 +1,7 @@
 """Hybrid extraction: regex first (cheap, templated posts), LLM fallback for prose."""
 from __future__ import annotations
 import re
-from schema import Applicant, CollegeOutcome, Decision, Round
+from schema import Applicant, CollegeOutcome, Decision
 
 # ---- Stage A: regex for templated posts ------------------------------------
 # Two GPA phrasings seen in the wild: "UW GPA: 3.9" and the r/collegeresults

@@ -27,7 +27,7 @@ import {
 import { api } from '../services/api';
 import { toast } from 'sonner';
 import { DataFreshnessIndicator } from '@/components/DataFreshnessIndicator';
-import { getCollegeById, isSupabaseConfigured, normalizeToDetail } from '../lib/collegeService';
+import { getCollegeById, isSupabaseConfigured, normalizeToDetail, type CollegeRecord } from '../lib/collegeService';
 import { useAuth } from '../contexts/AuthContext';
 import ConfidenceBadge from '../components/ConfidenceBadge';
 import { AIDisclaimer } from '@/components/legal/AIDisclaimer';
@@ -323,9 +323,15 @@ const CollegeDetail: React.FC = () => {
           }
         }
       } else {
-        // ── Legacy backend path ────────────────────────────────────────────────
+        // ── Backend path ───────────────────────────────────────────────────────
+        // The backend /api/colleges/:id endpoint returns the canonical *nested*
+        // shape ({ institution, admissions, deadlines, rankings, … }), identical
+        // to the Supabase path above. It must go through the same normalizer, or
+        // the flat fields the page renders (name, location, acceptance, rankings,
+        // deadlines) come back undefined → "Unknown"/blank. normalizeToDetail is
+        // a no-op-safe passthrough for already-flat legacy payloads.
         const response = await api.colleges.getById(collegeId);
-        collegeData = response.data;
+        collegeData = response.data ? (normalizeToDetail(response.data as CollegeRecord) as unknown as College) : null;
       }
 
       setCollege(collegeData);

@@ -1,0 +1,2684 @@
+{
+  "methodology": "Curated list of widely-recognized National Universities (US) and Liberal Arts Colleges, extended with a verified T50 Ivy+/T20/state-flagship set, plus notable non-US institutions with existing sourced rankings (QS/NIRF) in canonical.institution_rankings. Institution NAMES only are reproduced here (factual, not copyrightable) -- no proprietary ranking numbers/order from any single publisher (e.g. US News) are used. Each name was resolved against canonical.institutions by exact name match after a merge/enrichment pass (see docs/data_audit_2026-07-16.md Phase 2) that fixed 50 duplicate master-row/Scorecard-row pairs and attached verified IPEDS ids to 5 more (Northwestern, Cornell, Boston College, Idaho, UCF) that had no DB duplicate at all.",
+  "generated_at": "2026-07-17T05:34:11.953Z",
+  "total": 382,
+  "us_count": 323,
+  "non_us_count": 59,
+  "scorecard_linkable_count": 323,
+  "institutions": [
+    {
+      "institution_id": "29c2be4c-b543-473e-acab-0df673df515e",
+      "canonical_name": "Princeton University",
+      "country_code": "US",
+      "ipeds": "186131",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "27b7737e-1792-4c30-8b4e-bc513dbf5fe8",
+      "canonical_name": "Massachusetts Institute of Technology",
+      "country_code": "US",
+      "ipeds": "166683",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "ceda6162-7354-4eca-8048-fc71a01bf614",
+      "canonical_name": "Harvard University",
+      "country_code": "US",
+      "ipeds": "166027",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "665f4cb3-a341-4c4f-9f55-107fb35ecd61",
+      "canonical_name": "Stanford University",
+      "country_code": "US",
+      "ipeds": "243744",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a8570ab0-9589-4579-9b21-4ab0c9dd0a5f",
+      "canonical_name": "Yale University",
+      "country_code": "US",
+      "ipeds": "130794",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "766992db-eb00-45b6-8a7f-28359f4f7f75",
+      "canonical_name": "University of Pennsylvania",
+      "country_code": "US",
+      "ipeds": "215062",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5f79b6bc-5956-4657-b8ce-3950a29d268a",
+      "canonical_name": "California Institute of Technology",
+      "country_code": "US",
+      "ipeds": "110404",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5279be79-464f-4ce7-a6ac-19d77d2225bf",
+      "canonical_name": "Duke University",
+      "country_code": "US",
+      "ipeds": "198419",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "98f9e38d-beb9-4d11-b870-48ab42481e06",
+      "canonical_name": "Brown University",
+      "country_code": "US",
+      "ipeds": "217156",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "0bb4dca8-90cf-4a36-b7b1-c5c4171ded98",
+      "canonical_name": "Johns Hopkins University",
+      "country_code": "US",
+      "ipeds": "162928",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "02be0831-387f-433d-bfc3-c3deabfc3db8",
+      "canonical_name": "Northwestern University",
+      "country_code": "US",
+      "ipeds": "147767",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "0ba034c1-2de9-41a5-b5f0-1d723e2f5a69",
+      "canonical_name": "Columbia University in the City of New York",
+      "country_code": "US",
+      "ipeds": "190150",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "09ebd7d5-9f6e-4858-b689-bb5f52aefaca",
+      "canonical_name": "Cornell University",
+      "country_code": "US",
+      "ipeds": "190415",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "e5d86cfa-7e60-4feb-8e90-e2b92ea26a37",
+      "canonical_name": "University of Chicago",
+      "country_code": "US",
+      "ipeds": "144050",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "89c1acc4-1936-4e65-892b-3af8d59e022d",
+      "canonical_name": "University of California-Berkeley",
+      "country_code": "US",
+      "ipeds": "110635",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "d4907748-9551-42ef-9a40-3775112600a2",
+      "canonical_name": "University of California-Los Angeles",
+      "country_code": "US",
+      "ipeds": "110662",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1e5c6988-7770-41d6-81b4-aad77989a767",
+      "canonical_name": "Rice University",
+      "country_code": "US",
+      "ipeds": "227757",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "99d10c7c-53d9-4c27-b60d-61199471591e",
+      "canonical_name": "University of Notre Dame",
+      "country_code": "US",
+      "ipeds": "152080",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5a440401-07fb-4792-a32e-8e065871c0a3",
+      "canonical_name": "Vanderbilt University",
+      "country_code": "US",
+      "ipeds": "221999",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "4f117a54-4b84-4398-96e3-0f0842064db3",
+      "canonical_name": "Carnegie Mellon University",
+      "country_code": "US",
+      "ipeds": "211440",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1e5d6d26-60cc-4362-830b-b2fb93f52050",
+      "canonical_name": "University of Michigan-Ann Arbor",
+      "country_code": "US",
+      "ipeds": "170976",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "6a603de6-d390-4414-954f-999c22a551c9",
+      "canonical_name": "Georgetown University",
+      "country_code": "US",
+      "ipeds": "131496",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "83561dcb-e91f-4bb6-9171-9473f9ed06e4",
+      "canonical_name": "University of North Carolina at Chapel Hill",
+      "country_code": "US",
+      "ipeds": "199120",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "9d05e546-c3e2-4477-966d-72d3827fe794",
+      "canonical_name": "University of Virginia-Main Campus",
+      "country_code": "US",
+      "ipeds": "234076",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "2237ed48-e230-4e94-8474-32d6c97fd68c",
+      "canonical_name": "University of California-San Diego",
+      "country_code": "US",
+      "ipeds": "110680",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "86966d54-6da2-4570-9d6b-f0eb3fab28e8",
+      "canonical_name": "University of Southern California",
+      "country_code": "US",
+      "ipeds": "123961",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "60236251-5b3f-4483-9f60-fb9bb7fc1ed1",
+      "canonical_name": "New York University",
+      "country_code": "US",
+      "ipeds": "193900",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "05855c4d-2f7d-4c02-9434-5c7185917e80",
+      "canonical_name": "University of Florida",
+      "country_code": "US",
+      "ipeds": "134130",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "95df206e-a02b-4ca8-a06d-5938ebeddc2f",
+      "canonical_name": "The University of Texas at Austin",
+      "country_code": "US",
+      "ipeds": "228778",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f1693c3d-a54a-4d7d-bd49-c424dd193f1a",
+      "canonical_name": "University of Wisconsin-Madison",
+      "country_code": "US",
+      "ipeds": "240444",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "e15f85c9-ff9c-450c-9794-d36795a615db",
+      "canonical_name": "Emory University",
+      "country_code": "US",
+      "ipeds": "139658",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "b265e159-35f6-48aa-aa42-59d0cf537304",
+      "canonical_name": "Georgia Institute of Technology-Main Campus",
+      "country_code": "US",
+      "ipeds": "139755",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "91ccb3b1-cb37-49b6-a250-aa2b8d2d90da",
+      "canonical_name": "University of Illinois Urbana-Champaign",
+      "country_code": "US",
+      "ipeds": "145637",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "e101046c-e8e2-4773-a97a-420f034a17b0",
+      "canonical_name": "University of California-Davis",
+      "country_code": "US",
+      "ipeds": "110644",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "0cc60c00-1810-403a-9d9f-0d8d99828be9",
+      "canonical_name": "University of California-Irvine",
+      "country_code": "US",
+      "ipeds": "110653",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "fe4472ab-ec36-4edd-9939-c03bb1578c80",
+      "canonical_name": "University of California-Santa Barbara",
+      "country_code": "US",
+      "ipeds": "110705",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a20b7a1f-d3bf-4f44-91b6-0fbec8db943a",
+      "canonical_name": "Boston College",
+      "country_code": "US",
+      "ipeds": "164924",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5d729868-b969-4bbf-ad8b-26ce6b269875",
+      "canonical_name": "Tufts University",
+      "country_code": "US",
+      "ipeds": "168148",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "9465ca51-dd28-4deb-892a-71300da9c86b",
+      "canonical_name": "University of Rochester",
+      "country_code": "US",
+      "ipeds": "195030",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "b1e63fa2-771f-46f2-95aa-e31a9f3de53a",
+      "canonical_name": "Boston University",
+      "country_code": "US",
+      "ipeds": "164988",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "39639b13-3103-4ab7-b35c-545174aca1f1",
+      "canonical_name": "Ohio State University-Main Campus",
+      "country_code": "US",
+      "ipeds": "204796",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "4fb3f38f-f33e-4dad-a111-c338fde050cb",
+      "canonical_name": "University of Washington-Seattle Campus",
+      "country_code": "US",
+      "ipeds": "236948",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5c02375b-e1b3-48aa-bb5b-c9cb1ccf02a5",
+      "canonical_name": "Purdue University-Main Campus",
+      "country_code": "US",
+      "ipeds": "243780",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "0d910411-4701-4073-b348-c4dc004f4950",
+      "canonical_name": "University of Maryland-College Park",
+      "country_code": "US",
+      "ipeds": "163286",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "8900c6fc-9622-4969-bd3c-52cbf3f10ef1",
+      "canonical_name": "Wake Forest University",
+      "country_code": "US",
+      "ipeds": "199847",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "8337362d-5c99-477c-a75a-64afa91e37e7",
+      "canonical_name": "Rutgers University-New Brunswick",
+      "country_code": "US",
+      "ipeds": "186380",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a501de52-6586-4d64-9915-d5e0e63ba334",
+      "canonical_name": "Lehigh University",
+      "country_code": "US",
+      "ipeds": "213543",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "d517c63e-0729-4a3d-b9ca-8f2c3cf14a2c",
+      "canonical_name": "University of Georgia",
+      "country_code": "US",
+      "ipeds": "139959",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "0b15c780-2a06-48f2-bd4e-83b5b14301c8",
+      "canonical_name": "Pepperdine University",
+      "country_code": "US",
+      "ipeds": "121150",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "6fbfe04c-c488-4479-8a7d-aa11816f7742",
+      "canonical_name": "Case Western Reserve University",
+      "country_code": "US",
+      "ipeds": "201645",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1cf21b0c-51dd-4391-91db-88befc8a2738",
+      "canonical_name": "Tulane University of Louisiana",
+      "country_code": "US",
+      "ipeds": "160755",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1dc0cf61-93eb-4a71-982c-b6bab399568f",
+      "canonical_name": "University of Miami",
+      "country_code": "US",
+      "ipeds": "135726",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "6258a8ca-855b-4289-82f0-2d6e11a906d3",
+      "canonical_name": "Villanova University",
+      "country_code": "US",
+      "ipeds": "216597",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "db45d4d1-4ae4-4615-a997-f9c1b9d6eb46",
+      "canonical_name": "Southern Methodist University",
+      "country_code": "US",
+      "ipeds": "228246",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5d72e9bf-fed4-4074-8709-d98f038e63fe",
+      "canonical_name": "Fordham University",
+      "country_code": "US",
+      "ipeds": "191241",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5d991496-7eee-4602-9cef-66cc8ba0e040",
+      "canonical_name": "Northeastern University",
+      "country_code": "US",
+      "ipeds": "167358",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "e00ff9d3-0ac3-4fa9-8c3b-9aa0af75272d",
+      "canonical_name": "Syracuse University",
+      "country_code": "US",
+      "ipeds": "196413",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "0849e715-edd0-4c3e-94bd-76dffdc9a9f2",
+      "canonical_name": "University of Connecticut",
+      "country_code": "US",
+      "ipeds": "129020",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f5351e7a-0a0a-4f10-898c-c492c03ee694",
+      "canonical_name": "University of Delaware",
+      "country_code": "US",
+      "ipeds": "130943",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "7f9a9411-7b8f-45c6-9e32-0ae5a68d60b1",
+      "canonical_name": "Clemson University",
+      "country_code": "US",
+      "ipeds": "217882",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "df3d4c14-bb68-405f-9f58-ac27e20d9038",
+      "canonical_name": "Baylor University",
+      "country_code": "US",
+      "ipeds": "223232",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "e2d175e7-defd-419f-bea5-a01fa22afe19",
+      "canonical_name": "Texas A&M University-College Station",
+      "country_code": "US",
+      "ipeds": "228723",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "fbfe9ca5-b623-457c-a9ee-5a822e8bd700",
+      "canonical_name": "University of Pittsburgh-Pittsburgh Campus",
+      "country_code": "US",
+      "ipeds": "215293",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "811e4cd2-03db-4333-a10d-a34e74502931",
+      "canonical_name": "Pennsylvania State University-Main Campus",
+      "country_code": "US",
+      "ipeds": "214777",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "c6a04786-1735-4563-9f11-b533a1f89740",
+      "canonical_name": "Michigan State University",
+      "country_code": "US",
+      "ipeds": "171100",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "e49f808c-db87-409c-b5a5-c8e8f9513275",
+      "canonical_name": "Indiana University-Bloomington",
+      "country_code": "US",
+      "ipeds": "151351",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a7e51d4d-290f-425d-982e-4337ed65a0aa",
+      "canonical_name": "University of Iowa",
+      "country_code": "US",
+      "ipeds": "153658",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "d1f05c1a-de7d-40e0-93d6-80f2a66f84de",
+      "canonical_name": "University of Minnesota-Twin Cities",
+      "country_code": "US",
+      "ipeds": "174066",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "3b377348-2df9-40e2-99e7-249670f0af03",
+      "canonical_name": "University of Colorado Boulder",
+      "country_code": "US",
+      "ipeds": "126614",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "662c098a-6103-4adf-82cd-1f5cbb13d394",
+      "canonical_name": "University of Arizona",
+      "country_code": "US",
+      "ipeds": "104179",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "584821ac-80f2-44d6-aa27-c16dfbb758c5",
+      "canonical_name": "Arizona State University Campus Immersion",
+      "country_code": "US",
+      "ipeds": "104151",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "03110fa5-17a3-45ec-bbc7-aaf83e01fa7e",
+      "canonical_name": "Florida State University",
+      "country_code": "US",
+      "ipeds": "134097",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "242e7509-ae4b-48ae-acff-24785be933f8",
+      "canonical_name": "The University of Alabama",
+      "country_code": "US",
+      "ipeds": "100751",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "4a74a0a0-ab87-4364-9762-c3bc357406c6",
+      "canonical_name": "Auburn University",
+      "country_code": "US",
+      "ipeds": "100858",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "798d6b29-4c9f-4a1e-be5d-ff7d5723532a",
+      "canonical_name": "The University of Tennessee-Knoxville",
+      "country_code": "US",
+      "ipeds": "221759",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "ff9a5401-a9d6-408a-8a12-ab7660401a2b",
+      "canonical_name": "Virginia Polytechnic Institute and State University",
+      "country_code": "US",
+      "ipeds": "233921",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "3a3c442e-dce2-4cb7-8752-04343e4be899",
+      "canonical_name": "North Carolina State University at Raleigh",
+      "country_code": "US",
+      "ipeds": "199193",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "332a57df-9088-4fe8-bf16-566c631cea30",
+      "canonical_name": "George Washington University",
+      "country_code": "US",
+      "ipeds": "131469",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "2022813c-e77a-4008-8901-8763b2d65bb1",
+      "canonical_name": "American University",
+      "country_code": "US",
+      "ipeds": "131159",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f73cc4fe-e6bf-4b3d-a31d-154a84a96cf5",
+      "canonical_name": "University of Denver",
+      "country_code": "US",
+      "ipeds": "127060",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "51ae3b69-35e3-449d-bc2a-b642fcc6e592",
+      "canonical_name": "University of Tulsa",
+      "country_code": "US",
+      "ipeds": "207971",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "b80feb7e-74e5-4fcd-bd05-704a0562c0ff",
+      "canonical_name": "Loyola Marymount University",
+      "country_code": "US",
+      "ipeds": "117946",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "d29ce288-ea54-4119-8179-78fe375a246f",
+      "canonical_name": "University of San Diego",
+      "country_code": "US",
+      "ipeds": "122436",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "e8594a87-9b00-4827-a15f-dcd6abfe7824",
+      "canonical_name": "Santa Clara University",
+      "country_code": "US",
+      "ipeds": "122931",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "321e4fcc-7705-4155-9e87-97f054c6dd5e",
+      "canonical_name": "University of the Pacific",
+      "country_code": "US",
+      "ipeds": "120883",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "2a293b75-028b-4256-a555-bab057c56a62",
+      "canonical_name": "Marquette University",
+      "country_code": "US",
+      "ipeds": "239105",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "7c315652-a8b5-4388-9ef0-a5c2d0dfcad3",
+      "canonical_name": "University of Dayton",
+      "country_code": "US",
+      "ipeds": "202480",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "486a5dcf-8af6-41ae-bff9-d05bca3f7edf",
+      "canonical_name": "Drexel University",
+      "country_code": "US",
+      "ipeds": "212054",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "25ae8734-4d1e-4b87-8795-4bc80f637123",
+      "canonical_name": "Stevens Institute of Technology",
+      "country_code": "US",
+      "ipeds": "186867",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "92e78e9e-ee94-43c2-ac4d-92393265ef6d",
+      "canonical_name": "Worcester Polytechnic Institute",
+      "country_code": "US",
+      "ipeds": "168421",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5bd61811-996a-4d99-a2d0-59a3700b56af",
+      "canonical_name": "Rensselaer Polytechnic Institute",
+      "country_code": "US",
+      "ipeds": "194824",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5514719b-4754-43ed-b92b-102f42587352",
+      "canonical_name": "Illinois Institute of Technology",
+      "country_code": "US",
+      "ipeds": "145725",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "bca9b760-ddc7-4b8b-adca-20f269607495",
+      "canonical_name": "University of California-Santa Cruz",
+      "country_code": "US",
+      "ipeds": "110714",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "b21c1479-465e-4476-b176-58758fb25407",
+      "canonical_name": "University of California-Riverside",
+      "country_code": "US",
+      "ipeds": "110671",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "c49cefde-544e-463c-874f-644950413568",
+      "canonical_name": "University of California-Merced",
+      "country_code": "US",
+      "ipeds": "445188",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "80b769a5-9a94-45b7-b394-834fd9575e9f",
+      "canonical_name": "Binghamton University",
+      "country_code": "US",
+      "ipeds": "196079",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "883bab16-799a-498b-a9e1-49f25f990088",
+      "canonical_name": "Stony Brook University",
+      "country_code": "US",
+      "ipeds": "196097",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "724c0251-a0de-43f3-b3e6-18ff7799a675",
+      "canonical_name": "University at Buffalo",
+      "country_code": "US",
+      "ipeds": "196088",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "7c84e620-71d8-4e12-b01c-b353022356b2",
+      "canonical_name": "University of Massachusetts-Amherst",
+      "country_code": "US",
+      "ipeds": "166629",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "6e2928c6-0e0e-4017-9138-cc4c2e2c1ca4",
+      "canonical_name": "Rutgers University-Newark",
+      "country_code": "US",
+      "ipeds": "186399",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "4849d2f6-340a-453e-a80a-ef475d843315",
+      "canonical_name": "William & Mary",
+      "country_code": "US",
+      "ipeds": "231624",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "2366b6b8-dfe2-487e-af90-e309833f4066",
+      "canonical_name": "James Madison University",
+      "country_code": "US",
+      "ipeds": "232423",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "35b178f6-94d2-45d9-8afc-29aef55df0f6",
+      "canonical_name": "Elon University",
+      "country_code": "US",
+      "ipeds": "198516",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "fee8a67a-9807-4188-b1df-8c2c45a6ce86",
+      "canonical_name": "University of Vermont",
+      "country_code": "US",
+      "ipeds": "231174",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "7884ce6c-9d55-452d-bebc-77d29c55009b",
+      "canonical_name": "University of New Hampshire-Main Campus",
+      "country_code": "US",
+      "ipeds": "183044",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "b9ea9037-c96e-4f9b-8384-0b1d1b9cc571",
+      "canonical_name": "University of Oregon",
+      "country_code": "US",
+      "ipeds": "209551",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "31381f4b-ed13-4117-83e2-13040155147c",
+      "canonical_name": "Washington State University",
+      "country_code": "US",
+      "ipeds": "236939",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "8e9131c2-2f55-484d-b14b-32e0d28d96c7",
+      "canonical_name": "Colorado State University-Fort Collins",
+      "country_code": "US",
+      "ipeds": "126818",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "e365f881-256e-4a51-b5ae-885df01cca34",
+      "canonical_name": "University of Utah",
+      "country_code": "US",
+      "ipeds": "230764",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "911a218c-cade-40d2-a87e-a60809c68ea7",
+      "canonical_name": "Brigham Young University",
+      "country_code": "US",
+      "ipeds": "230038",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f9527aec-ec55-42e2-8f92-9d3805e53ffb",
+      "canonical_name": "University of Kansas",
+      "country_code": "US",
+      "ipeds": "155317",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "0a31f40c-97ab-4967-a080-eb753b166060",
+      "canonical_name": "University of Missouri-Columbia",
+      "country_code": "US",
+      "ipeds": "178396",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "06aae277-7745-475f-ab02-1d89cb4ab56c",
+      "canonical_name": "University of Nebraska-Lincoln",
+      "country_code": "US",
+      "ipeds": "181464",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "dcdaa1a4-5cb0-4bcd-bea8-389223c4397f",
+      "canonical_name": "Iowa State University",
+      "country_code": "US",
+      "ipeds": "153603",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5e468d45-fb69-4092-af15-a962e87eafb5",
+      "canonical_name": "Kansas State University",
+      "country_code": "US",
+      "ipeds": "155399",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a6ed2f2a-544e-4acf-81b1-b99f87221f45",
+      "canonical_name": "University of Oklahoma-Norman Campus",
+      "country_code": "US",
+      "ipeds": "207500",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "19c443b0-f8d0-4f19-9401-091fd4d4d341",
+      "canonical_name": "Oklahoma State University-Main Campus",
+      "country_code": "US",
+      "ipeds": "207388",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "b6c560dd-c198-403b-b85e-eb7497781c1a",
+      "canonical_name": "University of Arkansas",
+      "country_code": "US",
+      "ipeds": "106397",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a8620514-2b11-4002-a934-a55ac0edd0cd",
+      "canonical_name": "Mississippi State University",
+      "country_code": "US",
+      "ipeds": "176080",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "aa922373-e0d0-42ca-915e-a0f6481fb77a",
+      "canonical_name": "University of Mississippi",
+      "country_code": "US",
+      "ipeds": "176017",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "0f32a29b-5fd9-4b6f-8b1b-cdc8a3faeb98",
+      "canonical_name": "University of Kentucky",
+      "country_code": "US",
+      "ipeds": "157085",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "2a9465e5-a880-475f-b626-f2125338e95a",
+      "canonical_name": "University of Louisville",
+      "country_code": "US",
+      "ipeds": "157289",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "00ee272f-998e-4e97-b0de-7098f57ba46f",
+      "canonical_name": "West Virginia University",
+      "country_code": "US",
+      "ipeds": "238032",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f7710c98-f979-41ef-8a36-def88d74f057",
+      "canonical_name": "University of Cincinnati-Main Campus",
+      "country_code": "US",
+      "ipeds": "201885",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a7645c21-e167-4a0b-b925-0bf3af855846",
+      "canonical_name": "Kent State University at Kent",
+      "country_code": "US",
+      "ipeds": "203517",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1387e5e5-7583-4cae-918a-d93354448adc",
+      "canonical_name": "Bowling Green State University-Main Campus",
+      "country_code": "US",
+      "ipeds": "201441",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "91a89680-b73a-45cc-855f-26972e769a37",
+      "canonical_name": "Miami University-Oxford",
+      "country_code": "US",
+      "ipeds": "204024",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "e63bcdc1-2c48-4827-8347-e3c2046d9914",
+      "canonical_name": "University of Akron Main Campus",
+      "country_code": "US",
+      "ipeds": "200800",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "23085e88-3bf8-4312-8162-30b0b794e5e3",
+      "canonical_name": "Wright State University-Main Campus",
+      "country_code": "US",
+      "ipeds": "206604",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "0880561f-4071-47a0-8311-b94d9e24b0bc",
+      "canonical_name": "University of Toledo",
+      "country_code": "US",
+      "ipeds": "206084",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "fb731502-8067-4c4d-b95f-fe54d3e27bf0",
+      "canonical_name": "DePaul University",
+      "country_code": "US",
+      "ipeds": "144740",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "d36bdf0c-65da-4062-8648-9c72b87b97b3",
+      "canonical_name": "Loyola University Chicago",
+      "country_code": "US",
+      "ipeds": "146719",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1d709311-245a-44d2-9c17-2589c498acfa",
+      "canonical_name": "University of Illinois Chicago",
+      "country_code": "US",
+      "ipeds": "145600",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f09e6800-c241-4b92-b32b-57693d9eec74",
+      "canonical_name": "Fairfield University",
+      "country_code": "US",
+      "ipeds": "129242",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "88edb1b5-7992-4b49-812d-7f2b3e72e5e4",
+      "canonical_name": "Providence College",
+      "country_code": "US",
+      "ipeds": "217402",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "4422c333-f34e-4c97-b563-9a315cd4c517",
+      "canonical_name": "Quinnipiac University",
+      "country_code": "US",
+      "ipeds": "130226",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a68a8a22-631d-4aab-81ff-eeddd1a956ed",
+      "canonical_name": "Bentley University",
+      "country_code": "US",
+      "ipeds": "164739",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "24615dfa-0c66-4f7e-a5a2-4cfbe52014ad",
+      "canonical_name": "Babson College",
+      "country_code": "US",
+      "ipeds": "164580",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a8a8aae7-1295-42ec-846a-57912f14838f",
+      "canonical_name": "Clark University",
+      "country_code": "US",
+      "ipeds": "165334",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "94b4c18b-c309-4f8c-9681-f7dea4ab42cc",
+      "canonical_name": "Brandeis University",
+      "country_code": "US",
+      "ipeds": "165015",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a3a655a6-c108-4a6e-83df-f5a63f5741eb",
+      "canonical_name": "Rochester Institute of Technology",
+      "country_code": "US",
+      "ipeds": "195003",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "cdd6e18e-a009-4010-bc6a-e23c6cff7899",
+      "canonical_name": "Hofstra University",
+      "country_code": "US",
+      "ipeds": "191649",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "ccbeff99-7b49-4e16-a13c-c3a5522cb65e",
+      "canonical_name": "Adelphi University",
+      "country_code": "US",
+      "ipeds": "188429",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "db7a8673-ddb2-4ce3-9728-7281497d6c89",
+      "canonical_name": "Pace University",
+      "country_code": "US",
+      "ipeds": "194310",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a7da8011-d63c-449c-a4e8-cc9dc035fc02",
+      "canonical_name": "Seton Hall University",
+      "country_code": "US",
+      "ipeds": "186584",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f3f7b784-dfd3-431b-887a-8b3b64952cda",
+      "canonical_name": "Drew University",
+      "country_code": "US",
+      "ipeds": "184348",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1842c011-e3fd-4ce5-b429-1f471ce2bbd7",
+      "canonical_name": "Stevenson University",
+      "country_code": "US",
+      "ipeds": "164173",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f08c6556-c294-4e08-a2bd-483224ac915b",
+      "canonical_name": "Towson University",
+      "country_code": "US",
+      "ipeds": "164076",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a70d053c-b08b-46cf-b4cf-9685df154d79",
+      "canonical_name": "University of Maryland-Baltimore County",
+      "country_code": "US",
+      "ipeds": "163268",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f15bea96-be0e-4ff7-bfb2-8b5d929f038c",
+      "canonical_name": "George Mason University",
+      "country_code": "US",
+      "ipeds": "232186",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "14b12324-7500-4399-9ae7-3536377cee63",
+      "canonical_name": "Old Dominion University",
+      "country_code": "US",
+      "ipeds": "232982",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "fc9fd217-f10a-4f98-a716-9d2344fa3396",
+      "canonical_name": "Virginia Commonwealth University",
+      "country_code": "US",
+      "ipeds": "234030",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "b75e6df0-6884-4e1c-8157-20403b17a7f3",
+      "canonical_name": "University of Richmond",
+      "country_code": "US",
+      "ipeds": "233374",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "3658a605-fdc7-48c4-a9f9-fcebf2739c49",
+      "canonical_name": "Wofford College",
+      "country_code": "US",
+      "ipeds": "218973",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "8240aa3a-7396-44df-82fc-fe06b2459b56",
+      "canonical_name": "Furman University",
+      "country_code": "US",
+      "ipeds": "218070",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "51c7f1a0-afde-4d71-8e8f-b9d52dd3fa96",
+      "canonical_name": "Rhodes College",
+      "country_code": "US",
+      "ipeds": "221351",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "ec532d61-f62e-41e2-bb8d-1a8ec81e17dd",
+      "canonical_name": "Centre College",
+      "country_code": "US",
+      "ipeds": "156408",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "2660ae51-b4e8-4590-9876-a8d2dea253ae",
+      "canonical_name": "Berea College",
+      "country_code": "US",
+      "ipeds": "156295",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "eec942f3-763b-4ca4-af4f-a262d2579aed",
+      "canonical_name": "Transylvania University",
+      "country_code": "US",
+      "ipeds": "157818",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "4edf502b-74ec-4cfc-955e-a86260cb48c1",
+      "canonical_name": "University of Puget Sound",
+      "country_code": "US",
+      "ipeds": "236328",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "aacf1576-4761-41d9-8fcf-3e195e737625",
+      "canonical_name": "Whitman College",
+      "country_code": "US",
+      "ipeds": "237057",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "3e47d42b-8db2-4855-bf94-bcfe452d596a",
+      "canonical_name": "Reed College",
+      "country_code": "US",
+      "ipeds": "209922",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "9f1af2c6-dee3-4ab4-becf-0c44a36a596c",
+      "canonical_name": "Willamette University",
+      "country_code": "US",
+      "ipeds": "210401",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "8e840382-3176-4c22-bd99-a8f74011b674",
+      "canonical_name": "Lewis & Clark College",
+      "country_code": "US",
+      "ipeds": "209056",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "175c25cd-4d63-4a41-906a-04ddae9f2254",
+      "canonical_name": "University of Portland",
+      "country_code": "US",
+      "ipeds": "209825",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "3bce7f45-af2a-4c4a-88b8-7632a88127a4",
+      "canonical_name": "Gonzaga University",
+      "country_code": "US",
+      "ipeds": "235316",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a1b5008d-eb7c-4fa6-9f5f-d4ad072fc0a8",
+      "canonical_name": "Seattle University",
+      "country_code": "US",
+      "ipeds": "236595",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "ae43ea73-b888-4bc1-897e-481f6d64ebe8",
+      "canonical_name": "University of San Francisco",
+      "country_code": "US",
+      "ipeds": "122612",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "87948649-2be2-454c-9362-3d2dd48fa9a1",
+      "canonical_name": "Chapman University",
+      "country_code": "US",
+      "ipeds": "111948",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "8b32f5ef-30de-44cd-8d08-20847580e227",
+      "canonical_name": "Occidental College",
+      "country_code": "US",
+      "ipeds": "120254",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f75fa552-d4f5-4248-bbd1-55983184a957",
+      "canonical_name": "Pomona College",
+      "country_code": "US",
+      "ipeds": "121345",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "2f66aca7-fa02-4ede-ad8c-4371fc3b1371",
+      "canonical_name": "Claremont McKenna College",
+      "country_code": "US",
+      "ipeds": "112260",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "28548e98-cf32-48fc-b357-6e4464db6e5c",
+      "canonical_name": "Harvey Mudd College",
+      "country_code": "US",
+      "ipeds": "115409",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "d7444890-0f99-45bb-8914-f95650a65207",
+      "canonical_name": "Scripps College",
+      "country_code": "US",
+      "ipeds": "123165",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "96922575-7c3c-472d-b47d-dc163396026f",
+      "canonical_name": "Pitzer College",
+      "country_code": "US",
+      "ipeds": "121257",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5249f50a-625c-4611-bf5f-6224c1f3677b",
+      "canonical_name": "University of Redlands",
+      "country_code": "US",
+      "ipeds": "121691",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "90392db7-aae0-4afb-a636-0568d59e4473",
+      "canonical_name": "San Diego State University",
+      "country_code": "US",
+      "ipeds": "122409",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "61e7d613-2133-4ad9-b943-d449e154e2c5",
+      "canonical_name": "San Jose State University",
+      "country_code": "US",
+      "ipeds": "122755",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "63a903f4-44b8-414b-ac28-68bd8f4b9d63",
+      "canonical_name": "University of Hawaii at Manoa",
+      "country_code": "US",
+      "ipeds": "141574",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "27c1c9df-d217-45a5-be1a-8ec963bf615d",
+      "canonical_name": "University of Alaska Fairbanks",
+      "country_code": "US",
+      "ipeds": "102614",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5234387f-8f86-4eed-aef8-d9c300192e95",
+      "canonical_name": "The University of Montana",
+      "country_code": "US",
+      "ipeds": "180489",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a8618d03-b81f-4725-918b-c3cca371ce26",
+      "canonical_name": "Montana State University",
+      "country_code": "US",
+      "ipeds": "180461",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "920103d9-1a6b-49bc-bd5d-62da7afd6753",
+      "canonical_name": "Boise State University",
+      "country_code": "US",
+      "ipeds": "142115",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "c2b0627e-b9f8-4387-8e07-fa1a73fa19f0",
+      "canonical_name": "University of Idaho",
+      "country_code": "US",
+      "ipeds": "142285",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "4658c5a2-7bae-4900-9c09-101edd94ebe9",
+      "canonical_name": "New Mexico State University-Main Campus",
+      "country_code": "US",
+      "ipeds": "188030",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "fbadaea7-e5fb-43ef-a5f9-ce54482e2285",
+      "canonical_name": "University of New Mexico-Main Campus",
+      "country_code": "US",
+      "ipeds": "187985",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "8dd06479-3ade-4cf7-8636-1ddda065694b",
+      "canonical_name": "Colorado College",
+      "country_code": "US",
+      "ipeds": "126678",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "4fdb5223-7800-49b3-86ec-fde458db6b11",
+      "canonical_name": "University of Wyoming",
+      "country_code": "US",
+      "ipeds": "240727",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "0a7e2dc6-2e09-4e52-86d5-d47780ac27ba",
+      "canonical_name": "North Dakota State University-Main Campus",
+      "country_code": "US",
+      "ipeds": "200332",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "276f9701-fcca-4ed5-97ee-4937cb595f9d",
+      "canonical_name": "University of North Dakota",
+      "country_code": "US",
+      "ipeds": "200280",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "c75ac16e-012e-422e-a2f8-7fa0e25aabd8",
+      "canonical_name": "South Dakota State University",
+      "country_code": "US",
+      "ipeds": "219356",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "13aa4234-6a57-4ace-bdd6-26952c17ef57",
+      "canonical_name": "University of South Dakota",
+      "country_code": "US",
+      "ipeds": "219471",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "4e890d4e-ada1-4873-8a1e-9071ae0e0d9f",
+      "canonical_name": "Truman State University",
+      "country_code": "US",
+      "ipeds": "178615",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "76602629-d356-4f07-afae-84c05410237f",
+      "canonical_name": "University of Wisconsin-Milwaukee",
+      "country_code": "US",
+      "ipeds": "240453",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "e379796c-f335-4ac3-955a-f49890ec1901",
+      "canonical_name": "Beloit College",
+      "country_code": "US",
+      "ipeds": "238333",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "41638f5a-7f61-4536-925b-bd9a765f6494",
+      "canonical_name": "Lawrence University",
+      "country_code": "US",
+      "ipeds": "239017",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "7852cf66-6dd5-4a69-81c4-f7cfb64f37c4",
+      "canonical_name": "Ripon College",
+      "country_code": "US",
+      "ipeds": "239628",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a577ffb1-eb99-47b8-a1e7-a5f22d7eb079",
+      "canonical_name": "Carleton College",
+      "country_code": "US",
+      "ipeds": "173258",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "729718b7-2de0-4a42-9ec2-8c9547bb758a",
+      "canonical_name": "Macalester College",
+      "country_code": "US",
+      "ipeds": "173902",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "298bab2c-843f-4386-95fe-164500f068fb",
+      "canonical_name": "Gustavus Adolphus College",
+      "country_code": "US",
+      "ipeds": "173647",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "613cec33-a17d-4499-8131-9492e7ed8870",
+      "canonical_name": "Hamline University",
+      "country_code": "US",
+      "ipeds": "173665",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "bd94ac00-6e66-4123-b838-35a4794d1e58",
+      "canonical_name": "Grinnell College",
+      "country_code": "US",
+      "ipeds": "153384",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "09409db6-1635-46c7-be65-0fc14635f131",
+      "canonical_name": "Coe College",
+      "country_code": "US",
+      "ipeds": "153144",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "2b225660-df6d-4780-be33-5cca6bd317a1",
+      "canonical_name": "Cornell College",
+      "country_code": "US",
+      "ipeds": "153162",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "9ced2c87-c0c9-4901-9fa1-ff3bebf37204",
+      "canonical_name": "Luther College",
+      "country_code": "US",
+      "ipeds": "153834",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "9637535e-8003-4535-ae41-281961faed7b",
+      "canonical_name": "Knox College",
+      "country_code": "US",
+      "ipeds": "146427",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "33129908-f889-4008-9edf-4a5caaf8d882",
+      "canonical_name": "Illinois Wesleyan University",
+      "country_code": "US",
+      "ipeds": "145646",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5b1f2b8a-fd5a-4e40-b45d-568aed0e78c1",
+      "canonical_name": "Wheaton College",
+      "country_code": "US",
+      "ipeds": "149781",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a644e52f-9b93-4d9f-801f-8d427c8c99ba",
+      "canonical_name": "North Central College",
+      "country_code": "US",
+      "ipeds": "147660",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f5775061-4363-4298-ad95-f6c34ee2dc63",
+      "canonical_name": "Denison University",
+      "country_code": "US",
+      "ipeds": "202523",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "ca048db5-68a7-4406-a7bf-553664161b68",
+      "canonical_name": "Kenyon College",
+      "country_code": "US",
+      "ipeds": "203535",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1765cd4d-7fa4-40cb-b82a-38181361126f",
+      "canonical_name": "Oberlin College",
+      "country_code": "US",
+      "ipeds": "204501",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "b3f19320-b0fa-4539-87be-14a7654b078a",
+      "canonical_name": "Ohio Wesleyan University",
+      "country_code": "US",
+      "ipeds": "204909",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "30669b63-cb9f-4c4e-8f22-76fd1f601cbb",
+      "canonical_name": "Hiram College",
+      "country_code": "US",
+      "ipeds": "203128",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1812e9b7-d0a1-4220-af9f-7aff11860ac0",
+      "canonical_name": "Allegheny College",
+      "country_code": "US",
+      "ipeds": "210669",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "062c7011-677a-4859-b763-f2b03c56e4fe",
+      "canonical_name": "Dickinson College",
+      "country_code": "US",
+      "ipeds": "212009",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "7b74d6a3-02e6-420e-a86b-f7237b143744",
+      "canonical_name": "Gettysburg College",
+      "country_code": "US",
+      "ipeds": "212674",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a82fc7ba-fee8-4102-8b57-644e783d1807",
+      "canonical_name": "Lafayette College",
+      "country_code": "US",
+      "ipeds": "213385",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a57b977e-c50a-43e6-8712-3d2e7389f2da",
+      "canonical_name": "Muhlenberg College",
+      "country_code": "US",
+      "ipeds": "214175",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "879796cc-e767-48f3-be95-d8ac2a64cdbd",
+      "canonical_name": "Swarthmore College",
+      "country_code": "US",
+      "ipeds": "216287",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "ad6debf2-ec27-4059-90d8-79d9a1fff525",
+      "canonical_name": "Haverford College",
+      "country_code": "US",
+      "ipeds": "212911",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "d940fefe-a505-4efd-a354-bef4dc555b6c",
+      "canonical_name": "Bryn Mawr College",
+      "country_code": "US",
+      "ipeds": "211273",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "02d3720f-25ec-4acb-bd70-8aece6606a9a",
+      "canonical_name": "Ursinus College",
+      "country_code": "US",
+      "ipeds": "216524",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "76a437c8-4b28-460b-8d82-00d02084e8ef",
+      "canonical_name": "Susquehanna University",
+      "country_code": "US",
+      "ipeds": "216278",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "75c002d2-4dee-463f-ba7d-de52b6e661ba",
+      "canonical_name": "Bucknell University",
+      "country_code": "US",
+      "ipeds": "211291",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "d2e7aee6-e808-46a7-a287-ee0bab1efd1e",
+      "canonical_name": "Temple University",
+      "country_code": "US",
+      "ipeds": "216339",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "cb9ac32b-a591-49b5-95f2-93e57cc7038c",
+      "canonical_name": "La Salle University",
+      "country_code": "US",
+      "ipeds": "213367",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "e1087091-52ff-41ad-b906-256959b09ddf",
+      "canonical_name": "Skidmore College",
+      "country_code": "US",
+      "ipeds": "195526",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5c478e06-8b4c-44fd-9619-c5b81d732eb6",
+      "canonical_name": "Hamilton College",
+      "country_code": "US",
+      "ipeds": "191515",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "79784fce-54d3-452c-b077-647ee4be784b",
+      "canonical_name": "Colgate University",
+      "country_code": "US",
+      "ipeds": "190099",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a04e2b49-423d-4be0-9979-d01fdc46f1fa",
+      "canonical_name": "Vassar College",
+      "country_code": "US",
+      "ipeds": "197133",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "ca9e0530-b81d-4118-a237-2f4d1764daa9",
+      "canonical_name": "Bard College",
+      "country_code": "US",
+      "ipeds": "189088",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "3a0ec4d0-8172-4eb8-8802-62554572ef18",
+      "canonical_name": "Sarah Lawrence College",
+      "country_code": "US",
+      "ipeds": "195304",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "2be1acd1-2b70-4b8b-b988-29bd8611f50d",
+      "canonical_name": "Wells College",
+      "country_code": "US",
+      "ipeds": "197230",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "9039d9d8-cdee-4c9b-bcf0-807dcdda630b",
+      "canonical_name": "Ithaca College",
+      "country_code": "US",
+      "ipeds": "191968",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "91f2aa7e-f5b4-4223-b98c-e1dde238abd8",
+      "canonical_name": "Clarkson University",
+      "country_code": "US",
+      "ipeds": "190044",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "48415423-222e-480c-947a-6dbb6bfd6761",
+      "canonical_name": "Alfred University",
+      "country_code": "US",
+      "ipeds": "188641",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "cfa3a0ab-2780-4985-81c3-ad1b7ef17f08",
+      "canonical_name": "Hartwick College",
+      "country_code": "US",
+      "ipeds": "191533",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1043aeeb-3899-48df-a53f-fe593cc7a987",
+      "canonical_name": "Siena College",
+      "country_code": "US",
+      "ipeds": "195474",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "d4681201-5492-4c88-bf7a-39c54c2113ec",
+      "canonical_name": "Middlebury College",
+      "country_code": "US",
+      "ipeds": "230959",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "b7fb9f81-30bc-400f-a699-15d78cf46220",
+      "canonical_name": "Williams College",
+      "country_code": "US",
+      "ipeds": "168342",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "d369c57a-dca0-41e5-ae34-ecb05c868d78",
+      "canonical_name": "Amherst College",
+      "country_code": "US",
+      "ipeds": "164465",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "775f704d-a997-4b99-9b14-65bbea755ec9",
+      "canonical_name": "Wesleyan University",
+      "country_code": "US",
+      "ipeds": "130697",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "864d7f79-33a8-4782-9d54-dd876cb7dc0e",
+      "canonical_name": "Trinity College",
+      "country_code": "US",
+      "ipeds": "130590",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a4b76991-475a-4b7f-8117-0cbb3f0a4004",
+      "canonical_name": "Connecticut College",
+      "country_code": "US",
+      "ipeds": "128902",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "aaa00873-91b2-4c3c-abe2-9a3f85cd22c1",
+      "canonical_name": "Bowdoin College",
+      "country_code": "US",
+      "ipeds": "161004",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "7a7027ab-9f22-4d2c-8e5f-77f0ca6fd01a",
+      "canonical_name": "Bates College",
+      "country_code": "US",
+      "ipeds": "160977",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "cbf9103a-44ad-45ae-b387-5693cb37ee87",
+      "canonical_name": "Colby College",
+      "country_code": "US",
+      "ipeds": "161086",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "40ea2f13-7160-4597-8073-3c43823f50ba",
+      "canonical_name": "University of Maine",
+      "country_code": "US",
+      "ipeds": "161253",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "de3af42f-0d15-4661-b19c-68b4dceab670",
+      "canonical_name": "University of Rhode Island",
+      "country_code": "US",
+      "ipeds": "217484",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "6c2cb0d3-b5ed-4c4c-953e-3f98f0d087c6",
+      "canonical_name": "Dartmouth College",
+      "country_code": "US",
+      "ipeds": "182670",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5b214dca-7b11-47db-a222-d48c0cd30780",
+      "canonical_name": "Smith College",
+      "country_code": "US",
+      "ipeds": "167835",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "699cc848-2546-4224-8023-af15048e5679",
+      "canonical_name": "Mount Holyoke College",
+      "country_code": "US",
+      "ipeds": "166939",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "6e714f31-1ab7-4276-82e1-df0115397246",
+      "canonical_name": "Wellesley College",
+      "country_code": "US",
+      "ipeds": "168218",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "dbbe9cf0-f9a8-4cfe-a895-ad5ced93dfba",
+      "canonical_name": "Barnard College",
+      "country_code": "US",
+      "ipeds": "189097",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f9e4215e-8ed1-4ddf-b04b-9003276dcfd0",
+      "canonical_name": "Hampshire College",
+      "country_code": "US",
+      "ipeds": "166018",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "b831132a-bc32-4cea-88ce-dbc6e1c5cd45",
+      "canonical_name": "Simmons University",
+      "country_code": "US",
+      "ipeds": "167783",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "611c13d8-5d4b-46c0-8ada-cc87ff3059ac",
+      "canonical_name": "Emerson College",
+      "country_code": "US",
+      "ipeds": "165662",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "426e9d95-54a0-4254-8f47-b499eff0a880",
+      "canonical_name": "Suffolk University",
+      "country_code": "US",
+      "ipeds": "168005",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "885b44f9-d2eb-4993-a0ca-906b252698ba",
+      "canonical_name": "University of Massachusetts-Boston",
+      "country_code": "US",
+      "ipeds": "166638",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "61fa583d-a4c9-4a88-b69f-054019608161",
+      "canonical_name": "University of Massachusetts-Lowell",
+      "country_code": "US",
+      "ipeds": "166513",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "342ad940-6056-4bab-9da1-dd14e0986389",
+      "canonical_name": "Franklin and Marshall College",
+      "country_code": "US",
+      "ipeds": "212577",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "db5aa398-473c-49bb-938f-139cb015546c",
+      "canonical_name": "Goucher College",
+      "country_code": "US",
+      "ipeds": "162654",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1debe7d6-8686-45ce-8fa7-8e8fcf2b85b1",
+      "canonical_name": "Loyola University Maryland",
+      "country_code": "US",
+      "ipeds": "163046",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "30c1530a-1c82-443b-ae1e-dfda2ccdf1b2",
+      "canonical_name": "Hood College",
+      "country_code": "US",
+      "ipeds": "162760",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1d0dc43c-243d-4a95-a32a-3036415ce63f",
+      "canonical_name": "McDaniel College",
+      "country_code": "US",
+      "ipeds": "164270",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "c015cfd2-fbb5-44b8-b0ac-38fabf10c606",
+      "canonical_name": "Washington College",
+      "country_code": "US",
+      "ipeds": "164216",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "853ebdc2-c69a-4f36-a0b6-5d196a1699c8",
+      "canonical_name": "St. Mary's College of Maryland",
+      "country_code": "US",
+      "ipeds": "163912",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f783486f-a2e4-4bea-bc19-4cc0324a69ff",
+      "canonical_name": "The Catholic University of America",
+      "country_code": "US",
+      "ipeds": "131283",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "97678bc7-f7c1-41f4-bc3f-4256d2979a86",
+      "canonical_name": "Howard University",
+      "country_code": "US",
+      "ipeds": "131520",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f3d087b3-9486-4148-a787-64ee87787927",
+      "canonical_name": "Trinity Washington University",
+      "country_code": "US",
+      "ipeds": "131876",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1bb9d51b-2f86-4920-a770-61efbd455312",
+      "canonical_name": "Gallaudet University",
+      "country_code": "US",
+      "ipeds": "131450",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "d0318c3c-7206-4d4c-9470-08ab52ab8573",
+      "canonical_name": "Morehouse College",
+      "country_code": "US",
+      "ipeds": "140553",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "7aa043ee-62d6-4520-9912-41dcbb8f250a",
+      "canonical_name": "Spelman College",
+      "country_code": "US",
+      "ipeds": "141060",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "0bd48f8e-940a-4a87-9986-de035d9465a9",
+      "canonical_name": "Agnes Scott College",
+      "country_code": "US",
+      "ipeds": "138600",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "20366312-95cc-432a-8a76-4ea3cfe74a4b",
+      "canonical_name": "Oglethorpe University",
+      "country_code": "US",
+      "ipeds": "140696",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "8990c87d-405e-46d9-a04d-724384b2e010",
+      "canonical_name": "Mercer University",
+      "country_code": "US",
+      "ipeds": "140447",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f1adbed4-eb20-4a5c-85d5-70898a71bea2",
+      "canonical_name": "Kennesaw State University",
+      "country_code": "US",
+      "ipeds": "486840",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "40a2e94c-c255-45f7-95fb-3fbd9a89e757",
+      "canonical_name": "University of West Georgia",
+      "country_code": "US",
+      "ipeds": "141334",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "8c7b8c88-c4ad-4f50-ac78-5476f1b449c1",
+      "canonical_name": "Florida International University",
+      "country_code": "US",
+      "ipeds": "133951",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a421c625-b572-48b7-9d2c-6d24d3c9269c",
+      "canonical_name": "University of Central Florida",
+      "country_code": "US",
+      "ipeds": "132903",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "cea509b3-b2cc-4be4-aea5-f670c060c308",
+      "canonical_name": "University of South Florida",
+      "country_code": "US",
+      "ipeds": "137351",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "fa973b62-c887-4709-bb6f-0c9a20a2e174",
+      "canonical_name": "Stetson University",
+      "country_code": "US",
+      "ipeds": "137546",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f883a578-4018-4256-9cdd-d5e50b21c612",
+      "canonical_name": "Rollins College",
+      "country_code": "US",
+      "ipeds": "136950",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "0f486807-09c5-484f-98e9-9ff67a7e7685",
+      "canonical_name": "Eckerd College",
+      "country_code": "US",
+      "ipeds": "133492",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "52e918cd-459a-495d-96f7-11c61c6c177d",
+      "canonical_name": "New College of Florida",
+      "country_code": "US",
+      "ipeds": "262129",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "490ac594-365f-4977-8f83-0eeeeba0f94d",
+      "canonical_name": "Nova Southeastern University",
+      "country_code": "US",
+      "ipeds": "136215",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "d86dd0dc-8573-478f-a5d2-a8e2da69873b",
+      "canonical_name": "Belmont University",
+      "country_code": "US",
+      "ipeds": "219709",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "22de9759-9d7b-4165-a991-4eee3ee9cedb",
+      "canonical_name": "Maryville College",
+      "country_code": "US",
+      "ipeds": "220710",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "dd36bdfe-dbc7-46fd-8e3d-d629398279e0",
+      "canonical_name": "King University",
+      "country_code": "US",
+      "ipeds": "220516",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "5aca1e8a-3732-4f76-82ae-2d80b2a1bf04",
+      "canonical_name": "East Tennessee State University",
+      "country_code": "US",
+      "ipeds": "220075",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "663506d4-5542-429e-a67d-df4ea171ada4",
+      "canonical_name": "Middle Tennessee State University",
+      "country_code": "US",
+      "ipeds": "220978",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "e8ac73ba-e382-418d-a542-c1090c11bd89",
+      "canonical_name": "Tennessee Technological University",
+      "country_code": "US",
+      "ipeds": "221847",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "983aafa0-e4ac-43a5-b978-bae4a2e9aac9",
+      "canonical_name": "University of Memphis",
+      "country_code": "US",
+      "ipeds": "220862",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "fced161d-c501-4e50-b0fb-d7e6a794727c",
+      "canonical_name": "Christian Brothers University",
+      "country_code": "US",
+      "ipeds": "219833",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "19be7b37-b284-4e7f-91b9-053d302f3624",
+      "canonical_name": "Southwestern University",
+      "country_code": "US",
+      "ipeds": "228343",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f70f932b-3a85-4745-8f12-8fab1395379e",
+      "canonical_name": "University of Dallas",
+      "country_code": "US",
+      "ipeds": "224323",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "0c90a845-7293-41c0-964b-f596198b0a85",
+      "canonical_name": "Texas Christian University",
+      "country_code": "US",
+      "ipeds": "228875",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "1b57f8cf-f431-40b5-a51a-cc26e651177f",
+      "canonical_name": "Sam Houston State University",
+      "country_code": "US",
+      "ipeds": "227881",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "cdc51dd9-a2d0-4b20-995c-26b36691926e",
+      "canonical_name": "University of Houston",
+      "country_code": "US",
+      "ipeds": "225511",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "a191dca1-a38a-41e7-b26e-6f22e1e67abd",
+      "canonical_name": "Texas State University",
+      "country_code": "US",
+      "ipeds": "228459",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "00678a20-3d53-4cc4-a11d-fbf30404ecca",
+      "canonical_name": "University of North Texas",
+      "country_code": "US",
+      "ipeds": "227216",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "10644374-a2c3-4f18-a0df-3eaaa2d2c5bf",
+      "canonical_name": "Texas Tech University",
+      "country_code": "US",
+      "ipeds": "229115",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "04a72784-20d9-4392-997c-06d9df836ee6",
+      "canonical_name": "Angelo State University",
+      "country_code": "US",
+      "ipeds": "222831",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "3aa8a73f-1c19-4125-a911-03f5d74faf51",
+      "canonical_name": "Austin College",
+      "country_code": "US",
+      "ipeds": "222983",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "bd6042b7-51dc-4d30-ae0d-08d454ba932b",
+      "canonical_name": "Hendrix College",
+      "country_code": "US",
+      "ipeds": "107080",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "bd28566b-f75b-44d3-be98-d775d8935604",
+      "canonical_name": "John Brown University",
+      "country_code": "US",
+      "ipeds": "107141",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "6fd7860b-ae9d-4534-9258-d2ff4023a9ea",
+      "canonical_name": "Oral Roberts University",
+      "country_code": "US",
+      "ipeds": "207582",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "537257db-170c-465a-b267-4390e1c66eb9",
+      "canonical_name": "Oklahoma City University",
+      "country_code": "US",
+      "ipeds": "207458",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "f82302c3-f4de-4d63-bfb9-46f44806814c",
+      "canonical_name": "Northeastern State University",
+      "country_code": "US",
+      "ipeds": "207263",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "240a1f33-165d-4a62-92fc-5c2c549fec5a",
+      "canonical_name": "Loyola University New Orleans",
+      "country_code": "US",
+      "ipeds": "159656",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "68d2c5d4-7f8f-46df-8f12-fc1a7fabdf0f",
+      "canonical_name": "Xavier University of Louisiana",
+      "country_code": "US",
+      "ipeds": "160904",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "be41d899-9078-46dd-b569-c066d2799a13",
+      "canonical_name": "University of New Orleans",
+      "country_code": "US",
+      "ipeds": "159939",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "64faaa1e-2c86-4eff-96b9-8a98e8a9751f",
+      "canonical_name": "Millsaps College",
+      "country_code": "US",
+      "ipeds": "175980",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "784ae053-6e56-44af-8333-18952a408b23",
+      "canonical_name": "University of Southern Mississippi",
+      "country_code": "US",
+      "ipeds": "176372",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "4836ec63-9aca-41f3-bb08-aeeb79fae43b",
+      "canonical_name": "University of Alabama at Birmingham",
+      "country_code": "US",
+      "ipeds": "100663",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "2f44dea5-0074-4c35-90dd-d4c1316ec45d",
+      "canonical_name": "Samford University",
+      "country_code": "US",
+      "ipeds": "102049",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "56d37d90-0527-49da-8685-f6d5d7612f00",
+      "canonical_name": "Birmingham-Southern College",
+      "country_code": "US",
+      "ipeds": "100937",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "14492b3f-6fac-473a-bba5-4af2eee8b9a7",
+      "canonical_name": "Spring Hill College",
+      "country_code": "US",
+      "ipeds": "102234",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "4751afc5-cfab-4caa-8833-57699cf8396d",
+      "canonical_name": "Auburn University at Montgomery",
+      "country_code": "US",
+      "ipeds": "100830",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "2eb38c64-4f0a-456a-a2b4-66e86598ce35",
+      "canonical_name": "Troy University",
+      "country_code": "US",
+      "ipeds": "102368",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "3272d067-f5b9-47bd-9a0a-fbd3d1a1489c",
+      "canonical_name": "Jacksonville State University",
+      "country_code": "US",
+      "ipeds": "101480",
+      "scorecard_linkable": true
+    },
+    {
+      "institution_id": "8763629f-cf32-42c3-8db7-33f0fa21623c",
+      "canonical_name": "University of Oxford",
+      "country_code": "GB",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "5af23d75-6723-4dcf-8694-ba5529ff67a1",
+      "canonical_name": "University of Cambridge",
+      "country_code": "GB",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "2052ff15-869d-489f-a592-9216b01ae6e0",
+      "canonical_name": "Imperial College London",
+      "country_code": "GB",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "a38e2931-438f-4689-9c4e-ee70c51ab652",
+      "canonical_name": "London School of Economics and Political Science",
+      "country_code": "GB",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "29a4b6d2-d6ce-4a5e-810d-43af187f2f1b",
+      "canonical_name": "University College London",
+      "country_code": "GB",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "dae3e2cf-b2f3-4377-ba09-38be9b57bda4",
+      "canonical_name": "University of Edinburgh",
+      "country_code": "GB",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "fa245e95-2d80-46f4-bbfd-da546c053f25",
+      "canonical_name": "King's College London",
+      "country_code": "GB",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "e57f7da4-c519-4a19-b763-18d03f9c9d5a",
+      "canonical_name": "University of Manchester",
+      "country_code": "GB",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "277ceb9e-96d6-4362-8e72-b4a4e6f45bfa",
+      "canonical_name": "University of Toronto",
+      "country_code": "CA",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "fd6acfb9-23e9-4696-82e6-1e2ddaa26dd9",
+      "canonical_name": "University of British Columbia",
+      "country_code": "CA",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "4c459e33-da34-4be4-b602-98aaa34b8359",
+      "canonical_name": "McGill University",
+      "country_code": "CA",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "91a88f5e-6663-43eb-abba-ebd7adbbe3b1",
+      "canonical_name": "University of Waterloo",
+      "country_code": "CA",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "733b506e-2097-42b8-9b44-9d176921acdb",
+      "canonical_name": "McMaster University",
+      "country_code": "CA",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "463ca326-ed3f-4afe-bbb7-4f02ddedaa80",
+      "canonical_name": "University of Alberta",
+      "country_code": "CA",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "322e84d0-903d-479a-9a1b-4cd59ccd0e57",
+      "canonical_name": "Australian National University",
+      "country_code": "AU",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "ae3c9256-ba54-4f79-9577-3983a0b296d8",
+      "canonical_name": "University of Melbourne",
+      "country_code": "AU",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "fde5d7de-b6b3-4a4d-97ae-90a551fca6d1",
+      "canonical_name": "University of Sydney",
+      "country_code": "AU",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "b06d3c03-43d9-441f-93d2-791f7c620af6",
+      "canonical_name": "University of New South Wales",
+      "country_code": "AU",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "c78ea19e-4a15-4067-a1f0-e12f38ab3c73",
+      "canonical_name": "University of Queensland",
+      "country_code": "AU",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "4962add7-a2c8-41b0-884e-f830769496e5",
+      "canonical_name": "Monash University",
+      "country_code": "AU",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "04b12861-0224-4d93-ad4c-f7e2776fba1f",
+      "canonical_name": "National University of Singapore",
+      "country_code": "SG",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "7cc2ba7c-004d-403c-bb51-9b46e0e80e9f",
+      "canonical_name": "Nanyang Technological University",
+      "country_code": "SG",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "ea56ecee-ead5-47d7-acff-4441ac58971b",
+      "canonical_name": "University of Hong Kong",
+      "country_code": "CN",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "225cf892-df10-442a-a887-259d27d99f3b",
+      "canonical_name": "Chinese University of Hong Kong",
+      "country_code": "CN",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "23ca72d4-d66c-471a-bb29-ae89d2b2b951",
+      "canonical_name": "Hong Kong University of Science and Technology",
+      "country_code": "CN",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "6d6a9244-ad81-49c8-9b2e-3e90596a9136",
+      "canonical_name": "University of Tokyo",
+      "country_code": "JP",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "049e2137-3751-429a-9db8-5c1ff198a80b",
+      "canonical_name": "Kyoto University",
+      "country_code": "JP",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "228573a0-4242-43ee-9d79-3d8b1b8f5b2f",
+      "canonical_name": "Peking University",
+      "country_code": "CN",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "702f14c7-16f0-4ac7-b888-7a65c3cf5683",
+      "canonical_name": "Tsinghua University",
+      "country_code": "CN",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "6c57a16d-e229-4f0a-9002-7655ff244ec8",
+      "canonical_name": "Fudan University",
+      "country_code": "CN",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "986e5b2a-83f0-405e-b763-6db1ed9ceea9",
+      "canonical_name": "Shanghai Jiao Tong University",
+      "country_code": "CN",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "7a32fe78-69fa-4500-8344-f7e0a1ee522c",
+      "canonical_name": "Seoul National University",
+      "country_code": "KR",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "7c9e3ced-1502-4b87-b570-7b71dfd899e4",
+      "canonical_name": "KAIST",
+      "country_code": "KR",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "78a5751b-db94-40a3-9405-0c790917261e",
+      "canonical_name": "Yonsei University",
+      "country_code": "KR",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "2a722ad5-b9b4-487b-8891-6c2101452f7f",
+      "canonical_name": "Korea University",
+      "country_code": "KR",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "ba5d9e00-d6a2-46f0-ad7e-252197bf1659",
+      "canonical_name": "ETH Zurich",
+      "country_code": "CH",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "12245156-e12c-44d7-b422-e1ad43c8c78b",
+      "canonical_name": "EPFL",
+      "country_code": "CH",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "b5e9643c-d4ae-48c1-afee-235d24814a11",
+      "canonical_name": "Technical University of Munich",
+      "country_code": "DE",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "299c60db-912d-4c71-896b-e28d83deb7f5",
+      "canonical_name": "Ludwig Maximilian University of Munich",
+      "country_code": "DE",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "fb2c62ef-860f-483a-b734-57d80ccd2bda",
+      "canonical_name": "Heidelberg University",
+      "country_code": "DE",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "3286522c-a97e-43e3-ac85-8b6e20b0c1f2",
+      "canonical_name": "Sorbonne University",
+      "country_code": "FR",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "3c42f4ef-11db-4f1e-ba29-ab4f2a32a037",
+      "canonical_name": "Sciences Po",
+      "country_code": "FR",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "1de50683-7beb-4219-a740-b272ca87ad0a",
+      "canonical_name": "PSL University",
+      "country_code": "FR",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "625ca5ab-18f5-4cdc-8610-853f4b18647d",
+      "canonical_name": "Trinity College Dublin",
+      "country_code": "IE",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "4b1da5d2-a2b5-438d-803c-8359849034d4",
+      "canonical_name": "University College Dublin",
+      "country_code": "IE",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "9ac2c9c3-e99e-4537-92c1-0948b85a7111",
+      "canonical_name": "University of Amsterdam",
+      "country_code": "NL",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "014101e3-ee53-4d2e-8b1e-a93b0ac113e2",
+      "canonical_name": "Delft University of Technology",
+      "country_code": "NL",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "1603fa17-d53d-4b6d-87fb-a662051e7b4b",
+      "canonical_name": "Karolinska Institute",
+      "country_code": "SE",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "d41dc7e1-cabf-4712-9a86-ab183c7feb8f",
+      "canonical_name": "KTH Royal Institute of Technology",
+      "country_code": "SE",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "e7730c0f-dd6b-41a4-aef3-28f2229ad1b2",
+      "canonical_name": "University of Copenhagen",
+      "country_code": "DK",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "42a401ea-ef39-4c40-9bbd-aad94c3fb7bb",
+      "canonical_name": "Indian Institute of Technology Bombay",
+      "country_code": "IN",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "4b57515e-c8b3-48be-ac2d-b8a7317ea0cf",
+      "canonical_name": "Indian Institute of Technology Delhi",
+      "country_code": "IN",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "3fcd8150-a165-4994-9a39-bbab35706119",
+      "canonical_name": "Indian Institute of Science",
+      "country_code": "IN",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "add5a5da-dd84-4492-90d1-07ed7563276a",
+      "canonical_name": "Ashoka University",
+      "country_code": "IN",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "afbde145-1fe0-496d-9447-c6c288d50252",
+      "canonical_name": "University of Cape Town",
+      "country_code": "ZA",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "356f2434-d133-4e57-b6d2-007e0266bc0e",
+      "canonical_name": "Tel Aviv University",
+      "country_code": "IL",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "0ec9a6ca-b36e-4e02-b2db-5955afd0dc51",
+      "canonical_name": "Hebrew University of Jerusalem",
+      "country_code": "IL",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "dc3932fd-08e6-4332-ad6b-8a9ce2532282",
+      "canonical_name": "Technion Israel Institute of Technology",
+      "country_code": "IL",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "fe5cac62-ebc2-45f9-aaac-5ce7d37d643e",
+      "canonical_name": "University of Auckland",
+      "country_code": "NZ",
+      "ipeds": null,
+      "scorecard_linkable": false
+    },
+    {
+      "institution_id": "521e4b82-9f54-4da6-8307-daa587d3b034",
+      "canonical_name": "California Polytechnic State University-San Luis Obispo",
+      "country_code": "US",
+      "ipeds": "110422",
+      "scorecard_linkable": true
+    }
+  ]
+}

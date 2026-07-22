@@ -35,7 +35,6 @@ Options:
 import argparse
 import concurrent.futures
 import csv
-import json
 import logging
 import os
 import sys

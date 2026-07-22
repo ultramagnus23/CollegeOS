@@ -27,7 +27,7 @@ import re
 import sys
 import time
 from collections import defaultdict
-from statistics import median, mean
+from statistics import mean
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger(__name__)

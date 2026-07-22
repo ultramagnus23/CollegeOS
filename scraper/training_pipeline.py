@@ -33,7 +33,6 @@ import os
 import sys
 import json
 import logging
-import datetime
 from pathlib import Path
 
 import numpy as np
@@ -42,7 +41,7 @@ import psycopg2
 import psycopg2.extras
 import joblib
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, OrdinalEncoder
+from sklearn.preprocessing import OrdinalEncoder
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
     confusion_matrix, classification_report,

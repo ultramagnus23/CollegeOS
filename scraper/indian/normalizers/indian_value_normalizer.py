@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Any
 
 from .base_normalizer import BaseNormalizer
 from .exam_taxonomy import normalize_exam_name

@@ -651,7 +651,6 @@ def normalize_pathway_row(row: dict) -> Optional[dict]:
 
 def resolve_institution_id(pool, institution_name: str, institution_country: str) -> Optional[str]:
     """Try to resolve to canonical_institution_id via institutions table."""
-    from uuid import UUID
     try:
         import re
         normalized = re.sub(r'[^a-z0-9]+', ' ', institution_name.lower()).strip()
