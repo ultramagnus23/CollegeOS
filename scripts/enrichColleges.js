@@ -2,9 +2,20 @@
 /**
  * Master college enrichment pipeline.
  * Usage: node scripts/enrichColleges.js
+ *
+ * DB access uses a direct pg connection (DATABASE_URL / SUPABASE_DB_URL),
+ * not the Supabase JS client — the client's underlying fetch calls were
+ * failing in CI (`TypeError: fetch failed`) while every other workflow's
+ * pg-based DB access succeeds. External sources (College Scorecard,
+ * Wikidata, UCAS, NIRF, QS) still use fetch — those are legitimate.
+ *
+ * NOTE: this pipeline enriches the LEGACY public.colleges table, not
+ * canonical.institutions — known dual-data-model debt, tracked separately.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import pg from 'pg';
+
+const { Client } = pg;
 
 const SCORECARD_FIELDS = [
   'school.name',
@@ -46,12 +57,6 @@ const SCORED_FIELDS = [
 // Fallback used when currency_rates has no USD→INR row.
 let USD_TO_INR_RATE = Number(process.env.USD_TO_INR_RATE || 84);
 const DELAY_MS = 500;
-
-function requireEnv(name) {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required env var: ${name}`);
-  return value;
-}
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -106,17 +111,13 @@ async function fetchText(url, options = {}) {
   return res.text();
 }
 
-async function loadUsdToInrRate(supabase) {
-  const { data, error } = await supabase
-    .from('currency_rates')
-    .select('rate')
-    .eq('base_currency', 'USD')
-    .eq('quote_currency', 'INR')
-    .order('fetched_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  const rate = Number(data?.rate);
+async function loadUsdToInrRate(client) {
+  const { rows } = await client.query(
+    `SELECT rate FROM currency_rates
+      WHERE base_currency = 'USD' AND quote_currency = 'INR'
+      ORDER BY fetched_at DESC LIMIT 1`
+  );
+  const rate = Number(rows[0]?.rate);
   return Number.isFinite(rate) && rate > 0 ? rate : null;
 }
 
@@ -301,11 +302,21 @@ function nonNullKeys(obj) {
 }
 
 async function main() {
-  const supabaseUrl = requireEnv('SUPABASE_URL');
-  const serviceRoleKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
-  const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
+  const connectionString = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+  if (!connectionString) throw new Error('Missing required env var: DATABASE_URL or SUPABASE_DB_URL');
+  const client = new Client({ connectionString, ssl: { rejectUnauthorized: false } });
+  await client.connect();
+
   try {
-    const dbRate = await loadUsdToInrRate(supabase);
+    await runEnrichment(client);
+  } finally {
+    await client.end();
+  }
+}
+
+async function runEnrichment(client) {
+  try {
+    const dbRate = await loadUsdToInrRate(client);
     if (dbRate) {
       USD_TO_INR_RATE = dbRate;
     }
@@ -313,13 +324,10 @@ async function main() {
     console.warn(`Failed to load USD→INR rate from currency_rates, using fallback ${USD_TO_INR_RATE}: ${err.message}`);
   }
 
-  const { data: colleges, error } = await supabase
-    .from('colleges')
-    .select('*')
-    .eq('needs_enrichment', true)
-    .order('data_quality_score', { ascending: true });
+  const { rows: colleges } = await client.query(
+    `SELECT * FROM colleges WHERE needs_enrichment = true ORDER BY data_quality_score ASC`
+  );
 
-  if (error) throw error;
   if (!colleges || colleges.length === 0) {
     console.log('No colleges need enrichment.');
     return;
@@ -369,12 +377,14 @@ async function main() {
       needs_enrichment: qualityScore < 70,
     };
 
-    const { error: updateError } = await supabase
-      .from('colleges')
-      .update(updatePayload)
-      .eq('id', college.id);
-
-    if (updateError) {
+    try {
+      const cols = Object.keys(updatePayload);
+      const setClause = cols.map((c, i) => `"${c}" = $${i + 2}`).join(', ');
+      await client.query(
+        `UPDATE colleges SET ${setClause} WHERE id = $1`,
+        [college.id, ...cols.map((c) => updatePayload[c])]
+      );
+    } catch (updateError) {
       console.error(`❌ ${college.name}: update failed - ${updateError.message}`);
       await delay(DELAY_MS);
       continue;

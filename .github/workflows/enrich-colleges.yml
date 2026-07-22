@@ -71,8 +71,10 @@ jobs:
         run: |
           missing=0
 
-          [ -z "${SUPABASE_URL}" ] && echo "Missing SUPABASE_URL" && missing=1
-          [ -z "${SUPABASE_SERVICE_ROLE_KEY}" ] && echo "Missing SUPABASE_SERVICE_ROLE_KEY" && missing=1
+          # DB access is a direct pg connection (see scripts/enrichColleges.js);
+          # SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY are no longer used for DB
+          # access (the Supabase JS client's fetch calls were failing in CI —
+          # see scripts/runMigrations.js header comment for the root cause).
           [ -z "${SUPABASE_DB_URL}" ] && echo "Missing SUPABASE_DB_URL" && missing=1
 
           if [ "$missing" -eq 1 ]; then
@@ -80,16 +82,12 @@ jobs:
             exit 1
           fi
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
 
       - name: Run Migrations
         id: migrations
         continue-on-error: true
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           set -e
@@ -105,8 +103,6 @@ jobs:
         continue-on-error: true
         timeout-minutes: 100
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           SCORECARD_API_KEY: ${{ secrets.SCORECARD_API_KEY }}
           USD_TO_INR_RATE: "83"
@@ -124,8 +120,6 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           set -e

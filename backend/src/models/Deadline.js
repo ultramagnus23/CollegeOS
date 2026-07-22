@@ -29,11 +29,17 @@ class Deadline {
 
   static async findUpcoming(userId, daysAhead = 30) {
     const pool = dbManager.getDatabase();
+    // Prefer the canonical name via applications.canonical_institution_id
+    // (populated for applications created after migration 151); fall back to
+    // the legacy colleges_full bridge view for applications that predate it
+    // or have no canonical mapping.
     const { rows } = await pool.query(
-      `SELECT d.*, a.college_id, c.name as college_name
+      `SELECT d.*, a.college_id,
+              COALESCE(ci.canonical_name, c.name) AS college_name
        FROM deadlines d
        JOIN applications a ON d.application_id = a.id
-       JOIN colleges_full c ON a.college_id = c.id
+       LEFT JOIN canonical.institutions ci ON ci.id = a.canonical_institution_id
+       LEFT JOIN colleges_full c ON a.college_id = c.id
        WHERE a.user_id = $1
          AND (d.is_completed IS NULL OR d.is_completed = false)
          AND d.deadline_date BETWEEN NOW() AND NOW() + ($2 || ' days')::INTERVAL
