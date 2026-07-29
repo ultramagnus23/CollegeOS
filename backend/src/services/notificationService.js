@@ -141,11 +141,12 @@ class NotificationService {
       // user_id on deadlines is populated by migration 093; is_completed replaces status
       const { rows: upcomingDeadlines } = await pool.query(
         `SELECT d.user_id, d.deadline_date, d.deadline_type,
-                c.name AS college_name, c.id AS college_id,
+                COALESCE(ci.canonical_name, c.name) AS college_name, c.id AS college_id,
                 EXTRACT(EPOCH FROM (d.deadline_date::timestamptz - NOW())) / 86400 AS days_until
          FROM deadlines d
          JOIN applications a ON d.application_id = a.id
          JOIN colleges_full c ON a.college_id = c.id
+         LEFT JOIN canonical.institutions ci ON ci.id = a.canonical_institution_id
          WHERE (d.is_completed IS NULL OR d.is_completed = false)
            AND d.deadline_date >= CURRENT_DATE
            AND d.deadline_date <= CURRENT_DATE + INTERVAL '7 days'
@@ -175,7 +176,7 @@ class NotificationService {
       const pool = dbManager.getDatabase();
       // application_deadlines uses type-specific notification columns
       const { rows: upcomingDecisions } = await pool.query(
-        `SELECT a.user_id, c.name AS college_name, c.id AS college_id,
+        `SELECT a.user_id, COALESCE(ci.canonical_name, c.name) AS college_name, c.id AS college_id,
                 COALESCE(
                   ad.regular_decision_notification,
                   ad.early_decision_1_notification,
@@ -190,6 +191,7 @@ class NotificationService {
                 )) / 86400 AS days_until
          FROM applications a
          JOIN colleges_full c ON a.college_id = c.id
+         LEFT JOIN canonical.institutions ci ON ci.id = a.canonical_institution_id
          JOIN application_deadlines ad ON ad.college_id = a.college_id
          WHERE a.status = 'submitted'
            AND COALESCE(

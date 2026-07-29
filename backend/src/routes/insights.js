@@ -162,9 +162,18 @@ router.get('/', async (req, res, next) => {
       `SELECT ci.id, ci.subreddit, ci.post_url, ci.posted_at, ci.author_flair,
               ci.college_id, ci.college_name_raw, ci.insight_type,
               ci.content_snippet, ci.sentiment, ci.sentiment_score,
-              ci.scraped_at, c.name AS college_name
+              ci.scraped_at, COALESCE(cn.canonical_name, c.name) AS college_name
        FROM   college_insights ci
        LEFT JOIN colleges_full c ON c.id = ci.college_id
+       LEFT JOIN LATERAL (
+         SELECT inst.canonical_name
+         FROM canonical.institution_identity_map im
+         JOIN canonical.institutions inst ON inst.id = im.institution_id
+         WHERE im.source_pk = ci.college_id::text
+           AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+         ORDER BY im.source_table
+         LIMIT 1
+       ) cn ON true
        WHERE  ${conditions.join(' AND ')}
        ORDER  BY ci.posted_at DESC NULLS LAST
        LIMIT  $${params.length - 1}

@@ -60,9 +60,10 @@ class DashboardService {
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
       `SELECT a.id, a.status, a.college_id, a.application_type, a.deadline,
-              c.name AS college_name, c.acceptance_rate
+              COALESCE(ci.canonical_name, c.name) AS college_name, c.acceptance_rate
        FROM applications a
        LEFT JOIN colleges_full c ON a.college_id = c.id
+       LEFT JOIN canonical.institutions ci ON ci.id = a.canonical_institution_id
        WHERE a.user_id = $1
        ORDER BY a.created_at DESC`,
       [userId]

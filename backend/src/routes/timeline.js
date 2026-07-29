@@ -24,17 +24,27 @@ router.get('/monthly', authenticate, async (req, res, next) => {
       const result = await pool.query(
         `SELECT at.id, at.title, at.task_type AS type, at.due_date,
                 CASE WHEN at.completed THEN 'completed' ELSE 'pending' END AS status,
-                c.name AS college_name
+                COALESCE(ci1.canonical_name, c.name) AS college_name
          FROM application_tasks at
          JOIN applications a ON at.application_id = a.id
          LEFT JOIN colleges_full c ON c.id = a.college_id
+         LEFT JOIN canonical.institutions ci1 ON ci1.id = a.canonical_institution_id
          WHERE a.user_id = $1
          UNION ALL
          SELECT t.id, t.title, t.task_type AS type, t.deadline AS due_date,
                 t.status,
-                c2.name AS college_name
+                COALESCE(ci2.canonical_name, c2.name) AS college_name
          FROM tasks t
          LEFT JOIN colleges_full c2 ON c2.id = t.college_id
+         LEFT JOIN LATERAL (
+           SELECT inst.canonical_name
+           FROM canonical.institution_identity_map im
+           JOIN canonical.institutions inst ON inst.id = im.institution_id
+           WHERE im.source_pk = t.college_id::text
+             AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+           ORDER BY im.source_table
+           LIMIT 1
+         ) ci2 ON true
          WHERE t.user_id = $1
          ORDER BY due_date ASC NULLS LAST`,
         [userId]
@@ -49,10 +59,19 @@ router.get('/monthly', authenticate, async (req, res, next) => {
     // college_id; application_deadlines is the empty college-level source table).
     try {
       const result = await pool.query(
-        `SELECT d.id, c.name AS college_name, d.deadline_type, d.deadline_date,
+        `SELECT d.id, COALESCE(ci.canonical_name, c.name) AS college_name, d.deadline_type, d.deadline_date,
                 CASE WHEN d.is_completed THEN 1 ELSE 0 END AS is_completed
          FROM deadlines d
          LEFT JOIN colleges_full c ON c.id = d.college_id
+         LEFT JOIN LATERAL (
+           SELECT inst.canonical_name
+           FROM canonical.institution_identity_map im
+           JOIN canonical.institutions inst ON inst.id = im.institution_id
+           WHERE im.source_pk = d.college_id::text
+             AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+           ORDER BY im.source_table
+           LIMIT 1
+         ) ci ON true
          WHERE d.user_id = $1
          ORDER BY d.deadline_date ASC NULLS LAST`,
         [userId]

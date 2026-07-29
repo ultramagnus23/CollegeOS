@@ -45,9 +45,10 @@ class DeadlineService {
     const impossibleColleges = [];
 
     const { rows: applications } = await pool.query(
-      `SELECT DISTINCT a.college_id, c.name AS college_name
+      `SELECT DISTINCT a.college_id, COALESCE(ci.canonical_name, c.name) AS college_name
        FROM applications a
        JOIN colleges_full c ON c.id = a.college_id
+       LEFT JOIN canonical.institutions ci ON ci.id = a.canonical_institution_id
        WHERE a.user_id = $1 AND a.status NOT IN ('submitted','withdrawn','accepted','rejected')`,
       [userId]
     );
@@ -100,9 +101,18 @@ class DeadlineService {
     futureDate.setDate(futureDate.getDate() + days);
 
     const { rows: deadlines } = await pool.query(
-      `SELECT ud.*, c.name AS college_name
+      `SELECT ud.*, COALESCE(ci.canonical_name, c.name) AS college_name
        FROM user_deadlines ud
        LEFT JOIN colleges_full c ON c.id = ud.college_id
+       LEFT JOIN LATERAL (
+         SELECT inst.canonical_name
+         FROM canonical.institution_identity_map im
+         JOIN canonical.institutions inst ON inst.id = im.institution_id
+         WHERE im.source_pk = ud.college_id::text
+           AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+         ORDER BY im.source_table
+         LIMIT 1
+       ) ci ON true
        WHERE ud.user_id = $1
          AND ud.is_active = 1
          AND ud.is_completed = 0
@@ -240,10 +250,19 @@ class DeadlineService {
     const pool = dbManager.getDatabase();
     try {
       const { rows } = await pool.query(
-        `SELECT da.*, ud.title AS deadline_title, ud.deadline_date, c.name AS college_name
+        `SELECT da.*, ud.title AS deadline_title, ud.deadline_date, COALESCE(ci.canonical_name, c.name) AS college_name
          FROM deadline_alerts da
          JOIN user_deadlines ud ON ud.id = da.deadline_id
          LEFT JOIN colleges_full c ON c.id = ud.college_id
+         LEFT JOIN LATERAL (
+           SELECT inst.canonical_name
+           FROM canonical.institution_identity_map im
+           JOIN canonical.institutions inst ON inst.id = im.institution_id
+           WHERE im.source_pk = ud.college_id::text
+             AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+           ORDER BY im.source_table
+           LIMIT 1
+         ) ci ON true
          WHERE da.user_id = $1 AND da.is_read = false AND da.is_dismissed = false
          ORDER BY da.created_at DESC`,
         [userId]
@@ -266,9 +285,18 @@ class DeadlineService {
   static async getDeadlines(userId, options = {}) {
     const pool = dbManager.getDatabase();
     let query = `
-      SELECT ud.*, c.name AS college_name
+      SELECT ud.*, COALESCE(ci.canonical_name, c.name) AS college_name
       FROM user_deadlines ud
       LEFT JOIN colleges_full c ON c.id = ud.college_id
+      LEFT JOIN LATERAL (
+        SELECT inst.canonical_name
+        FROM canonical.institution_identity_map im
+        JOIN canonical.institutions inst ON inst.id = im.institution_id
+        WHERE im.source_pk = ud.college_id::text
+          AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+        ORDER BY im.source_table
+        LIMIT 1
+      ) ci ON true
       WHERE ud.user_id = $1`;
     const params = [userId];
     let idx = 2;

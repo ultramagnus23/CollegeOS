@@ -180,7 +180,7 @@ async function getUpcomingForUser(userId, daysAhead = 90) {
     `SELECT
        cd.id,
        cd.college_id,
-       c.name          AS college_name,
+       COALESCE(ci.canonical_name, c.name) AS college_name,
        c.country,
        cd.deadline_type,
        cd.deadline_date,
@@ -196,6 +196,7 @@ async function getUpcomingForUser(userId, daysAhead = 90) {
      FROM applications a
      JOIN college_deadlines cd ON cd.college_id = a.college_id
      JOIN colleges_full c ON c.id = cd.college_id
+     LEFT JOIN canonical.institutions ci ON ci.id = a.canonical_institution_id
      WHERE a.user_id = $1
        AND (cd.deadline_date IS NULL OR cd.deadline_date BETWEEN NOW() AND (NOW() + ($2 || ' days')::INTERVAL))
      ORDER BY cd.deadline_date ASC NULLS LAST`,
@@ -221,7 +222,7 @@ async function getByCountry(country) {
   const { rows } = await pool.query(
     `SELECT
        c.id            AS college_id,
-       c.name          AS college_name,
+       COALESCE(ci.canonical_name, c.name) AS college_name,
        c.country,
        c.state,
        cd.deadline_type,
@@ -237,6 +238,15 @@ async function getByCountry(country) {
        cd.data_year
      FROM colleges_full c
      JOIN college_deadlines cd ON cd.college_id = c.id
+     LEFT JOIN LATERAL (
+       SELECT inst.canonical_name
+       FROM canonical.institution_identity_map im
+       JOIN canonical.institutions inst ON inst.id = im.institution_id
+       WHERE im.source_pk = c.id::text
+         AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+       ORDER BY im.source_table
+       LIMIT 1
+     ) ci ON true
      WHERE LOWER(c.country) = LOWER($1)
        AND (cd.deadline_date IS NULL OR cd.deadline_date >= NOW() - ($2 || ' days')::INTERVAL)
      ORDER BY c.name ASC, cd.deadline_date ASC NULLS LAST`,
