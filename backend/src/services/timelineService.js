@@ -355,9 +355,10 @@ async function getUserApplications(userId) {
   // application_deadline; synthesize the same { early_action, ... } shape the
   // rest of this file already expects, from those real columns.
   const rows = (await pool.query(`
-      SELECT a.*, c.name, c.country, c.ea_deadline, c.ed_deadline, c.rd_deadline, c.application_deadline
+      SELECT a.*, COALESCE(ci.canonical_name, c.name) AS name, c.country, c.ea_deadline, c.ed_deadline, c.rd_deadline, c.application_deadline
       FROM applications a
       JOIN colleges_full c ON a.college_id = c.id
+      LEFT JOIN canonical.institutions ci ON ci.id = a.canonical_institution_id
       WHERE a.user_id = $1
     `, [userId])).rows;
   return rows.map(row => ({

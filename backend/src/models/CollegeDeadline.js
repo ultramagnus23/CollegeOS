@@ -77,11 +77,20 @@ class CollegeDeadline {
   static async findAll(year = new Date().getFullYear()) {
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
-      `SELECT ad.*, c.name as college_name
+      `SELECT ad.*, COALESCE(ci.canonical_name, c.name) as college_name
        FROM application_deadlines ad
        JOIN colleges_full c ON ad.college_id = c.id
+       LEFT JOIN LATERAL (
+         SELECT inst.canonical_name
+         FROM canonical.institution_identity_map im
+         JOIN canonical.institutions inst ON inst.id = im.institution_id
+         WHERE im.source_pk = ad.college_id::text
+           AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+         ORDER BY im.source_table
+         LIMIT 1
+       ) ci ON true
        WHERE ad.application_year = $1
-       ORDER BY c.name ASC`,
+       ORDER BY COALESCE(ci.canonical_name, c.name) ASC`,
       [year]
     );
     return rows;

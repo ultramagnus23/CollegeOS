@@ -727,9 +727,18 @@ router.get('/history', authenticate, async (req, res, next) => {
     
     let paramIndex = 1;
     let query = `
-      SELECT ch.*, c.name as college_name
+      SELECT ch.*, COALESCE(ci.canonical_name, c.name) as college_name
       FROM chancing_history ch
       LEFT JOIN colleges_full c ON ch.college_id = c.id
+      LEFT JOIN LATERAL (
+        SELECT inst.canonical_name
+        FROM canonical.institution_identity_map im
+        JOIN canonical.institutions inst ON inst.id = im.institution_id
+        WHERE im.source_pk = ch.college_id::text
+          AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+        ORDER BY im.source_table
+        LIMIT 1
+      ) ci ON true
       WHERE ch.user_id = $${paramIndex++}
     `;
     const params = [req.user.userId];
@@ -1404,17 +1413,26 @@ router.get('/ml/data-needs', authenticate, async (req, res, next) => {
     const minSamples = 30;
     
     const collegesNeedingData = (await pool.query(
-      `SELECT 
+      `SELECT
         t.college_id,
-        c.name as college_name,
+        COALESCE(ci.canonical_name, c.name) as college_name,
         COUNT(*)::int as current_samples,
         SUM(CASE WHEN t.decision = 'accepted' THEN 1 ELSE 0 END)::int as accepted_count,
         SUM(CASE WHEN t.decision = 'rejected' THEN 1 ELSE 0 END)::int as rejected_count,
         ($1 - COUNT(*))::int as samples_needed
       FROM ml_training_data t
       LEFT JOIN colleges_full c ON t.college_id = c.id
+      LEFT JOIN LATERAL (
+        SELECT inst.canonical_name
+        FROM canonical.institution_identity_map im
+        JOIN canonical.institutions inst ON inst.id = im.institution_id
+        WHERE im.source_pk = t.college_id::text
+          AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+        ORDER BY im.source_table
+        LIMIT 1
+      ) ci ON true
       WHERE t.decision IN ('accepted', 'rejected')
-      GROUP BY t.college_id, c.name
+      GROUP BY t.college_id, c.name, ci.canonical_name
       HAVING COUNT(*) < $2
       ORDER BY current_samples DESC
       LIMIT 20`,

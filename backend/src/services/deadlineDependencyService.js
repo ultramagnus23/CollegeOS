@@ -164,9 +164,18 @@ class DeadlineDependencyService {
     
     try {
       let query = `
-        SELECT t.*, c.name as college_name
+        SELECT t.*, COALESCE(ci.canonical_name, c.name) as college_name
         FROM tasks t
         LEFT JOIN colleges_full c ON c.id = t.college_id
+        LEFT JOIN LATERAL (
+          SELECT inst.canonical_name
+          FROM canonical.institution_identity_map im
+          JOIN canonical.institutions inst ON inst.id = im.institution_id
+          WHERE im.source_pk = t.college_id::text
+            AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+          ORDER BY im.source_table
+          LIMIT 1
+        ) ci ON true
         WHERE t.user_id = $1
       `;
       const params = [userId];

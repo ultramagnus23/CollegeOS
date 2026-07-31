@@ -19,7 +19,19 @@ router.get('/', authenticate, async (req, res) => {
     const userId = req.user.userId || req.user.id;
     const { collegeId, status, type } = req.query;
     const pool = dbManager.getDatabase();
-    let query = 'SELECT t.*, c.name as college_name FROM tasks t LEFT JOIN colleges_full c ON c.id=t.college_id WHERE t.user_id=$1';
+    let query = `SELECT t.*, COALESCE(ci.canonical_name, c.name) as college_name
+       FROM tasks t
+       LEFT JOIN colleges_full c ON c.id=t.college_id
+       LEFT JOIN LATERAL (
+         SELECT inst.canonical_name
+         FROM canonical.institution_identity_map im
+         JOIN canonical.institutions inst ON inst.id = im.institution_id
+         WHERE im.source_pk = t.college_id::text
+           AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+         ORDER BY im.source_table
+         LIMIT 1
+       ) ci ON true
+       WHERE t.user_id=$1`;
     const params = [userId];
     let idx = 2;
     if (collegeId) { query += ` AND t.college_id=$${idx++}`; params.push(parseInt(collegeId)); }
@@ -94,7 +106,19 @@ router.get('/blocked', authenticate, async (req, res) => {
     const userId = req.user.userId || req.user.id;
     const { collegeId } = req.query;
     const pool = dbManager.getDatabase();
-    let query = `SELECT t.*, c.name as college_name FROM tasks t LEFT JOIN colleges_full c ON c.id=t.college_id WHERE t.user_id=$1 AND t.status='blocked'`;
+    let query = `SELECT t.*, COALESCE(ci.canonical_name, c.name) as college_name
+       FROM tasks t
+       LEFT JOIN colleges_full c ON c.id=t.college_id
+       LEFT JOIN LATERAL (
+         SELECT inst.canonical_name
+         FROM canonical.institution_identity_map im
+         JOIN canonical.institutions inst ON inst.id = im.institution_id
+         WHERE im.source_pk = t.college_id::text
+           AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+         ORDER BY im.source_table
+         LIMIT 1
+       ) ci ON true
+       WHERE t.user_id=$1 AND t.status='blocked'`;
     const params = [userId];
     let idx = 2;
     if (collegeId) { query += ` AND t.college_id=$${idx++}`; params.push(parseInt(collegeId)); }
