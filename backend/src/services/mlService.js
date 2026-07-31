@@ -109,21 +109,31 @@ async function _rulesBasedRanking(studentProfile) {
   const pool = dbManager.getDatabase();
   const student = academicIndex(studentProfile);
 
-  // Pull a pool of well-known colleges that have an acceptance rate. act_avg is
-  // used to refine the school's academic level where present.
+  // Pull a pool of well-known colleges that have an acceptance rate, from
+  // canonical.mv_college_cards (9,848 institutions; live-verified 2,140 with
+  // a usable acceptance_rate) rather than the legacy `colleges` table (5,336
+  // institutions, 1,795 usable) — canonical is the app's actual source of
+  // truth and has a meaningfully larger candidate pool. college_id below is
+  // now the canonical UUID; the only consumer (routes/chances.js) passes it
+  // straight through to the frontend for display/add-college, which already
+  // accepts UUIDs everywhere else in the app (College.findById, Application.
+  // create), so this is not a breaking shape change downstream.
+  // act_50 (median ACT) substitutes for the legacy act_avg; global_rank
+  // substitutes for ranking_us_news as the pool's secondary sort (canonical's
+  // popularity_score is sparsely populated — verified live, mostly 0).
   let rows = [];
   try {
     ({ rows } = await pool.query(
-      `SELECT id, name, acceptance_rate, act_avg
-         FROM colleges
+      `SELECT id, canonical_name AS name, acceptance_rate, act_50 AS act_avg
+         FROM canonical.mv_college_cards
         WHERE acceptance_rate IS NOT NULL AND acceptance_rate > 0
-        ORDER BY COALESCE(popularity_score, 0) DESC NULLS LAST,
-                 ranking_us_news ASC NULLS LAST
+        ORDER BY global_rank ASC NULLS LAST,
+                 COALESCE(popularity_score, 0) DESC NULLS LAST
         LIMIT 400`
     ));
   } catch (err) {
     logger.warn('rules-based ranking pool query failed; using minimal fallback', { error: err.message });
-    const { rows: any } = await pool.query('SELECT id, name, acceptance_rate FROM colleges LIMIT 10');
+    const { rows: any } = await pool.query('SELECT id, canonical_name AS name, acceptance_rate FROM canonical.mv_college_cards LIMIT 10');
     return any.map((r) => ({
       college_id: r.id, college_name: r.name, probability: null, label: 'Unknown',
       acceptance_rate: r.acceptance_rate,
