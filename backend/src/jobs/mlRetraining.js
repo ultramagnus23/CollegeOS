@@ -282,8 +282,8 @@ class MLRetrainingJob {
           t.college_id,
           COALESCE(ci.canonical_name, c.name) as college_name,
           COUNT(*) as total_samples,
-          SUM(CASE WHEN t.decision = 'accepted' THEN 1 ELSE 0 END) as accepted_count,
-          SUM(CASE WHEN t.decision = 'rejected' THEN 1 ELSE 0 END) as rejected_count
+          SUM(CASE WHEN t.outcome = 'accepted' THEN 1 ELSE 0 END) as accepted_count,
+          SUM(CASE WHEN t.outcome = 'rejected' THEN 1 ELSE 0 END) as rejected_count
         FROM ml_training_data t
         LEFT JOIN colleges_full c ON t.college_id = c.id
         LEFT JOIN LATERAL (
@@ -295,11 +295,11 @@ class MLRetrainingJob {
           ORDER BY im.source_table
           LIMIT 1
         ) ci ON true
-        WHERE t.decision IN ('accepted', 'rejected')
+        WHERE t.outcome IN ('accepted', 'rejected')
         GROUP BY t.college_id, c.name, ci.canonical_name
         HAVING COUNT(*) >= 30
-          AND SUM(CASE WHEN t.decision = 'accepted' THEN 1 ELSE 0 END) >= 10
-          AND SUM(CASE WHEN t.decision = 'rejected' THEN 1 ELSE 0 END) >= 10
+          AND SUM(CASE WHEN t.outcome = 'accepted' THEN 1 ELSE 0 END) >= 10
+          AND SUM(CASE WHEN t.outcome = 'rejected' THEN 1 ELSE 0 END) >= 10
         ORDER BY COUNT(*) DESC
         LIMIT 10
       `)).rows;

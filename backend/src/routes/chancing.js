@@ -718,68 +718,16 @@ router.post('/save-history', authenticate, async (req, res, next) => {
  * colleges_full is defined in migration 090 as a view of the colleges table.
  */
 router.get('/history', authenticate, async (req, res, next) => {
+  // The `chancing_history` table referenced by this endpoint was never
+  // created (no CREATE TABLE, no INSERT anywhere in the codebase, no
+  // frontend caller — verified 2026-07-31). This route has always thrown
+  // "relation chancing_history does not exist" for any caller. Rather than
+  // invent a mapping onto a differently-shaped table (chancing_predictions
+  // uses a UUID user_id, incompatible with this app's integer user model;
+  // prediction_logs lacks profile_snapshot/factors), return an honest empty
+  // result until real per-request chancing history storage is built.
   try {
-    const { collegeId, limit = 50 } = req.query;
-    
-    const boundedLimit = Math.min(Math.max(1, parseInt(limit) || 50), 1000);
-    
-    const pool = dbManager.getDatabase();
-    
-    let paramIndex = 1;
-    let query = `
-      SELECT ch.*, COALESCE(ci.canonical_name, c.name) as college_name
-      FROM chancing_history ch
-      LEFT JOIN colleges_full c ON ch.college_id = c.id
-      LEFT JOIN LATERAL (
-        SELECT inst.canonical_name
-        FROM canonical.institution_identity_map im
-        JOIN canonical.institutions inst ON inst.id = im.institution_id
-        WHERE im.source_pk = ch.college_id::text
-          AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
-        ORDER BY im.source_table
-        LIMIT 1
-      ) ci ON true
-      WHERE ch.user_id = $${paramIndex++}
-    `;
-    const params = [req.user.userId];
-    
-    if (collegeId) {
-      query += ` AND ch.college_id = $${paramIndex++}`;
-      params.push(parseInt(collegeId));
-    }
-    
-    query += ` ORDER BY ch.calculated_at DESC LIMIT $${paramIndex++}`;
-    params.push(boundedLimit);
-    
-    const history = (await pool.query(query, params)).rows;
-    
-    const parsedHistory = history.map(h => {
-      let profileSnapshot = {};
-      let factors = [];
-      
-      try {
-        profileSnapshot = JSON.parse(h.profile_snapshot || '{}');
-      } catch (e) {
-        logger.warn(`Invalid JSON in profile_snapshot for history id ${sanitizeLogInput(h.id)}`);
-      }
-      
-      try {
-        factors = JSON.parse(h.factors || '[]');
-      } catch (e) {
-        logger.warn(`Invalid JSON in factors for history id ${sanitizeLogInput(h.id)}`);
-      }
-      
-      return {
-        ...h,
-        profileSnapshot,
-        factors
-      };
-    });
-    
-    res.json({
-      success: true,
-      data: parsedHistory
-    });
+    res.json({ success: true, data: [] });
   } catch (error) {
     logger.error('Get history failed:', error);
     next(error);
@@ -1417,8 +1365,8 @@ router.get('/ml/data-needs', authenticate, async (req, res, next) => {
         t.college_id,
         COALESCE(ci.canonical_name, c.name) as college_name,
         COUNT(*)::int as current_samples,
-        SUM(CASE WHEN t.decision = 'accepted' THEN 1 ELSE 0 END)::int as accepted_count,
-        SUM(CASE WHEN t.decision = 'rejected' THEN 1 ELSE 0 END)::int as rejected_count,
+        SUM(CASE WHEN t.outcome = 'accepted' THEN 1 ELSE 0 END)::int as accepted_count,
+        SUM(CASE WHEN t.outcome = 'rejected' THEN 1 ELSE 0 END)::int as rejected_count,
         ($1 - COUNT(*))::int as samples_needed
       FROM ml_training_data t
       LEFT JOIN colleges_full c ON t.college_id = c.id
@@ -1431,7 +1379,7 @@ router.get('/ml/data-needs', authenticate, async (req, res, next) => {
         ORDER BY im.source_table
         LIMIT 1
       ) ci ON true
-      WHERE t.decision IN ('accepted', 'rejected')
+      WHERE t.outcome IN ('accepted', 'rejected')
       GROUP BY t.college_id, c.name, ci.canonical_name
       HAVING COUNT(*) < $2
       ORDER BY current_samples DESC

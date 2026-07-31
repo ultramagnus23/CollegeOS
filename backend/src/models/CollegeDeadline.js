@@ -1,11 +1,24 @@
 const dbManager = require('../config/database');
 
+// NOTE: this entire model is dead code (zero callers anywhere in the
+// codebase, verified 2026-07-31) and its backing table (application_deadlines)
+// has 0 rows in prod — real deadline data lives in
+// canonical.institution_deadlines instead (see deadlineAutoPopulationService.js,
+// fixed to read from there). Left unused rather than deleted outright since
+// that's a separate cleanup decision; only the read path below is corrected
+// (real column is academic_year TEXT, not application_year) so this doesn't
+// throw if something starts calling it again. createOrUpdate() below still
+// references confidence_score/verification_status/source_url, which don't
+// exist on application_deadlines either — not fixed, since repairing a
+// zero-caller write path isn't worth the column-drift risk; if this model is
+// ever revived, redirect it to canonical.institution_deadlines instead of
+// patching the legacy table further.
 class CollegeDeadline {
   static async findByCollege(collegeId, year = new Date().getFullYear()) {
     const pool = dbManager.getDatabase();
     const { rows } = await pool.query(
-      'SELECT * FROM application_deadlines WHERE college_id = $1 AND application_year = $2',
-      [collegeId, year]
+      'SELECT * FROM application_deadlines WHERE college_id = $1 AND academic_year = $2',
+      [collegeId, String(year)]
     );
     return rows[0] || null;
   }
@@ -89,9 +102,9 @@ class CollegeDeadline {
          ORDER BY im.source_table
          LIMIT 1
        ) ci ON true
-       WHERE ad.application_year = $1
+       WHERE ad.academic_year = $1
        ORDER BY COALESCE(ci.canonical_name, c.name) ASC`,
-      [year]
+      [String(year)]
     );
     return rows;
   }
