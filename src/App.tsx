@@ -53,6 +53,7 @@ const Timeline = lazy(() => import("./pages/Timeline").then(m => ({ default: m.T
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const LegalPage = lazy(() => import("./pages/LegalPage"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const CounsellorDashboard = lazy(() => import("./pages/CounsellorDashboard"));
 const Chancing = lazy(() => import("./pages/Chancing"));
 const SuggestionsPage = lazy(() => import("./pages/Suggestions"));
 const SuggestedColleges = lazy(() => import("./pages/SuggestedColleges"));
@@ -271,6 +272,7 @@ const AppContent = () => {
               <Route path="/settings" element={<Settings />} />
               <Route path="/profile" element={<Settings />} />
               <Route path="/admin" element={user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/dashboard" replace />} />
+              <Route path="/counsellor" element={user?.role === 'counsellor' ? <CounsellorDashboard /> : <Navigate to="/dashboard" replace />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

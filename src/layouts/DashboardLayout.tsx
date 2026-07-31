@@ -22,7 +22,8 @@ import {
   Clock,
   Shield,
   Target,
-  Star
+  Star,
+  GraduationCap
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -43,6 +44,7 @@ const DashboardLayout = () => {
     { name: 'Recommenders', href: '/recommenders', icon: Users },
     { name: 'Timeline', href: '/timeline', icon: Clock },
     ...(user?.role === 'admin' ? [{ name: 'Admin', href: '/admin', icon: Shield }] : []),
+    ...(user?.role === 'counsellor' ? [{ name: 'My Students', href: '/counsellor', icon: GraduationCap }] : []),
     { name: 'Settings', href: '/settings', icon: SettingsIcon },
   ];
 

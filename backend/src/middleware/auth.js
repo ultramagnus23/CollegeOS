@@ -144,4 +144,21 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
-module.exports = { authenticate, optionalAuth, adminOnly };
+/**
+ * Counsellor-only middleware — returns 403 if the authenticated user is not
+ * a counsellor. Must be used after `authenticate`. Access to a specific
+ * student's data is enforced separately per-route via an active row in
+ * counsellor_student_links — this only gates the counsellor role itself.
+ */
+const counsellorOnly = (req, res, next) => {
+  if (!req.user || req.user.role !== 'counsellor') {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden: counsellor access required',
+      errorType: 'FORBIDDEN'
+    });
+  }
+  next();
+};
+
+module.exports = { authenticate, optionalAuth, adminOnly, counsellorOnly };

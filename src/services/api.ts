@@ -1421,6 +1421,22 @@ class ApiService {
     return this.request('/admin/scraper-health');
   }
 
+  // ==================== COUNSELLOR ENDPOINTS ====================
+
+  counsellor = {
+    roster: () => this.request('/counsellor/roster'),
+    studentDetail: (studentId: number | string) => this.request(`/counsellor/student/${studentId}`),
+    pending: () => this.request('/counsellor/pending'),
+    invite: (studentEmail: string) =>
+      this.request('/counsellor/invite', { method: 'POST', body: JSON.stringify({ studentEmail }) }),
+    requestCounsellor: (counsellorEmail: string) =>
+      this.request('/counsellor/request', { method: 'POST', body: JSON.stringify({ counsellorEmail }) }),
+    respond: (linkId: number, accept: boolean) =>
+      this.request('/counsellor/respond', { method: 'POST', body: JSON.stringify({ linkId, accept }) }),
+    revokeLink: (studentId: number | string) =>
+      this.request(`/counsellor/link/${studentId}`, { method: 'DELETE' }),
+  };
+
   // ==================== FINANCIAL AID ENDPOINTS ====================
 
   financial = {
