@@ -844,7 +844,12 @@ class ApiService {
     },
 
     getById: (id: number | string) => this.getCollegeById(id),
-    
+
+    // Richer detail than getById: includes financials (fees/COA) and
+    // requirements alongside admissions/rankings/programs, keyed by the
+    // canonical UUID. Used by the Application Detail view.
+    getComprehensive: (canonicalId: string) => this.request(`/colleges/comprehensive/${encodeURIComponent(canonicalId)}`),
+
     getCollegeData: (id: number, type: string) => this.getCollegeData(id, type),
 
     getCountries: () => this.request('/colleges/filters/countries'),

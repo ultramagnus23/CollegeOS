@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../services/api';
-import { Loader2, X, Search, ExternalLink, Trash2, ChevronDown, ChevronUp, Plus, CheckCircle2, Circle } from 'lucide-react';
+import { Loader2, X, Search, ExternalLink, Trash2, ChevronDown, ChevronUp, Plus, CheckCircle2, Circle, FileSearch } from 'lucide-react';
 import { toast } from 'sonner';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { daysUntilDateOnly } from '@/utils/dateOnly';
@@ -213,9 +214,9 @@ const AppCard: React.FC<{
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: S.text, fontFamily: S.font, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <Link to={`/applications/${app.id}`} style={{ fontSize: 14, fontWeight: 700, color: S.text, fontFamily: S.font, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', textDecoration: 'none' }}>
             {app.college_name}
-          </div>
+          </Link>
           <div style={{ fontSize: 11, color: S.dim, fontFamily: S.font }}>{app.country || 'USA'}</div>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginLeft: 8 }}>
@@ -264,15 +265,24 @@ const AppCard: React.FC<{
         </select>
       </div>
 
-      {/* Expand/collapse */}
-      <button onClick={loadDetails} style={{
-        width: '100%', padding: '6px', background: 'transparent', border: `1px solid ${S.border}`,
-        borderRadius: 8, cursor: 'pointer', color: S.muted, fontFamily: S.font, fontSize: 11,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-      }}>
-        {loadingDetails ? <Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} /> : expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-        {expanded ? 'Hide details' : 'View deadlines & tasks'}
-      </button>
+      {/* Quick expand + full detail page */}
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button onClick={loadDetails} style={{
+          flex: 1, padding: '6px', background: 'transparent', border: `1px solid ${S.border}`,
+          borderRadius: 8, cursor: 'pointer', color: S.muted, fontFamily: S.font, fontSize: 11,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+        }}>
+          {loadingDetails ? <Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} /> : expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          {expanded ? 'Hide' : 'Quick view'}
+        </button>
+        <Link to={`/applications/${app.id}`} style={{
+          flex: 1, padding: '6px', background: 'transparent', border: `1px solid ${accentColor}`,
+          borderRadius: 8, cursor: 'pointer', color: accentColor, fontFamily: S.font, fontSize: 11,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, textDecoration: 'none',
+        }}>
+          <FileSearch size={12} /> Full details
+        </Link>
+      </div>
 
       {/* Expanded details */}
       {expanded && !loadingDetails && (

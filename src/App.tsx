@@ -41,6 +41,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Colleges = lazy(() => import("./pages/Colleges"));
 const CollegeDetails = lazy(() => import("./pages/CollegeDetails"));
 const Applications = lazy(() => import("./pages/Applications"));
+const ApplicationDetail = lazy(() => import("./pages/ApplicationDetail"));
 const Requirements = lazy(() => import("./pages/Requirements"));
 const Deadlines = lazy(() => import("./pages/Deadlines"));
 const Essays = lazy(() => import("./pages/Essays"));
@@ -255,6 +256,7 @@ const AppContent = () => {
             >
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/applications" element={<Applications />} />
+              <Route path="/applications/:id" element={<ApplicationDetail />} />
               <Route path="/requirements" element={<Requirements />} />
               <Route path="/deadlines" element={<Deadlines />} />
               <Route path="/essays" element={<Essays />} />
