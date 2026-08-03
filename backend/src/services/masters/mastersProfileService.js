@@ -15,7 +15,15 @@ const PROFILE_COLUMNS = [
   'sop_status', 'lors_secured', 'lors_required',
   'target_intake_term', 'target_intake_year',
   'target_budget_max', 'target_budget_currency',
+  'track_type', 'research_interests', 'advisor_targets', 'career_goals', 'why_this_program',
+  'funding_need', 'assistantship_interest', 'program_format', 'study_pace',
+  'lors_academic_count', 'lors_professional_count', 'visa_work_auth_interest',
 ];
+
+// JSONB array columns need an explicit ::jsonb cast + JSON.stringify, handled
+// separately from the plain PROFILE_COLUMNS loop (same pattern target_countries
+// already used before this migration added two more JSONB columns).
+const JSONB_ARRAY_COLUMNS = ['target_countries', 'research_entries', 'work_entries'];
 
 async function getTrack(userId) {
   const pool = dbManager.getDatabase();
@@ -46,8 +54,10 @@ async function getProfile(userId) {
   const { rows } = await pool.query(`SELECT * FROM public.masters_profile WHERE user_id = $1`, [userId]);
   const row = rows[0];
   if (!row) return null;
-  if (typeof row.target_countries === 'string') {
-    try { row.target_countries = JSON.parse(row.target_countries); } catch { row.target_countries = []; }
+  for (const col of JSONB_ARRAY_COLUMNS) {
+    if (typeof row[col] === 'string') {
+      try { row[col] = JSON.parse(row[col]); } catch { row[col] = []; }
+    }
   }
   return row;
 }
@@ -66,11 +76,12 @@ async function upsertProfile(userId, data = {}) {
       placeholders.push(`$${params.length}`);
     }
   }
-  // target_countries is JSONB
-  if (data.target_countries !== undefined) {
-    params.push(JSON.stringify(Array.isArray(data.target_countries) ? data.target_countries : []));
-    cols.push('target_countries');
-    placeholders.push(`$${params.length}::jsonb`);
+  for (const col of JSONB_ARRAY_COLUMNS) {
+    if (data[col] !== undefined) {
+      params.push(JSON.stringify(Array.isArray(data[col]) ? data[col] : []));
+      cols.push(col);
+      placeholders.push(`$${params.length}::jsonb`);
+    }
   }
 
   const updateSet = cols

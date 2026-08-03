@@ -22,6 +22,10 @@ router.use(mastersFeatureGate);
 const DEGREE_TYPES = new Set(['MS', 'MA', 'MBA']);
 const SOP_STATUSES = new Set(['not_started', 'drafting', 'reviewing', 'final']);
 const INTAKE_TERMS = new Set(['fall', 'spring', 'summer', 'winter']);
+const TRACK_TYPES = new Set(['thesis', 'coursework', 'unsure']);
+const FUNDING_NEEDS = new Set(['fully_funded_required', 'partial_funding_preferred', 'self_funding', 'unsure']);
+const PROGRAM_FORMATS = new Set(['on_campus', 'online', 'hybrid', 'no_preference']);
+const STUDY_PACES = new Set(['full_time', 'part_time', 'no_preference']);
 
 /** Keep only known masters_profile fields and coerce/guard enums. */
 function sanitizeProfile(body = {}) {
@@ -31,7 +35,7 @@ function sanitizeProfile(body = {}) {
     'toefl_score', 'ielts_score', 'duolingo_score', 'pte_score',
     'undergrad_gpa', 'undergrad_gpa_scale', 'publication_count',
     'work_experience_years', 'lors_secured', 'lors_required', 'target_intake_year',
-    'target_budget_max',
+    'target_budget_max', 'lors_academic_count', 'lors_professional_count',
   ];
   for (const k of numeric) {
     if (body[k] !== undefined && body[k] !== null && body[k] !== '') {
@@ -41,15 +45,46 @@ function sanitizeProfile(body = {}) {
   }
   const text = ['intended_program', 'intended_specialization', 'undergrad_institution',
     'undergrad_major', 'undergrad_country', 'research_experience', 'work_experience_desc',
-    'target_budget_currency'];
+    'target_budget_currency', 'research_interests', 'advisor_targets', 'career_goals',
+    'why_this_program'];
   for (const k of text) {
     if (typeof body[k] === 'string') out[k] = body[k].slice(0, 2000);
+  }
+  const bool = ['assistantship_interest', 'visa_work_auth_interest'];
+  for (const k of bool) {
+    if (typeof body[k] === 'boolean') out[k] = body[k];
   }
   if (DEGREE_TYPES.has(body.target_degree_type)) out.target_degree_type = body.target_degree_type;
   if (SOP_STATUSES.has(body.sop_status)) out.sop_status = body.sop_status;
   if (INTAKE_TERMS.has(body.target_intake_term)) out.target_intake_term = body.target_intake_term;
+  if (TRACK_TYPES.has(body.track_type)) out.track_type = body.track_type;
+  if (FUNDING_NEEDS.has(body.funding_need)) out.funding_need = body.funding_need;
+  if (PROGRAM_FORMATS.has(body.program_format)) out.program_format = body.program_format;
+  if (STUDY_PACES.has(body.study_pace)) out.study_pace = body.study_pace;
   if (Array.isArray(body.target_countries)) {
     out.target_countries = body.target_countries.map((c) => String(c).slice(0, 100)).filter(Boolean).slice(0, 20);
+  }
+  if (Array.isArray(body.research_entries)) {
+    out.research_entries = body.research_entries
+      .filter((e) => e && typeof e === 'object')
+      .map((e) => ({
+        title: String(e.title || '').slice(0, 300),
+        role: String(e.role || '').slice(0, 200),
+        output_type: String(e.output_type || '').slice(0, 100),
+        year: e.year ? String(e.year).slice(0, 4) : '',
+      }))
+      .slice(0, 20);
+  }
+  if (Array.isArray(body.work_entries)) {
+    out.work_entries = body.work_entries
+      .filter((e) => e && typeof e === 'object')
+      .map((e) => ({
+        title: String(e.title || '').slice(0, 300),
+        company: String(e.company || '').slice(0, 300),
+        years: String(e.years || '').slice(0, 50),
+        description: String(e.description || '').slice(0, 1000),
+      }))
+      .slice(0, 20);
   }
   return out;
 }

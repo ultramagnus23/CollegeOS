@@ -844,7 +844,12 @@ class ApiService {
     },
 
     getById: (id: number | string) => this.getCollegeById(id),
-    
+
+    // Richer detail than getById: includes financials (fees/COA) and
+    // requirements alongside admissions/rankings/programs, keyed by the
+    // canonical UUID. Used by the Application Detail view.
+    getComprehensive: (canonicalId: string) => this.request(`/colleges/comprehensive/${encodeURIComponent(canonicalId)}`),
+
     getCollegeData: (id: number, type: string) => this.getCollegeData(id, type),
 
     getCountries: () => this.request('/colleges/filters/countries'),
@@ -1420,6 +1425,22 @@ class ApiService {
   async adminScraperHealth() {
     return this.request('/admin/scraper-health');
   }
+
+  // ==================== COUNSELLOR ENDPOINTS ====================
+
+  counsellor = {
+    roster: () => this.request('/counsellor/roster'),
+    studentDetail: (studentId: number | string) => this.request(`/counsellor/student/${studentId}`),
+    pending: () => this.request('/counsellor/pending'),
+    invite: (studentEmail: string) =>
+      this.request('/counsellor/invite', { method: 'POST', body: JSON.stringify({ studentEmail }) }),
+    requestCounsellor: (counsellorEmail: string) =>
+      this.request('/counsellor/request', { method: 'POST', body: JSON.stringify({ counsellorEmail }) }),
+    respond: (linkId: number, accept: boolean) =>
+      this.request('/counsellor/respond', { method: 'POST', body: JSON.stringify({ linkId, accept }) }),
+    revokeLink: (studentId: number | string) =>
+      this.request(`/counsellor/link/${studentId}`, { method: 'DELETE' }),
+  };
 
   // ==================== FINANCIAL AID ENDPOINTS ====================
 

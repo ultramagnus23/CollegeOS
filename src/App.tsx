@@ -41,6 +41,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Colleges = lazy(() => import("./pages/Colleges"));
 const CollegeDetails = lazy(() => import("./pages/CollegeDetails"));
 const Applications = lazy(() => import("./pages/Applications"));
+const ApplicationDetail = lazy(() => import("./pages/ApplicationDetail"));
 const Requirements = lazy(() => import("./pages/Requirements"));
 const Deadlines = lazy(() => import("./pages/Deadlines"));
 const Essays = lazy(() => import("./pages/Essays"));
@@ -53,6 +54,7 @@ const Timeline = lazy(() => import("./pages/Timeline").then(m => ({ default: m.T
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const LegalPage = lazy(() => import("./pages/LegalPage"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const CounsellorDashboard = lazy(() => import("./pages/CounsellorDashboard"));
 const Chancing = lazy(() => import("./pages/Chancing"));
 const SuggestionsPage = lazy(() => import("./pages/Suggestions"));
 const SuggestedColleges = lazy(() => import("./pages/SuggestedColleges"));
@@ -254,6 +256,7 @@ const AppContent = () => {
             >
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/applications" element={<Applications />} />
+              <Route path="/applications/:id" element={<ApplicationDetail />} />
               <Route path="/requirements" element={<Requirements />} />
               <Route path="/deadlines" element={<Deadlines />} />
               <Route path="/essays" element={<Essays />} />
@@ -271,6 +274,7 @@ const AppContent = () => {
               <Route path="/settings" element={<Settings />} />
               <Route path="/profile" element={<Settings />} />
               <Route path="/admin" element={user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/dashboard" replace />} />
+              <Route path="/counsellor" element={user?.role === 'counsellor' ? <CounsellorDashboard /> : <Navigate to="/dashboard" replace />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
