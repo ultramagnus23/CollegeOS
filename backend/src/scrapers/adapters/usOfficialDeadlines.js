@@ -15,14 +15,16 @@
 // snippet in raw_payload/parser_trace so any date is auditable back to the page.
 // ============================================================================
 
-const PARSER_NAME = 'usOfficialDeadlines';
-const PARSER_VERSION = '1.0.0';
+const { getCurrentCycle, yearForMonthInCycle } = require('../admissionsCycle');
 
-// Application cycle this run targets. Fall 2026 entry = the "2025-2026" cycle:
-// early deadlines fall in Nov/Dec 2025, regular deadlines in Jan 2026.
-const CYCLE_YEAR = '2025-2026';
-const CYCLE_YEAR_KEY = 2026; // entry year
-const CYCLE_START_YEAR = 2025;
+const PARSER_NAME = 'usOfficialDeadlines';
+const PARSER_VERSION = '1.1.0';
+
+// Application cycle this run targets, derived from the clock at run time — NOT
+// hardcoded. A hardcoded cycle silently expires: the scraper keeps running green
+// while stamping freshly-scraped dates into a cycle that has already closed, so
+// the app ends up with zero future deadlines and no failing signal anywhere.
+// See backend/src/scrapers/admissionsCycle.js.
 
 // Targets: canonical_name (for institution_id lookup) + official deadlines page.
 // No dates here — those are read from the live page. Each target below has been
@@ -105,9 +107,9 @@ function cleanHtml(html) {
 }
 
 // Map a deadline month to the correct calendar year within the cycle:
-// Aug–Dec -> cycle start year (2025); Jan–Jul -> entry year (2026).
-function yearForMonth(month) {
-  return month >= 8 ? CYCLE_START_YEAR : CYCLE_YEAR_KEY;
+// Aug–Dec -> cycle start year; Jan–Jul -> entry year.
+function yearForMonth(month, cycle) {
+  return yearForMonthInCycle(month, cycle);
 }
 
 function toISODate(year, month, day) {
@@ -119,7 +121,7 @@ function toISODate(year, month, day) {
 // Extract deadlines from cleaned page text. For each anchor type we look only in a
 // tight window immediately AFTER the anchor phrase, and take the first plausible
 // date there. Returns [{ deadline_type, deadline_date, is_binding, snippet }].
-function extractDeadlines(cleanText, { windowChars = 60 } = {}) {
+function extractDeadlines(cleanText, { windowChars = 60, cycle = getCurrentCycle() } = {}) {
   const out = [];
   const seen = new Set();
   for (const anchor of ANCHORS) {
@@ -137,7 +139,7 @@ function extractDeadlines(cleanText, { windowChars = 60 } = {}) {
     if (!(month >= 9 || month <= 3)) continue;
     if (seen.has(anchor.type)) continue;
     seen.add(anchor.type);
-    const year = yearForMonth(month);
+    const year = yearForMonth(month, cycle);
     out.push({
       deadline_type: anchor.type,
       deadline_date: toISODate(year, month, day),
@@ -177,6 +179,8 @@ async function resolveInstitutionId(pool, name) {
 async function fetchRows({ pool, logger = console }) {
   const rows = [];
   const now = new Date().toISOString();
+  const cycle = getCurrentCycle();
+  logger.info?.(`[${PARSER_NAME}] targeting admissions cycle ${cycle.cycleYear} (entry year ${cycle.cycleYearKey})`);
   for (const target of TARGETS) {
     const institutionId = await resolveInstitutionId(pool, target.name); // eslint-disable-line no-await-in-loop
     if (!institutionId) {
@@ -186,7 +190,7 @@ async function fetchRows({ pool, logger = console }) {
     const html = await fetchText(target.url, logger); // eslint-disable-line no-await-in-loop
     if (!html) continue;
     const clean = cleanHtml(html);
-    const deadlines = extractDeadlines(clean);
+    const deadlines = extractDeadlines(clean, { cycle });
     if (!deadlines.length) {
       logger.warn(`[${PARSER_NAME}] no deadlines extracted from ${target.url}; skipping (not fabricating)`);
       continue;
@@ -196,8 +200,8 @@ async function fetchRows({ pool, logger = console }) {
     for (const d of deadlines) {
       rows.push({
         institution_id: institutionId,
-        cycle_year: CYCLE_YEAR,
-        cycle_year_key: CYCLE_YEAR_KEY,
+        cycle_year: cycle.cycleYear,
+        cycle_year_key: cycle.cycleYearKey,
         degree_level: 'undergraduate',
         applicant_type: 'international',
         intake_term: 'fall',
