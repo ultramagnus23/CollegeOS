@@ -44,16 +44,13 @@ const Applications = lazy(() => import("./pages/Applications"));
 const ApplicationDetail = lazy(() => import("./pages/ApplicationDetail"));
 const Requirements = lazy(() => import("./pages/Requirements"));
 const Deadlines = lazy(() => import("./pages/Deadlines"));
-const Essays = lazy(() => import("./pages/Essays"));
 const Settings = lazy(() => import("./pages/Settings"));
-const Documents = lazy(() => import("./pages/Documents"));
 const Scholarships = lazy(() => import("./pages/Scholarships"));
 const Recommendations = lazy(() => import("./pages/Recommendations"));
 const CollegeRecommendations = lazy(() => import("./pages/CollegeRecommendations"));
 const Timeline = lazy(() => import("./pages/Timeline").then(m => ({ default: m.Timeline })));
 const NotificationsPage = lazy(() => import("./pages/Notifications"));
 const LegalPage = lazy(() => import("./pages/LegalPage"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const CounsellorDashboard = lazy(() => import("./pages/CounsellorDashboard"));
 const Chancing = lazy(() => import("./pages/Chancing"));
 const SuggestionsPage = lazy(() => import("./pages/Suggestions"));
@@ -259,8 +256,6 @@ const AppContent = () => {
               <Route path="/applications/:id" element={<ApplicationDetail />} />
               <Route path="/requirements" element={<Requirements />} />
               <Route path="/deadlines" element={<Deadlines />} />
-              <Route path="/essays" element={<Essays />} />
-              <Route path="/documents" element={<Documents />} />
               <Route path="/scholarships" element={<Scholarships />} />
               <Route path="/financial-aid" element={<Navigate to="/scholarships" replace />} />
               <Route path="/recommenders" element={<Recommendations />} />
@@ -273,7 +268,6 @@ const AppContent = () => {
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/profile" element={<Settings />} />
-              <Route path="/admin" element={user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/dashboard" replace />} />
               <Route path="/counsellor" element={user?.role === 'counsellor' ? <CounsellorDashboard /> : <Navigate to="/dashboard" replace />} />
             </Route>
 

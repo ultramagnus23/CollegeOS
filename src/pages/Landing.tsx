@@ -89,7 +89,7 @@ const productPillars = [
   { title: 'University Discovery', description: 'Search and filter by cost, outcomes, admissions bar, and fit, not marketing copy.', icon: Compass },
   { title: 'Admissions Intelligence', description: 'Reach/Match/Safety classification from real acceptance data and your actual profile.', icon: Target },
   { title: 'Financial Intelligence', description: 'Total cost of attendance, aid, and net price: verified figures, never estimates shown as facts.', icon: Wallet },
-  { title: 'Application Tracking', description: 'Deadlines, essays, recommenders, and documents in one place across every school on your list.', icon: Calendar },
+  { title: 'Application Tracking', description: 'Deadlines, essays, and recommenders in one place across every school on your list.', icon: Calendar },
 ];
 
 function ProductOverview() {

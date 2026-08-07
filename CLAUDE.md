@@ -77,43 +77,104 @@ removed in PR #152 (2026-07-04) — this table previously listed them as still-p
 
 ---
 
-## Real Release Blocker
+## Deployment & CI Status (corrected 2026-08-08 — the "Real Release Blocker" note below was stale)
 
-GitHub Actions workflows are stuck in **`action_required`** state. This is a **pre-job platform approval gate** controlled in repo/org **Settings → Actions**, not a code or YAML issue.
+**The GitHub Actions approval gate is CLEARED, not blocked.** Live workflow runs are scheduled and green
+(`gh run list` shows `canonical-data-refresh`, `scorecard-refresh`, `deadlines-requirements-refresh`,
+`masters-scraper-refresh`, `global-data-refresh`, `frontend-runtime-validation`, `onboarding-smoke` all
+completing successfully on their schedules, not sitting in `action_required`). If you see a genuinely
+stuck run, re-verify against `gh run list` before assuming this note — don't trust either version blind.
 
-**Do NOT attempt to fix this by editing workflow YAML files.** The YAML itself is correct. The approval gate must be cleared through the GitHub UI/Settings by a repo admin.
-
-Affected workflows (all currently blocked): `frontend-runtime-validation.yml`, `onboarding-smoke.yml`, `daily-data-refresh.yml`, `enrich-colleges.yml`, and others.
-
-Launch is **Conditional GO** once Actions approvals are cleared and a full green CI run completes with jobs actually executing.
+**The backend is deployed and live**: `https://collegeos.onrender.com/api/colleges/comprehensive/stats`
+returns 200. Launch readiness is now a product-completeness question (deadline read path, admin
+reachability, masters write path — see `docs/audits/` and memory `audit_full_app_2026-08-08`), not an
+infrastructure-approval one.
 
 ---
 
-## Files That Bypass `canonical.mv_college_cards`
+## Files That Bypass `canonical.mv_college_cards` / Read Legacy Tables
 
-The canonical frontend contract is `canonical.mv_college_cards`. These 4 files bypass it with direct `canonical.institution_*` table references and are tracked as drift vectors:
+The canonical frontend contract is `canonical.mv_college_cards`. This table previously said "4 files
+bypass it" — that was stale. A 2026-08-08 grep for `FROM colleges`/`FROM colleges_full`/
+`FROM college_admissions_stats` (excluding comments) found **23 backend files** still reading the legacy
+model, not 4:
 
-1. **`src/lib/collegeService.ts`** — joins 12 direct canonical tables (institutions, admissions, financials, outcomes, deadlines, requirements, rankings, demographics, campus_life, programs, completeness, quality_scores)
-2. **`backend/src/routes/search.js`** — references `canonical.institution_programs`
-3. **`backend/src/routes/colleges.js`** — references canonical.institutions, institution_completeness, institution_quality_scores, institution_admissions
-4. **`backend/src/services/recommendation/recommendationPipelineService.js`** — references canonical.institution_programs, institution_rankings, institution_admissions
+`jobs/dataRefresh.js`, `jobs/deadlineScrapingScheduler.js`, `jobs/mlRetraining.js`, `jobs/scraperScheduler.js`,
+`models/Application.js`, `models/College.js`, `models/CollegeDeadline.js`, `models/Deadline.js`,
+`models/Essay.js`, `routes/chancing.js`, `routes/colleges.js`, `routes/counsellor.js`, `routes/deadlines.js`,
+`routes/insights.js`, `routes/signals.js`, `routes/tasks.js` *(archived 2026-08-08, see below)*,
+`routes/timeline.js`, `services/collegeDeadlineIntelligenceService.js`, `services/dashboardService.js`,
+`services/deadlineDependencyService.js`, `services/deadlineRiskService.js`,
+`services/deadlineScrapingOrchestrator.js`, `services/notificationService.js`,
+`services/timelineService.js`, `services/warningSystemService.js`,
+`src/lib/collegeService.ts`, `backend/src/services/recommendation/recommendationPipelineService.js`.
 
-Mitigation: card/list endpoints should be pinned to `canonical.mv_college_cards` fields. Contract is enforced at startup via `backend/src/utils/schemaContractChecker.js` and `src/contracts/frontendCollegeCardContract.ts`.
+**Runtime reality check before touching any of these**: three of the four legacy in-process cron jobs
+(`dataRefresh.js`, `deadlineScrapingScheduler.js`, `scraperScheduler.js`, plus `jobs/orchestrator.js`)
+only start if `ENABLE_LEGACY_SCRAPERS==='true'` (`backend/src/app.js`) — **unset in `render.yaml`, so they
+do NOT run in production today**. `render.yaml` separately sets `ENABLE_SCRAPING_JOBS=false`, which is
+**never read by any code** (only a stale comment references that name) — harmless today since both
+resolve to "off," but a landmine if someone "fixes" the wrong variable expecting it to do something.
+`mlRetraining.js` is the one job that DOES run live (gated on `NODE_ENV==='production'`, which is true).
+
+Full legacy cutover (retiring `colleges`/`colleges_full`/`college_admissions_stats` and updating all 23
+readers) is deliberately **not done** — it's its own phase, explicitly deferred as of 2026-08-08 to avoid
+destabilizing the deadline path while masters is the flagship focus. Don't attempt it opportunistically.
+
+Mitigation for the mv_college_cards drift specifically: card/list endpoints should be pinned to
+`canonical.mv_college_cards` fields. Contract is enforced at startup via
+`backend/src/utils/schemaContractChecker.js` and `src/contracts/frontendCollegeCardContract.ts`.
+
+---
+
+## 2026-08-08 Scope Cut — Archived Modules
+
+To narrow the product to one loop (search institutions → calibrated admission chance → real upcoming
+deadlines), the following were removed from `main` and preserved on
+`archive/documents-tasks-admin-essays-2026-08-08` (full code + a JSON export of the live rows at cut time):
+
+- **Admin dashboard** (`src/pages/AdminDashboard.tsx`, `backend/src/routes/admin.js`,
+  `backend/src/services/scraperHealthService.js`) — deleted outright, not archived-with-data: it was
+  unreachable in production (zero users have `role='admin'`, no nav link ever existed).
+- **Documents** (`src/pages/Documents.tsx`, `backend/src/routes/documents.js`) and **Tasks**
+  (`backend/src/routes/tasks.js`, `src/components/dashboard/TodaysTasks.tsx`) — archived with a full data
+  export. `public.documents`/`public.tasks` tables were NOT dropped; only rows for two synthetic test
+  accounts (`user_id` 401, 405) were purged (migration 158). A real user's rows were left untouched.
+- **Essays page only** (`src/pages/Essays.tsx`) — the essay data model, `routes/essays.js`, and every
+  service reading essay status as a chancing/profile-strength signal were explicitly KEPT. Essay status
+  now surfaces inline in `ApplicationDetail.tsx` instead of a standalone editor page.
+- **`ml_metadata`, `chance_me_posts`, `scraper_logs`, `scraper_run_logs`** — moved to the `archive` schema
+  (migration 158, same `ALTER TABLE ... SET SCHEMA archive` pattern as `150_archive_schema_and_colleges_legacy.sql`).
+  **`prediction_logs` was deliberately NOT touched** despite being on the original cut list — it's
+  actively written/read by `routes/chancing.js` on every real chancing prediction (core loop); archiving
+  it would break chancing, not remove dead weight.
 
 ---
 
 ## GitHub Actions Workflows Summary
 
+The workflow table here previously listed `daily-data-refresh.yml`, `scrape-weekly.yml`,
+`scrape-monthly.yml`, and `deadline-refresh-monthly.yml` — **none of these files exist anymore**. The
+real, current set as of 2026-08-08:
+
 | File | Trigger | Permissions |
 |------|---------|-------------|
-| `daily-data-refresh.yml` | `schedule: 0 3 * * *`, `workflow_dispatch` | `contents: read` |
-| `scrape-weekly.yml` | `schedule: 0 4 * * 0`, `workflow_dispatch` | `contents: read` |
-| `scrape-monthly.yml` | `schedule: 0 5 1 * *`, `workflow_dispatch` | `contents: read` |
-| `deadline-refresh-monthly.yml` | `workflow_dispatch` only (legacy) | `contents: read` |
-| `enrich-colleges.yml` | `schedule: 0 2 * * 0`, `workflow_dispatch` | `contents: read`, `actions: read`, `checks: read` |
-| `frontend-runtime-validation.yml` | `push` (main/master/copilot/**), `pull_request`, `pull_request_target`, `workflow_dispatch` | `contents: read`, `actions: read`, `checks: read` |
-| `onboarding-smoke.yml` | `push` (main/master/copilot/**), `pull_request`, `pull_request_target`, `workflow_dispatch` | `contents: read`, `actions: read`, `checks: read` |
-| `india-weekly-refresh.yml` | `schedule: 0 2 * * 1`, `workflow_dispatch` | `contents: read` |
+| `canonical-data-refresh.yml` | `schedule: 0 4 * * *`, `workflow_dispatch` | `contents: read` |
+| `data-quality.yml` | `schedule: 0 6 * * 1`, `workflow_dispatch` | `contents: read` |
+| `deadlines-requirements-refresh.yml` | `schedule: 0 6 * * 3`, `workflow_dispatch` | `contents: read` |
+| `enrich-colleges.yml` | `workflow_dispatch`, `schedule: 0 2 * * 0` | `contents: read`, `actions: read`, `checks: read` |
+| `frontend-runtime-validation.yml` | `pull_request`, `pull_request_target`, `workflow_dispatch` | `contents: read`, `actions: read`, `checks: read` |
+| `global-data-refresh.yml` | `schedule: 0 3 * * 3`, `workflow_dispatch` | `contents: read` |
 | `india-monthly-refresh.yml` | `schedule: 0 3 1 * *`, `workflow_dispatch` | `contents: read` |
+| `india-weekly-refresh.yml` | `schedule: 0 2 * * 1`, `workflow_dispatch` | `contents: read` |
+| `masters-scraper-refresh.yml` | `schedule: 0 6 * * 3`, `workflow_dispatch` | `contents: read` |
+| `onboarding-smoke.yml` | `pull_request`, `pull_request_target`, `push`, `workflow_dispatch` | `contents: read`, `actions: read`, `checks: read` |
+| `scorecard-refresh.yml` | `schedule: 30 4 * * *`, `workflow_dispatch` | `contents: read` |
+| `scraper-enrich.yml` | `schedule: 0 5 * * 2`, `workflow_dispatch` | `contents: read` |
+| `uk-data-refresh.yml` | `schedule: 0 4 15 * *`, `workflow_dispatch` | `contents: read` |
 
-All workflows set `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true`.
+All workflows set `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true`. `masters-scraper-refresh.yml` runs
+`scraper/masters/run_starter_ingest.py`, which by design never writes to the DB directly — it stages
+`tmp/scrape_inserts.sql` for manual human review/apply. Nobody has ever applied one; this is the real
+blocker on masters data freshness, tracked as a separate follow-up ("masters Phase 1: unblock the write
+path"), not fixed in this pass.

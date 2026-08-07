@@ -992,65 +992,6 @@ class ApiService {
     delete: (id: number) => this.deleteEssay(id),
   };
 
-  // ==================== DOCUMENTS ENDPOINTS ====================
-  
-  // Documents namespace - Document Vault
-  documents = {
-    getAll: (filters?: { category?: string; status?: string; collegeId?: string; limit?: number }) => {
-      const params = new URLSearchParams();
-      if (filters?.category) params.append('category', filters.category);
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.collegeId) params.append('collegeId', filters.collegeId);
-      if (filters?.limit) params.append('limit', String(filters.limit));
-      const queryString = params.toString();
-      return this.request(`/documents${queryString ? `?${queryString}` : ''}`);
-    },
-    
-    getById: (id: number) => this.request(`/documents/${id}`),
-    
-    getSummary: () => this.request('/documents/summary'),
-    
-    getExpiring: (days?: number) => 
-      this.request(`/documents/expiring${days ? `?days=${days}` : ''}`),
-    
-    checkForCollege: (collegeId: number, required?: string[]) => {
-      const params = required ? `?required=${required.join(',')}` : '';
-      return this.request(`/documents/check/${collegeId}${params}`);
-    },
-    
-    create: (data: any) => this.request('/documents', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-    
-    update: (id: number, data: any) => this.request(`/documents/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
-    
-    tagToColleges: (id: number, collegeIds: number[]) => 
-      this.request(`/documents/${id}/tag`, {
-        method: 'PUT',
-        body: JSON.stringify({ collegeIds }),
-      }),
-    
-    delete: (id: number) => this.request(`/documents/${id}`, {
-      method: 'DELETE',
-    }),
-    
-    categories: {
-      TRANSCRIPT: 'transcript',
-      TEST_SCORE: 'test_score',
-      ESSAY: 'essay',
-      RECOMMENDATION: 'recommendation',
-      FINANCIAL: 'financial',
-      PROOF: 'proof',
-      PASSPORT: 'passport',
-      PORTFOLIO: 'portfolio',
-      OTHER: 'other',
-    },
-  };
-
   // ==================== SCHOLARSHIPS ENDPOINTS ====================
   
   // Scholarships namespace - Scholarship Database
@@ -1345,42 +1286,6 @@ class ApiService {
     dismiss: (id: number) =>
       this.request(`/warnings/${id}/dismiss`, {
         method: 'PUT',
-      }),
-  };
-
-  // ==================== TASKS ENDPOINTS ====================
-  
-  // Tasks namespace - Task management
-  tasks = {
-    getAll: (filters?: { collegeId?: number; status?: string; type?: string }) => {
-      const params = new URLSearchParams();
-      if (filters?.collegeId) params.append('collegeId', String(filters.collegeId));
-      if (filters?.status) params.append('status', filters.status);
-      if (filters?.type) params.append('type', filters.type);
-      const queryString = params.toString();
-      return this.request(`/tasks${queryString ? `?${queryString}` : ''}`);
-    },
-    
-    create: (data: any) =>
-      this.request('/tasks', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    
-    update: (id: number, data: any) =>
-      this.request(`/tasks/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-    
-    delete: (id: number) =>
-      this.request(`/tasks/${id}`, {
-        method: 'DELETE',
-      }),
-    
-    decompose: (collegeId: number) =>
-      this.request(`/tasks/decompose/${collegeId}`, {
-        method: 'POST',
       }),
   };
 

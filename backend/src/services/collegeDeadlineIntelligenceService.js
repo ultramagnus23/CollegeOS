@@ -361,40 +361,45 @@ async function flagMissingData(collegeId) {
     scholarships_failed: false,
   };
 
-  try {
-    const [rec, ess, doc, sch] = await Promise.all([
-      // Recommendations: check application_requirements or college_requirements
-      pool.query(
-        `SELECT 1 FROM college_requirements WHERE college_id = $1 LIMIT 1`,
-        [collegeId]
-      ).catch(() => ({ rows: [] })),
+  // Each query result genuinely means "this section has no rows for this
+  // college" only if the query actually ran. Previously each was wrapped in
+  // .catch(() => ({ rows: [] })), so a real DB error (bad connection, a typo
+  // in a future edit, a dropped table) was indistinguishable from "verified
+  // empty" and silently reported as *_failed: true — a confidently wrong
+  // "this college is missing X" instead of "we couldn't check X". Letting the
+  // error propagate (caught by the caller, e.g. getForCollege's Promise.all)
+  // is the same fix as the deadline-cycle bug: a real failure must surface as
+  // a failure, not render as a plausible-looking zero.
+  const [rec, ess, doc, sch] = await Promise.all([
+    // Recommendations: check application_requirements or college_requirements
+    pool.query(
+      `SELECT 1 FROM college_requirements WHERE college_id = $1 LIMIT 1`,
+      [collegeId]
+    ),
 
-      // Essays: check essays table linked to this college
-      pool.query(
-        `SELECT 1 FROM essays WHERE college_id = $1 LIMIT 1`,
-        [collegeId]
-      ).catch(() => ({ rows: [] })),
+    // Essays: check essays table linked to this college
+    pool.query(
+      `SELECT 1 FROM essays WHERE college_id = $1 LIMIT 1`,
+      [collegeId]
+    ),
 
-      // Documents: check documents table or application_requirements
-      pool.query(
-        `SELECT 1 FROM college_requirements WHERE college_id = $1 AND required_documents IS NOT NULL LIMIT 1`,
-        [collegeId]
-      ).catch(() => ({ rows: [] })),
+    // Documents: check documents table or application_requirements
+    pool.query(
+      `SELECT 1 FROM college_requirements WHERE college_id = $1 AND required_documents IS NOT NULL LIMIT 1`,
+      [collegeId]
+    ),
 
-      // Scholarships: check college_financial_aid or scholarships table
-      pool.query(
-        `SELECT 1 FROM college_financial_aid WHERE college_id = $1 LIMIT 1`,
-        [collegeId]
-      ).catch(() => ({ rows: [] })),
-    ]);
+    // Scholarships: check college_financial_aid or scholarships table
+    pool.query(
+      `SELECT 1 FROM college_financial_aid WHERE college_id = $1 LIMIT 1`,
+      [collegeId]
+    ),
+  ]);
 
-    flags.recommendations_failed = rec.rows.length === 0;
-    flags.essays_failed = ess.rows.length === 0;
-    flags.documents_failed = doc.rows.length === 0;
-    flags.scholarships_failed = sch.rows.length === 0;
-  } catch (error) {
-    logger.error('flagMissingData failed', { collegeId, error: error.message });
-  }
+  flags.recommendations_failed = rec.rows.length === 0;
+  flags.essays_failed = ess.rows.length === 0;
+  flags.documents_failed = doc.rows.length === 0;
+  flags.scholarships_failed = sch.rows.length === 0;
 
   return flags;
 }

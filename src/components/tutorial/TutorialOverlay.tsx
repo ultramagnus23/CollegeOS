@@ -83,13 +83,6 @@ const DEFAULT_STEPS: TutorialStep[] = [
     placement: 'right',
   },
   {
-    id: 'essays',
-    title: 'Essays',
-    body: 'Manage all your supplemental and personal statement essays. Track word count and drafts per college.',
-    target: '[data-tutorial="essays"]',
-    placement: 'right',
-  },
-  {
     id: 'deadlines',
     title: 'Deadlines',
     body: 'Never miss a date. All your application deadlines in one calendar view with smart reminders.',

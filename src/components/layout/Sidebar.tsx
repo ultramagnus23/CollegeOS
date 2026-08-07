@@ -4,8 +4,7 @@ import {
   LayoutDashboard, 
   Search, 
   ClipboardList, 
-  Calendar, 
-  FileText, 
+  Calendar,
   Settings,
   GraduationCap,
   LogOut,
@@ -42,7 +41,6 @@ const navSections = [
       { id: 'applications', label: 'Applications', icon: ClipboardList,    path: '/applications' },
       { id: 'requirements', label: 'Requirements', icon: FileCheck,        path: '/requirements' },
       { id: 'deadlines',    label: 'Deadlines',    icon: Clock,            path: '/deadlines' },
-      { id: 'essays',       label: 'Essays',       icon: FileText,         path: '/essays' },
     ]
   },
   {

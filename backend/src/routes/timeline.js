@@ -13,16 +13,14 @@ router.get('/monthly', authenticate, async (req, res, next) => {
     let tasks = [];
     let deadlines = [];
 
-    // Pull tasks from BOTH task tables: `application_tasks` (generic per-application
-    // checklist items, populated on first GET of an application's task list) and
-    // `tasks` (the richer auto-generated set from ApplicationBootstrapService —
-    // also what Dashboard.tsx "Today's Tasks" and Timeline.tsx's completion toggle
-    // read/write). They are two real, independently-populated sources; union both
-    // rather than silently dropping one (the disconnect itself is tracked as
-    // follow-up consolidation work, not papered over here).
+    // Pull per-application checklist items from `application_tasks`. This used to
+    // also UNION in `public.tasks` (the standalone "Today's Tasks" / Timeline
+    // toggle feature), but that module was archived 2026-08-08 — see
+    // archive/documents-tasks-admin-essays-2026-08-08 — and its route
+    // (routes/tasks.js) no longer exists, so it's removed from this query too.
     try {
       const result = await pool.query(
-        `SELECT at.id, at.title, at.task_type AS type, at.due_date,
+        `SELECT at.id, at.application_id, at.title, at.task_type AS type, at.due_date,
                 CASE WHEN at.completed THEN 'completed' ELSE 'pending' END AS status,
                 COALESCE(ci1.canonical_name, c.name) AS college_name
          FROM application_tasks at
@@ -30,22 +28,6 @@ router.get('/monthly', authenticate, async (req, res, next) => {
          LEFT JOIN colleges_full c ON c.id = a.college_id
          LEFT JOIN canonical.institutions ci1 ON ci1.id = a.canonical_institution_id
          WHERE a.user_id = $1
-         UNION ALL
-         SELECT t.id, t.title, t.task_type AS type, t.deadline AS due_date,
-                t.status,
-                COALESCE(ci2.canonical_name, c2.name) AS college_name
-         FROM tasks t
-         LEFT JOIN colleges_full c2 ON c2.id = t.college_id
-         LEFT JOIN LATERAL (
-           SELECT inst.canonical_name
-           FROM canonical.institution_identity_map im
-           JOIN canonical.institutions inst ON inst.id = im.institution_id
-           WHERE im.source_pk = t.college_id::text
-             AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
-           ORDER BY im.source_table
-           LIMIT 1
-         ) ci2 ON true
-         WHERE t.user_id = $1
          ORDER BY due_date ASC NULLS LAST`,
         [userId]
       );

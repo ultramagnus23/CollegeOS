@@ -8,6 +8,7 @@ import { PAGE_ACCENTS } from '@/styles/pageAccents';
 
 interface TimelineTask {
   id: number;
+  application_id: number;
   title: string;
   type: string;
   due_date: string;
@@ -62,11 +63,11 @@ export function Timeline() {
     }
   };
 
-  const handleToggleTask = async (id: number, status: string) => {
+  const handleToggleTask = async (applicationId: number, id: number, status: string) => {
     const key = `task-${id}`;
     setToggling(key);
     try {
-      await api.tasks.update(id, { status: status === 'completed' ? 'pending' : 'completed' });
+      await api.applications.toggleTask(applicationId, id, status !== 'completed');
       await loadData();
     } catch {
       toast.error('Failed to update task');
@@ -138,7 +139,7 @@ export function Timeline() {
                         className="flex items-start gap-3 bg-card rounded-lg border border-border p-4"
                       >
                         <button
-                          onClick={() => handleToggleTask(task.id, task.status)}
+                          onClick={() => handleToggleTask(task.application_id, task.id, task.status)}
                           disabled={isToggling}
                           className="mt-0.5 flex-shrink-0 transition-opacity disabled:opacity-50"
                           aria-label={isCompleted ? 'Mark incomplete' : 'Mark complete'}
