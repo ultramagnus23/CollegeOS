@@ -349,7 +349,7 @@ const ApplicationDetail: React.FC = () => {
           </Section>
 
           {/* Essays */}
-          <Section icon={<PenTool size={16} />} title={`Essays (${completedEssays}/${essays.length})`} action={<Link to="/essays" style={{ fontSize: 12, color: S.accent, textDecoration: 'none', fontFamily: S.font }}>Open essay editor →</Link>}>
+          <Section icon={<PenTool size={16} />} title={`Essays (${completedEssays}/${essays.length})`}>
             {essays.length === 0 ? (
               <div style={{ fontSize: 13, color: S.dim, fontFamily: S.font }}>No essays linked to this application yet.</div>
             ) : (

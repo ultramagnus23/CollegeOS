@@ -3,10 +3,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import AIChatbot from '../components/AIChatbot';
 import ProfileStrength from '../components/chancing/ProfileStrength';
-import TodaysTasks from '../components/dashboard/TodaysTasks';
 import UrgentAlerts from '../components/dashboard/UrgentAlerts';
 import CollegeListOverview from '../components/dashboard/CollegeListOverview';
 import { CompactDecisionCountdown } from '@/components/DecisionCountdown';
@@ -158,7 +156,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [urgentAlerts, setUrgentAlerts] = useState<any[]>([]);
   const [collegeList, setCollegeList] = useState<any[]>([]);
-  const [todaysTasks, setTodaysTasks] = useState<any[]>([]);
   const [nextAction, setNextAction] = useState<any>(null);
   const [priorityActions, setPriorityActions] = useState<any[]>([]);
   const [distribution, setDistribution] = useState({ reach:0, target:0, safety:0, unclassified:0 });
@@ -191,11 +188,10 @@ const Dashboard = () => {
       // All data fetched in a single parallel batch — one network layer instead of 4+.
       // getDashboard already contains applications, deadlines, tasks, essays aggregates.
       // We fetch essays detail and risk alerts alongside it, not after it.
-      const [dashReq, essaysReq, alertsReq, tasksReq] = await Promise.allSettled([
+      const [dashReq, essaysReq, alertsReq] = await Promise.allSettled([
         api.getDashboard(),
         api.getEssays(),
         api.risk.alerts(),
-        api.tasks.getAll({ status:'pending' }),
       ]);
 
       // ── getDashboard ────────────────────────────────────────────────────────
@@ -205,7 +201,6 @@ const Dashboard = () => {
 
       const dashApps: any[] = d?.applications?.items || [];
       const dashDeadlines: any[] = d?.deadlines?.upcoming || [];
-      const dashTasks: any[] = d?.tasks?.dueThisWeek || [];
 
       if (d?.nextAction) setNextAction(d.nextAction);
       if (Array.isArray(d?.priorityActions) && d.priorityActions.length) setPriorityActions(d.priorityActions);
@@ -260,16 +255,6 @@ const Dashboard = () => {
         }));
       }
 
-      // ── tasks ────────────────────────────────────────────────────────────────
-      const tr = tasksReq.status === 'fulfilled' ? tasksReq.value : null;
-      if (tr?.success && Array.isArray(tr.data) && tr.data.length > 0) {
-        setTodaysTasks(tr.data.slice(0,5).map((t:any)=>({ id:t.id, title:t.title||t.type, category:t.type||'deadline', priority:t.priority||'medium', dueDate:t.due_date, college:t.college_name, status:t.status||'pending', estimatedTime:t.estimated_time||30 })));
-      } else {
-        setTodaysTasks(dashTasks.slice(0,5).map((t:any)=>({
-          id:t.id, title:t.title||'Task', category:'deadline',
-          priority:t.priority||'medium', dueDate:t.deadline, status:'pending', estimatedTime:30,
-        })));
-      }
     } catch (e) {
       console.error('Dashboard load error:', e);
       trackMetric('dashboard.load_failed', { reason: e instanceof Error ? e.message : 'unknown' });
@@ -355,7 +340,7 @@ const Dashboard = () => {
           {(() => {
             const items = priorityActions.length ? priorityActions : (nextAction ? [nextAction] : []);
             if (!items.length) return null;
-            const ctaRoutes: Record<string,string> = { profile:'/settings', explore:'/colleges', deadlines:'/deadlines', documents:'/documents', essays:'/essays', tasks:'/deadlines', timeline:'/timeline' };
+            const ctaRoutes: Record<string,string> = { profile:'/settings', explore:'/colleges', deadlines:'/deadlines', documents:'/applications', essays:'/applications', tasks:'/deadlines', timeline:'/timeline' };
             const urgencyColor = (u: string) => u==='critical' ? '#EF4444' : u==='high' ? '#F97316' : u==='low' ? '#10B981' : S.accent;
             return (
               <div style={{ marginBottom:24 }}>
@@ -400,23 +385,6 @@ const Dashboard = () => {
           {urgentAlerts.length > 0 && (
             <div style={{ marginBottom:28 }}>
               <UrgentAlerts alerts={urgentAlerts} onAlertClick={()=>navigate('/deadlines')} />
-            </div>
-          )}
-
-          {/* ── Today's tasks ──
-              TodaysTasks' empty state ("You're all caught up! No pending tasks") reads as
-              a direct contradiction sitting right below the "This week" hero when that
-              hero has real items — so only render it once there's something real to show.
-              The old "Recommended Actions" card that used to sit next to this fed a
-              hardcoded fallback profile (gpa: 3.5, curriculum: 'CBSE') into a separate
-              client-side heuristic whenever real data was missing, and its ranking
-              routinely contradicted the "This week" hero above (both claim to be the
-              #1 priority, backed by different logic). Removed rather than reconciled —
-              "This week" is server-derived from the user's real profile/deadlines/docs
-              and is the single source of truth for prioritization now. */}
-          {todaysTasks.length > 0 && (
-            <div style={{ marginBottom:24 }}>
-              <TodaysTasks tasks={todaysTasks} onTaskClick={()=>navigate('/deadlines')} onTaskComplete={async (id)=>{ try { await api.tasks.update(id,{status:'completed'}); setTodaysTasks(prev=>prev.filter(t=>t.id!==id)); } catch { toast.error('Failed to complete task'); } }} />
             </div>
           )}
 
@@ -555,7 +523,7 @@ const Dashboard = () => {
           {/* ── Essay progress ── */}
           {essayProgress.length > 0 && (
             <Card style={{ marginBottom:24 }}>
-              <SectionHead emoji="✍️" title="Essay Progress" href="/essays" linkLabel="View all" />
+              <SectionHead emoji="✍️" title="Essay Progress" href="/applications" linkLabel="View all" />
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:14 }}>
                 {essayProgress.map((essay:any)=>{
                   const statusColor: Record<string,string> = { final:'#10B981', draft_complete:'#3B9EFF', in_progress:'#FBBF24' };
@@ -580,7 +548,6 @@ const Dashboard = () => {
             <QuickAction emoji="🔭" title="Discover Colleges"  desc="Browse universities worldwide"  href="/colleges"      accent={PAGE_ACCENTS.colleges} />
             <QuickAction emoji="📋" title="My Applications"    desc="Track your progress"            href="/applications"  accent={PAGE_ACCENTS.applications} />
             <QuickAction emoji="📅" title="Deadlines"          desc="Never miss a date"              href="/deadlines"     accent={PAGE_ACCENTS.deadlines} />
-            <QuickAction emoji="✍️"  title="Essays"            desc="Write and track your essays"    href="/essays"        accent={PAGE_ACCENTS.essays} />
           </div>
         </div>
       </div>

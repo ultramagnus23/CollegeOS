@@ -7,20 +7,17 @@ import ThemeToggle from '../components/ui/ThemeToggle';
 import { TutorialTrigger } from '../components/tutorial/TutorialOverlay';
 import { LegalFooter } from '../components/legal/LegalFooter';
 import { 
-  Home, 
-  School, 
-  FileText, 
-  Calendar, 
-  PenTool, 
+  Home,
+  School,
+  FileText,
+  Calendar,
   Settings as SettingsIcon,
   LogOut,
   Menu,
   X,
-  FolderOpen,
   Award,
   Users,
   Clock,
-  Shield,
   Target,
   Star,
   GraduationCap
@@ -38,12 +35,9 @@ const DashboardLayout = () => {
     { name: 'College Recommendations', href: '/college-recommendations', icon: Star },
     { name: 'Applications', href: '/applications', icon: FileText },
     { name: 'Deadlines', href: '/deadlines', icon: Calendar },
-    { name: 'Essays', href: '/essays', icon: PenTool },
-    { name: 'Documents', href: '/documents', icon: FolderOpen },
     { name: 'Scholarships & Aid', href: '/scholarships', icon: Award },
     { name: 'Recommenders', href: '/recommenders', icon: Users },
     { name: 'Timeline', href: '/timeline', icon: Clock },
-    ...(user?.role === 'admin' ? [{ name: 'Admin', href: '/admin', icon: Shield }] : []),
     ...(user?.role === 'counsellor' ? [{ name: 'My Students', href: '/counsellor', icon: GraduationCap }] : []),
     { name: 'Settings', href: '/settings', icon: SettingsIcon },
   ];
@@ -119,7 +113,6 @@ const DashboardLayout = () => {
                   item.href === '/colleges' ? 'college-search' :
                   item.href === '/chancing' ? 'chancing' :
                   item.href === '/applications' ? 'applications' :
-                  item.href === '/essays' ? 'essays' :
                   item.href === '/deadlines' ? 'deadlines' :
                   item.href === '/settings' ? 'profile-nav' :
                   undefined

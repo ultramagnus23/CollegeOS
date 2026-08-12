@@ -25,12 +25,15 @@ router.get('/majors', async (req, res, next) => {
     const db   = require('../config/database');
     const pool = db.getDatabase();
 
-    // Try the IPEDS-sourced table first
+    // Try the IPEDS-sourced table first. A real query error is NOT caught here
+    // — it propagates to the outer catch/next(err) below, so a genuine DB
+    // failure surfaces as an error instead of being silently treated the same
+    // as "table legitimately empty" and falling through to the legacy path.
     let { rows } = await pool.query(
       `SELECT id, cip_code, name, broad_category, is_stem
        FROM   majors
        ORDER  BY broad_category, name`
-    ).catch(() => ({ rows: [] }));
+    );
 
     // Fallback to legacy controller if new table is empty
     if (!rows.length) {
