@@ -13,8 +13,12 @@
 //
 // Environment variables:
 //   SCRAPER_DIR     — path to the scraper directory (default: resolved from __dirname)
-//   ENABLE_SCRAPING_JOBS — must be 'true' (or NODE_ENV=production) for jobs to start
 //   FEEDBACK_RETRAIN_THRESHOLD — rows before training_pipeline.py is triggered (default 100)
+//
+// This module is only require()'d/started by app.js when ENABLE_LEGACY_SCRAPERS==='true'
+// (unset in render.yaml, so it does not run in production today). There used to be a
+// second, contradictory env var here (ENABLE_SCRAPING_JOBS, set in render.yaml but never
+// read by any code) — removed 2026-08-12 to stop it looking like a real toggle.
 
 'use strict';
 
