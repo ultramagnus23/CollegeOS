@@ -14,9 +14,10 @@
 
 const { cleanHtml } = require('./usOfficialDeadlines');
 
+const { getCurrentCycle } = require('../admissionsCycle');
+
 const PARSER_NAME = 'usOfficialRequirements';
-const PARSER_VERSION = '1.0.0';
-const CYCLE_YEAR = '2025-2026';
+const PARSER_VERSION = '1.1.0';
 const MIN_SIGNALS = 2; // need at least this many confidently-extracted fields to emit
 
 // Verified-parseable official admissions pages (checked 2026-06-22). These pages
@@ -205,11 +206,11 @@ async function resolveInstitutionId(pool, name) {
 // Institutions that already have a requirements row for this key — we skip them so
 // a partial live scrape never clobbers a richer curated/seed row (the framework's
 // upsert overwrites all columns). This adapter is purely additive.
-async function existingRequirementInstitutions(pool) {
+async function existingRequirementInstitutions(pool, cycleYear) {
   const r = await pool.query(
     `SELECT institution_id FROM canonical.institution_requirements
       WHERE cycle_year = $1 AND degree_level = 'undergraduate' AND applicant_type = 'international'`,
-    [CYCLE_YEAR]
+    [cycleYear]
   );
   return new Set(r.rows.map((x) => x.institution_id));
 }
@@ -235,7 +236,9 @@ async function writeGpaIfMissing(pool, institutionId, gpaAvg, logger, name, dryR
 async function fetchRows({ pool, logger = console, dryRun }) {
   const rows = [];
   const now = new Date().toISOString();
-  const existing = await existingRequirementInstitutions(pool);
+  const cycle = getCurrentCycle();
+  logger.info?.(`[${PARSER_NAME}] targeting admissions cycle ${cycle.cycleYear}`);
+  const existing = await existingRequirementInstitutions(pool, cycle.cycleYear);
   for (const target of TARGETS) {
     const institutionId = await resolveInstitutionId(pool, target.name); // eslint-disable-line no-await-in-loop
     if (!institutionId) { logger.warn(`[${PARSER_NAME}] no institution match for "${target.name}"; skipping`); continue; }
@@ -252,7 +255,7 @@ async function fetchRows({ pool, logger = console, dryRun }) {
     try { domain = new URL(target.url).hostname; } catch { /* ignore */ }
     rows.push({
       institution_id: institutionId,
-      cycle_year: CYCLE_YEAR,
+      cycle_year: cycle.cycleYear,
       degree_level: 'undergraduate',
       applicant_type: 'international',
       ...fields,

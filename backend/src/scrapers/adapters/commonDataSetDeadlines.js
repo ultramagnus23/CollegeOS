@@ -26,8 +26,10 @@
 // skipped, never fabricated.
 // ============================================================================
 
+const { getCurrentCycle, yearForMonthInCycle } = require('../admissionsCycle');
+
 const PARSER_NAME = 'commonDataSetDeadlines';
-const PARSER_VERSION = '1.0.0';
+const PARSER_VERSION = '1.1.0';
 
 // Some schools' CDS PDFs use fonts whose ligature glyphs the PDF text layer
 // can't map to real characters, substituting a Unicode placeholder instead
@@ -47,9 +49,8 @@ const LIGATURE_MAP = { ti: 'Ɵ', tt: 'Ʃ' };
 function fuzzyWord(word) {
   return word.replace(/ti|tt|ffi|ffl|fi|fl/g, (m) => `(?:${m}|${LIGATURE_MAP[m] || '[ƟƩ]'})`);
 }
-const CYCLE_YEAR = '2025-2026';
-const CYCLE_YEAR_KEY = 2026;
-const CYCLE_START_YEAR = 2025;
+// Application cycle is derived from the clock at run time — see
+// backend/src/scrapers/admissionsCycle.js for why it must never be hardcoded.
 
 function driveUrl(fileId) {
   return `https://drive.google.com/uc?export=download&id=${fileId}`;
@@ -326,8 +327,8 @@ const MONTHS = {
 };
 const MONTH_NAME_DATE_RE = /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})\b/i;
 
-function yearForMonth(month) {
-  return month >= 8 ? CYCLE_START_YEAR : CYCLE_YEAR_KEY;
+function yearForMonth(month, cycle) {
+  return yearForMonthInCycle(month, cycle);
 }
 
 function toISODate(year, month, day) {
@@ -337,13 +338,13 @@ function toISODate(year, month, day) {
 // Looks for a date within `windowChars` of the label match (not requiring
 // adjacency, since some schools put "Yes" or a line break between the CDS
 // question label and its answer value).
-function parseDateNear(text, windowChars = 150) {
+function parseDateNear(text, windowChars = 150, cycle = getCurrentCycle()) {
   const dash = DASH_DATE_RE.exec(text.slice(0, windowChars));
   if (dash) {
     const month = parseInt(dash[1], 10);
     const day = parseInt(dash[2], 10);
     if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-      return { date: toISODate(yearForMonth(month), month, day), snippet: dash[0] };
+      return { date: toISODate(yearForMonth(month, cycle), month, day), snippet: dash[0] };
     }
   }
   const named = MONTH_NAME_DATE_RE.exec(text.slice(0, windowChars));
@@ -351,7 +352,7 @@ function parseDateNear(text, windowChars = 150) {
     const month = MONTHS[named[1].toLowerCase()];
     const day = parseInt(named[2], 10);
     if (day >= 1 && day <= 31) {
-      return { date: toISODate(yearForMonth(month), month, day), snippet: named[0] };
+      return { date: toISODate(yearForMonth(month, cycle), month, day), snippet: named[0] };
     }
   }
   return null;
@@ -381,7 +382,7 @@ const FIELD_PATTERNS = [
   ]],
 ];
 
-function extractDeadlines(text) {
+function extractDeadlines(text, cycle = getCurrentCycle()) {
   const out = [];
   const seen = new Set();
   for (const [type, binding, patterns] of FIELD_PATTERNS) {
@@ -399,7 +400,7 @@ function extractDeadlines(text) {
       // rather than mislabel a rolling program's start date as a fixed
       // closing date.
       const rollingIdx = after.search(/rolling\s+basis/i);
-      const found = parseDateNear(after);
+      const found = parseDateNear(after, undefined, cycle);
       if (found) {
         const dateIdx = after.indexOf(found.snippet);
         if (rollingIdx !== -1 && dateIdx !== -1 && rollingIdx < dateIdx) continue; // eslint-disable-line no-continue
@@ -490,6 +491,8 @@ async function fetchPdfText(url, logger) {
 async function fetchRows({ pool, logger = console, limit }) {
   const rows = [];
   const now = new Date().toISOString();
+  const cycle = getCurrentCycle();
+  logger.info?.(`[${PARSER_NAME}] targeting admissions cycle ${cycle.cycleYear} (entry year ${cycle.cycleYearKey})`);
   // CDS_OFFSET lets a checkpointed sprint run this 241-institution list in
   // batches (e.g. CDS_OFFSET=100 node scripts/runScraper.js cdsDeadlines
   // --limit=100) without refetching earlier institutions each time.
@@ -501,13 +504,13 @@ async function fetchRows({ pool, logger = console, limit }) {
     if (!institutionId) { logger.warn(`[${PARSER_NAME}] no institution match for "${name}"; skipping`); continue; }
     const text = await fetchPdfText(url, logger); // eslint-disable-line no-await-in-loop
     if (!text) continue;
-    const deadlines = extractDeadlines(text);
+    const deadlines = extractDeadlines(text, cycle);
     if (!deadlines.length) { logger.warn(`[${PARSER_NAME}] no deadlines extracted for ${name}; skipping (not fabricating)`); continue; }
     for (const d of deadlines) {
       rows.push({
         institution_id: institutionId,
-        cycle_year: CYCLE_YEAR,
-        cycle_year_key: CYCLE_YEAR_KEY,
+        cycle_year: cycle.cycleYear,
+        cycle_year_key: cycle.cycleYearKey,
         degree_level: 'undergraduate',
         applicant_type: 'international',
         intake_term: 'fall',
