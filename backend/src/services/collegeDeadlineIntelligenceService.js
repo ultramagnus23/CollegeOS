@@ -167,7 +167,30 @@ async function upsertDeadline(collegeId, deadlineType, deadlineDate, sourceUrl, 
 }
 
 /**
+ * Resolve an application's row to a canonical institution_id: prefer the
+ * direct FK, and fall back to the identity map (keyed on the legacy
+ * college_id) for older application rows that predate the canonical
+ * cutover. Shared by every read below.
+ */
+const RESOLVE_INSTITUTION_ID_CTE = `
+  SELECT DISTINCT COALESCE(
+    a.canonical_institution_id,
+    (SELECT im.institution_id FROM canonical.institution_identity_map im
+      WHERE im.source_pk = a.college_id::text
+        AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+      ORDER BY im.source_table LIMIT 1)
+  ) AS institution_id
+  FROM applications a
+  WHERE a.user_id = $1
+`;
+
+/**
  * Return upcoming deadlines for colleges the user has saved (via applications table).
+ *
+ * Reads canonical.institution_deadlines — the table every scraper actually
+ * writes — not the legacy public.college_deadlines, which has been
+ * permanently empty since the canonical cutover and was silently starving
+ * this endpoint of real data. See docs/audits/ for the 2026-08 finding.
  *
  * @param {number} userId
  * @param {number} [daysAhead=90]
@@ -177,29 +200,29 @@ async function getUpcomingForUser(userId, daysAhead = 90) {
   const pool = dbManager.getDatabase();
 
   const { rows } = await pool.query(
-    `SELECT
-       cd.id,
-       cd.college_id,
-       COALESCE(ci.canonical_name, c.name) AS college_name,
-       c.country,
-       cd.deadline_type,
-       cd.deadline_date,
-       cd.notification_date,
-       cd.source_url,
-       cd.confidence_score,
-       cd.last_verified,
-       cd.is_estimated,
-       cd.estimation_basis,
-       cd.source_count,
-       cd.source_type,
-       cd.data_year
-     FROM applications a
-     JOIN college_deadlines cd ON cd.college_id = a.college_id
-     JOIN colleges_full c ON c.id = cd.college_id
-     LEFT JOIN canonical.institutions ci ON ci.id = a.canonical_institution_id
-     WHERE a.user_id = $1
-       AND (cd.deadline_date IS NULL OR cd.deadline_date BETWEEN NOW() AND (NOW() + ($2 || ' days')::INTERVAL))
-     ORDER BY cd.deadline_date ASC NULLS LAST`,
+    `WITH user_institutions AS (${RESOLVE_INSTITUTION_ID_CTE})
+     SELECT
+       d.id,
+       ui.institution_id AS college_id,
+       inst.canonical_name AS college_name,
+       inst.country_code AS country,
+       d.deadline_type,
+       d.deadline_date,
+       d.notification_date,
+       d.source_url,
+       d.confidence_score,
+       d.last_verified,
+       d.is_estimated,
+       NULL::text AS estimation_basis,
+       1 AS source_count,
+       d.source_type,
+       d.cycle_year AS data_year
+     FROM user_institutions ui
+     JOIN canonical.institution_deadlines d ON d.institution_id = ui.institution_id
+     LEFT JOIN canonical.institutions inst ON inst.id = ui.institution_id
+     WHERE ui.institution_id IS NOT NULL
+       AND (d.deadline_date IS NULL OR d.deadline_date BETWEEN NOW() AND (NOW() + ($2 || ' days')::INTERVAL))
+     ORDER BY d.deadline_date ASC NULLS LAST`,
     [userId, daysAhead]
   );
 
@@ -211,9 +234,14 @@ async function getUpcomingForUser(userId, daysAhead = 90) {
 }
 
 /**
- * Return all college_deadlines for colleges in a given country, grouped by college.
+ * Return all institution_deadlines for institutions in a given country, grouped by institution.
  *
- * @param {string} country
+ * Reads canonical.institution_deadlines/canonical.institutions — see
+ * getUpcomingForUser's header comment for why. Note `country` now matches
+ * canonical.institutions.country_code (e.g. 'US', 'UK'), not a full country
+ * name like the legacy colleges_full.country column held.
+ *
+ * @param {string} country - a country_code, e.g. 'US'
  * @returns {Promise<Object>} - { [college_name]: { college, deadlines[] } }
  */
 async function getByCountry(country) {
@@ -221,39 +249,30 @@ async function getByCountry(country) {
 
   const { rows } = await pool.query(
     `SELECT
-       c.id            AS college_id,
-       COALESCE(ci.canonical_name, c.name) AS college_name,
-       c.country,
-       c.state,
-       cd.deadline_type,
-       cd.deadline_date,
-       cd.notification_date,
-       cd.source_url,
-       cd.confidence_score,
-       cd.last_verified,
-       cd.is_estimated,
-       cd.estimation_basis,
-       cd.source_count,
-       cd.source_type,
-       cd.data_year
-     FROM colleges_full c
-     JOIN college_deadlines cd ON cd.college_id = c.id
-     LEFT JOIN LATERAL (
-       SELECT inst.canonical_name
-       FROM canonical.institution_identity_map im
-       JOIN canonical.institutions inst ON inst.id = im.institution_id
-       WHERE im.source_pk = c.id::text
-         AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
-       ORDER BY im.source_table
-       LIMIT 1
-     ) ci ON true
-     WHERE LOWER(c.country) = LOWER($1)
-       AND (cd.deadline_date IS NULL OR cd.deadline_date >= NOW() - ($2 || ' days')::INTERVAL)
-     ORDER BY c.name ASC, cd.deadline_date ASC NULLS LAST`,
+       inst.id AS college_id,
+       inst.canonical_name AS college_name,
+       inst.country_code AS country,
+       inst.state_region AS state,
+       d.deadline_type,
+       d.deadline_date,
+       d.notification_date,
+       d.source_url,
+       d.confidence_score,
+       d.last_verified,
+       d.is_estimated,
+       NULL::text AS estimation_basis,
+       1 AS source_count,
+       d.source_type,
+       d.cycle_year AS data_year
+     FROM canonical.institutions inst
+     JOIN canonical.institution_deadlines d ON d.institution_id = inst.id
+     WHERE LOWER(inst.country_code) = LOWER($1)
+       AND (d.deadline_date IS NULL OR d.deadline_date >= NOW() - ($2 || ' days')::INTERVAL)
+     ORDER BY inst.canonical_name ASC, d.deadline_date ASC NULLS LAST`,
     [country, COUNTRY_DEADLINE_LOOKBACK_DAYS]
   );
 
-  // Group by college
+  // Group by institution
   const grouped = {};
   for (const row of rows) {
     const key = row.college_id;
@@ -383,9 +402,13 @@ async function flagMissingData(collegeId) {
       [collegeId]
     ),
 
-    // Documents: check documents table or application_requirements
+    // Documents: college_requirements has no dedicated "required documents"
+    // column — required_documents never existed under that name (verified
+    // 2026-08-21 against the live schema). additional_requirements (freeform
+    // text) is the closest real proxy for "we have some document-requirement
+    // info on record for this college".
     pool.query(
-      `SELECT 1 FROM college_requirements WHERE college_id = $1 AND required_documents IS NOT NULL LIMIT 1`,
+      `SELECT 1 FROM college_requirements WHERE college_id = $1 AND additional_requirements IS NOT NULL LIMIT 1`,
       [collegeId]
     ),
 
@@ -405,7 +428,34 @@ async function flagMissingData(collegeId) {
 }
 
 /**
+ * Resolve a legacy integer college_id to its canonical institution row, via
+ * the identity map (same fallback pattern as RESOLVE_INSTITUTION_ID_CTE).
+ */
+async function resolveInstitution(pool, collegeId) {
+  const { rows } = await pool.query(
+    `SELECT inst.id, inst.canonical_name AS name, inst.country_code AS country,
+            inst.state_region AS state, inst.website AS official_website
+       FROM canonical.institution_identity_map im
+       JOIN canonical.institutions inst ON inst.id = im.institution_id
+      WHERE im.source_pk = $1::text
+        AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+      ORDER BY im.source_table
+      LIMIT 1`,
+    [String(collegeId)]
+  );
+  return rows[0] || null;
+}
+
+/**
  * Fetch all deadline types for a specific college, augmented with history.
+ *
+ * Reads canonical.institution_deadlines, resolved via the identity map from
+ * the legacy collegeId this function still takes (routes/deadlines.js's
+ * :id param is unchanged). Rows from every cycle_year the scrapers have ever
+ * written coexist in this table (a new cycle is a new row, not an
+ * overwrite — see admissionsCycle.js), so "current" vs "history" is a split
+ * on cycle_year_key rather than two separate tables. The old
+ * public.deadline_history table this used to read is permanently empty.
  *
  * @param {number} collegeId
  * @returns {Promise<{college: object, deadlines: Array, history: Array, missing_data: object}>}
@@ -413,52 +463,67 @@ async function flagMissingData(collegeId) {
 async function getForCollege(collegeId) {
   const pool = dbManager.getDatabase();
 
-  const [collegeRes, deadlinesRes, historyRes, missingData] = await Promise.all([
-    pool.query(
-      `SELECT id, name, country, state, official_website FROM colleges WHERE id = $1`,
-      [collegeId]
-    ),
-    pool.query(
-      `SELECT deadline_type, deadline_date, notification_date,
-              source_url, confidence_score, last_verified,
-              is_estimated, estimation_basis, source_count, source_type, data_year
-         FROM college_deadlines WHERE college_id = $1
-        ORDER BY deadline_date ASC NULLS LAST`,
-      [collegeId]
-    ),
-    pool.query(
-      `SELECT deadline_type, deadline_date, data_year, confidence_score, is_estimated, estimation_basis
-         FROM deadline_history WHERE college_id = $1
-        ORDER BY data_year DESC, deadline_date ASC`,
-      [collegeId]
-    ),
+  const [college, missingData] = await Promise.all([
+    resolveInstitution(pool, collegeId),
     flagMissingData(collegeId),
   ]);
 
-  const college = collegeRes.rows[0] || null;
-  const deadlines = deadlinesRes.rows.map(d => ({
-    ...d,
-    confidence_tier: getConfidenceTier(d.confidence_score),
-  }));
+  if (!college) {
+    return { college: null, deadlines: [], history: [], missing_data: missingData };
+  }
 
-  return { college, deadlines, history: historyRes.rows, missing_data: missingData };
+  const { rows } = await pool.query(
+    `SELECT deadline_type, deadline_date, notification_date,
+            source_url, confidence_score, last_verified,
+            is_estimated, source_type, cycle_year, cycle_year_key
+       FROM canonical.institution_deadlines
+      WHERE institution_id = $1
+      ORDER BY cycle_year_key DESC, deadline_date ASC NULLS LAST`,
+    [college.id]
+  );
+
+  const latestCycleKey = rows.length ? Math.max(...rows.map(r => r.cycle_year_key)) : null;
+  const toRow = (d) => ({
+    deadline_type: d.deadline_type,
+    deadline_date: d.deadline_date,
+    notification_date: d.notification_date,
+    source_url: d.source_url,
+    confidence_score: d.confidence_score,
+    confidence_tier: getConfidenceTier(d.confidence_score),
+    last_verified: d.last_verified,
+    is_estimated: d.is_estimated,
+    source_type: d.source_type,
+    data_year: d.cycle_year,
+  });
+
+  const deadlines = rows.filter(r => r.cycle_year_key === latestCycleKey).map(toRow);
+  const history = rows.filter(r => r.cycle_year_key !== latestCycleKey).map(toRow);
+
+  return { college, deadlines, history, missing_data: missingData };
 }
 
 /**
- * Return year-over-year history for a college.
+ * Return year-over-year history for a college — every cycle_year on record
+ * in canonical.institution_deadlines for this institution, oldest first
+ * within each deadline_type. See getForCollege's header for why this is one
+ * table split by cycle_year_key rather than two tables.
  *
  * @param {number} collegeId
  * @returns {Promise<Array>}
  */
 async function getHistory(collegeId) {
   const pool = dbManager.getDatabase();
+
+  const college = await resolveInstitution(pool, collegeId);
+  if (!college) return [];
+
   const { rows } = await pool.query(
     `SELECT deadline_type, deadline_date, notification_date,
-            data_year, source_url, confidence_score, is_estimated, estimation_basis, recorded_at
-       FROM deadline_history
-      WHERE college_id = $1
-      ORDER BY deadline_type ASC, data_year DESC`,
-    [collegeId]
+            cycle_year AS data_year, source_url, confidence_score, is_estimated, last_verified AS recorded_at
+       FROM canonical.institution_deadlines
+      WHERE institution_id = $1
+      ORDER BY deadline_type ASC, cycle_year_key DESC`,
+    [college.id]
   );
   return rows;
 }
