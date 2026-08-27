@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const intelligenceSvc = require('../services/collegeDeadlineIntelligenceService');
 
 // Get monthly timeline - groups application deadlines and tasks by month
 router.get('/monthly', authenticate, async (req, res, next) => {
@@ -58,10 +59,41 @@ router.get('/monthly', authenticate, async (req, res, next) => {
          ORDER BY d.deadline_date ASC NULLS LAST`,
         [userId]
       );
-      deadlines = result.rows;
+      deadlines = result.rows.map(row => ({ ...row, source: 'personal' }));
     } catch (err) {
       logger.error('Failed to fetch deadlines for timeline:', err);
       deadlines = [];
+    }
+
+    // Also pull real institutional deadlines (canonical.institution_deadlines) for
+    // the user's saved applications. Without this, a user who has colleges on their
+    // list but hasn't manually logged a personal deadline sees an empty Timeline even
+    // though the Deadlines page (which reads the same canonical source, see
+    // collegeDeadlineIntelligenceService.getUpcomingForUser) shows real dates for
+    // those same colleges. These rows are informational only, not user-completable
+    // (no row to toggle in `deadlines`), so they're tagged source: 'institutional'
+    // and deduped against anything the user already logged manually for the same
+    // college/type/date.
+    try {
+      const institutional = await intelligenceSvc.getUpcomingForUser(userId, 365);
+      const seen = new Set(
+        deadlines.map(d => `${d.college_name}|${d.deadline_type}|${d.deadline_date}`)
+      );
+      institutional.forEach(d => {
+        const key = `${d.college_name}|${d.deadline_type}|${d.deadline_date}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        deadlines.push({
+          id: d.id,
+          college_name: d.college_name,
+          deadline_type: d.deadline_type,
+          deadline_date: d.deadline_date,
+          is_completed: 0,
+          source: 'institutional',
+        });
+      });
+    } catch (err) {
+      logger.error('Failed to fetch institutional deadlines for timeline:', err);
     }
 
     // Group tasks and deadlines into monthly buckets

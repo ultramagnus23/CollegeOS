@@ -715,19 +715,38 @@ router.post('/save-history', authenticate, async (req, res, next) => {
  * GET /api/chancing/history
  * Get user's chancing history
  *
+ * chancing_history is created by migration 159 (2026-08-27) — it was
+ * referenced by this route and by POST /save-history since long before that,
+ * but the table itself didn't exist, so this always threw and save-history
+ * silently no-opped into an error too. No frontend caller uses either route
+ * yet, so it was never user-visible, but there's no reason to leave a route
+ * that lies with a hardcoded [] when the real table is one CREATE TABLE away.
+ *
  * colleges_full is defined in migration 090 as a view of the colleges table.
  */
 router.get('/history', authenticate, async (req, res, next) => {
-  // The `chancing_history` table referenced by this endpoint was never
-  // created (no CREATE TABLE, no INSERT anywhere in the codebase, no
-  // frontend caller — verified 2026-07-31). This route has always thrown
-  // "relation chancing_history does not exist" for any caller. Rather than
-  // invent a mapping onto a differently-shaped table (chancing_predictions
-  // uses a UUID user_id, incompatible with this app's integer user model;
-  // prediction_logs lacks profile_snapshot/factors), return an honest empty
-  // result until real per-request chancing history storage is built.
   try {
-    res.json({ success: true, data: [] });
+    const pool = dbManager.getDatabase();
+    const { rows } = await pool.query(
+      `SELECT ch.id, ch.college_id, COALESCE(ci.canonical_name, c.name) AS college_name,
+              ch.chance_percentage, ch.category, ch.profile_snapshot, ch.factors, ch.created_at
+       FROM chancing_history ch
+       LEFT JOIN colleges_full c ON c.id = ch.college_id
+       LEFT JOIN LATERAL (
+         SELECT inst.canonical_name
+         FROM canonical.institution_identity_map im
+         JOIN canonical.institutions inst ON inst.id = im.institution_id
+         WHERE im.source_pk = ch.college_id::text
+           AND im.source_table IN ('public.colleges_comprehensive', 'public.colleges', 'colleges')
+         ORDER BY im.source_table
+         LIMIT 1
+       ) ci ON true
+       WHERE ch.user_id = $1
+       ORDER BY ch.created_at DESC
+       LIMIT 100`,
+      [req.user.userId]
+    );
+    res.json({ success: true, data: rows });
   } catch (error) {
     logger.error('Get history failed:', error);
     next(error);

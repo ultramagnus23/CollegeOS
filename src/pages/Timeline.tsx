@@ -22,6 +22,7 @@ interface TimelineDeadline {
   deadline_type: string;
   deadline_date: string;
   is_completed: boolean;
+  source: 'personal' | 'institutional';
 }
 
 interface TimelineMonth {
@@ -166,25 +167,35 @@ export function Timeline() {
 
                   {month.deadlines.map(deadline => {
                     const isCompleted = deadline.is_completed;
-                    const key = `deadline-${deadline.id}`;
+                    const isInstitutional = deadline.source === 'institutional';
+                    const key = `deadline-${deadline.source}-${deadline.id}`;
                     const isToggling = toggling === key;
                     return (
                       <div
                         key={key}
                         className="flex items-start gap-3 bg-card rounded-lg border border-border p-4"
                       >
-                        <button
-                          onClick={() => handleToggleDeadline(deadline.id, deadline.is_completed)}
-                          disabled={isToggling}
-                          className="mt-0.5 flex-shrink-0 transition-opacity disabled:opacity-50"
-                          aria-label={isCompleted ? 'Mark incomplete' : 'Mark complete'}
-                        >
-                          {isCompleted ? (
-                            <CheckCircle2 className="w-5 h-5 text-green-500" />
-                          ) : (
-                            <Circle className="w-5 h-5 text-muted-foreground" />
-                          )}
-                        </button>
+                        {isInstitutional ? (
+                          <span
+                            className="mt-0.5 flex-shrink-0"
+                            title="Official institution deadline — not user-tracked"
+                          >
+                            <Calendar className="w-5 h-5 text-muted-foreground" />
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleToggleDeadline(deadline.id, deadline.is_completed)}
+                            disabled={isToggling}
+                            className="mt-0.5 flex-shrink-0 transition-opacity disabled:opacity-50"
+                            aria-label={isCompleted ? 'Mark incomplete' : 'Mark complete'}
+                          >
+                            {isCompleted ? (
+                              <CheckCircle2 className="w-5 h-5 text-green-500" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-muted-foreground" />
+                            )}
+                          </button>
+                        )}
                         <div className="flex-1 min-w-0">
                           <span className="font-bold text-foreground">{deadline.college_name}</span>
                           <span className="text-muted-foreground text-sm ml-2">{deadline.deadline_type}</span>
