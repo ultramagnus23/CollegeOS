@@ -1,14 +1,17 @@
 name: Masters Scraper Weekly Refresh
 
 # scraper/masters/run_starter_ingest.py is a config-driven, confidence-gated ingest
-# pipeline (targets in scraper/masters/targets.json). By design it NEVER writes to
-# the database directly -- it only produces tmp/scrape_dryrun.json (accepted),
-# tmp/scrape_review.json (flagged/rejected), and tmp/scrape_inserts.sql (a staged
-# SQL script for a human to review and apply). That staging gate is intentional
-# (confidence-gated data quality review before anything touches
-# canonical.masters_programs), so this workflow runs the scrape and uploads the
-# three output files as an artifact for manual review -- it does not auto-apply
-# scrape_inserts.sql to prod. Applying it is a deliberate, separate, human step.
+# pipeline (targets in scraper/masters/targets.json). As of 2026-09-04 (Gate 1/2 of
+# the masters Phase 1 write-path plan, memory masters_phase1_scope_2026-08-10) it
+# writes directly to canonical.masters_programs / masters_program_pathways /
+# masters_program_deadlines via scraper/masters/db.py, using the same per-field-
+# provenance / never-downgrade-confidence pattern already proven on the UG
+# deadline pipeline (scraper/db.py). It's still confidence-gated (validate_program
+# rejects thin extractions before anything reaches the DB) and still emits
+# tmp/scrape_dryrun.json / tmp/scrape_review.json for debugging, but the
+# "generate SQL for a human to apply" staging step is gone — nobody applied one in
+# months, and it was the actual blocker on masters data freshness (see CLAUDE.md's
+# "GitHub Actions Workflows Summary" note, now stale as of this change).
 
 on:
   schedule:
@@ -45,9 +48,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 lxml python-dotenv
+          pip install requests beautifulsoup4 lxml python-dotenv asyncpg structlog pydantic-settings pydantic python-dateutil
 
-      - name: Run masters starter ingest (staging output only, no DB writes)
+      - name: Run masters starter ingest (writes to canonical.masters_* directly)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python -m scraper.masters.run_starter_ingest
 
       - name: Upload scrape review artifacts
@@ -58,6 +63,5 @@ jobs:
           path: |
             tmp/scrape_dryrun.json
             tmp/scrape_review.json
-            tmp/scrape_inserts.sql
           if-no-files-found: warn
           retention-days: 30
