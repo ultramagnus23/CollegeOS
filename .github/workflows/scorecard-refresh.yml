@@ -46,4 +46,5 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
           COLLEGE_SCORECARD_API_KEY: ${{ secrets.COLLEGE_SCORECARD_API_KEY }}
-        run: node scripts/refreshScorecard.js --batch=${{ github.event.inputs.batch || '1000' }}
+          BATCH: ${{ inputs.batch || '1000' }}
+        run: node scripts/refreshScorecard.js --batch="$BATCH"
