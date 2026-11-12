@@ -54,8 +54,6 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           LIMIT: ${{ inputs.limit || '200' }}
         run: node scripts/runScraper.js usDeadlines --limit="$LIMIT"
         continue-on-error: true
