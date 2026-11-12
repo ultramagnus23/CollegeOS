@@ -63,7 +63,7 @@ async function fetchChunk(ids) {
 async function main() {
   if (!API_KEY) throw new Error('COLLEGE_SCORECARD_API_KEY not set');
   const url = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
-  const pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: false } });
+  const pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' } });
 
   const { rows: institutions } = await pool.query(`
     SELECT id, canonical_external_ids->>'ipeds' AS ipeds
