@@ -46,4 +46,6 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: node scripts/runScraper.js "${{ github.event.inputs.adapter || 'wikidata' }}" --limit="${{ github.event.inputs.limit || '50' }}"
+          ADAPTER: ${{ inputs.adapter || 'wikidata' }}
+          LIMIT: ${{ inputs.limit || '50' }}
+        run: node scripts/runScraper.js "$ADAPTER" --limit="$LIMIT"
