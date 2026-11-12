@@ -115,6 +115,13 @@ function checkWorkflows() {
     const rel = path.join('.github', 'workflows', file);
     const text = fs.readFileSync(path.join(root, rel), 'utf8');
 
+    // A thin caller that delegates to a reusable workflow (job-level `uses:`) has no
+    // steps of its own, so it cannot contain `actions/checkout` or a job `timeout-minutes`
+    // (GitHub rejects timeout-minutes on a reusable-workflow call). Those rules are
+    // enforced inside the reusable workflow instead.
+    const delegatesToReusable = /^\s{2,}uses:\s*\S+\/\.github\/workflows\/\S+/m.test(text);
+    const exemptForCallers = new Set(['checkout_v5', 'job_timeout']);
+
     const checks = [
       ['actions/checkout@v5', 'checkout_v5'],
       ['permissions:', 'permissions_block'],
@@ -124,6 +131,7 @@ function checkWorkflows() {
     ];
 
     for (const [needle, checkName] of checks) {
+      if (delegatesToReusable && exemptForCallers.has(checkName)) continue;
       if (!text.includes(needle)) addFail(`workflow_${checkName}`, { workflow: rel });
     }
 

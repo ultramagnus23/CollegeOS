@@ -101,11 +101,13 @@ jobs:
       - name: Enrich College Data
         id: enrich_job
         continue-on-error: true
-        timeout-minutes: 100
+        timeout-minutes: 135
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           SCORECARD_API_KEY: ${{ secrets.SCORECARD_API_KEY }}
           USD_TO_INR_RATE: "83"
+          # Stop cleanly before the step timeout; leftovers are picked up next run.
+          ENRICH_TIME_BUDGET_MIN: "125"
         run: |
           set -e
           set -o pipefail
