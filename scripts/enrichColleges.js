@@ -57,6 +57,11 @@ const SCORED_FIELDS = [
 // Fallback used when currency_rates has no USD→INR row.
 let USD_TO_INR_RATE = Number(process.env.USD_TO_INR_RATE || 84);
 const DELAY_MS = 500;
+// Optional wall-clock budget (minutes). Every row is persisted as it is processed, so
+// stopping early is safe: the next run resumes with whatever is still flagged
+// needs_enrichment. Without this the full backlog (thousands of rows at ~1.2 s each)
+// outgrows the CI step timeout and the weekly run is killed and reported as failed.
+const TIME_BUDGET_MIN = Number(process.env.ENRICH_TIME_BUDGET_MIN || 0);
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -337,7 +342,14 @@ async function runEnrichment(client) {
   let sumQuality = 0;
   let reached70 = 0;
 
+  const startedAt = Date.now();
+  let stoppedEarly = false;
+
   for (const college of colleges) {
+    if (TIME_BUDGET_MIN > 0 && Date.now() - startedAt >= TIME_BUDGET_MIN * 60_000) {
+      stoppedEarly = true;
+      break;
+    }
     const merged = { ...college };
     let sourceUsed = 'manual';
     let sourceUrl = merged.data_source_url || null;
@@ -405,6 +417,11 @@ async function runEnrichment(client) {
   const avg = processed > 0 ? (sumQuality / processed).toFixed(1) : '0.0';
   console.log('\n──────── Enrichment Summary ────────');
   console.log(`Total processed: ${processed}`);
+  if (stoppedEarly) {
+    console.log(
+      `Time budget of ${TIME_BUDGET_MIN} min reached; ${colleges.length - processed} rows remain flagged for the next run.`
+    );
+  }
   console.log(`Average quality score: ${avg}`);
   console.log(`Reached 70+: ${reached70}`);
   console.log('────────────────────────────────────');
