@@ -27,7 +27,7 @@ async function main() {
   const dryRun = process.argv.includes('--dry-run');
   const url = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
   if (!url) throw new Error('DATABASE_URL not set');
-  const pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: false }, max: 3 });
+  const pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' }, max: 3 });
 
   try {
     const summary = await runScrapers([adapter], { pool, dryRun, logger: console });
