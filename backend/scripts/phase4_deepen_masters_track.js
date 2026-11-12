@@ -23,7 +23,7 @@
 // Usage: node scripts/phase4_deepen_masters_track.js [--dry-run]
 
 const { Pool } = require('pg');
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' } });
 const DRY_RUN = process.argv.includes('--dry-run');
 
 const GPA_RE = /average\s+(?:high school\s+)?(?:un)?weighted\s+gpa[^.\d]{0,40}(\d\.\d{1,2})/i;
