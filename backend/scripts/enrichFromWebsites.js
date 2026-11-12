@@ -99,7 +99,7 @@ async function main() {
   const dryRun = process.argv.includes('--dry-run');
   const batch = Math.max(1, parseInt(arg('batch', '10'), 10));
   const countries = arg('countries', 'IN,AU,DE,FR,GB,CA,KR,IE,CH,JP,SE,NZ,SG,HK,NL').split(',').map((c) => c.trim().toUpperCase());
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 4 });
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' }, max: 4 });
 
   const { rows } = await pool.query(
     `SELECT id, canonical_name, website, country_code
