@@ -34,7 +34,7 @@ const PLACEMENTS = {
 
 async function main() {
   loadEnv();
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 2 });
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' }, max: 2 });
   try {
     const metaPatch = {
       sourcing_note: 'Enriched from ashoka.edu.in (verified 2026-06-22) + public record',
