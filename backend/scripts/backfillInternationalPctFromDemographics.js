@@ -21,7 +21,7 @@ const { Pool } = require('pg');
 const DRY = process.argv.includes('--dry-run');
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || process.env.SUPABASE_DB_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' },
 });
 
 async function main() {
