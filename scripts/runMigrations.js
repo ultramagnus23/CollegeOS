@@ -67,7 +67,7 @@ async function main() {
 
   const client = new Client({
     connectionString: getConnectionString(),
-    ssl: { rejectUnauthorized: false },
+    ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' },
   });
   await client.connect();
 
