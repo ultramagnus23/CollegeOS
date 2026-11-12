@@ -23,7 +23,7 @@ const DATA_YEAR = new Date().getFullYear();
 async function main() {
   const url = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
   if (!url) throw new Error('DATABASE_URL not set');
-  const pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: false } });
+  const pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' } });
 
   let updated = 0;
   for (const [name, pdfUrl] of TARGETS) {
