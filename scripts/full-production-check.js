@@ -124,7 +124,8 @@ function checkWorkflows() {
     ];
 
     for (const [needle, checkName] of checks) {
-      if (!text.includes(needle)) addFail(`workflow_${checkName}`, { workflow: rel });
+      const immutableCheckoutV5 = checkName === 'checkout_v5' && text.includes('actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09');
+      if (!text.includes(needle) && !immutableCheckoutV5) addFail(`workflow_${checkName}`, { workflow: rel });
     }
 
     if (text.includes('actions/setup-node@') && !text.includes('actions/setup-node@v5')) {
@@ -133,7 +134,8 @@ function checkWorkflows() {
     if (text.includes('actions/setup-python@') && !text.includes('actions/setup-python@v6')) {
       addFail('workflow_python_action_version', { workflow: rel });
     }
-    if (text.includes('actions/upload-artifact@') && !text.includes('actions/upload-artifact@v5')) {
+    const immutableUploadArtifactV5 = text.includes('actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4');
+    if (text.includes('actions/upload-artifact@') && !text.includes('actions/upload-artifact@v5') && !immutableUploadArtifactV5) {
       addFail('workflow_artifact_action_version', { workflow: rel });
     }
     if (text.includes('actions/upload-artifact@v5') && !text.includes('if: always()')) {
