@@ -8,9 +8,6 @@ name: Canonical Data Refresh
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
-  SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-  COLLEGE_SCORECARD_API_KEY: ${{ secrets.COLLEGE_SCORECARD_API_KEY }}
 
 on:
   schedule:
@@ -43,14 +40,24 @@ jobs:
         run: npm ci || npm install
 
       - name: Scorecard refresh (US stats)
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          COLLEGE_SCORECARD_API_KEY: ${{ secrets.COLLEGE_SCORECARD_API_KEY }}
         continue-on-error: true
         run: node scripts/refreshScorecard.js --batch=1000
 
       - name: Website enrichment (non-US descriptions/founding)
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         continue-on-error: true
         run: node scripts/enrichFromWebsites.js --batch=120
 
       - name: Admissions rolling (deadlines + requirements)
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         continue-on-error: true
         run: node scripts/runAdmissionsRolling.js --batch=60
 
@@ -72,5 +79,8 @@ jobs:
       - name: Install backend deps
         run: npm ci || npm install
       - name: NIRF ingestion
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         continue-on-error: true
         run: node scripts/runNirfRankings.js
