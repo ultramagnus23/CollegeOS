@@ -115,7 +115,7 @@ function checkWorkflows() {
     const rel = path.join('.github', 'workflows', file);
     const text = fs.readFileSync(path.join(root, rel), 'utf8');
 
-    const reusableCaller = /^\\s+uses:\\s+\\S+\\/\\.github\\/workflows\\/.+@/m.test(text);
+    const reusableCaller = /^\s+uses:\s+\S+\/\.github\/workflows\/.+@/m.test(text);
 
     const checks = [
       ['actions/checkout@v5', 'checkout_v5'],
