@@ -309,7 +309,7 @@ function nonNullKeys(obj) {
 async function main() {
   const connectionString = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
   if (!connectionString) throw new Error('Missing required env var: DATABASE_URL or SUPABASE_DB_URL');
-  const client = new Client({ connectionString, ssl: { rejectUnauthorized: false } });
+  const client = new Client({ connectionString, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' } });
   await client.connect();
 
   try {

@@ -34,7 +34,7 @@ function status(value, { ok, warn }) {
 async function main() {
   loadEnv();
   const jsonOnly = process.argv.includes('--json');
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 3 });
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' }, max: 3 });
 
   const inst = await q1(pool, `SELECT count(*)::int n FROM canonical.institutions`);
   const totalInst = inst.n || 0;

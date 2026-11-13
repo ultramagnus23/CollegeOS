@@ -11,7 +11,7 @@
 // Run: node scripts/phase2_dedupe_same_name_same_country.js [--dry-run]
 
 const { Pool } = require('pg');
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' } });
 const DRY_RUN = process.argv.includes('--dry-run');
 
 function score(row) {

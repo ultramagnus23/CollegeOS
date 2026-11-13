@@ -52,7 +52,7 @@ function stripQualifiers(name) {
 
 async function main() {
   const url = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
-  const pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: false } });
+  const pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' } });
 
   const { rows: insts } = await pool.query('SELECT id, canonical_name FROM canonical.institutions');
   const byName = new Map();

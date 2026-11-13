@@ -1,0 +1,94 @@
+{
+  "version": 2,
+  "updates": [
+    {
+      "package_ecosystem": "github-actions",
+      "directory": "/",
+      "schedule": {
+        "interval": "weekly",
+        "day": "monday",
+        "time": "08:00"
+      }
+    },
+    {
+      "package_ecosystem": "npm",
+      "directory": "/",
+      "schedule": {
+        "interval": "weekly",
+        "day": "monday",
+        "time": "08:00"
+      },
+      "open_pull_requests_limit": 5
+    },
+    {
+      "package_ecosystem": "npm",
+      "directory": "/backend",
+      "schedule": {
+        "interval": "weekly",
+        "day": "monday",
+        "time": "08:00"
+      },
+      "open_pull_requests_limit": 5
+    },
+    {
+      "package_ecosystem": "npm",
+      "directory": "/scraper",
+      "schedule": {
+        "interval": "weekly",
+        "day": "monday",
+        "time": "08:00"
+      },
+      "open_pull_requests_limit": 5
+    },
+    {
+      "package_ecosystem": "pip",
+      "directory": "/backend/scripts/data-pipeline",
+      "schedule": {
+        "interval": "weekly",
+        "day": "monday",
+        "time": "08:00"
+      },
+      "open_pull_requests_limit": 5
+    },
+    {
+      "package_ecosystem": "pip",
+      "directory": "/ml/reddit_chancing",
+      "schedule": {
+        "interval": "weekly",
+        "day": "monday",
+        "time": "08:00"
+      },
+      "open_pull_requests_limit": 5
+    },
+    {
+      "package_ecosystem": "pip",
+      "directory": "/ml",
+      "schedule": {
+        "interval": "weekly",
+        "day": "monday",
+        "time": "08:00"
+      },
+      "open_pull_requests_limit": 5
+    },
+    {
+      "package_ecosystem": "pip",
+      "directory": "/scraper/parsers",
+      "schedule": {
+        "interval": "weekly",
+        "day": "monday",
+        "time": "08:00"
+      },
+      "open_pull_requests_limit": 5
+    },
+    {
+      "package_ecosystem": "pip",
+      "directory": "/scraper",
+      "schedule": {
+        "interval": "weekly",
+        "day": "monday",
+        "time": "08:00"
+      },
+      "open_pull_requests_limit": 5
+    }
+  ]
+}

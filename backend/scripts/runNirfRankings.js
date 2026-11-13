@@ -70,7 +70,7 @@ async function createInstitution(pool, r) {
 async function main() {
   loadEnv();
   const dryRun = process.argv.includes('--dry-run');
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 3 });
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' }, max: 3 });
   const stats = { parsed: 0, matched: 0, created: 0, ranked: 0 };
   const seen = new Set();
   try {

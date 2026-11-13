@@ -10,7 +10,7 @@ const TABLES = process.argv.slice(2).length ? process.argv.slice(2) : [
 ];
 
 async function main() {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' } });
   for (const table of TABLES) {
     const totalRes = await pool.query(`SELECT COUNT(*) FROM canonical.${table}`);
     const total = parseInt(totalRes.rows[0].count, 10);

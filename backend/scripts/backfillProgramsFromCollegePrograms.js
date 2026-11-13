@@ -29,7 +29,7 @@ function normalizeDegreeType(dt) {
 async function main() {
   const url = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
   if (!url) throw new Error('DATABASE_URL not set');
-  const pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: false } });
+  const pool = new Pool({ connectionString: url, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' } });
 
   // public.colleges.canonical_institution_id is entirely stale (0 rows resolve to a
   // real canonical.institutions row — orphaned by a prior dedup/merge pass). Bridge

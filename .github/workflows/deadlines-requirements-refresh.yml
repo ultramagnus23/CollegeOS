@@ -54,14 +54,16 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: node scripts/runScraper.js usDeadlines --limit="${{ github.event.inputs.limit || '200' }}"
+          LIMIT: ${{ inputs.limit || '200' }}
+        run: node scripts/runScraper.js usDeadlines --limit="$LIMIT"
         continue-on-error: true
 
       - name: Run us-official-requirements
         working-directory: backend
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: node scripts/runScraper.js usRequirements --limit="${{ github.event.inputs.limit || '200' }}"
+          LIMIT: ${{ inputs.limit || '200' }}
+        run: node scripts/runScraper.js usRequirements --limit="$LIMIT"
         continue-on-error: true
 
       # Common Data Set PDF parser — the scalable deadline tier (241 targets).
@@ -73,19 +75,22 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: node scripts/runScraper.js cdsDeadlines --limit="${{ github.event.inputs.limit || '250' }}"
+          LIMIT: ${{ inputs.limit || '250' }}
+        run: node scripts/runScraper.js cdsDeadlines --limit="$LIMIT"
         continue-on-error: true
 
       - name: Run nirf-rankings
         working-directory: backend
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: node scripts/runScraper.js nirfRankings --limit="${{ github.event.inputs.limit || '200' }}"
+          LIMIT: ${{ inputs.limit || '200' }}
+        run: node scripts/runScraper.js nirfRankings --limit="$LIMIT"
         continue-on-error: true
 
       - name: Run institution-placements
         working-directory: backend
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: node scripts/runScraper.js institutionPlacements --limit="${{ github.event.inputs.limit || '200' }}"
+          LIMIT: ${{ inputs.limit || '200' }}
+        run: node scripts/runScraper.js institutionPlacements --limit="$LIMIT"
         continue-on-error: true

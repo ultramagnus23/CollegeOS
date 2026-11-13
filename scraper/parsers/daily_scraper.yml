@@ -71,24 +71,21 @@ jobs:
 
       - name: Run US scraper
         working-directory: scraper
+        env:
+          COUNTRY_CODES: ${{ inputs.country_codes || '' }}
+          LIMIT: ${{ inputs.limit || '' }}
         run: |
-          COUNTRY_ARGS="${{ github.event.inputs.country_codes }}"
-          LIMIT_ARG="${{ github.event.inputs.limit }}"
-
-          CMD="python orchestrator.py"
-
-          if [ -n "$COUNTRY_ARGS" ]; then
-            CMD="$CMD --country-codes $COUNTRY_ARGS"
+          if [[ -n "$COUNTRY_CODES" ]]; then
+            read -r -a country_args <<< "$COUNTRY_CODES"
           else
-            CMD="$CMD --country-codes US CA"
+            country_args=(US CA)
           fi
-
-          if [ -n "$LIMIT_ARG" ]; then
-            CMD="$CMD --limit $LIMIT_ARG"
+          cmd=(python orchestrator.py --country-codes "${country_args[@]}")
+          if [[ -n "$LIMIT" ]]; then
+            [[ "$LIMIT" =~ ^[0-9]+$ ]] || { echo "LIMIT must be a positive integer"; exit 2; }
+            cmd+=(--limit "$LIMIT")
           fi
-
-          echo "Running: $CMD"
-          $CMD
+          "${cmd[@]}"
 
       - name: Upload logs on failure
         if: failure()
@@ -135,14 +132,15 @@ jobs:
 
       - name: Run India scraper
         working-directory: scraper
+        env:
+          LIMIT: ${{ inputs.limit || '' }}
         run: |
-          LIMIT_ARG="${{ github.event.inputs.limit }}"
-          CMD="python orchestrator.py --country-codes IN"
-          if [ -n "$LIMIT_ARG" ]; then
-            CMD="$CMD --limit $LIMIT_ARG"
+          cmd=(python orchestrator.py --country-codes IN)
+          if [[ -n "$LIMIT" ]]; then
+            [[ "$LIMIT" =~ ^[0-9]+$ ]] || { echo "LIMIT must be a positive integer"; exit 2; }
+            cmd+=(--limit "$LIMIT")
           fi
-          echo "Running: $CMD"
-          $CMD
+          "${cmd[@]}"
 
       - name: Upload logs on failure
         if: failure()
@@ -189,14 +187,15 @@ jobs:
 
       - name: Run Europe scraper
         working-directory: scraper
+        env:
+          LIMIT: ${{ inputs.limit || '' }}
         run: |
-          LIMIT_ARG="${{ github.event.inputs.limit }}"
-          CMD="python orchestrator.py --country-codes GB DE NL FR SE NO DK FI AT CH IT ES BE IE"
-          if [ -n "$LIMIT_ARG" ]; then
-            CMD="$CMD --limit $LIMIT_ARG"
+          cmd=(python orchestrator.py --country-codes GB DE NL FR SE NO DK FI AT CH IT ES BE IE)
+          if [[ -n "$LIMIT" ]]; then
+            [[ "$LIMIT" =~ ^[0-9]+$ ]] || { echo "LIMIT must be a positive integer"; exit 2; }
+            cmd+=(--limit "$LIMIT")
           fi
-          echo "Running: $CMD"
-          $CMD
+          "${cmd[@]}"
 
       - name: Upload logs on failure
         if: failure()

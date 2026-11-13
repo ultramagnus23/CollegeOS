@@ -26,7 +26,7 @@
 // Usage: node scripts/phase3_seed_uk_ucas_deadlines.js [--dry-run]
 
 const { Pool } = require('pg');
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' } });
 const DRY_RUN = process.argv.includes('--dry-run');
 
 const CYCLE_YEAR = '2025-2026';

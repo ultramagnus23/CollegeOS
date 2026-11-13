@@ -114,7 +114,7 @@ async function main() {
   const dryRun = process.argv.includes('--dry-run');
   const batch = Math.max(1, parseInt(arg('batch', '25'), 10));
   const countries = arg('countries', 'US,IN,AU,GB,CA,DE,FR').split(',').map((c) => c.trim().toUpperCase());
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 4 });
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' }, max: 4 });
 
   // Rolling: prioritize PROMINENT colleges (ranked, then most selective — i.e. the
   // ones students actually apply to and that publish deadlines) that have a website

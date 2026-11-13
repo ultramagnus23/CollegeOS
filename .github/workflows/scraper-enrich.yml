@@ -46,11 +46,13 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ADAPTER: ${{ inputs.adapter || 'wikidata' }}
+          LIMIT: ${{ inputs.limit || '50' }}
         run: |
           # The scraper is idempotent (ON CONFLICT upserts), so a retry after a transient
           # Supabase connect/auth timeout is safe.
           for attempt in 1 2 3; do
-            if node scripts/runScraper.js "${{ github.event.inputs.adapter || 'wikidata' }}" --limit="${{ github.event.inputs.limit || '50' }}"; then
+            if node scripts/runScraper.js "$ADAPTER" --limit="$LIMIT"; then
               exit 0
             fi
             echo "::warning::Scraper attempt ${attempt}/3 failed"
