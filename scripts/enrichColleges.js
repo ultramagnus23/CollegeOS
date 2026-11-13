@@ -346,7 +346,7 @@ async function runEnrichment(client) {
   let stoppedEarly = false;
 
   for (const college of colleges) {
-    if (TIME_BUDGET_MIN > 0 && Date.now() - startedAt >= TIME_BUDGET_MIN * 60_000) {
+    if (TIME_BUDGET_MIN > 0 && Date.now() - startedAt >= TIME_BUDGET_MIN * 60000) {
       stoppedEarly = true;
       break;
     }

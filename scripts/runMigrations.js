@@ -70,7 +70,7 @@ async function connectWithRetry(attempts = 4) {
     const client = new Client({
       connectionString: getConnectionString(),
       ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' },
-      connectionTimeoutMillis: 20_000,
+      connectionTimeoutMillis: 20000,
     });
     try {
       await client.connect();
@@ -79,7 +79,7 @@ async function connectWithRetry(attempts = 4) {
       lastErr = err;
       await client.end().catch(() => {});
       if (i < attempts) {
-        const waitMs = 5_000 * i;
+        const waitMs = 5000 * i;
         console.warn(`⚠️ DB connect attempt ${i}/${attempts} failed (${err.message}); retrying in ${waitMs / 1000}s`);
         await new Promise((r) => setTimeout(r, waitMs));
       }
