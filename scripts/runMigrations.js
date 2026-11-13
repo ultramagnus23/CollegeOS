@@ -62,14 +62,36 @@ async function markApplied(client, filename) {
   );
 }
 
+// Supabase's pooler occasionally times out on connect from CI runners. Retry a few
+// times with a short backoff instead of failing the whole workflow on one blip.
+async function connectWithRetry(attempts = 4) {
+  let lastErr;
+  for (let i = 1; i <= attempts; i += 1) {
+    const client = new Client({
+      connectionString: getConnectionString(),
+      ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' },
+      connectionTimeoutMillis: 20000,
+    });
+    try {
+      await client.connect();
+      return client;
+    } catch (err) {
+      lastErr = err;
+      await client.end().catch(() => {});
+      if (i < attempts) {
+        const waitMs = 5000 * i;
+        console.warn(`⚠️ DB connect attempt ${i}/${attempts} failed (${err.message}); retrying in ${waitMs / 1000}s`);
+        await new Promise((r) => setTimeout(r, waitMs));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 async function main() {
   console.log('🔄 Running script migrations from scripts/migrations ...');
 
-  const client = new Client({
-    connectionString: getConnectionString(),
-    ssl: { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' },
-  });
-  await client.connect();
+  const client = await connectWithRetry();
 
   try {
     await ensureMigrationTable(client);

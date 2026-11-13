@@ -36,7 +36,17 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: node scripts/runMigrations.js
+        run: |
+          # Migrations are tracked and idempotent, so retrying after a transient
+          # Supabase connection timeout is safe.
+          for attempt in 1 2 3; do
+            if node scripts/runMigrations.js; then
+              exit 0
+            fi
+            echo "::warning::Migration attempt ${attempt}/3 failed"
+            [ "$attempt" -lt 3 ] && sleep $((20 * attempt))
+          done
+          exit 1
 
       - name: Generate data quality report
         id: report
